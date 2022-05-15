@@ -8,3 +8,4 @@ def test_temporary_directory() -> None:
         assert isinstance(temp, Path)
         assert temp.is_dir()
         assert set(temp.iterdir()) == set()
+    assert not temp.is_dir()
