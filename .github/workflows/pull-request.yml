@@ -1,0 +1,25 @@
+name: pull-request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: test / ${{ matrix.os }} / ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        version: ["3.7", "3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.version }}
+          cache: "poetry"
+      - run: poetry install
+      - run: poetry run pytest
