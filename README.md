@@ -1,3 +1,3 @@
-# `dycw-template`
+# `dycw-utilities`
 
-DYCW template package
+Miscellaneous Python utilities

@@ -38,14 +38,13 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "dycw-template"
-version = "0.1.7"
-description = "DYCW template package"
+name = "dycw-utilities"
+version = "0.0.1"
+description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-gitpython = "^3.1.27"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
@@ -99,7 +98,7 @@ reportUnusedCallResult = "error"
 addopts = [
   "-rsxX",
   "--color=auto",
-  "--cov=dycw_template",
+  "--cov=dycw_utilities",
   "--cov-report=html",
   "--strict-markers"
 ]
