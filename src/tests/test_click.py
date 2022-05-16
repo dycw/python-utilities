@@ -27,7 +27,7 @@ def runners() -> SearchStrategy[CliRunner]:
 
 @command()
 @argument("date", type=Date())
-def func(*, date: dt.date) -> None:
+def uses_date(*, date: dt.date) -> None:
     echo(f"date = {date}")
 
 
@@ -51,7 +51,7 @@ class TestDate:
 
 @command()
 @argument("datetime", type=DateTime())
-def uses_datetime(datetime: dt.datetime) -> None:
+def uses_datetime(*, datetime: dt.datetime) -> None:
     echo(f"datetime = {datetime}")
 
 
@@ -83,7 +83,7 @@ class Truth(_Enum):
 
 @command()
 @argument("truth", type=Enum(Truth))
-def uses_enum(truth: Truth) -> None:
+def uses_enum(*, truth: Truth) -> None:
     echo(f"truth = {truth}")
 
 
