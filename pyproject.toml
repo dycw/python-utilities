@@ -10,7 +10,7 @@ target-version = ["py37"]
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-source = ["app"]
+plugins = ["coverage_conditional_plugin"]
 
 [tool.coverage.report]
 fail_under = 100.0
@@ -19,6 +19,16 @@ skip_empty = true
 
 [tool.coverage.html]
 directory = ".coverage/html"
+
+[tool.coverage.coverage_conditional_plugin.rules]
+ge37 = "sys_version_info >= (3, 7)"
+ge38 = "sys_version_info >= (3, 8)"
+ge39 = "sys_version_info >= (3, 9)"
+ge310 = "sys_version_info >= (3, 10)"
+lt37 = "sys_version_info < (3, 7)"
+lt38 = "sys_version_info < (3, 8)"
+lt39 = "sys_version_info < (3, 9)"
+lt310 = "sys_version_info < (3, 10)"
 
 #### isort ####################################################################
 [tool.isort]
@@ -39,7 +49,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.0.5"
+version = "0.0.6"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -50,6 +60,7 @@ python = "^3.7"
 black = "^22.3.0"
 bump2version = "^1.0.1"
 coverage = { version = "^6.3.3", extras = ["toml"] }
+coverage-conditional-plugin = "^0.5.0"
 flake8 = "^4.0.1"
 flake8-absolute-import = "^1.0.0.1"
 flake8-annotations = "^2.9.0"
@@ -100,9 +111,14 @@ addopts = [
   "--color=auto",
   "--cov=dycw_utilities",
   "--cov-report=html",
+  "--cov-report=term",
   "--strict-markers"
 ]
-filterwarnings = ["error", "ignore::DeprecationWarning"]
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning",
+  "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+]
 looponfailroots = ["src"]
 minversion = "7.0"
 testpaths = ["src/tests"]
