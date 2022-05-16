@@ -1,4 +1,5 @@
 import datetime as dt
+from collections.abc import Callable
 from enum import Enum as _Enum
 from enum import auto
 
@@ -15,6 +16,8 @@ from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
 from hypothesis.strategies import just
 from hypothesis.strategies import sampled_from
+from pytest import mark
+from pytest import param
 
 from dycw_utilities.click import Date
 from dycw_utilities.click import DateTime
@@ -33,15 +36,21 @@ def uses_date(*, date: dt.date) -> None:
     echo(f"date = {date}")
 
 
+def format_date_1(date: dt.date, /) -> str:
+    return date.isoformat()
+
+
+def format_date_2(date: dt.date, /) -> str:
+    return date.strftime("%4Y%m%d")
+
+
 class TestDate:
-    @given(data=data(), runner=runners(), date=dates())
+    @given(runner=runners(), date=dates())
+    @mark.parametrize("format", [param(format_date_1), param(format_date_2)])
     def test_success(
-        self, data: DataObject, runner: CliRunner, date: dt.date
+        self, runner: CliRunner, date: dt.date, format: Callable[[dt.date], str]
     ) -> None:
-        as_str = data.draw(
-            sampled_from([date.isoformat(), date.strftime("%4Y%m%d")])
-        )
-        result = runner.invoke(uses_date, [as_str])
+        result = runner.invoke(uses_date, [format(date)])
         assert result.exit_code == 0
         assert result.stdout == f"date = {date:%4Y-%m-%d}\n"
 
@@ -57,16 +66,27 @@ def uses_datetime(*, datetime: dt.datetime) -> None:
     echo(f"datetime = {datetime}")
 
 
+def format_datetime_1(date: dt.datetime, /) -> str:
+    return date.isoformat()
+
+
+def format_datetime_2(date: dt.datetime, /) -> str:
+    return date.strftime("%4Y%m%d%H%M%S")
+
+
 class TestDateTime:
-    @given(data=data(), runner=runners(), date=datetimes())
+    @given(runner=runners(), date=datetimes())
+    @mark.parametrize(
+        "format", [param(format_datetime_1), param(format_datetime_2)]
+    )
     def test_success(
-        self, data: DataObject, runner: CliRunner, date: dt.datetime
+        self,
+        runner: CliRunner,
+        date: dt.datetime,
+        format: Callable[[dt.datetime], str],
     ) -> None:
         _ = assume(date.microsecond == 0)
-        as_str = data.draw(
-            sampled_from([date.isoformat(), date.strftime("%4Y%m%d%H%M%S")])
-        )
-        result = runner.invoke(uses_datetime, [as_str])
+        result = runner.invoke(uses_datetime, [format(date)])
         assert result.exit_code == 0
         assert result.stdout == f"datetime = {date}\n"
 

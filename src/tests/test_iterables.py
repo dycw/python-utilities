@@ -1,15 +1,20 @@
 from typing import Any
 
-from hypothesis import given
-from hypothesis.strategies import sampled_from
+from pytest import mark
+from pytest import param
 
 from dycw_utilities.iterables import is_iterable_not_str
 
 
 class TestIsIterableNotStr:
-    @given(
-        case=sampled_from([(None, False), ([], True), ((), True), ("", False)])
+    @mark.parametrize(
+        "x, expected",
+        [
+            param(None, False),
+            param([], True),
+            param((), True),
+            param("", False),
+        ],
     )
-    def test_main(self, case: tuple[Any, bool]) -> None:
-        x, expected = case
+    def test_main(self, x: Any, expected: bool) -> None:
         assert is_iterable_not_str(x) is expected
