@@ -12,9 +12,9 @@ from hypothesis.strategies import DataObject
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import data
 from hypothesis.strategies import dates
+from hypothesis.strategies import datetimes
 from hypothesis.strategies import just
 from hypothesis.strategies import sampled_from
-from hypothesis.strategies._internal.datetime import datetimes
 
 from dycw_utilities.click import Date
 from dycw_utilities.click import DateTime
