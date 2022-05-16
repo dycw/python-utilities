@@ -114,7 +114,11 @@ addopts = [
   "--cov-report=term",
   "--strict-markers"
 ]
-filterwarnings = ["error", "ignore::DeprecationWarning"]
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning",
+  "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+]
 looponfailroots = ["src"]
 minversion = "7.0"
 testpaths = ["src/tests"]
