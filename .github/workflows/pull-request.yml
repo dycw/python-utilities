@@ -13,13 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        version: ["3.7", "3.8", "3.9", "3.10"]
+        version: ["3.9", "3.10"]
     steps:
       - uses: actions/checkout@v3
-      - run: pipx install poetry
       - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.version }}
-          cache: "poetry"
+      - uses: abatilo/actions-poetry@v2.1.4
       - run: poetry install
       - run: poetry run pytest
