@@ -1,13 +1,14 @@
 from pathlib import Path
 from sys import version_info
 from tempfile import TemporaryDirectory as _TemporaryDirectory
+from tempfile import gettempdir as _gettempdir
 from typing import Optional
 
 
 if version_info >= (3, 10):  # pragma: lt310
 
     class TemporaryDirectory(_TemporaryDirectory):  # type: ignore
-        """Sub-class of TemporaryDirectory whose"""
+        """Sub-class of TemporaryDirectory whose name attribute is a Path."""
 
         name: Path
 
@@ -43,3 +44,9 @@ else:  # pragma: ge310
         ) -> None:
             super().__init__(suffix=suffix, prefix=prefix, dir=dir)
             self.name = Path(self.name)
+
+
+def gettempdir() -> Path:
+    """Get the name of the directory used for temporary files."""
+
+    return Path(_gettempdir())
