@@ -27,7 +27,7 @@ def runners() -> SearchStrategy[CliRunner]:
 
 @command()
 @argument("date", type=Date())
-def uses_date(date: dt.date) -> None:
+def func(*, date: dt.date) -> None:
     echo(f"date = {date}")
 
 

@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def is_iterable_not_str(x: Any) -> bool:
+def is_iterable_not_str(x: Any, /) -> bool:
     """Check if an object is iterable, but not a string."""
 
     try:
