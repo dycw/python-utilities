@@ -49,7 +49,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.0.8"
+version = "0.0.9"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -84,6 +84,7 @@ pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
 pytest-instafail = "^0.4.2"
 pytest-xdist = "^2.5.0"
+typeguard = "^2.13.3"
 
 #### pyright ##################################################################
 [tool.pyright]
@@ -113,7 +114,8 @@ addopts = [
   "--cov=dycw_utilities",
   "--cov-report=html",
   "--cov-report=term",
-  "--strict-markers"
+  "--strict-markers",
+  "--typeguard-packages=dycw_utilities",
 ]
 filterwarnings = [
   "error",
