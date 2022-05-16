@@ -27,10 +27,9 @@ def runners() -> SearchStrategy[CliRunner]:
 
 class TestDate:
     @given(data=data(), runner=runners(), date=dates())
-    def test_date(
+    def test_success(
         self, data: DataObject, runner: CliRunner, date: dt.date
     ) -> None:
-
         as_str = data.draw(
             sampled_from([date.isoformat(), date.strftime("%4Y%m%d")])
         )
