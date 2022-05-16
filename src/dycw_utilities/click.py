@@ -9,6 +9,9 @@ from typing import TypeVar
 from click import Context
 from click import ParamType
 from click import Parameter
+from click import option
+
+from dycw_utilities.logging import LogLevel
 
 
 class Date(ParamType):
@@ -61,3 +64,12 @@ class Enum(ParamType, Generic[_E]):
             (el,) = els
             return el
         self.fail(f"Unable to parse {value}", param, ctx)
+
+
+log_level_option = option(
+    "--log-level",
+    type=Enum(LogLevel),
+    default=LogLevel.INFO,
+    show_default=True,
+    help="The logging level",
+)

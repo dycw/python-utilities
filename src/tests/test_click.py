@@ -19,6 +19,8 @@ from hypothesis.strategies import sampled_from
 from dycw_utilities.click import Date
 from dycw_utilities.click import DateTime
 from dycw_utilities.click import Enum
+from dycw_utilities.click import log_level_option
+from dycw_utilities.logging import LogLevel
 
 
 def runners() -> SearchStrategy[CliRunner]:
@@ -102,3 +104,17 @@ class TestEnum:
     def test_failure(self, runner: CliRunner) -> None:
         result = runner.invoke(uses_enum, ["not_an_element"])
         assert result.exit_code == 2
+
+
+@command()
+@log_level_option
+def uses_log_level(*, log_level: LogLevel) -> None:
+    echo(f"log_level = {log_level}")
+
+
+class TestLogLevelOption:
+    @given(runner=runners(), log_level=sampled_from(LogLevel))
+    def test_main(self, runner: CliRunner, log_level: LogLevel) -> None:
+        result = runner.invoke(uses_log_level, [f"--log-level={log_level}"])
+        assert result.exit_code == 0
+        assert result.stdout == f"log_level = {log_level}\n"
