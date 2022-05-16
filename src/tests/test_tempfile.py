@@ -1,6 +1,12 @@
 from pathlib import Path
 
 from dycw_utilities.tempfile import TemporaryDirectory
+from dycw_utilities.tempfile import gettempdir
+
+
+class TestGetTempDir:
+    def test_main(self) -> None:
+        assert isinstance(gettempdir(), Path)
 
 
 class TestTemporaryDirectory:
