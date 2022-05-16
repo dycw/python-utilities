@@ -110,9 +110,8 @@ addopts = [
   "-rsxX",
   "--color=auto",
   "--cov=dycw_utilities",
-  "--cov-branch",
   "--cov-report=html",
-  "--cov-report=term-missing:skip-covered",
+  "--cov-report=term",
   "--strict-markers"
 ]
 filterwarnings = ["error", "ignore::DeprecationWarning"]
