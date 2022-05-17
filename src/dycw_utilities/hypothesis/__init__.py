@@ -1,12 +1,20 @@
+from collections.abc import Callable
 from collections.abc import Iterator
 from contextlib import contextmanager
+from functools import partial
 from os import getenv
 from re import search
+from typing import Any
 from typing import Optional
+from typing import TypeVar
 
 from hypothesis import Verbosity
 from hypothesis import assume
 from hypothesis import settings
+from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import fixed_dictionaries
+from hypothesis.strategies import just
+from hypothesis.strategies import tuples
 from typeguard import typeguard_ignore
 
 from dycw_utilities.text import ensure_str
@@ -32,6 +40,50 @@ def assume_does_not_raise(
                 _ = assume(False)
             else:
                 raise
+
+
+_TD = TypeVar("_TD")
+
+
+def draw_and_map(
+    func: Callable[..., _TD], *args: Any, **kwargs: Any
+) -> SearchStrategy[_TD]:
+    """Draw the elements and then pass them into a transformer."""
+
+    return _lift_args_and_kwargs(*args, **kwargs).map(partial(_apply, func))
+
+
+def draw_and_flatmap(
+    func: Callable[..., SearchStrategy[_TD]], *args: Any, **kwargs: Any
+) -> SearchStrategy[_TD]:
+    """Draw the elements and then flatmap them into a transformer."""
+
+    return _lift_args_and_kwargs(*args, **kwargs).flatmap(partial(_apply, func))
+
+
+def _lift_args_and_kwargs(
+    *args: Any, **kwargs: Any
+) -> SearchStrategy[tuple[tuple[Any, ...], dict[str, Any]]]:
+    """Lift a set of (*args, **kwargs) into strategies."""
+
+    lifted_args = tuples(*map(_lift, args))
+    lifted_kwargs = fixed_dictionaries({k: _lift(v) for k, v in kwargs.items()})
+    return tuples(lifted_args, lifted_kwargs)
+
+
+def _lift(x: Any, /) -> SearchStrategy[Any]:
+    """Lift a value to a strategy."""
+
+    return x if isinstance(x, SearchStrategy) else just(x)
+
+
+def _apply(
+    func: Callable[..., _TD], x: tuple[tuple[Any, ...], dict[str, Any]], /
+) -> _TD:
+    """Apply a set of (*args, **kwargs) into a function."""
+
+    args, kwargs = x
+    return func(*args, **kwargs)
 
 
 def setup_hypothesis_profiles() -> None:
