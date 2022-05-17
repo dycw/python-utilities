@@ -5,7 +5,7 @@ from typing import TypeVar
 
 try:
     from typeguard import typeguard_ignore as _typeguard_ignore
-except ModuleNotFoundError:
+except ModuleNotFoundError:  # pragma: no cover
 
     _T = TypeVar("_T", bound=Callable[..., Any])
 
