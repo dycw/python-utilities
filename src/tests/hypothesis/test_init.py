@@ -1,3 +1,4 @@
+import builtins
 from typing import Union
 
 from hypothesis import given
@@ -5,12 +6,16 @@ from hypothesis.strategies import DataObject
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import booleans
 from hypothesis.strategies import data
+from hypothesis.strategies import integers
 from hypothesis.strategies import just
+from pytest import mark
+from pytest import param
 from pytest import raises
 
 from dycw_utilities.hypothesis import assume_does_not_raise
 from dycw_utilities.hypothesis import draw_and_flatmap
 from dycw_utilities.hypothesis import draw_and_map
+from dycw_utilities.hypothesis import lists_fixed_length
 from dycw_utilities.hypothesis import setup_hypothesis_profiles
 
 
@@ -84,6 +89,28 @@ class TestDrawAndFlatMap:
     @given(x=uses_draw_and_flatmap(booleans()))
     def test_strategy(self, x: bool) -> None:
         assert isinstance(x, bool)
+
+
+class TestListsFixedLength:
+    @given(data=data(), size=integers(1, 10))
+    @mark.parametrize(
+        "unique", [param(True, id="unique"), param(False, id="no unique")]
+    )
+    @mark.parametrize(
+        "sorted", [param(True, id="sorted"), param(False, id="no sorted")]
+    )
+    def test_main(
+        self, data: DataObject, size: int, unique: bool, sorted: bool
+    ) -> None:
+        result = data.draw(
+            lists_fixed_length(integers(), size, unique=unique, sorted=sorted)
+        )
+        assert isinstance(result, list)
+        assert len(result) == size
+        if unique:
+            assert len(set(result)) == len(result)
+        if sorted:
+            assert builtins.sorted(result) == result
 
 
 class TestSetupHypothesisProfiles:

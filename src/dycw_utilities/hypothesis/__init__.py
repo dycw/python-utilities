@@ -1,3 +1,4 @@
+import builtins
 from collections.abc import Callable
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -14,6 +15,7 @@ from hypothesis import settings
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import fixed_dictionaries
 from hypothesis.strategies import just
+from hypothesis.strategies import lists
 from hypothesis.strategies import tuples
 from typeguard import typeguard_ignore
 
@@ -64,26 +66,49 @@ def draw_and_flatmap(
 def _lift_args_and_kwargs(
     *args: Any, **kwargs: Any
 ) -> SearchStrategy[tuple[tuple[Any, ...], dict[str, Any]]]:
-    """Lift a set of (*args, **kwargs) into strategies."""
-
     lifted_args = tuples(*map(_lift, args))
     lifted_kwargs = fixed_dictionaries({k: _lift(v) for k, v in kwargs.items()})
     return tuples(lifted_args, lifted_kwargs)
 
 
 def _lift(x: Any, /) -> SearchStrategy[Any]:
-    """Lift a value to a strategy."""
-
     return x if isinstance(x, SearchStrategy) else just(x)
 
 
 def _apply(
     func: Callable[..., _TD], x: tuple[tuple[Any, ...], dict[str, Any]], /
 ) -> _TD:
-    """Apply a set of (*args, **kwargs) into a function."""
-
     args, kwargs = x
     return func(*args, **kwargs)
+
+
+_TLFL = TypeVar("_TLFL")
+
+
+def lists_fixed_length(
+    strategy: SearchStrategy[_TLFL],
+    size: int,
+    /,
+    *,
+    unique: bool = False,
+    sorted: bool = False,
+) -> SearchStrategy[list[_TLFL]]:
+    """Strategy for generating lists of a fixed length."""
+
+    return draw_and_map(
+        _draw_lists_fixed_length,
+        lists(strategy, min_size=size, max_size=size, unique=unique),
+        sorted=sorted,
+    )
+
+
+def _draw_lists_fixed_length(
+    elements: list[Any], /, *, sorted: bool = False
+) -> list[Any]:
+    if sorted:
+        return builtins.sorted(elements)
+    else:
+        return elements
 
 
 def setup_hypothesis_profiles() -> None:
