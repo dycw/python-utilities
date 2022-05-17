@@ -1,4 +1,7 @@
+import datetime as dt
+from collections.abc import Callable
 from pathlib import Path
+from typing import Optional
 from typing import Union
 
 from hypothesis.strategies import SearchStrategy
@@ -12,13 +15,25 @@ from dycw_utilities.tempfile import TemporaryDirectory
 
 
 def sqlite_engines(
-    *, path: MaybeSearchStrategy[Union[Path, TemporaryDirectory]] = temp_dirs()
+    *,
+    dir: MaybeSearchStrategy[Union[Path, TemporaryDirectory]] = temp_dirs(),
+    post_init: Optional[Callable[[Engine], None]] = None,
 ) -> SearchStrategy[Engine]:
     """Strategy for generating SQLite engines."""
 
-    return draw_and_map(_draw_sqlite_engines, path)
+    return draw_and_map(_draw_sqlite_engines, dir, post_init=post_init)
 
 
-def _draw_sqlite_engines(path: Union[Path, TemporaryDirectory], /) -> Engine:
-    path_use = path if isinstance(path, Path) else path.name
-    return create_engine("sqlite", database=path_use.as_posix())
+def _draw_sqlite_engines(
+    dir: Union[Path, TemporaryDirectory],
+    /,
+    *,
+    post_init: Optional[Callable[[Engine], None]] = None,
+) -> Engine:
+    dir_use = dir if isinstance(dir, Path) else dir.name
+    now = dt.datetime.now()
+    path = dir_use.joinpath(f"db-{now}.sqlite")
+    engine = create_engine("sqlite", database=path.as_posix())
+    if post_init is not None:
+        post_init(engine)
+    return engine

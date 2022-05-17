@@ -115,7 +115,6 @@ addopts = [
   "--color=auto",
   "--cov=dycw_utilities",
   "--cov-report=html",
-  "--cov-report=term-missing:skip-covered",
   "--strict-markers",
   "--typeguard-packages=dycw_utilities",
 ]
