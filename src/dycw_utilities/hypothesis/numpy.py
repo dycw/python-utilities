@@ -28,7 +28,7 @@ _MaybeSearchStrategy = Union[_T, SearchStrategy[_T]]
 def bool_arrays(
     *, shape: _MaybeSearchStrategy[_Shape] = array_shapes()
 ) -> SearchStrategy[NDArray[bool_]]:
-    """Search strategy for generating arrays of booleans."""
+    """Strategy for generating arrays of booleans."""
 
     return draw_and_flatmap(_draw_bool_arrays, shape)
 
@@ -45,7 +45,7 @@ def float_arrays(
     allow_nan: _MaybeSearchStrategy[Optional[bool]] = None,
     allow_infinity: _MaybeSearchStrategy[Optional[bool]] = None,
 ) -> SearchStrategy[NDArray[float64]]:
-    """Search strategy for generating arrays of floats."""
+    """Strategy for generating arrays of floats."""
 
     return draw_and_flatmap(
         _draw_float_arrays,
@@ -81,7 +81,7 @@ def int_arrays(
     min_value: _MaybeSearchStrategy[Optional[int]] = None,
     max_value: _MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[NDArray[int64]]:
-    """Search strategy for generating arrays of ints."""
+    """Strategy for generating arrays of ints."""
 
     return draw_and_flatmap(
         _draw_int_arrays, shape, min_value=min_value, max_value=max_value
@@ -103,6 +103,6 @@ def _draw_int_arrays(
 
 
 def int64s() -> SearchStrategy[int]:
-    """Search strategy for generating int64s."""
+    """Strategy for generating int64s."""
 
     return from_dtype(dtype(int64)).map(int)

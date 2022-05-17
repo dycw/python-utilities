@@ -1,6 +1,6 @@
 from enum import auto
 
-from hypothesis.core import given
+from hypothesis import given
 from hypothesis.strategies import sampled_from
 
 from dycw_utilities.enum import StrEnum
