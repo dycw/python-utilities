@@ -28,6 +28,9 @@ if version_info >= (3, 10):  # pragma: lt310
             )
             self.name = Path(self.name)
 
+        def __enter__(self) -> Path:
+            return super().__enter__()
+
 else:  # pragma: ge310
 
     class TemporaryDirectory(_TemporaryDirectory):
@@ -44,6 +47,9 @@ else:  # pragma: ge310
         ) -> None:
             super().__init__(suffix=suffix, prefix=prefix, dir=dir)
             self.name = Path(self.name)
+
+        def __enter__(self) -> Path:
+            return super().__enter__()
 
 
 def gettempdir() -> Path:

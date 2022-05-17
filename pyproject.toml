@@ -45,7 +45,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.9"
+version = "0.1.10"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -83,6 +83,9 @@ pytest = "^7.1.2"
 pytest-cov = "^3.0.0"
 pytest-instafail = "^0.4.2"
 pytest-xdist = "^2.5.0"
+sqlalchemy = "^1.4.36"
+sqlalchemy2-stubs = "^0.0.2-alpha.22"
+tempenv = "^2.0.0"
 typeguard = "^2.13.3"
 
 #### pyright ##################################################################

@@ -14,16 +14,16 @@ from numpy import isinf
 from numpy import isnan
 
 from dycw_utilities.hypothesis import assume_does_not_raise
-from dycw_utilities.hypothesis.numpy import _Shape
 from dycw_utilities.hypothesis.numpy import bool_arrays
 from dycw_utilities.hypothesis.numpy import float_arrays
 from dycw_utilities.hypothesis.numpy import int64s
 from dycw_utilities.hypothesis.numpy import int_arrays
+from dycw_utilities.hypothesis.typing import Shape
 
 
 class TestBoolArrays:
     @given(data=data(), shape=array_shapes())
-    def test_main(self, data: DataObject, shape: _Shape) -> None:
+    def test_main(self, data: DataObject, shape: Shape) -> None:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
@@ -41,7 +41,7 @@ class TestFloatArrays:
     def test_main(
         self,
         data: DataObject,
-        shape: _Shape,
+        shape: Shape,
         min_value: Optional[float],
         max_value: Optional[float],
         allow_nan: Optional[bool],
@@ -75,7 +75,7 @@ class TestIntArrays:
     def test_main(
         self,
         data: DataObject,
-        shape: _Shape,
+        shape: Shape,
         min_value: Optional[int],
         max_value: Optional[int],
     ) -> None:
