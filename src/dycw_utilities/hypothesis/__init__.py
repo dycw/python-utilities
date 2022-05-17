@@ -17,9 +17,9 @@ from hypothesis.strategies import fixed_dictionaries
 from hypothesis.strategies import just
 from hypothesis.strategies import lists
 from hypothesis.strategies import tuples
-from typeguard import typeguard_ignore
 
 from dycw_utilities.text import ensure_str
+from dycw_utilities.typeguard import typeguard_ignore
 
 
 @typeguard_ignore
