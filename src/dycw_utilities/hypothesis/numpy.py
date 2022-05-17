@@ -1,6 +1,4 @@
 from typing import Optional
-from typing import TypeVar
-from typing import Union
 
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.extra.numpy import arrays
@@ -18,32 +16,29 @@ from numpy import int64
 from numpy.typing import NDArray
 
 from dycw_utilities.hypothesis import draw_and_flatmap
-
-
-_Shape = Union[int, tuple[int, ...]]
-_T = TypeVar("_T")
-_MaybeSearchStrategy = Union[_T, SearchStrategy[_T]]
+from dycw_utilities.hypothesis.typing import MaybeSearchStrategy
+from dycw_utilities.hypothesis.typing import Shape
 
 
 def bool_arrays(
-    *, shape: _MaybeSearchStrategy[_Shape] = array_shapes()
+    *, shape: MaybeSearchStrategy[Shape] = array_shapes()
 ) -> SearchStrategy[NDArray[bool_]]:
     """Strategy for generating arrays of booleans."""
 
     return draw_and_flatmap(_draw_bool_arrays, shape)
 
 
-def _draw_bool_arrays(shape: _Shape, /) -> SearchStrategy[NDArray[bool_]]:
+def _draw_bool_arrays(shape: Shape, /) -> SearchStrategy[NDArray[bool_]]:
     return arrays(bool, shape, elements=booleans(), fill=nothing())
 
 
 def float_arrays(
     *,
-    shape: _MaybeSearchStrategy[_Shape] = array_shapes(),
-    min_value: _MaybeSearchStrategy[Optional[float]] = None,
-    max_value: _MaybeSearchStrategy[Optional[float]] = None,
-    allow_nan: _MaybeSearchStrategy[Optional[bool]] = None,
-    allow_infinity: _MaybeSearchStrategy[Optional[bool]] = None,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
+    min_value: MaybeSearchStrategy[Optional[float]] = None,
+    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    allow_nan: MaybeSearchStrategy[Optional[bool]] = None,
+    allow_infinity: MaybeSearchStrategy[Optional[bool]] = None,
 ) -> SearchStrategy[NDArray[float64]]:
     """Strategy for generating arrays of floats."""
 
@@ -58,7 +53,7 @@ def float_arrays(
 
 
 def _draw_float_arrays(
-    shape: _Shape,
+    shape: Shape,
     /,
     *,
     min_value: Optional[float] = None,
@@ -77,9 +72,9 @@ def _draw_float_arrays(
 
 def int_arrays(
     *,
-    shape: _MaybeSearchStrategy[_Shape] = array_shapes(),
-    min_value: _MaybeSearchStrategy[Optional[int]] = None,
-    max_value: _MaybeSearchStrategy[Optional[int]] = None,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
+    min_value: MaybeSearchStrategy[Optional[int]] = None,
+    max_value: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[NDArray[int64]]:
     """Strategy for generating arrays of ints."""
 
@@ -89,7 +84,7 @@ def int_arrays(
 
 
 def _draw_int_arrays(
-    shape: _Shape,
+    shape: Shape,
     /,
     *,
     min_value: Optional[int] = None,
