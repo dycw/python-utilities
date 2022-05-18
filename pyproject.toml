@@ -45,7 +45,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.12"
+version = "0.1.13"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -71,7 +71,7 @@ flake8-pie = "^0.15.0"
 flake8-print = "^5.0.0"
 flake8-simplify = "^0.19.2"
 flake8-unused-arguments = "^0.0.10"
-hypothesis = "^6.46.5"
+hypothesis = "^6.46.6"
 isort = "^5.10.1"
 numpy = "^1.22.3"
 pandas = "^1.4.2"
