@@ -1,3 +1,4 @@
+from re import search
 from typing import Any
 from typing import Optional
 
@@ -5,6 +6,8 @@ from sqlalchemy import Table
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
 
@@ -31,6 +34,48 @@ def create_engine(
         database=database,
     )
     return _create_engine(url, future=True, poolclass=poolclass)
+
+
+def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
+    """Ensure a table is created."""
+
+    table = get_table(table_or_model)
+    try:
+        with engine.begin() as conn:
+            table.create(conn)
+    # note that OperationalError < DatabaseError
+    except OperationalError as error:
+        # sqlite
+        (msg,) = error.args
+        if not search("table .* already exists", msg):  # pragma: no cover
+            raise
+    except DatabaseError as error:  # pragma: no cover
+        # oracle
+        (msg,) = error.args
+        if not search(
+            "ORA-00955: name is already used by an existing object", msg
+        ):
+            raise
+
+
+def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
+    """Ensure a table is dropped."""
+
+    table = get_table(table_or_model)
+    try:
+        with engine.begin() as conn:
+            table.drop(conn)
+    # note that OperationalError < DatabaseError
+    except OperationalError as error:
+        # sqlite
+        (msg,) = error.args
+        if not search("no such table", msg):  # pragma: no cover
+            raise
+    except DatabaseError as error:  # pragma: no cover
+        # oracle
+        (msg,) = error.args
+        if not search("ORA-00942: table or view does not exist", msg):
+            raise
 
 
 def get_column_names(table_or_model: Any, /) -> list[str]:

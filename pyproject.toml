@@ -45,7 +45,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.14"
+version = "0.1.15"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -63,7 +63,7 @@ flake8-absolute-import = "^1.0.0.1"
 flake8-annotations = "^2.9.0"
 flake8-bandit = "^3.0.0"
 flake8-bugbear = "^22.4.25"
-flake8-comprehensions = "^3.9.0"
+flake8-comprehensions = "^3.10.0"
 flake8-debugger = "^4.1.2"
 flake8-eradicate = "^1.2.1"
 flake8-no-pep420 = "^2.3.0"
@@ -71,9 +71,9 @@ flake8-pie = "^0.15.0"
 flake8-print = "^5.0.0"
 flake8-simplify = "^0.19.2"
 flake8-unused-arguments = "^0.0.10"
-hypothesis = "^6.46.6"
+hypothesis = "^6.46.7"
 isort = "^5.10.1"
-numpy = "^1.22.3"
+numpy = "^1.22.4"
 pandas = "^1.4.2"
 pandas-stubs = "^1.2.0"
 poetry-deps-scanner = "^1.0.1"
@@ -115,6 +115,7 @@ addopts = [
   "--color=auto",
   "--cov=dycw_utilities",
   "--cov-report=html",
+  "--cov-report=term-missing:skip-covered",
   "--strict-markers",
   "--typeguard-packages=dycw_utilities",
 ]

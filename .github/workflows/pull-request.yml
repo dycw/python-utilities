@@ -21,4 +21,4 @@ jobs:
           python-version: ${{ matrix.version }}
       - uses: abatilo/actions-poetry@v2.1.4
       - run: poetry install
-      - run: poetry run pytest --cov-report=term-missing:skip-covered
+      - run: poetry run pytest

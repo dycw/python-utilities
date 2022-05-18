@@ -7,6 +7,7 @@ class StrEnum(str, Enum):
 
     @staticmethod
     def _generate_next_value_(
-        name: str, start: Any, count: int, last_values: Any  # noqa: U100
+        name: str, start: Any, count: int, last_values: Any
     ) -> str:
+        _ = start, count, last_values
         return name
