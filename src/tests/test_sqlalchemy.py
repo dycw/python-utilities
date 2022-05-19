@@ -1,3 +1,6 @@
+from typing import Any
+from typing import cast
+
 from hypothesis import given
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -22,9 +25,9 @@ class TestCreateEngine:
 
 class TestGetColumnNames:
     def test_main(self) -> None:
-        Base = declarative_base()
+        Base = cast(Any, declarative_base())
 
-        class Example(Base):  # type: ignore
+        class Example(Base):
             __tablename__ = "example"
 
             id = Column(Integer, primary_key=True)
@@ -34,9 +37,9 @@ class TestGetColumnNames:
 
 class TestGetColumns:
     def test_main(self) -> None:
-        Base = declarative_base()
+        Base = cast(Any, declarative_base())
 
-        class Example(Base):  # type: ignore
+        class Example(Base):
             __tablename__ = "example"
 
             id = Column(Integer, primary_key=True)
@@ -49,9 +52,9 @@ class TestGetColumns:
 
 class TestGetTable:
     def test_main(self) -> None:
-        Base = declarative_base()
+        Base = cast(Any, declarative_base())
 
-        class Example(Base):  # type: ignore
+        class Example(Base):
             __tablename__ = "example"
 
             id = Column(Integer, primary_key=True)

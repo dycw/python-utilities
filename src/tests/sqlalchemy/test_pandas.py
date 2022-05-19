@@ -1,3 +1,6 @@
+from typing import Any
+from typing import cast
+
 from hypothesis import given
 from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import data_frames
@@ -22,15 +25,15 @@ class TestInsertDataFrame:
         engine=sqlite_engines(),
     )
     def test_main(self, df: DataFrame, engine: Engine) -> None:
-        Base = declarative_base()
+        Base = cast(Any, declarative_base())
 
-        class Example(Base):  # type: ignore
+        class Example(Base):
             __tablename__ = "example"
 
             id = Column(Integer, primary_key=True)
 
         with engine.begin() as conn:
-            Base.metadata.create_all(conn)  # type: ignore
+            Base.metadata.create_all(conn)
 
         insert_dataframe(df, Example, engine)
         with engine.begin() as conn:

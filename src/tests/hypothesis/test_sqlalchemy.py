@@ -1,3 +1,6 @@
+from typing import Any
+from typing import cast
+
 from hypothesis import given
 from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
@@ -19,9 +22,9 @@ class TestSQLiteEngines:
 
     @given(data=data(), values=sets(integers(0, 100), max_size=10))
     def test_post_init(self, data: DataObject, values: set[int]) -> None:
-        Base = declarative_base()
+        Base = cast(Any, declarative_base())
 
-        class Example(Base):  # type: ignore
+        class Example(Base):
             __tablename__ = "example"
 
             id = Column(Integer, primary_key=True)
@@ -29,7 +32,7 @@ class TestSQLiteEngines:
 
         def post_init(engine: Engine, /) -> None:
             with engine.begin() as conn:
-                Base.metadata.create_all(conn)  # type: ignore
+                Base.metadata.create_all(conn)
 
         engine = data.draw(sqlite_engines(post_init=post_init))
         assert isinstance(engine, Engine)
