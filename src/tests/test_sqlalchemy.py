@@ -4,6 +4,7 @@ from typing import cast
 from hypothesis import given
 from sqlalchemy import Column
 from sqlalchemy import Integer
+from sqlalchemy import MetaData
 from sqlalchemy import Table
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
@@ -51,7 +52,7 @@ class TestGetColumns:
 
 
 class TestGetTable:
-    def test_main(self) -> None:
+    def test_model(self) -> None:
         Base = cast(Any, declarative_base())
 
         class Example(Base):
@@ -62,3 +63,8 @@ class TestGetTable:
         table = get_table(Example)
         assert isinstance(table, Table)
         assert table.name == "example"
+
+    def test_table(self) -> None:
+        metadata = MetaData()
+        table = Table("example", metadata, Column("id", primary_key=True))
+        assert get_table(table) is table

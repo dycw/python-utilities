@@ -2,10 +2,15 @@ import datetime as dt
 from typing import Any
 from typing import cast
 
+import sqlalchemy
+from _pytest.python_api import raises
+from hypothesis import assume
 from hypothesis import given
 from hypothesis.extra.pandas import column
 from hypothesis.extra.pandas import data_frames
 from hypothesis.extra.pandas import range_indexes
+from hypothesis.strategies import integers
+from hypothesis.strategies import sets
 from numpy import inf
 from numpy import nan
 from pandas import NA
@@ -23,6 +28,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import select
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
 
 from dycw_utilities.hypothesis.sqlalchemy import sqlite_engines
@@ -30,19 +36,40 @@ from dycw_utilities.numpy import datetime64ns
 from dycw_utilities.pandas import Int64
 from dycw_utilities.pandas import boolean
 from dycw_utilities.pandas import string
+from dycw_utilities.sqlalchemy.pandas import _get_dtype
+from dycw_utilities.sqlalchemy.pandas import _nativize_column
 from dycw_utilities.sqlalchemy.pandas import insert_dataframe
-from dycw_utilities.sqlalchemy.pandas import nativize_column
+from dycw_utilities.sqlalchemy.pandas import read_dataframe
+
+
+class TestGetDType:
+    @mark.parametrize(
+        "column, expected",
+        [
+            param(Column(Boolean), boolean),
+            param(Column(Date), datetime64ns),
+            param(Column(DateTime), datetime64ns),
+            param(Column(Float), float),
+            param(Column(Integer), Int64),
+            param(Column(String), string),
+            param(Column(sqlalchemy.DECIMAL), float),
+        ],
+    )
+    def test_main(self, column: Any, expected: Any) -> None:
+        assert _get_dtype(column) == expected
 
 
 class TestInsertDataFrame:
     @given(
         df=data_frames(
             [column(name="id", dtype=int)],  # type: ignore
-            index=range_indexes(min_size=1, max_size=10),
+            index=range_indexes(max_size=10),
         ),
         engine=sqlite_engines(),
     )
     def test_main(self, df: DataFrame, engine: Engine) -> None:
+        _ = assume(not df["id"].duplicated().any())
+
         Base = cast(Any, declarative_base())
 
         class Example(Base):
@@ -75,7 +102,7 @@ class TestNativizeColumn:
     def test_boolean_data(
         self, series: Series, column: Any, expected: list[Any]
     ) -> None:
-        res = list(nativize_column(series, column))
+        res = list(_nativize_column(series, column))
         assert res == expected
 
     @mark.parametrize(
@@ -98,7 +125,7 @@ class TestNativizeColumn:
     def test_datetime_data(
         self, series: Series, column: Any, expected: list[Any]
     ) -> None:
-        res = list(nativize_column(series, column))
+        res = list(_nativize_column(series, column))
         assert res == expected
 
     @mark.parametrize(
@@ -121,5 +148,33 @@ class TestNativizeColumn:
     def test_float_int_and_str_data(
         self, series: Series, column: Any, expected: list[Any]
     ) -> None:
-        res = list(nativize_column(series, column))
+        res = list(_nativize_column(series, column))
         assert res == expected
+
+    def test_error(self) -> None:
+        series = Series([True, False], dtype=bool)
+        column = Column(String)
+        with raises(TypeError, match="Invalid types: .*"):
+            _ = list(_nativize_column(series, column))
+
+
+class TestReadDataFrame:
+    @given(ids=sets(integers(0, 100), max_size=10), engine=sqlite_engines())
+    def test_main(self, ids: set[int], engine: Engine) -> None:
+        Base = cast(Any, declarative_base())
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id = Column(Integer, primary_key=True)
+
+        with engine.begin() as conn:
+            Base.metadata.create_all(conn)
+        with Session(engine) as sess:
+            sess.add_all([Example(id=id) for id in ids])
+            sess.commit()
+
+        sel = select(Example)
+        df = read_dataframe(sel, engine)
+        assert len(df) == len(ids)
+        assert dict(df.dtypes) == {"id": Int64}

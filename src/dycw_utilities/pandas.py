@@ -28,4 +28,4 @@ def timestamp_to_datetime(timestamp: Any, /) -> Optional[dt.datetime]:
     elif timestamp is NaT:
         return None
     else:
-        raise ValueError(f"Invalid value: {timestamp}")
+        raise TypeError(f"Invalid type: {type(timestamp).__name__!r}")
