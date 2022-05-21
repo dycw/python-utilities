@@ -1,8 +1,14 @@
+from collections.abc import Callable
+from functools import reduce
+from operator import ge
+from operator import le
 from re import search
 from typing import Any
 from typing import Optional
 
 from sqlalchemy import Table
+from sqlalchemy import and_
+from sqlalchemy import case
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.engine import Engine
@@ -10,6 +16,47 @@ from sqlalchemy.exc import DatabaseError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
+
+
+def columnwise_max(*columns: Any) -> Any:
+    """Compute the columnwise max of a number of columns."""
+
+    return _columnwise_minmax(*columns, op=ge)
+
+
+def columnwise_min(*columns: Any) -> Any:
+    """Compute the columnwise min of a number of columns."""
+
+    return _columnwise_minmax(*columns, op=le)
+
+
+def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
+    """Compute the columnwise min of a number of columns."""
+
+    def func(x: Any, y: Any, /) -> Any:
+        x_none = x.is_(None)
+        y_none = y.is_(None)
+        col = case(
+            (and_(x_none, y_none), None),
+            (and_(~x_none, y_none), x),
+            (and_(x_none, ~y_none), y),
+            (op(x, y), x),
+            else_=y,
+        )
+        # try auto-label
+        names = {
+            value
+            for col in [x, y]
+            if (value := getattr(col, "name", None)) is not None
+        }
+        try:
+            (name,) = names
+        except ValueError:
+            return col
+        else:
+            return col.label(name)
+
+    return reduce(func, columns)
 
 
 def create_engine(

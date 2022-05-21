@@ -1,7 +1,12 @@
 from typing import Any
+from typing import Optional
 from typing import cast
 
 from hypothesis import given
+from hypothesis.strategies import fixed_dictionaries
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists
+from hypothesis.strategies import none
 from pytest import mark
 from pytest import param
 from pytest import raises
@@ -9,12 +14,15 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base
 
 from dycw_utilities.hypothesis.sqlalchemy import sqlite_engines
 from dycw_utilities.hypothesis.tempfile import temp_dirs
+from dycw_utilities.sqlalchemy import columnwise_max
+from dycw_utilities.sqlalchemy import columnwise_min
 from dycw_utilities.sqlalchemy import create_engine
 from dycw_utilities.sqlalchemy import ensure_table_created
 from dycw_utilities.sqlalchemy import ensure_table_dropped
@@ -22,6 +30,71 @@ from dycw_utilities.sqlalchemy import get_column_names
 from dycw_utilities.sqlalchemy import get_columns
 from dycw_utilities.sqlalchemy import get_table
 from dycw_utilities.tempfile import TemporaryDirectory
+
+
+class TestColumnwiseMinMax:
+    @given(
+        values=lists(
+            fixed_dictionaries(
+                {"x": integers(0, 100) | none(), "y": integers(0, 100) | none()}
+            ),
+            min_size=1,
+            max_size=10,
+        ),
+        engine=sqlite_engines(),
+    )
+    def test_main(
+        self, values: list[dict[str, Optional[int]]], engine: Engine
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+            Column("y", Integer),
+        )
+        ensure_table_created(table, engine)
+        with engine.begin() as conn:
+            _ = conn.execute(table.insert(), values)
+            res = conn.execute(table.select()).all()
+
+        sel = select(
+            table.c.x,
+            table.c.y,
+            columnwise_min(table.c.x, table.c.y).label("min_xy"),
+            columnwise_max(table.c.x, table.c.y).label("max_xy"),
+        )
+        with engine.begin() as conn:
+            res = conn.execute(sel).all()
+
+        assert len(res) == len(values)
+        for x, y, min_xy, max_xy in res:
+            if (x is None) and (y is None):
+                assert min_xy is None
+                assert max_xy is None
+            elif (x is not None) and (y is None):
+                assert min_xy == x
+                assert max_xy == x
+            elif (x is None) and (y is not None):
+                assert min_xy == y
+                assert max_xy == y
+            else:
+                assert min_xy == min(x, y)
+                assert max_xy == max(x, y)
+
+    @given(engine=sqlite_engines())
+    def test_label(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+        )
+        ensure_table_created(table, engine)
+
+        sel = select(columnwise_min(table.c.x, table.c.x))
+        with engine.begin() as conn:
+            _ = conn.execute(sel).all()
 
 
 class TestCreateEngine:
@@ -35,7 +108,9 @@ class TestEnsureTableCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
@@ -67,7 +142,9 @@ class TestEnsureTableDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
@@ -99,7 +176,9 @@ class TestEnsureTableDropped:
 
 class TestGetColumnNames:
     def test_core(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         self._run_test(table)
 
     def test_orm(self) -> None:
@@ -115,7 +194,9 @@ class TestGetColumnNames:
 
 class TestGetColumns:
     def test_core(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         self._run_test(table)
 
     def test_orm(self) -> None:

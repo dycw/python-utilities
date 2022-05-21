@@ -3,7 +3,6 @@ from typing import Any
 from typing import cast
 
 import sqlalchemy
-from _pytest.python_api import raises
 from hypothesis import assume
 from hypothesis import given
 from hypothesis.extra.pandas import column
@@ -19,6 +18,7 @@ from pandas import Series
 from pandas import to_datetime
 from pytest import mark
 from pytest import param
+from pytest import raises
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Date
@@ -36,6 +36,7 @@ from dycw_utilities.numpy import datetime64ns
 from dycw_utilities.pandas import Int64
 from dycw_utilities.pandas import boolean
 from dycw_utilities.pandas import string
+from dycw_utilities.sqlalchemy import get_table
 from dycw_utilities.sqlalchemy.pandas import _get_dtype
 from dycw_utilities.sqlalchemy.pandas import _nativize_column
 from dycw_utilities.sqlalchemy.pandas import insert_dataframe
@@ -70,17 +71,15 @@ class TestInsertDataFrame:
     def test_main(self, df: DataFrame, engine: Engine) -> None:
         _ = assume(not df["id"].duplicated().any())
 
-        Base = cast(Any, declarative_base())
-
-        class Example(Base):
+        class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
-
             id = Column(Integer, primary_key=True)
 
         with engine.begin() as conn:
-            Base.metadata.create_all(conn)
+            get_table(Example).create(conn)
 
         insert_dataframe(df, Example, engine)
+
         with engine.begin() as conn:
             res = conn.execute(select(Example)).all()
         assert len(res) == len(df)
@@ -161,20 +160,16 @@ class TestNativizeColumn:
 class TestReadDataFrame:
     @given(ids=sets(integers(0, 100), max_size=10), engine=sqlite_engines())
     def test_main(self, ids: set[int], engine: Engine) -> None:
-        Base = cast(Any, declarative_base())
-
-        class Example(Base):
+        class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
-
             id = Column(Integer, primary_key=True)
 
         with engine.begin() as conn:
-            Base.metadata.create_all(conn)
+            get_table(Example).create(conn)
         with Session(engine) as sess:
             sess.add_all([Example(id=id) for id in ids])
             sess.commit()
 
-        sel = select(Example)
-        df = read_dataframe(sel, engine)
+        df = read_dataframe(select(Example), engine)
         assert len(df) == len(ids)
         assert dict(df.dtypes) == {"id": Int64}
