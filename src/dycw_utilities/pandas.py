@@ -39,7 +39,7 @@ def _timestamp_minmax_to_date(
 
 
 TIMESTAMP_MIN_AS_DATE = _timestamp_minmax_to_date(TIMESTAMP_MIN, "ceil")
-TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(TIMESTAMP_MIN, "floor")
+TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(TIMESTAMP_MAX, "floor")
 
 
 def _timestamp_minmax_to_datetime(
@@ -54,5 +54,5 @@ def _timestamp_minmax_to_datetime(
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(TIMESTAMP_MIN, "ceil")
 TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
-    TIMESTAMP_MIN, "floor"
+    TIMESTAMP_MAX, "floor"
 )
