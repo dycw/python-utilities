@@ -1,12 +1,12 @@
 from typing import Any
 from typing import Optional
 
+from sqlalchemy import Table
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
-from sqlalchemy.sql.schema import Table
 
 
 def create_engine(
