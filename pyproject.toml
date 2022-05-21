@@ -45,7 +45,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.15"
+version = "0.1.16"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -115,7 +115,6 @@ addopts = [
   "--color=auto",
   "--cov=dycw_utilities",
   "--cov-report=html",
-  "--cov-report=term-missing:skip-covered",
   "--strict-markers",
   "--typeguard-packages=dycw_utilities",
 ]
