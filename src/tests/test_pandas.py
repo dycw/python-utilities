@@ -1,6 +1,7 @@
 import datetime as dt
 from typing import Any
 
+from pandas import NaT
 from pandas import Series
 from pandas import Timestamp
 from pandas import to_datetime
@@ -64,6 +65,10 @@ class TestTimestampToDate:
     def test_main(self, timestamp: Any, expected: dt.date) -> None:
         assert timestamp_to_date(timestamp) == expected
 
+    def test_error(self) -> None:
+        with raises(ValueError, match="Invalid value"):
+            _ = timestamp_to_date(NaT)
+
 
 class TestTimestampToDateTime:
     @mark.parametrize(
@@ -77,3 +82,7 @@ class TestTimestampToDateTime:
     )
     def test_main(self, timestamp: Any, expected: dt.datetime) -> None:
         assert timestamp_to_datetime(timestamp) == expected
+
+    def test_error(self) -> None:
+        with raises(ValueError, match="Invalid value"):
+            _ = timestamp_to_datetime(NaT)

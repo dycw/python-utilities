@@ -82,6 +82,20 @@ class TestColumnwiseMinMax:
                 assert min_xy == min(x, y)
                 assert max_xy == max(x, y)
 
+    @given(engine=sqlite_engines())
+    def test_label(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("x", Integer),
+        )
+        ensure_table_created(table, engine)
+
+        sel = select(columnwise_min(table.c.x, table.c.x))
+        with engine.begin() as conn:
+            _ = conn.execute(sel).all()
+
 
 class TestCreateEngine:
     @given(temp_dir=temp_dirs())

@@ -19,7 +19,7 @@ def timestamp_to_date(timestamp: Any, /) -> dt.date:
     return timestamp_to_datetime(timestamp).date()
 
 
-def timestamp_to_datetime(timestamp: Timestamp, /) -> dt.datetime:
+def timestamp_to_datetime(timestamp: Any, /) -> dt.datetime:
     """Convert a timestamp to a datetime."""
 
     if timestamp is NaT:

@@ -51,22 +51,20 @@ def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
     """
 
     py_type = column.type.python_type
+    as_list = series.tolist()
     if (
         (has_dtype(series, (bool, boolean)) and (py_type in {bool, int}))
         or (has_dtype(series, float) and (py_type is float))
         or (has_dtype(series, (int, Int64)) and (py_type is int))
         or (has_dtype(series, string) and (py_type is str))
     ):
-        values = series.tolist()
+        values = as_list
     elif has_dtype(series, datetime64ns) and (py_type is dt.date):
-        values = (
-            None if t is NaT else timestamp_to_date(t) for t in series.tolist()
-        )
+        values = [None if t is NaT else timestamp_to_date(t) for t in as_list]
     elif has_dtype(series, datetime64ns) and (py_type is dt.datetime):
-        values = (
-            None if t is NaT else timestamp_to_datetime(t)
-            for t in series.tolist()
-        )
+        values = [
+            None if t is NaT else timestamp_to_datetime(t) for t in as_list
+        ]
     else:
         raise TypeError(f"Invalid types: {series}, {py_type}")
     for is_null, native in zip(series.isna(), values):
