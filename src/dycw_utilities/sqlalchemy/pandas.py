@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any
 
 from pandas import DataFrame
+from pandas import NaT
 from pandas import Series
 from sqlalchemy.engine import Engine
 
@@ -58,9 +59,14 @@ def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
     ):
         values = series.tolist()
     elif has_dtype(series, datetime64ns) and (py_type is dt.date):
-        values = series.map(timestamp_to_date)
+        values = (
+            None if t is NaT else timestamp_to_date(t) for t in series.tolist()
+        )
     elif has_dtype(series, datetime64ns) and (py_type is dt.datetime):
-        values = series.map(timestamp_to_datetime)
+        values = (
+            None if t is NaT else timestamp_to_datetime(t)
+            for t in series.tolist()
+        )
     else:
         raise TypeError(f"Invalid types: {series}, {py_type}")
     for is_null, native in zip(series.isna(), values):
