@@ -1,6 +1,7 @@
 from os import chdir
 from pathlib import Path
 from re import search
+from time import sleep
 
 from loguru import logger
 
@@ -12,7 +13,9 @@ class TestSetupLoguru:
         chdir(tmp_path)
         setup_loguru()
 
+        sleep(1e-3)
         logger.debug("message")
+        sleep(1e-3)
 
         (log,) = tmp_path.iterdir()
         assert log.name == "log"

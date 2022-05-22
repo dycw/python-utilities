@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Mapping
 from functools import partial
@@ -5,7 +6,6 @@ from io import StringIO
 from io import TextIOWrapper
 from multiprocessing import cpu_count
 from typing import Any
-from collections.abc import Callable
 from typing import Literal
 from typing import Optional
 from typing import TypeVar
@@ -205,7 +205,7 @@ def pstarmap(
 
 def _get_n_jobs(n_jobs: Optional[int], /) -> int:
     if (n_jobs is None) or (n_jobs <= 0):
-        return cpu_count()
+        return cpu_count()  # pragma: no cover
     else:
         return n_jobs
 
