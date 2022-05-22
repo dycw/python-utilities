@@ -16,4 +16,4 @@ class TestMemoryProfiled:
         profiled = memory_profiled(func)
         result = profiled(n)
         assert result.value == list(range(n))
-        assert result.memory <= (80.0 * n)
+        assert result.memory <= (200.0 * n)
