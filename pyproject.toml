@@ -13,6 +13,7 @@ data_file = ".coverage/data"
 omit = [
   "src/dycw_utilities/memory_profiler.py",
   "src/dycw_utilities/pyinstrument.py",
+  "src/dycw_utilities/pqdm.py",
 ]
 plugins = ["coverage_conditional_plugin"]
 
