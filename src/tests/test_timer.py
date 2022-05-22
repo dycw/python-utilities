@@ -6,6 +6,7 @@ from operator import gt
 from operator import le
 from operator import lt
 from operator import ne
+from re import search
 from time import sleep
 from typing import Any
 
@@ -41,7 +42,7 @@ class TestTimer:
         self, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:
         with Timer() as timer:
-            sleep(1e-3)
+            pass
         assert op(timer, dur) is expected
 
     def test_comparison_between_timers(self) -> None:
@@ -56,3 +57,10 @@ class TestTimer:
             pass
         with raises(TypeError):
             _ = timer == "error"
+
+    @mark.parametrize("func", [param(repr), param(str)])
+    def test_repr_and_str(self, func: Callable[[Timer], str]) -> None:
+        with Timer() as timer:
+            pass
+        as_str = func(timer)
+        assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)

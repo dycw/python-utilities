@@ -32,6 +32,12 @@ class Timer:
         end_use = default_timer() if (end := self._end) is None else end
         return end_use - self._start
 
+    def __repr__(self) -> str:
+        return str(self._to_timedelta())
+
+    def __str__(self) -> str:
+        return str(self._to_timedelta())
+
     def __eq__(self, other: Any) -> bool:
         return self._compare(other, eq)
 
@@ -57,3 +63,6 @@ class Timer:
             return op(float(self), other.total_seconds())
         else:
             return NotImplemented
+
+    def _to_timedelta(self) -> dt.timedelta:
+        return dt.timedelta(seconds=float(self))
