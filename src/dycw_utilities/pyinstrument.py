@@ -1,13 +1,15 @@
 import datetime as dt
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 from pyinstrument import Profiler
 
-from dycw_utilities.contextlib import contextmanager
 from dycw_utilities.pathlib import PathLike
+from dycw_utilities.typeguard import typeguard_ignore
 
 
+@typeguard_ignore
 @contextmanager
 def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     """Profile the contents of a block."""
@@ -18,3 +20,4 @@ def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
     with open(filename, mode="w") as fh:
         _ = fh.write(profiler.output_html())
+    _ = fh  # this ensures that `fh` is considered returned; for coverage
