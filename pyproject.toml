@@ -10,6 +10,7 @@ target-version = ["py39"]
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
+omit = ["src/dycw_utilities/memory_profiler.py"]
 plugins = ["coverage_conditional_plugin"]
 
 [tool.coverage.report]
@@ -45,7 +46,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.21"
+version = "0.1.22"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
@@ -74,6 +75,7 @@ flake8-unused-arguments = "^0.0.10"
 hypothesis = "^6.46.7"
 isort = "^5.10.1"
 loguru = "^0.6.0"
+memory-profiler = "^0.60.0"
 nox = "^2022.1.7"
 numpy = "^1.22.4"
 pandas = "^1.4.2"
@@ -91,7 +93,6 @@ tempenv = "^2.0.0"
 typeguard = "^2.13.3"
 
 #### pyright ##################################################################
-pytest-loguru = "^0.2.0"
 [tool.pyright]
 include = ["src"]
 pythonVersion = "3.9"

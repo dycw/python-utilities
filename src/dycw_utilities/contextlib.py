@@ -1,7 +1,7 @@
+from collections.abc import Callable
 from contextlib import AbstractContextManager
 from contextlib import contextmanager as _contextmanager
-from typing import Callable
-from typing import Iterator
+from collections.abc import Iterator
 from typing import TypeVar
 
 from typing_extensions import ParamSpec

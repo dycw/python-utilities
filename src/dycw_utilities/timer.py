@@ -8,7 +8,7 @@ from operator import lt
 from operator import ne
 from timeit import default_timer
 from typing import Any
-from typing import Callable
+from collections.abc import Callable
 from typing import Optional
 
 
