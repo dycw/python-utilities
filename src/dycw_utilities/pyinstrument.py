@@ -1,6 +1,6 @@
 import datetime as dt
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from pyinstrument import Profiler
 
