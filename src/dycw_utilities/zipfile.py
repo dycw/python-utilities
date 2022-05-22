@@ -14,3 +14,4 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     with ZipFile(path) as zf, TemporaryDirectory() as temp:
         zf.extractall(path=temp)
         yield list(temp.iterdir())
+    _ = zf  # this ensures that `zf` is considered returned; for coverage
