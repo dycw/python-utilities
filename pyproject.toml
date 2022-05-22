@@ -10,11 +10,6 @@ target-version = ["py39"]
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = [
-  "src/dycw_utilities/memory_profiler.py",
-  "src/dycw_utilities/pyinstrument.py",
-  "src/dycw_utilities/pqdm.py",
-]
 plugins = ["coverage_conditional_plugin"]
 
 [tool.coverage.report]
@@ -125,6 +120,7 @@ addopts = [
   "-rsxX",
   "--color=auto",
   "--cov=dycw_utilities",
+  "--cov-config=pyproject.toml",
   "--cov-report=html",
   "--strict-markers",
   "--typeguard-packages=dycw_utilities",
