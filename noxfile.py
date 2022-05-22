@@ -14,4 +14,6 @@ options.error_on_external_run = True
 def test(session: Session) -> None:
     session.install("-r", "requirements-all.txt")
     n = max(round(cpu_count() / 2), 1)
-    _ = session.run("pytest", f"-n={n}")
+    _ = session.run(
+        "pytest", f"-n={n}", "--cov-report=term-missing:skip-covered"
+    )
