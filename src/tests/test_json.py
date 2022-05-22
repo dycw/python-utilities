@@ -4,6 +4,7 @@ from typing import Any
 
 from pytest import mark
 from pytest import param
+from pytest import raises
 
 from dycw_utilities.json import serialize
 
@@ -26,3 +27,10 @@ class TestSerialize:
     )
     def test_main(self, x: Any, expected: str) -> None:
         assert serialize(x) == expected
+
+    def test_error(self) -> None:
+        class Example:
+            pass
+
+        with raises(TypeError, match="Invalid type"):
+            _ = serialize(Example())
