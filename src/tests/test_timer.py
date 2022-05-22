@@ -64,3 +64,10 @@ class TestTimer:
             pass
         as_str = func(timer)
         assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
+
+    def test_running(self) -> None:
+        timer = Timer()
+        sleep(1e-3)
+        assert timer >= 1e-3
+        sleep(1e-3)
+        assert timer >= 2e-3
