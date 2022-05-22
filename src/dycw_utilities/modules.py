@@ -36,7 +36,7 @@ def yield_module_contents(
     recursive: bool = False,
     type: Optional[Union[type, tuple[type, ...]]] = None,
     predicate: Optional[Callable[[Any], bool]] = None,
-) -> Iterator[ModuleType]:
+) -> Iterator[Any]:
     """Yield all the modules under a package. Optionally, recurse into
     sub-packages.
     """
