@@ -89,6 +89,7 @@ tempenv = "^2.0.0"
 typeguard = "^2.13.3"
 
 #### pyright ##################################################################
+nox = "^2022.1.7"
 [tool.pyright]
 include = ["src"]
 pythonVersion = "3.9"

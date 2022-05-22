@@ -99,4 +99,6 @@ repos:
     hooks:
       - id: run-bump2version
         args: [--setup-cfg]
+      - id: run-poetry-export
+        args: [--filename=requirements-all.txt, --dev, --without-hashes]
       - id: run-scan-deps
