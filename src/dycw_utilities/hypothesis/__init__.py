@@ -17,10 +17,13 @@ from hypothesis.strategies import just
 from hypothesis.strategies import lists
 from hypothesis.strategies import tuples
 
-from dycw_utilities.contextlib import contextmanager
+from contextlib import contextmanager
+
+from dycw_utilities.typeguard import typeguard_ignore
 from dycw_utilities.text import ensure_str
 
 
+@typeguard_ignore
 @contextmanager
 def assume_does_not_raise(
     *exceptions: type[Exception], match: Optional[str] = None

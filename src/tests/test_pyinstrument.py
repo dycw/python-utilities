@@ -11,4 +11,4 @@ class TestProfile:
             sleep(1e-3)
 
         (file,) = tmp_path.iterdir()
-        assert search(r"^profile__\d{8}T\{6}\.html$", file.name)
+        assert search(r"^profile__\d{8}T\d{6}\.html$", file.name)

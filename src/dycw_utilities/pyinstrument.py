@@ -1,13 +1,15 @@
 import datetime as dt
 from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from pyinstrument import Profiler
 
-from dycw_utilities.contextlib import contextmanager
 from dycw_utilities.pathlib import PathLike
+from dycw_utilities.typeguard import typeguard_ignore
 
 
+@typeguard_ignore
 @contextmanager
 def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     """Profile the contents of a block."""
