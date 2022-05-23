@@ -1,9 +1,11 @@
 import builtins
-from typing import Union
+from re import search
+from typing import Optional, Union
 
 from hypothesis import given
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import SearchStrategy, none
 from hypothesis.strategies import booleans
 from hypothesis.strategies import data
 from hypothesis.strategies import integers
@@ -12,7 +14,7 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.hypothesis import assume_does_not_raise
+from dycw_utilities.hypothesis import assume_does_not_raise, text_clean
 from dycw_utilities.hypothesis import draw_and_flatmap
 from dycw_utilities.hypothesis import draw_and_map
 from dycw_utilities.hypothesis import lists_fixed_length
@@ -116,3 +118,17 @@ class TestListsFixedLength:
 class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
+
+
+class TestTextClean:
+    @given(
+        data=data(),
+        min_size=integers(0, 100),
+        max_size=integers(0, 100) | none(),
+    )
+    def test_main(
+        self, data: DataObject, min_size: int, max_size: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument, AssertionError):
+            text = data.draw(text_clean(min_size=min_size, max_size=max_size))
+        assert search("^\\S[^\\r\\n]*$|^$", text)

@@ -1,4 +1,5 @@
 import builtins
+from hypothesis.strategies import text, characters
 from collections.abc import Callable
 from collections.abc import Iterator
 from functools import partial
@@ -127,3 +128,15 @@ def setup_hypothesis_profiles() -> None:
         "debug", max_examples=10, verbosity=Verbosity.verbose, **kwargs
     )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
+
+
+def text_clean(
+    *, min_size: int = 0, max_size: Optional[int] = None
+) -> SearchStrategy[str]:
+    """Strategy for generating clean text."""
+
+    return text(
+        characters(blacklist_categories=["Z", "C"]),
+        min_size=min_size,
+        max_size=max_size,
+    )
