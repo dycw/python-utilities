@@ -1,4 +1,5 @@
 import datetime as dt
+from collections.abc import Callable
 from numbers import Number
 from operator import eq
 from operator import ge
@@ -8,7 +9,6 @@ from operator import lt
 from operator import ne
 from timeit import default_timer
 from typing import Any
-from collections.abc import Callable
 from typing import Optional
 
 

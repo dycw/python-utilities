@@ -1,24 +1,27 @@
 import builtins
 from re import search
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy, none
+from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import booleans
 from hypothesis.strategies import data
 from hypothesis.strategies import integers
 from hypothesis.strategies import just
+from hypothesis.strategies import none
 from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.hypothesis import assume_does_not_raise, text_clean
+from dycw_utilities.hypothesis import assume_does_not_raise
 from dycw_utilities.hypothesis import draw_and_flatmap
 from dycw_utilities.hypothesis import draw_and_map
 from dycw_utilities.hypothesis import lists_fixed_length
 from dycw_utilities.hypothesis import setup_hypothesis_profiles
+from dycw_utilities.hypothesis import text_clean
 
 
 class TestAssumeDoesNotRaise:
