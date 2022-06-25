@@ -1,7 +1,7 @@
 import builtins
-from hypothesis.strategies import text, characters
 from collections.abc import Callable
 from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import partial
 from os import getenv
 from re import search
@@ -13,15 +13,15 @@ from hypothesis import Verbosity
 from hypothesis import assume
 from hypothesis import settings
 from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import characters
 from hypothesis.strategies import fixed_dictionaries
 from hypothesis.strategies import just
 from hypothesis.strategies import lists
+from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
-from contextlib import contextmanager
-
-from dycw_utilities.typeguard import typeguard_ignore
 from dycw_utilities.text import ensure_str
+from dycw_utilities.typeguard import typeguard_ignore
 
 
 @typeguard_ignore
