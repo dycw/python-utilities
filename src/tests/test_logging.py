@@ -1,5 +1,5 @@
-from dycw_utilities.enum import StrEnum
-from dycw_utilities.logging import LogLevel
+from utilities.enum import StrEnum
+from utilities.logging import LogLevel
 
 
 class TestLogLevel:

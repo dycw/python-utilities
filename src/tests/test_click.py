@@ -19,11 +19,11 @@ from hypothesis.strategies import sampled_from
 from pytest import mark
 from pytest import param
 
-from dycw_utilities.click import Date
-from dycw_utilities.click import DateTime
-from dycw_utilities.click import Enum
-from dycw_utilities.click import log_level_option
-from dycw_utilities.logging import LogLevel
+from utilities.click import Date
+from utilities.click import DateTime
+from utilities.click import Enum
+from utilities.click import log_level_option
+from utilities.logging import LogLevel
 
 
 def runners() -> SearchStrategy[CliRunner]:

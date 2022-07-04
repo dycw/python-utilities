@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 
-from dycw_utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.hypothesis.sqlalchemy import sqlite_engines
 
 
 class TestSQLiteEngines:

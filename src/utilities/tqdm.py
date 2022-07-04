@@ -8,7 +8,7 @@ from typing import Union
 
 from tqdm import tqdm as _tqdm
 
-from dycw_utilities.pytest import is_pytest
+from utilities.pytest import is_pytest
 
 
 class tqdm(_tqdm):

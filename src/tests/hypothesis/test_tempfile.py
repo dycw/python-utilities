@@ -4,8 +4,8 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import sets
 
-from dycw_utilities.hypothesis.tempfile import temp_dirs
-from dycw_utilities.tempfile import TemporaryDirectory
+from utilities.hypothesis.tempfile import temp_dirs
+from utilities.tempfile import TemporaryDirectory
 
 
 class TestTempDirs:

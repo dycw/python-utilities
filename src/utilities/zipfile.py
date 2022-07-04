@@ -3,9 +3,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
-from dycw_utilities.pathlib import PathLike
-from dycw_utilities.tempfile import TemporaryDirectory
-from dycw_utilities.typeguard import typeguard_ignore
+from utilities.pathlib import PathLike
+from utilities.tempfile import TemporaryDirectory
+from utilities.typeguard import typeguard_ignore
 
 
 @typeguard_ignore

@@ -3,10 +3,10 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from pyinstrument import Profiler
+from pyinstrument.profiler import Profiler
 
-from dycw_utilities.pathlib import PathLike
-from dycw_utilities.typeguard import typeguard_ignore
+from utilities.pathlib import PathLike
+from utilities.typeguard import typeguard_ignore
 
 
 @typeguard_ignore

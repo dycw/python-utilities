@@ -2,7 +2,7 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.fastapi import APIRouter
+from utilities.fastapi import APIRouter
 
 
 class TestAPIRouter:

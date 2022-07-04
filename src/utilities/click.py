@@ -11,7 +11,7 @@ from click import ParamType
 from click import Parameter
 from click import option
 
-from dycw_utilities.logging import LogLevel
+from utilities.logging import LogLevel
 
 
 class Date(ParamType):

@@ -2,7 +2,7 @@ from typing import Any
 
 from tqdm import tqdm as _tqdm
 
-from dycw_utilities.tqdm import tqdm
+from utilities.tqdm import tqdm
 
 
 class TestTqdm:

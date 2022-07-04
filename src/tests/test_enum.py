@@ -3,7 +3,7 @@ from enum import auto
 from hypothesis import given
 from hypothesis.strategies import sampled_from
 
-from dycw_utilities.enum import StrEnum
+from utilities.enum import StrEnum
 
 
 class Truth(StrEnum):

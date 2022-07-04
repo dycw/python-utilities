@@ -2,8 +2,8 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.re import extract_group
-from dycw_utilities.re import extract_groups
+from utilities.re import extract_group
+from utilities.re import extract_groups
 
 
 class TestExtractGroup:

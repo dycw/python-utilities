@@ -2,7 +2,7 @@ from typing import Any
 
 from numpy import dtype
 
-from dycw_utilities.iterables import is_iterable_not_str
+from utilities.iterables import is_iterable_not_str
 
 
 datetime64ns = dtype("datetime64[ns]")

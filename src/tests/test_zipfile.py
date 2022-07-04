@@ -6,9 +6,9 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import sets
 
-from dycw_utilities.hypothesis.tempfile import temp_dirs
-from dycw_utilities.tempfile import TemporaryDirectory
-from dycw_utilities.zipfile import yield_zip_file_contents
+from utilities.hypothesis.tempfile import temp_dirs
+from utilities.tempfile import TemporaryDirectory
+from utilities.zipfile import yield_zip_file_contents
 
 
 class TestYieldZipFileContents:

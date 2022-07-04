@@ -14,7 +14,7 @@ from typing import cast
 
 from pqdm import processes
 
-from dycw_utilities.tqdm import tqdm
+from utilities.tqdm import tqdm
 
 
 _T = TypeVar("_T")

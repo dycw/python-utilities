@@ -46,12 +46,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.1.29"
+version = "0.2.0"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.9, <3.11"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"
@@ -80,6 +80,7 @@ memory-profiler = "^0.60.0"
 nox = "^2022.1.7"
 numpy = "^1.22.4"
 pandas = "^1.4.3"
+pandas-stubs = "^1.4.3"
 poetry-deps-scanner = "^1.0.1"
 pqdm = "^0.2.0"
 pre-commit = "^2.18.1"
@@ -121,11 +122,11 @@ reportUnusedCallResult = "error"
 addopts = [
   "-rsxX",
   "--color=auto",
-  "--cov=dycw_utilities",
+  "--cov=utilities",
   "--cov-config=pyproject.toml",
   "--cov-report=html",
   "--strict-markers",
-  "--typeguard-packages=dycw_utilities",
+  "--typeguard-packages=utilities",
 ]
 filterwarnings = [
   "error",

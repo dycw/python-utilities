@@ -8,16 +8,16 @@ from pandas import NaT
 from pandas import Series
 from sqlalchemy.engine import Engine
 
-from dycw_utilities.numpy import datetime64ns
-from dycw_utilities.numpy import has_dtype
-from dycw_utilities.pandas import Int64
-from dycw_utilities.pandas import boolean
-from dycw_utilities.pandas import string
-from dycw_utilities.pandas import timestamp_to_date
-from dycw_utilities.pandas import timestamp_to_datetime
-from dycw_utilities.sqlalchemy import get_column_names
-from dycw_utilities.sqlalchemy import get_columns
-from dycw_utilities.sqlalchemy import get_table
+from utilities.numpy import datetime64ns
+from utilities.numpy import has_dtype
+from utilities.pandas import Int64
+from utilities.pandas import boolean
+from utilities.pandas import string
+from utilities.pandas import timestamp_to_date
+from utilities.pandas import timestamp_to_datetime
+from utilities.sqlalchemy import get_column_names
+from utilities.sqlalchemy import get_columns
+from utilities.sqlalchemy import get_table
 
 
 def insert_dataframe(

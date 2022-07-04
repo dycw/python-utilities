@@ -1,6 +1,6 @@
 from inspect import signature
 
-from dycw_utilities.typeguard import typeguard_ignore
+from utilities.typeguard import typeguard_ignore
 
 
 class TestTypeguardIgnore:
