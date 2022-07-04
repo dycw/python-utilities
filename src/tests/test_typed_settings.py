@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Any
 from typing import cast
 
 from hypothesis import assume
@@ -6,7 +7,10 @@ from hypothesis import given
 from hypothesis.strategies import dates
 from hypothesis.strategies import timedeltas
 from hypothesis.strategies import times
+from pytest import mark
+from pytest import raises
 from typed_settings import settings
+from typed_settings.exceptions import InvalidValueError
 
 from dycw_utilities.typed_settings import load_settings
 
@@ -55,3 +59,12 @@ class TestTypedSettings:
         assert isinstance(config, Config)
         assert isinstance(config.as_timedelta, dt.timedelta)
         assert isinstance(config.as_str, dt.timedelta)
+
+    @mark.parametrize("cls", [dt.date, dt.time, dt.timedelta])
+    def test_errors(self, cls: Any) -> None:
+        @settings(frozen=True)
+        class Config:
+            value: cls = cast(cls, None)
+
+        with raises(InvalidValueError):
+            _ = load_settings(Config, "appname")
