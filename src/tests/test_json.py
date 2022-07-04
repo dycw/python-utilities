@@ -6,7 +6,7 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.json import serialize
+from utilities.json import serialize
 
 
 class TestSerialize:

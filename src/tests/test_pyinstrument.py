@@ -2,7 +2,7 @@ from pathlib import Path
 from re import search
 from time import sleep
 
-from dycw_utilities.pyinstrument import profile
+from utilities.pyinstrument import profile
 
 
 class TestProfile:

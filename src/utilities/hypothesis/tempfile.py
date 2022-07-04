@@ -4,9 +4,9 @@ from uuid import UUID
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import uuids
 
-from dycw_utilities.hypothesis import draw_and_map
-from dycw_utilities.tempfile import TemporaryDirectory
-from dycw_utilities.tempfile import gettempdir
+from utilities.hypothesis import draw_and_map
+from utilities.tempfile import TemporaryDirectory
+from utilities.tempfile import gettempdir
 
 
 def temp_dirs() -> SearchStrategy[TemporaryDirectory]:

@@ -19,17 +19,17 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base
 
-from dycw_utilities.hypothesis.sqlalchemy import sqlite_engines
-from dycw_utilities.hypothesis.tempfile import temp_dirs
-from dycw_utilities.sqlalchemy import columnwise_max
-from dycw_utilities.sqlalchemy import columnwise_min
-from dycw_utilities.sqlalchemy import create_engine
-from dycw_utilities.sqlalchemy import ensure_table_created
-from dycw_utilities.sqlalchemy import ensure_table_dropped
-from dycw_utilities.sqlalchemy import get_column_names
-from dycw_utilities.sqlalchemy import get_columns
-from dycw_utilities.sqlalchemy import get_table
-from dycw_utilities.tempfile import TemporaryDirectory
+from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.hypothesis.tempfile import temp_dirs
+from utilities.sqlalchemy import columnwise_max
+from utilities.sqlalchemy import columnwise_min
+from utilities.sqlalchemy import create_engine
+from utilities.sqlalchemy import ensure_table_created
+from utilities.sqlalchemy import ensure_table_dropped
+from utilities.sqlalchemy import get_column_names
+from utilities.sqlalchemy import get_columns
+from utilities.sqlalchemy import get_table
+from utilities.tempfile import TemporaryDirectory
 
 
 class TestColumnwiseMinMax:

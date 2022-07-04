@@ -1,7 +1,7 @@
 from enum import auto
 from enum import unique
 
-from dycw_utilities.enum import StrEnum
+from utilities.enum import StrEnum
 
 
 @unique

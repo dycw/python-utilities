@@ -16,12 +16,12 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.hypothesis import assume_does_not_raise
-from dycw_utilities.hypothesis import draw_and_flatmap
-from dycw_utilities.hypothesis import draw_and_map
-from dycw_utilities.hypothesis import lists_fixed_length
-from dycw_utilities.hypothesis import setup_hypothesis_profiles
-from dycw_utilities.hypothesis import text_clean
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import draw_and_flatmap
+from utilities.hypothesis import draw_and_map
+from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import setup_hypothesis_profiles
+from utilities.hypothesis import text_clean
 
 
 class TestAssumeDoesNotRaise:

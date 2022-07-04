@@ -5,8 +5,8 @@ from typing import Literal
 from pytest import mark
 from pytest import param
 
-from dycw_utilities.pqdm import pmap
-from dycw_utilities.pqdm import pstarmap
+from utilities.pqdm import pmap
+from utilities.pqdm import pstarmap
 
 
 class TestPMap:

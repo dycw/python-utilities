@@ -5,10 +5,10 @@ from hypothesis.strategies import SearchStrategy
 from sqlalchemy import MetaData
 from sqlalchemy.engine import Engine
 
-from dycw_utilities.hypothesis import draw_and_map
-from dycw_utilities.hypothesis.tempfile import temp_dirs
-from dycw_utilities.sqlalchemy import create_engine
-from dycw_utilities.tempfile import TemporaryDirectory
+from utilities.hypothesis import draw_and_map
+from utilities.hypothesis.tempfile import temp_dirs
+from utilities.sqlalchemy import create_engine
+from utilities.tempfile import TemporaryDirectory
 
 
 def sqlite_engines(

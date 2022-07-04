@@ -3,7 +3,7 @@ from hypothesis import settings
 from hypothesis.strategies import integers
 from typeguard import typeguard_ignore
 
-from dycw_utilities.memory_profiler import memory_profiled
+from utilities.memory_profiler import memory_profiled
 
 
 @typeguard_ignore

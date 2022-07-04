@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union
 
-from dycw_utilities.re import extract_group
+from utilities.re import extract_group
 
 
 PathLike = Union[Path, str]

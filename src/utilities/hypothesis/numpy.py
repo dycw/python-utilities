@@ -15,9 +15,9 @@ from numpy import iinfo
 from numpy import int64
 from numpy.typing import NDArray
 
-from dycw_utilities.hypothesis import draw_and_flatmap
-from dycw_utilities.hypothesis.typing import MaybeSearchStrategy
-from dycw_utilities.hypothesis.typing import Shape
+from utilities.hypothesis import draw_and_flatmap
+from utilities.hypothesis.typing import MaybeSearchStrategy
+from utilities.hypothesis.typing import Shape
 
 
 def bool_arrays(

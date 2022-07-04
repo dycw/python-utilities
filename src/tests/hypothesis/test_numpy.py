@@ -13,12 +13,12 @@ from numpy import int64
 from numpy import isinf
 from numpy import isnan
 
-from dycw_utilities.hypothesis import assume_does_not_raise
-from dycw_utilities.hypothesis.numpy import bool_arrays
-from dycw_utilities.hypothesis.numpy import float_arrays
-from dycw_utilities.hypothesis.numpy import int64s
-from dycw_utilities.hypothesis.numpy import int_arrays
-from dycw_utilities.hypothesis.typing import Shape
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis.numpy import bool_arrays
+from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import int64s
+from utilities.hypothesis.numpy import int_arrays
+from utilities.hypothesis.typing import Shape
 
 
 class TestBoolArrays:

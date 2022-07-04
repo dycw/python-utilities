@@ -1,4 +1,4 @@
-from dycw_utilities.hashlib import md5_hash
+from utilities.hashlib import md5_hash
 
 
 class TestMD5Hash:

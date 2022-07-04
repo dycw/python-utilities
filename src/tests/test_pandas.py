@@ -1,5 +1,6 @@
 import datetime as dt
 from typing import Any
+from typing import cast
 
 from pandas import NaT
 from pandas import Series
@@ -9,15 +10,15 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from dycw_utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from dycw_utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from dycw_utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from dycw_utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from dycw_utilities.pandas import Int64
-from dycw_utilities.pandas import boolean
-from dycw_utilities.pandas import string
-from dycw_utilities.pandas import timestamp_to_date
-from dycw_utilities.pandas import timestamp_to_datetime
+from utilities.pandas import TIMESTAMP_MAX_AS_DATE
+from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
+from utilities.pandas import TIMESTAMP_MIN_AS_DATE
+from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
+from utilities.pandas import Int64
+from utilities.pandas import boolean
+from utilities.pandas import string
+from utilities.pandas import timestamp_to_date
+from utilities.pandas import timestamp_to_datetime
 
 
 class TestDTypes:
@@ -29,15 +30,15 @@ class TestDTypes:
 class TestTimestampMinMaxAsDate:
     def test_min(self) -> None:
         date = TIMESTAMP_MIN_AS_DATE
-        assert isinstance(to_datetime(date), Timestamp)
+        assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
-            to_datetime(date - dt.timedelta(days=1))
+            _ = to_datetime(cast(Timestamp, date - dt.timedelta(days=1)))
 
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATE
-        assert isinstance(to_datetime(date), Timestamp)
+        assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
-            to_datetime(date + dt.timedelta(days=1))
+            _ = to_datetime(cast(Timestamp, date + dt.timedelta(days=1)))
 
 
 class TestTimestampMinMaxAsDateTime:
@@ -45,13 +46,13 @@ class TestTimestampMinMaxAsDateTime:
         date = TIMESTAMP_MIN_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
-            to_datetime(date - dt.timedelta(microseconds=1))
+            _ = to_datetime(date - dt.timedelta(microseconds=1))
 
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
-            to_datetime(date + dt.timedelta(microseconds=1))
+            _ = to_datetime(date + dt.timedelta(microseconds=1))
 
 
 class TestTimestampToDate:

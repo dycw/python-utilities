@@ -14,7 +14,7 @@ from _pytest.python_api import raises
 from pytest import mark
 from pytest import param
 
-from dycw_utilities.timer import Timer
+from utilities.timer import Timer
 
 
 class TestTimer:

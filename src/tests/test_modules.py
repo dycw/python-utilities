@@ -10,11 +10,11 @@ from typing import Union
 from pytest import mark
 from pytest import param
 
-from dycw_utilities.modules import yield_module_contents
-from dycw_utilities.modules import yield_modules
 from tests.modules import package_with
 from tests.modules import package_without
 from tests.modules import standalone
+from utilities.modules import yield_module_contents
+from utilities.modules import yield_modules
 
 
 class TestYieldModules:

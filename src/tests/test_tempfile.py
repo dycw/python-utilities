@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from dycw_utilities.tempfile import TemporaryDirectory
-from dycw_utilities.tempfile import gettempdir
+from utilities.tempfile import TemporaryDirectory
+from utilities.tempfile import gettempdir
 
 
 class TestGetTempDir:

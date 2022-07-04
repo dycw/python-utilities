@@ -6,7 +6,7 @@ from pandas import Series
 from pytest import mark
 from pytest import param
 
-from dycw_utilities.numpy import has_dtype
+from utilities.numpy import has_dtype
 
 
 class TestHasDtype:

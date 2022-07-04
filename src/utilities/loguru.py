@@ -2,8 +2,8 @@ from sys import stdout
 
 from loguru import logger
 
-from dycw_utilities.logging import LogLevel
-from dycw_utilities.pathlib import PathLike
+from utilities.logging import LogLevel
+from utilities.pathlib import PathLike
 
 
 def setup_loguru(*, name: PathLike = "log") -> None:

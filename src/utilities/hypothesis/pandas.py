@@ -4,10 +4,10 @@ from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
 
-from dycw_utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from dycw_utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from dycw_utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from dycw_utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
+from utilities.pandas import TIMESTAMP_MAX_AS_DATE
+from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
+from utilities.pandas import TIMESTAMP_MIN_AS_DATE
+from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 
 
 def dates_pd(

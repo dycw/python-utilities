@@ -6,8 +6,6 @@ from pandas import NaT
 from pandas import Timestamp
 
 
-TIMESTAMP_MIN = cast(Timestamp, Timestamp.min)
-TIMESTAMP_MAX = cast(Timestamp, Timestamp.max)
 Int64 = "Int64"
 boolean = "boolean"
 string = "string"
@@ -38,8 +36,8 @@ def _timestamp_minmax_to_date(
     return timestamp_to_date(rounded)
 
 
-TIMESTAMP_MIN_AS_DATE = _timestamp_minmax_to_date(TIMESTAMP_MIN, "ceil")
-TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(TIMESTAMP_MAX, "floor")
+TIMESTAMP_MIN_AS_DATE = _timestamp_minmax_to_date(Timestamp.min, "ceil")
+TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(Timestamp.max, "floor")
 
 
 def _timestamp_minmax_to_datetime(
@@ -52,7 +50,7 @@ def _timestamp_minmax_to_datetime(
     return timestamp_to_datetime(rounded)
 
 
-TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(TIMESTAMP_MIN, "ceil")
+TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
-    TIMESTAMP_MAX, "floor"
+    Timestamp.max, "floor"
 )

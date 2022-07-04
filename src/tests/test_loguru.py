@@ -5,7 +5,7 @@ from time import sleep
 
 from loguru import logger
 
-from dycw_utilities.loguru import setup_loguru
+from utilities.loguru import setup_loguru
 
 
 class TestSetupLoguru:

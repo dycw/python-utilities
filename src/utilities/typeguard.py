@@ -13,4 +13,4 @@ except ImportError:  # pragma: no cover
         return x
 
 else:
-    typeguard_ignore = _typeguard_ignore  # type: ignore
+    typeguard_ignore = _typeguard_ignore

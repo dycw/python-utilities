@@ -5,8 +5,8 @@ from pytest import param
 from pytest import raises
 from typeguard import typechecked
 
-from dycw_utilities.pathlib import PathLike
-from dycw_utilities.pathlib import ensure_suffix
+from utilities.pathlib import PathLike
+from utilities.pathlib import ensure_suffix
 
 
 class TestEnsureSuffix:

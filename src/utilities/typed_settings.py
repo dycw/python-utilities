@@ -8,7 +8,7 @@ from typed_settings import default_converter
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
 
-from dycw_utilities.pathlib import PathLike
+from utilities.pathlib import PathLike
 
 
 _T = TypeVar("_T")
@@ -16,7 +16,7 @@ _T = TypeVar("_T")
 
 def load_settings(
     cls: type[_T], appname: str, /, *, config_files: Iterable[PathLike] = ()
-):
+) -> _T:
     """Load a settings object with the extended converter."""
 
     loaders = default_loaders(appname, config_files=config_files)

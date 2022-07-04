@@ -31,16 +31,16 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
 
-from dycw_utilities.hypothesis.sqlalchemy import sqlite_engines
-from dycw_utilities.numpy import datetime64ns
-from dycw_utilities.pandas import Int64
-from dycw_utilities.pandas import boolean
-from dycw_utilities.pandas import string
-from dycw_utilities.sqlalchemy import get_table
-from dycw_utilities.sqlalchemy.pandas import _get_dtype
-from dycw_utilities.sqlalchemy.pandas import _nativize_column
-from dycw_utilities.sqlalchemy.pandas import insert_dataframe
-from dycw_utilities.sqlalchemy.pandas import read_dataframe
+from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.numpy import datetime64ns
+from utilities.pandas import Int64
+from utilities.pandas import boolean
+from utilities.pandas import string
+from utilities.sqlalchemy import get_table
+from utilities.sqlalchemy.pandas import _get_dtype
+from utilities.sqlalchemy.pandas import _nativize_column
+from utilities.sqlalchemy.pandas import insert_dataframe
+from utilities.sqlalchemy.pandas import read_dataframe
 
 
 class TestGetDType:

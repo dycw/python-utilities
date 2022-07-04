@@ -1,6 +1,6 @@
 from pytest import raises
 
-from dycw_utilities.text import ensure_str
+from utilities.text import ensure_str
 
 
 class TestEnsureStr:

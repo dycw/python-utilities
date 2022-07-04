@@ -12,7 +12,7 @@ from pytest import raises
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
 
-from dycw_utilities.typed_settings import load_settings
+from utilities.typed_settings import load_settings
 
 
 class TestTypedSettings:
