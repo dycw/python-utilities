@@ -46,9 +46,10 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dycw-utilities"
-version = "0.2.0"
+version = "0.2.1"
 description = "Miscellaneous Python utilities"
 authors = ["Derek Wan <d.wan@icloud.com>"]
+packages = [ {include = "utilities", from = "src" } ]
 
 [tool.poetry.dependencies]
 python = "^3.9, <3.11"
