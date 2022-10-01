@@ -1,7 +1,5 @@
 import builtins
 from re import search
-from typing import Optional
-from typing import Union
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
@@ -57,7 +55,7 @@ class TestAssumeDoesNotRaise:
 
 
 def uses_draw_and_map(
-    x: Union[bool, SearchStrategy[bool]], /
+    x: bool | SearchStrategy[bool], /
 ) -> SearchStrategy[bool]:
     def inner(x: bool, /) -> bool:
         return x
@@ -77,7 +75,7 @@ class TestDrawAndMap:
 
 
 def uses_draw_and_flatmap(
-    x: Union[bool, SearchStrategy[bool]], /
+    x: bool | SearchStrategy[bool], /
 ) -> SearchStrategy[bool]:
     def inner(x: bool, /) -> SearchStrategy[bool]:
         return just(x)
@@ -130,7 +128,7 @@ class TestTextClean:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: Optional[int]
+        self, data: DataObject, min_size: int, max_size: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_clean(min_size=min_size, max_size=max_size))

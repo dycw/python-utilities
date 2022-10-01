@@ -3,7 +3,6 @@ from contextlib import suppress
 from enum import Enum as _Enum
 from typing import Any
 from typing import Generic
-from typing import Optional
 from typing import TypeVar
 
 from click import Context
@@ -20,7 +19,7 @@ class Date(ParamType):
     name = "date"
 
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         with suppress(ValueError):
             return dt.date.fromisoformat(value)
@@ -35,7 +34,7 @@ class DateTime(ParamType):
     name = "datetime"
 
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         with suppress(ValueError):
             return dt.datetime.fromisoformat(value)
@@ -57,7 +56,7 @@ class Enum(ParamType, Generic[_E]):
         self._enum = enum
 
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _E:
         els = {el for el in self._enum if el.name.lower() == value.lower()}
         with suppress(ValueError):

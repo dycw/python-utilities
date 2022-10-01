@@ -2,8 +2,6 @@ import datetime as dt
 from json import dumps
 from pathlib import Path
 from typing import Any
-from typing import Optional
-from typing import Union
 
 
 def _default(x: Any, /) -> str:
@@ -31,8 +29,8 @@ def serialize(
     ensure_ascii: bool = True,
     check_circular: bool = True,
     allow_nan: bool = True,
-    indent: Optional[Union[int, str]] = None,
-    separators: Optional[tuple[str, str]] = None,
+    indent: int | str | None = None,
+    separators: tuple[str, str] | None = None,
     sort_keys: bool = False,
     **kwargs: Any,
 ) -> str:

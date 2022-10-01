@@ -1,5 +1,3 @@
-from typing import Optional
-
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -42,10 +40,10 @@ class TestFloatArrays:
         self,
         data: DataObject,
         shape: Shape,
-        min_value: Optional[float],
-        max_value: Optional[float],
-        allow_nan: Optional[bool],
-        allow_infinity: Optional[bool],
+        min_value: float | None,
+        max_value: float | None,
+        allow_nan: bool | None,
+        allow_infinity: bool | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -76,8 +74,8 @@ class TestIntArrays:
         self,
         data: DataObject,
         shape: Shape,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        min_value: int | None,
+        max_value: int | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(

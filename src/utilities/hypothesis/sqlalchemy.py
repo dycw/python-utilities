@@ -1,5 +1,4 @@
 from typing import Any
-from typing import Optional
 
 from hypothesis.strategies import SearchStrategy
 from sqlalchemy import MetaData
@@ -12,7 +11,7 @@ from utilities.tempfile import TemporaryDirectory
 
 
 def sqlite_engines(
-    *, metadata: Optional[MetaData] = None, base: Any = None
+    *, metadata: MetaData | None = None, base: Any = None
 ) -> SearchStrategy[Engine]:
     """Strategy for generating SQLite engines."""
 
@@ -25,7 +24,7 @@ def _draw_sqlite_engines(
     temp_dir: TemporaryDirectory,
     /,
     *,
-    metadata: Optional[MetaData] = None,
+    metadata: MetaData | None = None,
     base: Any = None,
 ) -> Engine:
     path = temp_dir.name.joinpath("db.sqlite")

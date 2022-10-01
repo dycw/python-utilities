@@ -6,7 +6,6 @@ from functools import partial
 from os import getenv
 from re import search
 from typing import Any
-from typing import Optional
 from typing import TypeVar
 
 from hypothesis import Verbosity
@@ -27,7 +26,7 @@ from utilities.typeguard import typeguard_ignore
 @typeguard_ignore
 @contextmanager
 def assume_does_not_raise(
-    *exceptions: type[Exception], match: Optional[str] = None
+    *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised. Optionally filter on the
     string representation of the exception.
@@ -131,7 +130,7 @@ def setup_hypothesis_profiles() -> None:
 
 
 def text_clean(
-    *, min_size: int = 0, max_size: Optional[int] = None
+    *, min_size: int = 0, max_size: int | None = None
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
 
