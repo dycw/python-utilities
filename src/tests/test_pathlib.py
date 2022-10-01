@@ -1,9 +1,10 @@
 from pathlib import Path
 
+from beartype.door import die_if_unbearable
+from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark
 from pytest import param
 from pytest import raises
-from typeguard import typechecked
 
 from utilities.pathlib import PathLike
 from utilities.pathlib import ensure_suffix
@@ -29,19 +30,11 @@ class TestEnsureSuffix:
         assert result == Path(expected)
 
 
-@typechecked
-def _uses_pathlike(path: PathLike, /) -> PathLike:
-    return path
-
-
 class TestPathLike:
     @mark.parametrize("path", [param(Path.home()), param("~")])
     def test_main(self, path: PathLike) -> None:
-        _ = _uses_pathlike(path)
+        die_if_unbearable(path, PathLike)
 
     def test_error(self) -> None:
-        with raises(
-            TypeError,
-            match='type of argument "path" must be one .*; got NoneType instead',
-        ):
-            _ = _uses_pathlike(None)  # type: ignore
+        with raises(BeartypeAbbyHintViolation):
+            die_if_unbearable(None, PathLike)

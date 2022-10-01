@@ -8,6 +8,7 @@ from re import search
 from typing import Any
 from typing import TypeVar
 
+from beartype import beartype
 from hypothesis import Verbosity
 from hypothesis import assume
 from hypothesis import settings
@@ -20,11 +21,10 @@ from hypothesis.strategies import text
 from hypothesis.strategies import tuples
 
 from utilities.text import ensure_str
-from utilities.typeguard import typeguard_ignore
 
 
-@typeguard_ignore
 @contextmanager
+@beartype
 def assume_does_not_raise(
     *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:
@@ -48,6 +48,7 @@ def assume_does_not_raise(
 _TD = TypeVar("_TD")
 
 
+@beartype
 def draw_and_map(
     func: Callable[..., _TD], *args: Any, **kwargs: Any
 ) -> SearchStrategy[_TD]:
@@ -56,6 +57,7 @@ def draw_and_map(
     return _lift_args_and_kwargs(*args, **kwargs).map(partial(_apply, func))
 
 
+@beartype
 def draw_and_flatmap(
     func: Callable[..., SearchStrategy[_TD]], *args: Any, **kwargs: Any
 ) -> SearchStrategy[_TD]:
@@ -64,6 +66,7 @@ def draw_and_flatmap(
     return _lift_args_and_kwargs(*args, **kwargs).flatmap(partial(_apply, func))
 
 
+@beartype
 def _lift_args_and_kwargs(
     *args: Any, **kwargs: Any
 ) -> SearchStrategy[tuple[tuple[Any, ...], dict[str, Any]]]:
@@ -72,10 +75,12 @@ def _lift_args_and_kwargs(
     return tuples(lifted_args, lifted_kwargs)
 
 
+@beartype
 def _lift(x: Any, /) -> SearchStrategy[Any]:
     return x if isinstance(x, SearchStrategy) else just(x)
 
 
+@beartype
 def _apply(
     func: Callable[..., _TD], x: tuple[tuple[Any, ...], dict[str, Any]], /
 ) -> _TD:
@@ -86,6 +91,7 @@ def _apply(
 _TLFL = TypeVar("_TLFL")
 
 
+@beartype
 def lists_fixed_length(
     strategy: SearchStrategy[_TLFL],
     size: int,
@@ -103,6 +109,7 @@ def lists_fixed_length(
     )
 
 
+@beartype
 def _draw_lists_fixed_length(
     elements: list[Any], /, *, sorted: bool = False
 ) -> list[Any]:
@@ -112,6 +119,7 @@ def _draw_lists_fixed_length(
         return elements
 
 
+@beartype
 def setup_hypothesis_profiles() -> None:
     """Set up the hypothesis profiles."""
 
@@ -129,6 +137,7 @@ def setup_hypothesis_profiles() -> None:
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
 
 
+@beartype
 def text_clean(
     *, min_size: int = 0, max_size: int | None = None
 ) -> SearchStrategy[str]:

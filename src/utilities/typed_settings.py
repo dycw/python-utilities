@@ -3,7 +3,8 @@ from collections.abc import Iterable
 from typing import Any
 from typing import TypeVar
 
-from cattrs import GenConverter
+from beartype import beartype
+from cattrs import Converter
 from typed_settings import default_converter
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
@@ -14,6 +15,7 @@ from utilities.pathlib import PathLike
 _T = TypeVar("_T")
 
 
+@beartype
 def load_settings(
     cls: type[_T], appname: str, /, *, config_files: Iterable[PathLike] = ()
 ) -> _T:
@@ -24,7 +26,8 @@ def load_settings(
     return _load_settings(cls, loaders, converter=converter)
 
 
-def _make_converter() -> GenConverter:
+@beartype
+def _make_converter() -> Converter:
     """Extend the default converter."""
 
     converter = default_converter()
@@ -34,6 +37,7 @@ def _make_converter() -> GenConverter:
     return converter
 
 
+@beartype
 def _to_date(value: Any, _: type = dt.date) -> dt.date:
     """Convert a value to a date."""
 
@@ -45,6 +49,7 @@ def _to_date(value: Any, _: type = dt.date) -> dt.date:
         raise TypeError(type(value))
 
 
+@beartype
 def _to_time(value: Any, _: type = dt.time) -> dt.time:
     """Convert a value to a time."""
 
@@ -56,6 +61,7 @@ def _to_time(value: Any, _: type = dt.time) -> dt.time:
         raise TypeError(type(value))
 
 
+@beartype
 def _to_timedelta(value: Any, _: type = dt.timedelta) -> dt.timedelta:
     """Convert a value to a timedelta."""
 

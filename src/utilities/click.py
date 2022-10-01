@@ -5,6 +5,7 @@ from typing import Any
 from typing import Generic
 from typing import TypeVar
 
+from beartype import beartype
 from click import Context
 from click import ParamType
 from click import Parameter
@@ -18,6 +19,7 @@ class Date(ParamType):
 
     name = "date"
 
+    @beartype
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
@@ -33,6 +35,7 @@ class DateTime(ParamType):
 
     name = "datetime"
 
+    @beartype
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
@@ -51,10 +54,12 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
+    @beartype
     def __init__(self, enum: type[_E]) -> None:
         super().__init__()
         self._enum = enum
 
+    @beartype
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _E:

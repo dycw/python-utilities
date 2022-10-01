@@ -3,14 +3,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from beartype import beartype
 from pyinstrument.profiler import Profiler
 
 from utilities.pathlib import PathLike
-from utilities.typeguard import typeguard_ignore
 
 
-@typeguard_ignore
 @contextmanager
+@beartype
 def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     """Profile the contents of a block."""
 

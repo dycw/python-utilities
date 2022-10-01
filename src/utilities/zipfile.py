@@ -3,13 +3,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+from beartype import beartype
+
 from utilities.pathlib import PathLike
 from utilities.tempfile import TemporaryDirectory
-from utilities.typeguard import typeguard_ignore
 
 
-@typeguard_ignore
 @contextmanager
+@beartype
 def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     """Yield the contents of a zipfile in a temporary directory."""
 

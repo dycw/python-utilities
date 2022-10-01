@@ -1,11 +1,13 @@
 from sys import stdout
 
+from beartype import beartype
 from loguru import logger
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
 
+@beartype
 def setup_loguru(*, name: PathLike = "log") -> None:
     logger.remove()
 

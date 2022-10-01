@@ -3,24 +3,10 @@ from json import dumps
 from pathlib import Path
 from typing import Any
 
-
-def _default(x: Any, /) -> str:
-    """Extension for the JSON serializer."""
-
-    if isinstance(x, dt.date):
-        return x.isoformat()
-    elif isinstance(x, Path):
-        return x.as_posix()
-    elif isinstance(x, set):
-        inner = serialize(sorted(x))
-        return f"set({inner})"
-    elif isinstance(x, frozenset):
-        inner = serialize(sorted(x))
-        return f"frozenset({inner})"
-    else:
-        raise TypeError(f"Invalid type: {x}")
+from beartype import beartype
 
 
+@beartype
 def serialize(
     x: Any,
     /,
@@ -48,3 +34,21 @@ def serialize(
         sort_keys=sort_keys,
         **kwargs,
     )
+
+
+@beartype
+def _default(x: Any, /) -> str:
+    """Extension for the JSON serializer."""
+
+    if isinstance(x, dt.date):
+        return x.isoformat()
+    elif isinstance(x, Path):
+        return x.as_posix()
+    elif isinstance(x, set):
+        inner = serialize(sorted(x))
+        return f"set({inner})"
+    elif isinstance(x, frozenset):
+        inner = serialize(sorted(x))
+        return f"frozenset({inner})"
+    else:
+        raise TypeError(f"Invalid type: {x}")
