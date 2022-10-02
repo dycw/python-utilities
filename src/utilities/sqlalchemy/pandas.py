@@ -18,8 +18,11 @@ from utilities.pandas import timestamp_to_datetime
 from utilities.sqlalchemy import get_column_names
 from utilities.sqlalchemy import get_columns
 from utilities.sqlalchemy import get_table
+from beartype import beartype
 
 
+
+@beartype
 def insert_dataframe(
     df: DataFrame, table_or_model: Any, engine: Engine, /
 ) -> None:
@@ -45,6 +48,7 @@ def insert_dataframe(
             _ = conn.execute(table.insert(), list(dicts))
 
 
+@beartype
 def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
     """Check the columns of the DataFrame form a subset of the columns of the
     table.
@@ -71,6 +75,7 @@ def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
         yield None if is_null else native
 
 
+@beartype
 def read_dataframe(sel: Any, engine: Engine, /) -> DataFrame:
     """Read a table from a database into a DataFrame."""
 
@@ -80,6 +85,7 @@ def read_dataframe(sel: Any, engine: Engine, /) -> DataFrame:
     return DataFrame(rows, columns=list(sel)).astype(sel)
 
 
+@beartype
 def _get_dtype(column: Any, /) -> Any:
     """Get the mapping of names to dtypes."""
 

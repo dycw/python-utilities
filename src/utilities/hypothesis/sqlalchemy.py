@@ -8,8 +8,10 @@ from utilities.hypothesis import draw_and_map
 from utilities.hypothesis.tempfile import temp_dirs
 from utilities.sqlalchemy import create_engine
 from utilities.tempfile import TemporaryDirectory
+from beartype import beartype
 
 
+@beartype
 def sqlite_engines(
     *, metadata: MetaData | None = None, base: Any = None
 ) -> SearchStrategy[Engine]:
@@ -20,6 +22,7 @@ def sqlite_engines(
     )
 
 
+@beartype
 def _draw_sqlite_engines(
     temp_dir: TemporaryDirectory,
     /,

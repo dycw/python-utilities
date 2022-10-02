@@ -1,3 +1,4 @@
+from beartype import beartype
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.extra.numpy import arrays
 from hypothesis.extra.numpy import from_dtype
@@ -18,6 +19,7 @@ from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.hypothesis.typing import Shape
 
 
+@beartype
 def bool_arrays(
     *, shape: MaybeSearchStrategy[Shape] = array_shapes()
 ) -> SearchStrategy[NDArray[bool_]]:
@@ -26,10 +28,12 @@ def bool_arrays(
     return draw_and_flatmap(_draw_bool_arrays, shape)
 
 
+@beartype
 def _draw_bool_arrays(shape: Shape, /) -> SearchStrategy[NDArray[bool_]]:
     return arrays(bool, shape, elements=booleans(), fill=nothing())
 
 
+@beartype
 def float_arrays(
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -50,6 +54,7 @@ def float_arrays(
     )
 
 
+@beartype
 def _draw_float_arrays(
     shape: Shape,
     /,
@@ -68,6 +73,7 @@ def _draw_float_arrays(
     return arrays(float, shape, elements=elements, fill=nothing())
 
 
+@beartype
 def int_arrays(
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -81,6 +87,7 @@ def int_arrays(
     )
 
 
+@beartype
 def _draw_int_arrays(
     shape: Shape,
     /,
@@ -95,6 +102,7 @@ def _draw_int_arrays(
     return arrays(int, shape, elements=elements, fill=nothing())
 
 
+@beartype
 def int64s() -> SearchStrategy[int]:
     """Strategy for generating int64s."""
 
