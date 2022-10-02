@@ -6,23 +6,19 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import sets
 
-from utilities.hypothesis.tempfile import temp_dirs
-from utilities.tempfile import TemporaryDirectory
+from utilities.hypothesis.tempfile import temp_paths
 from utilities.zipfile import yield_zip_file_contents
 
 
 class TestYieldZipFileContents:
     @given(
-        temp_dir=temp_dirs(),
+        temp_path=temp_paths(),
         contents=sets(sampled_from(ascii_letters), min_size=1, max_size=10),
     )
-    def test_main(
-        self, temp_dir: TemporaryDirectory, contents: set[str]
-    ) -> None:
-        root = temp_dir.name
-        assert root.exists()
-        assert not list(root.iterdir())
-        path_zip = root.joinpath("zipfile")
+    def test_main(self, temp_path: Path, contents: set[str]) -> None:
+        assert temp_path.exists()
+        assert not list(temp_path.iterdir())
+        path_zip = temp_path.joinpath("zipfile")
         with ZipFile(path_zip, mode="w") as zf:
             for con in contents:
                 zf.writestr(con, con)

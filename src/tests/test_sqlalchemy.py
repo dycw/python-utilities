@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 from typing import cast
 
@@ -19,7 +20,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.hypothesis.tempfile import temp_dirs
+from utilities.hypothesis.tempfile import temp_paths
 from utilities.sqlalchemy import columnwise_max
 from utilities.sqlalchemy import columnwise_min
 from utilities.sqlalchemy import create_engine
@@ -28,7 +29,6 @@ from utilities.sqlalchemy import ensure_table_dropped
 from utilities.sqlalchemy import get_column_names
 from utilities.sqlalchemy import get_columns
 from utilities.sqlalchemy import get_table
-from utilities.tempfile import TemporaryDirectory
 
 
 class TestColumnwiseMinMax:
@@ -97,9 +97,9 @@ class TestColumnwiseMinMax:
 
 
 class TestCreateEngine:
-    @given(temp_dir=temp_dirs())
-    def test_main(self, temp_dir: TemporaryDirectory) -> None:
-        engine = create_engine("sqlite", database=temp_dir.name.as_posix())
+    @given(temp_path=temp_paths())
+    def test_main(self, temp_path: Path) -> None:
+        engine = create_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
 
 
