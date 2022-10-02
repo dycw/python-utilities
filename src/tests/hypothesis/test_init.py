@@ -19,6 +19,7 @@ from utilities.hypothesis import draw_and_flatmap
 from utilities.hypothesis import draw_and_map
 from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis import setup_hypothesis_profiles
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis import text_clean
 
 
@@ -121,6 +122,23 @@ class TestSetupHypothesisProfiles:
         setup_hypothesis_profiles()
 
 
+class TestTextAscii:
+    @given(
+        data=data(),
+        min_size=integers(0, 100),
+        max_size=integers(0, 100) | none(),
+    )
+    def test_main(
+        self, data: DataObject, min_size: int, max_size: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument, AssertionError):
+            text = data.draw(text_ascii(min_size=min_size, max_size=max_size))
+        assert search("^[A-Za-z]*$", text)
+        assert len(text) >= min_size
+        if max_size is not None:
+            assert len(text) <= max_size
+
+
 class TestTextClean:
     @given(
         data=data(),
@@ -133,3 +151,6 @@ class TestTextClean:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_clean(min_size=min_size, max_size=max_size))
         assert search("^\\S[^\\r\\n]*$|^$", text)
+        assert len(text) >= min_size
+        if max_size is not None:
+            assert len(text) <= max_size

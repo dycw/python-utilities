@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from functools import partial
 from os import getenv
 from re import search
+from string import ascii_letters
 from typing import Any
 from typing import TypeVar
 
@@ -135,6 +136,19 @@ def setup_hypothesis_profiles() -> None:
         "debug", max_examples=10, verbosity=Verbosity.verbose, **kwargs
     )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
+
+
+@beartype
+def text_ascii(
+    *, min_size: int = 0, max_size: int | None = None
+) -> SearchStrategy[str]:
+    """Strategy for generating ASCII text."""
+
+    return text(
+        characters(whitelist_categories=[], whitelist_characters=ascii_letters),
+        min_size=min_size,
+        max_size=max_size,
+    )
 
 
 @beartype
