@@ -1,5 +1,4 @@
 from typing import Any
-from typing import Optional
 from typing import cast
 
 from hypothesis import given
@@ -44,7 +43,7 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: list[dict[str, Optional[int]]], engine: Engine
+        self, values: list[dict[str, int | None]], engine: Engine
     ) -> None:
         table = Table(
             "example",

@@ -4,8 +4,6 @@ from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
 from typing import Any
-from typing import Optional
-from typing import Union
 
 
 def yield_modules(
@@ -34,8 +32,8 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: Optional[Union[type, tuple[type, ...]]] = None,
-    predicate: Optional[Callable[[Any], bool]] = None,
+    type: type | tuple[type, ...] | None = None,
+    predicate: Callable[[Any], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the modules under a package. Optionally, recurse into
     sub-packages.

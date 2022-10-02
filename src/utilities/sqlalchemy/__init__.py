@@ -4,7 +4,6 @@ from operator import ge
 from operator import le
 from re import search
 from typing import Any
-from typing import Optional
 
 from sqlalchemy import Table
 from sqlalchemy import and_
@@ -63,12 +62,12 @@ def create_engine(
     drivername: str,
     /,
     *,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    database: Optional[str] = None,
-    poolclass: Optional[type[Pool]] = NullPool,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    poolclass: type[Pool] | None = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
 

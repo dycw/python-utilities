@@ -9,7 +9,6 @@ from operator import lt
 from operator import ne
 from timeit import default_timer
 from typing import Any
-from typing import Optional
 
 
 class Timer:
@@ -18,7 +17,7 @@ class Timer:
     def __init__(self) -> None:
         super().__init__()
         self._start = default_timer()
-        self._end: Optional[float] = None
+        self._end: float | None = None
 
     def __enter__(self) -> "Timer":
         self._start = default_timer()
