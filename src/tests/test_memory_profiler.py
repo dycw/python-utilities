@@ -1,12 +1,10 @@
 from hypothesis import given
 from hypothesis import settings
 from hypothesis.strategies import integers
-from typeguard import typeguard_ignore
 
 from utilities.memory_profiler import memory_profiled
 
 
-@typeguard_ignore
 def func(n: int, /) -> list[int]:
     return list(range(n))
 

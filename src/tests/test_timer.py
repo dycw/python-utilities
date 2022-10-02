@@ -10,9 +10,9 @@ from re import search
 from time import sleep
 from typing import Any
 
-from _pytest.python_api import raises
 from pytest import mark
 from pytest import param
+from pytest import raises
 
 from utilities.timer import Timer
 

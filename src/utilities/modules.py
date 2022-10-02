@@ -5,7 +5,10 @@ from pkgutil import walk_packages
 from types import ModuleType
 from typing import Any
 
+from beartype import beartype
 
+
+@beartype
 def yield_modules(
     module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
@@ -27,6 +30,7 @@ def yield_modules(
                 yield imported
 
 
+@beartype
 def yield_module_contents(
     module: ModuleType,
     /,

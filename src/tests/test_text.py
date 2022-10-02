@@ -8,5 +8,5 @@ class TestEnsureStr:
         assert isinstance(ensure_str(""), str)
 
     def test_not_str(self) -> None:
-        with raises(TypeError, match="None is not a string"):
+        with raises(TypeError, match="x=None"):
             _ = ensure_str(None)
