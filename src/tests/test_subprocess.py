@@ -1,10 +1,14 @@
 from pathlib import Path
+from subprocess import CalledProcessError  # noqa: S404
+from subprocess import check_call  # noqa: S404
 
 from pytest import raises
 
 from utilities.subprocess import MultipleActivate
 from utilities.subprocess import NoActivate
 from utilities.subprocess import get_shell_output
+from utilities.subprocess import tabulate_called_process_error
+from utilities.text import strip_and_dedent
 
 
 class TestGetShellOutput:
@@ -32,3 +36,24 @@ class TestGetShellOutput:
             activate.touch()
         with raises(MultipleActivate):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
+
+
+class TestTabulateCalledProcessError:
+    def test_main(self) -> None:
+        def which() -> None:
+            _ = check_call(["which"], text=True)  # noqa: S603, S607
+
+        try:
+            which()
+        except CalledProcessError as error:
+            result = tabulate_called_process_error(error)
+            expected = """
+                cmd        ['which']
+                returncode 1
+                stdout     None
+                stderr     None
+            """
+            assert result == strip_and_dedent(expected)
+        else:
+            with raises(CalledProcessError):
+                which()
