@@ -71,6 +71,7 @@ hatch = ["hatch >= 1.6.0"]
 hypothesis = ["hypothesis >= 6.56.2"]
 inflection = ["inflection >= 0.5.1"]
 loguru = ["loguru >= 0.6.0"]
+luigi = ["luigi >= 3.1.1"]
 memory-profiler = ["memory-profiler >= 0.60.0"]
 numpy = ["numpy >= 1.23.4"]
 pandas = ["pandas >= 1.5.0"]
@@ -98,6 +99,8 @@ dev = [
   "inflection >= 0.5.1",
   # loguru
   "loguru >= 0.6.0",
+  # luigi
+  "luigi >= 3.1.1",
   # memory-profiler
   "memory-profiler >= 0.60.0",
   # numpy
