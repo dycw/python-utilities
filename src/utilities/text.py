@@ -1,3 +1,4 @@
+from textwrap import dedent
 from typing import Any
 
 from beartype import beartype
@@ -15,3 +16,10 @@ def ensure_str(x: Any, /) -> str:
 
 class NotAString(TypeError):
     ...
+
+
+@beartype
+def strip_and_dedent(text: str, /) -> str:
+    """Strip and dedent a string."""
+
+    return dedent(text.strip("\n")).strip("\n")
