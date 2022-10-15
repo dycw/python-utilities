@@ -26,6 +26,7 @@ attrs==22.1.0 \
     --hash=sha256:86efa402f67bf2df34f51a335487cf46b1ec130d02b8d39fd248abfd30da551c
     # via
     #   cattrs
+    #   dycw-utilities (pyproject.toml)
     #   flake8-annotations
     #   flake8-bugbear
     #   flake8-eradicate
