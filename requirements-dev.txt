@@ -4,6 +4,10 @@
 #
 #    pip-compile --allow-unsafe --extra=dev --generate-hashes --output-file=requirements-dev.txt pyproject.toml
 #
+airium==0.2.5 \
+    --hash=sha256:39a715fee1f6d81a75c31efa62bd13915d8648ea03937adf1ac07a6065f7cbec \
+    --hash=sha256:6b4d75a2ff1aca0d9f787bcd3a69df13a189a75806b2fa2c9acda2e30f0ef5be
+    # via dycw-utilities (pyproject.toml)
 anyio==3.6.1 \
     --hash=sha256:413adf95f93886e442aea925f3ee43baa5a765a64a0f52c6081894f9992fdd0b \
     --hash=sha256:cb29b9c70620506a9a8f87a309591713446953302d7d995344d0d7c6c0c9a7be
