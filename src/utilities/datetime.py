@@ -1,9 +1,38 @@
 import datetime as dt
+from collections.abc import Iterator
 from contextlib import suppress
 
 from beartype import beartype
 
 from utilities.re import extract_groups
+
+
+@beartype
+def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
+    """Add a number of a weekdays to a given date. If the initial date is a
+    weekend, then moving to the adjacent weekday counts as 1 move.
+    """
+
+    if n >= 1:
+        for _ in range(n):
+            date = round_to_next_weekday(date + dt.timedelta(days=1))
+    elif n == 0 and not is_weekday(date):
+        raise IsWeekend(date)
+    elif n <= -1:
+        for _ in range(-n):
+            date = round_to_prev_weekday(date - dt.timedelta(days=1))
+    return date
+
+
+class IsWeekend(ValueError):
+    ...
+
+
+@beartype
+def date_to_datetime(date: dt.date, /) -> dt.datetime:
+    """Expand a date into a datetime"""
+
+    return dt.datetime.combine(date, dt.time())
 
 
 @beartype
@@ -38,6 +67,13 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
         return timedelta
     else:
         return parse_timedelta(timedelta)
+
+
+@beartype
+def is_weekday(date: dt.date, /) -> bool:
+    """Check if a date is a weekday."""
+
+    return date.isoweekday() <= 5
 
 
 @beartype
@@ -124,6 +160,30 @@ class InvalidTimedelta(ValueError):
 
 
 @beartype
+def round_to_next_weekday(date: dt.date, /) -> dt.date:
+    """Round a date to the next weekday."""
+
+    return _round_to_weekday(date, True)
+
+
+@beartype
+def round_to_prev_weekday(date: dt.date, /) -> dt.date:
+    """Round a date to the previous weekday."""
+
+    return _round_to_weekday(date, False)
+
+
+@beartype
+def _round_to_weekday(date: dt.date, is_next: bool, /) -> dt.date:
+    """Round a date to the previous weekday."""
+
+    n = 1 if is_next else -1
+    while not is_weekday(date):
+        date = add_weekdays(date, n=n)
+    return date
+
+
+@beartype
 def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
 
@@ -153,3 +213,31 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
         return f"d{days},{tail}"
     else:
         return str(timedelta)
+
+
+@beartype
+def yield_weekdays(
+    *,
+    start: dt.date | None = None,
+    end: dt.date | None = None,
+    days: int | None = None,
+) -> Iterator[dt.date]:
+    """Yield the weekdays in a range."""
+
+    if (start is not None) and (end is not None) and (days is None):
+        date = round_to_next_weekday(start)
+        while date < end:
+            yield date
+            date = round_to_next_weekday(date + dt.timedelta(days=1))
+    elif (start is not None) and (end is None) and (days is not None):
+        date = round_to_next_weekday(start)
+        for _ in range(days):
+            yield date
+            date = round_to_next_weekday(date + dt.timedelta(days=1))
+    elif (start is None) and (end is not None) and (days is not None):
+        date = round_to_prev_weekday(end)
+        for _ in range(days):
+            yield date
+            date = round_to_prev_weekday(date - dt.timedelta(days=1))
+    else:
+        raise ValueError(f"Invalid options: {start=}, {end=}, {days=}")
