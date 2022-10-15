@@ -4,6 +4,7 @@ from typing import Any
 from typing import TypeVar
 
 from beartype import beartype
+from cattrs import BaseConverter
 from cattrs import Converter
 from typed_settings import default_converter
 from typed_settings import default_loaders
@@ -27,7 +28,7 @@ def load_settings(
 
 
 @beartype
-def _make_converter() -> Converter:
+def _make_converter() -> BaseConverter | Converter:
     """Extend the default converter."""
 
     converter = default_converter()
