@@ -2,12 +2,13 @@ import datetime as dt
 from collections.abc import Callable
 from enum import Enum as _Enum
 from enum import auto
+from typing import Any
 
+from click import ParamType
 from click import argument
 from click import command
 from click import echo
 from click.testing import CliRunner
-from hypothesis import assume
 from hypothesis import given
 from hypothesis.strategies import DataObject
 from hypothesis.strategies import SearchStrategy
@@ -16,13 +17,21 @@ from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
 from hypothesis.strategies import just
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies import timedeltas
+from hypothesis.strategies import times
 from pytest import mark
 from pytest import param
 
 from utilities.click import Date
 from utilities.click import DateTime
 from utilities.click import Enum
+from utilities.click import Time
+from utilities.click import Timedelta
 from utilities.click import log_level_option
+from utilities.datetime import serialize_date
+from utilities.datetime import serialize_datetime
+from utilities.datetime import serialize_time
+from utilities.datetime import serialize_timedelta
 from utilities.logging import LogLevel
 
 
@@ -30,71 +39,38 @@ def runners() -> SearchStrategy[CliRunner]:
     return just(CliRunner())
 
 
-@command()
-@argument("date", type=Date())
-def uses_date(*, date: dt.date) -> None:
-    echo(f"date = {date}")
-
-
-def format_date_1(date: dt.date, /) -> str:
-    return date.isoformat()
-
-
-def format_date_2(date: dt.date, /) -> str:
-    return date.strftime("%4Y%m%d")
-
-
-class TestDate:
-    @given(runner=runners(), date=dates())
-    @mark.parametrize("format", [param(format_date_1), param(format_date_2)])
-    def test_success(
-        self, runner: CliRunner, date: dt.date, format: Callable[[dt.date], str]
-    ) -> None:
-        result = runner.invoke(uses_date, [format(date)])
-        assert result.exit_code == 0
-        assert result.stdout == f"date = {date:%4Y-%m-%d}\n"
-
-    @given(runner=runners(), date=dates())
-    def test_failure(self, runner: CliRunner, date: dt.date) -> None:
-        result = runner.invoke(uses_date, [date.strftime("%4Y/%m/%d")])
-        assert result.exit_code == 2
-
-
-@command()
-@argument("datetime", type=DateTime())
-def uses_datetime(*, datetime: dt.datetime) -> None:
-    echo(f"datetime = {datetime}")
-
-
-def format_datetime_1(date: dt.datetime, /) -> str:
-    return date.isoformat()
-
-
-def format_datetime_2(date: dt.datetime, /) -> str:
-    return date.strftime("%4Y%m%d%H%M%S")
-
-
-class TestDateTime:
-    @given(runner=runners(), date=datetimes())
+class TestParameters:
+    @given(data=data())
     @mark.parametrize(
-        "format", [param(format_datetime_1), param(format_datetime_2)]
+        ["param", "cls", "strategy", "serialize"],
+        [
+            param(Date(), dt.date, dates(), serialize_date),
+            param(DateTime(), dt.datetime, datetimes(), serialize_datetime),
+            param(Time(), dt.time, times(), serialize_time),
+            param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
+        ],
     )
     def test_success(
         self,
-        runner: CliRunner,
-        date: dt.datetime,
-        format: Callable[[dt.datetime], str],
+        data: DataObject,
+        param: ParamType,
+        cls: Any,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
     ) -> None:
-        _ = assume(date.microsecond == 0)
-        result = runner.invoke(uses_datetime, [format(date)])
-        assert result.exit_code == 0
-        assert result.stdout == f"datetime = {date}\n"
+        runner = CliRunner()
 
-    @given(runner=runners(), date=dates())
-    def test_failure(self, runner: CliRunner, date: dt.date) -> None:
-        result = runner.invoke(
-            uses_datetime, [date.strftime("%4Y/%m/%d %H:%M:%S")]
-        )
+        @command()
+        @argument("value", type=param)
+        def cli(*, value: cls) -> None:
+            echo(f"value = {serialize(value)}")
+
+        value_str = serialize(data.draw(strategy))
+        result = runner.invoke(cli, [value_str])
+        assert result.exit_code == 0
+        assert result.stdout == f"value = {value_str}\n"
+
+        result = runner.invoke(cli, ["error"])
         assert result.exit_code == 2
 
 

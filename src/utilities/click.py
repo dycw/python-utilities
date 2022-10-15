@@ -11,6 +11,14 @@ from click import ParamType
 from click import Parameter
 from click import option
 
+from utilities.datetime import InvalidDate
+from utilities.datetime import InvalidDateTime
+from utilities.datetime import InvalidTime
+from utilities.datetime import InvalidTimedelta
+from utilities.datetime import parse_date
+from utilities.datetime import parse_datetime
+from utilities.datetime import parse_time
+from utilities.datetime import parse_timedelta
 from utilities.logging import LogLevel
 
 
@@ -23,11 +31,10 @@ class Date(ParamType):
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
-        with suppress(ValueError):
-            return dt.date.fromisoformat(value)
-        with suppress(ValueError):
-            return dt.datetime.strptime(value, "%Y%m%d").date()
-        self.fail(f"Unable to parse {value}", param, ctx)
+        try:
+            return parse_date(value)
+        except InvalidDate:
+            self.fail(f"Unable to parse {value}", param, ctx)
 
 
 class DateTime(ParamType):
@@ -39,11 +46,40 @@ class DateTime(ParamType):
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
-        with suppress(ValueError):
-            return dt.datetime.fromisoformat(value)
-        with suppress(ValueError):
-            return dt.datetime.strptime(value, "%Y%m%d%H%M%S")
-        self.fail(f"Unable to parse {value}", param, ctx)
+        try:
+            return parse_datetime(value)
+        except InvalidDateTime:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class Time(ParamType):
+    """A time-valued parameter."""
+
+    name = "time"
+
+    @beartype
+    def convert(
+        self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> dt.time:
+        try:
+            return parse_time(value)
+        except InvalidTime:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class Timedelta(ParamType):
+    """A timedelta-valued parameter."""
+
+    name = "timedelta"
+
+    @beartype
+    def convert(
+        self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> dt.timedelta:
+        try:
+            return parse_timedelta(value)
+        except InvalidTimedelta:
+            self.fail(f"Unable to parse {value}", param, ctx)
 
 
 _E = TypeVar("_E", bound=_Enum)
