@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import sets
 
-from utilities.hypothesis.tempfile import temp_paths
+from utilities.hypothesis import temp_paths
 from utilities.zipfile import yield_zip_file_contents
 
 
