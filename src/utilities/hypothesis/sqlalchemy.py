@@ -7,7 +7,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.engine import Engine
 
 from utilities.hypothesis import draw_and_map
-from utilities.hypothesis.tempfile import temp_paths
+from utilities.hypothesis import temp_paths
 from utilities.sqlalchemy import create_engine
 
 

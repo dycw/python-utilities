@@ -19,8 +19,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base
 
+from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.hypothesis.tempfile import temp_paths
 from utilities.sqlalchemy import columnwise_max
 from utilities.sqlalchemy import columnwise_min
 from utilities.sqlalchemy import create_engine

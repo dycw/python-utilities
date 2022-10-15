@@ -4,10 +4,13 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import partial
 from os import getenv
+from pathlib import Path
 from re import search
 from string import ascii_letters
+from string import printable
 from typing import Any
 from typing import TypeVar
+from uuid import UUID
 
 from beartype import beartype
 from hypothesis import Verbosity
@@ -20,7 +23,11 @@ from hypothesis.strategies import just
 from hypothesis.strategies import lists
 from hypothesis.strategies import text
 from hypothesis.strategies import tuples
+from hypothesis.strategies import uuids
 
+from utilities.hypothesis.typing import MaybeSearchStrategy
+from utilities.tempfile import TemporaryDirectory
+from utilities.tempfile import gettempdir
 from utilities.text import ensure_str
 
 
@@ -139,12 +146,44 @@ def setup_hypothesis_profiles() -> None:
 
 
 @beartype
+def temp_dirs() -> SearchStrategy[TemporaryDirectory]:
+    """Search strategy for temporary directories."""
+
+    dir = gettempdir().joinpath("hypothesis")
+    dir.mkdir(exist_ok=True)
+    return draw_and_map(_draw_temp_dirs, uuids(), dir)
+
+
+@beartype
+def _draw_temp_dirs(uuid: UUID, dir: Path, /) -> TemporaryDirectory:
+    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir.as_posix())
+
+
+@beartype
+def temp_paths() -> SearchStrategy[Path]:
+    """Search strategy for paths to temporary directories."""
+
+    return draw_and_map(_draw_temp_paths, temp_dirs())
+
+
+@beartype
+def _draw_temp_paths(temp_dir: TemporaryDirectory, /) -> Path:
+    class SubPath(type(root := temp_dir.name)):
+        _temp_dir = temp_dir
+
+    return SubPath(root)
+
+
+@beartype
 def text_ascii(
-    *, min_size: int = 0, max_size: int | None = None
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
 
-    return text(
+    return draw_and_flatmap(
+        _draw_text,
         characters(whitelist_categories=[], whitelist_characters=ascii_letters),
         min_size=min_size,
         max_size=max_size,
@@ -153,12 +192,42 @@ def text_ascii(
 
 @beartype
 def text_clean(
-    *, min_size: int = 0, max_size: int | None = None
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
 
-    return text(
+    return draw_and_flatmap(
+        _draw_text,
         characters(blacklist_categories=["Z", "C"]),
         min_size=min_size,
         max_size=max_size,
     )
+
+
+@beartype
+def text_printable(
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+) -> SearchStrategy[str]:
+    """Strategy for generating printable text."""
+
+    return draw_and_flatmap(
+        _draw_text,
+        characters(whitelist_categories=[], whitelist_characters=printable),
+        min_size=min_size,
+        max_size=max_size,
+    )
+
+
+@beartype
+def _draw_text(
+    alphabet: MaybeSearchStrategy[str],
+    /,
+    *,
+    min_size: int = 0,
+    max_size: int | None = None,
+) -> SearchStrategy[str]:
+    return text(alphabet, min_size=min_size, max_size=max_size)

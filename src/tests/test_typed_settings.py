@@ -26,7 +26,7 @@ from utilities.datetime import serialize_date
 from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
 from utilities.datetime import serialize_timedelta
-from utilities.hypothesis.tempfile import temp_paths
+from utilities.hypothesis import temp_paths
 from utilities.typed_settings import click_options
 from utilities.typed_settings import load_settings
 
