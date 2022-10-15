@@ -1,14 +1,25 @@
 from enum import auto
 
 from hypothesis import given
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
 from hypothesis.strategies import sampled_from
 
 from utilities.enum import StrEnum
+from utilities.enum import parse_enum
 
 
 class Truth(StrEnum):
     true = auto()
     false = auto()
+
+
+class TestParseEnum:
+    @given(data=data(), truth=sampled_from(Truth))
+    def test_main(self, data: DataObject, truth: Truth) -> None:
+        input = data.draw(sampled_from([truth, truth.name]))
+        result = parse_enum(Truth, input)
+        assert result is truth
 
 
 class TestStrEnum:
