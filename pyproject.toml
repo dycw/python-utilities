@@ -76,7 +76,7 @@ pyinstrument = ["pyinstrument >= 4.3.0"]
 tqdm = ["tqdm >= 4.64.1"]
 sqlalchemy = ["sqlalchemy >= 1.4.41", "sqlalchemy2-stubs"]
 tempenv = ["tempenv >= 2.0.0"]
-typed-settings = ["typed-settings >= 1.1.1"]
+typed-settings = ["typed-settings[click] >= 1.1.1"]
 dev = [
   # atomicwrites
   "atomicwrites >= 1.4.1",
