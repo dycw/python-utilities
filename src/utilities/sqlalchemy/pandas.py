@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from decimal import Decimal
 from typing import Any
 
+from beartype import beartype
 from pandas import DataFrame
 from pandas import NaT
 from pandas import Series
@@ -18,8 +19,6 @@ from utilities.pandas import timestamp_to_datetime
 from utilities.sqlalchemy import get_column_names
 from utilities.sqlalchemy import get_columns
 from utilities.sqlalchemy import get_table
-from beartype import beartype
-
 
 
 @beartype
