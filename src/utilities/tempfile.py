@@ -4,6 +4,8 @@ from tempfile import gettempdir as _gettempdir
 
 from beartype import beartype
 
+from utilities.pathlib import PathLike
+
 
 class TemporaryDirectory(_TemporaryDirectory):
     """Sub-class of TemporaryDirectory whose name attribute is a Path."""
@@ -16,7 +18,7 @@ class TemporaryDirectory(_TemporaryDirectory):
         *,
         suffix: str | None = None,
         prefix: str | None = None,
-        dir: str | None = None,
+        dir: PathLike | None = None,
         ignore_cleanup_errors: bool = False,
     ) -> None:
         super().__init__(
