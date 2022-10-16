@@ -1,4 +1,3 @@
-from beartype import beartype
 from hypothesis import given
 from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
@@ -12,7 +11,6 @@ class TestTaskNamespaces:
     def test_main(self, data: DataObject) -> None:
         _ = data.draw(task_namespaces())
 
-    @beartype
     @given(namespace=task_namespaces())
     def test_first(self, namespace: str) -> None:
         class Example(Task):
@@ -20,7 +18,6 @@ class TestTaskNamespaces:
 
         _ = Example()
 
-    @beartype
     @given(namespace=task_namespaces())
     def test_second(self, namespace: str) -> None:
         class Example(Task):

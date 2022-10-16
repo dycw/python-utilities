@@ -29,6 +29,7 @@ from utilities.sqlalchemy import ensure_table_dropped
 from utilities.sqlalchemy import get_column_names
 from utilities.sqlalchemy import get_columns
 from utilities.sqlalchemy import get_table
+from utilities.sqlalchemy import get_table_name
 
 
 class TestColumnwiseMinMax:
@@ -117,6 +118,7 @@ class TestEnsureTableCreated:
     def test_orm(self, engine: Engine, runs: int) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
+
             id = Column(Integer, primary_key=True)
 
         self._run_test(Example, engine, runs)
@@ -151,6 +153,7 @@ class TestEnsureTableDropped:
     def test_orm(self, engine: Engine, runs: int) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
+
             id = Column(Integer, primary_key=True)
 
         self._run_test(Example, engine, runs)
@@ -183,6 +186,7 @@ class TestGetColumnNames:
     def test_orm(self) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
+
             id = Column(Integer, primary_key=True)
 
         self._run_test(Example)
@@ -201,6 +205,7 @@ class TestGetColumns:
     def test_orm(self) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
+
             id = Column(Integer, primary_key=True)
 
         self._run_test(Example)
@@ -215,13 +220,33 @@ class TestGetColumns:
 class TestGetTable:
     def test_core(self) -> None:
         table = Table("example", MetaData(), Column("id", primary_key=True))
-        assert get_table(table) is table
+        result = get_table(table)
+        assert result is table
 
     def test_orm(self) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
+
             id = Column(Integer, primary_key=True)
 
         table = get_table(Example)
-        assert isinstance(table, Table)
-        assert table.name == "example"
+        result = get_table(table)
+        assert result is Example.__table__
+
+
+class TestGetTableName:
+    def test_core(self) -> None:
+        table = Table("example", MetaData(), Column("id", primary_key=True))
+        result = get_table_name(table)
+        expected = "example"
+        assert result == expected
+
+    def test_orm(self) -> None:
+        class Example(cast(Any, declarative_base())):
+            __tablename__ = "example"
+
+            id = Column(Integer, primary_key=True)
+
+        result = get_table_name(Example)
+        expected = "example"
+        assert result == expected
