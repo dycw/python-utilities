@@ -5,6 +5,7 @@ from operator import le
 from re import search
 from typing import Any
 
+from beartype import beartype
 from sqlalchemy import Table
 from sqlalchemy import and_
 from sqlalchemy import case
@@ -17,21 +18,25 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
 
 
+@beartype
 def columnwise_max(*columns: Any) -> Any:
     """Compute the columnwise max of a number of columns."""
 
     return _columnwise_minmax(*columns, op=ge)
 
 
+@beartype
 def columnwise_min(*columns: Any) -> Any:
     """Compute the columnwise min of a number of columns."""
 
     return _columnwise_minmax(*columns, op=le)
 
 
+@beartype
 def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     """Compute the columnwise min of a number of columns."""
 
+    @beartype
     def func(x: Any, y: Any, /) -> Any:
         x_none = x.is_(None)
         y_none = y.is_(None)
@@ -58,6 +63,7 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     return reduce(func, columns)
 
 
+@beartype
 def create_engine(
     drivername: str,
     /,
@@ -82,6 +88,7 @@ def create_engine(
     return _create_engine(url, future=True, poolclass=poolclass)
 
 
+@beartype
 def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
     """Ensure a table is created."""
 
@@ -104,6 +111,7 @@ def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
             raise
 
 
+@beartype
 def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
     """Ensure a table is dropped."""
 
@@ -124,18 +132,21 @@ def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
             raise
 
 
+@beartype
 def get_column_names(table_or_model: Any, /) -> list[str]:
     """Get the column names from a table or model."""
 
     return [col.name for col in get_columns(table_or_model)]
 
 
+@beartype
 def get_columns(table_or_model: Any, /) -> list[Any]:
     """Get the columns from a table or model."""
 
     return list(get_table(table_or_model).columns)
 
 
+@beartype
 def get_table(table_or_model: Any, /) -> Table:
     """Get the table from a ORM model."""
 
@@ -143,3 +154,10 @@ def get_table(table_or_model: Any, /) -> Table:
         return table_or_model
     else:
         return table_or_model.__table__
+
+
+@beartype
+def get_table_name(table_or_model: Any, /) -> str:
+    """Get the table name from a ORM model."""
+
+    return get_table(table_or_model).name

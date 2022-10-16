@@ -3,7 +3,6 @@ from typing import cast
 
 from attrs import define
 from attrs import fields
-from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
 from pytest import raises
@@ -39,7 +38,6 @@ class TestAttrsBase:
             x: int
             y: int
 
-            @beartype
             def __attrs_post_init__(self) -> None:
                 for field in fields(cast(Any, type(self))):
                     die_if_unbearable(getattr(self, field.name), field.type)

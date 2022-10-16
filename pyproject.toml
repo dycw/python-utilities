@@ -11,6 +11,7 @@ data_file = ".coverage/data"
 parallel = true
 
 [tool.coverage.report]
+exclude_lines = ["# pragma: no cover", "@overload"]
 fail_under = 100.0
 skip_covered = true
 skip_empty = true
