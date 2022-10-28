@@ -20,4 +20,3 @@ def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
     with open(filename, mode="w") as fh:
         _ = fh.write(profiler.output_html())
-    _ = fh  # this ensures that `fh` is considered returned; for coverage

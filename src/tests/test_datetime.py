@@ -307,9 +307,9 @@ class TestRoundToWeekday:
 
 
 class TestYieldWeekdays:
-    @given(start=dates(), end=dates())
-    def test_start_and_end(self, start: dt.date, end: dt.date) -> None:
-        _ = assume(end - start <= dt.timedelta(days=365))
+    @given(start=dates(), days=integers(0, 365))
+    def test_start_and_end(self, start: dt.date, days: int) -> None:
+        end = start + dt.timedelta(days=days)
         dates = list(yield_weekdays(start=start, end=end))
         assert all(start <= d <= end for d in dates)
         assert all(map(is_weekday, dates))
