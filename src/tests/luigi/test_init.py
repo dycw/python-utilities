@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import cast
 
 from hypothesis import given
+from hypothesis import settings
 from hypothesis.strategies import booleans
 from luigi import BoolParameter
 from luigi import Task
@@ -10,11 +11,12 @@ from luigi.notifications import smtp
 
 from utilities.hypothesis.luigi import task_namespaces
 from utilities.luigi import PathTarget
+from utilities.luigi import _yield_task_classes
 from utilities.luigi import build
 from utilities.luigi import clone
-from utilities.luigi import yield_dependencies_downstream
-from utilities.luigi import yield_dependencies_upstream
-from utilities.luigi import yield_task_classes
+from utilities.luigi import get_dependencies_downstream
+from utilities.luigi import get_dependencies_upstream
+from utilities.luigi import get_task_classes
 
 
 class TestBuild:
@@ -54,8 +56,9 @@ class TestPathTarget:
         assert target.exists()
 
 
-class TestYieldDependencies:
+class TestGetDependencies:
     @given(namespace=task_namespaces())
+    @settings(max_examples=1)
     def test_main(self, namespace: str) -> None:
         class A(Task):
             task_namespace = namespace
@@ -99,23 +102,25 @@ class TestYieldDependencies:
     def _get_sets(
         task: Task, /, *, recursive: bool = False
     ) -> tuple[set[Task], set[Task]]:
-        return set(yield_dependencies_upstream(task, recursive=recursive)), set(
-            yield_dependencies_downstream(task, recursive=recursive)
+        return set(get_dependencies_upstream(task, recursive=recursive)), set(
+            get_dependencies_downstream(task, recursive=recursive)
         )
 
 
-class TestYieldTaskClasses:
+class TestGetTaskClasses:
     @given(namespace=task_namespaces())
+    @settings(max_examples=1)
     def test_main(self, namespace: str) -> None:
         class Example(Task):
             task_namespace = namespace
 
-        assert Example in yield_task_classes()
+        assert Example in get_task_classes()
 
     def test_notifications(self) -> None:
-        assert smtp not in yield_task_classes()
+        assert smtp not in _yield_task_classes()
 
     @given(namespace=task_namespaces())
+    @settings(max_examples=1)
     def test_filter(self, namespace: str) -> None:
         class Parent(Task):
             task_namespace = namespace
@@ -123,6 +128,6 @@ class TestYieldTaskClasses:
         class Child(Parent):
             ...
 
-        result = set(yield_task_classes(cls=Parent))
-        expected = {Child}
+        result = get_task_classes(cls=Parent)
+        expected = frozenset([Child])
         assert result == expected
