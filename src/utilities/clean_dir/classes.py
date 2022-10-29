@@ -8,7 +8,7 @@ from utilities.tempfile import gettempdir
 
 
 @beartype
-@dataclass
+@dataclass(frozen=True)
 class Config:
     """Settings for the `clean_dir` script."""
 
@@ -19,7 +19,7 @@ class Config:
 
 
 @beartype
-@dataclass
+@dataclass(frozen=True)
 class Item:
     """An item to clean up."""
 

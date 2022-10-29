@@ -15,8 +15,8 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 
-@dataclass
 @beartype
+@dataclass(frozen=True)
 class Output(Generic[_T]):
     """A function output, and its memory usage."""
 

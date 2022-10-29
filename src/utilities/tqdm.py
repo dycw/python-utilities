@@ -12,8 +12,8 @@ from tqdm import tqdm as _tqdm
 from utilities.pytest import is_pytest
 
 
-@dataclass
 @beartype
+@dataclass(frozen=True)
 class _Defaults:
     desc: str | None = None
     total: int | float | None = None

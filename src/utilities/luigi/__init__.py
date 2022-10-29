@@ -92,67 +92,92 @@ def clone(task: Task, cls: type[_Task], /, **kwargs: Any) -> _Task:
 
 
 @overload
-def yield_dependencies_downstream(
+def get_dependencies_downstream(
     task: Task, /, *, cls: type[_Task], recursive: bool = False  # noqa: U100
-) -> Iterator[_Task]:
+) -> frozenset[_Task]:
     ...
 
 
 @overload
-def yield_dependencies_downstream(
+def get_dependencies_downstream(
     task: Task, /, *, cls: None = None, recursive: bool = False  # noqa: U100
-) -> Iterator[Task]:
+) -> frozenset[Task]:
     ...
 
 
 @beartype
-def yield_dependencies_downstream(
+def get_dependencies_downstream(
+    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
+) -> frozenset[Task]:
+    """Get the downstream dependencies of a task."""
+
+    return frozenset(
+        _yield_dependencies_downstream(task, cls=cls, recursive=recursive)
+    )
+
+
+@beartype
+def _yield_dependencies_downstream(
     task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> Iterator[Task]:
-    """Yield the downlaodstream dependencies of a task."""
-
-    for task_cls in cast(Iterable[type[Task]], yield_task_classes(cls=cls)):
+    for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
         try:
             cloned = clone(task, task_cls)
         except (MissingParameterException, TypeError):
             pass
         else:
-            if task in yield_dependencies_upstream(cloned, recursive=recursive):
+            if task in get_dependencies_upstream(cloned, recursive=recursive):
                 yield cloned
                 if recursive:
-                    yield from yield_dependencies_downstream(
+                    yield from get_dependencies_downstream(
                         cloned, recursive=recursive
                     )
 
 
 @beartype
-def yield_dependencies_upstream(
+def get_dependencies_upstream(
+    task: Task, /, *, recursive: bool = False
+) -> frozenset[Task]:
+    """Get the upstream dependencies of a task."""
+
+    return frozenset(_yield_dependencies_upstream(task, recursive=recursive))
+
+
+@beartype
+def _yield_dependencies_upstream(
     task: Task, /, *, recursive: bool = False
 ) -> Iterator[Task]:
-    """Yield the upstream dependencies of a task."""
-
     for t in cast(Iterable[Task], flatten(task.requires())):
         yield t
         if recursive:
-            yield from yield_dependencies_upstream(t, recursive=recursive)
+            yield from get_dependencies_upstream(t, recursive=recursive)
 
 
 @overload
-def yield_task_classes(
+def get_task_classes(
     *, cls: type[_Task]  # noqa: U100
-) -> Iterator[type[_Task]]:
+) -> frozenset[type[_Task]]:
     ...
 
 
 @overload
-def yield_task_classes(
+def get_task_classes(
     *, cls: None = None  # noqa: U100
-) -> Iterator[type[Task]]:
+) -> frozenset[type[Task]]:
     ...
 
 
 @beartype
-def yield_task_classes(
+def get_task_classes(
+    *, cls: type[_Task] | None = None
+) -> frozenset[type[_Task]]:
+    """Yield the task classes. Optionally filter down."""
+
+    return frozenset(_yield_task_classes(cls=cls))
+
+
+@beartype
+def _yield_task_classes(
     *, cls: type[_Task] | None = None
 ) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
