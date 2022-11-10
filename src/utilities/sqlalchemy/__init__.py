@@ -11,6 +11,7 @@ from typing import Literal
 from typing import cast
 
 from beartype import beartype
+from more_itertools import chunked
 from sqlalchemy import Table
 from sqlalchemy import and_
 from sqlalchemy import case
@@ -29,7 +30,6 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
 from sqlalchemy.sql import Selectable
 
-from utilities.itertools import chunked
 from utilities.typing import never
 
 
@@ -232,7 +232,7 @@ def yield_in_clause_rows(
 
     if chunk_size is None:
         dialect = get_dialect(engine_or_conn)
-        if (dialect) == "mssql":  # pragma: no cover
+        if dialect == "mssql":  # pragma: no cover
             max_params = 2100
         elif dialect == "mysql":  # pragma: no cover
             max_params = 65535
@@ -247,8 +247,7 @@ def yield_in_clause_rows(
         chunk_size_use = round(frac * max_params)
     else:
         chunk_size_use = chunk_size
-    value_chunks = chunked(values, chunk_size_use)
     with yield_connection(engine_or_conn) as conn:
-        for values_i in value_chunks:
+        for values_i in chunked(values, chunk_size_use):
             sel_i: Selectable = cast(Any, sel).where(column.in_(values_i))
             yield from conn.execute(sel_i).all()

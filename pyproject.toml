@@ -80,47 +80,35 @@ pandas = ["pandas >= 1.5.1"]
 pqdm = ["pqdm >= 0.2.0"]
 pyinstrument = ["pyinstrument >= 4.4.0"]
 tqdm = ["tqdm >= 4.64.1"]
-sqlalchemy = ["sqlalchemy >= 1.4.43", "sqlalchemy2-stubs"]
+sqlalchemy = [
+  "more-itertools >= 9.0.0",
+  "sqlalchemy >= 1.4.43",
+  "sqlalchemy2-stubs"
+]
 typed-settings = ["typed-settings[click] >= 1.1.1"]
 dev = [
-  # airium
+  # main
   "airium >= 0.2.5",
-  # atomicwrites
   "atomicwrites >= 1.4.1",
-  # attrs
   "attrs >= 22.1.0",
-  # click
   "click >= 8.1.3",
-  # fastapi
   "fastapi >= 0.86.0",
-  # hatch
   "hatch >= 1.6.0",
-  # hypothesis
   "hypothesis >= 6.56.2",
-  # inflection
   "inflection >= 0.5.1",
-  # loguru
   "loguru >= 0.6.0",
-  # luigi
   "luigi >= 3.1.1",
-  # memory-profiler
   "memory-profiler >= 0.60.0",
-  # numpy
+  "more-itertools >= 9.0.0",
   "numpy >= 1.23.4",
-  # pandas
   "pandas >= 1.5.1",
-  # pqdm
   "pqdm >= 0.2.0",
-  # pyinstrument
   "pyinstrument >= 4.4.0",
-  # tqdm
-  "tqdm >= 4.64.1",
-  # sqlalchemy
   "sqlalchemy >= 1.4.43",
   "sqlalchemy2-stubs",
-  # typed-settings
+  "tqdm >= 4.64.1",
   "typed-settings >= 1.1.1",
-  #
+  # dev
   "black",
   "bump2version",
   "cx_oracle",
