@@ -1,21 +1,36 @@
 from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import reduce
 from operator import ge
 from operator import le
 from re import search
 from typing import Any
+from typing import Literal
+from typing import cast
 
 from beartype import beartype
 from sqlalchemy import Table
 from sqlalchemy import and_
 from sqlalchemy import case
 from sqlalchemy import create_engine as _create_engine
+from sqlalchemy.dialects.mssql import dialect as mssql_dialect
+from sqlalchemy.dialects.mysql import dialect as mysql_dialect
+from sqlalchemy.dialects.oracle import dialect as oracle_dialect
+from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
+from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL
+from sqlalchemy.engine import Connection
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
+from sqlalchemy.sql import Selectable
+
+from utilities.itertools import chunked
+from utilities.typing import never
 
 
 @beartype
@@ -86,6 +101,31 @@ def create_engine(
         database=database,
     )
     return _create_engine(url, future=True, poolclass=poolclass)
+
+
+Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+
+
+@beartype
+def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
+    """Get the dialect of a database."""
+
+    if isinstance(dialect := engine_or_conn.dialect, mssql_dialect):
+        return "mssql"
+    elif isinstance(dialect, mysql_dialect):
+        return "mysql"
+    elif isinstance(dialect, oracle_dialect):
+        return "oracle"
+    elif isinstance(dialect, postgresql_dialect):
+        return "postgresql"
+    elif isinstance(dialect, sqlite_dialect):
+        return "sqlite"
+    else:  # pragma: no cover
+        raise UnsupportedDialect(f"{dialect=}")
+
+
+class UnsupportedDialect(TypeError):
+    """Raised when an unsupported dialect is encountered."""
 
 
 @beartype
@@ -161,3 +201,54 @@ def get_table_name(table_or_model: Any, /) -> str:
     """Get the table name from a ORM model."""
 
     return get_table(table_or_model).name
+
+
+@contextmanager
+@beartype
+def yield_connection(
+    engine_or_conn: Engine | Connection, /
+) -> Iterator[Connection]:
+    """Yield a connection."""
+
+    if isinstance(engine_or_conn, Engine):
+        with engine_or_conn.begin() as conn:
+            yield conn
+    else:
+        yield engine_or_conn
+
+
+@beartype
+def yield_in_clause_rows(
+    sel: Selectable,
+    column: Any,
+    values: Iterable[Any],
+    engine_or_conn: Engine | Connection,
+    /,
+    *,
+    chunk_size: int | None = None,
+    frac: float = 0.95,
+) -> Iterator[Any]:
+    """Yield the rows from an `in` clause."""
+
+    if chunk_size is None:
+        dialect = get_dialect(engine_or_conn)
+        if (dialect) == "mssql":  # pragma: no cover
+            max_params = 2100
+        elif dialect == "mysql":  # pragma: no cover
+            max_params = 65535
+        elif dialect == "oracle":  # pragma: no cover
+            max_params = 1000
+        elif dialect == "postgresql":  # pragma: no cover
+            max_params = 32767
+        elif dialect == "sqlite":
+            max_params = 100
+        else:
+            return never(dialect)  # pragma: no cover
+        chunk_size_use = round(frac * max_params)
+    else:
+        chunk_size_use = chunk_size
+    value_chunks = chunked(values, chunk_size_use)
+    with yield_connection(engine_or_conn) as conn:
+        for values_i in value_chunks:
+            sel_i: Selectable = cast(Any, sel).where(column.in_(values_i))
+            yield from conn.execute(sel_i).all()
