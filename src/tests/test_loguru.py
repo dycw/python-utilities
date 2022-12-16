@@ -13,9 +13,9 @@ class TestSetupLoguru:
         chdir(tmp_path)
         setup_loguru()
 
-        sleep(1e-3)
+        sleep(0.01)
         logger.debug("message")
-        sleep(1e-3)
+        sleep(0.01)
 
         (log,) = tmp_path.iterdir()
         assert log.name == "log"

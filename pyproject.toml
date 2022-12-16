@@ -51,7 +51,7 @@ skip_gitignore = true
 style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-generate-hashes.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
 ]
 
 #### project ##################################################################
@@ -68,50 +68,51 @@ airium = ["airium >= 0.2.5"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 22.1.0"]
 click = ["click >= 8.1.3"]
-fastapi = ["fastapi >= 0.86.0"]
-hatch = ["hatch >= 1.6.0"]
+fastapi = ["fastapi >= 0.88.0"]
+hatch = ["hatch >= 1.6.3"]
 hypothesis = ["hypothesis >= 6.56.2"]
 inflection = ["inflection >= 0.5.1"]
 loguru = ["loguru >= 0.6.0"]
 luigi = ["luigi >= 3.1.1"]
-memory-profiler = ["memory-profiler >= 0.60.0"]
-numpy = ["numpy >= 1.23.4"]
-pandas = ["pandas >= 1.5.1"]
+memory-profiler = ["memory-profiler >= 0.61.0"]
+numpy = ["numpy >= 1.23.5"]
+pandas = ["pandas >= 1.5.2"]
 pqdm = ["pqdm >= 0.2.0"]
 pyinstrument = ["pyinstrument >= 4.4.0"]
 tqdm = ["tqdm >= 4.64.1"]
 sqlalchemy = [
   "more-itertools >= 9.0.0",
-  "sqlalchemy >= 1.4.43",
+  "sqlalchemy >= 1.4.45",
   "sqlalchemy2-stubs"
 ]
-typed-settings = ["typed-settings[click] >= 1.1.1"]
+typed-settings = ["typed-settings[click] >= 2.0.0"]
 dev = [
   # main
   "airium >= 0.2.5",
   "atomicwrites >= 1.4.1",
   "attrs >= 22.1.0",
   "click >= 8.1.3",
-  "fastapi >= 0.86.0",
-  "hatch >= 1.6.0",
+  "fastapi >= 0.88.0",
+  "hatch >= 1.6.3",
   "hypothesis >= 6.56.2",
   "inflection >= 0.5.1",
   "loguru >= 0.6.0",
   "luigi >= 3.1.1",
-  "memory-profiler >= 0.60.0",
+  "memory-profiler >= 0.61.0",
   "more-itertools >= 9.0.0",
-  "numpy >= 1.23.4",
-  "pandas >= 1.5.1",
+  "numpy >= 1.23.5",
+  "pandas >= 1.5.2",
   "pqdm >= 0.2.0",
   "pyinstrument >= 4.4.0",
-  "sqlalchemy >= 1.4.43",
+  "sqlalchemy >= 1.4.45",
   "sqlalchemy2-stubs",
   "tqdm >= 4.64.1",
-  "typed-settings >= 1.1.1",
+  "typed-settings[click] >= 2.0.0",
   # dev
   "black",
   "bump2version",
   "cx_oracle",
+  "exceptiongroup",  # pytest
   "flake8",
   "flake8-absolute-import",
   "flake8-annotations",
@@ -179,8 +180,8 @@ filterwarnings = [
   "error",
   "ignore::DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+  "ignore::beartype.roar.BeartypeDecorHintPep585DeprecationWarning",
 ]
-looponfailroots = ["src"]
 minversion = "7.0"
 testpaths = ["src/tests"]
 xfail_strict = true
