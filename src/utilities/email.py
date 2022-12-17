@@ -2,6 +2,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from typing import Any
+from typing import Optional
 
 from beartype import beartype
 
@@ -14,7 +15,7 @@ def send_email(
     to: IterableStrs,
     /,
     *,
-    subject: str | None = None,
+    subject: Optional[str] = None,
     contents: Any = None,
     subtype: str = "plain",
     host: str = "",

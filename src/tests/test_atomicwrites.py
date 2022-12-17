@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 
 from pytest import mark
 from pytest import param
@@ -16,7 +17,7 @@ class TestWriter:
         ],
     )
     def test_basic_usage(
-        self, tmp_path: Path, is_binary: bool, contents: str | bytes
+        self, tmp_path: Path, is_binary: bool, contents: Union[str, bytes]
     ) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp, open(

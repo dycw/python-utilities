@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from beartype import beartype
 
@@ -9,7 +10,7 @@ from utilities.subprocess import get_shell_output
 
 @beartype
 def get_hatch_version(
-    *, cwd: PathLike = Path.cwd(), activate: PathLike | None = None
+    *, cwd: PathLike = Path.cwd(), activate: Optional[PathLike] = None
 ) -> tuple[int, int, int]:
     """Get the `hatch` version."""
 

@@ -4,6 +4,8 @@ from operator import le
 from operator import lt
 from types import ModuleType
 from typing import Any
+from typing import Optional
+from typing import Union
 
 from pytest import mark
 from pytest import param
@@ -49,7 +51,7 @@ class TestYieldModuleContents:
     )
     def test_main(
         self,
-        type: type | tuple[type, ...] | None,
+        type: Optional[Union[type, tuple[type, ...]]],
         predicate: Callable[[Any], bool],
         expected: int,
     ) -> None:

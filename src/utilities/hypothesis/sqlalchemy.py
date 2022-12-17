@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+from typing import Optional
 
 from beartype import beartype
 from hypothesis.strategies import SearchStrategy
@@ -13,7 +14,7 @@ from utilities.sqlalchemy import create_engine
 
 @beartype
 def sqlite_engines(
-    *, metadata: MetaData | None = None, base: Any = None
+    *, metadata: Optional[MetaData] = None, base: Any = None
 ) -> SearchStrategy[Engine]:
     """Strategy for generating SQLite engines."""
 
@@ -24,7 +25,7 @@ def sqlite_engines(
 
 @beartype
 def _draw_sqlite_engines(
-    temp_path: Path, /, *, metadata: MetaData | None = None, base: Any = None
+    temp_path: Path, /, *, metadata: Optional[MetaData] = None, base: Any = None
 ) -> Engine:
     path = temp_path.joinpath("db.sqlite")
     engine = create_engine("sqlite", database=path.as_posix())

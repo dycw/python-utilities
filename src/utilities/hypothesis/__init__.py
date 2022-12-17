@@ -9,6 +9,7 @@ from re import search
 from string import ascii_letters
 from string import printable
 from typing import Any
+from typing import Optional
 from typing import TypeVar
 from uuid import UUID
 
@@ -34,7 +35,7 @@ from utilities.text import ensure_str
 @contextmanager
 @beartype
 def assume_does_not_raise(
-    *exceptions: type[Exception], match: str | None = None
+    *exceptions: type[Exception], match: Optional[str] = None
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised. Optionally filter on the
     string representation of the exception.
@@ -178,7 +179,7 @@ def _draw_temp_paths(temp_dir: TemporaryDirectory, /) -> Path:
 def text_ascii(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
 
@@ -194,7 +195,7 @@ def text_ascii(
 def text_clean(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
 
@@ -210,7 +211,7 @@ def text_clean(
 def text_printable(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
 
@@ -228,6 +229,6 @@ def _draw_text(
     /,
     *,
     min_size: int = 0,
-    max_size: int | None = None,
+    max_size: Optional[int] = None,
 ) -> SearchStrategy[str]:
     return text(alphabet, min_size=min_size, max_size=max_size)

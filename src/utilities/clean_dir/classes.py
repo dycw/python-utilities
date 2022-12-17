@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from beartype import beartype
 
@@ -14,7 +15,7 @@ class Config:
 
     path: Path = gettempdir()
     days: int = 7
-    chunk_size: int | None = None
+    chunk_size: Optional[int] = None
     dry_run: bool = False
 
 

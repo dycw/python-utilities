@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+from typing import Optional
 from typing import cast
 
 from hypothesis import given
@@ -56,7 +57,7 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: list[dict[str, int | None]], engine: Engine
+        self, values: list[dict[str, Optional[int]]], engine: Engine
     ) -> None:
         table = Table(
             "example",
@@ -307,7 +308,7 @@ class TestYieldInClauseRows:
         chunk_size=integers(1, 10) | none(),
     )
     def test_main(
-        self, data: DataObject, engine: Engine, chunk_size: int | None
+        self, data: DataObject, engine: Engine, chunk_size: Optional[int]
     ) -> None:
         table = Table(
             "example", MetaData(), Column("id", Integer, primary_key=True)

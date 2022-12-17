@@ -8,6 +8,8 @@ from operator import le
 from re import search
 from typing import Any
 from typing import Literal
+from typing import Optional
+from typing import Union
 from typing import cast
 
 from beartype import beartype
@@ -83,12 +85,12 @@ def create_engine(
     drivername: str,
     /,
     *,
-    username: str | None = None,
-    password: str | None = None,
-    host: str | None = None,
-    port: int | None = None,
-    database: str | None = None,
-    poolclass: type[Pool] | None = NullPool,
+    username: Optional[str] = None,
+    password: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    database: Optional[str] = None,
+    poolclass: Optional[type[Pool]] = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
 
@@ -107,7 +109,7 @@ Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 
 
 @beartype
-def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
+def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
     """Get the dialect of a database."""
 
     if isinstance(dialect := engine_or_conn.dialect, mssql_dialect):
@@ -206,7 +208,7 @@ def get_table_name(table_or_model: Any, /) -> str:
 @contextmanager
 @beartype
 def yield_connection(
-    engine_or_conn: Engine | Connection, /
+    engine_or_conn: Union[Engine, Connection], /
 ) -> Iterator[Connection]:
     """Yield a connection."""
 
@@ -222,10 +224,10 @@ def yield_in_clause_rows(
     sel: Selectable,
     column: Any,
     values: Iterable[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Union[Engine, Connection],
     /,
     *,
-    chunk_size: int | None = None,
+    chunk_size: Optional[int] = None,
     frac: float = 0.95,
 ) -> Iterator[Any]:
     """Yield the rows from an `in` clause."""

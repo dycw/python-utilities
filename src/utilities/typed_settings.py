@@ -4,7 +4,9 @@ from collections.abc import Iterable
 from itertools import starmap
 from operator import itemgetter
 from typing import Any
+from typing import Optional
 from typing import TypeVar
+from typing import Union
 from typing import cast
 
 from beartype import beartype
@@ -60,7 +62,7 @@ def click_options(
     /,
     *,
     config_files: Iterable[PathLike] = (),
-    argname: str | None = None,
+    argname: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
 
@@ -77,7 +79,7 @@ def click_options(
 
 
 @beartype
-def _make_converter() -> BaseConverter | Converter:
+def _make_converter() -> Union[BaseConverter, Converter]:
     """Extend the default converter."""
 
     converter = default_converter()

@@ -1,6 +1,8 @@
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
+from typing import Optional
+from typing import Union
 
 from beartype import beartype
 
@@ -36,14 +38,14 @@ def date_to_datetime(date: dt.date, /) -> dt.datetime:
 
 
 @beartype
-def ensure_date(date: dt.date | str, /) -> dt.date:
+def ensure_date(date: Union[dt.date, str], /) -> dt.date:
     """Ensure the object is a date."""
 
     return date if isinstance(date, dt.date) else parse_date(date)
 
 
 @beartype
-def ensure_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+def ensure_datetime(datetime: Union[dt.datetime, str], /) -> dt.datetime:
     """Ensure the object is a datetime."""
 
     if isinstance(datetime, dt.datetime):
@@ -53,14 +55,14 @@ def ensure_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
 
 
 @beartype
-def ensure_time(time: dt.time | str, /) -> dt.time:
+def ensure_time(time: Union[dt.time, str], /) -> dt.time:
     """Ensure the object is a time."""
 
     return time if isinstance(time, dt.time) else parse_time(time)
 
 
 @beartype
-def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
+def ensure_timedelta(timedelta: Union[dt.timedelta, str], /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
 
     if isinstance(timedelta, dt.timedelta):
@@ -218,9 +220,9 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 @beartype
 def yield_weekdays(
     *,
-    start: dt.date | None = None,
-    end: dt.date | None = None,
-    days: int | None = None,
+    start: Optional[dt.date] = None,
+    end: Optional[dt.date] = None,
+    days: Optional[int] = None,
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
 

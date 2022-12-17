@@ -3,7 +3,9 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from typing import Literal
+from typing import Optional
 from typing import TypeVar
+from typing import Union
 from typing import cast
 from typing import overload
 
@@ -41,8 +43,8 @@ def build(
     *,
     detailed_summary: Literal[False] = False,  # noqa: U100
     local_scheduler: bool = False,  # noqa: U100
-    log_level: LogLevel | None = None,  # noqa: U100
-    workers: int | None = None,  # noqa: U100
+    log_level: Optional[LogLevel] = None,  # noqa: U100
+    workers: Optional[int] = None,  # noqa: U100
 ) -> bool:
     ...
 
@@ -54,8 +56,8 @@ def build(
     *,
     detailed_summary: Literal[True],  # noqa: U100
     local_scheduler: bool = False,  # noqa: U100
-    log_level: LogLevel | None = None,  # noqa: U100
-    workers: int | None = None,  # noqa: U100
+    log_level: Optional[LogLevel] = None,  # noqa: U100
+    workers: Optional[int] = None,  # noqa: U100
 ) -> LuigiRunResult:
     ...
 
@@ -67,9 +69,9 @@ def build(
     *,
     detailed_summary: bool = False,
     local_scheduler: bool = False,
-    log_level: LogLevel | None = None,
-    workers: int | None = None,
-) -> bool | LuigiRunResult:
+    log_level: Optional[LogLevel] = None,
+    workers: Optional[int] = None,
+) -> Union[bool, LuigiRunResult]:
     """Build a set of tasks."""
 
     return _build(
@@ -107,7 +109,7 @@ def get_dependencies_downstream(
 
 @beartype
 def get_dependencies_downstream(
-    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
+    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
 
@@ -118,7 +120,7 @@ def get_dependencies_downstream(
 
 @beartype
 def _yield_dependencies_downstream(
-    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
+    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
         try:
@@ -169,7 +171,7 @@ def get_task_classes(
 
 @beartype
 def get_task_classes(
-    *, cls: type[_Task] | None = None
+    *, cls: Optional[type[_Task]] = None
 ) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
 
@@ -178,7 +180,7 @@ def get_task_classes(
 
 @beartype
 def _yield_task_classes(
-    *, cls: type[_Task] | None = None
+    *, cls: Optional[type[_Task]] = None
 ) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
 

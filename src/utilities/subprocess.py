@@ -9,6 +9,7 @@ from subprocess import PIPE  # noqa: S404
 from subprocess import CalledProcessError  # noqa: S404
 from subprocess import check_output  # noqa: S404
 from typing import Any
+from typing import Optional
 
 from beartype import beartype
 
@@ -22,8 +23,8 @@ def get_shell_output(
     /,
     *,
     cwd: PathLike = Path.cwd(),
-    activate: PathLike | None = None,
-    env: Mapping[str, str | None] | None = None,
+    activate: Optional[PathLike] = None,
+    env: Optional[Mapping[str, Optional[str]]] = None,
 ) -> str:
     """Get the output of a shell call. Activate a virtual environment if
     necessary.

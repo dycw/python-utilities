@@ -1,3 +1,5 @@
+from typing import Optional
+
 from beartype import beartype
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.extra.numpy import arrays
@@ -37,10 +39,10 @@ def _draw_bool_arrays(shape: Shape, /) -> SearchStrategy[NDArray[bool_]]:
 def float_arrays(
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[float | None] = None,
-    max_value: MaybeSearchStrategy[float | None] = None,
-    allow_nan: MaybeSearchStrategy[bool | None] = None,
-    allow_infinity: MaybeSearchStrategy[bool | None] = None,
+    min_value: MaybeSearchStrategy[Optional[float]] = None,
+    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    allow_nan: MaybeSearchStrategy[Optional[bool]] = None,
+    allow_infinity: MaybeSearchStrategy[Optional[bool]] = None,
 ) -> SearchStrategy[NDArray[float64]]:
     """Strategy for generating arrays of floats."""
 
@@ -59,10 +61,10 @@ def _draw_float_arrays(
     shape: Shape,
     /,
     *,
-    min_value: float | None = None,
-    max_value: float | None = None,
-    allow_nan: bool | None = None,
-    allow_infinity: bool | None = None,
+    min_value: Optional[float] = None,
+    max_value: Optional[float] = None,
+    allow_nan: Optional[bool] = None,
+    allow_infinity: Optional[bool] = None,
 ) -> SearchStrategy[NDArray[float64]]:
     elements = floats(
         min_value=min_value,
@@ -77,8 +79,8 @@ def _draw_float_arrays(
 def int_arrays(
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
+    min_value: MaybeSearchStrategy[Optional[int]] = None,
+    max_value: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[NDArray[int64]]:
     """Strategy for generating arrays of ints."""
 
@@ -92,8 +94,8 @@ def _draw_int_arrays(
     shape: Shape,
     /,
     *,
-    min_value: int | None = None,
-    max_value: int | None = None,
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
 ) -> SearchStrategy[NDArray[int64]]:
     info = iinfo(int64)
     min_value_use = info.min if min_value is None else min_value
