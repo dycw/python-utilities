@@ -1,8 +1,7 @@
 import builtins
-from collections.abc import Callable
+from collections.abc import Iterable
 from collections.abc import Iterator
 from contextlib import contextmanager
-from functools import partial
 from os import getenv
 from pathlib import Path
 from re import search
@@ -10,20 +9,21 @@ from string import ascii_letters
 from string import printable
 from typing import Any
 from typing import Optional
+from typing import Protocol
 from typing import TypeVar
-from uuid import UUID
+from typing import cast
+from typing import overload
 
 from beartype import beartype
 from hypothesis import Verbosity
 from hypothesis import assume
 from hypothesis import settings
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import characters
-from hypothesis.strategies import fixed_dictionaries
-from hypothesis.strategies import just
+from hypothesis.strategies import composite
 from hypothesis.strategies import lists
 from hypothesis.strategies import text
-from hypothesis.strategies import tuples
 from hypothesis.strategies import uuids
 
 from utilities.hypothesis.typing import MaybeSearchStrategy
@@ -54,76 +54,56 @@ def assume_does_not_raise(
                 raise
 
 
-_TD = TypeVar("_TD")
+_MDF = TypeVar("_MDF")
 
 
-@beartype
-def draw_and_map(
-    func: Callable[..., _TD], *args: Any, **kwargs: Any
-) -> SearchStrategy[_TD]:
-    """Draw the elements and then pass them into a transformer."""
+class _MaybeDrawFn(Protocol):
+    @overload
+    def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF:
+        ...
 
-    return _lift_args_and_kwargs(*args, **kwargs).map(partial(_apply, func))
+    @overload
+    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+        ...
 
-
-@beartype
-def draw_and_flatmap(
-    func: Callable[..., SearchStrategy[_TD]], *args: Any, **kwargs: Any
-) -> SearchStrategy[_TD]:
-    """Draw the elements and then flatmap them into a transformer."""
-
-    return _lift_args_and_kwargs(*args, **kwargs).flatmap(partial(_apply, func))
+    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+        raise NotImplementedError  # pragma: no cover
 
 
-@beartype
-def _lift_args_and_kwargs(
-    *args: Any, **kwargs: Any
-) -> SearchStrategy[tuple[tuple[Any, ...], dict[str, Any]]]:
-    lifted_args = tuples(*map(_lift, args))
-    lifted_kwargs = fixed_dictionaries({k: _lift(v) for k, v in kwargs.items()})
-    return tuples(lifted_args, lifted_kwargs)
+def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
+    """Lift the `draw` function so that it can handle whichs are not of type
+    `SearchStrategy`.
+    """
 
+    @beartype
+    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+        return draw(obj) if isinstance(obj, SearchStrategy) else obj
 
-@beartype
-def _lift(x: Any, /) -> SearchStrategy[Any]:
-    return x if isinstance(x, SearchStrategy) else just(x)
-
-
-@beartype
-def _apply(
-    func: Callable[..., _TD], x: tuple[tuple[Any, ...], dict[str, Any]], /
-) -> _TD:
-    args, kwargs = x
-    return func(*args, **kwargs)
+    return func
 
 
 _TLFL = TypeVar("_TLFL")
 
 
-@beartype
+@composite
 def lists_fixed_length(
+    _draw: DrawFn,
     strategy: SearchStrategy[_TLFL],
-    size: int,
+    size: MaybeSearchStrategy[int],
     /,
     *,
-    unique: bool = False,
-    sorted: bool = False,
-) -> SearchStrategy[list[_TLFL]]:
+    unique: MaybeSearchStrategy[bool] = False,
+    sorted: MaybeSearchStrategy[bool] = False,
+) -> list[_TLFL]:
     """Strategy for generating lists of a fixed length."""
 
-    return draw_and_map(
-        _draw_lists_fixed_length,
-        lists(strategy, min_size=size, max_size=size, unique=unique),
-        sorted=sorted,
+    draw = lift_draw(_draw)
+    size_ = draw(size)
+    elements = draw(
+        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique))
     )
-
-
-@beartype
-def _draw_lists_fixed_length(
-    elements: list[Any], /, *, sorted: bool = False
-) -> list[Any]:
-    if sorted:
-        return builtins.sorted(elements)
+    if draw(sorted):
+        return builtins.sorted(cast(Iterable[Any], elements))
     else:
         return elements
 
@@ -146,30 +126,25 @@ def setup_hypothesis_profiles() -> None:
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
 
 
-@beartype
-def temp_dirs() -> SearchStrategy[TemporaryDirectory]:
+@composite
+def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
 
     dir = gettempdir().joinpath("hypothesis")
     dir.mkdir(exist_ok=True)
-    return draw_and_map(_draw_temp_dirs, uuids(), dir)
-
-
-@beartype
-def _draw_temp_dirs(uuid: UUID, dir: Path, /) -> TemporaryDirectory:
+    uuid = _draw(uuids())
     return TemporaryDirectory(prefix=f"{uuid}__", dir=dir.as_posix())
 
 
-@beartype
-def temp_paths() -> SearchStrategy[Path]:
+@composite
+def temp_paths(_draw: DrawFn, /) -> Path:
     """Search strategy for paths to temporary directories."""
 
-    return draw_and_map(_draw_temp_paths, temp_dirs())
+    temp_dir = _draw(temp_dirs())
+    root = temp_dir.name
+    cls = type(root)
 
-
-@beartype
-def _draw_temp_paths(temp_dir: TemporaryDirectory, /) -> Path:
-    class SubPath(type(root := temp_dir.name)):
+    class SubPath(cls):
         _temp_dir = temp_dir
 
     return SubPath(root)
@@ -183,8 +158,7 @@ def text_ascii(
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
 
-    return draw_and_flatmap(
-        _draw_text,
+    return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=ascii_letters),
         min_size=min_size,
         max_size=max_size,
@@ -199,8 +173,7 @@ def text_clean(
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
 
-    return draw_and_flatmap(
-        _draw_text,
+    return _draw_text(
         characters(blacklist_categories=["Z", "C"]),
         min_size=min_size,
         max_size=max_size,
@@ -215,20 +188,23 @@ def text_printable(
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
 
-    return draw_and_flatmap(
-        _draw_text,
+    return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=printable),
         min_size=min_size,
         max_size=max_size,
     )
 
 
-@beartype
+@composite
 def _draw_text(
+    _draw: DrawFn,
     alphabet: MaybeSearchStrategy[str],
     /,
     *,
-    min_size: int = 0,
-    max_size: Optional[int] = None,
-) -> SearchStrategy[str]:
-    return text(alphabet, min_size=min_size, max_size=max_size)
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
+) -> str:
+    draw = lift_draw(_draw)
+    return draw(
+        text(alphabet, min_size=draw(min_size), max_size=draw(max_size))
+    )

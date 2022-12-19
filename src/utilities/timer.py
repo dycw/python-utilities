@@ -9,6 +9,7 @@ from operator import lt
 from operator import ne
 from timeit import default_timer
 from typing import Any
+from typing import Optional
 
 from beartype import beartype
 
@@ -20,7 +21,7 @@ class Timer:
     def __init__(self) -> None:
         super().__init__()
         self._start = default_timer()
-        self._end: float | None = None
+        self._end: Optional[float] = None
 
     @beartype
     def __enter__(self) -> "Timer":

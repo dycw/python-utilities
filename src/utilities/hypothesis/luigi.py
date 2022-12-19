@@ -1,19 +1,12 @@
-from pathlib import Path
+from hypothesis.strategies import DrawFn
+from hypothesis.strategies import composite
 
-from beartype import beartype
-from hypothesis.strategies import SearchStrategy
-
-from utilities.hypothesis import draw_and_map
 from utilities.hypothesis import temp_paths
 
 
-@beartype
-def task_namespaces() -> SearchStrategy[str]:
+@composite
+def task_namespaces(_draw: DrawFn, /) -> str:
     """Strategy for generating task namespaces."""
 
-    return draw_and_map(_draw_task_namespace, temp_paths())
-
-
-@beartype
-def _draw_task_namespace(path: Path, /) -> str:
+    path = _draw(temp_paths())
     return path.name
