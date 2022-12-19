@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import Any
 from typing import Generic
-from typing import ParamSpec
 from typing import TypeVar
 from typing import cast
 
 from beartype import beartype
 from memory_profiler import memory_usage
+from typing_extensions import ParamSpec
 
 
 _P = ParamSpec("_P")

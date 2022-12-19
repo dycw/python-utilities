@@ -3,6 +3,7 @@ from contextlib import suppress
 from enum import Enum as _Enum
 from typing import Any
 from typing import Generic
+from typing import Optional
 from typing import TypeVar
 
 from beartype import beartype
@@ -29,7 +30,7 @@ class Date(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
         try:
             return parse_date(value)
@@ -44,7 +45,7 @@ class DateTime(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
         try:
             return parse_datetime(value)
@@ -59,7 +60,7 @@ class Time(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.time:
         try:
             return parse_time(value)
@@ -74,7 +75,7 @@ class Timedelta(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.timedelta:
         try:
             return parse_timedelta(value)
@@ -97,7 +98,7 @@ class Enum(ParamType, Generic[_E]):
 
     @beartype
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> _E:
         els = {el for el in self._enum if el.name.lower() == value.lower()}
         with suppress(ValueError):

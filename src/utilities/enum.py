@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Any
 from typing import TypeVar
+from typing import Union
 
 from beartype import beartype
 
@@ -21,7 +22,7 @@ _E = TypeVar("_E", bound=Enum)
 
 
 @beartype
-def parse_enum(enum: type[_E], x: _E | str, /) -> _E:
+def parse_enum(enum: type[_E], x: Union[_E, str], /) -> _E:
     """Parse a string into the enum."""
 
     return enum[x] if isinstance(x, str) else x

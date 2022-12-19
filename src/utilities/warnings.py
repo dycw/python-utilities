@@ -2,6 +2,8 @@ from collections.abc import Iterator
 from contextlib import ExitStack
 from contextlib import contextmanager
 from typing import Literal
+from typing import Optional
+from typing import Union
 from warnings import catch_warnings
 from warnings import filterwarnings
 
@@ -12,7 +14,7 @@ from beartype import beartype
 def catch_warnings_as_errors(
     *,
     message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Catch warnings as errors."""
 
@@ -23,7 +25,7 @@ def catch_warnings_as_errors(
 def suppress_warnings(
     *,
     message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Suppress warnings."""
 
@@ -39,7 +41,7 @@ def _handle_warnings(
     /,
     *,
     message: str = "",
-    category: type[Warning] | tuple[type[Warning], ...] | None = None,
+    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Suppress warnings."""
 
@@ -61,7 +63,7 @@ def _handle_warnings_1(
     /,
     *,
     message: str = "",
-    category: type[Warning] | None = None,
+    category: Optional[type[Warning]] = None,
 ) -> Iterator[None]:
     with catch_warnings():
         kwargs = {} if category is None else {"category": category}

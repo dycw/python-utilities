@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
+from typing import Optional
 
 from beartype import beartype
 
@@ -16,17 +17,11 @@ class TemporaryDirectory(_TemporaryDirectory):
     def __init__(
         self,
         *,
-        suffix: str | None = None,
-        prefix: str | None = None,
-        dir: PathLike | None = None,
-        ignore_cleanup_errors: bool = False,
+        suffix: Optional[str] = None,
+        prefix: Optional[str] = None,
+        dir: Optional[PathLike] = None,
     ) -> None:
-        super().__init__(
-            suffix=suffix,
-            prefix=prefix,
-            dir=dir,
-            ignore_cleanup_errors=ignore_cleanup_errors,
-        )
+        super().__init__(suffix=suffix, prefix=prefix, dir=dir)
         self.name = Path(self.name)
 
     @beartype

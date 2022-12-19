@@ -6,6 +6,7 @@ from itertools import islice
 from logging import getLogger
 from pathlib import Path
 from shutil import rmtree
+from typing import Optional
 
 from beartype import beartype
 from click import command
@@ -28,7 +29,7 @@ _LOGGER = getLogger(__name__)
 @option("-dr", "--dry-run", is_flag=True, show_default=True)
 @beartype
 def main(
-    *, path: Path, days: int, chunk_size: int | None, dry_run: bool
+    *, path: Path, days: int, chunk_size: Optional[int], dry_run: bool
 ) -> None:
     basic_config()
     config = Config(

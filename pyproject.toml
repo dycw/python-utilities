@@ -2,7 +2,7 @@
 [tool.black]
 line-length = 80
 skip-magic-trailing-comma = true
-target-version = ["py310"]
+target-version = ["py39"]
 
 #### coverage #################################################################
 [tool.coverage.run]
@@ -50,7 +50,7 @@ skip_gitignore = true
 [tool.nitpick]
 style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.9.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
 ]
 
@@ -59,9 +59,9 @@ style = [
 name = "dycw-utilities"
 dynamic = ["version"]
 readme = "README.md"
-requires-python = ">= 3.10"
+requires-python = ">= 3.9"
 authors = [{ name = "Derek Wan", email = "d.wan@icloud.com" }]
-dependencies = ["beartype >= 0.11.0"]
+dependencies = ["beartype >= 0.11.0", "typing-extensions >= 4.4.0"]
 
 [project.optional-dependencies]
 airium = ["airium >= 0.2.5"]
@@ -147,7 +147,7 @@ rotate-logs = "utilities.rotate_logs:main"
 #### pyright ##################################################################
 [tool.pyright]
 include = ["src"]
-pythonVersion = "3.10"
+pythonVersion = "3.9"
 executionEnvironments = [{ root = "src" }]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false

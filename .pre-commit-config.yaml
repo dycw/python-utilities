@@ -28,7 +28,7 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: [--py310-plus]
+        args: [--py39-plus]
   - repo: https://github.com/dycw/pre-commit-hooks
     rev: 0.6.2
     hooks:
@@ -83,7 +83,7 @@ repos:
         language: system
         types: [python]
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.8.0.4
+    rev: v0.9.0.2
     hooks:
       - id: shellcheck
   # fixers & linters
@@ -103,7 +103,7 @@ repos:
       - id: no-commit-to-branch
   # compile
   - repo: https://github.com/jazzband/pip-tools
-    rev: 6.12.0
+    rev: 6.12.1
     hooks:
       - id: pip-compile
         args:

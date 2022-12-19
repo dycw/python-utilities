@@ -4,6 +4,8 @@ from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
 from typing import Any
+from typing import Optional
+from typing import Union
 
 from beartype import beartype
 
@@ -36,8 +38,8 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: type | tuple[type, ...] | None = None,
-    predicate: Callable[[Any], bool] | None = None,
+    type: Optional[Union[type, tuple[type, ...]]] = None,
+    predicate: Optional[Callable[[Any], bool]] = None,
 ) -> Iterator[Any]:
     """Yield all the modules under a package. Optionally, recurse into
     sub-packages.

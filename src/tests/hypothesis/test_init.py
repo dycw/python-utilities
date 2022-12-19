@@ -1,6 +1,7 @@
 import builtins
 from pathlib import Path
 from re import search
+from typing import Optional
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
@@ -26,6 +27,7 @@ from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis import text_clean
 from utilities.hypothesis import text_printable
+from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.tempfile import TemporaryDirectory
 
 
@@ -61,9 +63,7 @@ class TestAssumeDoesNotRaise:
                 raise ValueError("x is True")
 
 
-def uses_draw_and_map(
-    x: bool | SearchStrategy[bool], /
-) -> SearchStrategy[bool]:
+def uses_draw_and_map(x: MaybeSearchStrategy[bool], /) -> SearchStrategy[bool]:
     def inner(x: bool, /) -> bool:
         return x
 
@@ -82,7 +82,7 @@ class TestDrawAndMap:
 
 
 def uses_draw_and_flatmap(
-    x: bool | SearchStrategy[bool], /
+    x: MaybeSearchStrategy[bool], /
 ) -> SearchStrategy[bool]:
     def inner(x: bool, /) -> SearchStrategy[bool]:
         return just(x)
@@ -174,7 +174,7 @@ class TestTextAscii:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: int | None
+        self, data: DataObject, min_size: int, max_size: Optional[int]
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_ascii(min_size=min_size, max_size=max_size))
@@ -191,7 +191,7 @@ class TestTextClean:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: int | None
+        self, data: DataObject, min_size: int, max_size: Optional[int]
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_clean(min_size=min_size, max_size=max_size))
@@ -208,7 +208,7 @@ class TestTextPrintable:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: int | None
+        self, data: DataObject, min_size: int, max_size: Optional[int]
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(

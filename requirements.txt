@@ -6,3 +6,5 @@
 #
 beartype==0.11.0
     # via dycw-utilities (pyproject.toml)
+typing-extensions==4.4.0
+    # via dycw-utilities (pyproject.toml)
