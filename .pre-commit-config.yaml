@@ -1,80 +1,51 @@
 repos:
   # fixers
-  - repo: https://github.com/myint/autoflake
-    rev: v2.0.0
-    hooks:
-      - id: autoflake
-        args:
-          [
-            --in-place,
-            --remove-all-unused-imports,
-            --remove-duplicate-keys,
-            --remove-unused-variables,
-          ]
-  - repo: https://github.com/psf/black
-    rev: 22.12.0
-    hooks:
-      - id: black
-      - id: black-jupyter
-  - repo: https://github.com/pycqa/isort
-    rev: v5.11.3
-    hooks:
-      - id: isort
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.0-alpha.4
-    hooks:
-      - id: prettier
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.3.1
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.198
+    hooks:
+      - id: ruff
+        args: [--fix]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.6.2
+    rev: 0.7.0
     hooks:
       - id: run-bump2version
-        args: [--setup-cfg]
-  - repo: https://github.com/asottile/yesqa
-    rev: v1.4.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
     hooks:
-      - id: yesqa
-        additional_dependencies:
-          - flake8-absolute-import
-          - flake8-annotations
-          - flake8-bandit
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-debugger
-          # - flake8-eradicate
-          - flake8-executable
-          - flake8-no-pep420
-          - flake8-pie
-          - flake8-print
-          - flake8-simplify
-          - flake8-unused-arguments
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: destroyed-symlinks
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: no-commit-to-branch
+      - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0-alpha.4
+    hooks:
+      - id: prettier
+  - repo: https://github.com/psf/black
+    rev: 22.12.0
+    hooks:
+      - id: black
+      - id: black-jupyter
   # linters
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-absolute-import
-          - flake8-annotations
-          - flake8-bandit
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-debugger
-          # - flake8-eradicate
-          - flake8-executable
-          - flake8-no-pep420
-          - flake8-pie
-          - flake8-print
-          - flake8-simplify
-          - flake8-unused-arguments
   - repo: https://github.com/andreoliwa/nitpick
     rev: v0.32.0
     hooks:
       - id: nitpick-check
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.2
+    hooks:
+      - id: shellcheck
   - repo: local
     hooks:
       - id: pyright
@@ -82,25 +53,6 @@ repos:
         entry: pyright
         language: system
         types: [python]
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.2
-    hooks:
-      - id: shellcheck
-  # fixers & linters
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-      - id: end-of-file-fixer
-      - id: mixed-line-ending
-        args: [--fix=lf]
-      - id: trailing-whitespace
-      - id: check-executables-have-shebangs
-      - id: check-merge-conflict
-      - id: check-shebang-scripts-are-executable
-      - id: check-symlinks
-      - id: destroyed-symlinks
-      - id: detect-private-key
-      - id: no-commit-to-branch
   # compile
   - repo: https://github.com/jazzband/pip-tools
     rev: 6.12.1

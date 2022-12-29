@@ -16,7 +16,7 @@ class APIRouter(_APIRouter):
     """
 
     @beartype
-    def api_route(  # type: ignore
+    def api_route(
         self, *, path: str, include_in_schema: bool = True, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         if _PATTERN.search(path):

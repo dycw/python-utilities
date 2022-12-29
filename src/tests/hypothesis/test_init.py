@@ -6,8 +6,9 @@ from typing import Optional
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import booleans
+from hypothesis.strategies import composite
 from hypothesis.strategies import data
 from hypothesis.strategies import integers
 from hypothesis.strategies import just
@@ -18,8 +19,6 @@ from pytest import param
 from pytest import raises
 
 from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import draw_and_flatmap
-from utilities.hypothesis import draw_and_map
 from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis import setup_hypothesis_profiles
 from utilities.hypothesis import temp_dirs
@@ -27,7 +26,6 @@ from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis import text_clean
 from utilities.hypothesis import text_printable
-from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.tempfile import TemporaryDirectory
 
 
@@ -63,42 +61,25 @@ class TestAssumeDoesNotRaise:
                 raise ValueError("x is True")
 
 
-def uses_draw_and_map(x: MaybeSearchStrategy[bool], /) -> SearchStrategy[bool]:
-    def inner(x: bool, /) -> bool:
-        return x
-
-    return draw_and_map(inner, x)
-
-
-class TestDrawAndMap:
+class TestLiftDraw:
     @given(data=data(), x=booleans())
     def test_fixed(self, data: DataObject, x: bool) -> None:
-        result = data.draw(uses_draw_and_map(x))
+        @composite
+        def func(_draw: DrawFn, /) -> bool:
+            _ = _draw
+            return x
+
+        result = data.draw(func())
         assert result is x
 
-    @given(x=uses_draw_and_map(booleans()))
-    def test_strategy(self, x: bool) -> None:
-        assert isinstance(x, bool)
+    @given(data=data())
+    def test_strategy(self, data: DataObject) -> None:
+        @composite
+        def func(_draw: DrawFn, /) -> bool:
+            return _draw(booleans())
 
-
-def uses_draw_and_flatmap(
-    x: MaybeSearchStrategy[bool], /
-) -> SearchStrategy[bool]:
-    def inner(x: bool, /) -> SearchStrategy[bool]:
-        return just(x)
-
-    return draw_and_flatmap(inner, x)
-
-
-class TestDrawAndFlatMap:
-    @given(data=data(), x=booleans())
-    def test_fixed(self, data: DataObject, x: bool) -> None:
-        result = data.draw(uses_draw_and_flatmap(x))
-        assert result is x
-
-    @given(x=uses_draw_and_flatmap(booleans()))
-    def test_strategy(self, x: bool) -> None:
-        assert isinstance(x, bool)
+        result = data.draw(func())
+        assert isinstance(result, bool)
 
 
 class TestListsFixedLength:
