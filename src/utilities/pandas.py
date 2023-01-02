@@ -6,6 +6,7 @@ from beartype import beartype
 from pandas import NaT
 from pandas import Timestamp
 
+from utilities.datetime import UTC
 
 Int64 = "Int64"
 boolean = "boolean"
@@ -15,18 +16,19 @@ string = "string"
 @beartype
 def timestamp_to_date(timestamp: Any, /) -> dt.date:
     """Convert a timestamp to a date."""
-
     return timestamp_to_datetime(timestamp).date()
 
 
 @beartype
 def timestamp_to_datetime(timestamp: Any, /) -> dt.datetime:
     """Convert a timestamp to a datetime."""
-
     if timestamp is NaT:
-        raise ValueError(f"Invalid value: {timestamp}")
-    else:
-        return timestamp.to_pydatetime()
+        msg = f"Invalid value: {timestamp}"
+        raise ValueError(msg)
+    datetime = cast(dt.datetime, timestamp.to_pydatetime())
+    if datetime.tzinfo is None:
+        return datetime.replace(tzinfo=UTC)
+    return datetime
 
 
 @beartype
@@ -34,7 +36,6 @@ def _timestamp_minmax_to_date(
     timestamp: Timestamp, method_name: str, /
 ) -> dt.date:
     """Get the maximum Timestamp as a date."""
-
     method = getattr(timestamp, method_name)
     rounded = cast(Timestamp, method("D"))
     return timestamp_to_date(rounded)
@@ -49,7 +50,6 @@ def _timestamp_minmax_to_datetime(
     timestamp: Timestamp, method_name: str, /
 ) -> dt.datetime:
     """Get the maximum Timestamp as a datetime."""
-
     method = getattr(timestamp, method_name)
     rounded = cast(Timestamp, method("us"))
     return timestamp_to_datetime(rounded)

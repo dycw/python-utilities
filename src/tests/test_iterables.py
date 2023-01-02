@@ -8,7 +8,7 @@ from utilities.iterables import is_iterable_not_str
 
 class TestIsIterableNotStr:
     @mark.parametrize(
-        "x, expected",
+        ("x", "expected"),
         [
             param(None, False),
             param([], True),

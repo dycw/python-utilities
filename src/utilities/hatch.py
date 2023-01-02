@@ -7,13 +7,14 @@ from utilities.pathlib import PathLike
 from utilities.re import extract_groups
 from utilities.subprocess import get_shell_output
 
+_CWD = Path.cwd()
+
 
 @beartype
 def get_hatch_version(
-    *, cwd: PathLike = Path.cwd(), activate: Optional[PathLike] = None
+    *, cwd: PathLike = _CWD, activate: Optional[PathLike] = None
 ) -> tuple[int, int, int]:
     """Get the `hatch` version."""
-
     version = get_shell_output(
         "hatch version", cwd=cwd, activate=activate
     ).strip("\n")

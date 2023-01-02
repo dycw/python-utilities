@@ -8,14 +8,14 @@ from typing import TypeVar
 
 from beartype import beartype
 from click import Context
-from click import ParamType
 from click import Parameter
+from click import ParamType
 from click import option
 
-from utilities.datetime import InvalidDate
-from utilities.datetime import InvalidDateTime
-from utilities.datetime import InvalidTime
-from utilities.datetime import InvalidTimedelta
+from utilities.datetime import ParseDateError
+from utilities.datetime import ParseDateTimeError
+from utilities.datetime import ParseTimeError
+from utilities.datetime import TimedeltaError
 from utilities.datetime import parse_date
 from utilities.datetime import parse_datetime
 from utilities.datetime import parse_time
@@ -32,9 +32,10 @@ class Date(ParamType):
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
+        """Convert a value into the `Date` type."""
         try:
             return parse_date(value)
-        except InvalidDate:
+        except ParseDateError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -47,9 +48,10 @@ class DateTime(ParamType):
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
+        """Convert a value into the `DateTime` type."""
         try:
             return parse_datetime(value)
-        except InvalidDateTime:
+        except ParseDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -62,9 +64,10 @@ class Time(ParamType):
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.time:
+        """Convert a value into the `Time` type."""
         try:
             return parse_time(value)
-        except InvalidTime:
+        except ParseTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -77,9 +80,10 @@ class Timedelta(ParamType):
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.timedelta:
+        """Convert a value into the `Timedelta` type."""
         try:
             return parse_timedelta(value)
-        except InvalidTimedelta:
+        except TimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -100,11 +104,12 @@ class Enum(ParamType, Generic[_E]):
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> _E:
+        """Convert a value into the `Enum` type."""
         els = {el for el in self._enum if el.name.lower() == value.lower()}
         with suppress(ValueError):
             (el,) = els
             return el
-        self.fail(f"Unable to parse {value}", param, ctx)
+        return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 log_level_option = option(

@@ -5,14 +5,12 @@ from beartype import beartype
 
 from utilities.re import extract_group
 
-
 PathLike = Union[Path, str]
 
 
 @beartype
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     """Ensure a path has the required suffix."""
-
     as_path = Path(path)
     parts = as_path.name.split(".")
     clean_suffix = extract_group(r"^\.(\w+)$", suffix)

@@ -5,51 +5,49 @@ from beartype import beartype
 
 @beartype
 def extract_group(pattern: str, text: str, /) -> str:
-    """Apply a regex with 1 capture group and check that there is exactly 1
-    match, and then return it.
-    """
+    """Extract a group.
 
+    The regex must have 1 capture group, and this must match exactly once.
+    """
     if compile(pattern).groups <= 1:
         (result,) = extract_groups(pattern, text)
         return result
-    else:
-        raise MultipleCaptureGroups(pattern)
+    raise MultipleCaptureGroupsError(pattern)
 
 
-class MultipleCaptureGroups(ValueError):
-    ...
+class MultipleCaptureGroupsError(ValueError):
+    """Raised when multiple capture groups are found."""
 
 
 @beartype
 def extract_groups(pattern: str, text: str, /) -> list[str]:
-    """Apply a regex with a positive number of capture groups and check that
-    there is exactly 1 match, and then return their contents as a single list.
-    """
+    """Extract multiple groups.
 
+    The regex may have any number of capture groups, and they must collectively
+    match exactly once.
+    """
     compiled = compile(pattern)
     if (n_groups := compiled.groups) == 0:
-        raise NoCaptureGroups(pattern)
-    else:
-        results = compiled.findall(text)
-        if (n_results := len(results)) == 0:
-            raise NoMatches(f"{pattern=}, {text=}")
-        elif n_results == 1:
-            if n_groups == 1:
-                return results
-            else:
-                (result,) = results
-                return list(result)
-        else:
-            raise MultipleMatches(f"{pattern=}, {text=}")
+        raise NoCaptureGroupsError(pattern)
+    results = compiled.findall(text)
+    msg = f"{pattern=}, {text=}"
+    if (n_results := len(results)) == 0:
+        raise NoMatchesError(msg)
+    if n_results == 1:
+        if n_groups == 1:
+            return results
+        (result,) = results
+        return list(result)
+    raise MultipleMatchesError(msg)
 
 
-class NoCaptureGroups(ValueError):
-    ...
+class NoCaptureGroupsError(ValueError):
+    """Raised when no capture groups are found."""
 
 
-class NoMatches(ValueError):
-    ...
+class NoMatchesError(ValueError):
+    """Raised when no matches are found."""
 
 
-class MultipleMatches(ValueError):
-    ...
+class MultipleMatchesError(ValueError):
+    """Raised when multiple matches are found."""

@@ -38,7 +38,6 @@ from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
 from utilities.pathlib import PathLike
 
-
 _T = TypeVar("_T")
 
 
@@ -47,7 +46,6 @@ def load_settings(
     cls: type[_T], appname: str, /, *, config_files: Iterable[PathLike] = ()
 ) -> _T:
     """Load a settings object with the extended converter."""
-
     loaders = default_loaders(appname, config_files=config_files)
     converter = _make_converter()
     return _load_settings(
@@ -65,7 +63,6 @@ def click_options(
     argname: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
-
     loaders = default_loaders(appname, config_files=config_files)
     converter = _make_converter()
     type_args_maker = TypeArgsMaker(cast(TypeHandler, _make_click_handler()))
@@ -81,7 +78,6 @@ def click_options(
 @beartype
 def _make_converter() -> Union[BaseConverter, Converter]:
     """Extend the default converter."""
-
     converter = default_converter()
     cases = [
         (dt.datetime, ensure_datetime),
@@ -103,10 +99,9 @@ def _make_structure_hook(
 
     @beartype
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
-        if isinstance(value, (cls, str)):
-            return func(value)
-        else:
+        if not isinstance(value, (cls, str)):
             raise TypeError(type(value))
+        return func(value)
 
     return hook
 
@@ -114,7 +109,6 @@ def _make_structure_hook(
 @beartype
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
-
     cases = [
         (dt.datetime, DateTime, serialize_datetime),
         (dt.date, Date, serialize_date),
@@ -141,7 +135,7 @@ def _make_type_handler_func(
 
     @beartype
     def handler(
-        _: type[Any], default: Default, is_optional: bool, /
+        _: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
     ) -> StrDict:
         mapping: StrDict = {"type": param()}
         if isinstance(default, cls):  # pragma: no cover

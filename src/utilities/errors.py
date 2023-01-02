@@ -11,21 +11,17 @@ from utilities.text import ensure_str
 def redirect_error(
     old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
 ) -> NoReturn:
-    """Redirect an error if the error contains a string, and if the string
-    matches the required pattern.
-    """
-
+    """Redirect an error if a matching string is found."""
     args = old.args
     try:
         (msg,) = args
     except ValueError:
-        raise NoUniqueArg(args) from None
+        raise NoUniqueArgError(args) from None
     else:
         if search(pattern, ensure_str(msg)):
             raise new from None
-        else:
-            raise old
+        raise old
 
 
-class NoUniqueArg(ValueError):
-    ...
+class NoUniqueArgError(ValueError):
+    """Raised when no unique argument can be found."""

@@ -36,6 +36,6 @@ class TestTableParameter:
         class ExampleTable(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         _ = ExampleTask(ExampleTable)

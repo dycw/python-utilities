@@ -28,6 +28,7 @@ from utilities.click import Enum
 from utilities.click import Time
 from utilities.click import Timedelta
 from utilities.click import log_level_option
+from utilities.datetime import UTC
 from utilities.datetime import serialize_date
 from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
@@ -42,10 +43,15 @@ def runners() -> SearchStrategy[CliRunner]:
 class TestParameters:
     @given(data=data())
     @mark.parametrize(
-        ["param", "cls", "strategy", "serialize"],
+        ("param", "cls", "strategy", "serialize"),
         [
             param(Date(), dt.date, dates(), serialize_date),
-            param(DateTime(), dt.datetime, datetimes(), serialize_datetime),
+            param(
+                DateTime(),
+                dt.datetime,
+                datetimes(timezones=just(UTC)),
+                serialize_datetime,
+            ),
             param(Time(), dt.time, times(), serialize_time),
             param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
         ],

@@ -3,9 +3,9 @@ from typing import NoReturn
 
 def never(x: NoReturn, /) -> NoReturn:
     """Never return. Used for exhaustive pattern matching."""
+    msg = f'"never" was run with {x}'
+    raise NeverError(msg)
 
-    raise Never(f'"never" was run with {x}')
 
-
-class Never(Exception):
+class NeverError(Exception):
     """Raised when `never` is run."""

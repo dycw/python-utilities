@@ -13,6 +13,7 @@ from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import data
 from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
+from hypothesis.strategies import just
 from hypothesis.strategies import timedeltas
 from hypothesis.strategies import times
 from hypothesis.strategies import tuples
@@ -22,6 +23,7 @@ from pytest import raises
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
 
+from utilities.datetime import UTC
 from utilities.datetime import serialize_date
 from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
@@ -34,10 +36,10 @@ from utilities.typed_settings import load_settings
 class TestLoadSettings:
     @given(data=data(), root=temp_paths())
     @mark.parametrize(
-        ["cls", "strategy"],
+        ("cls", "strategy"),
         [
             param(dt.date, dates()),
-            param(dt.datetime, datetimes()),
+            param(dt.datetime, datetimes(timezones=just(UTC))),
             param(dt.time, times()),
             param(dt.timedelta, timedeltas()),
         ],
@@ -79,10 +81,12 @@ class TestLoadSettings:
 class TestClickOptions:
     @given(data=data(), root=temp_paths())
     @mark.parametrize(
-        ["cls", "strategy", "serialize"],
+        ("cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(), serialize_datetime),
+            param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
         ],

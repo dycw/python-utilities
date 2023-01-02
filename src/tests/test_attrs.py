@@ -18,7 +18,7 @@ class TestAttrsBase:
             x: list[int]
 
         with raises(BeartypeAbbyHintViolation):
-            _ = Example(["0"])  # type: ignore
+            _ = Example(["0"])  # type: ignore[]
 
     def test_empty(self) -> None:
         @define

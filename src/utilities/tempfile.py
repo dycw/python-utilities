@@ -19,7 +19,7 @@ class TemporaryDirectory(_TemporaryDirectory):
         *,
         suffix: Optional[str] = None,
         prefix: Optional[str] = None,
-        dir: Optional[PathLike] = None,
+        dir: Optional[PathLike] = None,  # noqa: A002
     ) -> None:
         super().__init__(suffix=suffix, prefix=prefix, dir=dir)
         self.name = Path(self.name)
@@ -32,5 +32,4 @@ class TemporaryDirectory(_TemporaryDirectory):
 @beartype
 def gettempdir() -> Path:
     """Get the name of the directory used for temporary files."""
-
     return Path(_gettempdir())

@@ -10,7 +10,6 @@ from beartype import beartype
 from memory_profiler import memory_usage
 from typing_extensions import ParamSpec
 
-
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 

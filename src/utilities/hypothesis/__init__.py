@@ -37,19 +37,19 @@ from utilities.text import ensure_str
 def assume_does_not_raise(
     *exceptions: type[Exception], match: Optional[str] = None
 ) -> Iterator[None]:
-    """Assume a set of exceptions are not raised. Optionally filter on the
-    string representation of the exception.
-    """
+    """Assume a set of exceptions are not raised.
 
+    Optionally filter on the string representation of the exception.
+    """
     try:
         yield
     except exceptions as caught:
         if match is None:
-            _ = assume(False)
+            _ = assume(condition=False)
         else:
             (msg,) = caught.args
             if search(match, ensure_str(msg)):
-                _ = assume(False)
+                _ = assume(condition=False)
             else:
                 raise
 
@@ -67,13 +67,11 @@ class _MaybeDrawFn(Protocol):
         ...
 
     def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError(obj)  # pragma: no cover
 
 
 def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
-    """Lift the `draw` function so that it can handle whichs are not of type
-    `SearchStrategy`.
-    """
+    """Lift the `draw` function to handle non-`SearchStrategy` types."""
 
     @beartype
     def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
@@ -86,17 +84,17 @@ _TLFL = TypeVar("_TLFL")
 
 
 @composite
+@beartype
 def lists_fixed_length(
-    _draw: DrawFn,
+    _draw: Any,
     strategy: SearchStrategy[_TLFL],
     size: MaybeSearchStrategy[int],
     /,
     *,
     unique: MaybeSearchStrategy[bool] = False,
-    sorted: MaybeSearchStrategy[bool] = False,
+    sorted: MaybeSearchStrategy[bool] = False,  # noqa: A002
 ) -> list[_TLFL]:
     """Strategy for generating lists of a fixed length."""
-
     draw = lift_draw(_draw)
     size_ = draw(size)
     elements = draw(
@@ -104,14 +102,12 @@ def lists_fixed_length(
     )
     if draw(sorted):
         return builtins.sorted(cast(Iterable[Any], elements))
-    else:
-        return elements
+    return elements
 
 
 @beartype
 def setup_hypothesis_profiles() -> None:
     """Set up the hypothesis profiles."""
-
     kwargs = {
         "deadline": None,
         "print_blob": True,
@@ -127,19 +123,19 @@ def setup_hypothesis_profiles() -> None:
 
 
 @composite
-def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
+@beartype
+def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
-
-    dir = gettempdir().joinpath("hypothesis")
-    dir.mkdir(exist_ok=True)
+    dir_ = gettempdir().joinpath("hypothesis")
+    dir_.mkdir(exist_ok=True)
     uuid = _draw(uuids())
-    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir.as_posix())
+    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir_.as_posix())
 
 
 @composite
-def temp_paths(_draw: DrawFn, /) -> Path:
+@beartype
+def temp_paths(_draw: Any, /) -> Path:
     """Search strategy for paths to temporary directories."""
-
     temp_dir = _draw(temp_dirs())
     root = temp_dir.name
     cls = type(root)
@@ -157,7 +153,6 @@ def text_ascii(
     max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
-
     return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=ascii_letters),
         min_size=min_size,
@@ -172,7 +167,6 @@ def text_clean(
     max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
-
     return _draw_text(
         characters(blacklist_categories=["Z", "C"]),
         min_size=min_size,
@@ -187,7 +181,6 @@ def text_printable(
     max_size: MaybeSearchStrategy[Optional[int]] = None,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
-
     return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=printable),
         min_size=min_size,

@@ -15,7 +15,6 @@ def sqlite_engines(
     _draw: DrawFn, /, *, metadata: Optional[MetaData] = None, base: Any = None
 ) -> Engine:
     """Strategy for generating SQLite engines."""
-
     temp_path = _draw(temp_paths())
     path = temp_path.joinpath("db.sqlite")
     engine = create_engine("sqlite", database=path.as_posix())
@@ -25,6 +24,6 @@ def sqlite_engines(
         base.metadata.create_all(engine)
 
     # attach temp_path to the engine, so as to keep it alive
-    engine.temp_path = temp_path  # type: ignore
+    engine.temp_path = temp_path  # type: ignore[]
 
     return engine

@@ -5,7 +5,6 @@ from hypothesis import given
 from utilities.hypothesis import text_ascii
 from utilities.os import temp_environ
 
-
 text = text_ascii(min_size=1, max_size=10)
 
 

@@ -17,7 +17,6 @@ def catch_warnings_as_errors(
     category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Catch warnings as errors."""
-
     return _handle_warnings("error", message=message, category=category)
 
 
@@ -28,7 +27,6 @@ def suppress_warnings(
     category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Suppress warnings."""
-
     return _handle_warnings("ignore", message=message, category=category)
 
 
@@ -44,7 +42,6 @@ def _handle_warnings(
     category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
 ) -> ExitStack:
     """Suppress warnings."""
-
     stack = ExitStack()
     if isinstance(category, tuple):
         categories = category

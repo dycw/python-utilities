@@ -1,20 +1,21 @@
 from pathlib import Path
 from re import search
-from subprocess import PIPE  # noqa: S404
-from subprocess import CalledProcessError  # noqa: S404
-from subprocess import check_output  # noqa: S404
+from subprocess import PIPE
+from subprocess import CalledProcessError
+from subprocess import check_output
 
 from beartype import beartype
 
 from utilities.pathlib import PathLike
 
+_CWD = Path.cwd()
+
 
 @beartype
-def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
+def get_branch_name(*, cwd: PathLike = _CWD) -> str:
     """Get the current branch name."""
-
     root = get_repo_root(cwd=cwd)
-    output = check_output(  # noqa: S603, S607
+    output = check_output(
         ["git", "rev-parse", "--abbrev-ref", "HEAD"],
         stderr=PIPE,
         cwd=root,
@@ -24,22 +25,20 @@ def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
 
 
 @beartype
-def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
+def get_repo_name(*, cwd: PathLike = _CWD) -> str:
     """Get the repo name."""
-
     root = get_repo_root(cwd=cwd)
-    output = check_output(  # noqa: S603, S607
+    output = check_output(
         ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=root, text=True
     )
     return Path(output.strip("\n")).stem
 
 
 @beartype
-def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
+def get_repo_root(*, cwd: PathLike = _CWD) -> Path:
     """Get the repo root."""
-
     try:
-        output = check_output(  # noqa: S603, S607
+        output = check_output(
             ["git", "rev-parse", "--show-toplevel"],
             stderr=PIPE,
             cwd=cwd,
@@ -47,12 +46,11 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
         )
     except CalledProcessError as error:
         if search("fatal: not a git repository", error.stderr):
-            raise InvalidRepo(cwd) from None
-        else:  # pragma: no cover
-            raise
+            raise InvalidRepoError(cwd) from None
+        raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
 
 
-class InvalidRepo(TypeError):
-    ...
+class InvalidRepoError(TypeError):
+    """Raised when an invalid repo is encountered."""

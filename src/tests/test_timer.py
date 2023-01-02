@@ -25,7 +25,7 @@ class TestTimer:
         assert timer >= 1e-3
 
     @mark.parametrize(
-        "op, expected",
+        ("op", "expected"),
         [
             param(eq, False),
             param(ne, True),

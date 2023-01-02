@@ -13,6 +13,7 @@ from hypothesis.strategies import data
 from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
 from hypothesis.strategies import integers
+from hypothesis.strategies import just
 from hypothesis.strategies import sampled_from
 from hypothesis.strategies import timedeltas
 from hypothesis.strategies import times
@@ -20,11 +21,13 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from utilities.datetime import InvalidDate
-from utilities.datetime import InvalidDateTime
-from utilities.datetime import InvalidTime
-from utilities.datetime import InvalidTimedelta
-from utilities.datetime import IsWeekend
+from utilities.datetime import UTC
+from utilities.datetime import CallYieldWeekdaysError
+from utilities.datetime import IsWeekendError
+from utilities.datetime import ParseDateError
+from utilities.datetime import ParseDateTimeError
+from utilities.datetime import ParseTimeError
+from utilities.datetime import TimedeltaError
 from utilities.datetime import add_weekdays
 from utilities.datetime import date_to_datetime
 from utilities.datetime import ensure_date
@@ -67,12 +70,12 @@ class TestAddWeekdays:
     @given(date=dates())
     def test_error(self, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
-        with raises(IsWeekend):
+        with raises(IsWeekendError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
     def test_two(self, date: dt.date, n1: int, n2: int) -> None:
-        with assume_does_not_raise(IsWeekend):
+        with assume_does_not_raise(IsWeekendError, OverflowError):
             weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
         result = weekday1 <= weekday2
         expected = n1 <= n2
@@ -89,10 +92,10 @@ class TestDateToDatetime:
 class TestEnsure:
     @given(data=data())
     @mark.parametrize(
-        ["strategy", "func"],
+        ("strategy", "func"),
         [
             param(dates(), ensure_date),
-            param(datetimes(), ensure_datetime),
+            param(datetimes(timezones=just(UTC)), ensure_datetime),
             param(times(), ensure_time),
             param(timedeltas(), ensure_timedelta),
         ],
@@ -104,8 +107,8 @@ class TestEnsure:
         func: Callable[[Any], Any],
     ) -> None:
         value = data.draw(strategy)
-        input = data.draw(sampled_from([value, str(value)]))
-        result = func(input)
+        maybe_value = data.draw(sampled_from([value, str(value)]))
+        result = func(maybe_value)
         assert result == value
 
 
@@ -141,70 +144,81 @@ class TestParseDate:
         assert result == date
 
     def test_error(self) -> None:
-        with raises(InvalidDate):
+        with raises(ParseDateError):
             _ = parse_date("error")
 
 
 class TestParseDateTime:
-    @given(datetime=datetimes())
+    @given(datetime=datetimes(timezones=just(UTC)))
     def test_str(self, datetime: dt.datetime) -> None:
         result = parse_datetime(str(datetime))
         assert result == datetime
 
-    @given(datetime=datetimes())
+    @given(datetime=datetimes(timezones=just(UTC)))
     def test_isoformat(self, datetime: dt.datetime) -> None:
         result = parse_datetime(datetime.isoformat())
         assert result == datetime
 
     @given(
-        datetime=datetimes(),
-        format=sampled_from(["%4Y%m%dT%H%M%S.%f", "%4Y-%m-%d %H:%M:%S.%f"]),
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(["%4Y%m%dT%H%M%S.%f%z", "%4Y-%m-%d %H:%M:%S.%f%z"]),
     )
-    def test_yyyymmdd_hhmmss_fff(
-        self, datetime: dt.datetime, format: str
+    def test_yyyymmdd_hhmmss_fff_zzzz(
+        self, datetime: dt.datetime, fmt: str
     ) -> None:
-        result = parse_datetime(datetime.strftime(format))
+        result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
     @given(
-        datetime=datetimes(),
-        format=sampled_from(
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(["%4Y%m%dT%H%M%S.%f", "%4Y-%m-%d %H:%M:%S.%f"]),
+    )
+    def test_yyyymmdd_hhmmss_fff(self, datetime: dt.datetime, fmt: str) -> None:
+        result = parse_datetime(datetime.strftime(fmt))
+        assert result == datetime
+
+    @given(
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(
             ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"]
         ),
     )
-    def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, format: str) -> None:
+    def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
-        result = parse_datetime(datetime.strftime(format))
+        result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
     @given(
-        datetime=datetimes(),
-        format=sampled_from(
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(
             ["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"]
         ),
     )
-    def test_yyyymmdd_hhmm(self, datetime: dt.datetime, format: str) -> None:
+    def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(format))
+        result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
     @given(
-        datetime=datetimes(),
-        format=sampled_from(["%4Y%m%dT%H", "%4Y-%m-%d %H", "%4Y-%m-%dT%H"]),
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(["%4Y%m%dT%H", "%4Y-%m-%d %H", "%4Y-%m-%dT%H"]),
     )
-    def test_yyyymmdd_hh(self, datetime: dt.datetime, format: str) -> None:
+    def test_yyyymmdd_hh(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(format))
+        result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
-    @given(datetime=datetimes(), format=sampled_from(["%4Y%m%d", "%4Y-%m-%d"]))
-    def test_yyyymmdd(self, datetime: dt.datetime, format: str) -> None:
+    @given(
+        datetime=datetimes(timezones=just(UTC)),
+        fmt=sampled_from(["%4Y%m%d", "%4Y-%m-%d"]),
+    )
+    def test_yyyymmdd(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(format))
+        result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
     def test_error(self) -> None:
-        with raises(InvalidDateTime):
+        with raises(ParseDateTimeError):
             _ = parse_datetime("error")
 
 
@@ -219,31 +233,31 @@ class TestParseTime:
         result = parse_time(time.isoformat())
         assert result == time
 
-    @given(time=times(), format=sampled_from(["%H%M%S.%f", "%H:%M:%S.%f"]))
-    def test_hhmmss_fff(self, time: dt.time, format: str) -> None:
-        result = parse_time(time.strftime(format))
+    @given(time=times(), fmt=sampled_from(["%H%M%S.%f", "%H:%M:%S.%f"]))
+    def test_hhmmss_fff(self, time: dt.time, fmt: str) -> None:
+        result = parse_time(time.strftime(fmt))
         assert result == time
 
-    @given(time=times(), format=sampled_from(["%H%M%S", "%H:%M:%S"]))
-    def test_hhmmss(self, time: dt.time, format: str) -> None:
+    @given(time=times(), fmt=sampled_from(["%H%M%S", "%H:%M:%S"]))
+    def test_hhmmss(self, time: dt.time, fmt: str) -> None:
         time = time.replace(microsecond=0)
-        result = parse_time(time.strftime(format))
+        result = parse_time(time.strftime(fmt))
         assert result == time
 
-    @given(time=times(), format=sampled_from(["%H%M", "%H:%M"]))
-    def test_hhmm(self, time: dt.time, format: str) -> None:
+    @given(time=times(), fmt=sampled_from(["%H%M", "%H:%M"]))
+    def test_hhmm(self, time: dt.time, fmt: str) -> None:
         time = time.replace(second=0, microsecond=0)
-        result = parse_time(time.strftime(format))
+        result = parse_time(time.strftime(fmt))
         assert result == time
 
-    @given(time=times(), format=sampled_from(["%H", "%H"]))
-    def test_hh(self, time: dt.time, format: str) -> None:
+    @given(time=times(), fmt=sampled_from(["%H", "%H"]))
+    def test_hh(self, time: dt.time, fmt: str) -> None:
         time = time.replace(minute=0, second=0, microsecond=0)
-        result = parse_time(time.strftime(format))
+        result = parse_time(time.strftime(fmt))
         assert result == time
 
     def test_error(self) -> None:
-        with raises(InvalidTime):
+        with raises(ParseTimeError):
             _ = parse_time("error")
 
 
@@ -254,17 +268,21 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(InvalidTimedelta):
+        with raises(TimedeltaError):
             _ = parse_timedelta("error")
 
 
 class TestSerialize:
     @given(data=data())
     @mark.parametrize(
-        ["strategy", "serialize", "parse"],
+        ("strategy", "serialize", "parse"),
         [
             param(dates(), serialize_date, parse_date),
-            param(datetimes(), serialize_datetime, parse_datetime),
+            param(
+                datetimes(timezones=just(UTC)),
+                serialize_datetime,
+                parse_datetime,
+            ),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),
@@ -285,7 +303,7 @@ class TestSerialize:
 class TestRoundToWeekday:
     @given(date=dates())
     @mark.parametrize(
-        ["func", "predicate", "operator"],
+        ("func", "predicate", "operator"),
         [
             param(round_to_next_weekday, True, eq),
             param(round_to_next_weekday, False, gt),
@@ -329,5 +347,5 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with raises(ValueError):
+        with raises(CallYieldWeekdaysError):
             _ = list(yield_weekdays())

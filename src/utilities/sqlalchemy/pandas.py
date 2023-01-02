@@ -26,7 +26,6 @@ def insert_dataframe(
     df: DataFrame, table_or_model: Any, engine: Engine, /
 ) -> None:
     """Insert a DataFrame into a database."""
-
     names = get_column_names(table_or_model)
     columns = get_columns(table_or_model)
     all_names_to_columns = dict(zip(names, columns))
@@ -49,10 +48,6 @@ def insert_dataframe(
 
 @beartype
 def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
-    """Check the columns of the DataFrame form a subset of the columns of the
-    table.
-    """
-
     py_type = column.type.python_type
     as_list = series.tolist()
     if (
@@ -69,7 +64,8 @@ def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
             None if t is NaT else timestamp_to_datetime(t) for t in as_list
         ]
     else:
-        raise TypeError(f"Invalid types: {series}, {py_type}")
+        msg = f"Invalid types: {series}, {py_type}"
+        raise TypeError(msg)
     for is_null, native in zip(series.isna(), values):
         yield None if is_null else native
 
@@ -77,7 +73,6 @@ def _nativize_column(series: Series, column: Any, /) -> Iterator[Any]:
 @beartype
 def read_dataframe(sel: Any, engine: Engine, /) -> DataFrame:
     """Read a table from a database into a DataFrame."""
-
     with engine.begin() as conn:
         rows = conn.execute(sel).all()
     sel = {col.name: _get_dtype(col) for col in sel.selected_columns}
@@ -86,18 +81,16 @@ def read_dataframe(sel: Any, engine: Engine, /) -> DataFrame:
 
 @beartype
 def _get_dtype(column: Any, /) -> Any:
-    """Get the mapping of names to dtypes."""
-
     py_type = column.type.python_type
     if py_type is bool:
         return boolean
-    elif (py_type is float) or (py_type is Decimal):
+    if (py_type is float) or (py_type is Decimal):
         return float
-    elif py_type is int:
+    if py_type is int:
         return Int64
-    elif py_type is str:
+    if py_type is str:
         return string
-    elif issubclass(py_type, dt.date):
+    if issubclass(py_type, dt.date):
         return datetime64ns
-    else:
-        raise TypeError(f"Invalid type: {py_type}")  # pragma: no cover
+    msg = f"Invalid type: {py_type}"  # pragma: no cover
+    raise TypeError(msg)  # pragma: no cover

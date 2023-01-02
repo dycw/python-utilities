@@ -1,11 +1,11 @@
 from pathlib import Path
-from subprocess import CalledProcessError  # noqa: S404
-from subprocess import check_call  # noqa: S404
+from subprocess import CalledProcessError
+from subprocess import check_call
 
 from pytest import raises
 
-from utilities.subprocess import MultipleActivate
-from utilities.subprocess import NoActivate
+from utilities.subprocess import MultipleActivateError
+from utilities.subprocess import NoActivateError
 from utilities.subprocess import get_shell_output
 from utilities.subprocess import tabulate_called_process_error
 from utilities.text import strip_and_dedent
@@ -25,7 +25,7 @@ class TestGetShellOutput:
 
     def test_no_activate(self, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
-        with raises(NoActivate):
+        with raises(NoActivateError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
     def test_multiple_activates(self, tmp_path: Path) -> None:
@@ -34,14 +34,14 @@ class TestGetShellOutput:
             activate = venv.joinpath(str(i), "activate")
             activate.parent.mkdir(parents=True)
             activate.touch()
-        with raises(MultipleActivate):
+        with raises(MultipleActivateError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
 
 class TestTabulateCalledProcessError:
     def test_main(self) -> None:
         def which() -> None:
-            _ = check_call(["which"], text=True)  # noqa: S603, S607
+            _ = check_call(["which"], text=True)
 
         try:
             which()

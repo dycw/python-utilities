@@ -10,6 +10,7 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
+from utilities.datetime import UTC
 from utilities.pandas import TIMESTAMP_MAX_AS_DATE
 from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
 from utilities.pandas import TIMESTAMP_MIN_AS_DATE
@@ -57,7 +58,7 @@ class TestTimestampMinMaxAsDateTime:
 
 class TestTimestampToDate:
     @mark.parametrize(
-        "timestamp, expected",
+        ("timestamp", "expected"),
         [
             param(to_datetime("2000-01-01"), dt.date(2000, 1, 1)),
             param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
@@ -73,11 +74,18 @@ class TestTimestampToDate:
 
 class TestTimestampToDateTime:
     @mark.parametrize(
-        "timestamp, expected",
+        ("timestamp", "expected"),
         [
-            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1)),
             param(
-                to_datetime("2000-01-01 12:00:00"), dt.datetime(2000, 1, 1, 12)
+                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+            ),
+            param(
+                to_datetime("2000-01-01 12:00:00"),
+                dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
+            ),
+            param(
+                to_datetime("2000-01-01 12:00:00+00:00"),
+                dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
             ),
         ],
     )
