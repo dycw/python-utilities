@@ -9,9 +9,10 @@ from utilities.pathlib import PathLike
 
 @beartype
 def setup_loguru(*, name: PathLike = "log") -> None:
+    """Set up `loguru` with the standard format strings."""
     logger.remove()
 
-    format = (
+    fmt = (
         "<green>{time:YYYY-MM-DD}</green>"
         " "
         "<bold><green>{time:HH:mm:ss}</green></bold>"
@@ -27,7 +28,7 @@ def setup_loguru(*, name: PathLike = "log") -> None:
         "{message}"
     )
 
-    _ = logger.add(stdout, level=LogLevel.INFO, format=format, enqueue=True)
+    _ = logger.add(stdout, level=LogLevel.INFO, format=fmt, enqueue=True)
     _ = logger.add(
         name,
         level=LogLevel.DEBUG,

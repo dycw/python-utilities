@@ -30,18 +30,19 @@ class TestSQLiteEngines:
     def test_core(self, data: DataObject, ids: set[int]) -> None:
         metadata = MetaData()
         table = Table(
-            "example", metadata, Column("id", Integer, primary_key=True)
+            "example", metadata, Column("id_", Integer, primary_key=True)
         )
         engine = data.draw(sqlite_engines(metadata=metadata))
         self._run_test(engine, table, ids)
 
     @given(data=data(), ids=sets(integers(0, 100), min_size=1, max_size=10))
     def test_orm(self, data: DataObject, ids: set[int]) -> None:
-        Base = cast(Any, declarative_base())
+        Base = cast(Any, declarative_base())  # noqa: N806
 
         class Example(Base):
             __tablename__ = "example"
-            id = Column(Integer, primary_key=True)
+
+            id_ = Column(Integer, primary_key=True)
 
         engine = data.draw(sqlite_engines(base=Base))
         self._run_test(engine, Example, ids)
@@ -50,6 +51,8 @@ class TestSQLiteEngines:
         self, engine: Engine, table_or_model: Any, ids: set[int]
     ) -> None:
         with engine.begin() as conn:
-            _ = conn.execute(insert(table_or_model), [{"id": id} for id in ids])
+            _ = conn.execute(
+                insert(table_or_model), [{"id_": id_} for id_ in ids]
+            )
             res = conn.execute(select(table_or_model)).all()
-        assert {r["id"] for r in res} == ids
+        assert {r["id_"] for r in res} == ids

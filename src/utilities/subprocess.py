@@ -5,9 +5,9 @@ from itertools import chain
 from itertools import repeat
 from itertools import starmap
 from pathlib import Path
-from subprocess import PIPE  # noqa: S404
-from subprocess import CalledProcessError  # noqa: S404
-from subprocess import check_output  # noqa: S404
+from subprocess import PIPE
+from subprocess import CalledProcessError
+from subprocess import check_output
 from typing import Any
 from typing import Optional
 
@@ -16,47 +16,45 @@ from beartype import beartype
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 
+_CWD = Path.cwd()
+
 
 @beartype
 def get_shell_output(
     cmd: str,
     /,
     *,
-    cwd: PathLike = Path.cwd(),
+    cwd: PathLike = _CWD,
     activate: Optional[PathLike] = None,
     env: Optional[Mapping[str, Optional[str]]] = None,
 ) -> str:
-    """Get the output of a shell call. Activate a virtual environment if
-    necessary.
-    """
+    """Get the output of a shell call.
 
+    Optionally, activate a virtual environment if necessary.
+    """
     cwd = Path(cwd)
     if activate is not None:
         activates = list(cwd.rglob("activate"))
         if (n := len(activates)) == 0:
-            raise NoActivate(cwd)
-        elif n == 1:
+            raise NoActivateError(cwd)
+        if n == 1:
             cmd = f"source {activates[0]}; {cmd}"
-        else:
-            raise MultipleActivate(activates)
+        raise MultipleActivateError(activates)
     with temp_environ(env):
-        return check_output(
-            cmd, stderr=PIPE, shell=True, cwd=cwd, text=True  # noqa: S602
-        )
+        return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)
 
 
-class NoActivate(ValueError):
-    ...
+class NoActivateError(ValueError):
+    """Raised when no `activate` script can be found."""
 
 
-class MultipleActivate(ValueError):
-    ...
+class MultipleActivateError(ValueError):
+    """Raised when multiple `activate` scripts can be found."""
 
 
 @beartype
 def tabulate_called_process_error(error: CalledProcessError, /) -> str:
     """Tabulate the components of a CalledProcessError."""
-
     mapping = {
         "cmd": error.cmd,
         "returncode": error.returncode,

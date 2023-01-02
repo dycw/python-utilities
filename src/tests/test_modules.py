@@ -19,7 +19,7 @@ from utilities.modules import yield_modules
 
 class TestYieldModules:
     @mark.parametrize(
-        "module, recursive, expected",
+        ["module", "recursive", "expected"],
         [
             param(standalone, False, 1),
             param(standalone, True, 1),
@@ -37,7 +37,7 @@ class TestYieldModules:
 
 class TestYieldModuleContents:
     @mark.parametrize(
-        "type, predicate, expected",
+        ["type_", "predicate", "expected"],
         [
             param(None, None, 14),
             param(int, None, 3),
@@ -51,9 +51,9 @@ class TestYieldModuleContents:
     )
     def test_main(
         self,
-        type: Optional[Union[type, tuple[type, ...]]],
+        type_: Optional[Union[type, tuple[type, ...]]],
         predicate: Callable[[Any], bool],
         expected: int,
     ) -> None:
-        it = yield_module_contents(standalone, type=type, predicate=predicate)
+        it = yield_module_contents(standalone, type=type_, predicate=predicate)
         assert len(list(it)) == expected

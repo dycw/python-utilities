@@ -14,10 +14,10 @@ from beartype import beartype
 def yield_modules(
     module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
-    """Yield all the modules under a package. Optionally, recurse into
-    sub-packages.
-    """
+    """Yield all the modules under a package.
 
+    Optionally, recurse into sub-packages.
+    """
     name = module.__name__
     try:
         path = module.__path__
@@ -38,13 +38,13 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: Optional[Union[type, tuple[type, ...]]] = None,
+    type: Optional[Union[type, tuple[type, ...]]] = None,  # noqa: A002
     predicate: Optional[Callable[[Any], bool]] = None,
 ) -> Iterator[Any]:
-    """Yield all the modules under a package. Optionally, recurse into
-    sub-packages.
-    """
+    """Yield all the module contents under a package.
 
+    Optionally, recurse into sub-packages.
+    """
     for mod in yield_modules(module, recursive=recursive):
         for name in dir(mod):
             obj = getattr(mod, name)

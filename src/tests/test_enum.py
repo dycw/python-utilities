@@ -17,8 +17,8 @@ class Truth(StrEnum):
 class TestParseEnum:
     @given(data=data(), truth=sampled_from(Truth))
     def test_main(self, data: DataObject, truth: Truth) -> None:
-        input = data.draw(sampled_from([truth, truth.name]))
-        result = parse_enum(Truth, input)
+        input_ = data.draw(sampled_from([truth, truth.name]))
+        result = parse_enum(Truth, input_)
         assert result is truth
 
 

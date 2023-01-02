@@ -18,7 +18,6 @@ def dates_pd(
     max_value: dt.date = TIMESTAMP_MAX_AS_DATE,
 ) -> SearchStrategy[dt.date]:
     """Strategy for generating dates which can become Timestamps."""
-
     return dates(min_value=min_value, max_value=max_value)
 
 
@@ -29,5 +28,4 @@ def datetimes_pd(
     max_value: dt.datetime = TIMESTAMP_MAX_AS_DATETIME,
 ) -> SearchStrategy[dt.datetime]:
     """Strategy for generating datetimes which can become Timestamps."""
-
     return datetimes(min_value=min_value, max_value=max_value)

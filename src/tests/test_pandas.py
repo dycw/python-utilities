@@ -19,6 +19,7 @@ from utilities.pandas import boolean
 from utilities.pandas import string
 from utilities.pandas import timestamp_to_date
 from utilities.pandas import timestamp_to_datetime
+from utilities.zoneinfo import UTC
 
 
 class TestDTypes:
@@ -75,9 +76,12 @@ class TestTimestampToDateTime:
     @mark.parametrize(
         "timestamp, expected",
         [
-            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1)),
             param(
-                to_datetime("2000-01-01 12:00:00"), dt.datetime(2000, 1, 1, 12)
+                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+            ),
+            param(
+                to_datetime("2000-01-01 12:00:00"),
+                dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
             ),
         ],
     )

@@ -1,4 +1,3 @@
-import builtins
 from pathlib import Path
 from re import search
 from typing import Optional
@@ -34,31 +33,33 @@ class TestAssumeDoesNotRaise:
     def test_no_match_and_suppressed(self, x: bool) -> None:
         with assume_does_not_raise(ValueError):
             if x is True:
-                raise ValueError("x is True")
+                msg = "x is True"
+                raise ValueError(msg)
         assert x is False
 
     @given(x=just(True))
     def test_no_match_and_not_suppressed(self, x: bool) -> None:
-        with raises(ValueError, match="x is True"), assume_does_not_raise(
-            RuntimeError
-        ):
+        msg = "x is True"
+        with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
             if x is True:
-                raise ValueError("x is True")
+                raise ValueError(msg)
 
     @given(x=booleans())
     def test_with_match_and_suppressed(self, x: bool) -> None:
-        with assume_does_not_raise(ValueError, match="x is True"):
+        msg = "x is True"
+        with assume_does_not_raise(ValueError, match=msg):
             if x is True:
-                raise ValueError("x is True")
+                raise ValueError(msg)
         assert x is False
 
     @given(x=just(True))
     def test_with_match_and_not_suppressed(self, x: bool) -> None:
-        with raises(ValueError, match="x is True"), assume_does_not_raise(
+        msg = "x is True"
+        with raises(ValueError, match=msg), assume_does_not_raise(
             ValueError, match="wrong"
         ):
             if x is True:
-                raise ValueError("x is True")
+                raise ValueError(msg)
 
 
 class TestLiftDraw:
@@ -88,20 +89,20 @@ class TestListsFixedLength:
         "unique", [param(True, id="unique"), param(False, id="no unique")]
     )
     @mark.parametrize(
-        "sorted", [param(True, id="sorted"), param(False, id="no sorted")]
+        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
     def test_main(
-        self, data: DataObject, size: int, unique: bool, sorted: bool
+        self, data: DataObject, size: int, unique: bool, sorted_: bool
     ) -> None:
         result = data.draw(
-            lists_fixed_length(integers(), size, unique=unique, sorted=sorted)
+            lists_fixed_length(integers(), size, unique=unique, sorted=sorted_)
         )
         assert isinstance(result, list)
         assert len(result) == size
         if unique:
             assert len(set(result)) == len(result)
-        if sorted:
-            assert builtins.sorted(result) == result
+        if sorted_:
+            assert sorted(result) == result
 
 
 class TestSetupHypothesisProfiles:

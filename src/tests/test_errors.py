@@ -2,14 +2,15 @@ from typing import NoReturn
 
 from pytest import raises
 
-from utilities.errors import NoUniqueArg
+from utilities.errors import NoUniqueArgError
 from utilities.errors import redirect_error
 
 
 class TestRedirectError:
     def test_redirected(self) -> None:
         def raises_generic() -> NoReturn:
-            raise ValueError("error")
+            msg = "error"
+            raise ValueError(msg)
 
         class CustomError(ValueError):
             ...
@@ -22,7 +23,8 @@ class TestRedirectError:
 
     def test_not_redirected(self) -> None:
         def raises_generic() -> NoReturn:
-            raise ValueError("error")
+            msg = "error"
+            raise ValueError(msg)
 
         class CustomError(ValueError):
             ...
@@ -37,7 +39,7 @@ class TestRedirectError:
         def raises_generic() -> NoReturn:
             raise ValueError(0, 1)
 
-        with raises(NoUniqueArg):
+        with raises(NoUniqueArgError):
             try:
                 raises_generic()
             except ValueError as error:

@@ -25,7 +25,7 @@ class _Defaults:
     mininterval: Optional[float] = 0.1
     maxinterval: Optional[float] = 10.0
     miniters: Optional[Union[int, float]] = None
-    ascii: Union[bool, Optional[str]] = None
+    ascii: Union[bool, Optional[str]] = None  # noqa: A003
     unit: Optional[str] = "it"
     unit_scale: Union[bool, int, Optional[str]] = False
     dynamic_ncols: Optional[bool] = False
@@ -46,7 +46,7 @@ class _Defaults:
 _DEFAULTS = _Defaults()
 
 
-class tqdm(_tqdm):
+class tqdm(_tqdm):  # noqa: N801
     """Sub-class of `tqdm` which is disabled during pytest."""
 
     @beartype
@@ -61,7 +61,7 @@ class tqdm(_tqdm):
         mininterval: Optional[float] = _DEFAULTS.mininterval,
         maxinterval: Optional[float] = _DEFAULTS.maxinterval,
         miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-        ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,
+        ascii: Union[bool, Optional[str]] = None,  # noqa: A002
         unit: Optional[str] = _DEFAULTS.unit,
         unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
         dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,

@@ -38,14 +38,12 @@ from utilities.typing import never
 @beartype
 def columnwise_max(*columns: Any) -> Any:
     """Compute the columnwise max of a number of columns."""
-
     return _columnwise_minmax(*columns, op=ge)
 
 
 @beartype
 def columnwise_min(*columns: Any) -> Any:
     """Compute the columnwise min of a number of columns."""
-
     return _columnwise_minmax(*columns, op=le)
 
 
@@ -93,7 +91,6 @@ def create_engine(
     poolclass: Optional[type[Pool]] = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
-
     url = URL.create(
         drivername,
         username=username,
@@ -111,29 +108,27 @@ Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 @beartype
 def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
     """Get the dialect of a database."""
-
     if isinstance(dialect := engine_or_conn.dialect, mssql_dialect):
         return "mssql"
-    elif isinstance(dialect, mysql_dialect):
+    if isinstance(dialect, mysql_dialect):
         return "mysql"
-    elif isinstance(dialect, oracle_dialect):
+    if isinstance(dialect, oracle_dialect):
         return "oracle"
-    elif isinstance(dialect, postgresql_dialect):
+    if isinstance(dialect, postgresql_dialect):
         return "postgresql"
-    elif isinstance(dialect, sqlite_dialect):
+    if isinstance(dialect, sqlite_dialect):
         return "sqlite"
-    else:  # pragma: no cover
-        raise UnsupportedDialect(f"{dialect=}")
+    msg = f"{dialect=}"  # pragma: no cover
+    raise UnsupportedDialectError(msg)  # pragma: no cover
 
 
-class UnsupportedDialect(TypeError):
-    """Raised when an unsupported dialect is encountered."""
+class UnsupportedDialectError(TypeError):
+    """Raised when a dialect is unsupported."""
 
 
 @beartype
 def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
     """Ensure a table is created."""
-
     table = get_table(table_or_model)
     try:
         with engine.begin() as conn:
@@ -156,7 +151,6 @@ def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
 @beartype
 def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
     """Ensure a table is dropped."""
-
     table = get_table(table_or_model)
     try:
         with engine.begin() as conn:
@@ -177,31 +171,26 @@ def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
 @beartype
 def get_column_names(table_or_model: Any, /) -> list[str]:
     """Get the column names from a table or model."""
-
     return [col.name for col in get_columns(table_or_model)]
 
 
 @beartype
 def get_columns(table_or_model: Any, /) -> list[Any]:
     """Get the columns from a table or model."""
-
     return list(get_table(table_or_model).columns)
 
 
 @beartype
 def get_table(table_or_model: Any, /) -> Table:
     """Get the table from a ORM model."""
-
     if isinstance(table_or_model, Table):
         return table_or_model
-    else:
-        return table_or_model.__table__
+    return table_or_model.__table__
 
 
 @beartype
 def get_table_name(table_or_model: Any, /) -> str:
     """Get the table name from a ORM model."""
-
     return get_table(table_or_model).name
 
 
@@ -211,7 +200,6 @@ def yield_connection(
     engine_or_conn: Union[Engine, Connection], /
 ) -> Iterator[Connection]:
     """Yield a connection."""
-
     if isinstance(engine_or_conn, Engine):
         with engine_or_conn.begin() as conn:
             yield conn
@@ -231,7 +219,6 @@ def yield_in_clause_rows(
     frac: float = 0.95,
 ) -> Iterator[Any]:
     """Yield the rows from an `in` clause."""
-
     if chunk_size is None:
         dialect = get_dialect(engine_or_conn)
         if dialect == "mssql":  # pragma: no cover
@@ -253,3 +240,4 @@ def yield_in_clause_rows(
         for values_i in chunked(values, chunk_size_use):
             sel_i: Selectable = cast(Any, sel).where(column.in_(values_i))
             yield from conn.execute(sel_i).all()
+            return None

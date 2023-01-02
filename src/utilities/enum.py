@@ -24,5 +24,4 @@ _E = TypeVar("_E", bound=Enum)
 @beartype
 def parse_enum(enum: type[_E], x: Union[_E, str], /) -> _E:
     """Parse a string into the enum."""
-
     return enum[x] if isinstance(x, str) else x

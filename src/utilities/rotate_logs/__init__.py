@@ -8,11 +8,10 @@ from click import command
 from click import option
 
 from utilities.logging import basic_config
-from utilities.re import NoMatches
+from utilities.re import NoMatchesError
 from utilities.re import extract_group
 from utilities.rotate_logs.classes import Config
 from utilities.rotate_logs.classes import Item
-
 
 _LOGGER = getLogger(__name__)
 
@@ -95,7 +94,7 @@ def _yield_for_head(
     for p in path.parent.iterdir():
         try:
             num = extract_group(pattern, p.name)
-        except NoMatches:
+        except NoMatchesError:
             pass
         else:
             yield Item(p, path, num=int(num))

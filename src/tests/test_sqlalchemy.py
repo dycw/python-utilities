@@ -20,10 +20,10 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Table
-from sqlalchemy import create_engine as _create_engine
 from sqlalchemy import func
 from sqlalchemy import insert
 from sqlalchemy import select
+from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import Connection
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
@@ -62,7 +62,7 @@ class TestColumnwiseMinMax:
         table = Table(
             "example",
             MetaData(),
-            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
             Column("y", Integer),
         )
@@ -100,7 +100,7 @@ class TestColumnwiseMinMax:
         table = Table(
             "example",
             MetaData(),
-            Column("id", Integer, primary_key=True, autoincrement=True),
+            Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
         ensure_table_created(table, engine)
@@ -117,32 +117,12 @@ class TestCreateEngine:
         assert isinstance(engine, Engine)
 
 
-class TestGetDialect:
-    @given(engine=sqlite_engines())
-    def test_sqlite(self, engine: Engine) -> None:
-        assert get_dialect(engine) == "sqlite"
-
-    @mark.parametrize(
-        ["url", "expected"],
-        [
-            param("mssql+pyodbc://scott:tiger@mydsn", "mssql"),
-            param("mysql://scott:tiger@localhost/foo", "mysql"),
-            param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
-            param(
-                "postgresql://scott:tiger@localhost/mydatabase", "postgresql"
-            ),
-        ],
-    )
-    def test_non_sqlite(self, url: str, expected: str) -> None:
-        assert get_dialect(_create_engine(url)) == expected
-
-
 class TestEnsureTableCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         self._run_test(table, engine, runs)
 
@@ -152,7 +132,7 @@ class TestEnsureTableCreated:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         self._run_test(Example, engine, runs)
 
@@ -177,7 +157,7 @@ class TestEnsureTableDropped:
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         self._run_test(table, engine, runs)
 
@@ -187,7 +167,7 @@ class TestEnsureTableDropped:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         self._run_test(Example, engine, runs)
 
@@ -212,7 +192,7 @@ class TestEnsureTableDropped:
 class TestGetColumnNames:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         self._run_test(table)
 
@@ -220,18 +200,18 @@ class TestGetColumnNames:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         self._run_test(Example)
 
     def _run_test(self, table_or_model: Any, /) -> None:
-        assert get_column_names(table_or_model) == ["id"]
+        assert get_column_names(table_or_model) == ["id_"]
 
 
 class TestGetColumns:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         self._run_test(table)
 
@@ -239,7 +219,7 @@ class TestGetColumns:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         self._run_test(Example)
 
@@ -250,10 +230,30 @@ class TestGetColumns:
         assert isinstance(columns[0], Column)
 
 
+class TestGetDialect:
+    @given(engine=sqlite_engines())
+    def test_sqlite(self, engine: Engine) -> None:
+        assert get_dialect(engine) == "sqlite"
+
+    @mark.parametrize(
+        ["url", "expected"],
+        [
+            param("mssql+pyodbc://scott:tiger@mydsn", "mssql"),
+            param("mysql://scott:tiger@localhost/foo", "mysql"),
+            param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
+            param(
+                "postgresql://scott:tiger@localhost/mydatabase", "postgresql"
+            ),
+        ],
+    )
+    def test_non_sqlite(self, url: str, expected: str) -> None:
+        assert get_dialect(_create_engine(url)) == expected
+
+
 class TestGetTable:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         result = get_table(table)
         assert result is table
@@ -262,7 +262,7 @@ class TestGetTable:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         table = get_table(Example)
         result = get_table(table)
@@ -272,7 +272,7 @@ class TestGetTable:
 class TestGetTableName:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         result = get_table_name(table)
         expected = "example"
@@ -282,7 +282,7 @@ class TestGetTableName:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         result = get_table_name(Example)
         expected = "example"
@@ -311,7 +311,7 @@ class TestYieldInClauseRows:
         self, data: DataObject, engine: Engine, chunk_size: Optional[int]
     ) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example", MetaData(), Column("id_", Integer, primary_key=True)
         )
         rows = data.draw(table_records_lists(table, min_size=1))
         num_rows = len(rows)
@@ -326,8 +326,8 @@ class TestYieldInClauseRows:
         values = data.draw(sets(sampled_from(row_vals)))
         result = list(
             yield_in_clause_rows(
-                select(table.c.id),
-                table.c.id,
+                select(table.c.id_),
+                table.c.id_,
                 values,
                 engine,
                 chunk_size=chunk_size,

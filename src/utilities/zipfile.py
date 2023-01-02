@@ -13,7 +13,6 @@ from utilities.tempfile import TemporaryDirectory
 @beartype
 def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     """Yield the contents of a zipfile in a temporary directory."""
-
     with ZipFile(path) as zf, TemporaryDirectory() as temp:
         zf.extractall(path=temp)
         yield list(temp.iterdir())
