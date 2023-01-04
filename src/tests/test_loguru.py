@@ -24,6 +24,6 @@ class TestSetupLoguru:
 
         assert search(
             r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| DEBUG\s* \| "
-            + r"tests\.test_loguru:test_main:\d+ - message$",
+            r"tests\.test_loguru:test_main:\d+ - message$",
             line,
         )

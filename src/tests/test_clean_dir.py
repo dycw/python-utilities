@@ -8,8 +8,8 @@ from hypothesis.strategies import integers
 
 from utilities.clean_dir import main
 from utilities.clean_dir.classes import Config
+from utilities.datetime import UTC
 from utilities.hypothesis import temp_paths
-
 
 _TIMEDELTA = dt.timedelta(days=Config.days + 1)
 
@@ -19,7 +19,7 @@ class TestCleanDir:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix()]
-        with freeze_time(dt.date.today() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -31,9 +31,9 @@ class TestCleanDir:
         assert result.exit_code == 0
 
     def test_dir_to_retain(self, tmp_path: Path) -> None:
-        dir = tmp_path.joinpath("dir")
-        dir.mkdir()
-        dir.joinpath("file").touch()
+        dir_ = tmp_path.joinpath("dir")
+        dir_.mkdir()
+        dir_.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix()]
         result = runner.invoke(main, args)
@@ -45,7 +45,7 @@ class TestCleanDir:
         tmp_path.joinpath("second").symlink_to(file)
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix()]
-        with freeze_time(dt.date.today() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -54,7 +54,7 @@ class TestCleanDir:
         temp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", temp_path.as_posix(), "--chunk-size", str(chunk_size)]
-        with freeze_time(dt.date.today() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -62,6 +62,6 @@ class TestCleanDir:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix(), "--dry-run"]
-        with freeze_time(dt.date.today() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
             result = runner.invoke(main, args)
         assert result.exit_code == 0

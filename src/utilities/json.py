@@ -23,7 +23,6 @@ def serialize(
     **kwargs: Any,
 ) -> str:
     """Serialize an object."""
-
     return dumps(
         x,
         skipkeys=skipkeys,
@@ -41,16 +40,15 @@ def serialize(
 @beartype
 def _default(x: Any, /) -> str:
     """Extension for the JSON serializer."""
-
     if isinstance(x, dt.date):
         return x.isoformat()
-    elif isinstance(x, Path):
+    if isinstance(x, Path):
         return x.as_posix()
-    elif isinstance(x, set):
+    if isinstance(x, set):
         inner = serialize(sorted(x))
         return f"set({inner})"
-    elif isinstance(x, frozenset):
+    if isinstance(x, frozenset):
         inner = serialize(sorted(x))
         return f"frozenset({inner})"
-    else:
-        raise TypeError(f"Invalid type: {x}")
+    msg = f"Invalid type: {x}"
+    raise TypeError(msg)

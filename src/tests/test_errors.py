@@ -2,43 +2,38 @@ from typing import NoReturn
 
 from pytest import raises
 
-from utilities.errors import NoUniqueArg
+from utilities.errors import NoUniqueArgError
 from utilities.errors import redirect_error
 
 
 class TestRedirectError:
-    def test_redirected(self) -> None:
+    def test_generic_redirected_to_custom(self) -> None:
+        with raises(self._CustomError):
+            self._raises_custom("generic error")
+
+    def test_generic_not_redirected_to_custom(self) -> None:
+        with raises(ValueError, match="generic error"):
+            self._raises_custom("something else")
+
+    def _raises_generic(self) -> NoReturn:
+        msg = "generic error"
+        raise ValueError(msg)
+
+    class _CustomError(ValueError):
+        ...
+
+    def _raises_custom(self, pattern: str, /) -> NoReturn:
+        try:
+            self._raises_generic()
+        except ValueError as error:
+            redirect_error(error, pattern, self._CustomError)
+
+    def test_generic_with_no_unique_arg(self) -> None:
         def raises_generic() -> NoReturn:
-            raise ValueError("error")
-
-        class CustomError(ValueError):
-            ...
-
-        with raises(CustomError):
             try:
-                raises_generic()
-            except ValueError as error:
-                redirect_error(error, "error", CustomError)
-
-    def test_not_redirected(self) -> None:
-        def raises_generic() -> NoReturn:
-            raise ValueError("error")
-
-        class CustomError(ValueError):
-            ...
-
-        with raises(ValueError):
-            try:
-                raises_generic()
-            except ValueError as error:
-                redirect_error(error, "something else", CustomError)
-
-    def test_no_unique_arg(self) -> None:
-        def raises_generic() -> NoReturn:
-            raise ValueError(0, 1)
-
-        with raises(NoUniqueArg):
-            try:
-                raises_generic()
+                raise ValueError(0, 1)
             except ValueError as error:
                 redirect_error(error, "error", RuntimeError)
+
+        with raises(NoUniqueArgError):
+            raises_generic()

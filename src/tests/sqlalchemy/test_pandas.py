@@ -31,6 +31,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
 
+from utilities.datetime import UTC
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.numpy import datetime64ns
 from utilities.pandas import Int64
@@ -45,7 +46,7 @@ from utilities.sqlalchemy.pandas import read_dataframe
 
 class TestGetDType:
     @mark.parametrize(
-        "column, expected",
+        ("column", "expected"),
         [
             param(Column(Boolean), boolean),
             param(Column(Date), datetime64ns),
@@ -63,17 +64,17 @@ class TestGetDType:
 class TestInsertDataFrame:
     @given(
         df=data_frames(
-            [column(name="id", dtype=int)],  # type: ignore
+            [column(name="id_", dtype=int)],  # type: ignore[]
             index=range_indexes(max_size=10),
         ),
         engine=sqlite_engines(),
     )
     def test_main(self, df: DataFrame, engine: Engine) -> None:
-        _ = assume(not df["id"].duplicated().any())
+        _ = assume(not df["id_"].duplicated().any())
 
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         with engine.begin() as conn:
             get_table(Example).create(conn)
@@ -87,7 +88,7 @@ class TestInsertDataFrame:
 
 class TestNativizeColumn:
     @mark.parametrize(
-        "series, expected",
+        ("series", "expected"),
         [
             param(Series([True, False], dtype=bool), [True, False]),
             param(
@@ -105,7 +106,7 @@ class TestNativizeColumn:
         assert res == expected
 
     @mark.parametrize(
-        "series, column, expected",
+        ("series", "column", "expected"),
         [
             param(
                 Series([to_datetime("2000-01-01"), NA], dtype=datetime64ns),
@@ -117,7 +118,7 @@ class TestNativizeColumn:
                     [to_datetime("2000-01-01 12:00:00"), NA], dtype=datetime64ns
                 ),
                 Column(DateTime),
-                [dt.datetime(2000, 1, 1, 12), None],
+                [dt.datetime(2000, 1, 1, 12, tzinfo=UTC), None],
             ),
         ],
     )
@@ -128,7 +129,7 @@ class TestNativizeColumn:
         assert res == expected
 
     @mark.parametrize(
-        "series, column, expected",
+        ("series", "column", "expected"),
         [
             param(
                 Series([0.0, nan, inf, -inf], dtype=float),
@@ -162,14 +163,15 @@ class TestReadDataFrame:
     def test_main(self, ids: set[int], engine: Engine) -> None:
         class Example(cast(Any, declarative_base())):
             __tablename__ = "example"
-            id = Column(Integer, primary_key=True)
+
+            id_ = Column(Integer, primary_key=True)
 
         with engine.begin() as conn:
             get_table(Example).create(conn)
         with Session(engine) as sess:
-            sess.add_all([Example(id=id) for id in ids])
+            sess.add_all([Example(id_=id_) for id_ in ids])
             sess.commit()
 
         df = read_dataframe(select(Example), engine)
         assert len(df) == len(ids)
-        assert dict(df.dtypes) == {"id": Int64}
+        assert dict(df.dtypes) == {"id_": Int64}

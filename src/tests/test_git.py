@@ -3,7 +3,7 @@ from re import search
 
 from pytest import raises
 
-from utilities.git import InvalidRepo
+from utilities.git import InvalidRepoError
 from utilities.git import get_branch_name
 from utilities.git import get_repo_name
 from utilities.git import get_repo_root
@@ -28,5 +28,5 @@ class TestGetRepoRoot:
         assert any(p.is_dir() and p.name == ".git" for p in root.iterdir())
 
     def test_error(self, tmp_path: Path) -> None:
-        with raises(InvalidRepo):
+        with raises(InvalidRepoError):
             _ = get_repo_root(cwd=tmp_path)

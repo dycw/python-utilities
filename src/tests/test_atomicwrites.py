@@ -10,7 +10,7 @@ from utilities.atomicwrites import writer
 
 class TestWriter:
     @mark.parametrize(
-        "is_binary, contents",
+        ("is_binary", "contents"),
         [
             param(False, "contents", id="text"),
             param(True, b"contents", id="binary"),

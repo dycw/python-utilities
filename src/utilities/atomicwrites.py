@@ -14,7 +14,6 @@ from utilities.tempfile import TemporaryDirectory
 @beartype
 def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
-
     path = Path(path)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)

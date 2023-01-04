@@ -18,7 +18,6 @@ from pqdm import processes
 from utilities.tqdm import _DEFAULTS
 from utilities.tqdm import tqdm
 
-
 _T = TypeVar("_T")
 
 
@@ -39,7 +38,7 @@ def pmap(
     mininterval: Optional[float] = _DEFAULTS.mininterval,
     maxinterval: Optional[float] = _DEFAULTS.maxinterval,
     miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,
+    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,  # noqa: A002
     unit: Optional[str] = _DEFAULTS.unit,
     unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
     dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,
@@ -58,7 +57,6 @@ def pmap(
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel map, powered by `pqdm`."""
-
     return pstarmap(
         func,
         zip(*iterables),
@@ -112,7 +110,7 @@ def pstarmap(
     mininterval: Optional[float] = _DEFAULTS.mininterval,
     maxinterval: Optional[float] = _DEFAULTS.maxinterval,
     miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,
+    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,  # noqa: A002
     unit: Optional[str] = _DEFAULTS.unit,
     unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
     dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,
@@ -131,7 +129,6 @@ def pstarmap(
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel starmap, powered by `pqdm`."""
-
     n_jobs = _get_n_jobs(n_jobs)
     tqdm_class = cast(Any, tqdm)
     if parallelism == "processes":
@@ -211,8 +208,7 @@ def pstarmap(
 def _get_n_jobs(n_jobs: Optional[int], /) -> int:
     if (n_jobs is None) or (n_jobs <= 0):
         return cpu_count()  # pragma: no cover
-    else:
-        return n_jobs
+    return n_jobs
 
 
 @beartype

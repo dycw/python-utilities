@@ -16,7 +16,7 @@ class AttrsBase:
     def __attrs_post_init__(self) -> None:
         all_fields = fields(cast(Any, type(self)))
         try:
-            field = choice(all_fields)  # noqa: S311
+            field = choice(all_fields)
         except IndexError:
             pass
         else:

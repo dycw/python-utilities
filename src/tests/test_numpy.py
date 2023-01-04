@@ -11,7 +11,7 @@ from utilities.numpy import has_dtype
 
 class TestHasDtype:
     @mark.parametrize(
-        "x, dtype, expected",
+        ("x", "dtype", "expected"),
         [
             param(array([]), float, True),
             param(array([]), (float,), True),

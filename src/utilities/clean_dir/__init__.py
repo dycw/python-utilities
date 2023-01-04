@@ -14,8 +14,8 @@ from click import option
 
 from utilities.clean_dir.classes import Config
 from utilities.clean_dir.classes import Item
+from utilities.datetime import UTC
 from utilities.logging import basic_config
-
 
 _LOGGER = getLogger(__name__)
 
@@ -31,6 +31,7 @@ _LOGGER = getLogger(__name__)
 def main(
     *, path: Path, days: int, chunk_size: Optional[int], dry_run: bool
 ) -> None:
+    """CLI for the `clean_dir` script."""
     basic_config()
     config = Config(
         path=path, days=days, chunk_size=chunk_size, dry_run=dry_run
@@ -65,7 +66,7 @@ def _clean_dir(config: Config, /) -> None:
 def _yield_items(config: Config, /) -> Iterator[Item]:
     it = _yield_inner(config)
     if (chunk_size := config.chunk_size) is not None:
-        it = islice(it, chunk_size)
+        return islice(it, chunk_size)
     return it
 
 
@@ -78,7 +79,7 @@ def _yield_inner(config: Config, /) -> Iterator[Item]:
 @beartype
 def _yield_from_path(path: Path, config: Config, /) -> Iterator[Item]:
     if path.is_symlink():
-        return _yield_from_path(path.resolve(), config)
+        yield from _yield_from_path(path.resolve(), config)
     elif _is_owned_and_relative(path, config):  # pragma: no cover
         if (path.is_file() or path.is_socket()) and _is_old(path, config):
             yield Item(path, partial(_unlink_path, path))
@@ -101,7 +102,9 @@ def _is_empty(path: Path, /) -> bool:
 
 @beartype
 def _is_old(path: Path, config: Config, /) -> bool:
-    age = dt.datetime.now() - dt.datetime.fromtimestamp(path.stat().st_mtime)
+    age = dt.datetime.now(tz=UTC) - dt.datetime.fromtimestamp(
+        path.stat().st_mtime, tz=UTC
+    )
     return age >= dt.timedelta(days=config.days)
 
 

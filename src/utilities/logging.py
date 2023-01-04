@@ -10,7 +10,6 @@ from utilities.enum import StrEnum
 @beartype
 def basic_config() -> None:
     """Do the basic config."""
-
     basicConfig(
         format="{asctime} | {name} | {levelname:8} | {message}",
         datefmt="%4Y-%m-%d %H:%M:%S",

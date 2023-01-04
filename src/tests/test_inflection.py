@@ -6,7 +6,7 @@ from utilities.inflection import snake_case
 
 class TestSnakeCase:
     @mark.parametrize(
-        ["text", "expected"],
+        ("text", "expected"),
         [
             param("text", "text"),
             param("Text", "text"),

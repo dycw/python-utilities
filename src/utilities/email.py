@@ -22,7 +22,6 @@ def send_email(
     port: int = 0,
 ) -> None:
     """Send an email."""
-
     message = MIMEMultipart()
     message["From"] = from_
     message["To"] = ",".join(to)
@@ -35,16 +34,15 @@ def send_email(
             try:
                 from airium import Airium
             except ModuleNotFoundError:  # pragma: no cover
-                raise InvalidContents(contents)
+                raise InvalidContentsError(contents) from None
             else:
-                if isinstance(contents, Airium):
-                    text = MIMEText(str(contents), "html")
-                else:
-                    raise InvalidContents(contents)
+                if not isinstance(contents, Airium):
+                    raise InvalidContentsError(contents)
+                text = MIMEText(str(contents), "html")
         message.attach(text)
     with SMTP(host=host, port=port) as smtp:
         _ = smtp.send_message(message)
 
 
-class InvalidContents(TypeError):
-    ...
+class InvalidContentsError(TypeError):
+    """Raised when an invalid set of contents is encountered."""

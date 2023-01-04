@@ -18,7 +18,6 @@ def temp_environ(
     **env_kwargs: Optional[str],
 ) -> Iterator[None]:
     """Context manager with temporary environment variable set."""
-
     all_env = (
         cast(dict[str, Optional[str]], {}) if env is None else env
     ) | env_kwargs

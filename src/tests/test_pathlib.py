@@ -12,7 +12,7 @@ from utilities.pathlib import ensure_suffix
 
 class TestEnsureSuffix:
     @mark.parametrize(
-        ["path", "expected"],
+        ("path", "expected"),
         [
             param("hello.txt", "hello.txt"),
             param("hello.1.txt", "hello.1.txt"),

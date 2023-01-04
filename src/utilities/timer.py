@@ -1,3 +1,6 @@
+"""Context manager for timing blocks of code."""
+
+
 import datetime as dt
 from collections.abc import Callable
 from numbers import Number
@@ -24,7 +27,7 @@ class Timer:
         self._end: Optional[float] = None
 
     @beartype
-    def __enter__(self) -> "Timer":
+    def __enter__(self: "Timer") -> "Timer":
         self._start = default_timer()
         return self
 
@@ -74,10 +77,10 @@ class Timer:
     def _compare(self, other: Any, op: Callable[[Any, Any], bool], /) -> bool:
         if isinstance(other, (Number, Timer)):
             return op(float(self), other)
-        elif isinstance(other, dt.timedelta):
+        if isinstance(other, dt.timedelta):
             return op(float(self), other.total_seconds())
-        else:
-            raise TypeError(f"{other=}")
+        msg = f"{other=}"
+        raise TypeError(msg)
 
     @beartype
     def _to_timedelta(self) -> dt.timedelta:
