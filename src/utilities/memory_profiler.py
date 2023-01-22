@@ -30,7 +30,9 @@ def memory_profiled(func: Callable[_P, _T], /) -> Callable[_P, Output[_T]]:
     @wraps(func)
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> Output[_T]:
         memory, value = memory_usage(
-            cast(Any, (func, args, kwargs)), max_usage=True, retval=True
+            cast(Any, (func, args, kwargs)),
+            max_usage=True,
+            retval=True,
         )
         return Output(value=value, memory=memory)
 

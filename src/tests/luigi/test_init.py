@@ -77,7 +77,8 @@ class TestGetDependencies:
 
         a, b, c = A(), B(), C()
         ((up_a, down_a), (up_b, down_b), (up_c, down_c)) = map(
-            self._get_sets, [a, b, c]
+            self._get_sets,
+            [a, b, c],
         )
         assert up_a == set()
         assert down_a == {b}
@@ -100,10 +101,13 @@ class TestGetDependencies:
 
     @staticmethod
     def _get_sets(
-        task: Task, /, *, recursive: bool = False
+        task: Task,
+        /,
+        *,
+        recursive: bool = False,
     ) -> tuple[set[Task], set[Task]]:
         return set(get_dependencies_upstream(task, recursive=recursive)), set(
-            get_dependencies_downstream(task, recursive=recursive)
+            get_dependencies_downstream(task, recursive=recursive),
         )
 
 

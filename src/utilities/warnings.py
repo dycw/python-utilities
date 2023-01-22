@@ -43,10 +43,7 @@ def _handle_warnings(
 ) -> ExitStack:
     """Suppress warnings."""
     stack = ExitStack()
-    if isinstance(category, tuple):
-        categories = category
-    else:
-        categories = [category]
+    categories = category if isinstance(category, tuple) else [category]
     for cat in categories:
         cm = _handle_warnings_1(action, message=message, category=cat)
         stack.enter_context(cm)

@@ -43,13 +43,19 @@ _T = TypeVar("_T")
 
 @beartype
 def load_settings(
-    cls: type[_T], appname: str, /, *, config_files: Iterable[PathLike] = ()
+    cls: type[_T],
+    appname: str,
+    /,
+    *,
+    config_files: Iterable[PathLike] = (),
 ) -> _T:
     """Load a settings object with the extended converter."""
     loaders = default_loaders(appname, config_files=config_files)
     converter = _make_converter()
     return _load_settings(
-        cast(SettingsClass, cls), loaders, converter=converter
+        cast(SettingsClass, cls),
+        loaders,
+        converter=converter,
     )
 
 
@@ -93,7 +99,9 @@ def _make_converter() -> Union[BaseConverter, Converter]:
 
 @beartype
 def _make_structure_hook(
-    cls: type[Any], func: Callable[[Any], Any], /
+    cls: type[Any],
+    func: Callable[[Any], Any],
+    /,
 ) -> Callable[[Any, type[Any]], Any]:
     """Make the structure hook for a given type."""
 
@@ -121,7 +129,7 @@ def _make_click_handler() -> ClickHandler:
             zip(
                 map(itemgetter(0), cases),
                 starmap(_make_type_handler_func, cases),
-            )
+            ),
         ),
     )
     return ClickHandler(extra_types=extra_types)
@@ -129,13 +137,19 @@ def _make_click_handler() -> ClickHandler:
 
 @beartype
 def _make_type_handler_func(
-    cls: type[Any], param: type[ParamType], serialize: Callable[[Any], str], /
+    cls: type[Any],
+    param: type[ParamType],
+    serialize: Callable[[Any], str],
+    /,
 ) -> Callable[[Any, Any, Any], StrDict]:
     """Make the type handler for a given type/parameter."""
 
     @beartype
     def handler(
-        _: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
+        _: type[Any],
+        default: Default,
+        is_optional: bool,
+        /,  # noqa: FBT001
     ) -> StrDict:
         mapping: StrDict = {"type": param()}
         if isinstance(default, cls):  # pragma: no cover

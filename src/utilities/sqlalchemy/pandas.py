@@ -23,7 +23,10 @@ from utilities.sqlalchemy import get_table
 
 @beartype
 def insert_dataframe(
-    df: DataFrame, table_or_model: Any, engine: Engine, /
+    df: DataFrame,
+    table_or_model: Any,
+    engine: Engine,
+    /,
 ) -> None:
     """Insert a DataFrame into a database."""
     names = get_column_names(table_or_model)

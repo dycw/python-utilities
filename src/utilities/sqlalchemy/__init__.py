@@ -143,7 +143,8 @@ def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
         # oracle
         (msg,) = error.args
         if not search(
-            "ORA-00955: name is already used by an existing object", msg
+            "ORA-00955: name is already used by an existing object",
+            msg,
         ):
             raise
 
@@ -197,7 +198,8 @@ def get_table_name(table_or_model: Any, /) -> str:
 @contextmanager
 @beartype
 def yield_connection(
-    engine_or_conn: Union[Engine, Connection], /
+    engine_or_conn: Union[Engine, Connection],
+    /,
 ) -> Iterator[Connection]:
     """Yield a connection."""
     if isinstance(engine_or_conn, Engine):

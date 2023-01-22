@@ -30,7 +30,9 @@ class TestSQLiteEngines:
     def test_core(self, data: DataObject, ids: set[int]) -> None:
         metadata = MetaData()
         table = Table(
-            "example", metadata, Column("id_", Integer, primary_key=True)
+            "example",
+            metadata,
+            Column("id_", Integer, primary_key=True),
         )
         engine = data.draw(sqlite_engines(metadata=metadata))
         self._run_test(engine, table, ids)
@@ -48,11 +50,15 @@ class TestSQLiteEngines:
         self._run_test(engine, Example, ids)
 
     def _run_test(
-        self, engine: Engine, table_or_model: Any, ids: set[int]
+        self,
+        engine: Engine,
+        table_or_model: Any,
+        ids: set[int],
     ) -> None:
         with engine.begin() as conn:
             _ = conn.execute(
-                insert(table_or_model), [{"id_": id_} for id_ in ids]
+                insert(table_or_model),
+                [{"id_": id_} for id_ in ids],
             )
             res = conn.execute(select(table_or_model)).all()
         assert {r["id_"] for r in res} == ids

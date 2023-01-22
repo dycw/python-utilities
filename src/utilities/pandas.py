@@ -33,7 +33,9 @@ def timestamp_to_datetime(timestamp: Any, /) -> dt.datetime:
 
 @beartype
 def _timestamp_minmax_to_date(
-    timestamp: Timestamp, method_name: str, /
+    timestamp: Timestamp,
+    method_name: str,
+    /,
 ) -> dt.date:
     """Get the maximum Timestamp as a date."""
     method = getattr(timestamp, method_name)
@@ -47,7 +49,9 @@ TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(Timestamp.max, "floor")
 
 @beartype
 def _timestamp_minmax_to_datetime(
-    timestamp: Timestamp, method_name: str, /
+    timestamp: Timestamp,
+    method_name: str,
+    /,
 ) -> dt.datetime:
     """Get the maximum Timestamp as a datetime."""
     method = getattr(timestamp, method_name)
@@ -57,5 +61,6 @@ def _timestamp_minmax_to_datetime(
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
-    Timestamp.max, "floor"
+    Timestamp.max,
+    "floor",
 )

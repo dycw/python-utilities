@@ -19,14 +19,23 @@ _LOGGER = getLogger(__name__)
 @command()
 @option("-p", "--path", type=Path, default=Config.path, show_default=True)
 @option(
-    "-e", "--extension", type=str, default=Config.extension, show_default=True
+    "-e",
+    "--extension",
+    type=str,
+    default=Config.extension,
+    show_default=True,
 )
 @option("-s", "--size", type=int, default=Config.size, show_default=True)
 @option("-k", "--keep", type=int, default=Config.keep, show_default=True)
 @option("-dr", "--dry-run", is_flag=True, show_default=True)
 @beartype
 def main(
-    *, path: Path, extension: str, size: int, keep: int, dry_run: bool
+    *,
+    path: Path,
+    extension: str,
+    size: int,
+    keep: int,
+    dry_run: bool,
 ) -> None:
     """CLI for the `rotate_logs` script."""
     basic_config()
@@ -88,7 +97,10 @@ def _yield_items(
 
 @beartype
 def _yield_for_head(
-    path: Path, /, *, extension: str = Config.extension
+    path: Path,
+    /,
+    *,
+    extension: str = Config.extension,
 ) -> Iterator[Item]:
     yield Item(path, path)
     pattern = rf"^{path.stem}\.{extension}\.(\d+)$"

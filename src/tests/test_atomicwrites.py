@@ -17,11 +17,15 @@ class TestWriter:
         ],
     )
     def test_basic_usage(
-        self, tmp_path: Path, is_binary: bool, contents: Union[str, bytes]
+        self,
+        tmp_path: Path,
+        is_binary: bool,
+        contents: Union[str, bytes],
     ) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp, open(
-            temp, mode="wb" if is_binary else "w"
+            temp,
+            mode="wb" if is_binary else "w",
         ) as fh1:
             _ = fh1.write(contents)
         with open(str(path), mode="rb" if is_binary else "r") as fh2:
@@ -32,7 +36,7 @@ class TestWriter:
         with writer(path) as temp1, open(temp1, mode="w") as fh1:
             _ = fh1.write("contents")
         with raises(FileExistsError, match=str(path)), writer(
-            path
+            path,
         ) as temp2, open(temp2, mode="w") as fh2:
             _ = fh2.write("new contents")
 
@@ -41,7 +45,8 @@ class TestWriter:
         with writer(path) as temp1, open(temp1, mode="w") as fh1:
             _ = fh1.write("contents")
         with writer(path, overwrite=True) as temp2, open(
-            temp2, mode="w"
+            temp2,
+            mode="w",
         ) as fh2:
             _ = fh2.write("new contents")
         with open(str(path)) as fh3:

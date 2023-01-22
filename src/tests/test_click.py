@@ -94,7 +94,10 @@ def uses_enum(*, truth: Truth) -> None:
 class TestEnum:
     @given(data=data(), runner=runners(), truth=sampled_from(Truth))
     def test_success(
-        self, data: DataObject, runner: CliRunner, truth: Truth
+        self,
+        data: DataObject,
+        runner: CliRunner,
+        truth: Truth,
     ) -> None:
         name = truth.name
         as_str = data.draw(sampled_from([name, name.lower()]))

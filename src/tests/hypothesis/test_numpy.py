@@ -55,7 +55,7 @@ class TestFloatArrays:
                     max_value=max_value,
                     allow_nan=allow_nan,
                     allow_infinity=allow_infinity,
-                )
+                ),
             )
         assert array.dtype == float
         assert array.shape == shape
@@ -82,8 +82,10 @@ class TestIntArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 int_arrays(
-                    shape=shape, min_value=min_value, max_value=max_value
-                )
+                    shape=shape,
+                    min_value=min_value,
+                    max_value=max_value,
+                ),
             )
         assert array.dtype == int
         assert array.shape == shape

@@ -62,12 +62,15 @@ class TestLoadSettings:
         with open(file := root.joinpath("file.toml"), mode="w") as fh:
             _ = fh.write(f'[appname]\nvalue = "{value}"')
         settings_loaded = load_settings(
-            Settings, "appname", config_files=[file]
+            Settings,
+            "appname",
+            config_files=[file],
         )
         assert settings_loaded.value == value
 
     @mark.parametrize(
-        "cls", [param(dt.date), param(dt.time), param(dt.timedelta)]
+        "cls",
+        [param(dt.date), param(dt.time), param(dt.timedelta)],
     )
     def test_errors(self, cls: Any) -> None:
         @settings(frozen=True)
@@ -85,7 +88,9 @@ class TestClickOptions:
         [
             param(dt.date, dates(), serialize_date),
             param(
-                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+                dt.datetime,
+                datetimes(timezones=just(UTC)),
+                serialize_datetime,
             ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),

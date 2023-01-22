@@ -53,7 +53,10 @@ class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
     @mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
-        self, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
+        self,
+        date: dt.date,
+        n: int,
+        predicate: Callable[[Any, Any], bool],
     ) -> None:
         _ = assume(predicate(n, 0))
         with assume_does_not_raise(OverflowError):
@@ -164,7 +167,9 @@ class TestParseDateTime:
         fmt=sampled_from(["%4Y%m%dT%H%M%S.%f%z", "%4Y-%m-%d %H:%M:%S.%f%z"]),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(
-        self, datetime: dt.datetime, fmt: str
+        self,
+        datetime: dt.datetime,
+        fmt: str,
     ) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -180,7 +185,7 @@ class TestParseDateTime:
     @given(
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(
-            ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"]
+            ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"],
         ),
     )
     def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, fmt: str) -> None:
@@ -191,7 +196,7 @@ class TestParseDateTime:
     @given(
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(
-            ["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"]
+            ["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"],
         ),
     )
     def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:

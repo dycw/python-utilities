@@ -30,7 +30,10 @@ class Date(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self,
+        value: Any,
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -46,7 +49,10 @@ class DateTime(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self,
+        value: Any,
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -62,7 +68,10 @@ class Time(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self,
+        value: Any,
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -78,7 +87,10 @@ class Timedelta(ParamType):
 
     @beartype
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self,
+        value: Any,
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
@@ -102,7 +114,10 @@ class Enum(ParamType, Generic[_E]):
 
     @beartype
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self,
+        value: Any,
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> _E:
         """Convert a value into the `Enum` type."""
         els = {el for el in self._enum if el.name.lower() == value.lower()}

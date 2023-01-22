@@ -30,7 +30,10 @@ class TestYieldModules:
         ],
     )
     def test_main(
-        self, module: ModuleType, recursive: bool, expected: int
+        self,
+        module: ModuleType,
+        recursive: bool,
+        expected: int,
     ) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 

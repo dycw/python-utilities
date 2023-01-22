@@ -1,7 +1,6 @@
 #### black ####################################################################
 [tool.black]
 line-length = 80
-skip-magic-trailing-comma = true
 target-version = ["py39"]
 
 #### coverage #################################################################
@@ -56,16 +55,16 @@ airium = ["airium >= 0.2.5"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 22.2.0"]
 click = ["click >= 8.1.3"]
-fastapi = ["fastapi >= 0.88.0"]
+fastapi = ["fastapi >= 0.89.1"]
 hatch = ["hatch >= 1.6.3"]
 hypothesis = ["hypothesis >= 6.61.0"]
 inflection = ["inflection >= 0.5.1"]
 loguru = ["loguru >= 0.6.0"]
-luigi = ["luigi >= 3.1.1"]
+luigi = ["luigi >= 3.2.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 9.0.0"]
 numpy = ["numpy >= 1.24.0"]
-pandas = ["pandas >= 1.5.2"]
+pandas = ["pandas >= 1.5.3"]
 pqdm = ["pqdm >= 0.2.0"]
 pyinstrument = ["pyinstrument >= 4.4.0"]
 tqdm = ["tqdm >= 4.64.1"]
@@ -74,29 +73,29 @@ sqlalchemy = [
   "sqlalchemy >= 1.4.46",
   "sqlalchemy2-stubs"
 ]
-typed-settings = ["typed-settings[click] >= 2.0.0"]
+typed-settings = ["typed-settings[click] >= 2.0.2"]
 dev = [
   # main
   "airium >= 0.2.5",
   "atomicwrites >= 1.4.1",
   "attrs >= 22.2.0",
   "click >= 8.1.3",
-  "fastapi >= 0.88.0",
+  "fastapi >= 0.89.1",
   "hatch >= 1.6.3",
   "hypothesis >= 6.61.0",
   "inflection >= 0.5.1",
   "loguru >= 0.6.0",
-  "luigi >= 3.1.1",
+  "luigi >= 3.2.0",
   "memory-profiler >= 0.61.0",
   "more-itertools >= 9.0.0",
   "numpy >= 1.24.0",
-  "pandas >= 1.5.2",
+  "pandas >= 1.5.3",
   "pqdm >= 0.2.0",
   "pyinstrument >= 4.4.0",
   "sqlalchemy >= 1.4.46",
   "sqlalchemy2-stubs",
   "tqdm >= 4.64.1",
-  "typed-settings[click] >= 2.0.0",
+  "typed-settings[click] >= 2.0.2",
   # dev
   "black",
   "bump2version",
@@ -209,6 +208,7 @@ force-single-line = true
   "D", # pydocstyle
   "FBT001", # flake8-boolean-trap, BooleanPositionalArgInFunctionDefinition
   "FBT003", # flake8-boolean-trap, BooleanPositionalValueInFunctionCall
+  "PLR2004", # refactor, magic-value-comparison
   "S101", # flake8-bandit, AssertUsed
 
 ]

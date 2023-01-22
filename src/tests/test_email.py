@@ -15,7 +15,9 @@ class TestSendEmail:
     def test_subject(self) -> None:
         with raises(SMTPServerDisconnected):
             send_email(
-                "no-reply@test.com", ["user@test.com"], subject="Subject"
+                "no-reply@test.com",
+                ["user@test.com"],
+                subject="Subject",
             )
 
     def test_contents_str(self) -> None:

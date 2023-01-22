@@ -12,7 +12,10 @@ from beartype import beartype
 
 @beartype
 def yield_modules(
-    module: ModuleType, /, *, recursive: bool = False
+    module: ModuleType,
+    /,
+    *,
+    recursive: bool = False,
 ) -> Iterator[ModuleType]:
     """Yield all the modules under a package.
 
