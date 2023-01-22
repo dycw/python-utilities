@@ -70,7 +70,8 @@ def ensure_timedelta(timedelta: Union[dt.timedelta, str], /) -> dt.timedelta:
 @beartype
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
-    return date.isoweekday() <= 5
+    friday = 5
+    return date.isoweekday() <= friday
 
 
 @beartype

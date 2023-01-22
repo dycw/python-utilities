@@ -23,7 +23,6 @@ from typed_settings.cli_utils import TypeHandler
 from typed_settings.cli_utils import TypeHandlerFunc
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
-from typed_settings.types import SettingsClass
 
 from utilities.click import Date
 from utilities.click import DateTime
@@ -52,11 +51,7 @@ def load_settings(
     """Load a settings object with the extended converter."""
     loaders = default_loaders(appname, config_files=config_files)
     converter = _make_converter()
-    return _load_settings(
-        cast(SettingsClass, cls),
-        loaders,
-        converter=converter,
-    )
+    return _load_settings(cast(Any, cls), loaders, converter=converter)
 
 
 @beartype
@@ -148,8 +143,8 @@ def _make_type_handler_func(
     def handler(
         _: type[Any],
         default: Default,
-        is_optional: bool,
-        /,  # noqa: FBT001
+        is_optional: bool,  # noqa: FBT001
+        /,
     ) -> StrDict:
         mapping: StrDict = {"type": param()}
         if isinstance(default, cls):  # pragma: no cover
