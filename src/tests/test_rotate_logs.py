@@ -98,7 +98,7 @@ class TestRotateLogs:
         tail.touch()
         items = frozenset(_yield_items(path=tmp_path, size=0))
         expected = frozenset(
-            [frozenset([Item(head, head), Item(tail, head, num=1)])]
+            [frozenset([Item(head, head), Item(tail, head, num=1)])],
         )
         assert items == expected
 
@@ -113,9 +113,9 @@ class TestRotateLogs:
         expected = frozenset(
             [
                 frozenset(
-                    [Item(foo_head, foo_head), Item(foo_tail, foo_head, num=1)]
+                    [Item(foo_head, foo_head), Item(foo_tail, foo_head, num=1)],
                 ),
                 frozenset([Item(bar_head, bar_head)]),
-            ]
+            ],
         )
         assert items == expected

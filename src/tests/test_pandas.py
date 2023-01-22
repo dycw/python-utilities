@@ -77,7 +77,8 @@ class TestTimestampToDateTime:
         ("timestamp", "expected"),
         [
             param(
-                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+                to_datetime("2000-01-01"),
+                dt.datetime(2000, 1, 1, tzinfo=UTC),
             ),
             param(
                 to_datetime("2000-01-01 12:00:00"),

@@ -35,7 +35,8 @@ from utilities.text import ensure_str
 @contextmanager
 @beartype
 def assume_does_not_raise(
-    *exceptions: type[Exception], match: Optional[str] = None
+    *exceptions: type[Exception],
+    match: Optional[str] = None,
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised.
 
@@ -98,7 +99,7 @@ def lists_fixed_length(
     draw = lift_draw(_draw)
     size_ = draw(size)
     elements = draw(
-        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique))
+        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique)),
     )
     if draw(sorted):
         return builtins.sorted(cast(Iterable[Any], elements))
@@ -117,7 +118,10 @@ def setup_hypothesis_profiles() -> None:
     settings.register_profile("dev", max_examples=10, **kwargs)
     settings.register_profile("ci", max_examples=1000, **kwargs)
     settings.register_profile(
-        "debug", max_examples=10, verbosity=Verbosity.verbose, **kwargs
+        "debug",
+        max_examples=10,
+        verbosity=Verbosity.verbose,
+        **kwargs,
     )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
 
@@ -199,5 +203,5 @@ def _draw_text(
 ) -> str:
     draw = lift_draw(_draw)
     return draw(
-        text(alphabet, min_size=draw(min_size), max_size=draw(max_size))
+        text(alphabet, min_size=draw(min_size), max_size=draw(max_size)),
     )

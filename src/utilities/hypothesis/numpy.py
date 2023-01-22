@@ -43,7 +43,7 @@ def bool_arrays(
             elements=booleans(),
             fill=nothing(),
             unique=draw(unique),
-        )
+        ),
     )
 
 
@@ -75,7 +75,7 @@ def float_arrays(
             elements=elements,
             fill=nothing(),
             unique=draw(unique),
-        )
+        ),
     )
 
 
@@ -104,7 +104,7 @@ def int_arrays(
             elements=elements,
             fill=nothing(),
             unique=draw(unique),
-        )
+        ),
     )
 
 

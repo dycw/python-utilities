@@ -23,7 +23,7 @@ class TestCatchWarningsAsErrors:
         with warns(CustomWarning):
             warn("", category=CustomWarning)
         with raises(CustomWarning), catch_warnings_as_errors(
-            category=CustomWarning
+            category=CustomWarning,
         ):
             warn("", category=CustomWarning)
 
@@ -39,7 +39,7 @@ class TestCatchWarningsAsErrors:
         with warns(category):
             warn("", category=category)
         with raises(category), catch_warnings_as_errors(
-            category=(FirstWarning, SecondWarning)
+            category=(FirstWarning, SecondWarning),
         ):
             warn("", category=category)
 

@@ -40,6 +40,6 @@ def datetimes_pd(
         datetimes(
             min_value=min_value.replace(tzinfo=None),
             max_value=max_value.replace(tzinfo=None),
-        )
+        ),
     )
     return datetime.replace(tzinfo=UTC)

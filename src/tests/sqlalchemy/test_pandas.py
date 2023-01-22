@@ -92,15 +92,20 @@ class TestNativizeColumn:
         [
             param(Series([True, False], dtype=bool), [True, False]),
             param(
-                Series([True, False, None], dtype=boolean), [True, False, None]
+                Series([True, False, None], dtype=boolean),
+                [True, False, None],
             ),
         ],
     )
     @mark.parametrize(
-        "column", [param(Column(Boolean)), param(Column(Integer))]
+        "column",
+        [param(Column(Boolean)), param(Column(Integer))],
     )
     def test_boolean_data(
-        self, series: Series, column: Any, expected: list[Any]
+        self,
+        series: Series,
+        column: Any,
+        expected: list[Any],
     ) -> None:
         res = list(_nativize_column(series, column))
         assert res == expected
@@ -115,7 +120,8 @@ class TestNativizeColumn:
             ),
             param(
                 Series(
-                    [to_datetime("2000-01-01 12:00:00"), NA], dtype=datetime64ns
+                    [to_datetime("2000-01-01 12:00:00"), NA],
+                    dtype=datetime64ns,
                 ),
                 Column(DateTime),
                 [dt.datetime(2000, 1, 1, 12, tzinfo=UTC), None],
@@ -123,7 +129,10 @@ class TestNativizeColumn:
         ],
     )
     def test_datetime_data(
-        self, series: Series, column: Any, expected: list[Any]
+        self,
+        series: Series,
+        column: Any,
+        expected: list[Any],
     ) -> None:
         res = list(_nativize_column(series, column))
         assert res == expected
@@ -146,7 +155,10 @@ class TestNativizeColumn:
         ],
     )
     def test_float_int_and_str_data(
-        self, series: Series, column: Any, expected: list[Any]
+        self,
+        series: Series,
+        column: Any,
+        expected: list[Any],
     ) -> None:
         res = list(_nativize_column(series, column))
         assert res == expected

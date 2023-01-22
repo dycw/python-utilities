@@ -42,7 +42,7 @@ class TestAssumeDoesNotRaise:
         msg = "x is True"
         if x is True:
             with raises(ValueError, match=msg), assume_does_not_raise(
-                RuntimeError
+                RuntimeError,
             ):
                 raise ValueError(msg)
 
@@ -59,7 +59,8 @@ class TestAssumeDoesNotRaise:
         msg = "x is True"
         if x is True:
             with raises(ValueError, match=msg), assume_does_not_raise(
-                ValueError, match="wrong"
+                ValueError,
+                match="wrong",
             ):
                 raise ValueError(msg)
 
@@ -88,16 +89,22 @@ class TestLiftDraw:
 class TestListsFixedLength:
     @given(data=data(), size=integers(1, 10))
     @mark.parametrize(
-        "unique", [param(True, id="unique"), param(False, id="no unique")]
+        "unique",
+        [param(True, id="unique"), param(False, id="no unique")],
     )
     @mark.parametrize(
-        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
+        "sorted_",
+        [param(True, id="sorted"), param(False, id="no sorted")],
     )
     def test_main(
-        self, data: DataObject, size: int, unique: bool, sorted_: bool
+        self,
+        data: DataObject,
+        size: int,
+        unique: bool,
+        sorted_: bool,
     ) -> None:
         result = data.draw(
-            lists_fixed_length(integers(), size, unique=unique, sorted=sorted_)
+            lists_fixed_length(integers(), size, unique=unique, sorted=sorted_),
         )
         assert isinstance(result, list)
         assert len(result) == size
@@ -118,10 +125,13 @@ class TestTempDirs:
         _test_temp_path(temp_dir.name)
 
     @given(
-        temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10)
+        temp_dir=temp_dirs(),
+        contents=sets(text_ascii(min_size=1), max_size=10),
     )
     def test_writing_files(
-        self, temp_dir: TemporaryDirectory, contents: set[str]
+        self,
+        temp_dir: TemporaryDirectory,
+        contents: set[str],
     ) -> None:
         _test_writing_to_temp_path(temp_dir.name, contents)
 
@@ -158,7 +168,10 @@ class TestTextAscii:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: Optional[int]
+        self,
+        data: DataObject,
+        min_size: int,
+        max_size: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_ascii(min_size=min_size, max_size=max_size))
@@ -175,7 +188,10 @@ class TestTextClean:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: Optional[int]
+        self,
+        data: DataObject,
+        min_size: int,
+        max_size: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(text_clean(min_size=min_size, max_size=max_size))
@@ -192,14 +208,18 @@ class TestTextPrintable:
         max_size=integers(0, 100) | none(),
     )
     def test_main(
-        self, data: DataObject, min_size: int, max_size: Optional[int]
+        self,
+        data: DataObject,
+        min_size: int,
+        max_size: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(
-                text_printable(min_size=min_size, max_size=max_size)
+                text_printable(min_size=min_size, max_size=max_size),
             )
         assert search(
-            r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text
+            r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$",
+            text,
         )
         assert len(text) >= min_size
         if max_size is not None:

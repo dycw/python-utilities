@@ -29,7 +29,10 @@ def get_repo_name(*, cwd: PathLike = _CWD) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
-        ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=root, text=True
+        ["git", "remote", "get-url", "origin"],
+        stderr=PIPE,
+        cwd=root,
+        text=True,
     )
     return Path(output.strip("\n")).stem
 

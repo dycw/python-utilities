@@ -9,7 +9,10 @@ from utilities.text import ensure_str
 
 @beartype
 def redirect_error(
-    old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
+    old: Exception,
+    pattern: str,
+    new: Union[Exception, type[Exception]],
+    /,
 ) -> NoReturn:
     """Redirect an error if a matching string is found."""
     args = old.args

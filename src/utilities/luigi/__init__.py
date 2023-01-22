@@ -94,31 +94,47 @@ def clone(task: Task, cls: type[_Task], /, **kwargs: Any) -> _Task:
 
 @overload
 def get_dependencies_downstream(
-    task: Task, /, *, cls: type[_Task], recursive: bool = False
+    task: Task,
+    /,
+    *,
+    cls: type[_Task],
+    recursive: bool = False,
 ) -> frozenset[_Task]:
     ...
 
 
 @overload
 def get_dependencies_downstream(
-    task: Task, /, *, cls: None = None, recursive: bool = False
+    task: Task,
+    /,
+    *,
+    cls: None = None,
+    recursive: bool = False,
 ) -> frozenset[Task]:
     ...
 
 
 @beartype
 def get_dependencies_downstream(
-    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
+    task: Task,
+    /,
+    *,
+    cls: Optional[type[Task]] = None,
+    recursive: bool = False,
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
     return frozenset(
-        _yield_dependencies_downstream(task, cls=cls, recursive=recursive)
+        _yield_dependencies_downstream(task, cls=cls, recursive=recursive),
     )
 
 
 @beartype
 def _yield_dependencies_downstream(
-    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
+    task: Task,
+    /,
+    *,
+    cls: Optional[type[Task]] = None,
+    recursive: bool = False,
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
         try:
@@ -130,13 +146,17 @@ def _yield_dependencies_downstream(
                 yield cloned
                 if recursive:
                     yield from get_dependencies_downstream(
-                        cloned, recursive=recursive
+                        cloned,
+                        recursive=recursive,
                     )
 
 
 @beartype
 def get_dependencies_upstream(
-    task: Task, /, *, recursive: bool = False
+    task: Task,
+    /,
+    *,
+    recursive: bool = False,
 ) -> frozenset[Task]:
     """Get the upstream dependencies of a task."""
     return frozenset(_yield_dependencies_upstream(task, recursive=recursive))
@@ -144,7 +164,10 @@ def get_dependencies_upstream(
 
 @beartype
 def _yield_dependencies_upstream(
-    task: Task, /, *, recursive: bool = False
+    task: Task,
+    /,
+    *,
+    recursive: bool = False,
 ) -> Iterator[Task]:
     for t in cast(Iterable[Task], flatten(task.requires())):
         yield t
@@ -164,7 +187,8 @@ def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
 
 @beartype
 def get_task_classes(
-    *, cls: Optional[type[_Task]] = None
+    *,
+    cls: Optional[type[_Task]] = None,
 ) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     return frozenset(_yield_task_classes(cls=cls))
@@ -172,7 +196,8 @@ def get_task_classes(
 
 @beartype
 def _yield_task_classes(
-    *, cls: Optional[type[_Task]] = None
+    *,
+    cls: Optional[type[_Task]] = None,
 ) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     for name in Register.task_names():

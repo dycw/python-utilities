@@ -70,7 +70,8 @@ def ensure_timedelta(timedelta: Union[dt.timedelta, str], /) -> dt.timedelta:
 @beartype
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
-    return date.isoweekday() <= 5
+    friday = 5
+    return date.isoweekday() <= friday
 
 
 @beartype
@@ -101,7 +102,7 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
     ]:
         with suppress(ValueError):
             return dt.datetime.strptime(datetime, fmt).replace(
-                tzinfo=dt.timezone.utc
+                tzinfo=dt.timezone.utc,
             )
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):
@@ -145,7 +146,8 @@ def parse_timedelta(timedelta: str) -> dt.timedelta:
             )
     try:
         days, tail = extract_groups(
-            r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta
+            r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)",
+            timedelta,
         )
     except ValueError:
         raise TimedeltaError(timedelta) from None

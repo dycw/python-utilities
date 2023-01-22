@@ -49,7 +49,10 @@ class TestColumnwiseMinMax:
     @given(
         values=lists(
             fixed_dictionaries(
-                {"x": integers(0, 100) | none(), "y": integers(0, 100) | none()}
+                {
+                    "x": integers(0, 100) | none(),
+                    "y": integers(0, 100) | none(),
+                },
             ),
             min_size=1,
             max_size=10,
@@ -57,7 +60,9 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: list[dict[str, Optional[int]]], engine: Engine
+        self,
+        values: list[dict[str, Optional[int]]],
+        engine: Engine,
     ) -> None:
         table = Table(
             "example",
@@ -122,7 +127,9 @@ class TestEnsureTableCreated:
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         self._run_test(table, engine, runs)
 
@@ -137,11 +144,16 @@ class TestEnsureTableCreated:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self, table_or_model: Any, engine: Engine, runs: int, /
+        self,
+        table_or_model: Any,
+        engine: Engine,
+        runs: int,
+        /,
     ) -> None:
         sel = get_table(table_or_model).select()
         with raises(
-            OperationalError, match="no such table"
+            OperationalError,
+            match="no such table",
         ), engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -157,7 +169,9 @@ class TestEnsureTableDropped:
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         self._run_test(table, engine, runs)
 
@@ -172,7 +186,11 @@ class TestEnsureTableDropped:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self, table_or_model: Any, engine: Engine, runs: int, /
+        self,
+        table_or_model: Any,
+        engine: Engine,
+        runs: int,
+        /,
     ) -> None:
         table = get_table(table_or_model)
         sel = table.select()
@@ -184,7 +202,8 @@ class TestEnsureTableDropped:
             ensure_table_dropped(table_or_model, engine)
 
         with raises(
-            OperationalError, match="no such table"
+            OperationalError,
+            match="no such table",
         ), engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -192,7 +211,9 @@ class TestEnsureTableDropped:
 class TestGetColumnNames:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         self._run_test(table)
 
@@ -211,7 +232,9 @@ class TestGetColumnNames:
 class TestGetColumns:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         self._run_test(table)
 
@@ -242,7 +265,8 @@ class TestGetDialect:
             param("mysql://scott:tiger@localhost/foo", "mysql"),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param(
-                "postgresql://scott:tiger@localhost/mydatabase", "postgresql"
+                "postgresql://scott:tiger@localhost/mydatabase",
+                "postgresql",
             ),
         ],
     )
@@ -253,7 +277,9 @@ class TestGetDialect:
 class TestGetTable:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         result = get_table(table)
         assert result is table
@@ -272,7 +298,9 @@ class TestGetTable:
 class TestGetTableName:
     def test_core(self) -> None:
         table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
         )
         result = get_table_name(table)
         expected = "example"
@@ -308,10 +336,15 @@ class TestYieldInClauseRows:
         chunk_size=integers(1, 10) | none(),
     )
     def test_main(
-        self, data: DataObject, engine: Engine, chunk_size: Optional[int]
+        self,
+        data: DataObject,
+        engine: Engine,
+        chunk_size: Optional[int],
     ) -> None:
         table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
         )
         rows = data.draw(table_records_lists(table, min_size=1))
         num_rows = len(rows)
@@ -331,6 +364,6 @@ class TestYieldInClauseRows:
                 values,
                 engine,
                 chunk_size=chunk_size,
-            )
+            ),
         )
         assert len(result) == len(values)

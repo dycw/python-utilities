@@ -24,17 +24,28 @@ _LOGGER = getLogger(__name__)
 @option("-p", "--path", type=Path, default=Config.path, show_default=True)
 @option("-d", "--days", type=int, default=Config.days, show_default=True)
 @option(
-    "-c", "--chunk-size", type=int, default=Config.chunk_size, show_default=True
+    "-c",
+    "--chunk-size",
+    type=int,
+    default=Config.chunk_size,
+    show_default=True,
 )
 @option("-dr", "--dry-run", is_flag=True, show_default=True)
 @beartype
 def main(
-    *, path: Path, days: int, chunk_size: Optional[int], dry_run: bool
+    *,
+    path: Path,
+    days: int,
+    chunk_size: Optional[int],
+    dry_run: bool,
 ) -> None:
     """CLI for the `clean_dir` script."""
     basic_config()
     config = Config(
-        path=path, days=days, chunk_size=chunk_size, dry_run=dry_run
+        path=path,
+        days=days,
+        chunk_size=chunk_size,
+        dry_run=dry_run,
     )
     _log_config(config)
     if config.dry_run:
@@ -103,7 +114,8 @@ def _is_empty(path: Path, /) -> bool:
 @beartype
 def _is_old(path: Path, config: Config, /) -> bool:
     age = dt.datetime.now(tz=UTC) - dt.datetime.fromtimestamp(
-        path.stat().st_mtime, tz=UTC
+        path.stat().st_mtime,
+        tz=UTC,
     )
     return age >= dt.timedelta(days=config.days)
 
