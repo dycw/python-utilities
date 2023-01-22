@@ -164,18 +164,19 @@ xfail_strict = true
 #### ruff #####################################################################
 [tool.ruff]
 extend-ignore = [
-  "ANN101", # flake8-annotations, MissingTypeSelf
-  "ANN401", # flake8-annotations, DynamicallyTypedExpression
-  "D100", # pydocstyle, PublicModule
-  "D104", # pydocstyle, PublicPackage
-  "D105", # pydocstyle, MagicMethod
-  "D107", # pydocstyle, PublicInit
+  "ANN101", # flake8-annotations, missing-type-self
+  "ANN401", # flake8-annotations, dynamically-typed-expression
+  "D100", # pydocstyle, public-module
+  "D104", # pydocstyle, public-package
+  "D105", # pydocstyle, magic-method
+  "D107", # pydocstyle, public-init
   "D203", # pydocstyle, pep8
   "D203", # pydocstyle, pep8
   "D212", # pydocstyle, pep8
   "D213", # pydocstyle, pep8
   "D214", # pydocstyle, pep8
   "D215", # pydocstyle, pep8
+  "D401", # pydocstyle, non-imperative-mood
   "D404", # pydocstyle, pep8
   "D405", # pydocstyle, pep8
   "D406", # pydocstyle, pep8
@@ -189,7 +190,7 @@ extend-ignore = [
   "D416", # pydocstyle, pep8
   "D417", # pydocstyle, pep8
   "PD", # pandas-vet
-  "PT013", # flake8-pytest-style, IncorrectPytestImport
+  "PT013", # flake8-pytest-style, incorrect-pytest-import
 
 ]
 extend-select = ["ALL"]
@@ -206,10 +207,10 @@ force-single-line = true
 [tool.ruff.per-file-ignores]
 "src/tests/**/*.py" = [
   "D", # pydocstyle
-  "FBT001", # flake8-boolean-trap, BooleanPositionalArgInFunctionDefinition
-  "FBT003", # flake8-boolean-trap, BooleanPositionalValueInFunctionCall
+  "FBT001", # flake8-boolean-trap, boolean-positional-arg-in-function-definition
+  "FBT003", # flake8-boolean-trap, boolean-positional-value-in-function-call
   "PLR2004", # refactor, magic-value-comparison
-  "S101", # flake8-bandit, AssertUsed
+  "S101", # flake8-bandit, assert-used
 
 ]
 
