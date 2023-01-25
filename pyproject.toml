@@ -190,6 +190,7 @@ extend-ignore = [
   "D416", # pydocstyle, pep8
   "D417", # pydocstyle, pep8
   "PD", # pandas-vet
+  "PT012", # flake8-pytest-style, raises-with-multiple-statements
   "PT013", # flake8-pytest-style, incorrect-pytest-import
 
 ]
@@ -200,9 +201,6 @@ target-version = "py39"
 
 [tool.ruff.flake8-tidy-imports]
 ban-relative-imports = "all"
-
-[tool.ruff.isort]
-force-single-line = true
 
 [tool.ruff.per-file-ignores]
 "src/tests/**/*.py" = [

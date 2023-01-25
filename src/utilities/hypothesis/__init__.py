@@ -1,34 +1,26 @@
 import builtins
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from os import getenv
 from pathlib import Path
 from re import search
-from string import ascii_letters
-from string import printable
-from typing import Any
-from typing import Optional
-from typing import Protocol
-from typing import TypeVar
-from typing import cast
-from typing import overload
+from string import ascii_letters, printable
+from typing import Any, Optional, Protocol, TypeVar, cast, overload
 
 from beartype import beartype
-from hypothesis import Verbosity
-from hypothesis import assume
-from hypothesis import settings
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import characters
-from hypothesis.strategies import composite
-from hypothesis.strategies import lists
-from hypothesis.strategies import text
-from hypothesis.strategies import uuids
+from hypothesis import Verbosity, assume, settings
+from hypothesis.strategies import (
+    DrawFn,
+    SearchStrategy,
+    characters,
+    composite,
+    lists,
+    text,
+    uuids,
+)
 
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.tempfile import TemporaryDirectory
-from utilities.tempfile import gettempdir
+from utilities.tempfile import TemporaryDirectory, gettempdir
 from utilities.text import ensure_str
 
 

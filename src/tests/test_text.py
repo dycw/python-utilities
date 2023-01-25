@@ -1,7 +1,6 @@
 from pytest import raises
 
-from utilities.text import ensure_str
-from utilities.text import strip_and_dedent
+from utilities.text import ensure_str, strip_and_dedent
 
 
 class TestEnsureStr:

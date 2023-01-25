@@ -2,9 +2,11 @@ from re import escape
 
 from pytest import raises
 
-from utilities.more_itertools import EmptyIterableError
-from utilities.more_itertools import MultipleElementsError
-from utilities.more_itertools import one
+from utilities.more_itertools import (
+    EmptyIterableError,
+    MultipleElementsError,
+    one,
+)
 
 
 class TestOne:

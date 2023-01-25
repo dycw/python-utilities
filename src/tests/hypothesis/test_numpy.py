@@ -3,21 +3,16 @@ from typing import Optional
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import floats
-from hypothesis.strategies import none
-from numpy import iinfo
-from numpy import int64
-from numpy import isinf
-from numpy import isnan
+from hypothesis.strategies import DataObject, booleans, data, floats, none
+from numpy import iinfo, int64, isinf, isnan
 
 from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis.numpy import bool_arrays
-from utilities.hypothesis.numpy import float_arrays
-from utilities.hypothesis.numpy import int64s
-from utilities.hypothesis.numpy import int_arrays
+from utilities.hypothesis.numpy import (
+    bool_arrays,
+    float_arrays,
+    int64s,
+    int_arrays,
+)
 from utilities.hypothesis.typing import Shape
 
 

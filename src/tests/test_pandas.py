@@ -1,25 +1,21 @@
 import datetime as dt
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from pandas import NaT
-from pandas import Series
-from pandas import Timestamp
-from pandas import to_datetime
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pandas import NaT, Series, Timestamp, to_datetime
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+    Int64,
+    boolean,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+)
 
 
 class TestDTypes:

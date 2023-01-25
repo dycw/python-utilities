@@ -1,11 +1,8 @@
-from collections.abc import Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import Any, Optional, Union
 
 from beartype import beartype
 

@@ -1,17 +1,14 @@
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 from hypothesis import given
 from luigi import Task
-from sqlalchemy import Column
-from sqlalchemy import Integer
+from sqlalchemy import Column, Integer
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis.luigi import task_namespaces
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.luigi.sqlalchemy import EngineParameter
-from utilities.luigi.sqlalchemy import TableParameter
+from utilities.luigi.sqlalchemy import EngineParameter, TableParameter
 
 
 class TestEngineParameter:

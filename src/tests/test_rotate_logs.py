@@ -2,11 +2,13 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from utilities.rotate_logs import _key
-from utilities.rotate_logs import _rotate_item
-from utilities.rotate_logs import _rotate_items
-from utilities.rotate_logs import _yield_items
-from utilities.rotate_logs import main
+from utilities.rotate_logs import (
+    _key,
+    _rotate_item,
+    _rotate_items,
+    _yield_items,
+    main,
+)
 from utilities.rotate_logs.classes import Item
 
 

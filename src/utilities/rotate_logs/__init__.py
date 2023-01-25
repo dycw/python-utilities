@@ -1,17 +1,13 @@
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from logging import getLogger
 from pathlib import Path
 
 from beartype import beartype
-from click import command
-from click import option
+from click import command, option
 
 from utilities.logging import basic_config
-from utilities.re import NoMatchesError
-from utilities.re import extract_group
-from utilities.rotate_logs.classes import Config
-from utilities.rotate_logs.classes import Item
+from utilities.re import NoMatchesError, extract_group
+from utilities.rotate_logs.classes import Config, Item
 
 _LOGGER = getLogger(__name__)
 

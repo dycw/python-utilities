@@ -1,35 +1,22 @@
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from functools import reduce
-from operator import ge
-from operator import le
+from operator import ge, le
 from re import search
-from typing import Any
-from typing import Literal
-from typing import Optional
-from typing import Union
-from typing import cast
+from typing import Any, Literal, Optional, Union, cast
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Table
-from sqlalchemy import and_
-from sqlalchemy import case
+from sqlalchemy import Table, and_, case
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.pool import NullPool
-from sqlalchemy.pool import Pool
+from sqlalchemy.engine import URL, Connection, Engine
+from sqlalchemy.exc import DatabaseError, OperationalError
+from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql import Selectable
 
 from utilities.typing import never

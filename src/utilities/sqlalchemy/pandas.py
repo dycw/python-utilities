@@ -4,21 +4,18 @@ from decimal import Decimal
 from typing import Any
 
 from beartype import beartype
-from pandas import DataFrame
-from pandas import NaT
-from pandas import Series
+from pandas import DataFrame, NaT, Series
 from sqlalchemy.engine import Engine
 
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
-from utilities.sqlalchemy import get_column_names
-from utilities.sqlalchemy import get_columns
-from utilities.sqlalchemy import get_table
+from utilities.numpy import datetime64ns, has_dtype
+from utilities.pandas import (
+    Int64,
+    boolean,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+)
+from utilities.sqlalchemy import get_column_names, get_columns, get_table
 
 
 @beartype

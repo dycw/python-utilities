@@ -4,35 +4,37 @@ from enum import Enum as _Enum
 from enum import auto
 from typing import Any
 
-from click import ParamType
-from click import argument
-from click import command
-from click import echo
+from click import ParamType, argument, command, echo
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import just
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import timedeltas
-from hypothesis.strategies import times
-from pytest import mark
-from pytest import param
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    dates,
+    datetimes,
+    just,
+    sampled_from,
+    timedeltas,
+    times,
+)
+from pytest import mark, param
 
-from utilities.click import Date
-from utilities.click import DateTime
-from utilities.click import Enum
-from utilities.click import Time
-from utilities.click import Timedelta
-from utilities.click import log_level_option
-from utilities.datetime import UTC
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.datetime import serialize_timedelta
+from utilities.click import (
+    Date,
+    DateTime,
+    Enum,
+    Time,
+    Timedelta,
+    log_level_option,
+)
+from utilities.datetime import (
+    UTC,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+    serialize_timedelta,
+)
 from utilities.logging import LogLevel
 
 

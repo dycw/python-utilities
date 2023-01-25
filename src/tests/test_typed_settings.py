@@ -1,36 +1,35 @@
 import datetime as dt
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from click import command
-from click import echo
+from click import command, echo
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import just
-from hypothesis.strategies import timedeltas
-from hypothesis.strategies import times
-from hypothesis.strategies import tuples
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    dates,
+    datetimes,
+    just,
+    timedeltas,
+    times,
+    tuples,
+)
+from pytest import mark, param, raises
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
 
-from utilities.datetime import UTC
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.datetime import serialize_timedelta
+from utilities.datetime import (
+    UTC,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+    serialize_timedelta,
+)
 from utilities.hypothesis import temp_paths
-from utilities.typed_settings import click_options
-from utilities.typed_settings import load_settings
+from utilities.typed_settings import click_options, load_settings
 
 
 class TestLoadSettings:
@@ -59,7 +58,8 @@ class TestLoadSettings:
 
         settings_default = load_settings(Settings, "appname")
         assert settings_default.value == default
-        with open(file := root.joinpath("file.toml"), mode="w") as fh:
+        file = root.joinpath("file.toml")
+        with file.open(mode="w") as fh:
             _ = fh.write(f'[appname]\nvalue = "{value}"')
         settings_loaded = load_settings(
             Settings,
@@ -125,7 +125,8 @@ class TestClickOptions:
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
 
-        with open(file := root.joinpath("file.toml"), mode="w") as fh:
+        file = root.joinpath("file.toml")
+        with file.open(mode="w") as fh:
             _ = fh.write(f'[appname]\nvalue = "{cfg_str}"')
 
         @command()

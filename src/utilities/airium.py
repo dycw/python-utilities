@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 from airium import Airium
 from beartype import beartype

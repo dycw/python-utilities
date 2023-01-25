@@ -3,10 +3,12 @@ from re import search
 
 from pytest import raises
 
-from utilities.git import InvalidRepoError
-from utilities.git import get_branch_name
-from utilities.git import get_repo_name
-from utilities.git import get_repo_root
+from utilities.git import (
+    InvalidRepoError,
+    get_branch_name,
+    get_repo_name,
+    get_repo_root,
+)
 
 
 class TestGetBranchName:

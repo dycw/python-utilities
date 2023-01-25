@@ -1,10 +1,8 @@
 import datetime as dt
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 from beartype import beartype
-from pandas import NaT
-from pandas import Timestamp
+from pandas import NaT, Timestamp
 
 from utilities.datetime import UTC
 

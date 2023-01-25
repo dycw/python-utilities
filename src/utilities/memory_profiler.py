@@ -1,10 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any
-from typing import Generic
-from typing import TypeVar
-from typing import cast
+from typing import Any, Generic, TypeVar, cast
 
 from beartype import beartype
 from memory_profiler import memory_usage

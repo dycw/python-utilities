@@ -1,7 +1,6 @@
 from typing import Any
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
 from utilities.iterables import is_iterable_not_str
 

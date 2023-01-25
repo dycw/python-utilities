@@ -1,7 +1,6 @@
 from os import getenv
 
-from hypothesis import Verbosity
-from hypothesis import settings
+from hypothesis import Verbosity, settings
 
 kwargs = {"deadline": None, "print_blob": True, "report_multiple_bugs": False}
 settings.register_profile("default", max_examples=100, **kwargs)

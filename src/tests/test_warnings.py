@@ -1,14 +1,10 @@
 from warnings import warn
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import sampled_from
-from pytest import raises
-from pytest import warns
+from hypothesis.strategies import DataObject, data, sampled_from
+from pytest import raises, warns
 
-from utilities.warnings import catch_warnings_as_errors
-from utilities.warnings import suppress_warnings
+from utilities.warnings import catch_warnings_as_errors, suppress_warnings
 
 
 class TestCatchWarningsAsErrors:

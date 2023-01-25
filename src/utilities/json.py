@@ -1,9 +1,7 @@
 import datetime as dt
 from json import dumps
 from pathlib import Path
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import Any, Optional, Union
 
 from beartype import beartype
 
