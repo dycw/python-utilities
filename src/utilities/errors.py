@@ -1,6 +1,5 @@
 from re import search
-from typing import NoReturn
-from typing import Union
+from typing import NoReturn, Union
 
 from beartype import beartype
 

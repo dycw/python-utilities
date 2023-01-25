@@ -2,11 +2,9 @@ import datetime as dt
 from typing import cast
 
 from hypothesis import given
-from pandas import Timestamp
-from pandas import to_datetime
+from pandas import Timestamp, to_datetime
 
-from utilities.hypothesis.pandas import dates_pd
-from utilities.hypothesis.pandas import datetimes_pd
+from utilities.hypothesis.pandas import dates_pd, datetimes_pd
 
 
 class TestDatesPd:

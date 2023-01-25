@@ -1,48 +1,41 @@
 from pathlib import Path
-from typing import Any
-from typing import Optional
-from typing import cast
+from typing import Any, Optional, cast
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import fixed_dictionaries
-from hypothesis.strategies import integers
-from hypothesis.strategies import lists
-from hypothesis.strategies import none
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    fixed_dictionaries,
+    integers,
+    lists,
+    none,
+    sampled_from,
+    sets,
+)
 from hypothesis_sqlalchemy.sample import table_records_lists
-from pytest import mark
-from pytest import param
-from pytest import raises
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import Table
-from sqlalchemy import func
-from sqlalchemy import insert
-from sqlalchemy import select
+from pytest import mark, param, raises
+from sqlalchemy import Column, Integer, MetaData, Table, func, insert, select
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.sqlalchemy import columnwise_max
-from utilities.sqlalchemy import columnwise_min
-from utilities.sqlalchemy import create_engine
-from utilities.sqlalchemy import ensure_table_created
-from utilities.sqlalchemy import ensure_table_dropped
-from utilities.sqlalchemy import get_column_names
-from utilities.sqlalchemy import get_columns
-from utilities.sqlalchemy import get_dialect
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import get_table_name
-from utilities.sqlalchemy import yield_connection
-from utilities.sqlalchemy import yield_in_clause_rows
+from utilities.sqlalchemy import (
+    columnwise_max,
+    columnwise_min,
+    create_engine,
+    ensure_table_created,
+    ensure_table_dropped,
+    get_column_names,
+    get_columns,
+    get_dialect,
+    get_table,
+    get_table_name,
+    yield_connection,
+    yield_in_clause_rows,
+)
 
 
 class TestColumnwiseMinMax:

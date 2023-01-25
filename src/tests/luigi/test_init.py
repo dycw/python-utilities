@@ -2,21 +2,21 @@ from functools import partial
 from pathlib import Path
 from typing import cast
 
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import given, settings
 from hypothesis.strategies import booleans
-from luigi import BoolParameter
-from luigi import Task
+from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 
 from utilities.hypothesis.luigi import task_namespaces
-from utilities.luigi import PathTarget
-from utilities.luigi import _yield_task_classes
-from utilities.luigi import build
-from utilities.luigi import clone
-from utilities.luigi import get_dependencies_downstream
-from utilities.luigi import get_dependencies_upstream
-from utilities.luigi import get_task_classes
+from utilities.luigi import (
+    PathTarget,
+    _yield_task_classes,
+    build,
+    clone,
+    get_dependencies_downstream,
+    get_dependencies_upstream,
+    get_task_classes,
+)
 
 
 class TestBuild:

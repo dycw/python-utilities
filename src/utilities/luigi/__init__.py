@@ -1,23 +1,14 @@
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
-from typing import Any
-from typing import Literal
-from typing import Optional
-from typing import TypeVar
-from typing import Union
-from typing import cast
-from typing import overload
+from typing import Any, Literal, Optional, TypeVar, Union, cast, overload
 
 from beartype import beartype
-from luigi import Target
-from luigi import Task
+from luigi import Target, Task
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
-from luigi.task import Register
-from luigi.task import flatten
+from luigi.task import Register, flatten
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike

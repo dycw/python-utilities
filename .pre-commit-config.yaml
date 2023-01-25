@@ -6,12 +6,12 @@ repos:
       - id: pyupgrade
         args: [--py39-plus]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.229
+    rev: v0.0.233
     hooks:
       - id: ruff
         args: [--fix]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.7.2
+    rev: 0.7.3
     hooks:
       - id: run-bump2version
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -1,47 +1,37 @@
 import datetime as dt
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import sqlalchemy
-from hypothesis import assume
-from hypothesis import given
-from hypothesis.extra.pandas import column
-from hypothesis.extra.pandas import data_frames
-from hypothesis.extra.pandas import range_indexes
-from hypothesis.strategies import integers
-from hypothesis.strategies import sets
-from numpy import inf
-from numpy import nan
-from pandas import NA
-from pandas import DataFrame
-from pandas import Series
-from pandas import to_datetime
-from pytest import mark
-from pytest import param
-from pytest import raises
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import Date
-from sqlalchemy import DateTime
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import select
+from hypothesis import assume, given
+from hypothesis.extra.pandas import column, data_frames, range_indexes
+from hypothesis.strategies import integers, sets
+from numpy import inf, nan
+from pandas import NA, DataFrame, Series, to_datetime
+from pytest import mark, param, raises
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    select,
+)
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Session, declarative_base
 
 from utilities.datetime import UTC
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.numpy import datetime64ns
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import string
+from utilities.pandas import Int64, boolean, string
 from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy.pandas import _get_dtype
-from utilities.sqlalchemy.pandas import _nativize_column
-from utilities.sqlalchemy.pandas import insert_dataframe
-from utilities.sqlalchemy.pandas import read_dataframe
+from utilities.sqlalchemy.pandas import (
+    _get_dtype,
+    _nativize_column,
+    insert_dataframe,
+    read_dataframe,
+)
 
 
 class TestGetDType:

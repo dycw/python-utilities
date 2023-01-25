@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from utilities.tempfile import TemporaryDirectory
-from utilities.tempfile import gettempdir
+from utilities.tempfile import TemporaryDirectory, gettempdir
 
 
 class TestGetTempDir:

@@ -1,25 +1,21 @@
 import datetime as dt
 from contextlib import suppress
 from enum import Enum as _Enum
-from typing import Any
-from typing import Generic
-from typing import Optional
-from typing import TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from beartype import beartype
-from click import Context
-from click import Parameter
-from click import ParamType
-from click import option
+from click import Context, Parameter, ParamType, option
 
-from utilities.datetime import ParseDateError
-from utilities.datetime import ParseDateTimeError
-from utilities.datetime import ParseTimeError
-from utilities.datetime import TimedeltaError
-from utilities.datetime import parse_date
-from utilities.datetime import parse_datetime
-from utilities.datetime import parse_time
-from utilities.datetime import parse_timedelta
+from utilities.datetime import (
+    ParseDateError,
+    ParseDateTimeError,
+    ParseTimeError,
+    TimedeltaError,
+    parse_date,
+    parse_datetime,
+    parse_time,
+    parse_timedelta,
+)
 from utilities.logging import LogLevel
 
 

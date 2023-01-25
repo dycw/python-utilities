@@ -1,12 +1,7 @@
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import Mapping
-from contextlib import contextmanager
-from contextlib import suppress
-from os import environ
-from os import getenv
-from typing import Optional
-from typing import cast
+from collections.abc import Iterable, Iterator, Mapping
+from contextlib import contextmanager, suppress
+from os import environ, getenv
+from typing import Optional, cast
 
 from beartype import beartype
 

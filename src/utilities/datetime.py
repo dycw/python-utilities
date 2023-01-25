@@ -1,8 +1,7 @@
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
-from typing import Optional
-from typing import Union
+from typing import Optional, Union
 
 from beartype import beartype
 

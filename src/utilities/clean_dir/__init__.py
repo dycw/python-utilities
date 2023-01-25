@@ -9,11 +9,9 @@ from shutil import rmtree
 from typing import Optional
 
 from beartype import beartype
-from click import command
-from click import option
+from click import command, option
 
-from utilities.clean_dir.classes import Config
-from utilities.clean_dir.classes import Item
+from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC
 from utilities.logging import basic_config
 

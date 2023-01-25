@@ -1,6 +1,5 @@
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
+from hypothesis.strategies import DataObject, data
 from luigi import Task
 
 from utilities.hypothesis.luigi import task_namespaces

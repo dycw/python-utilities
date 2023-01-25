@@ -1,8 +1,7 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from beartype import beartype
 

@@ -1,20 +1,13 @@
 from collections.abc import Callable
 from functools import partial
-from operator import le
-from operator import lt
+from operator import le, lt
 from types import ModuleType
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import Any, Optional, Union
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
-from tests.modules import package_with
-from tests.modules import package_without
-from tests.modules import standalone
-from utilities.modules import yield_module_contents
-from utilities.modules import yield_modules
+from tests.modules import package_with, package_without, standalone
+from utilities.modules import yield_module_contents, yield_modules
 
 
 class TestYieldModules:

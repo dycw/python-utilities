@@ -4,27 +4,29 @@ from typing import Optional
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import booleans
-from hypothesis.strategies import composite
-from hypothesis.strategies import data
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import none
-from hypothesis.strategies import sets
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis.strategies import (
+    DataObject,
+    DrawFn,
+    booleans,
+    composite,
+    data,
+    integers,
+    just,
+    none,
+    sets,
+)
+from pytest import mark, param, raises
 
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import setup_hypothesis_profiles
-from utilities.hypothesis import temp_dirs
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis import text_clean
-from utilities.hypothesis import text_printable
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    lists_fixed_length,
+    setup_hypothesis_profiles,
+    temp_dirs,
+    temp_paths,
+    text_ascii,
+    text_clean,
+    text_printable,
+)
 from utilities.tempfile import TemporaryDirectory
 
 

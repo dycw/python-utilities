@@ -1,9 +1,7 @@
 from random import choice
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from attrs import define
-from attrs import fields
+from attrs import define, fields
 from beartype import beartype
 from beartype.door import die_if_unbearable
 

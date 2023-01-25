@@ -2,17 +2,16 @@ import datetime as dt
 from typing import Any
 
 from beartype import beartype
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import composite
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
+from hypothesis.strategies import SearchStrategy, composite, dates, datetimes
 
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+)
 
 
 @beartype

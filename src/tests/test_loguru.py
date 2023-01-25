@@ -19,7 +19,7 @@ class TestSetupLoguru:
 
         (log,) = tmp_path.iterdir()
         assert log.name == "log"
-        with open(log) as fh:
+        with log.open() as fh:
             (line,) = fh.read().splitlines()
 
         assert search(

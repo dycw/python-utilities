@@ -1,15 +1,9 @@
-from collections.abc import Iterator
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from functools import partial
-from itertools import chain
-from itertools import repeat
-from itertools import starmap
+from itertools import chain, repeat, starmap
 from pathlib import Path
-from subprocess import PIPE
-from subprocess import CalledProcessError
-from subprocess import check_output
-from typing import Any
-from typing import Optional
+from subprocess import PIPE, CalledProcessError, check_output
+from typing import Any, Optional
 
 from beartype import beartype
 

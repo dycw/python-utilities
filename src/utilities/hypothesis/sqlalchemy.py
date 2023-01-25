@@ -1,8 +1,6 @@
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import composite
+from hypothesis.strategies import DrawFn, composite
 from sqlalchemy import MetaData
 from sqlalchemy.engine import Engine
 

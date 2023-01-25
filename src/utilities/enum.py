@@ -1,7 +1,5 @@
 from enum import Enum
-from typing import Any
-from typing import TypeVar
-from typing import Union
+from typing import Any, TypeVar, Union
 
 from beartype import beartype
 

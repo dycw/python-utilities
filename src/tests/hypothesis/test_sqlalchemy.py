@@ -1,18 +1,9 @@
 from pathlib import Path
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import integers
-from hypothesis.strategies import sets
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import Table
-from sqlalchemy import insert
-from sqlalchemy import select
+from hypothesis.strategies import DataObject, data, integers, sets
+from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 

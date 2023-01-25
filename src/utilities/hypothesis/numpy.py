@@ -1,26 +1,20 @@
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from beartype import beartype
-from hypothesis.extra.numpy import array_shapes
-from hypothesis.extra.numpy import arrays
-from hypothesis.extra.numpy import from_dtype
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import booleans
-from hypothesis.strategies import composite
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import nothing
-from numpy import bool_
-from numpy import dtype
-from numpy import float64
-from numpy import iinfo
-from numpy import int64
+from hypothesis.extra.numpy import array_shapes, arrays, from_dtype
+from hypothesis.strategies import (
+    SearchStrategy,
+    booleans,
+    composite,
+    floats,
+    integers,
+    nothing,
+)
+from numpy import bool_, dtype, float64, iinfo, int64
 from numpy.typing import NDArray
 
 from utilities.hypothesis import lift_draw
-from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.hypothesis.typing import Shape
+from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
 
 _ARRAY_SHAPES = array_shapes()
 

@@ -1,5 +1,4 @@
-from enum import auto
-from enum import unique
+from enum import auto, unique
 from logging import basicConfig
 
 from beartype import beartype

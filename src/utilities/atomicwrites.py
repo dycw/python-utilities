@@ -2,8 +2,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from atomicwrites import move_atomic
-from atomicwrites import replace_atomic
+from atomicwrites import move_atomic, replace_atomic
 from beartype import beartype
 
 from utilities.pathlib import PathLike

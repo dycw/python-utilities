@@ -20,5 +20,5 @@ def profile(*, path: PathLike = _CWD) -> Iterator[None]:
         yield
     now = dt.datetime.now(tz=ZoneInfo("UTC"))
     filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
-    with open(filename, mode="w") as fh:
+    with filename.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
