@@ -192,6 +192,8 @@ extend-ignore = [
   "PD", # pandas-vet
   "PT012", # flake8-pytest-style, raises-with-multiple-statements
   "PT013", # flake8-pytest-style, incorrect-pytest-import
+  "TRY200", # tryceratops, reraise-no-cause
+  "TRY301", # tryceratops, raise-within-try
 
 ]
 extend-select = ["ALL"]

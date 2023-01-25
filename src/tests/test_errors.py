@@ -15,12 +15,9 @@ class TestRedirectError:
             self._raises_custom("something else")
 
     def _raises_custom(self, pattern: str, /) -> NoReturn:
-        def raise_error() -> NoReturn:
+        try:
             msg = "generic error"
             raise ValueError(msg)
-
-        try:
-            raise_error()
         except ValueError as error:
             redirect_error(error, pattern, self._CustomError)
 
@@ -28,11 +25,8 @@ class TestRedirectError:
         ...
 
     def test_generic_with_no_unique_arg(self) -> None:
-        def raise_error() -> NoReturn:
-            raise ValueError(0, 1)
-
         with raises(NoUniqueArgError):
             try:
-                raise_error()
+                raise ValueError(0, 1)
             except ValueError as error:
                 redirect_error(error, "error", RuntimeError)
