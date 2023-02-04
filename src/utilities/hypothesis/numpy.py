@@ -6,14 +6,13 @@ from hypothesis.strategies import (
     SearchStrategy,
     booleans,
     composite,
-    floats,
     integers,
     nothing,
 )
 from numpy import bool_, dtype, float64, iinfo, int64
 from numpy.typing import NDArray
 
-from utilities.hypothesis import lift_draw
+from utilities.hypothesis import floats_extra, lift_draw
 from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
 
 _ARRAY_SHAPES = array_shapes()
@@ -26,6 +25,7 @@ def bool_arrays(
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = _ARRAY_SHAPES,
+    fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArray[bool_]:
     """Strategy for generating arrays of booleans."""
@@ -35,7 +35,7 @@ def bool_arrays(
             bool,
             draw(shape),
             elements=booleans(),
-            fill=nothing(),
+            fill=fill,
             unique=draw(unique),
         ),
     )
@@ -50,24 +50,31 @@ def float_arrays(
     shape: MaybeSearchStrategy[Shape] = _ARRAY_SHAPES,
     min_value: MaybeSearchStrategy[Optional[float]] = None,
     max_value: MaybeSearchStrategy[Optional[float]] = None,
-    allow_nan: MaybeSearchStrategy[Optional[bool]] = None,
-    allow_infinity: MaybeSearchStrategy[Optional[bool]] = None,
+    allow_nan: MaybeSearchStrategy[bool] = False,
+    allow_inf: MaybeSearchStrategy[bool] = False,
+    allow_pos_inf: MaybeSearchStrategy[bool] = False,
+    allow_neg_inf: MaybeSearchStrategy[bool] = False,
+    integral: MaybeSearchStrategy[bool] = False,
+    fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArray[float64]:
     """Strategy for generating arrays of floats."""
     draw = lift_draw(_draw)
-    elements = floats(
-        min_value=draw(min_value),
-        max_value=draw(max_value),
-        allow_nan=draw(allow_nan),
-        allow_infinity=draw(allow_infinity),
+    elements = floats_extra(
+        min_value=min_value,
+        max_value=max_value,
+        allow_nan=allow_nan,
+        allow_inf=allow_inf,
+        allow_pos_inf=allow_pos_inf,
+        allow_neg_inf=allow_neg_inf,
+        integral=integral,
     )
     return draw(
         arrays(
             float,
             draw(shape),
             elements=elements,
-            fill=nothing(),
+            fill=fill,
             unique=draw(unique),
         ),
     )

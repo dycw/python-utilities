@@ -2,7 +2,6 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Union
 
-from beartype import beartype
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import writer
@@ -86,7 +85,6 @@ class TestWriter:
     ) -> None:
         path = tmp_path.joinpath("file.txt")
 
-        @beartype
         def raise_error() -> None:
             raise error
 
