@@ -81,7 +81,7 @@ httpx==0.23.3
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.66.1
+hypothesis==6.66.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -130,6 +130,7 @@ numpy==1.24.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pandas
+    #   xarray
 packaging==23.0
     # via
     #   black
@@ -137,8 +138,11 @@ packaging==23.0
     #   hatch
     #   hatchling
     #   pytest
+    #   xarray
 pandas==1.5.3
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   xarray
 pathspec==0.11.0
     # via
     #   black
@@ -249,6 +253,8 @@ virtualenv==20.17.1
     # via hatch
 wheel==0.38.4
     # via pip-tools
+xarray==2023.1.0
+    # via dycw-utilities (pyproject.toml)
 zipp==3.12.0
     # via importlib-metadata
 

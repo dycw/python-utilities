@@ -8,7 +8,7 @@ from string import ascii_letters, printable
 from typing import Any, Optional, Protocol, TypeVar, cast, overload
 
 from beartype import beartype
-from hypothesis import Verbosity, assume, settings
+from hypothesis import HealthCheck, Verbosity, assume, settings
 from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
@@ -105,6 +105,7 @@ def setup_hypothesis_profiles() -> None:
         "deadline": None,
         "print_blob": True,
         "report_multiple_bugs": False,
+        "suppress_health_check": [HealthCheck.filter_too_much],
     }
     settings.register_profile("default", max_examples=100, **kwargs)
     settings.register_profile("dev", max_examples=10, **kwargs)
