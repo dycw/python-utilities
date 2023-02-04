@@ -185,8 +185,11 @@ pyproject-hooks==1.0.0
 pytest==7.2.1
     # via
     #   dycw-utilities (pyproject.toml)
+    #   pytest-check
     #   pytest-cov
     #   pytest-xdist
+pytest-check==2.1.2
+    # via dycw-utilities (pyproject.toml)
 pytest-cov==4.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.1.0

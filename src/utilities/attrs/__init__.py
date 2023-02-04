@@ -6,6 +6,8 @@ from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 
+from utilities.class_name import get_class_name
+
 
 @define
 class AttrsBase:
@@ -25,7 +27,7 @@ class AttrsBase:
             except BeartypeDoorHintViolation:
                 msg = (
                     f"module = {self.__module__}, "
-                    f"class = {type(self).__name__}, field = {fname}"
+                    f"class = {get_class_name(self)}, field = {fname}"
                 )
                 raise FieldTypeError(msg) from None
 
