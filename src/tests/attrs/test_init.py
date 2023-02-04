@@ -30,11 +30,13 @@ class TestAttrsBase:
         class Example(AttrsBase):
             x: int
             y: int
+            z: int
 
         @define
         class Full:
             x: int
             y: int
+            z: int
 
             def __attrs_post_init__(self) -> None:
                 for field in fields(cast(Any, type(self))):
@@ -43,8 +45,8 @@ class TestAttrsBase:
         n = int(1e4)
         with Timer() as timer1:
             for _ in range(n):
-                _ = Example(0, 0)
+                _ = Example(0, 0, 0)
         with Timer() as timer2:
             for _ in range(n):
-                _ = Full(0, 0)
+                _ = Full(0, 0, 0)
         assert timer1 < timer2

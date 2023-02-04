@@ -5,6 +5,8 @@ from numpy import dtype
 
 from utilities.iterables import is_iterable_not_str
 
+datetime64D = dtype("datetime64[D]")  # noqa: N816
+datetime64Y = dtype("datetime64[Y]")  # noqa: N816
 datetime64ns = dtype("datetime64[ns]")
 
 
