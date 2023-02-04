@@ -74,6 +74,7 @@ sqlalchemy = [
   "sqlalchemy2-stubs"
 ]
 typed-settings = ["typed-settings[click] >= 2.0.2"]
+xarray = ["xarray >= 2023.1.0"]
 dev = [
   # main
   "airium >= 0.2.5",
@@ -96,6 +97,7 @@ dev = [
   "sqlalchemy2-stubs",
   "tqdm >= 4.64.1",
   "typed-settings[click] >= 2.0.2",
+  "xarray >= 2023.1.0",
   # dev
   "black",
   "bump2version",

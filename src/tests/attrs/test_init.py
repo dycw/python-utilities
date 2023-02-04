@@ -2,10 +2,9 @@ from typing import Any, cast
 
 from attrs import define, fields
 from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeAbbyHintViolation
 from pytest import raises
 
-from utilities.attrs import AttrsBase
+from utilities.attrs import AttrsBase, FieldTypeError
 from utilities.timer import Timer
 
 
@@ -13,21 +12,22 @@ class TestAttrsBase:
     def test_main(self) -> None:
         @define
         class Example(AttrsBase):
-            x: list[int]
+            x: int
 
-        with raises(BeartypeAbbyHintViolation):
-            _ = Example(["0"])  # type: ignore[]
+        match = "module = tests.attrs.test_init, class = Example, field = x"
+        with raises(FieldTypeError, match=match):
+            _ = Example(None)  # type: ignore[]
 
-    def test_empty(self) -> None:
+    def test_no_fields(self) -> None:
         @define
         class Example(AttrsBase):
-            pass
+            ...
 
         _ = Example()
 
     def test_speed(self) -> None:
         @define
-        class Example:
+        class Example(AttrsBase):
             x: int
             y: int
 
