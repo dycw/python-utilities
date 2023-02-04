@@ -6,6 +6,10 @@ from beartype import beartype
 from utilities.text import ensure_str
 
 
+class DirectoryExistsError(Exception):
+    """Raised when a directory already exists."""
+
+
 @beartype
 def redirect_error(
     old: Exception,
