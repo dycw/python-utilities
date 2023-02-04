@@ -1,3 +1,4 @@
+from math import inf, isfinite, isinf, isnan
 from pathlib import Path
 from re import search
 from typing import Optional
@@ -10,17 +11,21 @@ from hypothesis.strategies import (
     booleans,
     composite,
     data,
+    floats,
     integers,
     just,
     none,
     sets,
 )
+from more_itertools import pairwise
 from pytest import mark, param, raises
 
 from utilities.hypothesis import (
     assume_does_not_raise,
+    floats_extra,
     lists_fixed_length,
     setup_hypothesis_profiles,
+    slices,
     temp_dirs,
     temp_paths,
     text_ascii,
@@ -65,6 +70,57 @@ class TestAssumeDoesNotRaise:
                 match="wrong",
             ):
                 raise ValueError(msg)
+
+
+class TestFloatsExtra:
+    @given(
+        data=data(),
+        min_value=floats() | none(),
+        max_value=floats() | none(),
+        allow_nan=booleans(),
+        allow_inf=booleans(),
+        allow_pos_inf=booleans(),
+        allow_neg_inf=booleans(),
+        integral=booleans(),
+    )
+    def test_main(
+        self,
+        data: DataObject,
+        min_value: Optional[float],
+        max_value: Optional[float],
+        allow_nan: bool,
+        allow_inf: bool,
+        allow_pos_inf: bool,
+        allow_neg_inf: bool,
+        integral: bool,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(
+                floats_extra(
+                    min_value=min_value,
+                    max_value=max_value,
+                    allow_nan=allow_nan,
+                    allow_inf=allow_inf,
+                    allow_pos_inf=allow_pos_inf,
+                    allow_neg_inf=allow_neg_inf,
+                    integral=integral,
+                ),
+            )
+        if min_value is not None:
+            assert (isfinite(x) and x >= min_value) or not isfinite(x)
+        if max_value is not None:
+            assert (isfinite(x) and x <= max_value) or not isfinite(x)
+        if not allow_nan:
+            assert not isnan(x)
+        if not allow_inf:
+            if not (allow_pos_inf or allow_neg_inf):
+                assert not isinf(x)
+            if not allow_pos_inf:
+                assert x != inf
+            if not allow_neg_inf:
+                assert x != -inf
+        if integral:
+            assert (isfinite(x) and x == round(x)) or not isfinite(x)
 
 
 class TestLiftDraw:
@@ -114,6 +170,25 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestSlices:
+    @given(data=data(), iter_len=integers(0, 10))
+    def test_main(self, data: DataObject, iter_len: int) -> None:
+        slice_len = data.draw(integers(0, iter_len) | none())
+        slice_ = data.draw(slices(iter_len, slice_len=slice_len))
+        range_slice = range(iter_len)[slice_]
+        assert all(i + 1 == j for i, j in pairwise(range_slice))
+        if slice_len is not None:
+            assert len(range_slice) == slice_len
+
+    @given(data=data(), iter_len=integers(0, 10))
+    def test_error(self, data: DataObject, iter_len: int) -> None:
+        with raises(
+            InvalidArgument,
+            match=r"Slice length \d+ exceeds iterable length \d+",
+        ):
+            _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
 
 
 class TestSetupHypothesisProfiles:

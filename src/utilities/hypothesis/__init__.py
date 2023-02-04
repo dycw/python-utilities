@@ -1,6 +1,7 @@
 import builtins
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
+from math import ceil, floor, inf, isfinite, nan
 from os import getenv
 from pathlib import Path
 from re import search
@@ -9,12 +10,17 @@ from typing import Any, Optional, Protocol, TypeVar, cast, overload
 
 from beartype import beartype
 from hypothesis import HealthCheck, Verbosity, assume, settings
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
     characters,
     composite,
+    floats,
+    integers,
+    just,
     lists,
+    sampled_from,
     text,
     uuids,
 )
@@ -45,6 +51,50 @@ def assume_does_not_raise(
                 _ = assume(condition=False)
             else:
                 raise
+
+
+@composite
+@beartype
+def floats_extra(
+    _draw: Any,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Optional[float]] = None,
+    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    allow_nan: MaybeSearchStrategy[bool] = False,
+    allow_inf: MaybeSearchStrategy[bool] = False,
+    allow_pos_inf: MaybeSearchStrategy[bool] = False,
+    allow_neg_inf: MaybeSearchStrategy[bool] = False,
+    integral: MaybeSearchStrategy[bool] = False,
+) -> float:
+    """Strategy for generating floats, with extra special values."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    elements = floats(
+        min_value=min_value_,
+        max_value=max_value_,
+        allow_nan=False,
+        allow_infinity=False,
+    )
+    if draw(allow_nan):
+        elements |= just(nan)
+    if draw(allow_inf):
+        elements |= sampled_from([inf, -inf])
+    if draw(allow_pos_inf):
+        elements |= just(inf)
+    if draw(allow_neg_inf):
+        elements |= just(-inf)
+    element = draw(elements)
+    if isfinite(element) and draw(integral):
+        candidates = [floor(element), ceil(element)]
+        if min_value_ is not None:
+            candidates = [c for c in candidates if c >= min_value_]
+        if max_value_ is not None:
+            candidates = [c for c in candidates if c <= max_value_]
+        _ = assume(len(candidates) >= 1)
+        element = draw(sampled_from(candidates))
+        return float(element)
+    return element
 
 
 _MDF = TypeVar("_MDF")
@@ -117,6 +167,27 @@ def setup_hypothesis_profiles() -> None:
         **kwargs,
     )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
+
+
+@composite
+@beartype
+def slices(
+    _draw: Any,
+    iter_len: int,
+    /,
+    *,
+    slice_len: MaybeSearchStrategy[Optional[int]] = None,
+) -> slice:
+    """Strategy for generating continuous slices from an iterable."""
+    draw = lift_draw(_draw)
+    if (slice_len_ := draw(slice_len)) is None:
+        slice_len_ = draw(integers(0, iter_len))
+    elif not 0 <= slice_len_ <= iter_len:
+        msg = f"Slice length {slice_len_} exceeds iterable length {iter_len}"
+        raise InvalidArgument(msg)
+    start = draw(integers(0, iter_len - slice_len_))
+    stop = start + slice_len_
+    return slice(start, stop)
 
 
 @composite
