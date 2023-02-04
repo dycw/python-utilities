@@ -151,21 +151,21 @@ def lists_fixed_length(
 @beartype
 def setup_hypothesis_profiles() -> None:
     """Set up the hypothesis profiles."""
-    kwargs = {
-        "deadline": None,
-        "print_blob": True,
-        "report_multiple_bugs": False,
-        "suppress_health_check": [HealthCheck.filter_too_much],
-    }
-    settings.register_profile("default", max_examples=100, **kwargs)
-    settings.register_profile("dev", max_examples=10, **kwargs)
-    settings.register_profile("ci", max_examples=1000, **kwargs)
-    settings.register_profile(
-        "debug",
-        max_examples=10,
-        verbosity=Verbosity.verbose,
-        **kwargs,
-    )
+    for name, max_examples, kwargs in [
+        ("dev", 10, {}),
+        ("default", 100, {}),
+        ("ci", 1000, {}),
+        ("debug", 10, {"verbosity": Verbosity.verbose}),
+    ]:
+        settings.register_profile(
+            name,
+            max_examples=max_examples,
+            report_multiple_bugs=True,
+            suppress_health_check={HealthCheck.filter_too_much},
+            deadline=None,
+            print_blob=True,
+            **kwargs,
+        )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
 
 

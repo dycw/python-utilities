@@ -1,26 +1,27 @@
+from typing import Any
+
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
 from luigi import Task
 
-from utilities.hypothesis.luigi import task_namespaces
+from utilities.hypothesis.luigi import namespace_mixins
 
 
-class TestTaskNamespaces:
+class TestNamespaceMixins:
     @given(data=data())
     def test_main(self, data: DataObject) -> None:
-        _ = data.draw(task_namespaces())
+        _ = data.draw(namespace_mixins())
 
-    @given(namespace=task_namespaces())
-    def test_first(self, namespace: str) -> None:
-        class Example(Task):
-            task_namespace = namespace
+    @given(namespace_mixin=namespace_mixins())
+    def test_first(self, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task):
+            ...
 
         _ = Example()
 
-    @given(namespace=task_namespaces())
-    def test_second(self, namespace: str) -> None:
-        class Example(Task):
-            task_namespace = namespace
+    @given(namespace_mixin=namespace_mixins())
+    def test_second(self, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task):
             ...
 
         _ = Example()
