@@ -1,17 +1,51 @@
 from collections.abc import Iterable, Iterator
+from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Optional, TypeVar, Union, cast, overload
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from beartype import beartype
-from luigi import Target, Task
+from luigi import Parameter, Target, Task
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
 from luigi.task import Register, flatten
 
+from utilities.enum import parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
+
+_E = TypeVar("_E", bound=Enum)
+
+
+class EnumParameter(Parameter, Generic[_E]):
+    """A parameter which takes the value of an Enum."""
+
+    @beartype
+    def __init__(self, enum: type[_E], /, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._enum = enum
+
+    @beartype
+    def normalize(self, x: Union[_E, str], /) -> _E:  # noqa: D102
+        return parse_enum(self._enum, x)
+
+    @beartype
+    def parse(self, x: str, /) -> _E:  # noqa: D102
+        return parse_enum(self._enum, x)
+
+    @beartype
+    def serialize(self, x: _E, /) -> str:  # noqa: D102
+        return x.name
 
 
 class PathTarget(Target):

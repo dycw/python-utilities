@@ -1,14 +1,16 @@
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from hypothesis import given, settings
-from hypothesis.strategies import booleans
+from hypothesis.strategies import DataObject, booleans, data, sampled_from
 from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 
-from utilities.hypothesis.luigi import task_namespaces
+from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
+    EnumParameter,
     PathTarget,
     _yield_task_classes,
     build,
@@ -20,25 +22,21 @@ from utilities.luigi import (
 
 
 class TestBuild:
-    @given(namespace=task_namespaces())
-    def test_main(self, namespace: str) -> None:
-        class Example(Task):
-            task_namespace = namespace
+    @given(namespace_mixin=namespace_mixins())
+    def test_main(self, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task):
+            ...
 
         _ = build([Example()], local_scheduler=True)
 
 
 class TestClone:
-    @given(namespace=task_namespaces(), truth=booleans())
-    def test_main(self, namespace: str, truth: bool) -> None:
-        class A(Task):
-            task_namespace = namespace
-
+    @given(namespace_mixin=namespace_mixins(), truth=booleans())
+    def test_main(self, namespace_mixin: Any, truth: bool) -> None:
+        class A(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
-        class B(Task):
-            task_namespace = namespace
-
+        class B(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
         a = A(truth)
@@ -47,31 +45,30 @@ class TestClone:
         assert result is expected
 
 
-class TestPathTarget:
-    def test_main(self, tmp_path: Path) -> None:
-        target = PathTarget(path := tmp_path.joinpath("file"))
-        assert isinstance(target.path, Path)
-        assert not target.exists()
-        path.touch()
-        assert target.exists()
+class TestEnumParameter:
+    @given(data=data())
+    def test_main(self, data: DataObject) -> None:
+        class Example(Enum):
+            member = auto()
+
+        param = EnumParameter(Example)
+        input_ = data.draw(sampled_from([Example.member, "member"]))
+        norm = param.normalize(input_)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestGetDependencies:
-    @given(namespace=task_namespaces())
+    @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_main(self, namespace: str) -> None:
-        class A(Task):
-            task_namespace = namespace
+    def test_main(self, namespace_mixin: Any) -> None:
+        class A(namespace_mixin, Task):
+            ...
 
-        class B(Task):
-            task_namespace = namespace
-
+        class B(namespace_mixin, Task):
             def requires(self) -> A:
                 return clone(self, A)
 
-        class C(Task):
-            task_namespace = namespace
-
+        class C(namespace_mixin, Task):
             def requires(self) -> B:
                 return clone(self, B)
 
@@ -112,22 +109,22 @@ class TestGetDependencies:
 
 
 class TestGetTaskClasses:
-    @given(namespace=task_namespaces())
+    @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_main(self, namespace: str) -> None:
-        class Example(Task):
-            task_namespace = namespace
+    def test_main(self, namespace_mixin: Any) -> None:
+        class Example(namespace_mixin, Task):
+            ...
 
         assert Example in get_task_classes()
 
     def test_notifications(self) -> None:
         assert smtp not in _yield_task_classes()
 
-    @given(namespace=task_namespaces())
+    @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_filter(self, namespace: str) -> None:
-        class Parent(Task):
-            task_namespace = namespace
+    def test_filter(self, namespace_mixin: Any) -> None:
+        class Parent(namespace_mixin, Task):
+            ...
 
         class Child(Parent):
             ...
@@ -135,3 +132,12 @@ class TestGetTaskClasses:
         result = get_task_classes(cls=Parent)
         expected = frozenset([Child])
         assert result == expected
+
+
+class TestPathTarget:
+    def test_main(self, tmp_path: Path) -> None:
+        target = PathTarget(path := tmp_path.joinpath("file"))
+        assert isinstance(target.path, Path)
+        assert not target.exists()
+        path.touch()
+        assert target.exists()

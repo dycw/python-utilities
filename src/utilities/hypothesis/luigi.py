@@ -3,12 +3,17 @@ from typing import Any
 from beartype import beartype
 from hypothesis.strategies import composite
 
-from utilities.hypothesis import temp_paths
+from utilities.hypothesis import lift_draw, temp_paths
 
 
 @composite
 @beartype
-def task_namespaces(_draw: Any, /) -> str:
-    """Strategy for generating task namespaces."""
-    path = _draw(temp_paths())
-    return path.name
+def namespace_mixins(_draw: Any, /) -> type:
+    """Strategy for generating task namespace mixins."""
+    draw = lift_draw(_draw)
+    path = draw(temp_paths())
+
+    class NamespaceMixin:
+        task_namespace = path.name
+
+    return NamespaceMixin
