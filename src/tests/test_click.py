@@ -122,6 +122,6 @@ def uses_log_level(*, log_level: LogLevel) -> None:
 class TestLogLevelOption:
     @given(runner=runners(), log_level=sampled_from(LogLevel))
     def test_main(self, runner: CliRunner, log_level: LogLevel) -> None:
-        result = runner.invoke(uses_log_level, [f"--log-level={log_level}"])
+        result = runner.invoke(uses_log_level, ["--log-level", f"{log_level}"])
         assert result.exit_code == 0
         assert result.stdout == f"log_level = {log_level}\n"

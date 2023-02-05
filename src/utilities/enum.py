@@ -3,20 +3,28 @@ from typing import Any, TypeVar, Union
 
 from beartype import beartype
 
+from utilities.sys import PYTHON_AT_LEAST_3_11
 
-class StrEnum(str, Enum):
-    """An enum whose elements are themselves strings."""
+if PYTHON_AT_LEAST_3_11:  # pragma: py-le-310
+    from enum import StrEnum as _StrEnum  # type:ignore[]  # pragma: py-ne-310
+else:  # pragma: py-ge-311
 
-    @staticmethod
-    @beartype
-    def _generate_next_value_(
-        name: str,
-        start: Any,
-        count: int,
-        last_values: Any,
-    ) -> str:
-        _ = start, count, last_values
-        return name
+    class _StrEnum(str, Enum):
+        """An enum whose elements are themselves strings."""
+
+        @staticmethod
+        @beartype
+        def _generate_next_value_(
+            name: str,
+            start: Any,
+            count: int,
+            last_values: Any,
+        ) -> str:
+            _ = start, count, last_values
+            return name
+
+
+StrEnum = _StrEnum
 
 
 _E = TypeVar("_E", bound=Enum)
