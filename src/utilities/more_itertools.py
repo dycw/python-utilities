@@ -23,7 +23,7 @@ def one(iterable: Iterable[_T], /) -> _T:
             )
         except ValueError as error2:
             redirect_error(
-                error1,
+                error2,
                 "Expected exactly one item in iterable",
                 MultipleElementsError(error2.args[0]),
             )

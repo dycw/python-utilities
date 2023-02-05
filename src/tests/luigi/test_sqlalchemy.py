@@ -30,7 +30,12 @@ class TestDatabaseTarget:
         target = DatabaseTarget(sel, engine)
         assert not target.exists()
         rows = data.draw(
-            table_records_lists(table, min_size=1, id1=integers(0, 10)),
+            table_records_lists(
+                table,
+                id1=integers(0, 10),
+                min_size=1,
+                max_size=10,
+            ),
         )
         with engine.begin() as conn:
             table.create(conn)

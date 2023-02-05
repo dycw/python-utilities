@@ -6,7 +6,7 @@ from typing import Any, Literal, NoReturn, Optional, Union
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Select, Table, and_, case
+from sqlalchemy import Column, Select, Table, and_, case
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
@@ -15,9 +15,11 @@ from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL, Connection, Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
 
 from utilities.errors import redirect_error
+from utilities.more_itertools import one
 from utilities.typing import never
 
 
@@ -113,27 +115,35 @@ class UnsupportedDialectError(TypeError):
 
 
 @beartype
-def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
+def ensure_table_created(
+    table_or_model: Any,
+    engine_or_connection: Union[Engine, Connection],
+    /,
+) -> None:
     """Ensure a table is created."""
     table = get_table(table_or_model)
     try:
-        with engine.begin() as conn:
+        with yield_connection(engine_or_connection) as conn:
             table.create(conn)
     except DatabaseError as error:
         with suppress(TableAlreadyExistsError):
-            redirect_to_table_already_exists_error(engine, error)
+            redirect_to_table_already_exists_error(engine_or_connection, error)
 
 
 @beartype
-def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
+def ensure_table_dropped(
+    table_or_model: Any,
+    engine_or_conn: Union[Engine, Connection],
+    /,
+) -> None:
     """Ensure a table is dropped."""
     table = get_table(table_or_model)
     try:
-        with engine.begin() as conn:
+        with yield_connection(engine_or_conn) as conn:
             table.drop(conn)
     except DatabaseError as error:
         with suppress(NoSuchTableError):
-            redirect_to_no_such_table_error(engine, error)
+            redirect_to_no_such_table_error(engine_or_conn, error)
 
 
 @beartype
@@ -143,7 +153,7 @@ def get_column_names(table_or_model: Any, /) -> list[str]:
 
 
 @beartype
-def get_columns(table_or_model: Any, /) -> list[Any]:
+def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
     """Get the columns from a table or model."""
     return list(get_table(table_or_model).columns)
 
@@ -163,13 +173,37 @@ def get_table_name(table_or_model: Any, /) -> str:
 
 
 @beartype
+def model_to_dict(obj: Any, /) -> dict[str, Any]:
+    """Construct a dictionary of elements for insertion."""
+    cls = type(obj)
+
+    @beartype
+    def is_attr(attr: str, key: str, /) -> Optional[str]:
+        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
+            value.name == key
+        ):
+            return attr
+        return None
+
+    @beartype
+    def yield_items() -> Iterator[tuple[str, Any]]:
+        for key in get_column_names(cls):
+            attr = one(
+                attr for attr in dir(cls) if is_attr(attr, key) is not None
+            )
+            yield key, getattr(obj, attr)
+
+    return dict(yield_items())
+
+
+@beartype
 def redirect_to_no_such_table_error(
-    engine: Engine,
+    engine_or_conn: Union[Engine, Connection],
     error: DatabaseError,
     /,
 ) -> NoReturn:
     """Redirect to the `NoSuchTableError`."""
-    dialect = get_dialect(engine)
+    dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
         dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
     ):
@@ -185,12 +219,12 @@ def redirect_to_no_such_table_error(
 
 @beartype
 def redirect_to_table_already_exists_error(
-    engine: Engine,
+    engine_or_conn: Union[Engine, Connection],
     error: DatabaseError,
     /,
 ) -> NoReturn:
     """Redirect to the `TableAlreadyExistsError`."""
-    dialect = get_dialect(engine)
+    dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
         dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
     ):
