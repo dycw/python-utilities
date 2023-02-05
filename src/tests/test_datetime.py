@@ -3,7 +3,7 @@ from collections.abc import Callable
 from operator import eq, gt, lt
 from typing import Any
 
-from hypothesis import assume, given
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -306,6 +306,7 @@ class TestSerialize:
 
 class TestRoundToWeekday:
     @given(date=dates())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     @mark.parametrize(
         ("func", "predicate", "operator"),
         [

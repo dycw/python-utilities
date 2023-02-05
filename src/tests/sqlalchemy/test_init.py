@@ -17,12 +17,13 @@ from pytest import mark, param, raises
 from sqlalchemy import Column, Integer, MetaData, Table, func, insert, select
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import (
+    TableAlreadyExistsError,
     columnwise_max,
     columnwise_min,
     create_engine,
@@ -33,6 +34,8 @@ from utilities.sqlalchemy import (
     get_dialect,
     get_table,
     get_table_name,
+    redirect_to_no_such_table_error,
+    redirect_to_table_already_exists_error,
     yield_connection,
     yield_in_clause_rows,
 )
@@ -144,15 +147,13 @@ class TestEnsureTableCreated:
         /,
     ) -> None:
         sel = get_table(table_or_model).select()
-        with raises(
-            OperationalError,
-            match="no such table",
-        ), engine.begin() as conn:
-            _ = conn.execute(sel).all()
-
+        with raises(NoSuchTableError), engine.begin() as conn:
+            try:
+                _ = conn.execute(sel).all()
+            except DatabaseError as error:
+                redirect_to_no_such_table_error(engine, error)
         for _ in range(runs):
             ensure_table_created(table_or_model, engine)
-
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -190,15 +191,13 @@ class TestEnsureTableDropped:
         with engine.begin() as conn:
             table.create(conn)
             _ = conn.execute(sel).all()
-
         for _ in range(runs):
             ensure_table_dropped(table_or_model, engine)
-
-        with raises(
-            OperationalError,
-            match="no such table",
-        ), engine.begin() as conn:
-            _ = conn.execute(sel).all()
+        with raises(NoSuchTableError), engine.begin() as conn:
+            try:
+                _ = conn.execute(sel).all()
+            except DatabaseError as error:
+                redirect_to_no_such_table_error(engine, error)
 
 
 class TestGetColumnNames:
@@ -308,6 +307,38 @@ class TestGetTableName:
         result = get_table_name(Example)
         expected = "example"
         assert result == expected
+
+
+class TestRedirectToNoSuchTableError:
+    @given(engine=sqlite_engines())
+    def test_direct(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        with raises(NoSuchTableError), engine.begin() as conn:
+            try:
+                _ = conn.execute(select(table))
+            except DatabaseError as error:
+                redirect_to_no_such_table_error(engine, error)
+
+
+class TestRedirectTableAlreadyExistsError:
+    @given(engine=sqlite_engines())
+    def test_direct(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        with engine.begin() as conn:
+            _ = table.create(conn)
+        with raises(TableAlreadyExistsError), engine.begin() as conn:
+            try:
+                _ = table.create(conn)
+            except DatabaseError as error:
+                redirect_to_table_already_exists_error(engine, error)
 
 
 class TestYieldConnection:

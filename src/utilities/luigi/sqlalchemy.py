@@ -1,10 +1,35 @@
 from typing import Any
 
 from beartype import beartype
-from luigi import Parameter
+from luigi import Parameter, Target
+from sqlalchemy import Select, create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DatabaseError, NoSuchTableError
 
-from utilities.sqlalchemy import get_table_name
+from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
+
+
+class DatabaseTarget(Target):
+    """A target point to a set of rows in a database."""
+
+    @beartype
+    def __init__(self, sel: Select, engine: Engine, /) -> None:
+        super().__init__()
+        self._sel = sel.limit(1)
+        self._engine = engine
+
+    @beartype
+    def exists(self) -> bool:  # noqa: D102
+        try:
+            with self._engine.begin() as conn:
+                res = conn.execute(self._sel).one_or_none()
+        except DatabaseError as error:
+            try:
+                redirect_to_no_such_table_error(self._engine, error)
+            except NoSuchTableError:
+                return False
+        else:
+            return res is not None
 
 
 class EngineParameter(Parameter):
@@ -14,6 +39,11 @@ class EngineParameter(Parameter):
     def normalize(self, engine: Engine, /) -> Engine:
         """Normalize an `Engine` argument."""
         return engine
+
+    @beartype
+    def parse(self, engine: str, /) -> Engine:
+        """Parse an `Engine` argument."""
+        return create_engine(engine)
 
     @beartype
     def serialize(self, engine: Engine, /) -> str:

@@ -1,9 +1,8 @@
 from collections.abc import Callable, Iterable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from functools import reduce
 from operator import ge, le
-from re import search
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, NoReturn, Optional, Union
 
 from beartype import beartype
 from more_itertools import chunked
@@ -15,9 +14,10 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL, Connection, Engine
-from sqlalchemy.exc import DatabaseError, OperationalError
+from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.pool import NullPool, Pool
 
+from utilities.errors import redirect_error
 from utilities.typing import never
 
 
@@ -119,20 +119,9 @@ def ensure_table_created(table_or_model: Any, engine: Engine, /) -> None:
     try:
         with engine.begin() as conn:
             table.create(conn)
-    # note that OperationalError < DatabaseError
-    except OperationalError as error:
-        # sqlite
-        (msg,) = error.args
-        if not search("table .* already exists", msg):  # pragma: no cover
-            raise
-    except DatabaseError as error:  # pragma: no cover
-        # oracle
-        (msg,) = error.args
-        if not search(
-            "ORA-00955: name is already used by an existing object",
-            msg,
-        ):
-            raise
+    except DatabaseError as error:
+        with suppress(TableAlreadyExistsError):
+            redirect_to_table_already_exists_error(engine, error)
 
 
 @beartype
@@ -142,17 +131,9 @@ def ensure_table_dropped(table_or_model: Any, engine: Engine, /) -> None:
     try:
         with engine.begin() as conn:
             table.drop(conn)
-    # note that OperationalError < DatabaseError
-    except OperationalError as error:
-        # sqlite
-        (msg,) = error.args
-        if not search("no such table", msg):  # pragma: no cover
-            raise
-    except DatabaseError as error:  # pragma: no cover
-        # oracle
-        (msg,) = error.args
-        if not search("ORA-00942: table or view does not exist", msg):
-            raise
+    except DatabaseError as error:
+        with suppress(NoSuchTableError):
+            redirect_to_no_such_table_error(engine, error)
 
 
 @beartype
@@ -179,6 +160,52 @@ def get_table(table_or_model: Any, /) -> Table:
 def get_table_name(table_or_model: Any, /) -> str:
     """Get the table name from a ORM model."""
     return get_table(table_or_model).name
+
+
+@beartype
+def redirect_to_no_such_table_error(
+    engine: Engine,
+    error: DatabaseError,
+    /,
+) -> NoReturn:
+    """Redirect to the `NoSuchTableError`."""
+    dialect = get_dialect(engine)
+    if (  # pragma: no cover
+        dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
+    ):
+        raise NotImplementedError(dialect)  # pragma: no cover
+    if dialect == "oracle":  # pragma: no cover
+        pattern = "ORA-00942: table or view does not exist"
+    elif dialect == "sqlite":
+        pattern = "no such table"
+    else:
+        return never(dialect)  # pragma: no cover
+    return redirect_error(error, pattern, NoSuchTableError)
+
+
+@beartype
+def redirect_to_table_already_exists_error(
+    engine: Engine,
+    error: DatabaseError,
+    /,
+) -> NoReturn:
+    """Redirect to the `TableAlreadyExistsError`."""
+    dialect = get_dialect(engine)
+    if (  # pragma: no cover
+        dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
+    ):
+        raise NotImplementedError(dialect)  # pragma: no cover
+    if dialect == "oracle":  # pragma: no cover
+        pattern = "ORA-00955: name is already used by an existing object"
+    elif dialect == "sqlite":
+        pattern = "table .* already exists"
+    else:
+        return never(dialect)  # pragma: no cover
+    return redirect_error(error, pattern, TableAlreadyExistsError)
+
+
+class TableAlreadyExistsError(Exception):
+    """Raised when a table already exists."""
 
 
 @contextmanager

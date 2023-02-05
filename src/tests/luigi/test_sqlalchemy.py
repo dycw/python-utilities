@@ -1,23 +1,51 @@
 from typing import Any, cast
 
 from hypothesis import given
+from hypothesis.strategies import DataObject, data, integers
+from hypothesis_sqlalchemy.sample import table_records_lists
 from luigi import Task
-from sqlalchemy import Column, Integer
+from sqlalchemy import Column, Integer, MetaData, Table, insert, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.luigi.sqlalchemy import EngineParameter, TableParameter
+from utilities.luigi.sqlalchemy import (
+    DatabaseTarget,
+    EngineParameter,
+    TableParameter,
+)
+
+
+class TestDatabaseTarget:
+    @given(data=data(), engine=sqlite_engines())
+    def test_main(self, data: DataObject, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id1", Integer, primary_key=True),
+            Column("id2", Integer, primary_key=True),
+        )
+        sel = select(table).where(table.c.id1 == 0)
+        target = DatabaseTarget(sel, engine)
+        assert not target.exists()
+        rows = data.draw(
+            table_records_lists(table, min_size=1, id1=integers(0, 10)),
+        )
+        with engine.begin() as conn:
+            table.create(conn)
+            _ = conn.execute(insert(table).values(rows))
+        expected = any(row[0] == 0 for row in rows)
+        assert target.exists() is expected
 
 
 class TestEngineParameter:
-    @given(namespace_mixin=namespace_mixins(), engine=sqlite_engines())
-    def test_main(self, namespace_mixin: Any, engine: Engine) -> None:
-        class Example(namespace_mixin, Task):
-            engine = EngineParameter()
-
-        _ = Example(engine)
+    @given(engine=sqlite_engines())
+    def test_main(self, engine: Engine) -> None:
+        param = EngineParameter()
+        norm = param.normalize(engine)
+        new_engine = param.parse(param.serialize(norm))
+        assert new_engine.url == norm.url
 
 
 class TestTableParameter:

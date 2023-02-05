@@ -1,3 +1,4 @@
+import datetime as dt
 from collections.abc import Iterable, Iterator
 from enum import Enum
 from pathlib import Path
@@ -20,6 +21,7 @@ from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
 from luigi.task import Register, flatten
 
+from utilities.datetime import parse_time, serialize_time
 from utilities.enum import parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
@@ -36,16 +38,32 @@ class EnumParameter(Parameter, Generic[_E]):
         self._enum = enum
 
     @beartype
-    def normalize(self, x: Union[_E, str], /) -> _E:  # noqa: D102
-        return parse_enum(self._enum, x)
+    def normalize(self, member: Union[_E, str], /) -> _E:  # noqa: D102
+        return parse_enum(self._enum, member)
 
     @beartype
-    def parse(self, x: str, /) -> _E:  # noqa: D102
-        return parse_enum(self._enum, x)
+    def parse(self, member: str, /) -> _E:  # noqa: D102
+        return parse_enum(self._enum, member)
 
     @beartype
-    def serialize(self, x: _E, /) -> str:  # noqa: D102
-        return x.name
+    def serialize(self, member: _E, /) -> str:  # noqa: D102
+        return member.name
+
+
+class TimeParameter(Parameter, Generic[_E]):
+    """A parameter which takes the value of a `dt.time`."""
+
+    @beartype
+    def normalize(self, time: dt.time, /) -> dt.time:  # noqa: D102
+        return time
+
+    @beartype
+    def parse(self, time: str, /) -> dt.time:  # noqa: D102
+        return parse_time(time)
+
+    @beartype
+    def serialize(self, time: dt.time, /) -> str:  # noqa: D102
+        return serialize_time(time)
 
 
 class PathTarget(Target):
