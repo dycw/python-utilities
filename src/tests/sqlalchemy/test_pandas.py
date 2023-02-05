@@ -1,12 +1,22 @@
 import datetime as dt
-from typing import Any, cast
+from collections.abc import Sized
+from typing import Any, Optional, Union, cast
 
 import sqlalchemy
-from hypothesis import assume, given
-from hypothesis.extra.pandas import column, data_frames, range_indexes
-from hypothesis.strategies import integers, sets
-from numpy import inf, nan
-from pandas import NA, DataFrame, Series, to_datetime
+from hypothesis import given
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    booleans,
+    data,
+    floats,
+    integers,
+    just,
+    lists,
+    none,
+)
+from hypothesis_sqlalchemy.sample import table_records_lists
+from pandas import DataFrame, NaT, Series
 from pytest import mark, param, raises
 from sqlalchemy import (
     Boolean,
@@ -15,26 +25,310 @@ from sqlalchemy import (
     DateTime,
     Float,
     Integer,
+    MetaData,
     String,
+    Table,
+    func,
+    insert,
     select,
 )
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, declarative_base
+from sqlalchemy.exc import DuplicateColumnError
+from sqlalchemy.orm import declarative_base
 
-from utilities.datetime import UTC
+from utilities.hypothesis import text_ascii
+from utilities.hypothesis.numpy import int64s
+from utilities.hypothesis.pandas import dates_pd, datetimes_pd
 from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.inflection import snake_case
 from utilities.numpy import datetime64ns
-from utilities.pandas import Int64, boolean, string
-from utilities.sqlalchemy import get_table
+from utilities.pandas import Int64, boolean, datetime64nsutc, string
+from utilities.sqlalchemy import ensure_table_created, get_table
 from utilities.sqlalchemy.pandas import (
-    _get_dtype,
-    _nativize_column,
+    DatesWithTimeComponentsError,
+    NonPositiveStreamError,
+    SeriesAgainstTableColumnError,
+    SeriesNameNotInTableError,
+    SeriesNameSnakeCaseNotInTableError,
+    SnakeCaseDuplicateColumnsError,
+    _check_select_for_duplicates,
+    _check_series_against_table_column,
+    _dataframe_columns_to_snake,
+    _parse_series_against_table,
+    _rows_to_dataframe,
+    _stream_dataframes,
+    _table_column_to_dtype,
+    _yield_dataframe_rows_as_dicts,
+    _yield_insertion_elements,
     insert_dataframe,
-    read_dataframe,
+    insert_items,
+    select_to_dataframe,
 )
+from utilities.types import NoneType
 
 
-class TestGetDType:
+class TestCheckSelectForDuplicates:
+    def test_error(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        sel = select(table.c.id, table.c.id)
+        with raises(DuplicateColumnError):
+            _check_select_for_duplicates(sel)
+
+
+class TestCheckSeriesAgainstColumnTable:
+    def test_error(self) -> None:
+        series = Series([], dtype=object)
+        column = Column("id", Integer)
+        with raises(SeriesAgainstTableColumnError):
+            _check_series_against_table_column(series, column)
+
+
+class TestDataFrameColumnsToSnake:
+    @given(col_name=text_ascii())
+    def test_main(self, col_name: str) -> None:
+        df = DataFrame(columns=[col_name])
+        snake = _dataframe_columns_to_snake(df)
+        assert snake.columns.tolist() == [snake_case(col_name)]
+
+    def test_error(self) -> None:
+        df = DataFrame(columns=["id", "Id"])
+        with raises(SnakeCaseDuplicateColumnsError):
+            _ = _dataframe_columns_to_snake(df)
+
+
+class TestInsertDataFrame:
+    @given(
+        data=data(),
+        engine=sqlite_engines(),
+    )
+    def test_main(self, data: DataObject, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        rows = data.draw(table_records_lists(table, max_size=10))
+        df = DataFrame(rows, columns=["id"]).astype(int)
+        insert_dataframe(df, table, engine)
+        with engine.begin() as conn:
+            res = conn.execute(select(func.count()).select_from(table)).scalar()
+        assert res == len(rows)
+
+
+class TestInsertItems:
+    @given(data=data(), engine=sqlite_engines())
+    def test_lists_of_tuples(
+        self,
+        data: DataObject,
+        engine: Engine,
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        rows = data.draw(table_records_lists(table, max_size=10))
+        insert_items([(rows, table)], engine)
+        with engine.begin() as conn:
+            res = conn.execute(select(func.count()).select_from(table)).scalar()
+        assert res == len(rows)
+
+    @given(data=data(), engine=sqlite_engines())
+    def test_dataframe_with_table(
+        self,
+        data: DataObject,
+        engine: Engine,
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        rows = data.draw(table_records_lists(table, max_size=10))
+        df = DataFrame(rows, columns=["id"]).astype(int)
+        insert_items([(df, table)], engine)
+        with engine.begin() as conn:
+            res = conn.execute(select(func.count()).select_from(table)).scalar()
+        assert res == len(rows)
+
+    @given(data=data(), engine=sqlite_engines())
+    def test_model(self, data: DataObject, engine: Engine) -> None:
+        class Example(cast(Any, declarative_base())):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        ensure_table_created(Example, engine)
+        rows = data.draw(table_records_lists(get_table(Example), max_size=10))
+        items = [Example(id_=id_) for id_, in rows]
+        insert_items(items, engine)
+        with engine.begin() as conn:
+            res = conn.execute(
+                select(func.count()).select_from(get_table(Example)),
+            ).scalar()
+        assert res == len(rows)
+
+    @given(engine=sqlite_engines())
+    def test_type_error(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        items = [(None, table)]
+        with raises(TypeError, match="Invalid item="):
+            insert_items(items, engine)
+
+
+class TestParseSeriesAgainstTable:
+    @mark.parametrize(
+        ("series_name", "table_column_name", "snake"),
+        [
+            param("id", "id", False),
+            param("id", "Id", True),
+            param("Id", "id", True),
+        ],
+    )
+    def test_main(
+        self,
+        series_name: str,
+        table_column_name: str,
+        snake: bool,
+    ) -> None:
+        series = Series([], dtype=int, name=series_name)
+        table = Table(
+            "example",
+            MetaData(),
+            Column(table_column_name, Integer, primary_key=True),
+        )
+        key, _ = _parse_series_against_table(
+            series,
+            table,
+            snake=snake,
+        )
+        assert key == table_column_name
+
+    @mark.parametrize(
+        ("snake", "error"),
+        [
+            param(True, SeriesNameSnakeCaseNotInTableError),
+            param(False, SeriesNameNotInTableError),
+        ],
+    )
+    def test_error(
+        self,
+        snake: bool,
+        error: type[Exception],
+    ) -> None:
+        series = Series([], dtype=int, name="name")
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        with raises(error):
+            _ = _parse_series_against_table(
+                series,
+                table,
+                snake=snake,
+            )
+
+
+class TestRowsToDataFrame:
+    @given(data=data(), engine=sqlite_engines())
+    @mark.parametrize(
+        ("col_name", "snake"),
+        [param("id", False), param("Id", True)],
+    )
+    def test_main(
+        self,
+        data: DataObject,
+        col_name: str,
+        engine: Engine,
+        snake: bool,
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column(col_name, Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        values = data.draw(table_records_lists(table, min_size=1, max_size=10))
+        with engine.begin() as conn:
+            _ = conn.execute(insert(table).values(values))
+        with engine.begin() as conn:
+            rows = conn.execute(sel := select(table)).all()
+        df = _rows_to_dataframe(sel, rows, snake=snake)
+        assert len(df) == len(values)
+        assert dict(df.dtypes) == {"id": Int64}
+
+
+class TestSelectToDataFrame:
+    @given(
+        data=data(),
+        engine=sqlite_engines(),
+        stream=integers(1, 10) | none(),
+    )
+    def test_main(
+        self,
+        data: DataObject,
+        engine: Engine,
+        stream: Optional[int],
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
+        insert_items([(rows, table)], engine)
+        result = select_to_dataframe(select(table), engine, stream=stream)
+        if stream is None:
+            assert isinstance(result, DataFrame)
+            assert len(cast(Sized, result)) == len(rows)
+            assert dict(cast(Any, result).dtypes) == {"id": Int64}
+        else:
+            assert not isinstance(result, DataFrame)
+            for df in result:
+                assert 1 <= len(df) <= stream
+                assert dict(df.dtypes) == {"id": Int64}
+
+
+class TestStreamDataFrames:
+    @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
+    def test_main(self, data: DataObject, engine: Engine, stream: int) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
+        insert_items([(rows, table)], engine)
+        for df in _stream_dataframes(select(table), engine, stream):
+            assert 1 <= len(df) <= stream
+            assert dict(df.dtypes) == {"id": Int64}
+
+    @given(engine=sqlite_engines())
+    def test_non_positive_stream(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        with raises(NonPositiveStreamError):
+            _ = list(_stream_dataframes(select(table), engine, 0))
+
+
+class TestTableColumnToDtype:
     @mark.parametrize(
         ("column", "expected"),
         [
@@ -48,132 +342,106 @@ class TestGetDType:
         ],
     )
     def test_main(self, column: Any, expected: Any) -> None:
-        assert _get_dtype(column) == expected
+        assert _table_column_to_dtype(column) == expected
 
 
-class TestInsertDataFrame:
-    @given(
-        df=data_frames(
-            [cast(Any, column)(name="id_", dtype=int)],
-            index=range_indexes(max_size=10),
-        ),
-        engine=sqlite_engines(),
-    )
-    def test_main(self, df: DataFrame, engine: Engine) -> None:
-        _ = assume(not df["id_"].duplicated().any())
-
-        class Example(cast(Any, declarative_base())):
-            __tablename__ = "example"
-            id_ = Column(Integer, primary_key=True)
-
-        with engine.begin() as conn:
-            get_table(Example).create(conn)
-
-        insert_dataframe(df, Example, engine)
-
-        with engine.begin() as conn:
-            res = conn.execute(select(Example)).all()
-        assert len(res) == len(df)
-
-
-class TestNativizeColumn:
+class TestYieldDataFrameRowsAsDicts:
+    @given(data=data())
     @mark.parametrize(
-        ("series", "expected"),
+        ("elements", "df_dtype", "table_dtype", "result_type"),
         [
-            param(Series([True, False], dtype=bool), [True, False]),
+            param(booleans(), bool, Boolean, bool),
+            param(booleans() | none(), boolean, Boolean, (bool, NoneType)),
+            param(dates_pd(), datetime64ns, Date, dt.date),
             param(
-                Series([True, False, None], dtype=boolean),
-                [True, False, None],
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                Date,
+                (dt.date, NoneType),
             ),
+            param(datetimes_pd(), datetime64nsutc, DateTime, dt.datetime),
+            param(
+                datetimes_pd() | just(NaT) | none(),
+                datetime64nsutc,
+                DateTime,
+                (dt.datetime, NoneType),
+            ),
+            param(floats(), float, Float, (float, NoneType)),
+            param(int64s(), int, Integer, int),
+            param(int64s() | none(), Int64, Integer, (int, NoneType)),
+            param(text_ascii(), string, String, str),
+            param(text_ascii() | none(), string, String, (str, NoneType)),
         ],
     )
-    @mark.parametrize(
-        "column",
-        [param(Column(Boolean)), param(Column(Integer))],
-    )
-    def test_boolean_data(
+    def test_main(
         self,
-        series: Series,
-        column: Any,
-        expected: list[Any],
+        data: DataObject,
+        elements: SearchStrategy[Any],
+        df_dtype: Any,
+        table_dtype: Any,
+        result_type: Any,
     ) -> None:
-        res = list(_nativize_column(series, column))
-        assert res == expected
+        values = data.draw(lists(elements, max_size=10))
+        df = DataFrame(values, columns=["id"], dtype=df_dtype)
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", table_dtype, primary_key=True),
+        )
+        dicts = list(_yield_dataframe_rows_as_dicts(df, table))
+        assert len(dicts) == len(values)
+        for dict_ in dicts:
+            assert isinstance(dict_["id"], result_type)
 
+
+class TestYieldInsertionElements:
+    @given(data=data())
     @mark.parametrize(
-        ("series", "column", "expected"),
+        ("elements", "dtype", "expected"),
         [
+            param(booleans(), bool, bool),
+            param(booleans() | none(), boolean, (bool, NoneType)),
+            param(dates_pd(), datetime64ns, dt.date),
             param(
-                Series([to_datetime("2000-01-01"), NA], dtype=datetime64ns),
-                Column(Date),
-                [dt.date(2000, 1, 1), None],
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                (dt.date, NoneType),
             ),
+            param(datetimes_pd(), datetime64nsutc, dt.datetime),
             param(
-                Series(
-                    [to_datetime("2000-01-01 12:00:00"), NA],
-                    dtype=datetime64ns,
-                ),
-                Column(DateTime),
-                [dt.datetime(2000, 1, 1, 12, tzinfo=UTC), None],
+                datetimes_pd() | just(NaT) | none(),
+                datetime64nsutc,
+                (dt.datetime, NoneType),
             ),
+            param(floats(), float, (float, NoneType)),
+            param(int64s(), int, int),
+            param(int64s() | none(), Int64, (int, NoneType)),
+            param(text_ascii(), string, str),
+            param(text_ascii() | none(), string, (str, NoneType)),
         ],
     )
-    def test_datetime_data(
+    def test_main(
         self,
-        series: Series,
-        column: Any,
-        expected: list[Any],
+        data: DataObject,
+        elements: SearchStrategy[Any],
+        dtype: Any,
+        expected: Union[type, tuple[type, ...]],
     ) -> None:
-        res = list(_nativize_column(series, column))
-        assert res == expected
+        values = data.draw(lists(elements, max_size=10))
+        series = Series(values, dtype=dtype)
+        for el in _yield_insertion_elements(series):
+            assert isinstance(el, expected)
 
-    @mark.parametrize(
-        ("series", "column", "expected"),
-        [
-            param(
-                Series([0.0, nan, inf, -inf], dtype=float),
-                Column(Float),
-                [0.0, None, inf, -inf],
-            ),
-            param(Series([0], dtype=int), Column(Integer), [0]),
-            param(Series([0, NA], dtype=Int64), Column(Integer), [0, None]),
-            param(
-                Series(["string", NA], dtype=string),
-                Column(String),
-                ["string", None],
-            ),
-        ],
-    )
-    def test_float_int_and_str_data(
-        self,
-        series: Series,
-        column: Any,
-        expected: list[Any],
-    ) -> None:
-        res = list(_nativize_column(series, column))
-        assert res == expected
+    @given(date=dates_pd())
+    def test_dates_with_time_components_error(self, date: dt.date) -> None:
+        series = Series(
+            [dt.datetime.combine(date, dt.time(12))],
+            dtype=datetime64ns,
+        )
+        with raises(DatesWithTimeComponentsError):
+            _ = list(_yield_insertion_elements(series))
 
-    def test_error(self) -> None:
-        series = Series([True, False], dtype=bool)
-        column = Column(String)
-        with raises(TypeError, match="Invalid types: .*"):
-            _ = list(_nativize_column(series, column))
-
-
-class TestReadDataFrame:
-    @given(ids=sets(integers(0, 100), max_size=10), engine=sqlite_engines())
-    def test_main(self, ids: set[int], engine: Engine) -> None:
-        class Example(cast(Any, declarative_base())):
-            __tablename__ = "example"
-
-            id_ = Column(Integer, primary_key=True)
-
-        with engine.begin() as conn:
-            get_table(Example).create(conn)
-        with Session(engine) as sess:
-            sess.add_all([Example(id_=id_) for id_ in ids])
-            sess.commit()
-
-        df = read_dataframe(select(Example), engine)
-        assert len(df) == len(ids)
-        assert dict(df.dtypes) == {"id_": Int64}
+    def test_type_error(self) -> None:
+        series = Series(dtype=object)
+        with raises(TypeError, match="Invalid dtype"):
+            _ = list(_yield_insertion_elements(series))

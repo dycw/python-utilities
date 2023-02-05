@@ -2,13 +2,14 @@ import datetime as dt
 from typing import Any, cast
 
 from beartype import beartype
-from pandas import NaT, Timestamp
+from pandas import DatetimeTZDtype, NaT, Timestamp
 
 from utilities.datetime import UTC
 
 Int64 = "Int64"
 boolean = "boolean"
 string = "string"
+datetime64nsutc = DatetimeTZDtype(tz=UTC)
 
 
 @beartype

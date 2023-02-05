@@ -34,6 +34,7 @@ from utilities.sqlalchemy import (
     get_dialect,
     get_table,
     get_table_name,
+    model_to_dict,
     redirect_to_no_such_table_error,
     redirect_to_table_already_exists_error,
     yield_connection,
@@ -226,7 +227,7 @@ class TestGetColumns:
         table = Table(
             "example",
             MetaData(),
-            Column("id_", Integer, primary_key=True),
+            Column("id", Integer, primary_key=True),
         )
         self._run_test(table)
 
@@ -307,6 +308,26 @@ class TestGetTableName:
         result = get_table_name(Example)
         expected = "example"
         assert result == expected
+
+
+class TestModelToDict:
+    @given(id_=integers())
+    def test_main(self, id_: int) -> None:
+        class Example(cast(Any, declarative_base())):
+            __tablename__ = "example"
+            id_ = Column(Integer, primary_key=True)
+
+        example = Example(id_=id_)
+        assert model_to_dict(example) == {"id_": id_}
+
+    @given(id_=integers())
+    def test_explicitly_named_column(self, id_: int) -> None:
+        class Example(cast(Any, declarative_base())):
+            __tablename__ = "example"
+            ID = Column(Integer, primary_key=True, name="id")
+
+        example = Example(ID=id_)
+        assert model_to_dict(example) == {"id": id_}
 
 
 class TestRedirectToNoSuchTableError:
