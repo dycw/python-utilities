@@ -110,6 +110,7 @@ dev = [
   "hatch",
   "hypothesis-sqlalchemy",
   "mysqlclient",
+  "nox",
   "pip-tools",
   "psycopg2",
   "pyodbc",

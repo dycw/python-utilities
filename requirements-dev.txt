@@ -10,6 +10,8 @@ anyio==3.6.2
     # via
     #   httpcore
     #   starlette
+argcomplete==2.0.0
+    # via nox
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 attrs==22.2.0
@@ -45,6 +47,8 @@ click==8.1.3
     #   pip-tools
     #   typed-settings
     #   userpath
+colorlog==6.7.0
+    # via nox
 coverage[toml]==7.1.0
     # via pytest-cov
 cryptography==39.0.0
@@ -126,6 +130,8 @@ mypy-extensions==1.0.0
     # via black
 mysqlclient==2.1.1
     # via dycw-utilities (pyproject.toml)
+nox==2022.11.21
+    # via dycw-utilities (pyproject.toml)
 numpy==1.24.1
     # via
     #   dycw-utilities (pyproject.toml)
@@ -137,6 +143,7 @@ packaging==23.0
     #   build
     #   hatch
     #   hatchling
+    #   nox
     #   pytest
     #   xarray
 pandas==1.5.3
@@ -251,7 +258,9 @@ typing-extensions==4.4.0
 userpath==1.8.0
     # via hatch
 virtualenv==20.17.1
-    # via hatch
+    # via
+    #   hatch
+    #   nox
 wheel==0.38.4
     # via pip-tools
 xarray==2023.1.0
