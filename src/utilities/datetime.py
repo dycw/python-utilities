@@ -78,7 +78,7 @@ def parse_date(date: str, /) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
-    with suppress(ValueError):
+    with suppress(ValueError):  # pragma: py-ge-311
         return dt.datetime.strptime(date, "%Y%m%d").replace(tzinfo=UTC).date()
     raise ParseDateError(date)
 
@@ -99,12 +99,12 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
         "%Y%m%dT%H%M%S",
         "%Y%m%dT%H%M%S.%f",
     ]:
-        with suppress(ValueError):
+        with suppress(ValueError):  # pragma: py-ge-311
             return dt.datetime.strptime(datetime, fmt).replace(
                 tzinfo=dt.timezone.utc,
             )
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
-        with suppress(ValueError):
+        with suppress(ValueError):  # pragma: py-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
     raise ParseDateTimeError(datetime)
 
@@ -118,7 +118,7 @@ def parse_time(time: str) -> dt.time:
     """Parse a string into a time."""
     with suppress(ValueError):
         return dt.time.fromisoformat(time)
-    for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:
+    for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:  # pragma: py-ge-311
         with suppress(ValueError):
             return dt.datetime.strptime(time, fmt).replace(tzinfo=UTC).time()
     raise ParseTimeError(time)

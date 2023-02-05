@@ -9,6 +9,7 @@ branch = true
 data_file = ".coverage/data"
 parallel = true
 omit = ["src/utilities/clean_dir/__main__.py"]
+plugins = ["coverage_conditional_plugin"]
 
 [tool.coverage.report]
 exclude_lines = ["# pragma: no cover", "@overload"]
@@ -18,6 +19,11 @@ skip_empty = true
 
 [tool.coverage.html]
 directory = ".coverage/html"
+
+[tool.coverage.coverage_conditional_plugin.rules]
+py-le-310 = "sys_version_info <= (3, 10)"
+py-ne-310 = "sys_version_info != (3, 10)"
+py-ge-311 = "sys_version_info >= (3, 11)"
 
 #### hatch ####################################################################
 [build-system]
@@ -104,6 +110,7 @@ dev = [
   # dev
   "black",
   "bump2version",
+  "coverage-conditional-plugin",
   "cx_oracle",
   "exceptiongroup", # pytest
   "freezegun",

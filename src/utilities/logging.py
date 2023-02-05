@@ -1,4 +1,4 @@
-from enum import auto, unique
+from enum import unique
 from logging import basicConfig
 
 from beartype import beartype
@@ -13,7 +13,7 @@ def basic_config() -> None:
         format="{asctime} | {name} | {levelname:8} | {message}",
         datefmt="%4Y-%m-%d %H:%M:%S",
         style="{",
-        level="DEBUG",
+        level=LogLevel.DEBUG,
     )
 
 
@@ -21,8 +21,8 @@ def basic_config() -> None:
 class LogLevel(StrEnum):
     """An enumeration of the logging levels."""
 
-    DEBUG = auto()
-    INFO = auto()
-    WARNING = auto()
-    ERROR = auto()
-    CRITICAL = auto()
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
