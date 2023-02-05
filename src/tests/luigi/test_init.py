@@ -1,10 +1,17 @@
+import datetime as dt
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
 from typing import Any, cast
 
 from hypothesis import given, settings
-from hypothesis.strategies import DataObject, booleans, data, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    sampled_from,
+    times,
+)
 from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 
@@ -12,6 +19,7 @@ from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
     EnumParameter,
     PathTarget,
+    TimeParameter,
     _yield_task_classes,
     build,
     clone,
@@ -141,3 +149,11 @@ class TestPathTarget:
         assert not target.exists()
         path.touch()
         assert target.exists()
+
+
+class TestTimeParameter:
+    @given(time=times())
+    def test_main(self, time: dt.time) -> None:
+        param = TimeParameter()
+        norm = param.normalize(time)
+        assert param.parse(param.serialize(norm)) == time
