@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from hypothesis.strategies import DrawFn, composite
 from sqlalchemy import MetaData
@@ -26,6 +26,6 @@ def sqlite_engines(
         base.metadata.create_all(engine)
 
     # attach temp_path to the engine, so as to keep it alive
-    engine.temp_path = temp_path  # type: ignore[]
+    cast(Any, engine).temp_path = temp_path
 
     return engine

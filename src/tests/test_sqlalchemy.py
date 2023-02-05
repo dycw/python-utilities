@@ -345,7 +345,7 @@ class TestYieldInClauseRows:
             table.create(conn)
             _ = conn.execute(insert(table).values(rows))
             assert (
-                conn.execute(select([func.count()]).select_from(table)).scalar()
+                conn.execute(select(func.count()).select_from(table)).scalar()
                 == num_rows
             )
         row_vals = [row[0] for row in rows]
