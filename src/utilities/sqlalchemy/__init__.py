@@ -3,11 +3,11 @@ from contextlib import contextmanager
 from functools import reduce
 from operator import ge, le
 from re import search
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Table, and_, case
+from sqlalchemy import Select, Table, and_, case
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
@@ -17,7 +17,6 @@ from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL, Connection, Engine
 from sqlalchemy.exc import DatabaseError, OperationalError
 from sqlalchemy.pool import NullPool, Pool
-from sqlalchemy.sql import Selectable
 
 from utilities.typing import never
 
@@ -198,7 +197,7 @@ def yield_connection(
 
 @beartype
 def yield_in_clause_rows(
-    sel: Selectable,
+    sel: Select,
     column: Any,
     values: Iterable[Any],
     engine_or_conn: Union[Engine, Connection],
@@ -227,6 +226,6 @@ def yield_in_clause_rows(
         chunk_size_use = chunk_size
     with yield_connection(engine_or_conn) as conn:
         for values_i in chunked(values, chunk_size_use):
-            sel_i: Selectable = cast(Any, sel).where(column.in_(values_i))
+            sel_i = sel.where(column.in_(values_i))
             yield from conn.execute(sel_i).all()
     return None

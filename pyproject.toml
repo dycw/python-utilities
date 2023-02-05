@@ -69,11 +69,7 @@ pqdm = ["pqdm >= 0.2.0"]
 pyinstrument = ["pyinstrument >= 4.4.0"]
 pytest-check = ["pytest-check >= 2.1.2"]
 tqdm = ["tqdm >= 4.64.1"]
-sqlalchemy = [
-  "more-itertools >= 9.0.0",
-  "sqlalchemy >= 1.4.46",
-  "sqlalchemy2-stubs"
-]
+sqlalchemy = ["more-itertools >= 9.0.0", "sqlalchemy >= 2.0.1"]
 typed-settings = ["typed-settings[click] >= 2.0.2"]
 xarray = ["xarray >= 2023.1.0"]
 dev = [
@@ -95,8 +91,7 @@ dev = [
   "pqdm >= 0.2.0",
   "pyinstrument >= 4.4.0",
   "pytest-check >= 2.1.2",
-  "sqlalchemy >= 1.4.46",
-  "sqlalchemy2-stubs",
+  "sqlalchemy >= 2.0.1",
   "tqdm >= 4.64.1",
   "typed-settings[click] >= 2.0.2",
   "xarray >= 2023.1.0",

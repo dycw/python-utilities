@@ -52,4 +52,4 @@ class TestSQLiteEngines:
                 [{"id_": id_} for id_ in ids],
             )
             res = conn.execute(select(table_or_model)).all()
-        assert {r["id_"] for r in res} == ids
+        assert {r.id_ for r in res} == ids

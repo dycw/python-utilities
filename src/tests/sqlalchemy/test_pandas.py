@@ -54,7 +54,7 @@ class TestGetDType:
 class TestInsertDataFrame:
     @given(
         df=data_frames(
-            [column(name="id_", dtype=int)],  # type: ignore[]
+            [cast(Any, column)(name="id_", dtype=int)],
             index=range_indexes(max_size=10),
         ),
         engine=sqlite_engines(),
