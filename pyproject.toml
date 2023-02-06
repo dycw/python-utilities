@@ -109,7 +109,6 @@ dev = [
   "xarray >= 2023.1.0",
   # dev
   "black",
-  "bump2version",
   "coverage-conditional-plugin",
   "cx_oracle",
   "exceptiongroup", # pytest
