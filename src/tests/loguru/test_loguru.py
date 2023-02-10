@@ -55,7 +55,7 @@ class TestSetupLoguru:
         assert files_dir.name == files
         results = {path.name for path in files_dir.iterdir()}
         expected = {"debug", "info", "warning", "error", "log"}
-        assert results.issuperset(expected)
+        assert results == expected
         with files_dir.joinpath("log").open() as fh:
             (line,) = fh.read().splitlines()
         assert search(

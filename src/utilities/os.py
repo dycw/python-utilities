@@ -1,9 +1,11 @@
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
-from os import environ, getenv
+from os import cpu_count, environ, getenv
 from typing import Optional, cast
 
 from beartype import beartype
+
+CPU_COUNT = cpu_count()
 
 
 @contextmanager

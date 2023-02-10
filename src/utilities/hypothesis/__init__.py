@@ -26,7 +26,7 @@ from hypothesis.strategies import (
 )
 
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.tempfile import TemporaryDirectory, gettempdir
+from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
 
@@ -194,7 +194,7 @@ def slices(
 @beartype
 def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
-    dir_ = gettempdir().joinpath("hypothesis")
+    dir_ = TEMP_DIR.joinpath("hypothesis")
     dir_.mkdir(exist_ok=True)
     uuid = _draw(uuids())
     return TemporaryDirectory(prefix=f"{uuid}__", dir=dir_.as_posix())

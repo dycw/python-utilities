@@ -19,7 +19,7 @@ from utilities.re import NoMatchesError, extract_group
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _CWD = Path.cwd()
 _FILES_ENV_VAR = "LOGGING"
-_ROTATION = 1
+_ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
 
 
