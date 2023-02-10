@@ -1,1 +1,1 @@
-pytest_plugins = "pytester"  # noqa: INP001
+pytest_plugins = "pytester"

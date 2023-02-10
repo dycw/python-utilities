@@ -1,4 +1,4 @@
-from pathlib import Path  # noqa: INP001
+from pathlib import Path
 
 from beartype import beartype
 from nox import Session, session
