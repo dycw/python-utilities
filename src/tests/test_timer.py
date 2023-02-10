@@ -68,3 +68,7 @@ class TestTimer:
         assert timer >= 1e-3
         sleep(1e-3)
         assert timer >= 2e-3
+
+    def test_timedelta(self) -> None:
+        timer = Timer()
+        assert isinstance(timer.timedelta, dt.timedelta)

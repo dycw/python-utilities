@@ -37,11 +37,11 @@ class Timer:
 
     @beartype
     def __repr__(self) -> str:
-        return str(self._to_timedelta())
+        return str(self.timedelta)
 
     @beartype
     def __str__(self) -> str:
-        return str(self._to_timedelta())
+        return str(self.timedelta)
 
     @beartype
     def __eq__(self, other: Any) -> bool:
@@ -67,15 +67,17 @@ class Timer:
     def __ne__(self, other: Any) -> bool:
         return self._compare(other, ne)
 
+    @property
+    @beartype
+    def timedelta(self) -> dt.timedelta:
+        """The elapsed time, as a `timedelta` object."""
+        return dt.timedelta(seconds=float(self))
+
     @beartype
     def _compare(self, other: Any, op: Callable[[Any, Any], bool], /) -> bool:
         if isinstance(other, (Number, Timer)):
             return op(float(self), other)
         if isinstance(other, dt.timedelta):
-            return op(float(self), other.total_seconds())
+            return op(self.timedelta, other)
         msg = f"{other=}"
         raise TypeError(msg)
-
-    @beartype
-    def _to_timedelta(self) -> dt.timedelta:
-        return dt.timedelta(seconds=float(self))
