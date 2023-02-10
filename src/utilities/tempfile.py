@@ -33,3 +33,6 @@ class TemporaryDirectory(_TemporaryDirectory):
 def gettempdir() -> Path:
     """Get the name of the directory used for temporary files."""
     return Path(_gettempdir())
+
+
+TEMP_DIR = gettempdir()

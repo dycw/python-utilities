@@ -5,7 +5,7 @@ from typing import Optional
 
 from beartype import beartype
 
-from utilities.tempfile import gettempdir
+from utilities.tempfile import TEMP_DIR
 
 
 @beartype
@@ -13,7 +13,7 @@ from utilities.tempfile import gettempdir
 class Config:
     """Settings for the `clean_dir` script."""
 
-    path: Path = gettempdir()
+    path: Path = TEMP_DIR
     days: int = 7
     chunk_size: Optional[int] = None
     dry_run: bool = False

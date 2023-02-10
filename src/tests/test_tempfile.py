@@ -1,11 +1,16 @@
 from pathlib import Path
 
-from utilities.tempfile import TemporaryDirectory, gettempdir
+from utilities.tempfile import TEMP_DIR, TemporaryDirectory, gettempdir
 
 
 class TestGetTempDir:
     def test_main(self) -> None:
         assert isinstance(gettempdir(), Path)
+
+
+class TestTempDir:
+    def test_main(self) -> None:
+        assert isinstance(TEMP_DIR, Path)
 
 
 class TestTemporaryDirectory:
