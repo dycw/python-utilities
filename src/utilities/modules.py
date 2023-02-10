@@ -38,7 +38,9 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: Optional[Union[type, tuple[type, ...]]] = None,  # noqa: A002
+    type: Optional[  # noqa: A002
+        Union[type[Any], tuple[type[Any], ...]]
+    ] = None,
     predicate: Optional[Callable[[Any], bool]] = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.
@@ -52,3 +54,33 @@ def yield_module_contents(
                 (predicate is None) or predicate(obj)
             ):
                 yield obj
+
+
+@beartype
+def yield_module_subclasses(
+    module: ModuleType,
+    cls: type[Any],
+    /,
+    *,
+    recursive: bool = False,
+    predicate: Optional[Callable[[type[Any]], bool]] = None,
+) -> Iterator[Any]:
+    """Yield all the module subclasses under a package.
+
+    Optionally, recurse into sub-packages.
+    """
+
+    @beartype
+    def predicate_use(obj: type[Any], /) -> bool:
+        return (
+            issubclass(obj, cls)
+            and not issubclass(cls, obj)
+            and ((predicate is None) or predicate(obj))
+        )
+
+    return yield_module_contents(
+        module,
+        recursive=recursive,
+        type=type,
+        predicate=predicate_use,
+    )

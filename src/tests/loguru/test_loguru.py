@@ -29,7 +29,7 @@ class TestSetupLoguru:
         setup_loguru(levels=levels)
         logger.info("test")
 
-    @given(module=text_ascii(min_size=1).map(str.lower))
+    @given(module=text_ascii(min_size=1))
     def test_standard(self, module: str) -> None:
         setup_loguru(levels={module: LogLevel.INFO})
         logger.info("test")
@@ -65,6 +65,10 @@ class TestSetupLoguru:
         )
 
 
+env_var_prefixes = text_ascii(min_size=20)
+modules = text_ascii(min_size=1).map(str.lower)
+
+
 class TestAugmentLevels:
     def test_none(self) -> None:
         result = _augment_levels()
@@ -79,8 +83,8 @@ class TestAugmentLevels:
         assert result == levels
 
     @given(
-        env_var_prefix=text_ascii(min_size=1),
-        module=text_ascii(min_size=1).map(str.lower),
+        env_var_prefix=env_var_prefixes,
+        module=modules,
         level=sampled_from(LogLevel),
     )
     def test_with_env_var(
@@ -94,8 +98,8 @@ class TestAugmentLevels:
         assert result == {module: level}
 
     @given(
-        env_var_prefix=text_ascii(min_size=1),
-        module=text_ascii(min_size=1),
+        env_var_prefix=env_var_prefixes,
+        module=modules,
         level=sampled_from(LogLevel),
     )
     def test_without_env_var(
@@ -109,8 +113,8 @@ class TestAugmentLevels:
         assert result == {}
 
     @given(
-        env_var_prefix=text_ascii(min_size=10),
-        module=text_ascii(min_size=1).map(str.lower),
+        env_var_prefix=env_var_prefixes,
+        module=modules,
         level_direct=sampled_from(LogLevel),
         level_env_var=sampled_from(LogLevel),
     )
@@ -149,7 +153,7 @@ class TestGetFilesPath:
 
     @given(
         files=text_ascii(min_size=1),
-        env_var_key=text_ascii(min_size=1),
+        env_var_key=env_var_prefixes,
         env_var_value=text_ascii(min_size=1),
     )
     def test_both(

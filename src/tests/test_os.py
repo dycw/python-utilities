@@ -3,9 +3,15 @@ from os import getenv
 from hypothesis import given
 
 from utilities.hypothesis import text_ascii
-from utilities.os import temp_environ
+from utilities.os import CPU_COUNT, temp_environ
+from utilities.types import NoneType
 
 text = text_ascii(min_size=1, max_size=10)
+
+
+class TestAsdf:
+    def test_main(self) -> None:
+        assert isinstance(CPU_COUNT, (int, NoneType))
 
 
 def prefix(text: str, /) -> str:
