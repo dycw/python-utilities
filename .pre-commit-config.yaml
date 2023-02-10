@@ -1,12 +1,12 @@
 repos:
   # fixers
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.241
+    rev: v0.0.244
     hooks:
       - id: ruff
         args: [--fix]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.8.6
+    rev: 0.8.8
     hooks:
       - id: run-hatch-version
   - repo: https://github.com/pre-commit/pre-commit-hooks

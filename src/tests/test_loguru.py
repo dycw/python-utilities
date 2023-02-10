@@ -1,29 +1,163 @@
-from os import chdir
 from pathlib import Path
 from re import search
 from time import sleep
+from typing import Optional
 
+from hypothesis import given, settings
+from hypothesis.strategies import dictionaries, lists, none, sampled_from
 from loguru import logger
 
-from utilities.loguru import setup_loguru
+from utilities.hypothesis import temp_paths, text_ascii
+from utilities.logging import LogLevel
+from utilities.loguru import (
+    _FILES_ENV_VAR,
+    _augment_levels,
+    _get_files_path,
+    setup_loguru,
+)
+from utilities.os import temp_environ
+from utilities.pathlib import PathLike
 
 
 class TestSetupLoguru:
-    def test_main(self, tmp_path: Path) -> None:
-        chdir(tmp_path)
+    def test_disabled(self) -> None:
         setup_loguru()
+        logger.info("test")
 
-        sleep(0.01)
-        logger.debug("message")
-        sleep(0.01)
+    @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
+    def test_level(self, levels: dict[str, LogLevel]) -> None:
+        setup_loguru(levels=levels)
+        logger.info("test")
 
-        (log,) = tmp_path.iterdir()
-        assert log.name == "log"
-        with log.open() as fh:
+    @given(module=text_ascii(min_size=1).map(str.lower))
+    def test_standard(self, module: str) -> None:
+        setup_loguru(levels={module: LogLevel.INFO})
+        logger.info("test")
+
+    @given(enable=lists(text_ascii(min_size=1)))
+    def test_enable(self, enable: list[str]) -> None:
+        setup_loguru(enable=enable)
+        logger.info("test")
+
+    @given(level=sampled_from(LogLevel))
+    def test_luigi(self, level: LogLevel) -> None:
+        setup_loguru(levels={"luigi": level})
+        logger.info("test")
+
+    @given(root=temp_paths(), files=text_ascii(min_size=1))
+    @settings(max_examples=1)
+    def test_files(self, root: Path, files: str) -> None:
+        setup_loguru(files=files, files_root=root)
+        sleep(0.05)
+        logger.info("message")
+        sleep(0.05)
+        (files_dir,) = root.iterdir()
+        assert files_dir.name == files
+        results = {path.name for path in files_dir.iterdir()}
+        expected = {"debug", "info", "warning", "error", "log"}
+        assert results.issuperset(expected)
+        with files_dir.joinpath("log").open() as fh:
             (line,) = fh.read().splitlines()
-
         assert search(
-            r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| DEBUG\s* \| "
-            r"tests\.test_loguru:test_main:\d+ - message$",
+            r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}  INFO  \w+\-\d+  "
+            r"[\w\.\-]+  message$",
             line,
         )
+
+
+class TestAugmentLevels:
+    def test_none(self) -> None:
+        result = _augment_levels()
+        assert result == {}
+
+    @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
+    def test_main(
+        self,
+        levels: Optional[dict[str, LogLevel]],
+    ) -> None:
+        result = _augment_levels(levels=levels)
+        assert result == levels
+
+    @given(
+        env_var_prefix=text_ascii(min_size=1),
+        module=text_ascii(min_size=1).map(str.lower),
+        level=sampled_from(LogLevel),
+    )
+    def test_with_env_var(
+        self,
+        env_var_prefix: str,
+        module: str,
+        level: LogLevel,
+    ) -> None:
+        with temp_environ({f"{env_var_prefix}_{module}": level}):
+            result = _augment_levels(env_var_prefix=env_var_prefix)
+        assert result == {module: level}
+
+    @given(
+        env_var_prefix=text_ascii(min_size=1),
+        module=text_ascii(min_size=1),
+        level=sampled_from(LogLevel),
+    )
+    def test_without_env_var(
+        self,
+        env_var_prefix: str,
+        module: str,
+        level: LogLevel,
+    ) -> None:
+        with temp_environ({f"{env_var_prefix}_{module}": level}):
+            result = _augment_levels(env_var_prefix=None)
+        assert result == {}
+
+    @given(
+        env_var_prefix=text_ascii(min_size=10),
+        module=text_ascii(min_size=1).map(str.lower),
+        level_direct=sampled_from(LogLevel),
+        level_env_var=sampled_from(LogLevel),
+    )
+    def test_both(
+        self,
+        level_direct: LogLevel,
+        env_var_prefix: str,
+        module: str,
+        level_env_var: LogLevel,
+    ) -> None:
+        with temp_environ({f"{env_var_prefix}_{module}": level_env_var}):
+            result = _augment_levels(
+                levels={module: level_direct},
+                env_var_prefix=env_var_prefix,
+            )
+        assert result == {module: level_env_var}
+
+
+class TestGetFilesPath:
+    @given(files=text_ascii(min_size=1) | none())
+    def test_main(self, files: Optional[PathLike]) -> None:
+        result = _get_files_path(files=files)
+        assert result == files
+
+    @given(env_var=text_ascii(min_size=1), files=text_ascii(min_size=1))
+    def test_with_env_var(self, env_var: str, files: str) -> None:
+        with temp_environ({env_var: files}):
+            result = _get_files_path(env_var=env_var)
+        assert result == files
+
+    @given(files=text_ascii(min_size=1))
+    def test_without_env_var(self, files: str) -> None:
+        with temp_environ({_FILES_ENV_VAR: files}):
+            result = _get_files_path(env_var=None)
+        assert result is None
+
+    @given(
+        files=text_ascii(min_size=1),
+        env_var_key=text_ascii(min_size=1),
+        env_var_value=text_ascii(min_size=1),
+    )
+    def test_both(
+        self,
+        files: str,
+        env_var_key: str,
+        env_var_value: str,
+    ) -> None:
+        with temp_environ({env_var_key: env_var_value}):
+            result = _get_files_path(files=files, env_var=env_var_key)
+        assert result == files
