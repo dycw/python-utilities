@@ -183,7 +183,7 @@ def _yield_dependencies_downstream(
         try:
             cloned = clone(task, task_cls)
         except (MissingParameterException, TypeError):
-            pass  # noqa: S110
+            pass
         else:
             if task in get_dependencies_upstream(cloned, recursive=recursive):
                 yield cloned

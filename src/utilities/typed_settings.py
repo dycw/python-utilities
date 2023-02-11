@@ -97,7 +97,8 @@ def _make_structure_hook(
     @beartype
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
         if not isinstance(value, (cls, str)):
-            raise TypeError(type(value))
+            msg = f"Invalid type: {value=}"
+            raise TypeError(msg)
         return func(value)
 
     return hook

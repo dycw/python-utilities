@@ -56,6 +56,7 @@ def insert_items(
     """Insert a set of items into a database.
 
     These can be either a:
+     - ([tuple], table) pair, or
      - (DataFrame, table) pair, or
      - Model instance.
     """
@@ -75,7 +76,7 @@ def insert_items(
                         ),
                     )
                 else:
-                    msg = f"Invalid {item=}"
+                    msg = f"Invalid type: {first=}"
                     raise TypeError(msg)
             else:
                 table_or_model = item
@@ -244,7 +245,10 @@ def select_to_dataframe(
     snake: bool = False,
     stream: Optional[int] = None,
 ) -> Union[DataFrame, Iterator[DataFrame]]:
-    """Read a table from a database into a DataFrame, or streamed in chunks."""
+    """Read a table from a database into a DataFrame.
+
+    Optionally stream it in chunks.
+    """
     _check_select_for_duplicates(sel)
     if stream is None:
         with yield_connection(engine_or_conn) as conn:
@@ -297,7 +301,7 @@ def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
         return string
     if issubclass(py_type, dt.date):
         return datetime64ns
-    msg = f"Invalid type: {py_type}"  # pragma: no cover
+    msg = f"Invalid type: {py_type=}"  # pragma: no cover
     raise TypeError(msg)  # pragma: no cover
 
 
