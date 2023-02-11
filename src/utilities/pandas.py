@@ -1,15 +1,75 @@
 import datetime as dt
-from typing import Any, cast
+from typing import Any, Union, cast
 
 from beartype import beartype
-from pandas import DatetimeTZDtype, NaT, Timestamp
+from pandas import (
+    DataFrame,
+    DatetimeTZDtype,
+    Index,
+    NaT,
+    RangeIndex,
+    Series,
+    Timestamp,
+)
 
 from utilities.datetime import UTC
 
 Int64 = "Int64"
 boolean = "boolean"
+category = "category"
 string = "string"
 datetime64nsutc = DatetimeTZDtype(tz=UTC)
+
+
+@beartype
+def check_range_index(obj: Union[Index, Series, DataFrame], /) -> None:
+    """Check if a RangeIndex is the default one."""
+    if isinstance(obj, Index):
+        if not isinstance(obj, RangeIndex):
+            msg = f"Invalid type: {obj=}"
+            raise TypeError(msg)
+        if obj.start != 0:
+            msg = f"{obj=}"
+            raise RangeIndexStartError(msg)
+        if obj.step != 1:
+            msg = f"{obj=}"
+            raise RangeIndexStepError(msg)
+        if obj.name is not None:
+            msg = f"{obj=}"
+            raise RangeIndexNameError(msg)
+    else:
+        try:
+            check_range_index(obj.index)
+        except (
+            TypeError,
+            RangeIndexStartError,
+            RangeIndexStepError,
+            RangeIndexNameError,
+        ) as error:
+            msg = f"{obj=}"
+            if isinstance(obj, Series):
+                raise SeriesRangeIndexError(msg) from error
+            raise DataFrameRangeIndexError(msg) from error
+
+
+class RangeIndexStartError(ValueError):
+    """Raised when a RangeIndex start is not 0."""
+
+
+class RangeIndexStepError(ValueError):
+    """Raised when a RangeIndex step is not 1."""
+
+
+class RangeIndexNameError(ValueError):
+    """Raised when a RangeIndex name is not None."""
+
+
+class SeriesRangeIndexError(ValueError):
+    """Raised when Series does not have a standard RangeIndex."""
+
+
+class DataFrameRangeIndexError(ValueError):
+    """Raised when DataFrame does not have a standard RangeIndex."""
 
 
 @beartype

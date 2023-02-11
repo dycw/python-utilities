@@ -53,6 +53,8 @@ coverage[toml]==7.1.0
     #   pytest-cov
 coverage-conditional-plugin==0.8.0
     # via dycw-utilities (pyproject.toml)
+cramjam==2.6.2
+    # via fastparquet
 cryptography==39.0.1
     # via secretstorage
 cx-oracle==8.3.0
@@ -69,10 +71,14 @@ execnet==1.9.0
     # via pytest-xdist
 fastapi==0.91.0
     # via dycw-utilities (pyproject.toml)
+fastparquet==2023.2.0
+    # via dycw-utilities (pyproject.toml)
 filelock==3.9.0
     # via virtualenv
 freezegun==1.2.2
     # via dycw-utilities (pyproject.toml)
+fsspec==2023.1.0
+    # via fastparquet
 greenlet==2.0.2
     # via sqlalchemy
 h11==0.14.0
@@ -137,6 +143,7 @@ nox==2022.11.21
 numpy==1.24.2
     # via
     #   dycw-utilities (pyproject.toml)
+    #   fastparquet
     #   pandas
     #   xarray
 packaging==23.0
@@ -144,6 +151,7 @@ packaging==23.0
     #   black
     #   build
     #   coverage-conditional-plugin
+    #   fastparquet
     #   hatch
     #   hatchling
     #   nox
@@ -152,6 +160,7 @@ packaging==23.0
 pandas==1.5.3
     # via
     #   dycw-utilities (pyproject.toml)
+    #   fastparquet
     #   xarray
 pathspec==0.11.0
     # via
@@ -217,7 +226,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.1
     # via hatch
-ruff==0.0.244
+ruff==0.0.245
     # via dycw-utilities (pyproject.toml)
 secretstorage==3.3.3
     # via keyring

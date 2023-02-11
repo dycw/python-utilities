@@ -183,7 +183,7 @@ class TestInsertItems:
             Column("id", Integer, primary_key=True),
         )
         items = [(None, table)]
-        with raises(TypeError, match="Invalid item="):
+        with raises(TypeError, match="Invalid type: first="):
             insert_items(items, engine)
 
 

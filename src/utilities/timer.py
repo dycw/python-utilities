@@ -79,5 +79,5 @@ class Timer:
             return op(float(self), other)
         if isinstance(other, dt.timedelta):
             return op(self.timedelta, other)
-        msg = f"{other=}"
+        msg = f"Invalid type: {other=}"
         raise TypeError(msg)
