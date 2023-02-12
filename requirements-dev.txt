@@ -93,7 +93,7 @@ httpx==0.23.3
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.68.0
+hypothesis==6.68.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
