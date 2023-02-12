@@ -1,6 +1,6 @@
 import datetime as dt
 import logging
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import suppress
 from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
@@ -12,6 +12,7 @@ from typing import Any, Optional, Union, cast
 from beartype import beartype
 from loguru import logger
 
+from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 from utilities.re import NoMatchesError, extract_group
@@ -28,7 +29,7 @@ def setup_loguru(
     *,
     levels: Optional[Mapping[str, LogLevel]] = None,
     levels_env_var_prefix: Optional[str] = _LEVELS_ENV_VAR_PREFIX,
-    enable: Optional[Iterable[str]] = None,
+    enable: Optional[IterableStrs] = None,
     console: LogLevel = LogLevel.INFO,
     files: Optional[PathLike] = None,
     files_root: Path = _CWD,

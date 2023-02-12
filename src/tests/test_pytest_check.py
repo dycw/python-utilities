@@ -12,7 +12,7 @@ class TestCheck:
                     assert False, "first"
                 with check():
                     assert False, "second"
-           """,
+            """,
         )
         result = testdir.runpytest()
         result.assert_outcomes(failed=1)
@@ -36,8 +36,8 @@ class TestCheck:
                         assert False, "first"
                     with check():
                         assert False, "second"
-           """,
+            """,
         )
         result = testdir.runpytest()
         result.assert_outcomes(failed=1)
-        result.stdout.fnmatch_lines(["*AssertionError: first"])
+        result.stdout.re_match_lines([".*AssertionError: first"])
