@@ -37,9 +37,9 @@ _T = TypeVar("_T")
 @beartype
 def load_settings(
     cls: type[_T],
-    appname: str,
     /,
     *,
+    appname: str = "appname",
     config_files: Iterable[PathLike] = (),
 ) -> _T:
     """Load a settings object with the extended converter."""
@@ -51,9 +51,9 @@ def load_settings(
 @beartype
 def click_options(
     cls: type[Any],
-    appname: str,
     /,
     *,
+    appname: str = "appname",
     config_files: Iterable[PathLike] = (),
     argname: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:

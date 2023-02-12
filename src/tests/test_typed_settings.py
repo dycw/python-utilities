@@ -28,12 +28,14 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.hypothesis import temp_paths
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.typed_settings import click_options, load_settings
+
+app_names = text_ascii(min_size=1).map(str.lower)
 
 
 class TestLoadSettings:
-    @given(data=data(), root=temp_paths())
+    @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
         ("cls", "strategy"),
         [
@@ -46,6 +48,7 @@ class TestLoadSettings:
     def test_main(
         self,
         data: DataObject,
+        appname: str,
         root: Path,
         cls: Any,
         strategy: SearchStrategy[Any],
@@ -56,33 +59,34 @@ class TestLoadSettings:
         class Settings:
             value: cls = default
 
-        settings_default = load_settings(Settings, "appname")
+        settings_default = load_settings(Settings)
         assert settings_default.value == default
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
-            _ = fh.write(f'[appname]\nvalue = "{value}"')
+            _ = fh.write(f'[{appname}]\nvalue = "{value}"')
         settings_loaded = load_settings(
             Settings,
-            "appname",
+            appname=appname,
             config_files=[file],
         )
         assert settings_loaded.value == value
 
+    @given(appname=app_names)
     @mark.parametrize(
         "cls",
         [param(dt.date), param(dt.time), param(dt.timedelta)],
     )
-    def test_errors(self, cls: Any) -> None:
+    def test_errors(self, appname: str, cls: Any) -> None:
         @settings(frozen=True)
         class Settings:
             value: cls = cast(Any, None)
 
         with raises(InvalidValueError):
-            _ = load_settings(Settings, "appname")
+            _ = load_settings(Settings, appname=appname)
 
 
 class TestClickOptions:
-    @given(data=data(), root=temp_paths())
+    @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
         ("cls", "strategy", "serialize"),
         [
@@ -99,6 +103,7 @@ class TestClickOptions:
     def test_main(
         self,
         data: DataObject,
+        appname: str,
         root: Path,
         cls: Any,
         strategy: SearchStrategy[Any],
@@ -113,7 +118,7 @@ class TestClickOptions:
             value: cls = default
 
         @command()
-        @click_options(Settings, "appname")
+        @click_options(Settings, appname=appname)
         def cli1(settings: Settings, /) -> None:
             echo(f"value = {serialize(settings.value)}")
 
@@ -127,10 +132,10 @@ class TestClickOptions:
 
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
-            _ = fh.write(f'[appname]\nvalue = "{cfg_str}"')
+            _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
 
         @command()
-        @click_options(Settings, "appname", config_files=[file])
+        @click_options(Settings, appname=appname, config_files=[file])
         def cli2(settings: Settings, /) -> None:
             echo(f"value = {serialize(settings.value)}")
 
