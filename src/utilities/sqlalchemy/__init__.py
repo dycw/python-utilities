@@ -6,7 +6,7 @@ from typing import Any, Literal, NoReturn, Optional, Union
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Column, Select, Table, and_, case
+from sqlalchemy import Column, Select, Table, and_, case, text
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
@@ -21,6 +21,59 @@ from sqlalchemy.pool import NullPool, Pool
 from utilities.errors import redirect_error
 from utilities.more_itertools import one
 from utilities.typing import never
+
+
+@beartype
+def check_engine(
+    engine: Engine,
+    /,
+    *,
+    num_tables: Optional[int] = None,
+    num_columns: Optional[int] = None,
+) -> None:
+    """Check that an engine can connect.
+
+    Optionally query for the number of tables, or the number of columns in
+    such a table.
+    """
+    dialect = get_dialect(engine)
+    if (  # pragma: no cover
+        (dialect == "mssql")
+        or (dialect == "mysql")
+        or (dialect == "postgresql")
+    ):
+        query = "select * from information_schema.tables"  # pragma: no cover
+    elif dialect == "oracle":  # pragma: no cover
+        query = "select * from all_objects"
+    elif dialect == "sqlite":
+        query = "select * from sqlite_master where type='table'"
+    else:
+        return never(dialect)  # pragma: no cover
+    with engine.begin() as conn:
+        rows = conn.execute(text(query)).all()
+    if (num_tables is not None) and (len(rows) != num_tables):
+        msg = f"{len(rows)=}, {num_tables=}"
+        raise IncorrectNumberOfTablesError(msg)
+    if num_columns is not None:
+        if len(rows) == 0:
+            msg = f"{engine=}"
+            raise NoTablesError(msg)
+        if len(rows[0]) != num_columns:
+            msg = f"{len(rows[0])=}, {num_columns=}"
+            raise IncorrectNumberOfColumnsError(msg)
+    return None
+
+
+class IncorrectNumberOfTablesError(ValueError):
+    """Raised when there are an incorrect number of tables."""
+
+
+class NoTablesError(ValueError):
+    """Raised when there are no tables."""
+
+
+class IncorrectNumberOfColumnsError(ValueError):
+    """Raised when there are an incorrect number of columns."""
 
 
 @beartype
