@@ -70,6 +70,7 @@ class TestAddWeekdays:
         assert result == date
 
     @given(date=dates())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error(self, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
         with raises(IsWeekendError):

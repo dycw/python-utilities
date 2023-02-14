@@ -23,7 +23,11 @@ from sqlalchemy.orm import declarative_base
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import (
+    IncorrectNumberOfColumnsError,
+    IncorrectNumberOfTablesError,
+    NoTablesError,
     TableAlreadyExistsError,
+    check_engine,
     columnwise_max,
     columnwise_min,
     create_engine,
@@ -40,6 +44,39 @@ from utilities.sqlalchemy import (
     yield_connection,
     yield_in_clause_rows,
 )
+
+
+class TestCheckEngine:
+    @given(engine=sqlite_engines(), num_tables=integers(0, 10) | none())
+    def test_main(self, engine: Engine, num_tables: Optional[int]) -> None:
+        if (num_tables is None) or (num_tables == 0):
+            check_engine(engine, num_tables=num_tables)
+        else:
+            with raises(IncorrectNumberOfTablesError):
+                check_engine(engine, num_tables=num_tables)
+
+    @given(engine=sqlite_engines(), num_columns=integers(1, 10))
+    def test_no_tables_error(self, engine: Engine, num_columns: int) -> None:
+        with raises(NoTablesError):
+            check_engine(engine, num_columns=num_columns)
+
+    @given(engine=sqlite_engines(), num_columns=integers(1, 10))
+    def test_correct_num_columns(
+        self,
+        engine: Engine,
+        num_columns: int,
+    ) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        if num_columns == 5:
+            check_engine(engine, num_columns=num_columns)
+        else:
+            with raises(IncorrectNumberOfColumnsError):
+                check_engine(engine, num_columns=num_columns)
 
 
 class TestColumnwiseMinMax:
