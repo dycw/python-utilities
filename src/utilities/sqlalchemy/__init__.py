@@ -6,7 +6,26 @@ from typing import Any, Literal, NoReturn, Optional, Union
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Column, Select, Table, and_, case, text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    Interval,
+    LargeBinary,
+    Numeric,
+    Select,
+    String,
+    Table,
+    Unicode,
+    UnicodeText,
+    Uuid,
+    and_,
+    case,
+    quoted_name,
+    text,
+)
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
@@ -17,10 +36,277 @@ from sqlalchemy.engine import URL, Connection, Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
+from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.errors import redirect_error
+from utilities.inflection import snake_case
 from utilities.more_itertools import one
+from utilities.types import ensure_class
 from utilities.typing import never
+
+
+@beartype
+def check_tables_equal(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    snake_table: bool = False,
+    snake_columns: bool = False,
+) -> None:
+    """Check that a pair of tables are equal."""
+    x_t, y_t = map(get_table, [x, y])
+    _check_table_or_column_names_equal(x_t.name, y_t.name, snake=snake_table)
+    _check_column_collections_equal(
+        x_t.columns,
+        y_t.columns,
+        snake=snake_columns,
+    )
+
+
+@beartype
+def _check_table_or_column_names_equal(
+    x: Union[str, quoted_name],
+    y: Union[str, quoted_name],
+    /,
+    *,
+    snake: bool = False,
+) -> None:
+    """Check that a pair of table/columns' names are equal."""
+    x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
+    msg = f"{x=}, {y=}"
+    if snake and (snake_case(x) != snake_case(y)):
+        raise UnequalTableOrColumnSnakeCaseNamesError(msg)
+    if (not snake) and (x != y):
+        raise UnequalTableOrColumnNamesError(msg)
+
+
+class UnequalTableOrColumnNamesError(ValueError):
+    """Raised when two table/columns' names differ."""
+
+
+class UnequalTableOrColumnSnakeCaseNamesError(ValueError):
+    """Raised when two table/columns' snake case names differ."""
+
+
+@beartype
+def _check_column_collections_equal(
+    x: ReadOnlyColumnCollection[Any, Any],
+    y: ReadOnlyColumnCollection[Any, Any],
+    /,
+    *,
+    snake: bool = False,
+) -> None:
+    """Check that a pair of column collections are equal."""
+    msg = f"{x=}, {y=}"
+    if len(x) != len(y):
+        raise UnequalNumberOfColumnsError(msg)
+    for x_i, y_i in zip(x, y):
+        _check_columns_equal(x_i, y_i, snake=snake)
+
+
+class UnequalNumberOfColumnsError(ValueError):
+    """Raised when two column collections' lengths differ."""
+
+
+@beartype
+def _check_columns_equal(
+    x: Column[Any],
+    y: Column[Any],
+    /,
+    *,
+    snake: bool = False,
+) -> None:
+    """Check that a pair of columns are equal."""
+    _check_table_or_column_names_equal(x.name, y.name, snake=snake)
+    _check_column_types_equal(x.type, y.type)
+    if x.primary_key != y.primary_key:
+        msg = f"{x.primary_key=}, {y.primary_key=}"
+        raise UnequalPrimaryKeyStatusError(msg)
+    if x.nullable != y.nullable:
+        msg = f"{x.nullable=}, {y.nullable=}"
+        raise UnequalNullableStatusError(msg)
+
+
+class UnequalPrimaryKeyStatusError(ValueError):
+    """Raised when two columns differ in primary key status."""
+
+
+class UnequalNullableStatusError(ValueError):
+    """Raised when two columns differ in nullable status."""
+
+
+@beartype
+def _check_column_types_equal(  # noqa: C901,PLR0912,PLR0915
+    x: Any,
+    y: Any,
+    /,
+) -> None:
+    """Check that a pair of column types are equal."""
+    x_cls, y_cls = map(ensure_class, [x, y])
+    msg = f"{x=}, {y=}"
+    if not (issubclass(x_cls, y_cls) and issubclass(y_cls, x_cls)):
+        raise UnequalColumnTypesError(msg)
+    x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
+    if isinstance(x_inst, Boolean) and isinstance(y_inst, Boolean):
+        if x_inst.create_constraint is not y_inst.create_constraint:
+            raise UnequalBooleanColumnCreateConstraintError(msg)
+        if x_inst.name != y_inst.name:
+            raise UnequalBooleanColumnNameError(msg)
+    if isinstance(x_inst, Enum) and isinstance(y_inst, Enum):
+        x_enum, y_enum = (i.enum_class for i in [x_inst, y_inst])
+        if ((x_enum is None) and (y_enum is not None)) or (
+            (x_enum is not None)
+            and (y_enum is None)
+            or (
+                (x_enum is not None)
+                and (y_enum is not None)
+                and not (
+                    issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum)
+                )
+            )
+        ):
+            raise UnequalEnumColumnTypesError(msg)
+        if x_inst.create_constraint is not y_inst.create_constraint:
+            raise UnequalEnumColumnCreateConstraintError(msg)
+        if x_inst.native_enum is not y_inst.native_enum:
+            raise UnequalEnumColumnNativeEnumError(msg)
+        if x_inst.length != y_inst.length:
+            raise UnequalEnumColumnLengthError(msg)
+        if x_inst.inherit_schema is not y_inst.inherit_schema:
+            raise UnequalEnumColumnInheritSchemaError(msg)
+    if (
+        isinstance(x_inst, (Float, Numeric))
+        and isinstance(y_inst, (Float, Numeric))
+        and (x_inst.asdecimal is not y_inst.asdecimal)
+    ):
+        raise UnequalFloatColumnAsDecimalError(msg)
+    if (
+        isinstance(x_inst, DateTime)
+        and isinstance(y_inst, DateTime)
+        and (x_inst.timezone is not y_inst.timezone)
+    ):
+        raise UnequalDateTimeColumnTimezoneError(msg)
+    if isinstance(x_inst, (Float, Numeric)) and isinstance(
+        y_inst,
+        (Float, Numeric),
+    ):
+        if x_inst.precision != y_inst.precision:
+            raise UnequalFloatColumnPrecisionsError(msg)
+        if x_inst.decimal_return_scale != y_inst.decimal_return_scale:
+            raise UnequalFloatColumnDecimalReturnScaleError(msg)
+        if x_inst.scale != y_inst.scale:
+            raise UnequalNumericScaleError(msg)
+    if isinstance(x_inst, Interval) and isinstance(y_inst, Interval):
+        if x_inst.native is not y_inst.native:
+            raise UnequalIntervalColumnNativeError(msg)
+        if x_inst.second_precision != y_inst.second_precision:
+            raise UnequalIntervalColumnSecondPrecisionError(msg)
+        if x_inst.day_precision != y_inst.day_precision:
+            raise UnequalIntervalColumnDayPrecisionError(msg)
+    if (
+        isinstance(x_inst, LargeBinary)
+        and isinstance(y_inst, LargeBinary)
+        and (x_inst.length != y_inst.length)
+    ):
+        raise UnequalLargeBinaryColumnLengthError(msg)
+    if isinstance(x_inst, (String, Unicode, UnicodeText)) and isinstance(
+        y_inst,
+        (String, Unicode, UnicodeText),
+    ):
+        if x_inst.length != y_inst.length:
+            raise UnequalStringLengthError(msg)
+        if x_inst.collation != y_inst.collation:
+            raise UnequalStringCollationError(msg)
+    if isinstance(x_inst, Uuid) and isinstance(y_inst, Uuid):
+        if x_inst.as_uuid is not y_inst.as_uuid:
+            raise UnequalUUIDAsUUIDError(msg)
+        if x_inst.native_uuid is not y_inst.native_uuid:
+            raise UnequalUUIDNativeUUIDError(msg)
+
+
+class UnequalColumnTypesError(TypeError):
+    """Raised when two columns' types differ."""
+
+
+class UnequalBooleanColumnCreateConstraintError(TypeError):
+    """Raised when two boolean columns' create constraints differ."""
+
+
+class UnequalBooleanColumnNameError(TypeError):
+    """Raised when two boolean columns' names differ."""
+
+
+class UnequalDateTimeColumnTimezoneError(TypeError):
+    """Raised when two datetime columns' timezones differ."""
+
+
+class UnequalEnumColumnTypesError(TypeError):
+    """Raised when two enum columns' types differ."""
+
+
+class UnequalEnumColumnCreateConstraintError(TypeError):
+    """Raised when two enum columns' create constraints differ."""
+
+
+class UnequalEnumColumnNativeEnumError(TypeError):
+    """Raised when two enum columns' native enums differ."""
+
+
+class UnequalEnumColumnLengthError(TypeError):
+    """Raised when two enum columns' lengths differ."""
+
+
+class UnequalEnumColumnInheritSchemaError(TypeError):
+    """Raised when two enum columns' inherit schemas differ."""
+
+
+class UnequalFloatColumnPrecisionsError(TypeError):
+    """Raised when two float columns' precisions differ."""
+
+
+class UnequalFloatColumnAsDecimalError(TypeError):
+    """Raised when two float columns' asdecimal differ."""
+
+
+class UnequalFloatColumnDecimalReturnScaleError(TypeError):
+    """Raised when two float columns' decimal return scales differ."""
+
+
+class UnequalIntervalColumnNativeError(TypeError):
+    """Raised when two intervals columns' native differ."""
+
+
+class UnequalIntervalColumnSecondPrecisionError(TypeError):
+    """Raised when two intervals columns' second precisions differ."""
+
+
+class UnequalIntervalColumnDayPrecisionError(TypeError):
+    """Raised when two intervals columns' day precisions differ."""
+
+
+class UnequalLargeBinaryColumnLengthError(TypeError):
+    """Raised when two large binary columns' lengths differ."""
+
+
+class UnequalNumericScaleError(TypeError):
+    """Raised when two numeric columns' scales differ."""
+
+
+class UnequalStringLengthError(TypeError):
+    """Raised when two string columns' lengths differ."""
+
+
+class UnequalStringCollationError(TypeError):
+    """Raised when two string columns' collations differ."""
+
+
+class UnequalUUIDAsUUIDError(TypeError):
+    """Raised when two UUID columns' as_uuid differ."""
+
+
+class UnequalUUIDNativeUUIDError(TypeError):
+    """Raised when two UUID columns' native UUID differ."""
 
 
 @beartype
