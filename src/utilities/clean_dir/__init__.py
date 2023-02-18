@@ -8,63 +8,57 @@ from pathlib import Path
 from shutil import rmtree
 from typing import Optional
 
+from attrs import asdict
 from beartype import beartype
-from click import command, option
+from click import command
 
 from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC
 from utilities.logging import basic_config
+from utilities.typed_settings import click_options
 
+_CONFIG = Config()
 _LOGGER = getLogger(__name__)
 
 
 @command()
-@option("-p", "--path", type=Path, default=Config.path, show_default=True)
-@option("-d", "--days", type=int, default=Config.days, show_default=True)
-@option(
-    "-c",
-    "--chunk-size",
-    type=int,
-    default=Config.chunk_size,
-    show_default=True,
-)
-@option("-dr", "--dry-run", is_flag=True, show_default=True)
+@click_options(Config)
 @beartype
-def main(
-    *,
-    path: Path,
-    days: int,
-    chunk_size: Optional[int],
-    dry_run: bool,
-) -> None:
+def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     basic_config()
-    config = Config(
-        path=path,
-        days=days,
-        chunk_size=chunk_size,
-        dry_run=dry_run,
-    )
     _log_config(config)
     if config.dry_run:
-        for item in _yield_items(config):
+        for item in _yield_items(
+            path=config.path,
+            days=config.days,
+            chunk_size=config.chunk_size,
+        ):
             _LOGGER.debug("%s", item.path)
     else:
-        _clean_dir(config)
+        _clean_dir(
+            path=config.path,
+            days=config.days,
+            chunk_size=config.chunk_size,
+        )
 
 
 @beartype
 def _log_config(config: Config, /) -> None:
-    _LOGGER.info("path        = %s", config.path)
-    _LOGGER.info("days        = %s", config.days)
-    _LOGGER.info("chunk_sizes = %s", config.chunk_size)
-    _LOGGER.info("dry_run     = %s", config.dry_run)
+    for key, value in asdict(config).items():
+        _LOGGER.info("%-10s = %s", key, value)
 
 
 @beartype
-def _clean_dir(config: Config, /) -> None:
+def _clean_dir(
+    *,
+    path: Path = _CONFIG.path,
+    days: int = _CONFIG.days,
+    chunk_size: Optional[int] = _CONFIG.chunk_size,
+) -> None:
     while True:
-        if len(items := list(_yield_items(config))) >= 1:
+        iterator = _yield_items(path=path, days=days, chunk_size=chunk_size)
+        if len(items := list(iterator)) >= 1:
             for item in items:
                 item.clean()
         else:
@@ -72,34 +66,49 @@ def _clean_dir(config: Config, /) -> None:
 
 
 @beartype
-def _yield_items(config: Config, /) -> Iterator[Item]:
-    it = _yield_inner(config)
-    if (chunk_size := config.chunk_size) is not None:
+def _yield_items(
+    *,
+    path: Path = _CONFIG.path,
+    days: int = _CONFIG.days,
+    chunk_size: Optional[int] = _CONFIG.chunk_size,
+) -> Iterator[Item]:
+    it = _yield_inner(path=path, days=days)
+    if chunk_size is not None:
         return islice(it, chunk_size)
     return it
 
 
 @beartype
-def _yield_inner(config: Config, /) -> Iterator[Item]:
-    for p in config.path.rglob("*"):
-        yield from _yield_from_path(p, config)
+def _yield_inner(
+    *,
+    path: Path = _CONFIG.path,
+    days: int = _CONFIG.days,
+) -> Iterator[Item]:
+    for p in path.rglob("*"):
+        yield from _yield_from_path(p, path=path, days=days)
 
 
 @beartype
-def _yield_from_path(path: Path, config: Config, /) -> Iterator[Item]:
-    if path.is_symlink():
-        yield from _yield_from_path(path.resolve(), config)
-    elif _is_owned_and_relative(path, config):  # pragma: no cover
-        if (path.is_file() or path.is_socket()) and _is_old(path, config):
-            yield Item(path, partial(_unlink_path, path))
-        elif path.is_dir() and _is_empty(path):
-            yield Item(path, partial(_unlink_dir, path))
+def _yield_from_path(
+    p: Path,
+    /,
+    *,
+    path: Path = _CONFIG.path,
+    days: int = _CONFIG.days,
+) -> Iterator[Item]:
+    if p.is_symlink():
+        yield from _yield_from_path(p.resolve(), path=path, days=days)
+    elif _is_owned_and_relative(p, path=path):  # pragma: no cover
+        if (p.is_file() or p.is_socket()) and _is_old(p, days=days):
+            yield Item(p, partial(_unlink_path, p))
+        elif p.is_dir() and _is_empty(p):
+            yield Item(p, partial(_unlink_dir, p))
 
 
 @beartype
-def _is_owned_and_relative(path: Path, config: Config, /) -> bool:
+def _is_owned_and_relative(p: Path, /, *, path: Path = _CONFIG.path) -> bool:
     try:
-        return (path.owner() == getuser()) and path.is_relative_to(config.path)
+        return (p.owner() == getuser()) and p.is_relative_to(path)
     except FileNotFoundError:  # pragma: no cover
         return False
 
@@ -110,12 +119,12 @@ def _is_empty(path: Path, /) -> bool:
 
 
 @beartype
-def _is_old(path: Path, config: Config, /) -> bool:
+def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
     age = dt.datetime.now(tz=UTC) - dt.datetime.fromtimestamp(
         path.stat().st_mtime,
         tz=UTC,
     )
-    return age >= dt.timedelta(days=config.days)
+    return age >= dt.timedelta(days=days)
 
 
 @beartype

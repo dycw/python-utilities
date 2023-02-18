@@ -11,7 +11,7 @@ from utilities.clean_dir.classes import Config
 from utilities.datetime import UTC
 from utilities.hypothesis import temp_paths
 
-_TIMEDELTA = dt.timedelta(days=Config.days + 1)
+_TIMEDELTA = dt.timedelta(days=Config().days + 1)
 
 
 class TestCleanDir:

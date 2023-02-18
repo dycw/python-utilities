@@ -9,7 +9,7 @@ from utilities.types import NoneType
 text = text_ascii(min_size=1, max_size=10)
 
 
-class TestAsdf:
+class TestCPUCount:
     def test_main(self) -> None:
         assert isinstance(CPU_COUNT, (int, NoneType))
 

@@ -182,7 +182,9 @@ pluggy==1.0.0
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
 psutil==5.9.4
-    # via memory-profiler
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   memory-profiler
 psycopg2==2.9.5
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
