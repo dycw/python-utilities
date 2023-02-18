@@ -104,9 +104,16 @@ class Enum(ParamType, Generic[_E]):
     name = "enum"
 
     @beartype
-    def __init__(self, enum: type[_E]) -> None:
+    def __init__(
+        self,
+        enum: type[_E],
+        /,
+        *,
+        case_sensitive: bool = True,
+    ) -> None:
         super().__init__()
         self._enum = enum
+        self._case_sensitive = case_sensitive
 
     @beartype
     def convert(
@@ -116,7 +123,10 @@ class Enum(ParamType, Generic[_E]):
         ctx: Optional[Context],
     ) -> _E:
         """Convert a value into the `Enum` type."""
-        els = {el for el in self._enum if el.name.lower() == value.lower()}
+        if self._case_sensitive:
+            els = {el for el in self._enum if el.name == value}
+        else:
+            els = {el for el in self._enum if el.name.lower() == value.lower()}
         with suppress(ValueError):
             (el,) = els
             return el
@@ -124,8 +134,9 @@ class Enum(ParamType, Generic[_E]):
 
 
 log_level_option = option(
+    "-ll",
     "--log-level",
-    type=Enum(LogLevel),
+    type=Enum(LogLevel, case_sensitive=False),
     default=LogLevel.INFO,
     show_default=True,
     help="The logging level",

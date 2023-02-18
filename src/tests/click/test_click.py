@@ -1,6 +1,6 @@
 import datetime as dt
+import enum
 from collections.abc import Callable
-from enum import Enum as _Enum
 from enum import auto
 from typing import Any
 
@@ -20,10 +20,10 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
+import utilities.click
 from utilities.click import (
     Date,
     DateTime,
-    Enum,
     Time,
     Timedelta,
     log_level_option,
@@ -36,10 +36,6 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.logging import LogLevel
-
-
-def runners() -> SearchStrategy[CliRunner]:
-    return just(CliRunner())
 
 
 class TestParameters:
@@ -82,46 +78,53 @@ class TestParameters:
         assert result.exit_code == 2
 
 
-class Truth(_Enum):
-    true = auto()
-    false = auto()
-
-
-@command()
-@argument("truth", type=Enum(Truth))
-def uses_enum(*, truth: Truth) -> None:
-    echo(f"truth = {truth}")
-
-
 class TestEnum:
-    @given(data=data(), runner=runners(), truth=sampled_from(Truth))
-    def test_success(
-        self,
-        data: DataObject,
-        runner: CliRunner,
-        truth: Truth,
-    ) -> None:
-        name = truth.name
-        as_str = data.draw(sampled_from([name, name.lower()]))
-        result = runner.invoke(uses_enum, [as_str])
+    class Truth(enum.Enum):
+        true = auto()
+        false = auto()
+
+    @command()
+    @argument("truth", type=utilities.click.Enum(Truth))
+    def cli(*, truth: Truth) -> None:
+        echo(f"truth = {truth}")
+
+    @given(truth=sampled_from(Truth))
+    def test_success(self, truth: Truth) -> None:
+        result = CliRunner().invoke(self.cli, [truth.name])
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
 
-    @given(runner=runners())
-    def test_failure(self, runner: CliRunner) -> None:
-        result = runner.invoke(uses_enum, ["not_an_element"])
+    def test_failure(self) -> None:
+        result = CliRunner().invoke(self.cli, ["not_an_element"])
         assert result.exit_code == 2
 
+    @given(data=data(), truth=sampled_from(Truth))
+    def test_success_insensitive(self, data: DataObject, truth: Truth) -> None:
+        Truth = self.Truth  # noqa: N806
 
-@command()
-@log_level_option
-def uses_log_level(*, log_level: LogLevel) -> None:
-    echo(f"log_level = {log_level}")
+        @command()
+        @argument(
+            "truth",
+            type=utilities.click.Enum(Truth, case_sensitive=False),
+        )
+        def cli(*, truth: Truth) -> None:
+            echo(f"truth = {truth}")
+
+        name = truth.name
+        as_str = data.draw(sampled_from([name, name.lower()]))
+        result = CliRunner().invoke(cli, [as_str])
+        assert result.exit_code == 0
+        assert result.stdout == f"truth = {truth}\n"
 
 
 class TestLogLevelOption:
-    @given(runner=runners(), log_level=sampled_from(LogLevel))
-    def test_main(self, runner: CliRunner, log_level: LogLevel) -> None:
-        result = runner.invoke(uses_log_level, ["--log-level", f"{log_level}"])
+    @given(log_level=sampled_from(LogLevel))
+    def test_main(self, log_level: LogLevel) -> None:
+        @command()
+        @log_level_option
+        def cli(*, log_level: LogLevel) -> None:
+            echo(f"log_level = {log_level}")
+
+        result = CliRunner().invoke(cli, ["--log-level", log_level.name])
         assert result.exit_code == 0
         assert result.stdout == f"log_level = {log_level}\n"
