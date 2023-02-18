@@ -2,18 +2,30 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from beartype import beartype
+from typed_settings import option, settings
 
 
-@beartype
-@dataclass(frozen=True)
+@settings(frozen=True)
 class Config:
     """Settings for the `rotate_logs` script."""
 
-    path: Path = Path.cwd()
-    extension: str = "log"
-    size: int = int(100 * 1024)
-    keep: int = 3
-    dry_run: bool = False
+    path: Path = option(
+        default=Path.cwd(),
+        click={"param_decls": ("-p", "--path")},
+    )
+    extension: str = option(
+        default="log",
+        click={"param_decls": ("-e", "--extension")},
+    )
+    size: int = option(
+        default=int(100 * 1024),
+        click={"param_decls": ("-s", "--size")},
+    )
+    keep: int = option(default=3, click={"param_decls": ("-k", "--keep")})
+    dry_run: bool = option(
+        default=False,
+        click={"param_decls": ("-dr", "--dry-run")},
+    )
 
 
 @beartype

@@ -13,7 +13,7 @@ def basic_config() -> None:
         format="{asctime} | {name} | {levelname:8} | {message}",
         datefmt="%4Y-%m-%d %H:%M:%S",
         style="{",
-        level=LogLevel.DEBUG,
+        level=LogLevel.DEBUG.name,
     )
 
 
