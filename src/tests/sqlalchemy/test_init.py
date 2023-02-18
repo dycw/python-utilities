@@ -20,6 +20,30 @@ from hypothesis.strategies import (
 from hypothesis_sqlalchemy.sample import table_records_lists
 from pytest import mark, param, raises
 from sqlalchemy import (
+    BIGINT,
+    BINARY,
+    BOOLEAN,
+    CHAR,
+    CLOB,
+    DATE,
+    DATETIME,
+    DECIMAL,
+    DOUBLE,
+    DOUBLE_PRECISION,
+    FLOAT,
+    INT,
+    INTEGER,
+    NCHAR,
+    NUMERIC,
+    NVARCHAR,
+    REAL,
+    SMALLINT,
+    TEXT,
+    TIME,
+    TIMESTAMP,
+    UUID,
+    VARBINARY,
+    VARCHAR,
     BigInteger,
     Boolean,
     Column,
@@ -46,7 +70,10 @@ from sqlalchemy import (
 )
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.exc import (
+    DatabaseError,
+    NoSuchTableError,
+)
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
@@ -86,7 +113,9 @@ from utilities.sqlalchemy import (
     _check_column_types_equal,
     _check_columns_equal,
     _check_table_or_column_names_equal,
+    _reflect_table,
     check_engine,
+    check_table_against_reflection,
     check_tables_equal,
     columnwise_max,
     columnwise_min,
@@ -160,44 +189,57 @@ class TestCheckColumnCollectionsEqual:
 
 
 class TestCheckColumnTypesEqual:
-    classes = [
-        BigInteger,
-        Boolean,
-        Date,
-        DateTime,
-        Double,
-        Float,
-        Integer,
-        Interval,
-        LargeBinary,
-        Numeric,
-        SmallInteger,
-        String,
-        Text,
-        Time,
-        Unicode,
-        UnicodeText,
-        Uuid,
-        sqlalchemy.Enum,
+    groups = [
+        [BIGINT, INT, INTEGER, SMALLINT, BigInteger, Integer, SmallInteger],
+        [BOOLEAN, Boolean],
+        [DATE, Date],
+        [DATETIME, TIMESTAMP, DateTime],
+        [Interval],
+        [BINARY, VARBINARY, LargeBinary],
+        [
+            DECIMAL,
+            DOUBLE,
+            DOUBLE_PRECISION,
+            FLOAT,
+            NUMERIC,
+            REAL,
+            Double,
+            Float,
+            Numeric,
+        ],
+        [
+            CHAR,
+            CLOB,
+            NCHAR,
+            NVARCHAR,
+            TEXT,
+            VARCHAR,
+            String,
+            Text,
+            Unicode,
+            UnicodeText,
+            sqlalchemy.Enum,
+        ],
+        [TIME, Time],
+        [UUID, Uuid],
     ]
 
     @given(data=data())
     def test_equal(self, data: DataObject) -> None:
-        cls = data.draw(sampled_from(self.classes))
-        elements = [cls, cls()]
-        x, y = data.draw(lists_fixed_length(sampled_from(elements), 2))
+        group = data.draw(sampled_from(self.groups))
+        cls = data.draw(sampled_from(group))
+        elements = sampled_from([cls, cls()])
+        x, y = data.draw(lists_fixed_length(elements, 2))
         _check_column_types_equal(x, y)
-        x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
-        xp, yp = (i.python_type for i in [x_inst, y_inst])
-        assert issubclass(xp, yp)
-        assert issubclass(yp, xp)
 
     @given(data=data())
     def test_unequal(self, data: DataObject) -> None:
-        classes = self.classes
-        i, j = data.draw(lists_fixed_length(integers(0, len(classes) - 1), 2))
+        groups = self.groups
+        i, j = data.draw(lists_fixed_length(integers(0, len(groups) - 1), 2))
         _ = assume(i != j)
-        x, y = self.classes[i], self.classes[j]
+        group_i, group_j = groups[i], groups[j]
+        cls_x, cls_y = (data.draw(sampled_from(g)) for g in [group_i, group_j])
+        x, y = (data.draw(sampled_from([c, c()])) for c in [cls_x, cls_y])
         with raises(UnequalColumnTypesError):
             _check_column_types_equal(x, y)
 
@@ -223,6 +265,9 @@ class TestCheckColumnTypesEqual:
         else:
             with raises(UnequalBooleanColumnNameError):
                 _check_column_types_equal(x, y)
+
+    def test_camel_versus_upper(self) -> None:
+        _check_column_types_equal(Boolean, BOOLEAN)
 
     @given(timezones=lists_fixed_length(booleans(), 2))
     def test_datetime_timezone(self, timezones: list[bool]) -> None:
@@ -508,10 +553,32 @@ class TestCheckEngine:
                 check_engine(engine, num_columns=num_columns)
 
 
+class TestCheckTableAgainstReflection:
+    @given(engine=sqlite_engines())
+    def test_reflected(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        check_table_against_reflection(table, engine)
+
+    @given(engine=sqlite_engines())
+    def test_no_such_table(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+        )
+        with raises(NoSuchTableError):
+            _ = check_table_against_reflection(table, engine)
+
+
 class TestCheckTablesEqual:
     def test_equal(self) -> None:
         table = Table(
-            "table",
+            "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
         )
@@ -519,12 +586,12 @@ class TestCheckTablesEqual:
 
     def test_column_collections(self) -> None:
         x = Table(
-            "table",
+            "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
         )
         y = Table(
-            "table",
+            "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
             Column("value", Integer),
@@ -533,13 +600,29 @@ class TestCheckTablesEqual:
             check_tables_equal(x, y)
 
     def test_snake_table(self) -> None:
-        x = Table("table", MetaData(), Column("id", Integer, primary_key=True))
-        y = Table("Table", MetaData(), Column("id", Integer, primary_key=True))
+        x = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        y = Table(
+            "Example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
         check_tables_equal(x, y, snake_table=True)
 
     def test_snake_columns(self) -> None:
-        x = Table("table", MetaData(), Column("id", Integer, primary_key=True))
-        y = Table("table", MetaData(), Column("Id", Integer, primary_key=True))
+        x = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        y = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+        )
         check_tables_equal(x, y, snake_columns=True)
 
     def test_orm(self) -> None:
@@ -883,7 +966,7 @@ class TestModelToDict:
 
 class TestRedirectToNoSuchTableError:
     @given(engine=sqlite_engines())
-    def test_direct(self, engine: Engine) -> None:
+    def test_main(self, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -898,7 +981,7 @@ class TestRedirectToNoSuchTableError:
 
 class TestRedirectTableAlreadyExistsError:
     @given(engine=sqlite_engines())
-    def test_direct(self, engine: Engine) -> None:
+    def test_main(self, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -911,6 +994,45 @@ class TestRedirectTableAlreadyExistsError:
                 _ = table.create(conn)
             except DatabaseError as error:
                 redirect_to_table_already_exists_error(engine, error)
+
+
+class TestReflectTable:
+    @given(
+        engine=sqlite_engines(),
+        col_type=sampled_from(
+            [
+                INTEGER,
+                INTEGER(),
+                NVARCHAR,
+                NVARCHAR(),
+                NVARCHAR(1),
+                Integer,
+                Integer(),
+                String,
+                String(),
+                String(1),
+            ],
+        ),
+    )
+    def test_reflected(self, engine: Engine, col_type: Any) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", col_type, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        reflected = _reflect_table(table, engine)
+        check_tables_equal(reflected, table)
+
+    @given(engine=sqlite_engines())
+    def test_no_such_table(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+        )
+        with raises(NoSuchTableError):
+            _ = _reflect_table(table, engine)
 
 
 class TestYieldConnection:

@@ -14,6 +14,7 @@ from sqlalchemy import (
     Float,
     Interval,
     LargeBinary,
+    MetaData,
     Numeric,
     Select,
     String,
@@ -33,7 +34,10 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL, Connection, Engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.exc import (
+    DatabaseError,
+    NoSuchTableError,
+)
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
@@ -41,8 +45,35 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from utilities.errors import redirect_error
 from utilities.inflection import snake_case
 from utilities.more_itertools import one
-from utilities.types import ensure_class
 from utilities.typing import never
+
+
+@beartype
+def check_table_against_reflection(
+    table_or_model: Any,
+    engine_or_conn: Union[Engine, Connection],
+    /,
+    *,
+    schema: Optional[str] = None,
+) -> None:
+    """Check that a table equals its reflection."""
+    reflected = _reflect_table(table_or_model, engine_or_conn, schema=schema)
+    check_tables_equal(reflected, table_or_model)
+
+
+@beartype
+def _reflect_table(
+    table_or_model: Any,
+    engine_or_conn: Union[Engine, Connection],
+    /,
+    *,
+    schema: Optional[str] = None,
+) -> Table:
+    """Reflect a table from a database."""
+    name = get_table_name(table_or_model)
+    metadata = MetaData(schema=schema)
+    with yield_connection(engine_or_conn) as conn:
+        return Table(name, metadata, autoload_with=conn)
 
 
 @beartype
@@ -143,11 +174,11 @@ def _check_column_types_equal(  # noqa: C901,PLR0912,PLR0915
     /,
 ) -> None:
     """Check that a pair of column types are equal."""
-    x_cls, y_cls = map(ensure_class, [x, y])
-    msg = f"{x=}, {y=}"
-    if not (issubclass(x_cls, y_cls) and issubclass(y_cls, x_cls)):
-        raise UnequalColumnTypesError(msg)
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
+    x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
+    msg = f"{x=}, {y=}"
+    if not (isinstance(x_inst, y_cls) and isinstance(y_inst, x_cls)):
+        raise UnequalColumnTypesError(msg)
     if isinstance(x_inst, Boolean) and isinstance(y_inst, Boolean):
         if x_inst.create_constraint is not y_inst.create_constraint:
             raise UnequalBooleanColumnCreateConstraintError(msg)
