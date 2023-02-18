@@ -2,4 +2,30 @@
 
 # `dycw-utilities`
 
-Miscellaneous Python utilities
+Miscellaneous Python utilities.
+
+## Installation
+
+- `pip install dycw-utilities`
+- `pip install dycw-utilities[airium]`
+- `pip install dycw-utilities[atomicwrites]`
+- `pip install dycw-utilities[attrs]`
+- `pip install dycw-utilities[click]`
+- `pip install dycw-utilities[fastapi]`
+- `pip install dycw-utilities[fastparquet]`
+- `pip install dycw-utilities[hatch]`
+- `pip install dycw-utilities[hypothesis]`
+- `pip install dycw-utilities[inflection]`
+- `pip install dycw-utilities[loguru]`
+- `pip install dycw-utilities[memory-profiler]`
+- `pip install dycw-utilities[more-itertools]`
+- `pip install dycw-utilities[numpy]`
+- `pip install dycw-utilities[pandas]`
+- `pip install dycw-utilities[pqdm]`
+- `pip install dycw-utilities[pyinstrument]`
+- `pip install dycw-utilities[pytest]`
+- `pip install dycw-utilities[pytest-check]`
+- `pip install dycw-utilities[tqdm]`
+- `pip install dycw-utilities[sqlalchemy]`
+- `pip install dycw-utilities[typed-settings]`
+- `pip install dycw-utilities[xarray]`
