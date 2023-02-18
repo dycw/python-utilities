@@ -64,7 +64,7 @@ click = ["click >= 8.1.3"]
 fastapi = ["fastapi >= 0.92.0"]
 fastparquet = ["atomicwrites >= 1.4.1", "fastparquet >= 2023.2.0"]
 hatch = ["hatch >= 1.6.3"]
-hypothesis = ["hypothesis >= 6.68.1"]
+hypothesis = ["hypothesis >= 6.68.2"]
 inflection = ["inflection >= 0.5.1"]
 loguru = ["loguru >= 0.6.0"]
 luigi = ["luigi >= 3.2.0"]
@@ -77,12 +77,16 @@ pyinstrument = ["pyinstrument >= 4.4.0"]
 pytest = ["pytest >= 7.2.1"]
 pytest-check = ["pytest-check >= 2.1.4"]
 tqdm = ["tqdm >= 4.64.1"]
-sqlalchemy = ["more-itertools >= 9.0.0", "sqlalchemy >= 2.0.3"]
+sqlalchemy = [
+  "inflection >= 0.5.1",
+  "more-itertools >= 9.0.0",
+  "sqlalchemy >= 2.0.4",
+]
 sqlalchemy-pandas = [
   "inflection >= 0.5.1",
   "more-itertools >= 9.0.0",
   "pandas >= 1.5.3",
-  "sqlalchemy >= 2.0.3",
+  "sqlalchemy >= 2.0.4",
 ]
 typed-settings = ["typed-settings[click] >= 2.0.2"]
 xarray = ["xarray >= 2023.1.0"]
