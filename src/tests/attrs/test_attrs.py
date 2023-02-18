@@ -14,7 +14,7 @@ class TestAttrsBase:
         class Example(AttrsBase):
             x: int
 
-        match = "module = tests.attrs.test_init, class = Example, field = x"
+        match = "module = tests.attrs.test_attrs, class = Example, field = x"
         with raises(FieldTypeError, match=match):
             _ = Example(None)  # type: ignore[]
 
