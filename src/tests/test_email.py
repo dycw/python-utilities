@@ -1,3 +1,4 @@
+from pathlib import Path
 from smtplib import SMTPServerDisconnected
 
 from pytest import raises
@@ -39,7 +40,18 @@ class TestSendEmail:
                 contents=airium,
             )
 
-    def test_error(self) -> None:
+    def test_attachment(self, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("file")
+        file.touch()
+        with raises(SMTPServerDisconnected):
+            send_email(
+                "no-reply@test.com",
+                ["user@test.com"],
+                subject="Subject",
+                attachments=[file],
+            )
+
+    def test_invalid_contents(self) -> None:
         with raises(InvalidContentsError):
             send_email(
                 "no-reply@test.com",

@@ -13,7 +13,7 @@ from hypothesis.strategies import (
 )
 from pandas import Index
 
-from utilities.beartype.numpy import DTypeInt
+from utilities.beartype.numpy import DTypeI
 from utilities.beartype.pandas import DTypeString
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw, text_ascii
@@ -99,7 +99,7 @@ def int_indexes(
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[Annotated[Index, DTypeInt]]:
+) -> SearchStrategy[Annotated[Index, DTypeI]]:
     """Strategy for generating integer Indexes."""
     return indexes(
         elements=int64s(),

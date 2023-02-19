@@ -1,7 +1,7 @@
 from random import choice
 from typing import Any, cast
 
-from attrs import define, fields
+from attrs import Factory, define, field, fields
 from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
@@ -34,3 +34,20 @@ class AttrsBase:
 
 class FieldTypeError(TypeError):
     """Raised when an `attrs` field has the wrong type."""
+
+
+@beartype
+def make_dict_field() -> Any:
+    """Create a `__dict__` field."""
+    return field(
+        default=Factory(cast(Any, dict)),
+        init=False,
+        repr=False,
+        eq=False,
+    )
+
+
+class DictMixin:
+    """Mix-in to support cached properties."""
+
+    __dict__: dict[str, Any] = make_dict_field()

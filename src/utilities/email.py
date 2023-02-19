@@ -1,11 +1,15 @@
+from collections.abc import Iterable
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from smtplib import SMTP
 from typing import Any, Optional
 
 from beartype import beartype
 
 from utilities.beartype import IterableStrs
+from utilities.pathlib import PathLike
 
 
 @beartype
@@ -19,6 +23,7 @@ def send_email(
     subtype: str = "plain",
     host: str = "",
     port: int = 0,
+    attachments: Optional[Iterable[PathLike]] = None,
 ) -> None:
     """Send an email."""
     message = MIMEMultipart()
@@ -39,8 +44,22 @@ def send_email(
                     raise InvalidContentsError(contents)
                 text = MIMEText(str(contents), "html")
         message.attach(text)
+    if attachments is not None:
+        for attachment in attachments:
+            _add_attachment(attachment, message)
     with SMTP(host=host, port=port) as smtp:
         _ = smtp.send_message(message)
+
+
+@beartype
+def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
+    """Add an attachment to an email."""
+    path = Path(path)
+    name = path.name
+    with path.open(mode="rb") as fh:
+        part = MIMEApplication(fh.read(), Name=name)
+    part["Content-Disposition"] = f"attachment; filename{name}"
+    message.attach(part)
 
 
 class InvalidContentsError(TypeError):
