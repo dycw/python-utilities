@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass
 from functools import partial
 from io import StringIO, TextIOWrapper
 from multiprocessing import cpu_count
@@ -7,7 +8,22 @@ from typing import Any, Literal, Optional, TypeVar, Union, cast
 from beartype import beartype
 from pqdm import processes
 
-from utilities.tqdm import _DEFAULTS, tqdm
+from utilities.sentinel import Sentinel, sentinel
+from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
+from utilities.tqdm import tqdm
+
+
+@beartype
+@dataclass(frozen=True)
+class _Defaults:
+    parallelism: Literal["processes", "threads"] = "processes"
+    n_jobs: Optional[int] = None
+    bounded: bool = False
+    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate"
+
+
+_PQDM_DEFAULTS = _Defaults()
+
 
 _T = TypeVar("_T")
 
@@ -17,34 +33,36 @@ def pmap(
     func: Callable[..., _T],
     /,
     *iterables: Iterable[Any],
-    parallelism: Literal["processes", "threads"] = "processes",
-    n_jobs: Optional[int] = None,
-    bounded: bool = False,
-    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "ignore",
-    desc: Optional[str] = _DEFAULTS.desc,
-    total: Optional[Union[int, float]] = _DEFAULTS.total,
-    leave: Optional[bool] = _DEFAULTS.leave,
-    file: Optional[Union[TextIOWrapper, StringIO]] = _DEFAULTS.file,
-    ncols: Optional[int] = _DEFAULTS.ncols,
-    mininterval: Optional[float] = _DEFAULTS.mininterval,
-    maxinterval: Optional[float] = _DEFAULTS.maxinterval,
-    miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,  # noqa: A002
-    unit: Optional[str] = _DEFAULTS.unit,
-    unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
-    dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,
-    smoothing: Optional[float] = _DEFAULTS.smoothing,
-    bar_format: Optional[str] = _DEFAULTS.bar_format,
+    parallelism: Literal["processes", "threads"] = _PQDM_DEFAULTS.parallelism,
+    n_jobs: Optional[int] = _PQDM_DEFAULTS.n_jobs,
+    bounded: bool = _PQDM_DEFAULTS.bounded,
+    exception_behaviour: Literal[
+        "ignore", "immediate", "deferred"
+    ] = _PQDM_DEFAULTS.exception_behaviour,
+    desc: Union[Optional[str], Sentinel] = sentinel,
+    total: Optional[Union[int, float]] = _TQDM_DEFAULTS.total,
+    leave: Optional[bool] = _TQDM_DEFAULTS.leave,
+    file: Optional[Union[TextIOWrapper, StringIO]] = _TQDM_DEFAULTS.file,
+    ncols: Optional[int] = _TQDM_DEFAULTS.ncols,
+    mininterval: Optional[float] = _TQDM_DEFAULTS.mininterval,
+    maxinterval: Optional[float] = _TQDM_DEFAULTS.maxinterval,
+    miniters: Optional[Union[int, float]] = _TQDM_DEFAULTS.miniters,
+    ascii: Union[bool, Optional[str]] = _TQDM_DEFAULTS.ascii,  # noqa: A002
+    unit: Optional[str] = _TQDM_DEFAULTS.unit,
+    unit_scale: Union[bool, int, Optional[str]] = _TQDM_DEFAULTS.unit_scale,
+    dynamic_ncols: Optional[bool] = _TQDM_DEFAULTS.dynamic_ncols,
+    smoothing: Optional[float] = _TQDM_DEFAULTS.smoothing,
+    bar_format: Optional[str] = _TQDM_DEFAULTS.bar_format,
     initial: Optional[Union[int, float]] = 0,
-    position: Optional[int] = _DEFAULTS.position,
-    postfix: Optional[Mapping[str, Any]] = _DEFAULTS.postfix,
-    unit_divisor: Optional[float] = _DEFAULTS.unit_divisor,
-    write_bytes: Optional[bool] = _DEFAULTS.write_bytes,
-    lock_args: Optional[tuple[Any, ...]] = _DEFAULTS.lock_args,
-    nrows: Optional[int] = _DEFAULTS.nrows,
-    colour: Optional[str] = _DEFAULTS.colour,
-    delay: Optional[float] = _DEFAULTS.delay,
-    gui: Optional[bool] = _DEFAULTS.gui,
+    position: Optional[int] = _TQDM_DEFAULTS.position,
+    postfix: Optional[Mapping[str, Any]] = _TQDM_DEFAULTS.postfix,
+    unit_divisor: Optional[float] = _TQDM_DEFAULTS.unit_divisor,
+    write_bytes: Optional[bool] = _TQDM_DEFAULTS.write_bytes,
+    lock_args: Optional[tuple[Any, ...]] = _TQDM_DEFAULTS.lock_args,
+    nrows: Optional[int] = _TQDM_DEFAULTS.nrows,
+    colour: Optional[str] = _TQDM_DEFAULTS.colour,
+    delay: Optional[float] = _TQDM_DEFAULTS.delay,
+    gui: Optional[bool] = _TQDM_DEFAULTS.gui,
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel map, powered by `pqdm`."""
@@ -56,7 +74,7 @@ def pmap(
         bounded=bounded,
         exception_behaviour=exception_behaviour,
         desc=desc,
-        total=total,
+        total=_get_total(iterables, total),
         leave=leave,
         file=file,
         ncols=ncols,
@@ -89,39 +107,43 @@ def pstarmap(
     iterable: Iterable[tuple[Any, ...]],
     /,
     *,
-    parallelism: Literal["processes", "threads"] = "processes",
-    n_jobs: Optional[int] = None,
-    bounded: bool = False,
-    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "ignore",
-    desc: Optional[str] = _DEFAULTS.desc,
-    total: Optional[Union[int, float]] = _DEFAULTS.total,
-    leave: Optional[bool] = _DEFAULTS.leave,
-    file: Optional[Union[TextIOWrapper, StringIO]] = _DEFAULTS.file,
-    ncols: Optional[int] = _DEFAULTS.ncols,
-    mininterval: Optional[float] = _DEFAULTS.mininterval,
-    maxinterval: Optional[float] = _DEFAULTS.maxinterval,
-    miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-    ascii: Union[bool, Optional[str]] = _DEFAULTS.ascii,  # noqa: A002
-    unit: Optional[str] = _DEFAULTS.unit,
-    unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
-    dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,
-    smoothing: Optional[float] = _DEFAULTS.smoothing,
-    bar_format: Optional[str] = _DEFAULTS.bar_format,
+    parallelism: Literal["processes", "threads"] = _PQDM_DEFAULTS.parallelism,
+    n_jobs: Optional[int] = _PQDM_DEFAULTS.n_jobs,
+    bounded: bool = _PQDM_DEFAULTS.bounded,
+    exception_behaviour: Literal[
+        "ignore", "immediate", "deferred"
+    ] = _PQDM_DEFAULTS.exception_behaviour,
+    desc: Union[Optional[str], Sentinel] = sentinel,
+    total: Optional[Union[int, float]] = _TQDM_DEFAULTS.total,
+    leave: Optional[bool] = _TQDM_DEFAULTS.leave,
+    file: Optional[Union[TextIOWrapper, StringIO]] = _TQDM_DEFAULTS.file,
+    ncols: Optional[int] = _TQDM_DEFAULTS.ncols,
+    mininterval: Optional[float] = _TQDM_DEFAULTS.mininterval,
+    maxinterval: Optional[float] = _TQDM_DEFAULTS.maxinterval,
+    miniters: Optional[Union[int, float]] = _TQDM_DEFAULTS.miniters,
+    ascii: Union[bool, Optional[str]] = _TQDM_DEFAULTS.ascii,  # noqa: A002
+    unit: Optional[str] = _TQDM_DEFAULTS.unit,
+    unit_scale: Union[bool, int, Optional[str]] = _TQDM_DEFAULTS.unit_scale,
+    dynamic_ncols: Optional[bool] = _TQDM_DEFAULTS.dynamic_ncols,
+    smoothing: Optional[float] = _TQDM_DEFAULTS.smoothing,
+    bar_format: Optional[str] = _TQDM_DEFAULTS.bar_format,
     initial: Optional[Union[int, float]] = 0,
-    position: Optional[int] = _DEFAULTS.position,
-    postfix: Optional[Mapping[str, Any]] = _DEFAULTS.postfix,
-    unit_divisor: Optional[float] = _DEFAULTS.unit_divisor,
-    write_bytes: Optional[bool] = _DEFAULTS.write_bytes,
-    lock_args: Optional[tuple[Any, ...]] = _DEFAULTS.lock_args,
-    nrows: Optional[int] = _DEFAULTS.nrows,
-    colour: Optional[str] = _DEFAULTS.colour,
-    delay: Optional[float] = _DEFAULTS.delay,
-    gui: Optional[bool] = _DEFAULTS.gui,
+    position: Optional[int] = _TQDM_DEFAULTS.position,
+    postfix: Optional[Mapping[str, Any]] = _TQDM_DEFAULTS.postfix,
+    unit_divisor: Optional[float] = _TQDM_DEFAULTS.unit_divisor,
+    write_bytes: Optional[bool] = _TQDM_DEFAULTS.write_bytes,
+    lock_args: Optional[tuple[Any, ...]] = _TQDM_DEFAULTS.lock_args,
+    nrows: Optional[int] = _TQDM_DEFAULTS.nrows,
+    colour: Optional[str] = _TQDM_DEFAULTS.colour,
+    delay: Optional[float] = _TQDM_DEFAULTS.delay,
+    gui: Optional[bool] = _TQDM_DEFAULTS.gui,
     **kwargs: Any,
 ) -> list[_T]:
     """Parallel starmap, powered by `pqdm`."""
     n_jobs = _get_n_jobs(n_jobs)
     tqdm_class = cast(Any, tqdm)
+    desc_kwargs = _get_desc(func, desc)
+    total = _get_total((iterable,), total)
     if parallelism == "processes":
         result = processes.pqdm(
             iterable,
@@ -131,7 +153,7 @@ def pstarmap(
             bounded=bounded,
             exception_behaviour=exception_behaviour,
             tqdm_class=tqdm_class,
-            **({} if desc is None else {"desc": desc}),
+            **desc_kwargs,
             total=total,
             leave=leave,
             file=file,
@@ -166,7 +188,7 @@ def pstarmap(
             bounded=bounded,
             exception_behaviour=exception_behaviour,
             tqdm_class=tqdm_class,
-            **({} if desc is None else {"desc": desc}),
+            **desc_kwargs,
             total=total,
             leave=leave,
             file=file,
@@ -200,6 +222,29 @@ def _get_n_jobs(n_jobs: Optional[int], /) -> int:
     if (n_jobs is None) or (n_jobs <= 0):
         return cpu_count()  # pragma: no cover
     return n_jobs
+
+
+@beartype
+def _get_desc(
+    func: Callable[..., Any], desc: Union[Optional[str], Sentinel], /
+) -> dict[str, str]:
+    desc_use = func.__name__ if isinstance(desc, Sentinel) else desc
+    return {} if desc_use is None else {"desc": desc_use}
+
+
+@beartype
+def _get_total(
+    iterables: tuple[Any, ...], total: Optional[Union[int, float]], /
+) -> Optional[Union[int, float]]:
+    if total is not None:
+        return total
+    lengths: list[int] = []
+    for iterable in iterables:
+        try:
+            lengths.append(len(iterable))
+        except TypeError:
+            return None
+    return min(lengths, default=0)
 
 
 @beartype

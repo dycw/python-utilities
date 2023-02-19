@@ -321,12 +321,67 @@ def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -
 
 
 @overload
-def maximum(*xs: float) -> float:  # type: ignore[reportOverlappingOverload]
+def maximum(x: float, /) -> float:
     ...
 
 
 @overload
-def maximum(*xs: Union[float, NDArrayF]) -> NDArrayF:
+def maximum(x0: float, x1: float, /) -> float:
+    ...
+
+
+@overload
+def maximum(x0: float, x1: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: float, x1: float, x2: float, /) -> float:
+    ...
+
+
+@overload
+def maximum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
@@ -337,12 +392,67 @@ def maximum(*xs: Union[float, NDArrayF]) -> Union[float, NDArrayF]:
 
 
 @overload
-def minimum(*xs: float) -> float:  # type: ignore[reportOverlappingOverload]
+def minimum(x: float, /) -> float:
     ...
 
 
 @overload
-def minimum(*xs: Union[float, NDArrayF]) -> NDArrayF:
+def minimum(x0: float, x1: float, /) -> float:
+    ...
+
+
+@overload
+def minimum(x0: float, x1: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: float, x1: float, x2: float, /) -> float:
+    ...
+
+
+@overload
+def minimum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
