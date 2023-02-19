@@ -1,9 +1,16 @@
 from beartype.vale import IsAttr, IsEqual
 
-from utilities.numpy import datetime64ns
+from utilities.numpy import datetime64D, datetime64ns, datetime64Y
 
-DTypeBool = IsAttr["dtype", IsEqual[bool]]
-DTypeDatetime64ns = IsAttr["dtype", IsEqual[datetime64ns]]
-DTypeFloat = IsAttr["dtype", IsEqual[float]]
-DTypeInt = IsAttr["dtype", IsEqual[int]]
-DTypeObject = IsAttr["dtype", IsEqual[object]]
+DTypeB = IsAttr["dtype", IsEqual[bool]]
+DTypeDD = IsAttr["dtype", IsEqual[datetime64D]]
+DTypeDY = IsAttr["dtype", IsEqual[datetime64Y]]
+DTypeDns = IsAttr["dtype", IsEqual[datetime64ns]]
+DTypeF = IsAttr["dtype", IsEqual[float]]
+DTypeI = IsAttr["dtype", IsEqual[int]]
+DTypeO = IsAttr["dtype", IsEqual[object]]
+
+NDim0 = IsAttr["ndim", IsEqual[0]]
+NDim1 = IsAttr["ndim", IsEqual[1]]
+NDim2 = IsAttr["ndim", IsEqual[2]]
+NDim3 = IsAttr["ndim", IsEqual[3]]
