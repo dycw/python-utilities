@@ -14,6 +14,8 @@ argcomplete==2.1.2
     # via nox
 asciitree==0.3.3
     # via zarr
+async-generator==1.10
+    # via trio
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 attrs==22.2.0
@@ -21,7 +23,9 @@ attrs==22.2.0
     #   cattrs
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
+    #   outcome
     #   pytest
+    #   trio
     #   typed-settings
 beartype==0.12.0
     # via dycw-utilities (pyproject.toml)
@@ -46,6 +50,7 @@ certifi==2022.12.7
     #   httpcore
     #   httpx
     #   requests
+    #   selenium
 cffi==1.15.1
     # via cryptography
 charset-normalizer==3.1.0
@@ -70,7 +75,7 @@ coverage-conditional-plugin==0.8.0
     # via dycw-utilities (pyproject.toml)
 cramjam==2.6.2
     # via fastparquet
-cryptography==39.0.2
+cryptography==40.0.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   secretstorage
@@ -91,7 +96,9 @@ editables==0.3
 entrypoints==0.4
     # via numcodecs
 exceptiongroup==1.1.1
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   trio-websocket
 execnet==1.9.0
     # via pytest-xdist
 fastapi==0.95.0
@@ -100,7 +107,7 @@ fasteners==0.18
     # via zarr
 fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
-filelock==3.10.2
+filelock==3.10.3
     # via virtualenv
 fonttools==4.39.2
     # via fpdf2
@@ -113,7 +120,9 @@ fsspec==2023.3.0
 greenlet==2.0.2
     # via sqlalchemy
 h11==0.14.0
-    # via httpcore
+    # via
+    #   httpcore
+    #   wsproto
 hatch==1.6.3
     # via dycw-utilities (pyproject.toml)
 hatchling==1.13.0
@@ -138,6 +147,7 @@ idna==3.4
     #   hyperlink
     #   requests
     #   rfc3986
+    #   trio
 importlib-metadata==6.1.0
     # via keyring
 iniconfig==2.0.0
@@ -158,7 +168,7 @@ loguru==0.6.0
     # via dycw-utilities (pyproject.toml)
 luigi==3.2.1
     # via dycw-utilities (pyproject.toml)
-markdown==3.4.2
+markdown==3.4.3
     # via panel
 markdown-it-py==2.2.0
     # via rich
@@ -199,6 +209,8 @@ numpy==1.24.2
     #   zarr
 osqp==0.6.2.post8
     # via cvxpy
+outcome==1.2.0
+    # via trio
 packaging==23.0
     # via
     #   black
@@ -277,6 +289,8 @@ pypi==2.1
     # via dycw-utilities (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
+pysocks==1.7.1
+    # via urllib3
 pytest==7.2.2
     # via
     #   dycw-utilities (pyproject.toml)
@@ -315,7 +329,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.2
     # via hatch
-ruff==0.0.258
+ruff==0.0.259
     # via dycw-utilities (pyproject.toml)
 scipy==1.10.1
     # via
@@ -328,6 +342,8 @@ scs==3.2.2
     # via cvxpy
 secretstorage==3.3.3
     # via keyring
+selenium==4.8.2
+    # via dycw-utilities (pyproject.toml)
 semver==2.13.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.0.post1
@@ -341,8 +357,11 @@ sniffio==1.3.0
     #   anyio
     #   httpcore
     #   httpx
+    #   trio
 sortedcontainers==2.4.0
-    # via hypothesis
+    # via
+    #   hypothesis
+    #   trio
 sqlalchemy==2.0.7
     # via
     #   dycw-utilities (pyproject.toml)
@@ -364,6 +383,12 @@ tqdm==4.65.0
     #   dycw-utilities (pyproject.toml)
     #   panel
     #   pqdm
+trio==0.22.0
+    # via
+    #   selenium
+    #   trio-websocket
+trio-websocket==0.10.2
+    # via selenium
 typed-settings[click]==23.0.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.5.0
@@ -374,8 +399,10 @@ typing-extensions==4.5.0
     #   pqdm
     #   pydantic
     #   sqlalchemy
-urllib3==1.26.15
-    # via requests
+urllib3[socks]==1.26.15
+    # via
+    #   requests
+    #   selenium
 userpath==1.8.0
     # via hatch
 virtualenv==20.21.0
@@ -386,6 +413,8 @@ webencodings==0.5.1
     # via bleach
 wheel==0.40.0
     # via pip-tools
+wsproto==1.2.0
+    # via trio-websocket
 xarray==2023.3.0
     # via dycw-utilities (pyproject.toml)
 zarr==2.14.2

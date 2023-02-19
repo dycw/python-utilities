@@ -2,7 +2,7 @@ import datetime as dt
 from typing import Any, Literal, Optional, Union
 
 from hypothesis import assume, given
-from hypothesis.strategies import DataObject, data, dates, integers
+from hypothesis.strategies import DataObject, data, dates, floats, integers
 from numpy import (
     arange,
     array,
@@ -22,6 +22,7 @@ from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
 
+from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis.numpy import float_arrays
 from utilities.numpy import (
     InfElementsError,
@@ -38,6 +39,8 @@ from utilities.numpy import (
     datetime64ns,
     datetime64Y,
     discretize,
+    ewma,
+    exp_moving_sum,
     ffill,
     ffill_non_nan_slices,
     fillna,
@@ -96,7 +99,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
+from utilities.numpy.typing import NDArrayF, NDArrayF1, NDArrayF2, NDArrayI2
 
 
 class TestArrayIndexer:
@@ -790,55 +793,20 @@ class TestDiscretize:
         assert_equal(result, expected)
 
 
-class TestGetFillValue:
-    @mark.parametrize(
-        "dtype",
-        [
-            param(bool),
-            param(datetime64D),
-            param(datetime64Y),
-            param(datetime64ns),
-            param(float),
-            param(int),
-            param(object),
-        ],
-    )
-    def test_main(self, dtype: Any) -> None:
-        fill_value = get_fill_value(dtype)
-        array = full(0, fill_value, dtype=dtype)
-        assert has_dtype(array, dtype)
-
-    def test_error(self) -> None:
-        with raises(InvalidDTypeError):
-            _ = get_fill_value(None)
+class TestEwma:
+    @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
+    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+        axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
+        with assume_does_not_raise(RuntimeWarning):
+            _ = ewma(array, halflife, axis=axis)
 
 
-class TestHasDtype:
-    @mark.parametrize(
-        ("x", "dtype", "expected"),
-        [
-            param(array([]), float, True),
-            param(array([]), (float,), True),
-            param(array([]), int, False),
-            param(array([]), (int,), False),
-            param(array([]), "Int64", False),
-            param(array([]), ("Int64",), False),
-            param(Series([], dtype="Int64"), "Int64", True),
-            param(Series([], dtype="Int64"), int, False),
-            param(
-                Series([], dtype=DatetimeTZDtype(tz="UTC")),
-                DatetimeTZDtype(tz="UTC"),
-                True,
-            ),
-            param(
-                Series([], dtype=DatetimeTZDtype(tz="UTC")),
-                DatetimeTZDtype(tz="Asia/Hong_Kong"),
-                False,
-            ),
-        ],
-    )
-    def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
-        assert has_dtype(x, dtype) is expected
+class TestExpMovingSum:
+    @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
+    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+        axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
+        with assume_does_not_raise(RuntimeWarning):
+            _ = exp_moving_sum(array, halflife, axis=axis)
 
 
 class TestFFill:
@@ -930,6 +898,57 @@ class TestFlatN0:
         arr = ones(n, dtype=bool)
         with raises(MultipleTrueElementsError):
             _ = flatn0(arr)
+
+
+class TestGetFillValue:
+    @mark.parametrize(
+        "dtype",
+        [
+            param(bool),
+            param(datetime64D),
+            param(datetime64Y),
+            param(datetime64ns),
+            param(float),
+            param(int),
+            param(object),
+        ],
+    )
+    def test_main(self, dtype: Any) -> None:
+        fill_value = get_fill_value(dtype)
+        array = full(0, fill_value, dtype=dtype)
+        assert has_dtype(array, dtype)
+
+    def test_error(self) -> None:
+        with raises(InvalidDTypeError):
+            _ = get_fill_value(None)
+
+
+class TestHasDtype:
+    @mark.parametrize(
+        ("x", "dtype", "expected"),
+        [
+            param(array([]), float, True),
+            param(array([]), (float,), True),
+            param(array([]), int, False),
+            param(array([]), (int,), False),
+            param(array([]), "Int64", False),
+            param(array([]), ("Int64",), False),
+            param(Series([], dtype="Int64"), "Int64", True),
+            param(Series([], dtype="Int64"), int, False),
+            param(
+                Series([], dtype=DatetimeTZDtype(tz="UTC")),
+                DatetimeTZDtype(tz="UTC"),
+                True,
+            ),
+            param(
+                Series([], dtype=DatetimeTZDtype(tz="UTC")),
+                DatetimeTZDtype(tz="Asia/Hong_Kong"),
+                False,
+            ),
+        ],
+    )
+    def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
+        assert has_dtype(x, dtype) is expected
 
 
 class TestIsEmptyAndIsNotEmpty:

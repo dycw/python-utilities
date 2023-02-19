@@ -29,12 +29,14 @@ class TestAttrsBase:
     def test_speed(self) -> None:
         @define
         class Example(AttrsBase):
+            w: int
             x: int
             y: int
             z: int
 
         @define
         class Full:
+            w: int
             x: int
             y: int
             z: int
@@ -46,10 +48,10 @@ class TestAttrsBase:
         n = int(1e4)
         with Timer() as timer1:
             for _ in range(n):
-                _ = Example(0, 0, 0)
+                _ = Example(0, 0, 0, 0)
         with Timer() as timer2:
             for _ in range(n):
-                _ = Full(0, 0, 0)
+                _ = Full(0, 0, 0, 0)
         assert timer1 < timer2
 
 

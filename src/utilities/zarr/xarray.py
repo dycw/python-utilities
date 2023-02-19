@@ -81,10 +81,16 @@ def yield_data_array_on_disk(
 @beartype
 def _to_ndarray1(x: Any, /) -> NDArray1:
     """Convert a coordinate into a 1-dimensional array."""
-    if isinstance(x, ndarray) and (x.ndim == 1):
-        return x
-    if isinstance(x, (DataArray, Index)) and (x.ndim == 1):
-        return x.to_numpy()
+    if isinstance(x, ndarray):
+        if x.ndim == 1:
+            return x
+        msg = f"{x=}"
+        raise NotOneDimensionalArrayError(msg)
+    if isinstance(x, (DataArray, Index)):
+        if x.ndim == 1:
+            return x.to_numpy()
+        msg = f"{x=}"
+        raise NotOneDimensionalArrayError(msg)
     msg = f"{x=}"
     raise NotOneDimensionalArrayError(msg)
 
