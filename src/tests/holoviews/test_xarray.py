@@ -1,5 +1,5 @@
 from hypothesis import given
-from hypothesis.strategies import floats
+from hypothesis.strategies import floats, integers
 from pytest import raises
 
 from utilities.holoviews.xarray import (
@@ -7,7 +7,7 @@ from utilities.holoviews.xarray import (
     ArrayNameNotAStringError,
     plot_curve,
 )
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import assume_does_not_raise, text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import bool_data_arrays, float_data_arrays
 from utilities.xarray.typing import DataArrayB1, DataArrayF1
@@ -28,6 +28,15 @@ class TestPlotCurve:
     def test_label(self, array: DataArrayF1, label: str) -> None:
         curve = plot_curve(array, label=label)
         assert curve.label == label
+
+    @given(
+        array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)),
+        smooth=integers(1, 10),
+    )
+    def test_smooth(self, array: DataArrayF1, smooth: int) -> None:
+        with assume_does_not_raise(RuntimeWarning):
+            curve = plot_curve(array, smooth=smooth)
+        assert curve.label == f"{array.name} (MA{smooth})"
 
     @given(
         array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)),
