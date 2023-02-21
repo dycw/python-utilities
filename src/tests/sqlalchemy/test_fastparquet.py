@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -9,12 +9,11 @@ from hypothesis.strategies import (
     none,
 )
 from hypothesis_sqlalchemy.sample import table_records_lists
-from sqlalchemy import Column, Engine, Integer, select
+from sqlalchemy import Column, Integer, select
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 
-from utilities.fastparquet import (
-    get_dtypes,
-)
+from utilities.fastparquet import get_dtypes
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.pandas import Int64
@@ -37,7 +36,8 @@ class TestSelectToParquet:
         root: Path,
         stream: Optional[int],
     ) -> None:
-        class Example(declarative_base()):  # does not work with a core table
+        class Example(cast(Any, declarative_base())):  # TODO: remove in 2.0
+            # does not work with a core table
             __tablename__ = "example"
             Id = Column(Integer, primary_key=True)
 

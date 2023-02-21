@@ -80,7 +80,8 @@ pytest-check = ["pytest-check >= 2.1.4"]
 sqlalchemy = [
   "inflection >= 0.5.1",
   "more-itertools >= 9.0.0",
-  "sqlalchemy >= 2.0.4",
+  "sqlalchemy >= 1.4.46",
+  "sqlalchemy-stubs",
 ]
 tqdm = ["tqdm >= 4.64.1"]
 typed-settings = ["typed-settings[click] >= 2.0.2"]
@@ -107,7 +108,7 @@ dev = [
   "pyinstrument",
   "pytest",
   "pytest-check",
-  "sqlalchemy",
+  "sqlalchemy == 1.4.46",
   "tqdm",
   "typed-settings[click]",
   "xarray",
@@ -127,6 +128,7 @@ dev = [
   "pytest-cov",
   "pytest-xdist",
   "ruff",
+  "sqlalchemy2-stubs",
 ]
 
 [project.scripts]

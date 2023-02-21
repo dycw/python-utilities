@@ -2,7 +2,8 @@ from typing import Optional, Union
 
 from beartype import beartype
 from fastparquet import write
-from sqlalchemy import Connection, Engine, Select
+from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.sql import Select
 
 from utilities.atomicwrites import writer
 from utilities.fastparquet import Compression, write_parquet

@@ -2,9 +2,10 @@ from typing import Any
 
 from beartype import beartype
 from luigi import Parameter, Target
-from sqlalchemy import Select, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.sql import Select
 
 from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
 
@@ -47,7 +48,7 @@ class EngineParameter(Parameter):
 
     @beartype
     def serialize(self, engine: Engine, /) -> str:
-        """serialize an `Engine` argument."""
+        """Serialize an `Engine` argument."""
         return engine.url.render_as_string()
 
 
@@ -61,5 +62,5 @@ class TableParameter(Parameter):
 
     @beartype
     def serialize(self, table_or_model: Any, /) -> str:
-        """serialize a `Table` or model argument."""
+        """Serialize a `Table` or model argument."""
         return get_table_name(table_or_model)
