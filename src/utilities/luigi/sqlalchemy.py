@@ -2,8 +2,10 @@ from typing import Any
 
 from beartype import beartype
 from luigi import Parameter, Target
-from sqlalchemy import Engine, Select, create_engine
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.sql import Select
 
 from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
 

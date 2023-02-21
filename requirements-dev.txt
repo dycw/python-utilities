@@ -246,10 +246,12 @@ sniffio==1.3.0
     #   httpx
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.4
+sqlalchemy==1.4.46
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
+sqlalchemy2-stubs==0.0.2a32
+    # via dycw-utilities (pyproject.toml)
 starlette==0.25.0
     # via fastapi
 tenacity==8.2.1
@@ -271,7 +273,7 @@ typing-extensions==4.5.0
     #   dycw-utilities (pyproject.toml)
     #   pqdm
     #   pydantic
-    #   sqlalchemy
+    #   sqlalchemy2-stubs
 userpath==1.8.0
     # via hatch
 virtualenv==20.19.0
