@@ -243,19 +243,29 @@ class TestTextAscii:
         data=data(),
         min_size=integers(0, 100),
         max_size=integers(0, 100) | none(),
+        disallow_na=booleans(),
     )
     def test_main(
         self,
         data: DataObject,
         min_size: int,
         max_size: Optional[int],
+        disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
-            text = data.draw(text_ascii(min_size=min_size, max_size=max_size))
+            text = data.draw(
+                text_ascii(
+                    min_size=min_size,
+                    max_size=max_size,
+                    disallow_na=disallow_na,
+                ),
+            )
         assert search("^[A-Za-z]*$", text)
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size
+        if disallow_na:
+            assert text != "NA"
 
 
 class TestTextClean:
@@ -263,19 +273,29 @@ class TestTextClean:
         data=data(),
         min_size=integers(0, 100),
         max_size=integers(0, 100) | none(),
+        disallow_na=booleans(),
     )
     def test_main(
         self,
         data: DataObject,
         min_size: int,
         max_size: Optional[int],
+        disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
-            text = data.draw(text_clean(min_size=min_size, max_size=max_size))
+            text = data.draw(
+                text_clean(
+                    min_size=min_size,
+                    max_size=max_size,
+                    disallow_na=disallow_na,
+                ),
+            )
         assert search("^\\S[^\\r\\n]*$|^$", text)
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size
+        if disallow_na:
+            assert text != "NA"
 
 
 class TestTextPrintable:
@@ -283,16 +303,22 @@ class TestTextPrintable:
         data=data(),
         min_size=integers(0, 100),
         max_size=integers(0, 100) | none(),
+        disallow_na=booleans(),
     )
     def test_main(
         self,
         data: DataObject,
         min_size: int,
         max_size: Optional[int],
+        disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(
-                text_printable(min_size=min_size, max_size=max_size),
+                text_printable(
+                    min_size=min_size,
+                    max_size=max_size,
+                    disallow_na=disallow_na,
+                ),
             )
         assert search(
             r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$",
@@ -301,3 +327,5 @@ class TestTextPrintable:
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size
+        if disallow_na:
+            assert text != "NA"
