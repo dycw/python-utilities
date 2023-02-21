@@ -1,7 +1,8 @@
 from typing import Any, Optional, cast
 
 from hypothesis.strategies import DrawFn, composite
-from sqlalchemy import Engine, MetaData
+from sqlalchemy import MetaData
+from sqlalchemy.engine import Engine
 
 from utilities.hypothesis import temp_paths
 from utilities.sqlalchemy import create_engine

@@ -23,7 +23,6 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
-    Engine,
     Float,
     Integer,
     MetaData,
@@ -33,7 +32,7 @@ from sqlalchemy import (
     insert,
     select,
 )
-from sqlalchemy.exc import DuplicateColumnError
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import text_ascii
@@ -46,6 +45,7 @@ from utilities.pandas import Int64, boolean, datetime64nsutc, string
 from utilities.sqlalchemy import ensure_table_created, get_table
 from utilities.sqlalchemy.pandas import (
     DatesWithTimeComponentsError,
+    DuplicateColumnError,
     NonPositiveStreamError,
     SeriesAgainstTableColumnError,
     SeriesNameNotInTableError,
