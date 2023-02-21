@@ -4,7 +4,7 @@ from collections.abc import Callable
 from enum import auto
 from typing import Any
 
-from click import ParamType, argument, command, echo
+from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import (
@@ -39,22 +39,21 @@ from utilities.logging import LogLevel
 
 
 class TestParameters:
+    cases = [
+        param(Date(), dt.date, dates(), serialize_date),
+        param(
+            DateTime(),
+            dt.datetime,
+            datetimes(timezones=just(UTC)),
+            serialize_datetime,
+        ),
+        param(Time(), dt.time, times(), serialize_time),
+        param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
+    ]
+
     @given(data=data())
-    @mark.parametrize(
-        ("param", "cls", "strategy", "serialize"),
-        [
-            param(Date(), dt.date, dates(), serialize_date),
-            param(
-                DateTime(),
-                dt.datetime,
-                datetimes(timezones=just(UTC)),
-                serialize_datetime,
-            ),
-            param(Time(), dt.time, times(), serialize_time),
-            param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
-        ],
-    )
-    def test_success(
+    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    def test_argument(
         self,
         data: DataObject,
         param: ParamType,
@@ -70,12 +69,33 @@ class TestParameters:
             echo(f"value = {serialize(value)}")
 
         value_str = serialize(data.draw(strategy))
-        result = runner.invoke(cli, [value_str])
+        result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
         assert result.stdout == f"value = {value_str}\n"
 
         result = runner.invoke(cli, ["error"])
         assert result.exit_code == 2
+
+    @given(data=data())
+    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    def test_option(
+        self,
+        data: DataObject,
+        param: ParamType,
+        cls: Any,
+        strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
+    ) -> None:
+        value = data.draw(strategy)
+
+        @command()
+        @option("--value", type=param, default=value)
+        def cli(value: cls) -> None:
+            echo(f"value = {serialize(value)}")
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0
+        assert result.stdout == f"value = {serialize(value)}\n"
 
 
 class TestEnum:
@@ -83,23 +103,24 @@ class TestEnum:
         true = auto()
         false = auto()
 
-    @command()
-    @argument("truth", type=utilities.click.Enum(Truth))
-    def cli(*, truth: Truth) -> None:
-        echo(f"truth = {truth}")
-
     @given(truth=sampled_from(Truth))
-    def test_success(self, truth: Truth) -> None:
-        result = CliRunner().invoke(self.cli, [truth.name])
+    def test_command(self, truth: Truth) -> None:
+        Truth = self.Truth  # noqa: N806
+
+        @command()
+        @argument("truth", type=utilities.click.Enum(Truth))
+        def cli(*, truth: Truth) -> None:
+            echo(f"truth = {truth}")
+
+        result = CliRunner().invoke(cli, [truth.name])
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
 
-    def test_failure(self) -> None:
-        result = CliRunner().invoke(self.cli, ["not_an_element"])
+        result = CliRunner().invoke(cli, ["not_an_element"])
         assert result.exit_code == 2
 
     @given(data=data(), truth=sampled_from(Truth))
-    def test_success_insensitive(self, data: DataObject, truth: Truth) -> None:
+    def test_case_insensitive(self, data: DataObject, truth: Truth) -> None:
         Truth = self.Truth  # noqa: N806
 
         @command()
@@ -113,6 +134,19 @@ class TestEnum:
         name = truth.name
         as_str = data.draw(sampled_from([name, name.lower()]))
         result = CliRunner().invoke(cli, [as_str])
+        assert result.exit_code == 0
+        assert result.stdout == f"truth = {truth}\n"
+
+    @given(truth=sampled_from(Truth))
+    def test_option(self, truth: Truth) -> None:
+        Truth = self.Truth  # noqa: N806
+
+        @command()
+        @option("--truth", type=utilities.click.Enum(Truth), default=truth)
+        def cli(*, truth: Truth) -> None:
+            echo(f"truth = {truth}")
+
+        result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
 

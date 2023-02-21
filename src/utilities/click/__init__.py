@@ -1,5 +1,4 @@
 import datetime as dt
-from contextlib import suppress
 from enum import Enum as _Enum
 from typing import Any, Generic, Optional, TypeVar
 
@@ -11,10 +10,15 @@ from utilities.datetime import (
     ParseDateTimeError,
     ParseTimeError,
     TimedeltaError,
-    parse_date,
-    parse_datetime,
-    parse_time,
-    parse_timedelta,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    ensure_timedelta,
+)
+from utilities.enum import (
+    MultipleMatchingMembersError,
+    NoMatchingMemberError,
+    ensure_enum,
 )
 from utilities.logging import LogLevel
 
@@ -33,7 +37,7 @@ class Date(ParamType):
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
-            return parse_date(value)
+            return ensure_date(value)
         except ParseDateError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
@@ -52,7 +56,7 @@ class DateTime(ParamType):
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
-            return parse_datetime(value)
+            return ensure_datetime(value)
         except ParseDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
@@ -71,7 +75,7 @@ class Time(ParamType):
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
-            return parse_time(value)
+            return ensure_time(value)
         except ParseTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
@@ -90,7 +94,7 @@ class Timedelta(ParamType):
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
-            return parse_timedelta(value)
+            return ensure_timedelta(value)
         except TimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
@@ -123,14 +127,14 @@ class Enum(ParamType, Generic[_E]):
         ctx: Optional[Context],
     ) -> _E:
         """Convert a value into the `Enum` type."""
-        if self._case_sensitive:
-            els = {el for el in self._enum if el.name == value}
-        else:
-            els = {el for el in self._enum if el.name.lower() == value.lower()}
-        with suppress(ValueError):
-            (el,) = els
-            return el
-        return self.fail(f"Unable to parse {value}", param, ctx)
+        try:
+            return ensure_enum(
+                self._enum,
+                value,
+                case_sensitive=self._case_sensitive,
+            )
+        except (NoMatchingMemberError, MultipleMatchingMembersError):
+            return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 log_level_option = option(

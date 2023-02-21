@@ -22,7 +22,7 @@ from luigi.parameter import MissingParameterException
 from luigi.task import Register, flatten
 
 from utilities.datetime import parse_time, serialize_time
-from utilities.enum import parse_enum
+from utilities.enum import ensure_enum, parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
@@ -33,17 +33,33 @@ class EnumParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of an Enum."""
 
     @beartype
-    def __init__(self, enum: type[_E], /, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        enum: type[_E],
+        /,
+        *args: Any,
+        case_sensitive: bool = True,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._enum = enum
+        self._case_sensitive = case_sensitive
 
     @beartype
     def normalize(self, member: Union[_E, str], /) -> _E:  # noqa: D102
-        return parse_enum(self._enum, member)
+        return ensure_enum(
+            self._enum,
+            member,
+            case_sensitive=self._case_sensitive,
+        )
 
     @beartype
     def parse(self, member: str, /) -> _E:  # noqa: D102
-        return parse_enum(self._enum, member)
+        return parse_enum(
+            self._enum,
+            member,
+            case_sensitive=self._case_sensitive,
+        )
 
     @beartype
     def serialize(self, member: _E, /) -> str:  # noqa: D102
