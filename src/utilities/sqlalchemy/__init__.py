@@ -16,12 +16,15 @@ from sqlalchemy import (
     LargeBinary,
     MetaData,
     Numeric,
+    Select,
     String,
     Table,
     Unicode,
     UnicodeText,
+    Uuid,
     and_,
     case,
+    quoted_name,
     text,
 )
 from sqlalchemy import create_engine as _create_engine
@@ -37,8 +40,7 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
-from sqlalchemy.sql import Select, quoted_name
-from sqlalchemy.sql.base import ImmutableColumnCollection
+from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.errors import redirect_error
 from utilities.inflection import snake_case
@@ -120,8 +122,8 @@ class UnequalTableOrColumnSnakeCaseNamesError(ValueError):
 
 @beartype
 def _check_column_collections_equal(
-    x: ImmutableColumnCollection,
-    y: ImmutableColumnCollection,
+    x: ReadOnlyColumnCollection[Any, Any],
+    y: ReadOnlyColumnCollection[Any, Any],
     /,
     *,
     snake: bool = False,
@@ -166,7 +168,7 @@ class UnequalNullableStatusError(ValueError):
 
 
 @beartype
-def _check_column_types_equal(  # noqa: C901, PLR0912
+def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
     x: Any,
     y: Any,
     /,
@@ -183,9 +185,6 @@ def _check_column_types_equal(  # noqa: C901, PLR0912
         if x_inst.name != y_inst.name:
             raise UnequalBooleanColumnNameError(msg)
     if isinstance(x_inst, Enum) and isinstance(y_inst, Enum):
-        x_inst, y_inst = (  # TODO: remove in 2.0
-            cast(Any, i) for i in [x_inst, y_inst]
-        )
         x_enum, y_enum = (cast(Any, i).enum_class for i in [x_inst, y_inst])
         if ((x_enum is None) and (y_enum is not None)) or (
             (x_enum is not None)
@@ -250,6 +249,11 @@ def _check_column_types_equal(  # noqa: C901, PLR0912
             raise UnequalStringLengthError(msg)
         if x_inst.collation != y_inst.collation:
             raise UnequalStringCollationError(msg)
+    if isinstance(x_inst, Uuid) and isinstance(y_inst, Uuid):
+        if x_inst.as_uuid is not y_inst.as_uuid:
+            raise UnequalUUIDAsUUIDError(msg)
+        if x_inst.native_uuid is not y_inst.native_uuid:
+            raise UnequalUUIDNativeUUIDError(msg)
 
 
 class UnequalColumnTypesError(TypeError):
@@ -326,6 +330,14 @@ class UnequalStringLengthError(TypeError):
 
 class UnequalStringCollationError(TypeError):
     """Raised when two string columns' collations differ."""
+
+
+class UnequalUUIDAsUUIDError(TypeError):
+    """Raised when two UUID columns' as_uuid differ."""
+
+
+class UnequalUUIDNativeUUIDError(TypeError):
+    """Raised when two UUID columns' native UUID differ."""
 
 
 @beartype
