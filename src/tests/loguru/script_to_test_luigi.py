@@ -6,7 +6,7 @@ from click import command, option
 from loguru import logger
 from luigi import IntParameter, Task
 from numpy import arange, array
-from numpy.random import choice, random, seed
+from numpy.random import default_rng, random
 
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
@@ -26,11 +26,11 @@ class Example(Task):
         return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
 
     def run(self) -> None:
-        seed(seed=get_native_id())
+        rng = default_rng(get_native_id())
         levels = [level.name for level in LogLevel]
         p = array([40, 30, 20, 9, 1]) / 100.0
         for i in arange(n := self.messages) + 1:
-            level = choice(levels, p=p)
+            level = rng.choice(levels, p=p)
             logger.log(level, "{}, #{}/{}", get_class_name(self), i, n)
             sleep(1.0 + random())
         with writer(self.output().path) as temp:

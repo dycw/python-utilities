@@ -219,12 +219,14 @@ def text_ascii(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
     return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=ascii_letters),
         min_size=min_size,
         max_size=max_size,
+        disallow_na=disallow_na,
     )
 
 
@@ -233,12 +235,14 @@ def text_clean(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
     return _draw_text(
         characters(blacklist_categories=["Z", "C"]),
         min_size=min_size,
         max_size=max_size,
+        disallow_na=disallow_na,
     )
 
 
@@ -247,12 +251,14 @@ def text_printable(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
     return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=printable),
         min_size=min_size,
         max_size=max_size,
+        disallow_na=disallow_na,
     )
 
 
@@ -264,8 +270,12 @@ def _draw_text(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
     draw = lift_draw(_draw)
-    return draw(
+    drawn = draw(
         text(alphabet, min_size=draw(min_size), max_size=draw(max_size)),
     )
+    if draw(disallow_na):
+        _ = assume(drawn != "NA")
+    return drawn
