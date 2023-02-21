@@ -7,6 +7,7 @@ from beartype import beartype
 from pandas import DataFrame, Series
 from sqlalchemy import Column, insert
 from sqlalchemy.engine import Connection, Engine, Row
+from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement, Select
 
 from utilities.inflection import snake_case
@@ -266,10 +267,6 @@ def _check_select_for_duplicates(sel: Select, /) -> None:
     except DuplicatedError:
         msg = f"{col_names=}"
         raise DuplicateColumnError(msg) from None
-
-
-class DuplicateColumnError(ValueError):
-    """Raised when a duplicated column is found."""
 
 
 @beartype

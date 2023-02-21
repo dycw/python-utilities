@@ -28,6 +28,8 @@ from sqlalchemy import (
     DATE,
     DATETIME,
     DECIMAL,
+    DOUBLE,
+    DOUBLE_PRECISION,
     FLOAT,
     INT,
     INTEGER,
@@ -39,6 +41,7 @@ from sqlalchemy import (
     TEXT,
     TIME,
     TIMESTAMP,
+    UUID,
     VARBINARY,
     VARCHAR,
     BigInteger,
@@ -46,6 +49,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Double,
     Float,
     Integer,
     Interval,
@@ -59,6 +63,7 @@ from sqlalchemy import (
     Time,
     Unicode,
     UnicodeText,
+    Uuid,
     func,
     insert,
     select,
@@ -102,6 +107,8 @@ from utilities.sqlalchemy import (
     UnequalStringLengthError,
     UnequalTableOrColumnNamesError,
     UnequalTableOrColumnSnakeCaseNamesError,
+    UnequalUUIDAsUUIDError,
+    UnequalUUIDNativeUUIDError,
     _check_column_collections_equal,
     _check_column_types_equal,
     _check_columns_equal,
@@ -189,7 +196,17 @@ class TestCheckColumnTypesEqual:
         [DATETIME, TIMESTAMP, DateTime],
         [Interval],
         [BINARY, VARBINARY, LargeBinary],
-        [DECIMAL, FLOAT, NUMERIC, REAL, Float, Numeric],
+        [
+            DECIMAL,
+            DOUBLE,
+            DOUBLE_PRECISION,
+            FLOAT,
+            NUMERIC,
+            REAL,
+            Double,
+            Float,
+            Numeric,
+        ],
         [
             CHAR,
             CLOB,
@@ -204,6 +221,7 @@ class TestCheckColumnTypesEqual:
             sqlalchemy.Enum,
         ],
         [TIME, Time],
+        [UUID, Uuid],
     ]
 
     @given(data=data())
@@ -321,13 +339,7 @@ class TestCheckColumnTypesEqual:
             member = auto()
 
         length_x, length_y = lengths
-        x, y = (
-            sqlalchemy.Enum(MyEnum, native_enum=False, length=l_)
-            for l_ in lengths
-        )
-        # sqlalchemy.exc.SAWarning: Enum 'length' argument is currently ignored
-        # unless native_enum is specified as False, including for DDL that
-        # renders VARCHAR in any case.  This may change in a future release.
+        x, y = (sqlalchemy.Enum(MyEnum, length=l_) for l_ in lengths)
         if length_x == length_y:
             _check_column_types_equal(x, y)
         else:
@@ -487,6 +499,26 @@ class TestCheckColumnTypesEqual:
             with raises(UnequalStringCollationError):
                 _check_column_types_equal(x, y)
 
+    @given(as_uuids=lists_fixed_length(booleans(), 2))
+    def test_uuid_as_uuid(self, as_uuids: list[bool]) -> None:
+        as_uuid_x, as_uuid_y = as_uuids
+        x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
+        if as_uuid_x is as_uuid_y:
+            _check_column_types_equal(x, y)
+        else:
+            with raises(UnequalUUIDAsUUIDError):
+                _check_column_types_equal(x, y)
+
+    @given(native_uuids=lists_fixed_length(booleans(), 2))
+    def test_uuid_native_uuid(self, native_uuids: list[bool]) -> None:
+        native_uuid_x, native_uuid_y = native_uuids
+        x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
+        if native_uuid_x is native_uuid_y:
+            _check_column_types_equal(x, y)
+        else:
+            with raises(UnequalUUIDNativeUUIDError):
+                _check_column_types_equal(x, y)
+
 
 class TestCheckEngine:
     @given(engine=sqlite_engines(), num_tables=integers(0, 10) | none())
@@ -594,7 +626,7 @@ class TestCheckTablesEqual:
         check_tables_equal(x, y, snake_columns=True)
 
     def test_orm(self) -> None:
-        class Example(cast(Any, declarative_base())):  # TODO: remove in 2.0
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             Id = Column(Integer, primary_key=True)
@@ -632,7 +664,7 @@ class TestCheckTableOrColumnNamesEqual:
         [param(None, "Id"), param("x", "x")],
     )
     def test_orm(self, name: Optional[str], expected: str) -> None:
-        class Example(cast(Any, declarative_base())):  # TODO: remove in 2.0
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             Id = Column(
