@@ -1,13 +1,19 @@
 from collections.abc import Iterable
 from os import environ
 
-from _pytest.config import Config
-from _pytest.config.argparsing import Parser
-from _pytest.python import Function
 from beartype import beartype
 from pytest import mark
 
 from utilities.beartype import IterableStrs
+
+try:  # WARNING: this package cannot use unguarded `pytest` imports
+    from _pytest.config import Config
+    from _pytest.config.argparsing import Parser
+    from _pytest.python import Function
+except ModuleNotFoundError:  # pragma: no cover
+    from typing import Any as Config
+    from typing import Any as Function
+    from typing import Any as Parser
 
 
 @beartype
@@ -20,7 +26,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
             add_pytest_addoption(parser, ["slow"])
     """
     for opt in options:
-        parser.addoption(
+        _ = parser.addoption(
             f"--{opt}",
             action="store_true",
             default=False,
@@ -49,7 +55,7 @@ def add_pytest_collection_modifyitems(
         if len(missing & set(opts_on_item)) >= 1:
             flags = [f"--{opt}" for opt in opts_on_item]
             joined = " ".join(flags)
-            item.add_marker(mark.skip(reason=f"pass {joined}"))
+            _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
 @beartype
@@ -65,7 +71,7 @@ def add_pytest_configure(
             add_pytest_configure(config, [("slow", "slow to run")])
     """
     for opt, desc in options:
-        config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
+        _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
 
 
 @beartype
