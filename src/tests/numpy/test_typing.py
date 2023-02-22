@@ -6,11 +6,10 @@ from pytest import mark, param
 
 from utilities.numpy import datetime64D, datetime64ns, datetime64Y
 from utilities.numpy.typing import (
-    NDArrayA,
-    NDArrayA0,
-    NDArrayA1,
-    NDArrayA2,
-    NDArrayA3,
+    NDArray0,
+    NDArray1,
+    NDArray2,
+    NDArray3,
     NDArrayB,
     NDArrayB0,
     NDArrayB1,
@@ -49,11 +48,10 @@ from utilities.numpy.typing import (
 )
 
 
-class TestAnnotations:
+class TestHints:
     @mark.parametrize(
         ("dtype", "hint"),
         [
-            param(bool, NDArrayA),
             param(bool, NDArrayB),
             param(datetime64D, NDArrayDD),
             param(datetime64Y, NDArrayDY),
@@ -63,15 +61,27 @@ class TestAnnotations:
             param(object, NDArrayO),
         ],
     )
-    def test_single(self, dtype: Any, hint: Any) -> None:
+    def test_dtype(self, dtype: Any, hint: Any) -> None:
         arr = empty(0, dtype=dtype)
+        die_if_unbearable(arr, hint)
+
+    @mark.parametrize(
+        ("ndim", "hint"),
+        [
+            param(0, NDArray0),
+            param(1, NDArray1),
+            param(2, NDArray2),
+            param(3, NDArray3),
+        ],
+    )
+    def test_ndim(self, ndim: int, hint: Any) -> None:
+        arr = empty(zeros(ndim, dtype=int), dtype=float)
         die_if_unbearable(arr, hint)
 
     @mark.parametrize(
         ("dtype", "ndim", "hint"),
         [
             # ndim 0
-            param(bool, 0, NDArrayA0),
             param(bool, 0, NDArrayB0),
             param(datetime64D, 0, NDArrayDD0),
             param(datetime64Y, 0, NDArrayDY0),
@@ -80,7 +90,6 @@ class TestAnnotations:
             param(int, 0, NDArrayI0),
             param(object, 0, NDArrayO0),
             # ndim 1
-            param(bool, 1, NDArrayA1),
             param(bool, 1, NDArrayB1),
             param(datetime64D, 1, NDArrayDD1),
             param(datetime64Y, 1, NDArrayDY1),
@@ -89,7 +98,6 @@ class TestAnnotations:
             param(int, 1, NDArrayI1),
             param(object, 1, NDArrayO1),
             # ndim 2
-            param(bool, 2, NDArrayA2),
             param(bool, 2, NDArrayB2),
             param(datetime64D, 2, NDArrayDD2),
             param(datetime64Y, 2, NDArrayDY2),
@@ -98,7 +106,6 @@ class TestAnnotations:
             param(int, 2, NDArrayI2),
             param(object, 2, NDArrayO2),
             # ndim 3
-            param(bool, 3, NDArrayA3),
             param(bool, 3, NDArrayB3),
             param(datetime64D, 3, NDArrayDD3),
             param(datetime64Y, 3, NDArrayDY3),
