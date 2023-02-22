@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from functools import reduce
 from operator import ge, le
@@ -446,6 +446,7 @@ def create_engine(
     host: Optional[str] = None,
     port: Optional[int] = None,
     database: Optional[str] = None,
+    query: Optional[Mapping[str, Union[Sequence[str], str]]] = None,
     poolclass: Optional[type[Pool]] = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
@@ -456,8 +457,9 @@ def create_engine(
         host=host,
         port=port,
         database=database,
+        **({} if query is None else {"query": query}),
     )
-    return _create_engine(url, future=True, poolclass=poolclass)
+    return _create_engine(url, poolclass=poolclass)
 
 
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
