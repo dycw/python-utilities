@@ -182,6 +182,8 @@ def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
 @beartype
 def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
+    if isinstance(date, dt.datetime):
+        return serialize_date(date.date())
     return date.isoformat()
 
 

@@ -304,6 +304,11 @@ class TestSerialize:
         result = parse(serialize(value))
         assert result == value
 
+    @given(datetime=datetimes())
+    def test_serialize_date(self, datetime: dt.datetime) -> None:
+        result = parse_date(serialize_date(datetime))
+        assert result == datetime.date()
+
 
 class TestRoundToWeekday:
     @given(date=dates())
