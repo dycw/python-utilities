@@ -3,15 +3,17 @@ from os import getenv
 from hypothesis import given
 
 from utilities.hypothesis import text_ascii
-from utilities.os import CPU_COUNT, temp_environ
-from utilities.types import NoneType
+from utilities.os import CPU_COUNT, _get_cpu_count, temp_environ
 
 text = text_ascii(min_size=1, max_size=10)
 
 
 class TestCPUCount:
-    def test_main(self) -> None:
-        assert isinstance(CPU_COUNT, (int, NoneType))
+    def test_function(self) -> None:
+        assert isinstance(_get_cpu_count(), int)
+
+    def test_constant(self) -> None:
+        assert isinstance(CPU_COUNT, int)
 
 
 def prefix(text: str, /) -> str:

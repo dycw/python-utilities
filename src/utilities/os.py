@@ -5,7 +5,21 @@ from typing import Optional, cast
 
 from beartype import beartype
 
-CPU_COUNT = cpu_count()
+
+@beartype
+def _get_cpu_count() -> int:
+    """Get the CPU count."""
+    count = cpu_count()
+    if count is None:  # pragma: no cover
+        raise UnableToDetermineCPUCountError
+    return count
+
+
+class UnableToDetermineCPUCountError(ValueError):
+    """Raised when unable to determine the CPU count."""
+
+
+CPU_COUNT = _get_cpu_count()
 
 
 @contextmanager
