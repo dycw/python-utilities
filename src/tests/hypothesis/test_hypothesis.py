@@ -1,9 +1,10 @@
+import datetime as dt
 from math import inf, isfinite, isinf, isnan
 from pathlib import Path
 from re import search
 from typing import Optional
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DataObject,
@@ -11,6 +12,7 @@ from hypothesis.strategies import (
     booleans,
     composite,
     data,
+    datetimes,
     floats,
     integers,
     just,
@@ -20,8 +22,10 @@ from hypothesis.strategies import (
 from more_itertools import pairwise
 from pytest import mark, param, raises
 
+from utilities.datetime import UTC
 from utilities.hypothesis import (
     assume_does_not_raise,
+    datetimes_utc,
     floats_extra,
     lists_fixed_length,
     setup_hypothesis_profiles,
@@ -31,6 +35,10 @@ from utilities.hypothesis import (
     text_ascii,
     text_clean,
     text_printable,
+)
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATETIME,
 )
 from utilities.tempfile import TemporaryDirectory
 
@@ -70,6 +78,32 @@ class TestAssumeDoesNotRaise:
                 match="wrong",
             ):
                 raise ValueError(msg)
+
+
+class TestDatetimesUTC:
+    @given(
+        data=data(),
+        min_value=datetimes(
+            min_value=TIMESTAMP_MIN_AS_DATETIME.replace(tzinfo=None),
+        ),
+        max_value=datetimes(
+            max_value=TIMESTAMP_MAX_AS_DATETIME.replace(tzinfo=None),
+        ),
+    )
+    def test_main(
+        self,
+        data: DataObject,
+        min_value: dt.datetime,
+        max_value: dt.datetime,
+    ) -> None:
+        min_value, max_value = (
+            v.replace(tzinfo=UTC) for v in [min_value, max_value]
+        )
+        _ = assume(min_value <= max_value)
+        datetime = data.draw(
+            datetimes_utc(min_value=min_value, max_value=max_value),
+        )
+        assert min_value <= datetime <= max_value
 
 
 class TestFloatsExtra:

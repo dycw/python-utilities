@@ -17,6 +17,7 @@ from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.hypothesis import text_ascii
+from utilities.hypothesis.pandas import timestamps
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
     TIMESTAMP_MAX_AS_DATETIME,
@@ -28,6 +29,7 @@ from utilities.pandas import (
     RangeIndexStartError,
     RangeIndexStepError,
     SeriesRangeIndexError,
+    TimestampIsNaTError,
     boolean,
     check_range_index,
     string,
@@ -130,7 +132,7 @@ class TestTimestampToDate:
         assert timestamp_to_date(timestamp) == expected
 
     def test_error(self) -> None:
-        with raises(ValueError, match="Invalid value"):
+        with raises(TimestampIsNaTError):
             _ = timestamp_to_date(NaT)
 
 
@@ -155,6 +157,15 @@ class TestTimestampToDateTime:
     def test_main(self, timestamp: Any, expected: dt.datetime) -> None:
         assert timestamp_to_datetime(timestamp) == expected
 
+    @given(timestamp=timestamps(allow_nanoseconds=True))
+    def test_warn(self, timestamp: Timestamp) -> None:
+        _ = assume(cast(Any, timestamp).nanosecond != 0)
+        with raises(
+            UserWarning,
+            match="Discarding nonzero nanoseconds in conversion",
+        ):
+            _ = timestamp_to_datetime(timestamp)
+
     def test_error(self) -> None:
-        with raises(ValueError, match="Invalid value"):
+        with raises(TimestampIsNaTError):
             _ = timestamp_to_datetime(NaT)
