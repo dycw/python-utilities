@@ -171,7 +171,7 @@ class TestPytestOptions:
 
 
 class TestIsPytest:
-    def test_main(self) -> None:
+    def test_function(self) -> None:
         assert is_pytest()
 
     def test_disable(self) -> None:

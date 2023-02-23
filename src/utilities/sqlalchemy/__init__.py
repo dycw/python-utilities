@@ -59,6 +59,7 @@ def check_table_against_reflection(
     schema: Optional[str] = None,
     snake_table: bool = False,
     snake_columns: bool = False,
+    primary_key: bool = True,
 ) -> None:
     """Check that a table equals its reflection."""
     reflected = _reflect_table(table_or_model, engine_or_conn, schema=schema)
@@ -67,6 +68,7 @@ def check_table_against_reflection(
         table_or_model,
         snake_table=snake_table,
         snake_columns=snake_columns,
+        primary_key=primary_key,
     )
 
 
@@ -93,6 +95,7 @@ def check_tables_equal(
     *,
     snake_table: bool = False,
     snake_columns: bool = False,
+    primary_key: bool = True,
 ) -> None:
     """Check that a pair of tables are equal."""
     x_t, y_t = map(get_table, [x, y])
@@ -101,6 +104,7 @@ def check_tables_equal(
         x_t.columns,
         y_t.columns,
         snake=snake_columns,
+        primary_key=primary_key,
     )
 
 
@@ -136,13 +140,14 @@ def _check_column_collections_equal(
     /,
     *,
     snake: bool = False,
+    primary_key: bool = True,
 ) -> None:
     """Check that a pair of column collections are equal."""
     msg = f"{x=}, {y=}"
     if len(x) != len(y):
         raise UnequalNumberOfColumnsError(msg)
     for x_i, y_i in zip(x, y):
-        _check_columns_equal(x_i, y_i, snake=snake)
+        _check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
 
 
 class UnequalNumberOfColumnsError(ValueError):
@@ -156,11 +161,12 @@ def _check_columns_equal(
     /,
     *,
     snake: bool = False,
+    primary_key: bool = True,
 ) -> None:
     """Check that a pair of columns are equal."""
     _check_table_or_column_names_equal(x.name, y.name, snake=snake)
     _check_column_types_equal(x.type, y.type)
-    if x.primary_key != y.primary_key:
+    if primary_key and (x.primary_key != y.primary_key):
         msg = f"{x.primary_key=}, {y.primary_key=}"
         raise UnequalPrimaryKeyStatusError(msg)
     if x.nullable != y.nullable:

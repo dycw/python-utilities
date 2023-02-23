@@ -6,24 +6,28 @@ from warnings import catch_warnings, filterwarnings
 from beartype import beartype
 
 
+@contextmanager
 @beartype
 def catch_warnings_as_errors(
     *,
     message: str = "",
     category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
-) -> ExitStack:
+) -> Iterator[None]:
     """Catch warnings as errors."""
-    return _handle_warnings("error", message=message, category=category)
+    with _handle_warnings("error", message=message, category=category):
+        yield
 
 
+@contextmanager
 @beartype
 def suppress_warnings(
     *,
     message: str = "",
     category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
-) -> ExitStack:
+) -> Iterator[None]:
     """Suppress warnings."""
-    return _handle_warnings("ignore", message=message, category=category)
+    with _handle_warnings("ignore", message=message, category=category):
+        yield
 
 
 _ActionKind = Literal["error", "ignore"]
