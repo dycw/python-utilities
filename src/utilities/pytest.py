@@ -2,7 +2,6 @@ from collections.abc import Iterable
 from os import environ
 
 from beartype import beartype
-from pytest import mark
 
 from utilities.beartype import IterableStrs
 
@@ -10,6 +9,7 @@ try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
+    from pytest import mark
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
