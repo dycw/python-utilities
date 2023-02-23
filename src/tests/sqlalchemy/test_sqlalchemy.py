@@ -79,9 +79,8 @@ from sqlalchemy.orm import declarative_base
 from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import (
-    IncorrectNumberOfColumnsError,
+    EngineError,
     IncorrectNumberOfTablesError,
-    NoTablesError,
     TableAlreadyExistsError,
     UnequalBooleanColumnCreateConstraintError,
     UnequalBooleanColumnNameError,
@@ -521,36 +520,39 @@ class TestCheckColumnTypesEqual:
 
 
 class TestCheckEngine:
-    @given(engine=sqlite_engines(), num_tables=integers(0, 10) | none())
-    def test_main(self, engine: Engine, num_tables: Optional[int]) -> None:
-        if (num_tables is None) or (num_tables == 0):
-            check_engine(engine, num_tables=num_tables)
-        else:
-            with raises(IncorrectNumberOfTablesError):
-                check_engine(engine, num_tables=num_tables)
+    @given(engine=sqlite_engines())
+    def test_success(self, engine: Engine) -> None:
+        check_engine(engine)
 
-    @given(engine=sqlite_engines(), num_columns=integers(1, 10))
-    def test_no_tables_error(self, engine: Engine, num_columns: int) -> None:
-        with raises(NoTablesError):
-            check_engine(engine, num_columns=num_columns)
+    @given(root=temp_paths())
+    def test_engine_error(self, root: Path) -> None:
+        engine = create_engine("sqlite", database=root.as_posix())
+        with raises(EngineError):
+            check_engine(engine)
 
-    @given(engine=sqlite_engines(), num_columns=integers(1, 10))
-    def test_correct_num_columns(
-        self,
-        engine: Engine,
-        num_columns: int,
-    ) -> None:
+    @given(engine=sqlite_engines())
+    def test_num_tables(self, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
         )
         ensure_table_created(table, engine)
-        if num_columns == 5:
-            check_engine(engine, num_columns=num_columns)
-        else:
-            with raises(IncorrectNumberOfColumnsError):
-                check_engine(engine, num_columns=num_columns)
+        check_engine(engine, num_tables=1)
+
+    @given(engine=sqlite_engines())
+    def test_num_tables_error(self, engine: Engine) -> None:
+        with raises(IncorrectNumberOfTablesError):
+            check_engine(engine, num_tables=1)
+
+    @given(engine=sqlite_engines())
+    def test_num_tables_abs_tol_correct(self, engine: Engine) -> None:
+        check_engine(engine, num_tables=1, abs_tol=1.0)
+
+    @given(engine=sqlite_engines())
+    def test_num_tables_abs_tol_error(self, engine: Engine) -> None:
+        with raises(IncorrectNumberOfTablesError):
+            check_engine(engine, num_tables=2, abs_tol=1.0)
 
 
 class TestCheckTableAgainstReflection:

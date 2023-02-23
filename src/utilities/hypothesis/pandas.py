@@ -3,6 +3,7 @@ from collections.abc import Hashable
 from typing import Annotated, Any, Optional, cast
 
 from beartype import beartype
+from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
 from hypothesis.strategies import (
     SearchStrategy,
@@ -11,7 +12,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
 )
-from pandas import Index
+from pandas import Index, Timedelta, Timestamp
 
 from utilities.beartype.numpy import DTypeI
 from utilities.beartype.pandas import DTypeString
@@ -29,13 +30,17 @@ from utilities.pandas import (
 
 
 @beartype
+@composite
 def dates_pd(
+    _draw: Any,
+    /,
     *,
-    min_value: dt.date = TIMESTAMP_MIN_AS_DATE,
-    max_value: dt.date = TIMESTAMP_MAX_AS_DATE,
-) -> SearchStrategy[dt.date]:
+    min_value: MaybeSearchStrategy[dt.date] = TIMESTAMP_MIN_AS_DATE,
+    max_value: MaybeSearchStrategy[dt.date] = TIMESTAMP_MAX_AS_DATE,
+) -> dt.date:
     """Strategy for generating dates which can become Timestamps."""
-    return dates(min_value=min_value, max_value=max_value)
+    draw = lift_draw(_draw)
+    return draw(dates(min_value=draw(min_value), max_value=draw(max_value)))
 
 
 @composite
@@ -44,15 +49,15 @@ def datetimes_pd(
     _draw: Any,
     /,
     *,
-    min_value: dt.datetime = TIMESTAMP_MIN_AS_DATETIME,
-    max_value: dt.datetime = TIMESTAMP_MAX_AS_DATETIME,
+    min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,
+    max_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MAX_AS_DATETIME,
 ) -> dt.datetime:
     """Strategy for generating datetimes which can become Timestamps."""
     draw = lift_draw(_draw)
     datetime = draw(
         datetimes(
-            min_value=min_value.replace(tzinfo=None),
-            max_value=max_value.replace(tzinfo=None),
+            min_value=draw(min_value).replace(tzinfo=None),
+            max_value=draw(max_value).replace(tzinfo=None),
         ),
     )
     return datetime.replace(tzinfo=UTC)
@@ -135,3 +140,26 @@ def str_indexes(
         ),
     )
     return index.astype(string)
+
+
+@composite
+def timestamps(
+    _draw: Any,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,
+    max_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MAX_AS_DATETIME,
+    allow_nanoseconds: MaybeSearchStrategy[bool] = False,
+) -> Timestamp:
+    """Strategy for generating Timestamps."""
+    draw = lift_draw(_draw)
+    min_value, max_value = map(draw, [min_value, max_value])
+    datetime = draw(datetimes_pd(min_value=min_value, max_value=max_value))
+    timestamp: Timestamp = Timestamp(datetime)
+    if draw(allow_nanoseconds):
+        nanoseconds = draw(integers(-999, 999))
+        timedelta: Timedelta = Timedelta(nanoseconds=nanoseconds)
+        timestamp += timedelta
+        _ = assume(min_value <= timestamp.floor("us"))
+        _ = assume(timestamp.ceil("us") <= max_value)
+    return timestamp

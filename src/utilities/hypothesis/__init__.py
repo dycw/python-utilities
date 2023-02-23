@@ -1,4 +1,5 @@
 import builtins
+import datetime as dt
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from math import ceil, floor, inf, isfinite, nan
@@ -16,6 +17,7 @@ from hypothesis.strategies import (
     SearchStrategy,
     characters,
     composite,
+    datetimes,
     floats,
     integers,
     just,
@@ -25,7 +27,12 @@ from hypothesis.strategies import (
     uuids,
 )
 
+from utilities.datetime import UTC
 from utilities.hypothesis.typing import MaybeSearchStrategy
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATETIME,
+)
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
@@ -51,6 +58,26 @@ def assume_does_not_raise(
                 _ = assume(condition=False)
             else:
                 raise
+
+
+@composite
+@beartype
+def datetimes_utc(
+    _draw: Any,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,
+    max_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MAX_AS_DATETIME,
+) -> dt.datetime:
+    """Strategy for generating datetimes with the UTC timezone."""
+    draw = lift_draw(_draw)
+    return draw(
+        datetimes(
+            min_value=draw(min_value).replace(tzinfo=None),
+            max_value=draw(max_value).replace(tzinfo=None),
+            timezones=just(UTC),
+        ),
+    )
 
 
 @composite

@@ -73,21 +73,30 @@ class DataFrameRangeIndexError(ValueError):
 
 
 @beartype
-def timestamp_to_date(timestamp: Any, /) -> dt.date:
+def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
     """Convert a timestamp to a date."""
-    return timestamp_to_datetime(timestamp).date()
+    return timestamp_to_datetime(timestamp, warn=warn).date()
 
 
 @beartype
-def timestamp_to_datetime(timestamp: Any, /) -> dt.datetime:
+def timestamp_to_datetime(
+    timestamp: Any,
+    /,
+    *,
+    warn: bool = True,
+) -> dt.datetime:
     """Convert a timestamp to a datetime."""
     if timestamp is NaT:
-        msg = f"Invalid value: {timestamp}"
-        raise ValueError(msg)
-    datetime = cast(dt.datetime, timestamp.to_pydatetime())
+        msg = f"{timestamp=}"
+        raise TimestampIsNaTError(msg)
+    datetime = cast(dt.datetime, timestamp.to_pydatetime(warn=warn))
     if datetime.tzinfo is None:
         return datetime.replace(tzinfo=UTC)
     return datetime
+
+
+class TimestampIsNaTError(ValueError):
+    """Raised when a NaT is received."""
 
 
 @beartype

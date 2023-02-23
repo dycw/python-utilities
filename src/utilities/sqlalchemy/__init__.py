@@ -1,6 +1,7 @@
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from functools import reduce
+from math import isclose
 from operator import ge, le
 from typing import Any, Literal, NoReturn, Optional, Union, cast
 
@@ -37,6 +38,7 @@ from sqlalchemy.engine import URL, Connection, Engine
 from sqlalchemy.exc import (
     DatabaseError,
     NoSuchTableError,
+    OperationalError,
 )
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
@@ -55,10 +57,17 @@ def check_table_against_reflection(
     /,
     *,
     schema: Optional[str] = None,
+    snake_table: bool = False,
+    snake_columns: bool = False,
 ) -> None:
     """Check that a table equals its reflection."""
     reflected = _reflect_table(table_or_model, engine_or_conn, schema=schema)
-    check_tables_equal(reflected, table_or_model)
+    check_tables_equal(
+        reflected,
+        table_or_model,
+        snake_table=snake_table,
+        snake_columns=snake_columns,
+    )
 
 
 @beartype
@@ -346,7 +355,7 @@ def check_engine(
     /,
     *,
     num_tables: Optional[int] = None,
-    num_columns: Optional[int] = None,
+    abs_tol: Optional[float] = None,
 ) -> None:
     """Check that an engine can connect.
 
@@ -366,31 +375,28 @@ def check_engine(
         query = "select * from sqlite_master where type='table'"
     else:
         return never(dialect)  # pragma: no cover
-    with engine.begin() as conn:
-        rows = conn.execute(text(query)).all()
-    if (num_tables is not None) and (len(rows) != num_tables):
-        msg = f"{len(rows)=}, {num_tables=}"
-        raise IncorrectNumberOfTablesError(msg)
-    if num_columns is not None:
-        if len(rows) == 0:
-            msg = f"{engine=}"
-            raise NoTablesError(msg)
-        if len(rows[0]) != num_columns:
-            msg = f"{len(rows[0])=}, {num_columns=}"
-            raise IncorrectNumberOfColumnsError(msg)
+    try:
+        with engine.begin() as conn:
+            rows = conn.execute(text(query)).all()
+    except OperationalError as error:
+        redirect_error(error, "unable to open database file", EngineError)
+    if num_tables is not None:
+        n_rows = len(rows)
+        if ((abs_tol is None) and (n_rows != num_tables)) or (
+            (abs_tol is not None)
+            and not isclose(n_rows, num_tables, abs_tol=abs_tol)
+        ):
+            msg = f"{len(rows)=}, {num_tables=}"
+            raise IncorrectNumberOfTablesError(msg)
     return None
+
+
+class EngineError(ValueError):
+    """Raised when an Engine cannot connect."""
 
 
 class IncorrectNumberOfTablesError(ValueError):
     """Raised when there are an incorrect number of tables."""
-
-
-class NoTablesError(ValueError):
-    """Raised when there are no tables."""
-
-
-class IncorrectNumberOfColumnsError(ValueError):
-    """Raised when there are an incorrect number of columns."""
 
 
 @beartype
@@ -661,4 +667,3 @@ def yield_in_clause_rows(
         for values_i in chunked(values, chunk_size_use):
             sel_i = sel.where(column.in_(values_i))
             yield from conn.execute(sel_i).all()
-    return None
