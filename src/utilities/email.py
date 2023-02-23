@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -10,6 +10,7 @@ from beartype import beartype
 
 from utilities.beartype import IterableStrs
 from utilities.pathlib import PathLike
+from utilities.pytest import is_pytest
 
 
 @beartype
@@ -24,8 +25,11 @@ def send_email(
     host: str = "",
     port: int = 0,
     attachments: Optional[Iterable[PathLike]] = None,
+    disable: Optional[Callable[[], bool]] = is_pytest,
 ) -> None:
     """Send an email."""
+    if (disable is not None) and disable():
+        return
     message = MIMEMultipart()
     message["From"] = from_
     message["To"] = ",".join(to)

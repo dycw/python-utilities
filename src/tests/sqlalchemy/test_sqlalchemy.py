@@ -157,6 +157,11 @@ class TestCheckColumnsEqual:
         with raises(UnequalPrimaryKeyStatusError):
             _check_columns_equal(x, y)
 
+    def test_primary_key_status_skipped(self) -> None:
+        x = Column("id", Integer, primary_key=True)
+        y = Column("id", Integer, nullable=False)
+        _check_columns_equal(x, y, primary_key=False)
+
     def test_nullable_status(self) -> None:
         x = Column("id", Integer)
         y = Column("id", Integer, nullable=False)

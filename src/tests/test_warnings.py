@@ -12,6 +12,11 @@ class TestCatchWarningsAsErrors:
         with raises(UserWarning), catch_warnings_as_errors():
             warn("")
 
+    def test_unbound_variables(self) -> None:
+        with catch_warnings_as_errors():
+            x = None
+        assert x is None
+
     def test_one_warning(self) -> None:
         class CustomWarning(UserWarning):
             ...
@@ -44,6 +49,11 @@ class TestSuppressWarnings:
     def test_main(self) -> None:
         with suppress_warnings():
             warn("")
+
+    def test_unbound_variables(self) -> None:
+        with suppress_warnings():
+            x = None
+        assert x is None
 
     def test_one_warning(self) -> None:
         class CustomWarning(UserWarning):
