@@ -3,7 +3,6 @@ from collections.abc import Iterator
 from functools import partial
 from getpass import getuser
 from itertools import islice
-from logging import getLogger
 from pathlib import Path
 from shutil import rmtree
 from typing import Optional
@@ -11,22 +10,23 @@ from typing import Optional
 from attrs import asdict
 from beartype import beartype
 from click import command
+from loguru import logger
+from typed_settings import find
 
 from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC
-from utilities.logging import basic_config
+from utilities.loguru import setup_loguru
 from utilities.typed_settings import click_options
 
 _CONFIG = Config()
-_LOGGER = getLogger(__name__)
 
 
 @command()
-@click_options(Config)
+@click_options(Config, appname="cleandir", config_files=[find("config.toml")])
 @beartype
 def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
-    basic_config()
+    setup_loguru()
     _log_config(config)
     if config.dry_run:
         for item in _yield_items(
@@ -34,7 +34,7 @@ def main(config: Config, /) -> None:
             days=config.days,
             chunk_size=config.chunk_size,
         ):
-            _LOGGER.debug("%s", item.path)
+            logger.debug("{path}", path=item.path)
     else:
         _clean_dir(
             path=config.path,
@@ -46,7 +46,7 @@ def main(config: Config, /) -> None:
 @beartype
 def _log_config(config: Config, /) -> None:
     for key, value in asdict(config).items():
-        _LOGGER.info("%-10s = %s", key, value)
+        logger.info("{key:10} = {value}", key=key, value=value)
 
 
 @beartype
@@ -129,11 +129,11 @@ def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
 
 @beartype
 def _unlink_path(path: Path, /) -> None:
-    _LOGGER.info("Removing file:      %s", path)
+    logger.info("Removing file:      {path}", path=path)
     path.unlink(missing_ok=True)
 
 
 @beartype
 def _unlink_dir(path: Path, /) -> None:
-    _LOGGER.info("Removing directory: %s", path)
+    logger.info("Removing directory: {path}", path=path)
     rmtree(path)

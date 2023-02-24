@@ -23,6 +23,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[pandas]`
 - `pip install dycw-utilities[pqdm]`
 - `pip install dycw-utilities[psutil]`
+- `pip install dycw-utilities[pypi]`
 - `pip install dycw-utilities[sqlalchemy]`
 - `pip install dycw-utilities[tqdm]`
 - `pip install dycw-utilities[typed-settings]`

@@ -19,6 +19,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.datetime import (
+    EPOCH_UTC,
     UTC,
     CallYieldWeekdaysError,
     IsWeekendError,
@@ -333,6 +334,17 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestTimes:
+    def test_main(self) -> None:
+        assert isinstance(EPOCH_UTC, dt.datetime)
+        assert EPOCH_UTC.tzinfo is UTC
+
+
+class TestTimeZones:
+    def test_main(self) -> None:
+        assert isinstance(UTC, dt.tzinfo)
 
 
 class TestYieldWeekdays:

@@ -1,6 +1,7 @@
 import datetime as dt
 from collections.abc import Callable
 from pathlib import Path
+from subprocess import check_call
 from typing import Any, cast
 
 from click import command, echo
@@ -17,7 +18,7 @@ from hypothesis.strategies import (
     times,
     tuples,
 )
-from pytest import mark, param, raises
+from pytest import MonkeyPatch, mark, param, raises
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
 
@@ -29,9 +30,36 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import temp_paths, text_ascii
-from utilities.typed_settings import click_options, load_settings
+from utilities.typed_settings import (
+    AppNameContainsUnderscoreError,
+    _get_loaders,
+    click_options,
+    get_repo_root_config,
+    load_settings,
+)
 
 app_names = text_ascii(min_size=1).map(str.lower)
+
+
+class TestGetRepoRootConfig:
+    def test_exists(self, monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+        monkeypatch.chdir(tmp_path)
+        _ = check_call(["git", "init"])
+        Path("config.toml").touch()
+        expected = tmp_path.joinpath("config.toml")
+        assert get_repo_root_config(cwd=tmp_path) == expected
+
+    def test_does_not_exist(self, tmp_path: Path) -> None:
+        assert get_repo_root_config(cwd=tmp_path) is None
+
+
+class TestGetLoaders:
+    def test_success(self) -> None:
+        _ = _get_loaders()
+
+    def test_error(self) -> None:
+        with raises(AppNameContainsUnderscoreError):
+            _ = _get_loaders(appname="app_name")
 
 
 class TestLoadSettings:

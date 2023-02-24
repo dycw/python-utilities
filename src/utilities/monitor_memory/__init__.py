@@ -4,7 +4,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from csv import DictWriter
 from dataclasses import fields
-from logging import getLogger
 from pathlib import Path
 from time import sleep
 from typing import Any, Optional, cast
@@ -12,24 +11,24 @@ from typing import Any, Optional, cast
 import attrs
 from beartype import beartype
 from click import command
+from loguru import logger
 from psutil import swap_memory, virtual_memory
 
 from utilities.datetime import UTC
-from utilities.logging import basic_config
+from utilities.loguru import setup_loguru
 from utilities.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
 
 _CONFIG = Config()
-_LOGGER = getLogger(__name__)
 
 
 @command()
-@click_options(Config)
+@click_options(Config, appname="monitormemory")
 @beartype
 def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
-    basic_config()
+    setup_loguru()
     _log_config(config)
     _monitor_memory(
         path=config.path,
@@ -41,7 +40,7 @@ def main(config: Config, /) -> None:
 @beartype
 def _log_config(config: Config, /) -> None:
     for key, value in attrs.asdict(config).items():
-        _LOGGER.info("%-8s = %s", key, value)
+        logger.info("{key:8} = {value}", key=key, value=value)
 
 
 @beartype
@@ -58,7 +57,7 @@ def _monitor_memory(
             writer.writeheader()
         if (max_timedelta is None) or (timer.timedelta <= max_timedelta):
             memory = _get_memory_usage()
-            _LOGGER.info("%s", memory)
+            logger.info("{memory}", memory=memory)
             with _yield_writer(path=path, mode="a") as writer:
                 writer.writerow(dataclasses.asdict(memory))
             sleep(freq)

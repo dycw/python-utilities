@@ -2,6 +2,8 @@ import datetime as dt
 from collections.abc import Callable, Iterable
 from itertools import starmap
 from operator import itemgetter
+from pathlib import Path
+from re import search
 from typing import Any, Optional, TypeVar, Union, cast
 
 from beartype import beartype
@@ -18,6 +20,7 @@ from typed_settings.cli_utils import (
 )
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
+from typed_settings.loaders import Loader
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.datetime import (
@@ -29,9 +32,30 @@ from utilities.datetime import (
     serialize_datetime,
     serialize_time,
 )
+from utilities.git import InvalidRepoError, get_repo_root
 from utilities.pathlib import PathLike
 
+_CWD = Path.cwd()
 _T = TypeVar("_T")
+
+
+@beartype
+def get_repo_root_config(
+    *,
+    cwd: PathLike = _CWD,
+    filename: str = "config.toml",
+) -> Optional[Path]:
+    """Get the config under the repo root, if it exists."""
+    try:
+        root = get_repo_root(cwd=cwd)
+    except InvalidRepoError:
+        return None
+    if (path := root.joinpath(filename)).exists():
+        return path
+    return None
+
+
+_CONFIG_FILES = [p for p in [get_repo_root_config()] if p is not None]
 
 
 @beartype
@@ -40,10 +64,10 @@ def load_settings(
     /,
     *,
     appname: str = "appname",
-    config_files: Iterable[PathLike] = (),
+    config_files: Iterable[PathLike] = _CONFIG_FILES,
 ) -> _T:
     """Load a settings object with the extended converter."""
-    loaders = default_loaders(appname, config_files=config_files)
+    loaders = _get_loaders(appname=appname, config_files=config_files)
     converter = _make_converter()
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
@@ -54,11 +78,11 @@ def click_options(
     /,
     *,
     appname: str = "appname",
-    config_files: Iterable[PathLike] = (),
+    config_files: Iterable[PathLike] = _CONFIG_FILES,
     argname: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
-    loaders = default_loaders(appname, config_files=config_files)
+    loaders = _get_loaders(appname=appname, config_files=config_files)
     converter = _make_converter()
     type_args_maker = TypeArgsMaker(cast(TypeHandler, _make_click_handler()))
     return _click_options(
@@ -68,6 +92,22 @@ def click_options(
         type_args_maker=type_args_maker,
         argname=argname,
     )
+
+
+def _get_loaders(
+    *,
+    appname: str = "appname",
+    config_files: Iterable[PathLike] = _CONFIG_FILES,
+) -> list[Loader]:
+    # cannot @beartype as Loader is a protocol
+    if search("_", appname):
+        msg = f"{appname=}"
+        raise AppNameContainsUnderscoreError(msg)
+    return default_loaders(appname, config_files=config_files)
+
+
+class AppNameContainsUnderscoreError(ValueError):
+    """Raised when the appname contains a space."""
 
 
 @beartype
