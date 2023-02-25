@@ -14,6 +14,7 @@ from typing import (
     overload,
 )
 
+import luigi
 from beartype import beartype
 from luigi import Parameter, Target, Task
 from luigi import build as _build
@@ -74,6 +75,22 @@ class EnumParameter(Parameter, Generic[_E]):
     @beartype
     def serialize(self, member: _E, /) -> str:  # noqa: D102
         return member.name
+
+
+class DateParameter(luigi.DateParameter):
+    """A parameter which takes the value of a `dt.date`."""
+
+    @beartype
+    def normalize(self, date: Union[dt.date, str], /) -> dt.date:  # noqa: D102
+        return ensure_date(date)
+
+    @beartype
+    def parse(self, date: str, /) -> dt.date:  # noqa: D102
+        return parse_date(date)
+
+    @beartype
+    def serialize(self, date: dt.date, /) -> str:  # noqa: D102
+        return serialize_date(date)
 
 
 class TimeParameter(Parameter, Generic[_E]):
