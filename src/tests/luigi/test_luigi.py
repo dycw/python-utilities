@@ -19,6 +19,7 @@ from luigi.notifications import smtp
 from utilities.datetime import serialize_date, serialize_time
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
+    DateParameter,
     EnumParameter,
     PathTarget,
     TimeParameter,
@@ -54,6 +55,15 @@ class TestClone:
         result = clone(a, B)
         expected = B(truth)
         assert result is expected
+
+
+class TestDateParameter:
+    @given(data=data(), date=dates())
+    def test_main(self, data: DataObject, date: dt.date) -> None:
+        param = DateParameter()
+        input_ = data.draw(sampled_from([date, serialize_date(date)]))
+        norm = param.normalize(input_)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestEnumParameter:
