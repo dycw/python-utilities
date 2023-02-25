@@ -79,12 +79,48 @@ class TestCheckSelectForDuplicates:
             _check_select_for_duplicates(sel)
 
 
-class TestCheckSeriesAgainstColumnTable:
-    def test_error(self) -> None:
-        series = Series([], dtype=object)
-        column = Column("id", Integer)
+class TestCheckSeriesAgainstTableColumn:
+    @mark.parametrize(
+        ("dtype", "column_type"),
+        [
+            param(bool, Boolean),
+            param(boolean, Boolean),
+            param(bool, Integer),
+            param(boolean, Integer),
+            param(float, Float),
+            param(datetime64ns, Date),
+            param(datetime64nsutc, DateTime),
+            param(int, Integer),
+            param(Int64, Integer),
+            param(string, String),
+        ],
+    )
+    def test_success(self, dtype: Any, column_type: Any) -> None:
+        series = Series([], dtype=dtype)
+        column = Column("id", column_type)
+        _check_series_against_table_column(series, column)
+
+    @mark.parametrize(
+        ("dtype", "column_type"),
+        [
+            param(object, Integer),
+            param(datetime64ns, DateTime),
+        ],
+    )
+    def test_error(self, dtype: Any, column_type: Any) -> None:
+        series = Series([], dtype=dtype)
+        column = Column("id", column_type)
         with raises(SeriesAgainstTableColumnError):
             _check_series_against_table_column(series, column)
+
+    def test_allow_naive_datetimes(self) -> None:
+        series = Series([], dtype=datetime64ns)
+        column = Column("id", DateTime)
+        _check_series_against_table_column(
+            series,
+            column,
+            allow_naive_datetimes=True,
+        )
 
 
 class TestDataFrameColumnsToSnake:
