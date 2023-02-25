@@ -11,6 +11,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities`
 - `pip install dycw-utilities[airium]`
 - `pip install dycw-utilities[atomicwrites]`
+- `pip install dycw-utilities[bidict]`
 - `pip install dycw-utilities[attrs]`
 - `pip install dycw-utilities[click]`
 - `pip install dycw-utilities[fastapi]`

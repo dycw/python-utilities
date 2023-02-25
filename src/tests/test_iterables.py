@@ -13,7 +13,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.iterables import (
-    DuplicatedError,
+    IterableContainsDuplicatesError,
     check_duplicates,
     is_iterable_not_str,
 )
@@ -28,10 +28,7 @@ class TestCheckDuplicates:
     def test_error(self, data: DataObject, x: list[int]) -> None:
         x_i = data.draw(sampled_from(x))
         y = chain(x, [x_i])
-        with raises(
-            DuplicatedError,
-            match=r"Iterable contains duplicates: {.+}",
-        ):
+        with raises(IterableContainsDuplicatesError):
             check_duplicates(y)
 
 

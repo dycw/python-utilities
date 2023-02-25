@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
-from operator import ge, le
+from operator import ge, itemgetter, le
 from typing import Any, Literal, NoReturn, Optional, Union, cast
 
 from beartype import beartype
@@ -46,7 +46,9 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.errors import redirect_error
 from utilities.inflection import snake_case
+from utilities.inflection.bidict import snake_case_mappings
 from utilities.more_itertools import one
+from utilities.text import ensure_str
 from utilities.typing import never
 
 
@@ -59,6 +61,7 @@ def check_table_against_reflection(
     schema: Optional[str] = None,
     snake_table: bool = False,
     snake_columns: bool = False,
+    allow_permutations_columns: bool = False,
     primary_key: bool = True,
 ) -> None:
     """Check that a table equals its reflection."""
@@ -67,6 +70,7 @@ def check_table_against_reflection(
         reflected,
         table_or_model,
         snake_table=snake_table,
+        allow_permutations_columns=allow_permutations_columns,
         snake_columns=snake_columns,
         primary_key=primary_key,
     )
@@ -95,6 +99,7 @@ def check_tables_equal(
     *,
     snake_table: bool = False,
     snake_columns: bool = False,
+    allow_permutations_columns: bool = False,
     primary_key: bool = True,
 ) -> None:
     """Check that a pair of tables are equal."""
@@ -104,6 +109,7 @@ def check_tables_equal(
         x_t.columns,
         y_t.columns,
         snake=snake_columns,
+        allow_permutations=allow_permutations_columns,
         primary_key=primary_key,
     )
 
@@ -140,18 +146,53 @@ def _check_column_collections_equal(
     /,
     *,
     snake: bool = False,
+    allow_permutations: bool = False,
     primary_key: bool = True,
 ) -> None:
     """Check that a pair of column collections are equal."""
-    msg = f"{x=}, {y=}"
-    if len(x) != len(y):
+    cols_x, cols_y = (list(cast(Iterable[Column[Any]], i)) for i in [x, y])
+    name_to_col_x, name_to_col_y = (
+        {ensure_str(col.name): col for col in i} for i in [cols_x, cols_y]
+    )
+    if len(name_to_col_x) != len(name_to_col_y):
+        msg = f"{x=}, {y=}"
         raise UnequalNumberOfColumnsError(msg)
-    for x_i, y_i in zip(x, y):
+    if snake:
+        snake_to_name_x, snake_to_name_y = (
+            snake_case_mappings(i).inv for i in [name_to_col_x, name_to_col_y]
+        )
+        key_to_col_x, key_to_col_y = (
+            {key: name_to_col[snake_to_name[key]] for key in snake_to_name}
+            for name_to_col, snake_to_name in [
+                (name_to_col_x, snake_to_name_x),
+                (name_to_col_y, snake_to_name_y),
+            ]
+        )
+    else:
+        key_to_col_x, key_to_col_y = name_to_col_x, name_to_col_y
+    if allow_permutations:
+        cols_to_check_x, cols_to_check_y = (
+            map(itemgetter(1), sorted(key_to_col.items(), key=itemgetter(0)))
+            for key_to_col in [key_to_col_x, key_to_col_y]
+        )
+    else:
+        cols_to_check_x, cols_to_check_y = (
+            i.values() for i in [key_to_col_x, key_to_col_y]
+        )
+    diff = set(key_to_col_x).symmetric_difference(set(key_to_col_y))
+    if len(diff) >= 1:
+        msg = f"{x=}, {y=}"
+        raise UnequalSetOfColumnsError(msg)
+    for x_i, y_i in zip(cols_to_check_x, cols_to_check_y):
         _check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
 
 
 class UnequalNumberOfColumnsError(ValueError):
     """Raised when two column collections' lengths differ."""
+
+
+class UnequalSetOfColumnsError(ValueError):
+    """Raised when two column collections' set of columns differ."""
 
 
 @beartype

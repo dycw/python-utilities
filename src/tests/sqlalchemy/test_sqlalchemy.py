@@ -102,6 +102,7 @@ from utilities.sqlalchemy import (
     UnequalNumberOfColumnsError,
     UnequalNumericScaleError,
     UnequalPrimaryKeyStatusError,
+    UnequalSetOfColumnsError,
     UnequalStringCollationError,
     UnequalStringLengthError,
     UnequalTableOrColumnNamesError,
@@ -170,11 +171,59 @@ class TestCheckColumnsEqual:
 
 
 class TestCheckColumnCollectionsEqual:
-    def test_equal(self) -> None:
+    def test_success(self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         _check_column_collections_equal(x.columns, x.columns)
 
-    def test_length(self) -> None:
+    def test_snake(self) -> None:
+        x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
+        y = Table("y", MetaData(), Column("Id", Integer, primary_key=True))
+        _check_column_collections_equal(
+            x.columns,
+            y.columns,
+            snake=True,
+        )
+
+    def test_allow_permutations(self) -> None:
+        x = Table(
+            "x",
+            MetaData(),
+            Column("id1", Integer, primary_key=True),
+            Column("id2", Integer, primary_key=True),
+        )
+        y = Table(
+            "y",
+            MetaData(),
+            Column("id2", Integer, primary_key=True),
+            Column("id1", Integer, primary_key=True),
+        )
+        _check_column_collections_equal(
+            x.columns,
+            y.columns,
+            allow_permutations=True,
+        )
+
+    def test_snake_and_allow_permutations(self) -> None:
+        x = Table(
+            "x",
+            MetaData(),
+            Column("id1", Integer, primary_key=True),
+            Column("id2", Integer, primary_key=True),
+        )
+        y = Table(
+            "y",
+            MetaData(),
+            Column("Id2", Integer, primary_key=True),
+            Column("Id1", Integer, primary_key=True),
+        )
+        _check_column_collections_equal(
+            x.columns,
+            y.columns,
+            snake=True,
+            allow_permutations=True,
+        )
+
+    def test_unequal_number_of_columns(self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         y = Table(
             "y",
@@ -185,11 +234,22 @@ class TestCheckColumnCollectionsEqual:
         with raises(UnequalNumberOfColumnsError):
             _check_column_collections_equal(x.columns, y.columns)
 
-    def test_column_types(self) -> None:
+    def test_unequal_set_of_columns(self) -> None:
+        x = Table("x", MetaData(), Column("id1", Integer, primary_key=True))
+        y = Table("y", MetaData(), Column("id2", Integer, primary_key=True))
+        with raises(UnequalSetOfColumnsError):
+            _check_column_collections_equal(x.columns, y.columns)
+
+    @mark.parametrize("allow_permutation", [param(True), param(False)])
+    def test_unequal_column_types(self, allow_permutation: bool) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("y", MetaData(), Column("id", String, primary_key=True))
         with raises(UnequalColumnTypesError):
-            _check_column_collections_equal(x.columns, y.columns)
+            _check_column_collections_equal(
+                x.columns,
+                y.columns,
+                allow_permutations=allow_permutation,
+            )
 
 
 class TestCheckColumnTypesEqual:

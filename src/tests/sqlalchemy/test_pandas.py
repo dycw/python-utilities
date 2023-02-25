@@ -50,7 +50,6 @@ from utilities.sqlalchemy.pandas import (
     SeriesAgainstTableColumnError,
     SeriesNameNotInTableError,
     SeriesNameSnakeCaseNotInTableError,
-    SnakeCaseDuplicateColumnsError,
     _check_select_for_duplicates,
     _check_series_against_table_column,
     _dataframe_columns_to_snake,
@@ -129,11 +128,6 @@ class TestDataFrameColumnsToSnake:
         df = DataFrame(columns=[col_name])
         snake = _dataframe_columns_to_snake(df)
         assert snake.columns.tolist() == [snake_case(col_name)]
-
-    def test_error(self) -> None:
-        df = DataFrame(columns=["id", "Id"])
-        with raises(SnakeCaseDuplicateColumnsError):
-            _ = _dataframe_columns_to_snake(df)
 
 
 class TestInsertDataFrame:

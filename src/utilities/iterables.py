@@ -8,12 +8,13 @@ from beartype import beartype
 @beartype
 def check_duplicates(x: Iterable[Hashable], /) -> None:
     """Check if an iterable contains any duplicates."""
-    if dup := {k: v for k, v in Counter(x).items() if v > 1}:
-        msg = f"Iterable contains duplicates: {dup}"
-        raise DuplicatedError(msg)
+    dup = {k: v for k, v in Counter(x).items() if v > 1}
+    if len(dup) >= 1:
+        msg = f"{dup=}"
+        raise IterableContainsDuplicatesError(msg)
 
 
-class DuplicatedError(ValueError):
+class IterableContainsDuplicatesError(ValueError):
     """Raised when an iterable contains duplicates."""
 
 
