@@ -1,9 +1,11 @@
-from os import environ
+from pathlib import Path
+from time import sleep
 from typing import Any
 
-from pytest import mark, param
+from pytest import MonkeyPatch, mark, param
 
 from utilities.pytest import is_pytest
+from utilities.text import strip_and_dedent
 
 
 class TestPytestOptions:
@@ -174,6 +176,29 @@ class TestIsPytest:
     def test_function(self) -> None:
         assert is_pytest()
 
-    def test_disable(self) -> None:
-        del environ["PYTEST_CURRENT_TEST"]
+    def test_disable(self, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.delenv("PYTEST_CURRENT_TEST")
         assert not is_pytest()
+
+
+class TestThrottle:
+    def test_main(self, testdir: Any, tmp_path: Path) -> None:
+        root_str = tmp_path.as_posix()
+        contents = f"""
+            from utilities.pytest import throttle
+
+            @throttle(root={root_str!r}, duration=0.5)
+            def test_main():
+                assert True
+            """
+        testdir.makepyfile(strip_and_dedent(contents))
+
+        result = testdir.runpytest()
+        result.assert_outcomes(passed=1)
+
+        result = testdir.runpytest()
+        result.assert_outcomes(skipped=1)
+
+        sleep(0.5)
+        result = testdir.runpytest()
+        result.assert_outcomes(passed=1)

@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from beartype import beartype
 from pyinstrument.profiler import Profiler
 
+from utilities.atomicwrites import writer
 from utilities.pathlib import PathLike
 
 _CWD = Path.cwd()
@@ -20,5 +21,5 @@ def profile(*, path: PathLike = _CWD) -> Iterator[None]:
         yield
     now = dt.datetime.now(tz=ZoneInfo("UTC"))
     filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
-    with filename.open(mode="w") as fh:
+    with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
