@@ -11,7 +11,11 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement, Select
 
 from utilities.inflection import snake_case
-from utilities.iterables import DuplicatedError, check_duplicates
+from utilities.inflection.bidict import snake_case_mappings
+from utilities.iterables import (
+    IterableContainsDuplicatesError,
+    check_duplicates,
+)
 from utilities.more_itertools import EmptyIterableError, one
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import (
@@ -290,7 +294,7 @@ def _check_select_for_duplicates(sel: Select, /) -> None:
     col_names = [col.name for col in sel.selected_columns.values()]
     try:
         check_duplicates(col_names)
-    except DuplicatedError:
+    except IterableContainsDuplicatesError:
         msg = f"{col_names=}"
         raise DuplicateColumnError(msg) from None
 
@@ -336,16 +340,8 @@ def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
 def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
     """Convert the columns of a DataFrame to snake case."""
     columns = [c for c in df.columns if isinstance(c, str)]
-    mapping = {col: snake_case(col) for col in columns}
-    try:
-        check_duplicates(mapping.values())
-    except DuplicatedError:
-        raise SnakeCaseDuplicateColumnsError(str(df)) from None
+    mapping = snake_case_mappings(columns)
     return df.rename(columns=mapping)
-
-
-class SnakeCaseDuplicateColumnsError(ValueError):
-    """Raised when a DataFrame contains duplicated snake-case columns."""
 
 
 @beartype
