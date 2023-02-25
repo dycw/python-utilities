@@ -41,9 +41,15 @@ def insert_dataframe(
     /,
     *,
     snake: bool = False,
+    allow_naive_datetimes: bool = False,
 ) -> None:
     """Insert a DataFrame into a database."""
-    return insert_items([(df, table_or_model)], engine_or_conn, snake=snake)
+    return insert_items(
+        [(df, table_or_model)],
+        engine_or_conn,
+        snake=snake,
+        allow_naive_datetimes=allow_naive_datetimes,
+    )
 
 
 @beartype
@@ -53,6 +59,7 @@ def insert_items(
     /,
     *,
     snake: bool = False,
+    allow_naive_datetimes: bool = False,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -74,6 +81,7 @@ def insert_items(
                             first,
                             table_or_model,
                             snake=snake,
+                            allow_naive_datetimes=allow_naive_datetimes,
                         ),
                     )
                 else:
@@ -97,10 +105,16 @@ def _yield_dataframe_rows_as_dicts(
     /,
     *,
     snake: bool = False,
+    allow_naive_datetimes: bool = False,
 ) -> Iterator[dict[str, Any]]:
     """Yield the rows of a DataFrame as dicts, ready for insertion."""
     parsed = [
-        _parse_series_against_table(sr, table_or_model, snake=snake)
+        _parse_series_against_table(
+            sr,
+            table_or_model,
+            snake=snake,
+            allow_naive_datetimes=allow_naive_datetimes,
+        )
         for _, sr in df.items()
     ]
     keys = [key for key, _ in parsed]
@@ -115,6 +129,7 @@ def _parse_series_against_table(
     /,
     *,
     snake: bool = False,
+    allow_naive_datetimes: bool = False,
 ) -> tuple[str, Iterator[Any]]:
     """Parse a series against a table.
 
@@ -140,7 +155,11 @@ def _parse_series_against_table(
     except EmptyIterableError:
         msg = f"Unable to map {series_name!r} to {table_or_model}"
         raise error(msg) from None
-    _check_series_against_table_column(series, column)
+    _check_series_against_table_column(
+        series,
+        column,
+        allow_naive_datetimes=allow_naive_datetimes,
+    )
     return column.name, _yield_insertion_elements(series)
 
 
@@ -157,6 +176,8 @@ def _check_series_against_table_column(
     series: Series,
     table_column: Column[Any],
     /,
+    *,
+    allow_naive_datetimes: bool = False,
 ) -> None:
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
@@ -173,6 +194,11 @@ def _check_series_against_table_column(
         )
         or (
             has_dtype(series, datetime64nsutc)
+            and issubclass(py_type, dt.datetime)
+        )
+        or (
+            allow_naive_datetimes
+            and has_dtype(series, datetime64ns)
             and issubclass(py_type, dt.datetime)
         )
         or (has_dtype(series, (int, Int64)) and (py_type, int))
