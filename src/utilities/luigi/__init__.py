@@ -1,5 +1,6 @@
 import datetime as dt
 from collections.abc import Iterable, Iterator
+from contextlib import suppress
 from enum import Enum
 from pathlib import Path
 from typing import (
@@ -21,7 +22,16 @@ from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
 from luigi.task import Register, flatten
 
-from utilities.datetime import parse_time, serialize_time
+from utilities.datetime import (
+    ensure_date,
+    ensure_time,
+    parse_date,
+    parse_time,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_time,
+)
 from utilities.enum import ensure_enum, parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
@@ -70,8 +80,8 @@ class TimeParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of a `dt.time`."""
 
     @beartype
-    def normalize(self, time: dt.time, /) -> dt.time:  # noqa: D102
-        return time
+    def normalize(self, time: Union[dt.time, str], /) -> dt.time:  # noqa: D102
+        return ensure_time(time)
 
     @beartype
     def parse(self, time: str, /) -> dt.time:  # noqa: D102
@@ -80,6 +90,39 @@ class TimeParameter(Parameter, Generic[_E]):
     @beartype
     def serialize(self, time: dt.time, /) -> str:  # noqa: D102
         return serialize_time(time)
+
+
+class WeekdayParameter(Parameter):
+    """A parameter which takes the valeu of the previous/next weekday."""
+
+    @beartype
+    def __init__(
+        self,
+        *args: Any,
+        rounding: Literal["prev", "next"] = "prev",
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if rounding == "prev":
+            self._rounder = round_to_prev_weekday
+        else:
+            self._rounder = round_to_next_weekday
+
+    @beartype
+    def normalize(self, date: Union[dt.date, str], /) -> dt.date:  # noqa: D102
+        with suppress(AttributeError, ModuleNotFoundError):
+            from utilities.pandas import timestamp_to_date
+
+            date = timestamp_to_date(date)
+        return self._rounder(ensure_date(date))
+
+    @beartype
+    def parse(self, date: str, /) -> dt.date:  # noqa: D102
+        return parse_date(date)
+
+    @beartype
+    def serialize(self, date: dt.date, /) -> str:  # noqa: D102
+        return serialize_date(date)
 
 
 class PathTarget(Target):

@@ -2,24 +2,27 @@ import datetime as dt
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
     booleans,
     data,
+    dates,
     sampled_from,
     times,
 )
 from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 
+from utilities.datetime import serialize_date, serialize_time
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
     EnumParameter,
     PathTarget,
     TimeParameter,
+    WeekdayParameter,
     _yield_task_classes,
     build,
     clone,
@@ -152,8 +155,23 @@ class TestPathTarget:
 
 
 class TestTimeParameter:
-    @given(time=times())
-    def test_main(self, time: dt.time) -> None:
+    @given(data=data(), time=times())
+    def test_main(self, data: DataObject, time: dt.time) -> None:
         param = TimeParameter()
-        norm = param.normalize(time)
+        input_ = data.draw(sampled_from([time, serialize_time(time)]))
+        norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == time
+
+
+class TestWeekdayParameter:
+    @given(data=data(), rounding=sampled_from(["prev", "next"]), date=dates())
+    def test_main(
+        self,
+        data: DataObject,
+        rounding: Literal["prev", "next"],
+        date: dt.date,
+    ) -> None:
+        param = WeekdayParameter(rounding=rounding)
+        input_ = data.draw(sampled_from([date, serialize_date(date)]))
+        norm = param.normalize(input_)
+        assert param.parse(param.serialize(norm)) == norm
