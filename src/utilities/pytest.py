@@ -1,9 +1,17 @@
-from collections.abc import Iterable
+import datetime as dt
+from collections.abc import Callable, Iterable
 from os import environ
+from pathlib import Path
+from typing import Any
 
 from beartype import beartype
+from pytest import skip
 
+from utilities.atomicwrites import writer
 from utilities.beartype import IterableStrs
+from utilities.datetime import UTC
+from utilities.pathlib import PathLike
+from utilities.tempfile import TEMP_DIR
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -78,3 +86,36 @@ def add_pytest_configure(
 def is_pytest() -> bool:
     """Check if pytest is currently running."""
     return "PYTEST_CURRENT_TEST" in environ
+
+
+@beartype
+def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
+    """Throttle a test."""
+
+    @beartype
+    def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
+        """Decorator to throttle a test function/method."""
+
+        @beartype
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            """The throttled test function/method."""
+            test = environ["PYTEST_CURRENT_TEST"]
+            path = Path(root, "pytest", test.replace("/", ":"))
+            if path.exists():
+                with path.open(mode="r") as fh:
+                    contents = fh.read()
+                prev = float(contents)
+            else:
+                prev = None
+            now = dt.datetime.now(tz=UTC).timestamp()
+            if (prev is not None) and ((now - prev) < duration):
+                skip(reason=f"{test} throttled")
+            with writer(path, overwrite=True) as temp, temp.open(
+                mode="w",
+            ) as fh:
+                _ = fh.write(str(now))
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
