@@ -1,5 +1,5 @@
 from pathlib import Path
-from re import search
+from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 
 from beartype import beartype
@@ -46,7 +46,13 @@ def get_repo_root(*, cwd: PathLike = _CWD) -> Path:
             text=True,
         )
     except CalledProcessError as error:
-        if search("fatal: not a git repository", error.stderr):
+        # newer versions of git report "Not a git repository", whilst older
+        # versions report "not a git repository"
+        if search(
+            "fatal: not a git repository",
+            error.stderr,
+            flags=IGNORECASE,
+        ):
             raise InvalidRepoError(cwd) from None
         raise  # pragma: no cover
     else:
