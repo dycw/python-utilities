@@ -49,7 +49,7 @@ click==8.1.3
     #   userpath
 colorlog==6.7.0
     # via nox
-coverage[toml]==7.1.0
+coverage[toml]==7.2.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -204,6 +204,8 @@ pyodbc==4.0.35
     # via dycw-utilities (pyproject.toml)
 pyperclip==1.8.2
     # via hatch
+pypi==2.1
+    # via dycw-utilities (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
 pytest==7.2.1
@@ -211,10 +213,13 @@ pytest==7.2.1
     #   dycw-utilities (pyproject.toml)
     #   pytest-check
     #   pytest-cov
+    #   pytest-instafail
     #   pytest-xdist
 pytest-check==2.1.4
     # via dycw-utilities (pyproject.toml)
 pytest-cov==4.0.0
+    # via dycw-utilities (pyproject.toml)
+pytest-instafail==0.4.2
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.2.0
     # via dycw-utilities (pyproject.toml)
@@ -231,7 +236,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.1
     # via hatch
-ruff==0.0.251
+ruff==0.0.252
     # via dycw-utilities (pyproject.toml)
 secretstorage==3.3.3
     # via keyring

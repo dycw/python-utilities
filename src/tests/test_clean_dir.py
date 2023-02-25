@@ -11,15 +11,15 @@ from utilities.clean_dir.classes import Config
 from utilities.datetime import UTC
 from utilities.hypothesis import temp_paths
 
-_TIMEDELTA = dt.timedelta(days=Config().days + 1)
-
 
 class TestCleanDir:
+    timedelta = dt.timedelta(days=Config().days + 1)
+
     def test_file(self, tmp_path: Path) -> None:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix()]
-        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -45,7 +45,7 @@ class TestCleanDir:
         tmp_path.joinpath("second").symlink_to(file)
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix()]
-        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -54,7 +54,7 @@ class TestCleanDir:
         temp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", temp_path.as_posix(), "--chunk-size", str(chunk_size)]
-        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -62,6 +62,6 @@ class TestCleanDir:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", tmp_path.as_posix(), "--dry-run"]
-        with freeze_time(dt.datetime.now(tz=UTC).date() + _TIMEDELTA):
+        with freeze_time(dt.datetime.now(tz=UTC).date() + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0

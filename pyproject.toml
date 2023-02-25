@@ -75,8 +75,10 @@ pandas = ["pandas >= 1.5.3"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.4"]
 pyinstrument = ["pyinstrument >= 4.4.0"]
+pypi = ["loguru >= 0.6.0", "pypi >= 0.4.8", "typed-settings[click] >= 2.0.2"]
 pytest = ["pytest >= 7.2.1"]
 pytest-check = ["pytest-check >= 2.1.4"]
+scripts = ["loguru >= 0.6.0", "typed-settings[click] >= 2.0.2"]
 sqlalchemy = [
   "inflection >= 0.5.1",
   "more-itertools >= 9.0.0",
@@ -106,6 +108,7 @@ dev = [
   "pqdm",
   "psutil",
   "pyinstrument",
+  "pypi",
   "pytest",
   "pytest-check",
   "sqlalchemy",
@@ -126,13 +129,15 @@ dev = [
   "psycopg2",
   "pyodbc",
   "pytest-cov",
+  "pytest-instafail",
   "pytest-xdist",
   "ruff",
 ]
 
 [project.scripts]
 clean-dir = "utilities.clean_dir:main"
-rotate-logs = "utilities.rotate_logs:main"
+monitor-memory = "utilities.monitor_memory:main"
+start-pypi-server = "utilities.pypi_server:main"
 
 #### pyright ##################################################################
 [tool.pyright]
