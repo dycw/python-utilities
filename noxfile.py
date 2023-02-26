@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from beartype import beartype
-from nox import Session, session
+from nox import Session
+from nox import session
 
 
 @session

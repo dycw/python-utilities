@@ -1,22 +1,22 @@
 from typing import Any
 
 from beartype.door import die_if_unbearable
-from pandas import Index, Series
-from pytest import mark, param
+from pandas import Index
+from pandas import Series
+from pytest import mark
+from pytest import param
 
 from utilities.numpy import datetime64ns
-from utilities.pandas.typing import (
-    IndexB,
-    IndexDns,
-    IndexF,
-    IndexI,
-    IndexO,
-    SeriesB,
-    SeriesDns,
-    SeriesF,
-    SeriesI,
-    SeriesO,
-)
+from utilities.pandas.typing import IndexB
+from utilities.pandas.typing import IndexDns
+from utilities.pandas.typing import IndexF
+from utilities.pandas.typing import IndexI
+from utilities.pandas.typing import IndexO
+from utilities.pandas.typing import SeriesB
+from utilities.pandas.typing import SeriesDns
+from utilities.pandas.typing import SeriesF
+from utilities.pandas.typing import SeriesI
+from utilities.pandas.typing import SeriesO
 
 
 class TestHints:

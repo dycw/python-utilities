@@ -1,7 +1,12 @@
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass
-from io import StringIO, TextIOWrapper
-from typing import Any, Optional, Union, cast
+from io import StringIO
+from io import TextIOWrapper
+from typing import Any
+from typing import Optional
+from typing import Union
+from typing import cast
 
 from beartype import beartype
 from tqdm import tqdm as _tqdm

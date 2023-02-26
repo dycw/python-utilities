@@ -3,16 +3,25 @@ from typing import Optional
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import DataObject, booleans, data, floats, none
-from numpy import iinfo, inf, int64, isfinite, isinf, isnan, ravel, rint
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import floats
+from hypothesis.strategies import none
+from numpy import iinfo
+from numpy import inf
+from numpy import int64
+from numpy import isfinite
+from numpy import isinf
+from numpy import isnan
+from numpy import ravel
+from numpy import rint
 
 from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis.numpy import (
-    bool_arrays,
-    float_arrays,
-    int64s,
-    int_arrays,
-)
+from utilities.hypothesis.numpy import bool_arrays
+from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import int64s
+from utilities.hypothesis.numpy import int_arrays
 from utilities.hypothesis.typing import Shape
 
 
@@ -67,13 +76,9 @@ class TestFloatArrays:
         assert array.dtype == float
         assert array.shape == shape
         if min_value is not None:
-            assert (
-                (isfinite(array) & (array >= min_value)) | ~isfinite(array)
-            ).all()
+            assert ((isfinite(array) & (array >= min_value)) | ~isfinite(array)).all()
         if max_value is not None:
-            assert (
-                (isfinite(array) & (array <= max_value)) | ~isfinite(array)
-            ).all()
+            assert ((isfinite(array) & (array <= max_value)) | ~isfinite(array)).all()
         if not allow_nan:
             assert (~isnan(array)).all()
         if not allow_inf:

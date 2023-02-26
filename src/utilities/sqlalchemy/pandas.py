@@ -1,39 +1,44 @@
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from decimal import Decimal
-from typing import Any, Optional, Union, overload
+from typing import Any
+from typing import Optional
+from typing import Union
+from typing import overload
 
 from beartype import beartype
-from pandas import DataFrame, Series
-from sqlalchemy import Column, insert
-from sqlalchemy.engine import Connection, Engine, Row
+from pandas import DataFrame
+from pandas import Series
+from sqlalchemy import Column
+from sqlalchemy import insert
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Row
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnElement, Select
+from sqlalchemy.sql import ColumnElement
+from sqlalchemy.sql import Select
 
 from utilities.inflection import snake_case
 from utilities.inflection.bidict import snake_case_mappings
-from utilities.iterables import (
-    IterableContainsDuplicatesError,
-    check_duplicates,
-)
-from utilities.more_itertools import EmptyIterableError, one
-from utilities.numpy import datetime64ns, has_dtype
-from utilities.pandas import (
-    Int64,
-    boolean,
-    datetime64nsutc,
-    string,
-    timestamp_to_date,
-    timestamp_to_datetime,
-)
-from utilities.sqlalchemy import (
-    get_column_names,
-    get_columns,
-    get_dialect,
-    get_table,
-    model_to_dict,
-    yield_connection,
-)
+from utilities.iterables import IterableContainsDuplicatesError
+from utilities.iterables import check_duplicates
+from utilities.more_itertools import EmptyIterableError
+from utilities.more_itertools import one
+from utilities.numpy import datetime64ns
+from utilities.numpy import has_dtype
+from utilities.pandas import Int64
+from utilities.pandas import boolean
+from utilities.pandas import datetime64nsutc
+from utilities.pandas import string
+from utilities.pandas import timestamp_to_date
+from utilities.pandas import timestamp_to_datetime
+from utilities.sqlalchemy import get_column_names
+from utilities.sqlalchemy import get_columns
+from utilities.sqlalchemy import get_dialect
+from utilities.sqlalchemy import get_table
+from utilities.sqlalchemy import model_to_dict
+from utilities.sqlalchemy import yield_connection
 from utilities.text import ensure_str
 
 
@@ -186,20 +191,14 @@ def _check_series_against_table_column(
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
     if not (
-        (
-            has_dtype(series, (bool, boolean))
-            and issubclass(py_type, (bool, int))
-        )
+        (has_dtype(series, (bool, boolean)) and issubclass(py_type, (bool, int)))
         or (has_dtype(series, float) and issubclass(py_type, float))
         or (
             has_dtype(series, datetime64ns)
             and issubclass(py_type, dt.date)
             and not issubclass(py_type, dt.datetime)
         )
-        or (
-            has_dtype(series, datetime64nsutc)
-            and issubclass(py_type, dt.datetime)
-        )
+        or (has_dtype(series, datetime64nsutc) and issubclass(py_type, dt.datetime))
         or (
             allow_naive_datetimes
             and has_dtype(series, datetime64ns)
@@ -309,8 +308,7 @@ def _rows_to_dataframe(
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
     dtypes = {
-        col.name: _table_column_to_dtype(col)
-        for col in sel.selected_columns.values()
+        col.name: _table_column_to_dtype(col) for col in sel.selected_columns.values()
     }
     df = DataFrame(rows, columns=list(dtypes)).astype(dtypes)
     if snake:
@@ -360,9 +358,7 @@ def _stream_dataframes(
             yield from _stream_dataframes(sel, conn, stream, snake=snake)
     else:
         for rows in (
-            engine_or_conn.execution_options(yield_per=stream)
-            .execute(sel)
-            .partitions()
+            engine_or_conn.execution_options(yield_per=stream).execute(sel).partitions()
         ):
             yield _rows_to_dataframe(sel, rows, snake=snake)
 

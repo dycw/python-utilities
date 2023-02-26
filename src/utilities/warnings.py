@@ -1,7 +1,11 @@
 from collections.abc import Iterator
-from contextlib import ExitStack, contextmanager
-from typing import Literal, Optional, Union
-from warnings import catch_warnings, filterwarnings
+from contextlib import ExitStack
+from contextlib import contextmanager
+from typing import Literal
+from typing import Optional
+from typing import Union
+from warnings import catch_warnings
+from warnings import filterwarnings
 
 from beartype import beartype
 

@@ -3,7 +3,9 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from utilities.monitor_memory import _get_memory_usage, _monitor_memory, main
+from utilities.monitor_memory import _get_memory_usage
+from utilities.monitor_memory import _monitor_memory
+from utilities.monitor_memory import main
 
 
 class TestMonitorMemory:

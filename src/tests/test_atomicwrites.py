@@ -2,7 +2,9 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Union
 
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
 from utilities.atomicwrites import writer
 from utilities.errors import DirectoryExistsError

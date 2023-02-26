@@ -1,9 +1,12 @@
-from operator import neg, pow
+from operator import neg
+from operator import pow
 from typing import Literal
 
-from pytest import mark, param
+from pytest import mark
+from pytest import param
 
-from utilities.pqdm import pmap, pstarmap
+from utilities.pqdm import pmap
+from utilities.pqdm import pstarmap
 
 
 class TestPMap:

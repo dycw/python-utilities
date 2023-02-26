@@ -1,45 +1,45 @@
 import datetime as dt
-from math import inf, isfinite, isinf, isnan
+from math import inf
+from math import isfinite
+from math import isinf
+from math import isnan
 from pathlib import Path
 from re import search
 from typing import Optional
 
-from hypothesis import assume, given
+from hypothesis import assume
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import (
-    DataObject,
-    DrawFn,
-    booleans,
-    composite,
-    data,
-    datetimes,
-    floats,
-    integers,
-    just,
-    none,
-    sets,
-)
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import DrawFn
+from hypothesis.strategies import booleans
+from hypothesis.strategies import composite
+from hypothesis.strategies import data
+from hypothesis.strategies import datetimes
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import just
+from hypothesis.strategies import none
+from hypothesis.strategies import sets
 from more_itertools import pairwise
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
 from utilities.datetime import UTC
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    datetimes_utc,
-    floats_extra,
-    lists_fixed_length,
-    setup_hypothesis_profiles,
-    slices,
-    temp_dirs,
-    temp_paths,
-    text_ascii,
-    text_clean,
-    text_printable,
-)
-from utilities.pandas import (
-    TIMESTAMP_MAX_AS_DATETIME,
-    TIMESTAMP_MIN_AS_DATETIME,
-)
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import datetimes_utc
+from utilities.hypothesis import floats_extra
+from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import setup_hypothesis_profiles
+from utilities.hypothesis import slices
+from utilities.hypothesis import temp_dirs
+from utilities.hypothesis import temp_paths
+from utilities.hypothesis import text_ascii
+from utilities.hypothesis import text_clean
+from utilities.hypothesis import text_printable
+from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
+from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 from utilities.tempfile import TemporaryDirectory
 
 
@@ -96,9 +96,7 @@ class TestDatetimesUTC:
         min_value: dt.datetime,
         max_value: dt.datetime,
     ) -> None:
-        min_value, max_value = (
-            v.replace(tzinfo=UTC) for v in [min_value, max_value]
-        )
+        min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
         _ = assume(min_value <= max_value)
         datetime = data.draw(
             datetimes_utc(min_value=min_value, max_value=max_value),

@@ -1,4 +1,5 @@
-from utilities.sys import PYTHON_AT_LEAST_3_11, VERSION_MAJOR_MINOR
+from utilities.sys import PYTHON_AT_LEAST_3_11
+from utilities.sys import VERSION_MAJOR_MINOR
 
 
 class TestPythonAtLeast311:

@@ -6,17 +6,21 @@ from csv import DictWriter
 from dataclasses import fields
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, cast
+from typing import Any
+from typing import Optional
+from typing import cast
 
 import attrs
 from beartype import beartype
 from click import command
 from loguru import logger
-from psutil import swap_memory, virtual_memory
+from psutil import swap_memory
+from psutil import virtual_memory
 
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
-from utilities.monitor_memory.classes import Config, Item
+from utilities.monitor_memory.classes import Config
+from utilities.monitor_memory.classes import Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
 

@@ -1,47 +1,58 @@
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from contextlib import contextmanager, suppress
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
+from collections.abc import Sequence
+from contextlib import contextmanager
+from contextlib import suppress
 from functools import reduce
 from math import isclose
-from operator import ge, itemgetter, le
-from typing import Any, Literal, NoReturn, Optional, Union, cast
+from operator import ge
+from operator import itemgetter
+from operator import le
+from typing import Any
+from typing import Literal
+from typing import NoReturn
+from typing import Optional
+from typing import Union
+from typing import cast
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    Float,
-    Interval,
-    LargeBinary,
-    MetaData,
-    Numeric,
-    Select,
-    String,
-    Table,
-    Unicode,
-    UnicodeText,
-    Uuid,
-    and_,
-    case,
-    quoted_name,
-    text,
-)
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Enum
+from sqlalchemy import Float
+from sqlalchemy import Interval
+from sqlalchemy import LargeBinary
+from sqlalchemy import MetaData
+from sqlalchemy import Numeric
+from sqlalchemy import Select
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import Unicode
+from sqlalchemy import UnicodeText
+from sqlalchemy import Uuid
+from sqlalchemy import and_
+from sqlalchemy import case
+from sqlalchemy import quoted_name
+from sqlalchemy import text
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL, Connection, Engine
-from sqlalchemy.exc import (
-    DatabaseError,
-    NoSuchTableError,
-    OperationalError,
-)
+from sqlalchemy.engine import URL
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import InstrumentedAttribute
-from sqlalchemy.pool import NullPool, Pool
+from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.errors import redirect_error
@@ -248,9 +259,7 @@ def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
             or (
                 (x_enum is not None)
                 and (y_enum is not None)
-                and not (
-                    issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum)
-                )
+                and not (issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum))
             )
         ):
             raise UnequalEnumColumnTypesError(msg)
@@ -411,9 +420,7 @@ def check_engine(
     """
     dialect = get_dialect(engine)
     if (  # pragma: no cover
-        (dialect == "mssql")
-        or (dialect == "mysql")
-        or (dialect == "postgresql")
+        (dialect == "mssql") or (dialect == "mysql") or (dialect == "postgresql")
     ):
         query = "select * from information_schema.tables"  # pragma: no cover
     elif dialect == "oracle":  # pragma: no cover
@@ -430,8 +437,7 @@ def check_engine(
     if num_tables is not None:
         n_rows = len(rows)
         if ((abs_tol is None) and (n_rows != num_tables)) or (
-            (abs_tol is not None)
-            and not isclose(n_rows, num_tables, abs_tol=abs_tol)
+            (abs_tol is not None) and not isclose(n_rows, num_tables, abs_tol=abs_tol)
         ):
             msg = f"{len(rows)=}, {num_tables=}"
             raise IncorrectNumberOfTablesError(msg)
@@ -475,9 +481,7 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
         )
         # try auto-label
         names = {
-            value
-            for col in [x, y]
-            if (value := getattr(col, "name", None)) is not None
+            value for col in [x, y] if (value := getattr(col, "name", None)) is not None
         }
         try:
             (name,) = names
@@ -613,9 +617,7 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
     @beartype
     def yield_items() -> Iterator[tuple[str, Any]]:
         for key in get_column_names(cls):
-            attr = one(
-                attr for attr in dir(cls) if is_attr(attr, key) is not None
-            )
+            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
             yield key, getattr(obj, attr)
 
     return dict(yield_items())

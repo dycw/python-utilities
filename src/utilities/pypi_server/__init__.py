@@ -1,6 +1,10 @@
 from pathlib import Path
-from re import MULTILINE, escape, search
-from subprocess import PIPE, CalledProcessError, check_output
+from re import MULTILINE
+from re import escape
+from re import search
+from subprocess import PIPE
+from subprocess import CalledProcessError
+from subprocess import check_output
 
 from attrs import asdict
 from beartype import beartype

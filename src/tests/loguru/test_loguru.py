@@ -3,18 +3,21 @@ from re import search
 from time import sleep
 from typing import Optional
 
-from hypothesis import given, settings
-from hypothesis.strategies import dictionaries, lists, none, sampled_from
+from hypothesis import given
+from hypothesis import settings
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import lists
+from hypothesis.strategies import none
+from hypothesis.strategies import sampled_from
 from loguru import logger
 
-from utilities.hypothesis import temp_paths, text_ascii
+from utilities.hypothesis import temp_paths
+from utilities.hypothesis import text_ascii
 from utilities.logging import LogLevel
-from utilities.loguru import (
-    _FILES_ENV_VAR,
-    _augment_levels,
-    _get_files_path,
-    setup_loguru,
-)
+from utilities.loguru import _FILES_ENV_VAR
+from utilities.loguru import _augment_levels
+from utilities.loguru import _get_files_path
+from utilities.loguru import setup_loguru
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 

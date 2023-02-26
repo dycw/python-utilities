@@ -1,8 +1,10 @@
 from typing import Any
 
 from numpy import array
-from pandas import DatetimeTZDtype, Series
-from pytest import mark, param
+from pandas import DatetimeTZDtype
+from pandas import Series
+from pytest import mark
+from pytest import param
 
 from utilities.numpy import has_dtype
 

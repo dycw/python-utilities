@@ -1,7 +1,13 @@
-from collections.abc import Iterable, Iterator, Mapping
-from contextlib import contextmanager, suppress
-from os import cpu_count, environ, getenv
-from typing import Optional, cast
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
+from contextlib import contextmanager
+from contextlib import suppress
+from os import cpu_count
+from os import environ
+from os import getenv
+from typing import Optional
+from typing import cast
 
 from beartype import beartype
 
@@ -29,9 +35,7 @@ def temp_environ(
     **env_kwargs: Optional[str],
 ) -> Iterator[None]:
     """Context manager with temporary environment variable set."""
-    all_env = (
-        cast(dict[str, Optional[str]], {}) if env is None else env
-    ) | env_kwargs
+    all_env = (cast(dict[str, Optional[str]], {}) if env is None else env) | env_kwargs
     prev = list(zip(all_env, map(getenv, all_env)))
     _apply_environment(all_env.items())
     try:

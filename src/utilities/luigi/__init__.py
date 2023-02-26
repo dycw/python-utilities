@@ -1,39 +1,40 @@
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from contextlib import suppress
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Generic,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any
+from typing import Generic
+from typing import Literal
+from typing import Optional
+from typing import TypeVar
+from typing import Union
+from typing import cast
+from typing import overload
 
 import luigi
 from beartype import beartype
-from luigi import Parameter, Target, Task
+from luigi import Parameter
+from luigi import Target
+from luigi import Task
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
-from luigi.task import Register, flatten
+from luigi.task import Register
+from luigi.task import flatten
 
-from utilities.datetime import (
-    ensure_date,
-    ensure_time,
-    parse_date,
-    parse_time,
-    round_to_next_weekday,
-    round_to_prev_weekday,
-    serialize_date,
-    serialize_time,
-)
-from utilities.enum import ensure_enum, parse_enum
+from utilities.datetime import ensure_date
+from utilities.datetime import ensure_time
+from utilities.datetime import parse_date
+from utilities.datetime import parse_time
+from utilities.datetime import round_to_next_weekday
+from utilities.datetime import round_to_prev_weekday
+from utilities.datetime import serialize_date
+from utilities.datetime import serialize_time
+from utilities.enum import ensure_enum
+from utilities.enum import parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
@@ -322,7 +323,6 @@ def _yield_task_classes(
     for name in Register.task_names():
         task_cls = Register.get_task_cls(name)
         if (
-            (cls is None)
-            or ((cls is not task_cls) and issubclass(task_cls, cls))
+            (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
         ) and (task_cls is not smtp):
             yield cast(type[_Task], task_cls)

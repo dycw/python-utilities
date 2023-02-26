@@ -1,5 +1,6 @@
 from beartype import beartype
-from bidict import ValueDuplicationError, bidict
+from bidict import ValueDuplicationError
+from bidict import bidict
 
 from utilities.beartype import IterableStrs
 from utilities.inflection import snake_case
