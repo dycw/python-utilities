@@ -1,39 +1,45 @@
 from pathlib import Path
 from typing import Any
 
-from hypothesis import assume, given
-from hypothesis.strategies import (
-    DataObject,
-    SearchStrategy,
-    booleans,
-    data,
-    dictionaries,
-    floats,
-    integers,
-    lists,
-    none,
-    sampled_from,
-    tuples,
-)
-from numpy import float32, nan
-from pandas import DataFrame, RangeIndex
-from pandas.testing import assert_frame_equal, assert_series_equal
-from pytest import mark, param, raises
+from hypothesis import assume
+from hypothesis import given
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists
+from hypothesis.strategies import none
+from hypothesis.strategies import sampled_from
+from hypothesis.strategies import tuples
+from numpy import float32
+from numpy import nan
+from pandas import DataFrame
+from pandas import RangeIndex
+from pandas.testing import assert_frame_equal
+from pandas.testing import assert_series_equal
+from pytest import mark
+from pytest import param
+from pytest import raises
 
-from utilities.fastparquet import (
-    _PARQUET_DTYPES,
-    EmptyDataFrameError,
-    _get_parquet_file,
-    count_rows,
-    get_columns,
-    get_dtypes,
-    read_parquet,
-    write_parquet,
-)
-from utilities.hypothesis import temp_paths, text_ascii
+from utilities.fastparquet import _PARQUET_DTYPES
+from utilities.fastparquet import EmptyDataFrameError
+from utilities.fastparquet import _get_parquet_file
+from utilities.fastparquet import count_rows
+from utilities.fastparquet import get_columns
+from utilities.fastparquet import get_dtypes
+from utilities.fastparquet import read_parquet
+from utilities.fastparquet import write_parquet
+from utilities.hypothesis import temp_paths
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import dates_pd
 from utilities.numpy import datetime64ns
-from utilities.pandas import DataFrameRangeIndexError, Int64, category, string
+from utilities.pandas import DataFrameRangeIndexError
+from utilities.pandas import Int64
+from utilities.pandas import category
+from utilities.pandas import string
 
 
 class TestCountRows:

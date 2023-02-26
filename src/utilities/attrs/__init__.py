@@ -1,7 +1,11 @@
 from random import choice
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
-from attrs import Factory, define, field, fields
+from attrs import Factory
+from attrs import define
+from attrs import field
+from attrs import fields
 from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation

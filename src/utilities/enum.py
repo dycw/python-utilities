@@ -1,6 +1,9 @@
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any, TypeVar, Union, cast
+from typing import Any
+from typing import TypeVar
+from typing import Union
+from typing import cast
 
 from beartype import beartype
 

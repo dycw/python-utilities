@@ -1,4 +1,5 @@
-from pytest import mark, param
+from pytest import mark
+from pytest import param
 
 from utilities.inflection import snake_case
 

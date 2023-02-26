@@ -1,6 +1,7 @@
 from pytest import raises
 
-from utilities.typing import NeverError, never
+from utilities.typing import NeverError
+from utilities.typing import never
 
 
 class TestNever:

@@ -1,11 +1,18 @@
 import datetime as dt
 from collections.abc import Callable
-from operator import eq, ge, gt, le, lt, ne
+from operator import eq
+from operator import ge
+from operator import gt
+from operator import le
+from operator import lt
+from operator import ne
 from re import search
 from time import sleep
 from typing import Any
 
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
 from utilities.timer import Timer
 

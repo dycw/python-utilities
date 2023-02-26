@@ -1,13 +1,22 @@
 import datetime as dt
 import logging
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
+from collections.abc import Mapping
 from contextlib import suppress
-from logging import Handler, LogRecord, basicConfig, getLogger
-from os import environ, getenv
+from logging import Handler
+from logging import LogRecord
+from logging import basicConfig
+from logging import getLogger
+from os import environ
+from os import getenv
 from pathlib import Path
 from re import search
-from sys import _getframe, stdout
-from typing import Any, Optional, Union, cast
+from sys import _getframe
+from sys import stdout
+from typing import Any
+from typing import Optional
+from typing import Union
+from typing import cast
 
 from beartype import beartype
 from loguru import logger
@@ -15,7 +24,8 @@ from loguru import logger
 from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
-from utilities.re import NoMatchesError, extract_group
+from utilities.re import NoMatchesError
+from utilities.re import extract_group
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _CWD = Path.cwd()

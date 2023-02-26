@@ -1,4 +1,5 @@
-from typing import TypeVar, Union
+from typing import TypeVar
+from typing import Union
 
 from hypothesis.strategies import SearchStrategy
 

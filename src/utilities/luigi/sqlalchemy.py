@@ -1,11 +1,16 @@
 from typing import Any
 
 from beartype import beartype
-from luigi import Parameter, Target
-from sqlalchemy import Engine, Select, create_engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from luigi import Parameter
+from luigi import Target
+from sqlalchemy import Engine
+from sqlalchemy import Select
+from sqlalchemy import create_engine
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import NoSuchTableError
 
-from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
+from utilities.sqlalchemy import get_table_name
+from utilities.sqlalchemy import redirect_to_no_such_table_error
 
 
 class DatabaseTarget(Target):

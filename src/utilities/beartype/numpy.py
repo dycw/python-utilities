@@ -1,6 +1,9 @@
-from beartype.vale import IsAttr, IsEqual
+from beartype.vale import IsAttr
+from beartype.vale import IsEqual
 
-from utilities.numpy import datetime64D, datetime64ns, datetime64Y
+from utilities.numpy import datetime64D
+from utilities.numpy import datetime64ns
+from utilities.numpy import datetime64Y
 
 # dtype
 DTypeB = IsAttr["dtype", IsEqual[bool]]

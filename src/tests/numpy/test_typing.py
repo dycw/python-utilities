@@ -1,51 +1,53 @@
 from typing import Any
 
 from beartype.door import die_if_unbearable
-from numpy import empty, zeros
-from pytest import mark, param
+from numpy import empty
+from numpy import zeros
+from pytest import mark
+from pytest import param
 
-from utilities.numpy import datetime64D, datetime64ns, datetime64Y
-from utilities.numpy.typing import (
-    NDArray0,
-    NDArray1,
-    NDArray2,
-    NDArray3,
-    NDArrayB,
-    NDArrayB0,
-    NDArrayB1,
-    NDArrayB2,
-    NDArrayB3,
-    NDArrayDD,
-    NDArrayDD0,
-    NDArrayDD1,
-    NDArrayDD2,
-    NDArrayDD3,
-    NDArrayDns,
-    NDArrayDns0,
-    NDArrayDns1,
-    NDArrayDns2,
-    NDArrayDns3,
-    NDArrayDY,
-    NDArrayDY0,
-    NDArrayDY1,
-    NDArrayDY2,
-    NDArrayDY3,
-    NDArrayF,
-    NDArrayF0,
-    NDArrayF1,
-    NDArrayF2,
-    NDArrayF3,
-    NDArrayI,
-    NDArrayI0,
-    NDArrayI1,
-    NDArrayI2,
-    NDArrayI3,
-    NDArrayO,
-    NDArrayO0,
-    NDArrayO1,
-    NDArrayO2,
-    NDArrayO3,
-)
+from utilities.numpy import datetime64D
+from utilities.numpy import datetime64ns
+from utilities.numpy import datetime64Y
+from utilities.numpy.typing import NDArray0
+from utilities.numpy.typing import NDArray1
+from utilities.numpy.typing import NDArray2
+from utilities.numpy.typing import NDArray3
+from utilities.numpy.typing import NDArrayB
+from utilities.numpy.typing import NDArrayB0
+from utilities.numpy.typing import NDArrayB1
+from utilities.numpy.typing import NDArrayB2
+from utilities.numpy.typing import NDArrayB3
+from utilities.numpy.typing import NDArrayDD
+from utilities.numpy.typing import NDArrayDD0
+from utilities.numpy.typing import NDArrayDD1
+from utilities.numpy.typing import NDArrayDD2
+from utilities.numpy.typing import NDArrayDD3
+from utilities.numpy.typing import NDArrayDns
+from utilities.numpy.typing import NDArrayDns0
+from utilities.numpy.typing import NDArrayDns1
+from utilities.numpy.typing import NDArrayDns2
+from utilities.numpy.typing import NDArrayDns3
+from utilities.numpy.typing import NDArrayDY
+from utilities.numpy.typing import NDArrayDY0
+from utilities.numpy.typing import NDArrayDY1
+from utilities.numpy.typing import NDArrayDY2
+from utilities.numpy.typing import NDArrayDY3
+from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayF0
+from utilities.numpy.typing import NDArrayF1
+from utilities.numpy.typing import NDArrayF2
+from utilities.numpy.typing import NDArrayF3
+from utilities.numpy.typing import NDArrayI
+from utilities.numpy.typing import NDArrayI0
+from utilities.numpy.typing import NDArrayI1
+from utilities.numpy.typing import NDArrayI2
+from utilities.numpy.typing import NDArrayI3
+from utilities.numpy.typing import NDArrayO
+from utilities.numpy.typing import NDArrayO0
+from utilities.numpy.typing import NDArrayO1
+from utilities.numpy.typing import NDArrayO2
+from utilities.numpy.typing import NDArrayO3
 
 
 class TestHints:

@@ -1,5 +1,6 @@
 import datetime as dt
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
+from collections.abc import Iterable
 from os import environ
 from pathlib import Path
 from typing import Any

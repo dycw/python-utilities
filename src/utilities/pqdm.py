@@ -1,13 +1,22 @@
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Mapping
 from functools import partial
-from io import StringIO, TextIOWrapper
+from io import StringIO
+from io import TextIOWrapper
 from multiprocessing import cpu_count
-from typing import Any, Literal, Optional, TypeVar, Union, cast
+from typing import Any
+from typing import Literal
+from typing import Optional
+from typing import TypeVar
+from typing import Union
+from typing import cast
 
 from beartype import beartype
 from pqdm import processes
 
-from utilities.tqdm import _DEFAULTS, tqdm
+from utilities.tqdm import _DEFAULTS
+from utilities.tqdm import tqdm
 
 _T = TypeVar("_T")
 

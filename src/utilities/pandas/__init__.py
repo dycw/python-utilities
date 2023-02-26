@@ -1,16 +1,16 @@
 import datetime as dt
-from typing import Any, Union, cast
+from typing import Any
+from typing import Union
+from typing import cast
 
 from beartype import beartype
-from pandas import (
-    DataFrame,
-    DatetimeTZDtype,
-    Index,
-    NaT,
-    RangeIndex,
-    Series,
-    Timestamp,
-)
+from pandas import DataFrame
+from pandas import DatetimeTZDtype
+from pandas import Index
+from pandas import NaT
+from pandas import RangeIndex
+from pandas import Series
+from pandas import Timestamp
 
 from utilities.datetime import UTC
 

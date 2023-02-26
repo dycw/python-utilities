@@ -1,6 +1,9 @@
 from pathlib import Path
-from re import IGNORECASE, search
-from subprocess import PIPE, CalledProcessError, check_output
+from re import IGNORECASE
+from re import search
+from subprocess import PIPE
+from subprocess import CalledProcessError
+from subprocess import check_output
 
 from beartype import beartype
 

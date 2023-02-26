@@ -1,9 +1,11 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from shutil import move, rmtree
+from shutil import move
+from shutil import rmtree
 
-from atomicwrites import move_atomic, replace_atomic
+from atomicwrites import move_atomic
+from atomicwrites import replace_atomic
 from beartype import beartype
 
 from utilities.errors import DirectoryExistsError

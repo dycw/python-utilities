@@ -1,8 +1,11 @@
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
+from collections.abc import Iterator
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any
+from typing import Optional
+from typing import Union
 
 from beartype import beartype
 
@@ -38,9 +41,7 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: Optional[  # noqa: A002
-        Union[type[Any], tuple[type[Any], ...]]
-    ] = None,
+    type: Optional[Union[type[Any], tuple[type[Any], ...]]] = None,  # noqa: A002
     predicate: Optional[Callable[[Any], bool]] = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.

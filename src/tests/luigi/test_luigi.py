@@ -1,36 +1,38 @@
 import datetime as dt
-from enum import Enum, auto
+from enum import Enum
+from enum import auto
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any
+from typing import Literal
+from typing import cast
 
-from hypothesis import given, settings
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    dates,
-    sampled_from,
-    times,
-)
-from luigi import BoolParameter, Task
+from hypothesis import given
+from hypothesis import settings
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import dates
+from hypothesis.strategies import sampled_from
+from hypothesis.strategies import times
+from luigi import BoolParameter
+from luigi import Task
 from luigi.notifications import smtp
 
-from utilities.datetime import serialize_date, serialize_time
+from utilities.datetime import serialize_date
+from utilities.datetime import serialize_time
 from utilities.hypothesis.luigi import namespace_mixins
-from utilities.luigi import (
-    DateParameter,
-    EnumParameter,
-    PathTarget,
-    TimeParameter,
-    WeekdayParameter,
-    _yield_task_classes,
-    build,
-    clone,
-    get_dependencies_downstream,
-    get_dependencies_upstream,
-    get_task_classes,
-)
+from utilities.luigi import DateParameter
+from utilities.luigi import EnumParameter
+from utilities.luigi import PathTarget
+from utilities.luigi import TimeParameter
+from utilities.luigi import WeekdayParameter
+from utilities.luigi import _yield_task_classes
+from utilities.luigi import build
+from utilities.luigi import clone
+from utilities.luigi import get_dependencies_downstream
+from utilities.luigi import get_dependencies_upstream
+from utilities.luigi import get_task_classes
 
 
 class TestBuild:

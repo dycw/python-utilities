@@ -2,21 +2,23 @@ from pathlib import Path
 from typing import Optional
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    integers,
-    none,
-)
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
+from hypothesis.strategies import integers
+from hypothesis.strategies import none
 from hypothesis_sqlalchemy.sample import table_records_lists
-from sqlalchemy import Column, Engine, Integer, select
+from sqlalchemy import Column
+from sqlalchemy import Engine
+from sqlalchemy import Integer
+from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
 from utilities.fastparquet import get_dtypes
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.pandas import Int64
-from utilities.sqlalchemy import ensure_table_created, get_table
+from utilities.sqlalchemy import ensure_table_created
+from utilities.sqlalchemy import get_table
 from utilities.sqlalchemy.fastparquet import select_to_parquet
 from utilities.sqlalchemy.pandas import insert_items
 

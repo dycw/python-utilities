@@ -3,10 +3,8 @@ from pytest import raises
 
 from utilities.hypothesis import text_ascii
 from utilities.inflection import snake_case
-from utilities.inflection.bidict import (
-    SnakeCaseContainsDuplicatesError,
-    snake_case_mappings,
-)
+from utilities.inflection.bidict import SnakeCaseContainsDuplicatesError
+from utilities.inflection.bidict import snake_case_mappings
 
 
 class TestSnakeCaseMappings:

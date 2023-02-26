@@ -1,14 +1,13 @@
 from pathlib import Path
-from subprocess import CalledProcessError, check_call
+from subprocess import CalledProcessError
+from subprocess import check_call
 
 from pytest import raises
 
-from utilities.subprocess import (
-    MultipleActivateError,
-    NoActivateError,
-    get_shell_output,
-    tabulate_called_process_error,
-)
+from utilities.subprocess import MultipleActivateError
+from utilities.subprocess import NoActivateError
+from utilities.subprocess import get_shell_output
+from utilities.subprocess import tabulate_called_process_error
 from utilities.text import strip_and_dedent
 
 

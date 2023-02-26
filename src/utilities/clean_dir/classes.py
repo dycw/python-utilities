@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Optional
 
 from beartype import beartype
-from typed_settings import option, settings
+from typed_settings import option
+from typed_settings import settings
 
 from utilities.tempfile import TEMP_DIR
 

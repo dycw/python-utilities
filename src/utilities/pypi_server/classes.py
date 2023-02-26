@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from beartype import beartype
-from typed_settings import option, settings
+from typed_settings import option
+from typed_settings import settings
 
 
 @beartype

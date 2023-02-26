@@ -13,7 +13,8 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.clean_dir.classes import Config, Item
+from utilities.clean_dir.classes import Config
+from utilities.clean_dir.classes import Item
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
 from utilities.typed_settings import click_options
