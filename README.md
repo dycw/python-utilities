@@ -16,7 +16,6 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[click]`
 - `pip install dycw-utilities[fastapi]`
 - `pip install dycw-utilities[fastparquet]`
-- `pip install dycw-utilities[inflection]`
 - `pip install dycw-utilities[loguru]`
 - `pip install dycw-utilities[luigi]`
 - `pip install dycw-utilities[more-itertools]`

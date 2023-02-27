@@ -19,8 +19,7 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement
 from sqlalchemy.sql import Select
 
-from utilities.inflection import snake_case
-from utilities.inflection.bidict import snake_case_mappings
+from utilities.bidict import snake_case_mappings
 from utilities.iterables import IterableContainsDuplicatesError
 from utilities.iterables import check_duplicates
 from utilities.more_itertools import EmptyIterableError
@@ -40,6 +39,7 @@ from utilities.sqlalchemy import get_table
 from utilities.sqlalchemy import model_to_dict
 from utilities.sqlalchemy import yield_connection
 from utilities.text import ensure_str
+from utilities.text import snake_case
 
 
 @beartype

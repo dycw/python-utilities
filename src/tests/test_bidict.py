@@ -1,10 +1,10 @@
 from hypothesis import given
 from pytest import raises
 
+from utilities.bidict import SnakeCaseContainsDuplicatesError
+from utilities.bidict import snake_case_mappings
 from utilities.hypothesis import text_ascii
-from utilities.inflection import snake_case
-from utilities.inflection.bidict import SnakeCaseContainsDuplicatesError
-from utilities.inflection.bidict import snake_case_mappings
+from utilities.text import snake_case
 
 
 class TestSnakeCaseMappings:
