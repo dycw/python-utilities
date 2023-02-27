@@ -139,6 +139,7 @@ dev = [
 [project.scripts]
 clean-dir = "utilities.clean_dir:main"
 monitor-memory = "utilities.monitor_memory:main"
+start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
 #### pyright ##################################################################
