@@ -110,8 +110,6 @@ idna==3.4
     #   rfc3986
 importlib-metadata==6.0.0
     # via keyring
-inflection==0.5.1
-    # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
 jaraco-classes==3.2.3
@@ -134,7 +132,7 @@ mdurl==0.1.2
     # via markdown-it-py
 memory-profiler==0.61.0
     # via dycw-utilities (pyproject.toml)
-more-itertools==9.0.0
+more-itertools==9.1.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes

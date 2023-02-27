@@ -44,7 +44,6 @@ from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.pandas import dates_pd
 from utilities.hypothesis.pandas import datetimes_pd
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.inflection import snake_case
 from utilities.numpy import datetime64ns
 from utilities.pandas import Int64
 from utilities.pandas import boolean
@@ -69,6 +68,7 @@ from utilities.sqlalchemy.pandas import _yield_insertion_elements
 from utilities.sqlalchemy.pandas import insert_dataframe
 from utilities.sqlalchemy.pandas import insert_items
 from utilities.sqlalchemy.pandas import select_to_dataframe
+from utilities.text import snake_case
 from utilities.types import NoneType
 
 

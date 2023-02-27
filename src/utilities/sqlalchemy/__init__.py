@@ -55,11 +55,11 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.pool import Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
+from utilities.bidict import snake_case_mappings
 from utilities.errors import redirect_error
-from utilities.inflection import snake_case
-from utilities.inflection.bidict import snake_case_mappings
 from utilities.more_itertools import one
 from utilities.text import ensure_str
+from utilities.text import snake_case
 from utilities.typing import never
 
 

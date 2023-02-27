@@ -3,8 +3,8 @@ from bidict import ValueDuplicationError
 from bidict import bidict
 
 from utilities.beartype import IterableStrs
-from utilities.inflection import snake_case
 from utilities.iterables import check_duplicates
+from utilities.text import snake_case
 
 
 @beartype
