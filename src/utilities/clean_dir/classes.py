@@ -15,8 +15,8 @@ from utilities.tempfile import TEMP_DIR
 class Config:
     """Settings for the `clean_dir` script."""
 
-    path: Path = option(
-        default=TEMP_DIR,
+    paths: list[Path] = option(
+        default=[TEMP_DIR],
         click={"param_decls": ("-p", "--path")},
     )
     days: int = option(default=7, click={"param_decls": ("-d", "--days")})
