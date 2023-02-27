@@ -7,8 +7,10 @@ from pathlib import Path
 from re import search
 from typing import Optional
 
+from hypothesis import Phase
 from hypothesis import assume
 from hypothesis import given
+from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject
 from hypothesis.strategies import DrawFn
@@ -27,6 +29,8 @@ from pytest import param
 from pytest import raises
 
 from utilities.datetime import UTC
+from utilities.hypothesis import _MAX_EXAMPLES
+from utilities.hypothesis import _NO_SHRINK
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import datetimes_utc
 from utilities.hypothesis import floats_extra
@@ -38,6 +42,7 @@ from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis import text_clean
 from utilities.hypothesis import text_printable
+from utilities.os import temp_environ
 from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
 from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 from utilities.tempfile import TemporaryDirectory
@@ -160,7 +165,7 @@ class TestLiftDraw:
     def test_fixed(self, data: DataObject, x: bool) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
-            _ = _draw
+            _ = _draw(booleans())
             return x
 
         result = data.draw(func())
@@ -226,6 +231,20 @@ class TestSlices:
 class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
+        curr = settings()
+        assert Phase.shrink in curr.phases
+        assert curr.max_examples == 100
+
+    def test_no_shrink(self) -> None:
+        with temp_environ({_NO_SHRINK: "1"}):
+            setup_hypothesis_profiles()
+        assert Phase.shrink not in settings().phases
+
+    @given(max_examples=integers(1, 100))
+    def test_max_examples(self, max_examples: int) -> None:
+        with temp_environ({_MAX_EXAMPLES: str(max_examples)}):
+            setup_hypothesis_profiles()
+        assert settings().max_examples == max_examples
 
 
 class TestTempDirs:
