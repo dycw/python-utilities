@@ -1,4 +1,5 @@
 import datetime as dt
+from collections.abc import Iterable
 from collections.abc import Iterator
 from functools import partial
 from getpass import getuser
@@ -17,6 +18,7 @@ from utilities.clean_dir.classes import Config
 from utilities.clean_dir.classes import Item
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
+from utilities.pathlib import PathLike
 from utilities.typed_settings import click_options
 
 _CONFIG = Config()
@@ -31,14 +33,14 @@ def main(config: Config, /) -> None:
     _log_config(config)
     if config.dry_run:
         for item in _yield_items(
-            path=config.path,
+            paths=config.paths,
             days=config.days,
             chunk_size=config.chunk_size,
         ):
             logger.debug("{path}", path=item.path)
     else:
         _clean_dir(
-            path=config.path,
+            paths=config.paths,
             days=config.days,
             chunk_size=config.chunk_size,
         )
@@ -53,12 +55,12 @@ def _log_config(config: Config, /) -> None:
 @beartype
 def _clean_dir(
     *,
-    path: Path = _CONFIG.path,
+    paths: Iterable[PathLike] = _CONFIG.paths,
     days: int = _CONFIG.days,
     chunk_size: Optional[int] = _CONFIG.chunk_size,
 ) -> None:
     while True:
-        iterator = _yield_items(path=path, days=days, chunk_size=chunk_size)
+        iterator = _yield_items(paths=paths, days=days, chunk_size=chunk_size)
         if len(items := list(iterator)) >= 1:
             for item in items:
                 item.clean()
@@ -69,11 +71,11 @@ def _clean_dir(
 @beartype
 def _yield_items(
     *,
-    path: Path = _CONFIG.path,
+    paths: Iterable[PathLike] = _CONFIG.paths,
     days: int = _CONFIG.days,
     chunk_size: Optional[int] = _CONFIG.chunk_size,
 ) -> Iterator[Item]:
-    it = _yield_inner(path=path, days=days)
+    it = _yield_inner(paths=paths, days=days)
     if chunk_size is not None:
         return islice(it, chunk_size)
     return it
@@ -82,24 +84,26 @@ def _yield_items(
 @beartype
 def _yield_inner(
     *,
-    path: Path = _CONFIG.path,
+    paths: Iterable[PathLike] = _CONFIG.paths,
     days: int = _CONFIG.days,
 ) -> Iterator[Item]:
-    for p in path.rglob("*"):
-        yield from _yield_from_path(p, path=path, days=days)
+    for path in map(Path, paths):
+        for p in path.rglob("*"):
+            yield from _yield_from_path(p, path, days=days)
 
 
 @beartype
 def _yield_from_path(
     p: Path,
+    path: Path,
     /,
     *,
-    path: Path = _CONFIG.path,
     days: int = _CONFIG.days,
 ) -> Iterator[Item]:
+    p, path = map(Path, [p, path])
     if p.is_symlink():
-        yield from _yield_from_path(p.resolve(), path=path, days=days)
-    elif _is_owned_and_relative(p, path=path):  # pragma: no cover
+        yield from _yield_from_path(p.resolve(), path, days=days)
+    elif _is_owned_and_relative(p, path):  # pragma: no cover
         if (p.is_file() or p.is_socket()) and _is_old(p, days=days):
             yield Item(p, partial(_unlink_path, p))
         elif p.is_dir() and _is_empty(p):
@@ -107,7 +111,7 @@ def _yield_from_path(
 
 
 @beartype
-def _is_owned_and_relative(p: Path, /, *, path: Path = _CONFIG.path) -> bool:
+def _is_owned_and_relative(p: Path, path: Path, /) -> bool:
     try:
         return (p.owner() == getuser()) and p.is_relative_to(path)
     except FileNotFoundError:  # pragma: no cover
@@ -137,4 +141,4 @@ def _unlink_path(path: Path, /) -> None:
 @beartype
 def _unlink_dir(path: Path, /) -> None:
     logger.info("Removing directory: {path}", path=path)
-    rmtree(path)
+    rmtree(path, ignore_errors=True)
