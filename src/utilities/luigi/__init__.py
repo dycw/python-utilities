@@ -320,8 +320,8 @@ def _yield_task_classes(
     cls: Optional[type[_Task]] = None,
 ) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
-    for name in Register.task_names():
-        task_cls = Register.get_task_cls(name)
+    for name in cast(Any, Register).task_names():
+        task_cls = cast(Any, Register).get_task_cls(name)
         if (
             (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
         ) and (task_cls is not smtp):

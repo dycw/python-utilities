@@ -6,8 +6,8 @@ from click import command
 from loguru import logger
 
 from utilities.loguru import setup_loguru
+from utilities.luigi.server.classes import Config
 from utilities.pathlib import PathLike
-from utilities.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
 
@@ -18,15 +18,15 @@ _CONFIG = Config()
 @click_options(Config, appname="pypiserver")
 @beartype
 def main(config: Config, /) -> None:
-    """CLI for starting the PyPI server."""
+    """CLI for starting the luigi server."""
     setup_loguru()
     _log_config(config)
-    _check_password_file(path_password=config.path_password)
-    config.path_packages.mkdir(parents=True, exist_ok=True)
+    config.log_dir.mkdir(parents=True, exist_ok=True)
     args = _get_args(
+        pid_file=config.pid_file,
+        log_dir=config.log_dir,
+        state_path=config.state_path,
         port=config.port,
-        path_password=config.path_password,
-        path_packages=config.path_packages,
     )
     if not config.dry_run:
         run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
@@ -39,30 +39,20 @@ def _log_config(config: Config, /) -> None:
 
 
 @beartype
-def _check_password_file(
-    *,
-    path_password: PathLike = _CONFIG.path_password,
-) -> None:
-    if not Path(path_password).exists():
-        msg = f"{path_password=!s}"
-        raise FileNotFoundError(msg)
-
-
-@beartype
 def _get_args(
     *,
+    pid_file: PathLike = _CONFIG.pid_file,
+    log_dir: PathLike = _CONFIG.log_dir,
+    state_path: PathLike = _CONFIG.state_path,
     port: int = _CONFIG.port,
-    path_password: PathLike = _CONFIG.path_password,
-    path_packages: PathLike = _CONFIG.path_packages,
 ) -> list[str]:
-    path_password, path_packages = map(Path, [path_password, path_packages])
+    pid_file, log_dir, state_path = map(Path, [pid_file, log_dir, state_path])
     args = [
-        "pypi-server",
-        "run",
+        "luigid",
+        f"--pidfile={pid_file.as_posix()}",
+        f"--log_dir={log_dir.as_posix()}",
+        f"--state-path={state_path.as_posix()}",
         f"--port={port}",
-        "--authenticate=download,list,update",
-        f"--passwords={path_password.as_posix()}",
-        path_packages.as_posix(),
     ]
     logger.debug("cmd = {cmd!r}", cmd=" ".join(args))
     return args
