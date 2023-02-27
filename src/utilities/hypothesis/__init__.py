@@ -8,6 +8,7 @@ from math import floor
 from math import inf
 from math import isfinite
 from math import nan
+from os import environ
 from os import getenv
 from pathlib import Path
 from re import search
@@ -22,6 +23,7 @@ from typing import overload
 
 from beartype import beartype
 from hypothesis import HealthCheck
+from hypothesis import Phase
 from hypothesis import Verbosity
 from hypothesis import assume
 from hypothesis import settings
@@ -186,23 +188,51 @@ def lists_fixed_length(
     return elements
 
 
+_MAX_EXAMPLES: str = "MAX_EXAMPLES"
+_NO_SHRINK: str = "NO_SHRINK"
+
+
 @beartype
-def setup_hypothesis_profiles() -> None:
+def setup_hypothesis_profiles(
+    *,
+    max_examples: str = _MAX_EXAMPLES,
+    no_shrink: str = _NO_SHRINK,
+    suppress_health_check: Iterable[HealthCheck] = (),
+) -> None:
     """Set up the hypothesis profiles."""
-    for name, max_examples, kwargs in [
-        ("dev", 10, {}),
-        ("default", 100, {}),
-        ("ci", 1000, {}),
-        ("debug", 10, {"verbosity": Verbosity.verbose}),
+
+    @beartype
+    def yield_phases() -> Iterator[Phase]:
+        yield Phase.explicit
+        yield Phase.reuse
+        yield Phase.generate
+        yield Phase.target
+        if not bool(getenv(no_shrink, default=False)):
+            yield Phase.shrink
+
+    phases = set(yield_phases())
+    for name, default_max_examples, verbosity in [
+        ("dev", 10, None),
+        ("default", 100, None),
+        ("ci", 1000, None),
+        ("debug", 10, Verbosity.verbose),
     ]:
+        try:
+            env_var = environ[max_examples]
+        except KeyError:
+            max_examples_use = default_max_examples
+        else:
+            max_examples_use = int(env_var)
+        verbosity_use = {} if verbosity is None else {"verbosity": verbosity}
         settings.register_profile(
             name,
-            max_examples=max_examples,
+            max_examples=max_examples_use,
+            **verbosity_use,
+            phases=phases,
             report_multiple_bugs=True,
-            suppress_health_check={HealthCheck.filter_too_much},
+            suppress_health_check=suppress_health_check,
             deadline=None,
             print_blob=True,
-            **kwargs,
         )
     settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
 
