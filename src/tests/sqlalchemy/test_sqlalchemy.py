@@ -608,13 +608,28 @@ class TestCheckEngine:
             check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
+    def test_num_tables_rel_tol_correct(self, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+        )
+        ensure_table_created(table, engine)
+        check_engine(engine, num_tables=2, rel_tol=0.5)
+
+    @given(engine=sqlite_engines())
+    def test_num_tables_rel_tol_error(self, engine: Engine) -> None:
+        with raises(IncorrectNumberOfTablesError):
+            check_engine(engine, num_tables=1, rel_tol=0.5)
+
+    @given(engine=sqlite_engines())
     def test_num_tables_abs_tol_correct(self, engine: Engine) -> None:
-        check_engine(engine, num_tables=1, abs_tol=1.0)
+        check_engine(engine, num_tables=1, abs_tol=1)
 
     @given(engine=sqlite_engines())
     def test_num_tables_abs_tol_error(self, engine: Engine) -> None:
         with raises(IncorrectNumberOfTablesError):
-            check_engine(engine, num_tables=2, abs_tol=1.0)
+            check_engine(engine, num_tables=2, abs_tol=1)
 
 
 class TestCheckTableAgainstReflection:

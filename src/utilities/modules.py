@@ -28,11 +28,15 @@ def yield_modules(
         yield module
     else:
         for info in walk_packages(path):
-            imported = import_module(f"{name}.{info.name}")
-            if (is_pkg := info.ispkg) and recursive:
-                yield from yield_modules(imported, recursive=recursive)
-            elif not is_pkg:
-                yield imported
+            try:
+                imported = import_module(f"{name}.{info.name}")
+            except ModuleNotFoundError:  # pragma: no cover
+                pass
+            else:
+                if (is_pkg := info.ispkg) and recursive:
+                    yield from yield_modules(imported, recursive=recursive)
+                elif not is_pkg:
+                    yield imported
 
 
 @beartype
