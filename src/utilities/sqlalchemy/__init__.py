@@ -411,7 +411,8 @@ def check_engine(
     /,
     *,
     num_tables: Optional[int] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: Optional[float] = None,
+    abs_tol: Optional[int] = None,
 ) -> None:
     """Check that an engine can connect.
 
@@ -436,11 +437,21 @@ def check_engine(
         redirect_error(error, "unable to open database file", EngineError)
     if num_tables is not None:
         n_rows = len(rows)
-        if ((abs_tol is None) and (n_rows != num_tables)) or (
-            (abs_tol is not None) and not isclose(n_rows, num_tables, abs_tol=abs_tol)
-        ):
-            msg = f"{len(rows)=}, {num_tables=}"
-            raise IncorrectNumberOfTablesError(msg)
+        if (rel_tol is None) and (abs_tol is None):
+            if n_rows != num_tables:
+                msg = f"{len(rows)=}, {num_tables=}"
+                raise IncorrectNumberOfTablesError(msg)
+        else:
+            rel_tol_use = 1e-9 if rel_tol is None else rel_tol
+            abs_tol_use = 0.0 if abs_tol is None else abs_tol
+            if not isclose(
+                n_rows,
+                num_tables,
+                rel_tol=rel_tol_use,
+                abs_tol=abs_tol_use,
+            ):
+                msg = f"{len(rows)=}, {num_tables=}, {rel_tol=}, {abs_tol=}"
+                raise IncorrectNumberOfTablesError(msg)
     return None
 
 
