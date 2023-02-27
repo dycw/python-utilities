@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from beartype import beartype
-from pytest import skip
 
 from utilities.atomicwrites import writer
 from utilities.beartype import IterableStrs
@@ -19,6 +18,7 @@ try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
     from pytest import mark
+    from pytest import skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
