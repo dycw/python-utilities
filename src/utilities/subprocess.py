@@ -63,11 +63,20 @@ def run_accept_address_in_use(args: list[str], /, *, exist_ok: bool) -> None:
     try:  # pragma: no cover
         _ = check_output(args, stderr=PIPE, text=True)
     except CalledProcessError as error:  # pragma: no cover
-        pattern = escape(r"^OSError: [Errno 98] Address already in use$")
+        pattern = _address_already_in_use_pattern()
         if exist_ok and search(pattern, error.stderr, flags=MULTILINE):
             logger.info("Address already in use")
         else:
+            logger.exception("Address already in use")
             raise
+
+
+@beartype
+def _address_already_in_use_pattern() -> str:
+    """Get the 'address_already_in_use' pattern."""
+    text = "OSError: [Errno 98] Address already in use"
+    escaped = escape(text)
+    return f"^{escaped}$"
 
 
 @beartype

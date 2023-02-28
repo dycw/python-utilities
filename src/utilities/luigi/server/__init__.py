@@ -35,7 +35,7 @@ def main(config: Config, /) -> None:
 @beartype
 def _log_config(config: Config, /) -> None:
     for key, value in asdict(config).items():
-        logger.info("{key:13} = {value}", key=key, value=value)
+        logger.info("{key:10} = {value}", key=key, value=value)
 
 
 @beartype
@@ -54,5 +54,5 @@ def _get_args(
         f"--state-path={state_path.as_posix()}",
         f"--port={port}",
     ]
-    logger.debug("cmd = {cmd!r}", cmd=" ".join(args))
+    logger.info("cmd = {cmd!r}", cmd=" ".join(args))
     return args
