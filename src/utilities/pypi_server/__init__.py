@@ -64,5 +64,5 @@ def _get_args(
         f"--passwords={path_password.as_posix()}",
         path_packages.as_posix(),
     ]
-    logger.debug("cmd = {cmd!r}", cmd=" ".join(args))
+    logger.info("cmd = {cmd!r}", cmd=" ".join(args))
     return args
