@@ -236,7 +236,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.1
     # via hatch
-ruff==0.0.252
+ruff==0.0.253
     # via dycw-utilities (pyproject.toml)
 secretstorage==3.3.3
     # via keyring
