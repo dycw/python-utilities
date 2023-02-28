@@ -42,14 +42,13 @@ from utilities.git import InvalidRepoError
 from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
 
-_CWD = Path.cwd()
 _T = TypeVar("_T")
 
 
 @beartype
 def get_repo_root_config(
     *,
-    cwd: PathLike = _CWD,
+    cwd: PathLike = Path.cwd(),
     filename: str = "config.toml",
 ) -> Optional[Path]:
     """Get the config under the repo root, if it exists."""

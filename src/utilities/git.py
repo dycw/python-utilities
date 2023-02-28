@@ -9,11 +9,9 @@ from beartype import beartype
 
 from utilities.pathlib import PathLike
 
-_CWD = Path.cwd()
-
 
 @beartype
-def get_branch_name(*, cwd: PathLike = _CWD) -> str:
+def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -26,7 +24,7 @@ def get_branch_name(*, cwd: PathLike = _CWD) -> str:
 
 
 @beartype
-def get_repo_name(*, cwd: PathLike = _CWD) -> str:
+def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -39,7 +37,7 @@ def get_repo_name(*, cwd: PathLike = _CWD) -> str:
 
 
 @beartype
-def get_repo_root(*, cwd: PathLike = _CWD) -> Path:
+def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
     """Get the repo root."""
     try:
         output = check_output(

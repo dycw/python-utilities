@@ -7,6 +7,8 @@ from typing import Any
 from typing import Literal
 from typing import cast
 
+from freezegun import freeze_time
+from hypothesis import assume
 from hypothesis import given
 from hypothesis import settings
 from hypothesis.strategies import DataObject
@@ -21,9 +23,15 @@ from luigi.notifications import smtp
 
 from utilities.datetime import serialize_date
 from utilities.datetime import serialize_time
+from utilities.hypothesis import datetimes_utc
+from utilities.hypothesis import temp_paths
 from utilities.hypothesis.luigi import namespace_mixins
+from utilities.luigi import AwaitTask
+from utilities.luigi import AwaitTime
 from utilities.luigi import DateParameter
 from utilities.luigi import EnumParameter
+from utilities.luigi import ExternalFile
+from utilities.luigi import ExternalTask
 from utilities.luigi import PathTarget
 from utilities.luigi import TimeParameter
 from utilities.luigi import WeekdayParameter
@@ -33,6 +41,32 @@ from utilities.luigi import clone
 from utilities.luigi import get_dependencies_downstream
 from utilities.luigi import get_dependencies_upstream
 from utilities.luigi import get_task_classes
+
+
+class TestAwaitTask:
+    @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
+    def test_main(self, namespace_mixin: Any, is_complete: bool) -> None:
+        class Example(namespace_mixin, Task):
+            is_complete = cast(bool, BoolParameter())
+
+            def complete(self) -> bool:
+                return self.is_complete
+
+        example = Example(is_complete=is_complete)
+        task: AwaitTask = cast(Any, AwaitTask)(example)
+        result = task.complete()
+        assert result is is_complete
+
+
+class TestAwaitTime:
+    @given(time_start=datetimes_utc(), time_now=datetimes_utc())
+    def test_main(self, time_start: dt.datetime, time_now: dt.datetime) -> None:
+        _ = assume(time_start.microsecond == 0)
+        task: AwaitTime = cast(Any, AwaitTime)(time_start)
+        with freeze_time(time_now):
+            result = task.exists()
+        expected = time_now >= time_start
+        assert result is expected
 
 
 class TestBuild:
@@ -78,6 +112,34 @@ class TestEnumParameter:
         input_ = data.draw(sampled_from([Example.member, "member"]))
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
+
+
+class TestExternalFile:
+    @given(namespace_mixin=namespace_mixins(), root=temp_paths())
+    def test_main(self, namespace_mixin: Any, root: Path) -> None:
+        path = root.joinpath("file")
+
+        class Example(namespace_mixin, ExternalFile):
+            ...
+
+        task = Example(path)
+        assert not task.exists()
+        path.touch()
+        assert task.exists()
+
+
+class TestExternalTask:
+    @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
+    def test_main(self, namespace_mixin: Any, is_complete: bool) -> None:
+        class Example(namespace_mixin, ExternalTask):
+            is_complete = cast(bool, BoolParameter())
+
+            def exists(self) -> bool:
+                return self.is_complete
+
+        task = Example(is_complete=is_complete)
+        result = task.exists()
+        assert result is is_complete
 
 
 class TestGetDependencies:

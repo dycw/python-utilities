@@ -1,6 +1,7 @@
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
+from datetime import tzinfo
 from typing import Optional
 from typing import Union
 
@@ -35,9 +36,15 @@ class IsWeekendError(ValueError):
 
 
 @beartype
-def date_to_datetime(date: dt.date, /) -> dt.datetime:
+def date_to_datetime(
+    date: dt.date,
+    /,
+    *,
+    time: dt.time = dt.time(0),
+    tzinfo: tzinfo = UTC,
+) -> dt.datetime:
     """Expand a date into a datetime."""
-    return dt.datetime.combine(date, dt.time())
+    return dt.datetime.combine(date, time, tzinfo=tzinfo)
 
 
 @beartype
@@ -73,6 +80,20 @@ def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     friday = 5
     return date.isoweekday() <= friday
+
+
+@beartype
+def local_timezone() -> tzinfo:
+    """Get the local timezone."""
+    tz = dt.datetime.now().astimezone().tzinfo  # noqa: DTZ005
+    if tz is None:  # pragma: no cover
+        msg = f"{tz=}"
+        raise LocalTimeZoneError(msg)
+    return tz
+
+
+class LocalTimeZoneError(ValueError):
+    """Raised when the local timezone cannot be found."""
 
 
 @beartype

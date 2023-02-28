@@ -188,6 +188,7 @@ xfail_strict = true
 extend-ignore = [
   "ANN101", # flake8-annotations, missing-type-self
   "ANN401", # flake8-annotations, dynamically-typed-expression
+  "B008",  # flake8-bugbear, function-call-argument-default
   "D100", # pydocstyle, public-module
   "D104", # pydocstyle, public-package
   "D105", # pydocstyle, magic-method

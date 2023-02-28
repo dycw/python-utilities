@@ -10,12 +10,10 @@ from pyinstrument.profiler import Profiler
 from utilities.atomicwrites import writer
 from utilities.pathlib import PathLike
 
-_CWD = Path.cwd()
-
 
 @contextmanager
 @beartype
-def profile(*, path: PathLike = _CWD) -> Iterator[None]:
+def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     """Profile the contents of a block."""
     with Profiler() as profiler:
         yield
