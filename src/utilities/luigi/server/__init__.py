@@ -50,7 +50,7 @@ def _get_args(
     args = [
         "luigid",
         f"--pidfile={pid_file.as_posix()}",
-        f"--log_dir={log_dir.as_posix()}",
+        f"--logdir={log_dir.as_posix()}",
         f"--state-path={state_path.as_posix()}",
         f"--port={port}",
     ]
