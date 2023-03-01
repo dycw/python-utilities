@@ -1,4 +1,7 @@
 from typing import NoReturn
+from typing import Union
+
+Number = Union[float, int]
 
 
 def never(x: NoReturn, /) -> NoReturn:

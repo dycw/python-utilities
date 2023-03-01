@@ -1,19 +1,28 @@
+from pytest import mark
+from pytest import param
+
 from utilities.class_name import get_class_name
 
 
 class TestGetClassName:
-    def test_class(self) -> None:
+    @mark.parametrize(
+        ("snake", "expected"),
+        [param(False, "Example"), param(True, "example")],
+    )
+    def test_class(self, snake: bool, expected: str) -> None:
         class Example:
             ...
 
-        result = get_class_name(Example)
-        expected = "Example"
+        result = get_class_name(Example, snake=snake)
         assert result == expected
 
-    def test_instance(self) -> None:
+    @mark.parametrize(
+        ("snake", "expected"),
+        [param(False, "Example"), param(True, "example")],
+    )
+    def test_instance(self, snake: bool, expected: str) -> None:
         class Example:
             ...
 
-        result = get_class_name(Example())
-        expected = "Example"
+        result = get_class_name(Example(), snake=snake)
         assert result == expected

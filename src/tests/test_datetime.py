@@ -38,6 +38,7 @@ from utilities.datetime import ensure_datetime
 from utilities.datetime import ensure_time
 from utilities.datetime import ensure_timedelta
 from utilities.datetime import is_weekday
+from utilities.datetime import local_timezone
 from utilities.datetime import parse_date
 from utilities.datetime import parse_datetime
 from utilities.datetime import parse_time
@@ -132,6 +133,15 @@ class TestIsWeekday:
             "Friday",
         }
         assert result is expected
+
+
+class TestLocalTimeZone:
+    def test_main(self) -> None:
+        tz = local_timezone()
+        now = dt.datetime.now(tz=UTC)
+        result = tz.tzname(now)
+        expected = {"HKT", "UTC"}
+        assert result in expected
 
 
 class TestParseDate:

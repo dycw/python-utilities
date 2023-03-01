@@ -28,7 +28,6 @@ from utilities.re import NoMatchesError
 from utilities.re import extract_group
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
-_CWD = Path.cwd()
 _FILES_ENV_VAR = "LOGGING"
 _ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
@@ -42,7 +41,7 @@ def setup_loguru(
     enable: Optional[IterableStrs] = None,
     console: LogLevel = LogLevel.INFO,
     files: Optional[PathLike] = None,
-    files_root: Path = _CWD,
+    files_root: Path = Path.cwd(),
     files_env_var: Optional[str] = _FILES_ENV_VAR,
     rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
     retention: Optional[Union[str, int, dt.time, dt.timedelta]] = _RETENTION,

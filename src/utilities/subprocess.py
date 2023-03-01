@@ -20,15 +20,13 @@ from loguru import logger
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 
-_CWD = Path.cwd()
-
 
 @beartype
 def get_shell_output(
     cmd: str,
     /,
     *,
-    cwd: PathLike = _CWD,
+    cwd: PathLike = Path.cwd(),
     activate: Optional[PathLike] = None,
     env: Optional[Mapping[str, Optional[str]]] = None,
 ) -> str:

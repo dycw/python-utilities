@@ -1,4 +1,6 @@
 import datetime as dt
+from abc import ABC
+from abc import abstractmethod
 from collections.abc import Iterable
 from collections.abc import Iterator
 from contextlib import suppress
@@ -15,9 +17,12 @@ from typing import overload
 
 import luigi
 from beartype import beartype
+from luigi import DateSecondParameter
 from luigi import Parameter
+from luigi import PathParameter
 from luigi import Target
 from luigi import Task
+from luigi import TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
@@ -25,6 +30,8 @@ from luigi.parameter import MissingParameterException
 from luigi.task import Register
 from luigi.task import flatten
 
+from utilities.datetime import EPOCH_UTC
+from utilities.datetime import UTC
 from utilities.datetime import ensure_date
 from utilities.datetime import ensure_time
 from utilities.datetime import parse_date
@@ -39,6 +46,9 @@ from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
 _E = TypeVar("_E", bound=Enum)
+
+
+# paramaters
 
 
 class EnumParameter(Parameter, Generic[_E]):
@@ -143,6 +153,9 @@ class WeekdayParameter(Parameter):
         return serialize_date(date)
 
 
+# targets
+
+
 class PathTarget(Target):
     """A local target whose `path` attribute is a Pathlib instance."""
 
@@ -155,6 +168,72 @@ class PathTarget(Target):
     def exists(self) -> bool:
         """Check if the target exists."""
         return self.path.exists()
+
+
+# tasks
+
+
+class ExternalTask(ABC, luigi.ExternalTask):
+    """An external task with `exists()` defined here."""
+
+    @abstractmethod
+    def exists(self) -> bool:
+        """Predicate on which the external task is deemed to exist."""
+        msg = f"{self=}"  # pragma: no cover
+        raise NotImplementedError(msg)  # pragma: no cover
+
+    @beartype
+    def output(self) -> "_ExternalTaskDummyTarget":  # noqa: D102
+        return _ExternalTaskDummyTarget(self)
+
+
+class _ExternalTaskDummyTarget(Target):
+    """Dummy target for `ExternalTask`."""
+
+    @beartype
+    def __init__(self, task: ExternalTask, /) -> None:
+        super().__init__()
+        self._task = task
+
+    @beartype
+    def exists(self) -> bool:
+        return self._task.exists()
+
+
+_Task = TypeVar("_Task", bound=Task)
+
+
+class AwaitTask(ExternalTask, Generic[_Task]):
+    """Await the completion of another task."""
+
+    task = cast(_Task, TaskParameter())
+
+    @beartype
+    def exists(self) -> bool:  # noqa: D102
+        return self.task.complete()
+
+
+class AwaitTime(ExternalTask):
+    """Await a specific moment of time."""
+
+    datetime = cast(dt.datetime, DateSecondParameter(start=EPOCH_UTC))
+
+    @beartype
+    def exists(self) -> bool:  # noqa: D102
+        return dt.datetime.now(tz=UTC) >= self.datetime
+
+
+class ExternalFile(ExternalTask):
+    """Await an external file on the local disk."""
+
+    path = cast(Path, PathParameter())
+
+    @beartype
+    def exists(self) -> bool:  # noqa: D102
+        return self.path.exists()
+
+
+# fucntions
 
 
 @overload

@@ -257,7 +257,7 @@ sqlalchemy==2.0.4
     #   hypothesis-sqlalchemy
 starlette==0.25.0
     # via fastapi
-tenacity==8.2.1
+tenacity==8.2.2
     # via luigi
 tomli-w==1.0.0
     # via hatch
@@ -279,7 +279,7 @@ typing-extensions==4.5.0
     #   sqlalchemy
 userpath==1.8.0
     # via hatch
-virtualenv==20.19.0
+virtualenv==20.20.0
     # via
     #   hatch
     #   nox
