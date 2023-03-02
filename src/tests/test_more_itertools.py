@@ -2,16 +2,13 @@ from re import escape
 
 from pytest import raises
 
-from utilities.more_itertools import EmptyIterableError
-from utilities.more_itertools import MultipleElementsError
-from utilities.more_itertools import one
+from utilities.more_itertools import EmptyIterableError, MultipleElementsError, one
 
 
 class TestOne:
     def test_empty(self) -> None:
         with raises(
-            EmptyIterableError,
-            match=escape("too few items in iterable (expected 1)"),
+            EmptyIterableError, match=escape("too few items in iterable (expected 1)")
         ):
             _ = one([])
 

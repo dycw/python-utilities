@@ -1,41 +1,33 @@
 import datetime as dt
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from hypothesis import assume
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.extra.pandas import range_indexes
 from hypothesis.strategies import integers
-from pandas import DataFrame
-from pandas import Index
-from pandas import NaT
-from pandas import RangeIndex
-from pandas import Series
-from pandas import Timestamp
-from pandas import to_datetime
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pandas import DataFrame, Index, NaT, RangeIndex, Series, Timestamp, to_datetime
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import timestamps
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.pandas import DataFrameRangeIndexError
-from utilities.pandas import Int64
-from utilities.pandas import RangeIndexNameError
-from utilities.pandas import RangeIndexStartError
-from utilities.pandas import RangeIndexStepError
-from utilities.pandas import SeriesRangeIndexError
-from utilities.pandas import TimestampIsNaTError
-from utilities.pandas import boolean
-from utilities.pandas import check_range_index
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+    DataFrameRangeIndexError,
+    Int64,
+    RangeIndexNameError,
+    RangeIndexStartError,
+    RangeIndexStepError,
+    SeriesRangeIndexError,
+    TimestampIsNaTError,
+    boolean,
+    check_range_index,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+)
 
 
 class TestCheckRangeIndex:
@@ -140,10 +132,7 @@ class TestTimestampToDateTime:
     @mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(
-                to_datetime("2000-01-01"),
-                dt.datetime(2000, 1, 1, tzinfo=UTC),
-            ),
+            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
             param(
                 to_datetime("2000-01-01 12:00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
@@ -160,10 +149,7 @@ class TestTimestampToDateTime:
     @given(timestamp=timestamps(allow_nanoseconds=True))
     def test_warn(self, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(
-            UserWarning,
-            match="Discarding nonzero nanoseconds in conversion",
-        ):
+        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
             _ = timestamp_to_datetime(timestamp)
 
     def test_error(self) -> None:

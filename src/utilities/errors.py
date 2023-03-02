@@ -1,6 +1,5 @@
 from re import search
-from typing import NoReturn
-from typing import Union
+from typing import NoReturn, Union
 
 from beartype import beartype
 
@@ -13,10 +12,7 @@ class DirectoryExistsError(Exception):
 
 @beartype
 def redirect_error(
-    old: Exception,
-    pattern: str,
-    new: Union[Exception, type[Exception]],
-    /,
+    old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
 ) -> NoReturn:
     """Redirect an error if a matching string is found."""
     args = old.args

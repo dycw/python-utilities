@@ -1,11 +1,7 @@
 from random import choice
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from attrs import Factory
-from attrs import define
-from attrs import field
-from attrs import fields
+from attrs import Factory, define, field, fields
 from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
@@ -43,12 +39,7 @@ class FieldTypeError(TypeError):
 @beartype
 def make_dict_field() -> Any:
     """Create a `__dict__` field."""
-    return field(
-        default=Factory(cast(Any, dict)),
-        init=False,
-        repr=False,
-        eq=False,
-    )
+    return field(default=Factory(cast(Any, dict)), init=False, repr=False, eq=False)
 
 
 class DictMixin:

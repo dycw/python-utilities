@@ -2,9 +2,7 @@ from pathlib import Path
 from time import sleep
 from typing import Any
 
-from pytest import MonkeyPatch
-from pytest import mark
-from pytest import param
+from pytest import MonkeyPatch, mark, param
 
 from utilities.pytest import is_pytest
 from utilities.text import strip_and_dedent
@@ -19,7 +17,7 @@ class TestPytestOptions:
             @mark.slow
             def test_main():
                 assert True
-            """,
+            """
         )
         result = testdir.runpytest()
         result.assert_outcomes(errors=1)
@@ -32,7 +30,7 @@ class TestPytestOptions:
 
             def pytest_configure(config):
                 add_pytest_configure(config, [("slow", "slow to run")])
-            """,
+            """
         )
         testdir.makepyfile(
             """
@@ -41,19 +39,14 @@ class TestPytestOptions:
             @mark.slow
             def test_main():
                 assert True
-            """,
+            """
         )
         result = testdir.runpytest("--slow")
-        result.stderr.re_match_lines(
-            ["-c: error: unrecognized arguments: --slow"],
-        )
+        result.stderr.re_match_lines(["-c: error: unrecognized arguments: --slow"])
 
     @mark.parametrize(
         ("case", "passed", "skipped", "matches"),
-        [
-            param([], 0, 1, [".*3: pass --slow"]),
-            param(["--slow"], 1, 0, []),
-        ],
+        [param([], 0, 1, [".*3: pass --slow"]), param(["--slow"], 1, 0, [])],
     )
     def test_configured_one_mark_and_option(
         self,
@@ -77,7 +70,7 @@ class TestPytestOptions:
 
             def pytest_configure(config):
                 add_pytest_configure(config, [("slow", "slow to run")])
-            """,
+            """
         )
         testdir.makepyfile(
             """
@@ -86,7 +79,7 @@ class TestPytestOptions:
             @mark.slow
             def test_main():
                 assert True
-            """,
+            """
         )
         result = testdir.runpytest("-rs", *case)
         result.assert_outcomes(passed=passed, skipped=skipped)
@@ -99,24 +92,10 @@ class TestPytestOptions:
                 [],
                 1,
                 3,
-                [
-                    ".*6: pass --slow",
-                    ".*10: pass --fast",
-                    ".*14: pass --slow --fast",
-                ],
+                [".*6: pass --slow", ".*10: pass --fast", ".*14: pass --slow --fast"],
             ),
-            param(
-                ["--slow"],
-                2,
-                2,
-                [".*10: pass --fast", ".*14: pass --slow --fast"],
-            ),
-            param(
-                ["--fast"],
-                2,
-                2,
-                [".*6: pass --slow", ".*14: pass --slow --fast"],
-            ),
+            param(["--slow"], 2, 2, [".*10: pass --fast", ".*14: pass --slow --fast"]),
+            param(["--fast"], 2, 2, [".*6: pass --slow", ".*14: pass --slow --fast"]),
             param(["--slow", "--fast"], 4, 0, []),
         ],
     )
@@ -146,7 +125,7 @@ class TestPytestOptions:
                 add_pytest_configure(
                     config, [("slow", "slow to run"), ("fast", "fast to run")],
                 )
-            """,
+            """
         )
         testdir.makepyfile(
             """
@@ -167,7 +146,7 @@ class TestPytestOptions:
             @mark.fast
             def test_both():
                 assert True
-            """,
+            """
         )
         result = testdir.runpytest("-rs", *case)
         result.assert_outcomes(passed=passed, skipped=skipped)

@@ -1,47 +1,40 @@
 import datetime as dt
-from abc import ABC
-from abc import abstractmethod
-from collections.abc import Iterable
-from collections.abc import Iterator
+from abc import ABC, abstractmethod
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from enum import Enum
 from pathlib import Path
-from typing import Any
-from typing import Generic
-from typing import Literal
-from typing import Optional
-from typing import TypeVar
-from typing import Union
-from typing import cast
-from typing import overload
+from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast, overload
 
 import luigi
 from beartype import beartype
-from luigi import DateSecondParameter
-from luigi import Parameter
-from luigi import PathParameter
-from luigi import Target
-from luigi import Task
-from luigi import TaskParameter
+from luigi import (
+    DateSecondParameter,
+    Parameter,
+    PathParameter,
+    Target,
+    Task,
+    TaskParameter,
+)
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
-from luigi.task import Register
-from luigi.task import flatten
+from luigi.task import Register, flatten
 
-from utilities.datetime import EPOCH_UTC
-from utilities.datetime import UTC
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_time
-from utilities.datetime import parse_date
-from utilities.datetime import parse_time
-from utilities.datetime import round_to_next_weekday
-from utilities.datetime import round_to_prev_weekday
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_time
-from utilities.enum import ensure_enum
-from utilities.enum import parse_enum
+from utilities.datetime import (
+    EPOCH_UTC,
+    UTC,
+    ensure_date,
+    ensure_time,
+    parse_date,
+    parse_time,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_time,
+)
+from utilities.enum import ensure_enum, parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
@@ -56,12 +49,7 @@ class EnumParameter(Parameter, Generic[_E]):
 
     @beartype
     def __init__(
-        self,
-        enum: type[_E],
-        /,
-        *args: Any,
-        case_sensitive: bool = True,
-        **kwargs: Any,
+        self, enum: type[_E], /, *args: Any, case_sensitive: bool = True, **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         self._enum = enum
@@ -69,19 +57,11 @@ class EnumParameter(Parameter, Generic[_E]):
 
     @beartype
     def normalize(self, member: Union[_E, str], /) -> _E:  # noqa: D102
-        return ensure_enum(
-            self._enum,
-            member,
-            case_sensitive=self._case_sensitive,
-        )
+        return ensure_enum(self._enum, member, case_sensitive=self._case_sensitive)
 
     @beartype
     def parse(self, member: str, /) -> _E:  # noqa: D102
-        return parse_enum(
-            self._enum,
-            member,
-            case_sensitive=self._case_sensitive,
-        )
+        return parse_enum(self._enum, member, case_sensitive=self._case_sensitive)
 
     @beartype
     def serialize(self, member: _E, /) -> str:  # noqa: D102
@@ -125,10 +105,7 @@ class WeekdayParameter(Parameter):
 
     @beartype
     def __init__(
-        self,
-        *args: Any,
-        rounding: Literal["prev", "next"] = "prev",
-        **kwargs: Any,
+        self, *args: Any, rounding: Literal["prev", "next"] = "prev", **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         if rounding == "prev":
@@ -293,47 +270,29 @@ def clone(task: Task, cls: type[_Task], /, **kwargs: Any) -> _Task:
 
 @overload
 def get_dependencies_downstream(
-    task: Task,
-    /,
-    *,
-    cls: type[_Task],
-    recursive: bool = False,
+    task: Task, /, *, cls: type[_Task], recursive: bool = False
 ) -> frozenset[_Task]:
     ...
 
 
 @overload
 def get_dependencies_downstream(
-    task: Task,
-    /,
-    *,
-    cls: None = None,
-    recursive: bool = False,
+    task: Task, /, *, cls: None = None, recursive: bool = False
 ) -> frozenset[Task]:
     ...
 
 
 @beartype
 def get_dependencies_downstream(
-    task: Task,
-    /,
-    *,
-    cls: Optional[type[Task]] = None,
-    recursive: bool = False,
+    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
-    return frozenset(
-        _yield_dependencies_downstream(task, cls=cls, recursive=recursive),
-    )
+    return frozenset(_yield_dependencies_downstream(task, cls=cls, recursive=recursive))
 
 
 @beartype
 def _yield_dependencies_downstream(
-    task: Task,
-    /,
-    *,
-    cls: Optional[type[Task]] = None,
-    recursive: bool = False,
+    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
         try:
@@ -344,18 +303,12 @@ def _yield_dependencies_downstream(
             if task in get_dependencies_upstream(cloned, recursive=recursive):
                 yield cloned
                 if recursive:
-                    yield from get_dependencies_downstream(
-                        cloned,
-                        recursive=recursive,
-                    )
+                    yield from get_dependencies_downstream(cloned, recursive=recursive)
 
 
 @beartype
 def get_dependencies_upstream(
-    task: Task,
-    /,
-    *,
-    recursive: bool = False,
+    task: Task, /, *, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the upstream dependencies of a task."""
     return frozenset(_yield_dependencies_upstream(task, recursive=recursive))
@@ -363,10 +316,7 @@ def get_dependencies_upstream(
 
 @beartype
 def _yield_dependencies_upstream(
-    task: Task,
-    /,
-    *,
-    recursive: bool = False,
+    task: Task, /, *, recursive: bool = False
 ) -> Iterator[Task]:
     for t in cast(Iterable[Task], flatten(task.requires())):
         yield t
@@ -385,19 +335,13 @@ def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
 
 
 @beartype
-def get_task_classes(
-    *,
-    cls: Optional[type[_Task]] = None,
-) -> frozenset[type[_Task]]:
+def get_task_classes(*, cls: Optional[type[_Task]] = None) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     return frozenset(_yield_task_classes(cls=cls))
 
 
 @beartype
-def _yield_task_classes(
-    *,
-    cls: Optional[type[_Task]] = None,
-) -> Iterator[type[_Task]]:
+def _yield_task_classes(*, cls: Optional[type[_Task]] = None) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     for name in cast(Any, Register).task_names():
         task_cls = cast(Any, Register).get_task_cls(name)

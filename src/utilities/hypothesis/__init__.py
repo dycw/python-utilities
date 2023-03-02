@@ -1,60 +1,43 @@
 import builtins
 import datetime as dt
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
-from math import ceil
-from math import floor
-from math import inf
-from math import isfinite
-from math import nan
-from os import environ
-from os import getenv
+from math import ceil, floor, inf, isfinite, nan
+from os import environ, getenv
 from pathlib import Path
 from re import search
-from string import ascii_letters
-from string import printable
-from typing import Any
-from typing import Optional
-from typing import Protocol
-from typing import TypeVar
-from typing import cast
-from typing import overload
+from string import ascii_letters, printable
+from typing import Any, Optional, Protocol, TypeVar, cast, overload
 
 from beartype import beartype
-from hypothesis import HealthCheck
-from hypothesis import Phase
-from hypothesis import Verbosity
-from hypothesis import assume
-from hypothesis import settings
+from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import characters
-from hypothesis.strategies import composite
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import lists
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import text
-from hypothesis.strategies import uuids
+from hypothesis.strategies import (
+    DrawFn,
+    SearchStrategy,
+    characters,
+    composite,
+    datetimes,
+    floats,
+    integers,
+    just,
+    lists,
+    sampled_from,
+    text,
+    uuids,
+)
 
 from utilities.datetime import UTC
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.tempfile import TEMP_DIR
-from utilities.tempfile import TemporaryDirectory
+from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME, TIMESTAMP_MIN_AS_DATETIME
+from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
 
 @contextmanager
 @beartype
 def assume_does_not_raise(
-    *exceptions: type[Exception],
-    match: Optional[str] = None,
+    *exceptions: type[Exception], match: Optional[str] = None
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised.
 
@@ -89,7 +72,7 @@ def datetimes_utc(
             min_value=draw(min_value).replace(tzinfo=None),
             max_value=draw(max_value).replace(tzinfo=None),
             timezones=just(UTC),
-        ),
+        )
     )
 
 
@@ -181,7 +164,7 @@ def lists_fixed_length(
     draw = lift_draw(_draw)
     size_ = draw(size)
     elements = draw(
-        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique)),
+        lists(strategy, min_size=size_, max_size=size_, unique=draw(unique))
     )
     if draw(sorted):
         return builtins.sorted(cast(Iterable[Any], elements))
@@ -341,9 +324,7 @@ def _draw_text(
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
     draw = lift_draw(_draw)
-    drawn = draw(
-        text(alphabet, min_size=draw(min_size), max_size=draw(max_size)),
-    )
+    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
     if draw(disallow_na):
         _ = assume(drawn != "NA")
     return drawn

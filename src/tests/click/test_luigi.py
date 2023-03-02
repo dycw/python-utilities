@@ -1,17 +1,16 @@
 from typing import Optional
 
-from click import command
-from click import echo
+from click import command, echo
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
-from pytest import mark
-from pytest import param
+from hypothesis.strategies import integers, none
+from pytest import mark, param
 
-from utilities.click.luigi import local_scheduler_option_default_central
-from utilities.click.luigi import local_scheduler_option_default_local
-from utilities.click.luigi import workers_option
+from utilities.click.luigi import (
+    local_scheduler_option_default_central,
+    local_scheduler_option_default_local,
+    workers_option,
+)
 
 
 class TestLocalSchedulerOption:

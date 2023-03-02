@@ -1,9 +1,6 @@
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any
-from typing import TypeVar
-from typing import Union
-from typing import cast
+from typing import Any, TypeVar, Union, cast
 
 from beartype import beartype
 
@@ -19,10 +16,7 @@ else:  # pragma: py-ge-311
         @staticmethod
         @beartype
         def _generate_next_value_(
-            name: str,
-            start: Any,
-            count: int,
-            last_values: Any,
+            name: str, start: Any, count: int, last_values: Any
         ) -> str:
             _ = start, count, last_values
             return name
@@ -35,13 +29,7 @@ _E = TypeVar("_E", bound=Enum)
 
 
 @beartype
-def parse_enum(
-    enum: type[_E],
-    member: str,
-    /,
-    *,
-    case_sensitive: bool = True,
-) -> _E:
+def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
     """Parse a string into the enum."""
     enum_ = cast(Iterable[Any], enum)
     if case_sensitive:
@@ -68,11 +56,7 @@ class MultipleMatchingMembersError(Exception):
 
 @beartype
 def ensure_enum(
-    enum: type[_E],
-    member: Union[_E, str],
-    /,
-    *,
-    case_sensitive: bool = True,
+    enum: type[_E], member: Union[_E, str], /, *, case_sensitive: bool = True
 ) -> _E:
     """Ensure the object is a member of the enum."""
     if isinstance(member, Enum):

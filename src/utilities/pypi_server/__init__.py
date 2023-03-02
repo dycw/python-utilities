@@ -39,10 +39,7 @@ def _log_config(config: Config, /) -> None:
 
 
 @beartype
-def _check_password_file(
-    *,
-    path_password: PathLike = _CONFIG.path_password,
-) -> None:
+def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
     if not Path(path_password).exists():
         msg = f"{path_password=!s}"
         raise FileNotFoundError(msg)

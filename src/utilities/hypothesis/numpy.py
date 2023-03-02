@@ -1,26 +1,13 @@
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from beartype import beartype
-from hypothesis.extra.numpy import array_shapes
-from hypothesis.extra.numpy import arrays
-from hypothesis.extra.numpy import from_dtype
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import booleans
-from hypothesis.strategies import composite
-from hypothesis.strategies import integers
-from hypothesis.strategies import nothing
-from numpy import bool_
-from numpy import dtype
-from numpy import float64
-from numpy import iinfo
-from numpy import int64
+from hypothesis.extra.numpy import array_shapes, arrays, from_dtype
+from hypothesis.strategies import SearchStrategy, booleans, composite, integers, nothing
+from numpy import bool_, dtype, float64, iinfo, int64
 from numpy.typing import NDArray
 
-from utilities.hypothesis import floats_extra
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.hypothesis.typing import Shape
+from utilities.hypothesis import floats_extra, lift_draw
+from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
 
 _ARRAY_SHAPES = array_shapes()
 
@@ -38,13 +25,7 @@ def bool_arrays(
     """Strategy for generating arrays of booleans."""
     draw = lift_draw(_draw)
     return draw(
-        arrays(
-            bool,
-            draw(shape),
-            elements=booleans(),
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique))
     )
 
 
@@ -77,13 +58,7 @@ def float_arrays(
         integral=integral,
     )
     return draw(
-        arrays(
-            float,
-            draw(shape),
-            elements=elements,
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(float, draw(shape), elements=elements, fill=fill, unique=draw(unique))
     )
 
 
@@ -106,13 +81,7 @@ def int_arrays(
     max_value_use = info.max if max_value_ is None else max_value_
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     return draw(
-        arrays(
-            int,
-            draw(shape),
-            elements=elements,
-            fill=nothing(),
-            unique=draw(unique),
-        ),
+        arrays(int, draw(shape), elements=elements, fill=nothing(), unique=draw(unique))
     )
 
 

@@ -3,21 +3,18 @@ from re import search
 from time import sleep
 from typing import Optional
 
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import lists
-from hypothesis.strategies import none
-from hypothesis.strategies import sampled_from
+from hypothesis import given, settings
+from hypothesis.strategies import dictionaries, lists, none, sampled_from
 from loguru import logger
 
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.logging import LogLevel
-from utilities.loguru import _FILES_ENV_VAR
-from utilities.loguru import _augment_levels
-from utilities.loguru import _get_files_path
-from utilities.loguru import setup_loguru
+from utilities.loguru import (
+    _FILES_ENV_VAR,
+    _augment_levels,
+    _get_files_path,
+    setup_loguru,
+)
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 
@@ -78,38 +75,25 @@ class TestAugmentLevels:
         assert result == {}
 
     @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
-    def test_main(
-        self,
-        levels: Optional[dict[str, LogLevel]],
-    ) -> None:
+    def test_main(self, levels: Optional[dict[str, LogLevel]]) -> None:
         result = _augment_levels(levels=levels)
         assert result == levels
 
     @given(
-        env_var_prefix=env_var_prefixes,
-        module=modules,
-        level=sampled_from(LogLevel),
+        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_with_env_var(
-        self,
-        env_var_prefix: str,
-        module: str,
-        level: LogLevel,
+        self, env_var_prefix: str, module: str, level: LogLevel
     ) -> None:
         with temp_environ({f"{env_var_prefix}_{module}": level}):
             result = _augment_levels(env_var_prefix=env_var_prefix)
         assert result == {module: level}
 
     @given(
-        env_var_prefix=env_var_prefixes,
-        module=modules,
-        level=sampled_from(LogLevel),
+        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_without_env_var(
-        self,
-        env_var_prefix: str,
-        module: str,
-        level: LogLevel,
+        self, env_var_prefix: str, module: str, level: LogLevel
     ) -> None:
         with temp_environ({f"{env_var_prefix}_{module}": level}):
             result = _augment_levels(env_var_prefix=None)
@@ -130,8 +114,7 @@ class TestAugmentLevels:
     ) -> None:
         with temp_environ({f"{env_var_prefix}_{module}": level_env_var}):
             result = _augment_levels(
-                levels={module: level_direct},
-                env_var_prefix=env_var_prefix,
+                levels={module: level_direct}, env_var_prefix=env_var_prefix
             )
         assert result == {module: level_env_var}
 
@@ -159,12 +142,7 @@ class TestGetFilesPath:
         env_var_key=env_var_prefixes,
         env_var_value=text_ascii(min_size=1),
     )
-    def test_both(
-        self,
-        files: str,
-        env_var_key: str,
-        env_var_value: str,
-    ) -> None:
+    def test_both(self, files: str, env_var_key: str, env_var_value: str) -> None:
         with temp_environ({env_var_key: env_var_value}):
             result = _get_files_path(files=files, env_var=env_var_key)
         assert result == files

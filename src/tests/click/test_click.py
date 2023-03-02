@@ -4,36 +4,31 @@ from collections.abc import Callable
 from enum import auto
 from typing import Any
 
-from click import ParamType
-from click import argument
-from click import command
-from click import echo
-from click import option
+from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import just
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import timedeltas
-from hypothesis.strategies import times
-from pytest import mark
-from pytest import param
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    dates,
+    datetimes,
+    just,
+    sampled_from,
+    timedeltas,
+    times,
+)
+from pytest import mark, param
 
 import utilities.click
-from utilities.click import Date
-from utilities.click import DateTime
-from utilities.click import Time
-from utilities.click import Timedelta
-from utilities.click import log_level_option
-from utilities.datetime import UTC
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.datetime import serialize_timedelta
+from utilities.click import Date, DateTime, Time, Timedelta, log_level_option
+from utilities.datetime import (
+    UTC,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+    serialize_timedelta,
+)
 from utilities.logging import LogLevel
 
 
@@ -41,10 +36,7 @@ class TestParameters:
     cases = [
         param(Date(), dt.date, dates(), serialize_date),
         param(
-            DateTime(),
-            dt.datetime,
-            datetimes(timezones=just(UTC)),
-            serialize_datetime,
+            DateTime(), dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
         ),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
@@ -123,10 +115,7 @@ class TestEnum:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @argument(
-            "truth",
-            type=utilities.click.Enum(Truth, case_sensitive=False),
-        )
+        @argument("truth", type=utilities.click.Enum(Truth, case_sensitive=False))
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 

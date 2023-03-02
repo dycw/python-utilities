@@ -1,16 +1,11 @@
 from functools import cached_property
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from attrs import define
-from attrs import fields
+from attrs import define, fields
 from beartype.door import die_if_unbearable
 from pytest import raises
 
-from utilities.attrs import AttrsBase
-from utilities.attrs import DictMixin
-from utilities.attrs import FieldTypeError
-from utilities.attrs import make_dict_field
+from utilities.attrs import AttrsBase, DictMixin, FieldTypeError, make_dict_field
 from utilities.timer import Timer
 
 

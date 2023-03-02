@@ -1,11 +1,7 @@
-from typing import Any
-from typing import Optional
-from typing import cast
+from typing import Any, Optional, cast
 
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import composite
-from sqlalchemy import Engine
-from sqlalchemy import MetaData
+from hypothesis.strategies import DrawFn, composite
+from sqlalchemy import Engine, MetaData
 
 from utilities.hypothesis import temp_paths
 from utilities.sqlalchemy import create_engine
@@ -13,11 +9,7 @@ from utilities.sqlalchemy import create_engine
 
 @composite
 def sqlite_engines(
-    _draw: DrawFn,
-    /,
-    *,
-    metadata: Optional[MetaData] = None,
-    base: Any = None,
+    _draw: DrawFn, /, *, metadata: Optional[MetaData] = None, base: Any = None
 ) -> Engine:
     """Strategy for generating SQLite engines."""
     temp_path = _draw(temp_paths())

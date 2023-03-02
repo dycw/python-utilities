@@ -1,6 +1,5 @@
 import datetime as dt
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from functools import partial
 from getpass import getuser
 from itertools import islice
@@ -14,8 +13,7 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.clean_dir.classes import Config
-from utilities.clean_dir.classes import Item
+from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike
@@ -33,17 +31,11 @@ def main(config: Config, /) -> None:
     _log_config(config)
     if config.dry_run:
         for item in _yield_items(
-            paths=config.paths,
-            days=config.days,
-            chunk_size=config.chunk_size,
+            paths=config.paths, days=config.days, chunk_size=config.chunk_size
         ):
             logger.debug("{path}", path=item.path)
     else:
-        _clean_dir(
-            paths=config.paths,
-            days=config.days,
-            chunk_size=config.chunk_size,
-        )
+        _clean_dir(paths=config.paths, days=config.days, chunk_size=config.chunk_size)
 
 
 @beartype
@@ -83,9 +75,7 @@ def _yield_items(
 
 @beartype
 def _yield_inner(
-    *,
-    paths: Iterable[PathLike] = _CONFIG.paths,
-    days: int = _CONFIG.days,
+    *, paths: Iterable[PathLike] = _CONFIG.paths, days: int = _CONFIG.days
 ) -> Iterator[Item]:
     for path in map(Path, paths):
         for p in path.rglob("*"):
@@ -94,11 +84,7 @@ def _yield_inner(
 
 @beartype
 def _yield_from_path(
-    p: Path,
-    path: Path,
-    /,
-    *,
-    days: int = _CONFIG.days,
+    p: Path, path: Path, /, *, days: int = _CONFIG.days
 ) -> Iterator[Item]:
     p, path = map(Path, [p, path])
     if p.is_symlink():
@@ -126,8 +112,7 @@ def _is_empty(path: Path, /) -> bool:
 @beartype
 def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
     age = dt.datetime.now(tz=UTC) - dt.datetime.fromtimestamp(
-        path.stat().st_mtime,
-        tz=UTC,
+        path.stat().st_mtime, tz=UTC
     )
     return age >= dt.timedelta(days=days)
 

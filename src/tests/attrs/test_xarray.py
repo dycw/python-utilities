@@ -11,11 +11,7 @@ from utilities.hypothesis import text_ascii
 
 class TestRenameDataArrays:
     @given(name_array=text_ascii() | none(), name_other=text_ascii() | none())
-    def test_main(
-        self,
-        name_array: Optional[str],
-        name_other: Optional[str],
-    ) -> None:
+    def test_main(self, name_array: Optional[str], name_other: Optional[str]) -> None:
         @define
         class Other:
             name: Optional[str]

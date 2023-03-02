@@ -5,11 +5,8 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
 
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
-from utilities.pypi_server import _check_password_file
-from utilities.pypi_server import _get_args
-from utilities.pypi_server import main
+from utilities.hypothesis import temp_paths, text_ascii
+from utilities.pypi_server import _check_password_file, _get_args, main
 
 
 class TestPypiServer:
@@ -28,11 +25,7 @@ class TestPypiServer:
         packages=text_ascii(min_size=1),
     )
     def test_get_args(
-        self,
-        port: int,
-        root: Path,
-        password: str,
-        packages: str,
+        self, port: int, root: Path, password: str, packages: str
     ) -> None:
         _ = _get_args(
             port=port,

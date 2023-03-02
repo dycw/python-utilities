@@ -1,22 +1,13 @@
 import datetime as dt
 import logging
-from collections.abc import Iterator
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import suppress
-from logging import Handler
-from logging import LogRecord
-from logging import basicConfig
-from logging import getLogger
-from os import environ
-from os import getenv
+from logging import Handler, LogRecord, basicConfig, getLogger
+from os import environ, getenv
 from pathlib import Path
 from re import search
-from sys import _getframe
-from sys import stdout
-from typing import Any
-from typing import Optional
-from typing import Union
-from typing import cast
+from sys import _getframe, stdout
+from typing import Any, Optional, Union, cast
 
 from beartype import beartype
 from loguru import logger
@@ -24,8 +15,7 @@ from loguru import logger
 from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
-from utilities.re import NoMatchesError
-from utilities.re import extract_group
+from utilities.re import NoMatchesError, extract_group
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
@@ -49,10 +39,7 @@ def setup_loguru(
     """Set up `loguru` logging."""
     logger.remove()
     basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
-    all_levels = _augment_levels(
-        levels=levels,
-        env_var_prefix=levels_env_var_prefix,
-    )
+    all_levels = _augment_levels(levels=levels, env_var_prefix=levels_env_var_prefix)
     for name, level in all_levels.items():
         _setup_standard_logger(name, level)
     if enable is not None:
@@ -62,13 +49,7 @@ def setup_loguru(
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
         full_files_path = files_root.joinpath(files_path)
-        _add_file_sink(
-            full_files_path,
-            "log",
-            LogLevel.DEBUG,
-            all_levels,
-            live=False,
-        )
+        _add_file_sink(full_files_path, "log", LogLevel.DEBUG, all_levels, live=False)
         for level in set(LogLevel) - {LogLevel.CRITICAL}:
             _add_live_file_sink(
                 full_files_path,
@@ -99,8 +80,7 @@ class _InterceptHandler(Handler):
             depth += 1  # pragma: no cover
 
         logger.opt(depth=depth, exception=record.exc_info).log(
-            level,
-            record.getMessage(),
+            level, record.getMessage()
         )
 
 
@@ -140,9 +120,7 @@ def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
 
 @beartype
 def _get_files_path(
-    *,
-    files: Optional[PathLike] = None,
-    env_var: Optional[str] = _FILES_ENV_VAR,
+    *, files: Optional[PathLike] = None, env_var: Optional[str] = _FILES_ENV_VAR
 ) -> Optional[PathLike]:
     """Get the path of the files, possibly from the env var."""
     if files is not None:

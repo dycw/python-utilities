@@ -14,18 +14,12 @@ class APIRouter(_APIRouter):
 
     @beartype
     def api_route(
-        self,
-        *,
-        path: str,
-        include_in_schema: bool = True,
-        **kwargs: Any,
+        self, *, path: str, include_in_schema: bool = True, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """N/A."""
         if _PATTERN.search(path):
             return super().api_route(
-                path,
-                include_in_schema=include_in_schema,
-                **kwargs,
+                path, include_in_schema=include_in_schema, **kwargs
             )
         msg = f"Invalid route: {path}"
         raise ValueError(msg)

@@ -1,10 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any
-from typing import Generic
-from typing import TypeVar
-from typing import cast
+from typing import Any, Generic, TypeVar, cast
 
 from beartype import beartype
 from memory_profiler import memory_usage
@@ -30,9 +27,7 @@ def memory_profiled(func: Callable[_P, _T], /) -> Callable[_P, Output[_T]]:
     @wraps(func)
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> Output[_T]:
         memory, value = memory_usage(
-            cast(Any, (func, args, kwargs)),
-            max_usage=True,
-            retval=True,
+            cast(Any, (func, args, kwargs)), max_usage=True, retval=True
         )
         return Output(value=value, memory=memory)
 

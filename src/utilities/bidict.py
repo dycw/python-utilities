@@ -1,6 +1,5 @@
 from beartype import beartype
-from bidict import ValueDuplicationError
-from bidict import bidict
+from bidict import ValueDuplicationError, bidict
 
 from utilities.beartype import IterableStrs
 from utilities.iterables import check_duplicates

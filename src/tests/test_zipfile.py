@@ -3,8 +3,7 @@ from string import ascii_letters
 from zipfile import ZipFile
 
 from hypothesis import given
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
+from hypothesis.strategies import sampled_from, sets
 
 from utilities.hypothesis import temp_paths
 from utilities.zipfile import yield_zip_file_contents

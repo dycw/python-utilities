@@ -2,20 +2,14 @@ from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.types import NoneType
-from utilities.types import Number
-from utilities.types import ensure_class
-from utilities.types import issubclass_except_bool_int
+from utilities.types import NoneType, Number, ensure_class, issubclass_except_bool_int
 
 
 class TestEnsureClass:
     @mark.parametrize(
-        ("x", "expected"),
-        [param(None, NoneType), param(NoneType, NoneType)],
+        ("x", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
     )
     def test_main(self, x: Any, expected: type[Any]) -> None:
         assert ensure_class(x) is expected
@@ -24,11 +18,7 @@ class TestEnsureClass:
 class TestIsSubclassExceptBoolInt:
     @mark.parametrize(
         ("x", "y", "expected"),
-        [
-            param(bool, bool, True),
-            param(bool, int, False),
-            param(int, int, True),
-        ],
+        [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
     )
     def test_main(self, x: type[Any], y: type[Any], expected: bool) -> None:
         assert issubclass_except_bool_int(x, y) is expected

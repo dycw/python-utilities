@@ -1,15 +1,12 @@
-from typing import Optional
-from typing import Union
+from typing import Optional, Union
 
 from beartype import beartype
 from fastparquet import write
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql import Select
 
 from utilities.atomicwrites import writer
-from utilities.fastparquet import Compression
-from utilities.fastparquet import write_parquet
+from utilities.fastparquet import Compression, write_parquet
 from utilities.pathlib import PathLike
 from utilities.sqlalchemy import yield_connection
 from utilities.sqlalchemy.pandas import select_to_dataframe
@@ -33,14 +30,9 @@ def select_to_parquet(
     """
     if stream is None:
         df = select_to_dataframe(sel, engine_or_conn, snake=snake)
-        return write_parquet(
-            df,
-            path,
-            overwrite=overwrite,
-            compression=compression,
-        )
+        return write_parquet(df, path, overwrite=overwrite, compression=compression)
     with writer(path, overwrite=overwrite) as temp, yield_connection(
-        engine_or_conn,
+        engine_or_conn
     ) as conn:
         temp_str = temp.as_posix()
         dfs = select_to_dataframe(sel, conn, snake=snake, stream=stream)

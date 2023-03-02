@@ -1,12 +1,10 @@
-from collections.abc import Callable
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from smtplib import SMTP
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from beartype import beartype
 

@@ -10,15 +10,9 @@ from utilities.subprocess import get_shell_output
 
 @beartype
 def get_hatch_version(
-    *,
-    cwd: PathLike = Path.cwd(),
-    activate: Optional[PathLike] = None,
+    *, cwd: PathLike = Path.cwd(), activate: Optional[PathLike] = None
 ) -> tuple[int, int, int]:
     """Get the `hatch` version."""
-    version = get_shell_output(
-        "hatch version",
-        cwd=cwd,
-        activate=activate,
-    ).strip("\n")
+    version = get_shell_output("hatch version", cwd=cwd, activate=activate).strip("\n")
     major, minor, patch = extract_groups(r"^(\d+)\.(\d+)\.(\d+)$", version)
     return int(major), int(minor), int(patch)

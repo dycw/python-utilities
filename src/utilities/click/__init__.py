@@ -1,27 +1,25 @@
 import datetime as dt
 from enum import Enum as _Enum
-from typing import Any
-from typing import Generic
-from typing import Optional
-from typing import TypeVar
+from typing import Any, Generic, Optional, TypeVar
 
 from beartype import beartype
-from click import Context
-from click import Parameter
-from click import ParamType
-from click import option
+from click import Context, Parameter, ParamType, option
 
-from utilities.datetime import ParseDateError
-from utilities.datetime import ParseDateTimeError
-from utilities.datetime import ParseTimeError
-from utilities.datetime import TimedeltaError
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
-from utilities.datetime import ensure_time
-from utilities.datetime import ensure_timedelta
-from utilities.enum import MultipleMatchingMembersError
-from utilities.enum import NoMatchingMemberError
-from utilities.enum import ensure_enum
+from utilities.datetime import (
+    ParseDateError,
+    ParseDateTimeError,
+    ParseTimeError,
+    TimedeltaError,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    ensure_timedelta,
+)
+from utilities.enum import (
+    MultipleMatchingMembersError,
+    NoMatchingMemberError,
+    ensure_enum,
+)
 from utilities.logging import LogLevel
 
 
@@ -32,10 +30,7 @@ class Date(ParamType):
 
     @beartype
     def convert(
-        self,
-        value: Any,
-        param: Optional[Parameter],
-        ctx: Optional[Context],
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -51,10 +46,7 @@ class DateTime(ParamType):
 
     @beartype
     def convert(
-        self,
-        value: Any,
-        param: Optional[Parameter],
-        ctx: Optional[Context],
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -70,10 +62,7 @@ class Time(ParamType):
 
     @beartype
     def convert(
-        self,
-        value: Any,
-        param: Optional[Parameter],
-        ctx: Optional[Context],
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -89,10 +78,7 @@ class Timedelta(ParamType):
 
     @beartype
     def convert(
-        self,
-        value: Any,
-        param: Optional[Parameter],
-        ctx: Optional[Context],
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
@@ -110,31 +96,18 @@ class Enum(ParamType, Generic[_E]):
     name = "enum"
 
     @beartype
-    def __init__(
-        self,
-        enum: type[_E],
-        /,
-        *,
-        case_sensitive: bool = True,
-    ) -> None:
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
         super().__init__()
         self._enum = enum
         self._case_sensitive = case_sensitive
 
     @beartype
     def convert(
-        self,
-        value: Any,
-        param: Optional[Parameter],
-        ctx: Optional[Context],
+        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
-            return ensure_enum(
-                self._enum,
-                value,
-                case_sensitive=self._case_sensitive,
-            )
+            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
         except (NoMatchingMemberError, MultipleMatchingMembersError):
             return self.fail(f"Unable to parse {value}", param, ctx)
 

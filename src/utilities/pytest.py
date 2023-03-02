@@ -1,6 +1,5 @@
 import datetime as dt
-from collections.abc import Callable
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from os import environ
 from pathlib import Path
 from typing import Any
@@ -17,8 +16,7 @@ try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark
-    from pytest import skip
+    from pytest import mark, skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
@@ -45,10 +43,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
 
 @beartype
 def add_pytest_collection_modifyitems(
-    config: Config,
-    items: Iterable[Function],
-    options: IterableStrs,
-    /,
+    config: Config, items: Iterable[Function], options: IterableStrs, /
 ) -> None:
     """Add the @mark.skips as necessary.
 
@@ -68,11 +63,7 @@ def add_pytest_collection_modifyitems(
 
 
 @beartype
-def add_pytest_configure(
-    config: Config,
-    options: Iterable[tuple[str, str]],
-    /,
-) -> None:
+def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:
     """Add the `--slow`, etc markers to pytest.
 
     Usage:
@@ -111,9 +102,7 @@ def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
             now = dt.datetime.now(tz=UTC).timestamp()
             if (prev is not None) and ((now - prev) < duration):
                 skip(reason=f"{test} throttled")
-            with writer(path, overwrite=True) as temp, temp.open(
-                mode="w",
-            ) as fh:
+            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(str(now))
             return func(*args, **kwargs)
 
