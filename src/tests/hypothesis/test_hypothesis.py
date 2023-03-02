@@ -29,6 +29,7 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     datetimes_utc,
     floats_extra,
+    hashables,
     lists_fixed_length,
     setup_hypothesis_profiles,
     slices,
@@ -141,6 +142,13 @@ class TestFloatsExtra:
                 assert x != -inf
         if integral:
             assert (isfinite(x) and x == round(x)) or not isfinite(x)
+
+
+class TestHashables:
+    @given(data=data())
+    def test_fixed(self, data: DataObject) -> None:
+        x = data.draw(hashables())
+        _ = hash(x)
 
 
 class TestLiftDraw:

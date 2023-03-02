@@ -2,15 +2,14 @@ from typing import Optional
 
 from attrs import define
 from hypothesis import given
-from hypothesis.strategies import none
 from xarray import DataArray
 
 from utilities.attrs.xarray import rename_data_arrays
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import hashables
 
 
 class TestRenameDataArrays:
-    @given(name_array=text_ascii() | none(), name_other=text_ascii() | none())
+    @given(name_array=hashables(), name_other=hashables())
     def test_main(self, name_array: Optional[str], name_other: Optional[str]) -> None:
         @define
         class Other:

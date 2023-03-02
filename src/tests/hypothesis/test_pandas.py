@@ -3,11 +3,11 @@ from collections.abc import Hashable
 from typing import Any, cast
 
 from hypothesis import assume, given
-from hypothesis.strategies import DataObject, booleans, data, dates, integers, none
+from hypothesis.strategies import DataObject, booleans, data, dates, integers
 from pandas import Index, Timestamp
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import datetimes_utc, text_ascii
+from utilities.hypothesis import datetimes_utc, hashables
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.pandas import (
     dates_pd,
@@ -61,7 +61,7 @@ class TestIndexes:
         data=data(),
         n=integers(0, 10),
         unique=booleans(),
-        name=text_ascii() | none(),
+        name=hashables(),
         sort=booleans(),
     )
     def test_generic(
@@ -83,7 +83,7 @@ class TestIndexes:
         data=data(),
         n=integers(0, 10),
         unique=booleans(),
-        name=text_ascii() | none(),
+        name=hashables(),
         sort=booleans(),
     )
     def test_int(
@@ -102,7 +102,7 @@ class TestIndexes:
         data=data(),
         n=integers(0, 10),
         unique=booleans(),
-        name=text_ascii() | none(),
+        name=hashables(),
         sort=booleans(),
     )
     def test_str(

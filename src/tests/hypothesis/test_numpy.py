@@ -3,11 +3,17 @@ from typing import Optional
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import DataObject, booleans, data, floats, none
+from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
 from numpy import iinfo, inf, int64, isfinite, isinf, isnan, ravel, rint
 
 from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis.numpy import bool_arrays, float_arrays, int64s, int_arrays
+from utilities.hypothesis.numpy import (
+    bool_arrays,
+    float_arrays,
+    int64s,
+    int_arrays,
+    str_arrays,
+)
 from utilities.hypothesis.typing import Shape
 
 
@@ -116,3 +122,45 @@ class TestInt64s:
         assert isinstance(x, int)
         info = iinfo(int64)
         assert info.min <= x <= info.max
+
+
+class TestStrArrays:
+    @given(
+        data=data(),
+        shape=array_shapes(),
+        min_size=integers(0, 100),
+        max_size=integers(0, 100) | none(),
+        allow_none=booleans(),
+        unique=booleans(),
+    )
+    def test_main(
+        self,
+        data: DataObject,
+        shape: Shape,
+        min_size: int,
+        max_size: Optional[int],
+        allow_none: bool,
+        unique: bool,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            array = data.draw(
+                str_arrays(
+                    shape=shape,
+                    min_size=min_size,
+                    max_size=max_size,
+                    allow_none=allow_none,
+                    unique=unique,
+                )
+            )
+        assert array.dtype == object
+        assert array.shape == shape
+        flat = ravel(array)
+        flat_text = [i for i in flat if i is not None]
+        assert all(len(t) >= min_size for t in flat_text)
+        if max_size is not None:
+            assert all(len(t) <= max_size for t in flat_text)
+        if not allow_none:
+            assert len(flat_text) == array.size
+        if unique:
+            flat = ravel(array)
+            assert len(set(flat)) == len(flat)

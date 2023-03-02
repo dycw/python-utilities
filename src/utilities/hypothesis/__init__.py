@@ -1,6 +1,6 @@
 import builtins
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Hashable, Iterable, Iterator
 from contextlib import contextmanager
 from math import ceil, floor, inf, isfinite, nan
 from os import environ, getenv
@@ -15,6 +15,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DrawFn,
     SearchStrategy,
+    booleans,
     characters,
     composite,
     datetimes,
@@ -22,6 +23,7 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
+    none,
     sampled_from,
     text,
     uuids,
@@ -118,6 +120,12 @@ def floats_extra(
         element = draw(sampled_from(candidates))
         return float(element)
     return element
+
+
+@beartype
+def hashables() -> SearchStrategy[Hashable]:
+    """Strategy for generating hashable elements."""
+    return booleans() | integers() | none() | text_ascii()
 
 
 _MDF = TypeVar("_MDF")

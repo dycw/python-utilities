@@ -2,14 +2,12 @@ from typing import Any, Optional
 
 from beartype import beartype
 from hypothesis.extra.numpy import array_shapes, arrays, from_dtype
-from hypothesis.strategies import SearchStrategy, booleans, composite, integers, nothing
-from numpy import bool_, dtype, float64, iinfo, int64
-from numpy.typing import NDArray
+from hypothesis.strategies import SearchStrategy, booleans, composite, integers, none
+from numpy import dtype, iinfo, int64
 
-from utilities.hypothesis import floats_extra, lift_draw
+from utilities.hypothesis import floats_extra, lift_draw, text_ascii
 from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
-
-_ARRAY_SHAPES = array_shapes()
+from utilities.numpy.typing import NDArrayB, NDArrayF, NDArrayI, NDArrayO
 
 
 @composite
@@ -18,10 +16,10 @@ def bool_arrays(
     _draw: Any,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] = _ARRAY_SHAPES,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
-) -> NDArray[bool_]:
+) -> NDArrayB:
     """Strategy for generating arrays of booleans."""
     draw = lift_draw(_draw)
     return draw(
@@ -35,7 +33,7 @@ def float_arrays(
     _draw: Any,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] = _ARRAY_SHAPES,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
     min_value: MaybeSearchStrategy[Optional[float]] = None,
     max_value: MaybeSearchStrategy[Optional[float]] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
@@ -45,7 +43,7 @@ def float_arrays(
     integral: MaybeSearchStrategy[bool] = False,
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
-) -> NDArray[float64]:
+) -> NDArrayF:
     """Strategy for generating arrays of floats."""
     draw = lift_draw(_draw)
     elements = floats_extra(
@@ -68,11 +66,12 @@ def int_arrays(
     _draw: Any,
     /,
     *,
-    shape: MaybeSearchStrategy[Shape] = _ARRAY_SHAPES,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
     min_value: MaybeSearchStrategy[Optional[int]] = None,
     max_value: MaybeSearchStrategy[Optional[int]] = None,
+    fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
-) -> NDArray[int64]:
+) -> NDArrayI:
     """Strategy for generating arrays of ints."""
     draw = lift_draw(_draw)
     info = iinfo(int64)
@@ -81,7 +80,7 @@ def int_arrays(
     max_value_use = info.max if max_value_ is None else max_value_
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     return draw(
-        arrays(int, draw(shape), elements=elements, fill=nothing(), unique=draw(unique))
+        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique))
     )
 
 
@@ -89,3 +88,26 @@ def int_arrays(
 def int64s() -> SearchStrategy[int]:
     """Strategy for generating int64s."""
     return from_dtype(dtype(int64)).map(int)
+
+
+@composite
+@beartype
+def str_arrays(
+    _draw: Any,
+    /,
+    *,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    allow_none: MaybeSearchStrategy[bool] = False,
+    fill: Optional[SearchStrategy[Any]] = None,
+    unique: MaybeSearchStrategy[bool] = False,
+) -> NDArrayO:
+    """Strategy for generating arrays of strings."""
+    draw = lift_draw(_draw)
+    elements = text_ascii(min_size=min_size, max_size=max_size)
+    if draw(allow_none):
+        elements |= none()
+    return draw(
+        arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+    )
