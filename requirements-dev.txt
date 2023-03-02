@@ -69,7 +69,9 @@ coverage-conditional-plugin==0.8.0
 cramjam==2.6.2
     # via fastparquet
 cryptography==39.0.1
-    # via secretstorage
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   secretstorage
 cx-oracle==8.3.0
     # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
