@@ -1,11 +1,8 @@
 from beartype.door import die_if_unbearable
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.types import Number
-from utilities.typing import NeverError
-from utilities.typing import never
+from utilities.typing import NeverError, never
 
 
 class TestNever:

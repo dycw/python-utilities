@@ -1,46 +1,35 @@
 import datetime as dt
-from enum import Enum
-from enum import auto
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import Any
-from typing import Literal
-from typing import cast
+from typing import Any, Literal, cast
 
 from freezegun import freeze_time
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import times
-from luigi import BoolParameter
-from luigi import Task
+from hypothesis import assume, given, settings
+from hypothesis.strategies import DataObject, booleans, data, dates, sampled_from, times
+from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_time
-from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis import temp_paths
+from utilities.datetime import serialize_date, serialize_time
+from utilities.hypothesis import datetimes_utc, temp_paths
 from utilities.hypothesis.luigi import namespace_mixins
-from utilities.luigi import AwaitTask
-from utilities.luigi import AwaitTime
-from utilities.luigi import DateParameter
-from utilities.luigi import EnumParameter
-from utilities.luigi import ExternalFile
-from utilities.luigi import ExternalTask
-from utilities.luigi import PathTarget
-from utilities.luigi import TimeParameter
-from utilities.luigi import WeekdayParameter
-from utilities.luigi import _yield_task_classes
-from utilities.luigi import build
-from utilities.luigi import clone
-from utilities.luigi import get_dependencies_downstream
-from utilities.luigi import get_dependencies_upstream
-from utilities.luigi import get_task_classes
+from utilities.luigi import (
+    AwaitTask,
+    AwaitTime,
+    DateParameter,
+    EnumParameter,
+    ExternalFile,
+    ExternalTask,
+    PathTarget,
+    TimeParameter,
+    WeekdayParameter,
+    _yield_task_classes,
+    build,
+    clone,
+    get_dependencies_downstream,
+    get_dependencies_upstream,
+    get_task_classes,
+)
 
 
 class TestAwaitTask:
@@ -159,8 +148,7 @@ class TestGetDependencies:
 
         a, b, c = A(), B(), C()
         ((up_a, down_a), (up_b, down_b), (up_c, down_c)) = map(
-            self._get_sets,
-            [a, b, c],
+            self._get_sets, [a, b, c]
         )
         assert up_a == set()
         assert down_a == {b}
@@ -169,11 +157,9 @@ class TestGetDependencies:
         assert up_c == {b}
         assert down_c == set()
 
-        (
-            (up_a_rec, down_a_rec),
-            (up_b_rec, down_b_rec),
-            (up_c_rec, down_c_rec),
-        ) = map(partial(self._get_sets, recursive=True), [a, b, c])
+        ((up_a_rec, down_a_rec), (up_b_rec, down_b_rec), (up_c_rec, down_c_rec)) = map(
+            partial(self._get_sets, recursive=True), [a, b, c]
+        )
         assert up_a_rec == set()
         assert down_a_rec == {b, c}
         assert up_b_rec == {a}
@@ -183,13 +169,10 @@ class TestGetDependencies:
 
     @staticmethod
     def _get_sets(
-        task: Task,
-        /,
-        *,
-        recursive: bool = False,
+        task: Task, /, *, recursive: bool = False
     ) -> tuple[set[Task], set[Task]]:
         return set(get_dependencies_upstream(task, recursive=recursive)), set(
-            get_dependencies_downstream(task, recursive=recursive),
+            get_dependencies_downstream(task, recursive=recursive)
         )
 
 
@@ -240,10 +223,7 @@ class TestTimeParameter:
 class TestWeekdayParameter:
     @given(data=data(), rounding=sampled_from(["prev", "next"]), date=dates())
     def test_main(
-        self,
-        data: DataObject,
-        rounding: Literal["prev", "next"],
-        date: dt.date,
+        self, data: DataObject, rounding: Literal["prev", "next"], date: dt.date
     ) -> None:
         param = WeekdayParameter(rounding=rounding)
         input_ = data.draw(sampled_from([date, serialize_date(date)]))

@@ -1,27 +1,14 @@
-from collections.abc import Hashable
-from collections.abc import Mapping
-from collections.abc import Sequence
-from typing import Any
-from typing import Literal
-from typing import Optional
-from typing import Union
-from typing import cast
-from typing import overload
+from collections.abc import Hashable, Mapping, Sequence
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from beartype import beartype
-from fastparquet import ParquetFile
-from fastparquet import write
-from pandas import DataFrame
-from pandas import Series
+from fastparquet import ParquetFile, write
+from pandas import DataFrame, Series
 
 from utilities.atomicwrites import writer
 from utilities.iterables import is_iterable_not_str
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
-from utilities.pandas import Int64
-from utilities.pandas import category
-from utilities.pandas import check_range_index
-from utilities.pandas import string
+from utilities.numpy import datetime64ns, has_dtype
+from utilities.pandas import Int64, category, check_range_index, string
 from utilities.pathlib import PathLike
 
 _Compression = Literal["gzip", ",snappy", "brotli", "lz4", "zstandard"]
@@ -35,10 +22,7 @@ _PARQUET_DTYPES = [bool, datetime64ns, float, Int64, string]
 @beartype
 def count_rows(path: PathLike, /, *, filters: Optional[Filters] = None) -> int:
     """Count the number of rows in a Parquet file."""
-    return _get_parquet_file(path).count(
-        filters=filters,
-        **_maybe_row_filter(filters),
-    )
+    return _get_parquet_file(path).count(filters=filters, **_maybe_row_filter(filters))
 
 
 @beartype

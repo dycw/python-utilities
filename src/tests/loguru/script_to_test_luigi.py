@@ -1,24 +1,18 @@
 from threading import get_native_id
 from time import sleep
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from click import command
-from click import option
+from click import command, option
 from loguru import logger
-from luigi import IntParameter
-from luigi import Task
-from numpy import arange
-from numpy import array
-from numpy.random import default_rng
-from numpy.random import random
+from luigi import IntParameter, Task
+from numpy import arange, array
+from numpy.random import default_rng, random
 
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
 from utilities.logging import LogLevel
 from utilities.loguru import setup_loguru
-from utilities.luigi import PathTarget
-from utilities.luigi import build
+from utilities.luigi import PathTarget, build
 from utilities.os import CPU_COUNT
 from utilities.tempfile import TEMP_DIR
 

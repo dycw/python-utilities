@@ -23,8 +23,6 @@ class TestYieldPDF:
         with yield_pdf(header=header) as pdf:
             pdf.header()
 
-    def test_footer(
-        self,
-    ) -> None:
+    def test_footer(self) -> None:
         with yield_pdf() as pdf:
             pdf.footer()

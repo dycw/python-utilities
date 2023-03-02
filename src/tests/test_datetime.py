@@ -1,55 +1,52 @@
 import datetime as dt
 from collections.abc import Callable
-from operator import eq
-from operator import gt
-from operator import lt
+from operator import eq, gt, lt
 from typing import Any
 
-from hypothesis import HealthCheck
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import timedeltas
-from hypothesis.strategies import times
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    dates,
+    datetimes,
+    integers,
+    just,
+    sampled_from,
+    timedeltas,
+    times,
+)
+from pytest import mark, param, raises
 
-from utilities.datetime import EPOCH_UTC
-from utilities.datetime import UTC
-from utilities.datetime import CallYieldWeekdaysError
-from utilities.datetime import IsWeekendError
-from utilities.datetime import ParseDateError
-from utilities.datetime import ParseDateTimeError
-from utilities.datetime import ParseTimeError
-from utilities.datetime import TimedeltaError
-from utilities.datetime import add_weekdays
-from utilities.datetime import date_to_datetime
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
-from utilities.datetime import ensure_time
-from utilities.datetime import ensure_timedelta
-from utilities.datetime import is_weekday
-from utilities.datetime import local_timezone
-from utilities.datetime import parse_date
-from utilities.datetime import parse_datetime
-from utilities.datetime import parse_time
-from utilities.datetime import parse_timedelta
-from utilities.datetime import round_to_next_weekday
-from utilities.datetime import round_to_prev_weekday
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.datetime import serialize_timedelta
-from utilities.datetime import yield_weekdays
+from utilities.datetime import (
+    EPOCH_UTC,
+    UTC,
+    CallYieldWeekdaysError,
+    IsWeekendError,
+    ParseDateError,
+    ParseDateTimeError,
+    ParseTimeError,
+    TimedeltaError,
+    add_weekdays,
+    date_to_datetime,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    ensure_timedelta,
+    is_weekday,
+    local_timezone,
+    parse_date,
+    parse_datetime,
+    parse_time,
+    parse_timedelta,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+    serialize_timedelta,
+    yield_weekdays,
+)
 from utilities.hypothesis import assume_does_not_raise
 
 
@@ -57,10 +54,7 @@ class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
     @mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
-        self,
-        date: dt.date,
-        n: int,
-        predicate: Callable[[Any, Any], bool],
+        self, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
         _ = assume(predicate(n, 0))
         with assume_does_not_raise(OverflowError):
@@ -125,13 +119,7 @@ class TestIsWeekday:
     def test_is_weekday(self, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
-        expected = name in {
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-        }
+        expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
         assert result is expected
 
 
@@ -180,11 +168,7 @@ class TestParseDateTime:
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(["%4Y%m%dT%H%M%S.%f%z", "%4Y-%m-%d %H:%M:%S.%f%z"]),
     )
-    def test_yyyymmdd_hhmmss_fff_zzzz(
-        self,
-        datetime: dt.datetime,
-        fmt: str,
-    ) -> None:
+    def test_yyyymmdd_hhmmss_fff_zzzz(self, datetime: dt.datetime, fmt: str) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -199,7 +183,7 @@ class TestParseDateTime:
     @given(
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(
-            ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"],
+            ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"]
         ),
     )
     def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, fmt: str) -> None:
@@ -209,9 +193,7 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(
-            ["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"],
-        ),
+        fmt=sampled_from(["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"]),
     )
     def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
@@ -297,11 +279,7 @@ class TestSerialize:
         ("strategy", "serialize", "parse"),
         [
             param(dates(), serialize_date, parse_date),
-            param(
-                datetimes(timezones=just(UTC)),
-                serialize_datetime,
-                parse_datetime,
-            ),
+            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),

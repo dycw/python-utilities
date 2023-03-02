@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from beartype import beartype
-from typed_settings import option
-from typed_settings import settings
+from typed_settings import option, settings
 
 
 @beartype
@@ -14,18 +13,13 @@ class Config:
     """Settings for the `monitor_memory` script."""
 
     path: Path = option(
-        default=Path("memory.csv"),
-        click={"param_decls": ("-p", "--path")},
+        default=Path("memory.csv"), click={"param_decls": ("-p", "--path")}
     )
     freq: int = option(
-        default=60,
-        help="in seconds",
-        click={"param_decls": ("-f", "--freq")},
+        default=60, help="in seconds", click={"param_decls": ("-f", "--freq")}
     )
     duration: Optional[int] = option(
-        default=None,
-        help="in seconds",
-        click={"param_decls": ("-d", "--duration")},
+        default=None, help="in seconds", click={"param_decls": ("-d", "--duration")}
     )
 
 

@@ -2,8 +2,7 @@ import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
-from typing import Optional
-from typing import Union
+from typing import Optional, Union
 
 from beartype import beartype
 
@@ -37,11 +36,7 @@ class IsWeekendError(ValueError):
 
 @beartype
 def date_to_datetime(
-    date: dt.date,
-    /,
-    *,
-    time: dt.time = dt.time(0),
-    tzinfo: tzinfo = UTC,
+    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: tzinfo = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
@@ -123,9 +118,7 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
         "%Y%m%dT%H%M%S.%f",
     ]:
         with suppress(ValueError):  # pragma: py-ge-311
-            return dt.datetime.strptime(datetime, fmt).replace(
-                tzinfo=dt.timezone.utc,
-            )
+            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=dt.timezone.utc)
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: py-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
@@ -167,10 +160,7 @@ def parse_timedelta(timedelta: str) -> dt.timedelta:
                 microseconds=as_dt.microsecond,
             )
     try:
-        days, tail = extract_groups(
-            r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)",
-            timedelta,
-        )
+        days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
     except ValueError:
         raise TimedeltaError(timedelta) from None
     else:

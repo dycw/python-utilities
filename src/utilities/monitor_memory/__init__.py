@@ -6,21 +6,17 @@ from csv import DictWriter
 from dataclasses import fields
 from pathlib import Path
 from time import sleep
-from typing import Any
-from typing import Optional
-from typing import cast
+from typing import Any, Optional, cast
 
 import attrs
 from beartype import beartype
 from click import command
 from loguru import logger
-from psutil import swap_memory
-from psutil import virtual_memory
+from psutil import swap_memory, virtual_memory
 
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
-from utilities.monitor_memory.classes import Config
-from utilities.monitor_memory.classes import Item
+from utilities.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
 
@@ -34,11 +30,7 @@ def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     setup_loguru()
     _log_config(config)
-    _monitor_memory(
-        path=config.path,
-        freq=config.freq,
-        duration=config.duration,
-    )
+    _monitor_memory(path=config.path, freq=config.freq, duration=config.duration)
 
 
 @beartype
@@ -72,9 +64,7 @@ def _monitor_memory(
 @contextmanager
 @beartype
 def _yield_writer(
-    *,
-    path: Path = _CONFIG.path,
-    mode: str = "r",
+    *, path: Path = _CONFIG.path, mode: str = "r"
 ) -> Iterator[DictWriter]:
     fieldnames = [f.name for f in fields(cast(Any, Item))]
     with path.open(mode=mode) as fh:

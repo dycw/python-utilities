@@ -17,9 +17,7 @@ def one(iterable: Iterable[_T], /) -> _T:
     except ValueError as error1:
         try:
             redirect_error(
-                error1,
-                "too few items in iterable",
-                EmptyIterableError(error1.args[0]),
+                error1, "too few items in iterable", EmptyIterableError(error1.args[0])
             )
         except ValueError as error2:
             redirect_error(

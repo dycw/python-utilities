@@ -4,8 +4,7 @@ from smtplib import SMTPServerDisconnected
 from pytest import raises
 
 from utilities.airium import yield_airium
-from utilities.email import InvalidContentsError
-from utilities.email import send_email
+from utilities.email import InvalidContentsError, send_email
 from utilities.pytest import is_pytest
 
 
@@ -17,10 +16,7 @@ class TestSendEmail:
     def test_subject(self) -> None:
         with raises(SMTPServerDisconnected):
             send_email(
-                "no-reply@test.com",
-                ["user@test.com"],
-                subject="Subject",
-                disable=None,
+                "no-reply@test.com", ["user@test.com"], subject="Subject", disable=None
             )
 
     def test_contents_str(self) -> None:

@@ -1,8 +1,7 @@
 from pathlib import Path
 
 from beartype import beartype
-from nox import Session
-from nox import session
+from nox import Session, session
 
 
 @session
@@ -20,8 +19,4 @@ def tests(session: Session, /) -> None:
     session.install("--upgrade", "pip-tools")
     requirements = set(Path(__file__).parent.glob("requirements*.txt"))
     _ = session.run("pip-sync", *(r.as_posix() for r in requirements))
-    _ = session.run(
-        "pytest",
-        "--cov-report=term-missing:skip-covered",
-        "-n=auto",
-    )
+    _ = session.run("pytest", "--cov-report=term-missing:skip-covered", "-n=auto")

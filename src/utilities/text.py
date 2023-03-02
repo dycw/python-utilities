@@ -1,5 +1,4 @@
-from re import search
-from re import sub
+from re import search, sub
 from textwrap import dedent
 from typing import Any
 

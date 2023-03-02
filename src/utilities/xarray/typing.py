@@ -2,15 +2,17 @@ from typing import Annotated
 
 from xarray import DataArray
 
-from utilities.beartype.numpy import DTypeB
-from utilities.beartype.numpy import DTypeDns
-from utilities.beartype.numpy import DTypeF
-from utilities.beartype.numpy import DTypeI
-from utilities.beartype.numpy import DTypeO
-from utilities.beartype.numpy import NDim0
-from utilities.beartype.numpy import NDim1
-from utilities.beartype.numpy import NDim2
-from utilities.beartype.numpy import NDim3
+from utilities.beartype.numpy import (
+    DTypeB,
+    DTypeDns,
+    DTypeF,
+    DTypeI,
+    DTypeO,
+    NDim0,
+    NDim1,
+    NDim2,
+    NDim3,
+)
 
 # dtype
 DataArrayB = Annotated[DataArray, DTypeB]

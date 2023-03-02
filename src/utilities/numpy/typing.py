@@ -1,20 +1,10 @@
-from typing import Annotated
-from typing import Any
-from typing import cast
+from typing import Annotated, Any, cast
 
-from numpy import bool_
-from numpy import float64
-from numpy import int64
-from numpy import object_
+from numpy import bool_, float64, int64, object_
 from numpy.typing import NDArray
 
-from utilities.beartype.numpy import NDim0
-from utilities.beartype.numpy import NDim1
-from utilities.beartype.numpy import NDim2
-from utilities.beartype.numpy import NDim3
-from utilities.numpy import datetime64D
-from utilities.numpy import datetime64ns
-from utilities.numpy import datetime64Y
+from utilities.beartype.numpy import NDim0, NDim1, NDim2, NDim3
+from utilities.numpy import datetime64D, datetime64ns, datetime64Y
 
 # dtype
 NDArrayB = NDArray[bool_]

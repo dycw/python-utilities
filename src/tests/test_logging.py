@@ -1,8 +1,7 @@
 from logging import getLogger
 
 from utilities.enum import StrEnum
-from utilities.logging import LogLevel
-from utilities.logging import basic_config
+from utilities.logging import LogLevel, basic_config
 
 
 class TestBasicConfig:

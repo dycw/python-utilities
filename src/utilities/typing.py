@@ -1,5 +1,4 @@
-from typing import NoReturn
-from typing import Union
+from typing import NoReturn, Union
 
 Number = Union[float, int]
 

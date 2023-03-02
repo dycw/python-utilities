@@ -1,34 +1,26 @@
 import datetime as dt
 from collections.abc import Hashable
-from typing import Annotated
-from typing import Any
-from typing import Optional
-from typing import cast
+from typing import Annotated, Any, Optional, cast
 
 from beartype import beartype
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import composite
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import integers
-from pandas import Index
-from pandas import Timedelta
-from pandas import Timestamp
+from hypothesis.strategies import SearchStrategy, composite, dates, datetimes, integers
+from pandas import Index, Timedelta, Timestamp
 
 from utilities.beartype.numpy import DTypeI
 from utilities.beartype.pandas import DTypeString
 from utilities.datetime import UTC
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import lift_draw, text_ascii
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.pandas import string
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+    string,
+)
 
 
 @beartype
@@ -60,7 +52,7 @@ def datetimes_pd(
         datetimes(
             min_value=draw(min_value).replace(tzinfo=None),
             max_value=draw(max_value).replace(tzinfo=None),
-        ),
+        )
     )
     return datetime.replace(tzinfo=UTC)
 
@@ -91,7 +83,7 @@ def indexes(
             min_size=n_,
             max_size=n_,
             unique=draw(unique),
-        ),
+        )
     )
     index = cast(Index, index.rename(draw(name)))
     if draw(sort):
@@ -109,12 +101,7 @@ def int_indexes(
 ) -> SearchStrategy[Annotated[Index, DTypeI]]:
     """Strategy for generating integer Indexes."""
     return indexes(
-        elements=int64s(),
-        dtype=int,
-        n=n,
-        unique=unique,
-        name=name,
-        sort=sort,
+        elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
     )
 
 
@@ -139,7 +126,7 @@ def str_indexes(
             unique=unique,
             name=name,
             sort=sort,
-        ),
+        )
     )
     return index.astype(string)
 

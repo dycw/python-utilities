@@ -5,8 +5,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from utilities.hypothesis import text_ascii
-from utilities.luigi.server import _get_args
-from utilities.luigi.server import main
+from utilities.luigi.server import _get_args, main
 
 
 class TestLuigiServer:
@@ -17,17 +16,10 @@ class TestLuigiServer:
         port=integers(),
     )
     def test_get_args(
-        self,
-        pid_file: Path,
-        log_dir: str,
-        state_path: str,
-        port: int,
+        self, pid_file: Path, log_dir: str, state_path: str, port: int
     ) -> None:
         _ = _get_args(
-            pid_file=pid_file,
-            log_dir=log_dir,
-            state_path=state_path,
-            port=port,
+            pid_file=pid_file, log_dir=log_dir, state_path=state_path, port=port
         )
 
     def test_dry_run(self) -> None:

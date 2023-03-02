@@ -1,21 +1,15 @@
-from collections.abc import Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import Any, Optional, Union
 
 from beartype import beartype
 
 
 @beartype
 def yield_modules(
-    module: ModuleType,
-    /,
-    *,
-    recursive: bool = False,
+    module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
     """Yield all the modules under a package.
 
@@ -84,8 +78,5 @@ def yield_module_subclasses(
         )
 
     return yield_module_contents(
-        module,
-        recursive=recursive,
-        type=type,
-        predicate=predicate_use,
+        module, recursive=recursive, type=type, predicate=predicate_use
     )

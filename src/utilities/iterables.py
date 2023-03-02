@@ -1,6 +1,5 @@
 from collections import Counter
-from collections.abc import Hashable
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 from typing import Any
 
 from beartype import beartype

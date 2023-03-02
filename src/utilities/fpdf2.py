@@ -1,13 +1,12 @@
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
-from typing import Optional
+from typing import Any, Optional
 
 from beartype import beartype
 from fpdf import FPDF
-from fpdf.enums import XPos
-from fpdf.enums import YPos
+from fpdf.enums import XPos, YPos
+from holoviews import save
 
 from utilities.datetime import local_timezone
 from utilities.holoviews import save_plot
@@ -29,7 +28,7 @@ class _BasePDF(FPDF):
         with TemporaryDirectory() as temp:
             path = temp.joinpath("image.png")
             save_plot(plot, "plot.png")
-            _ = self.image(path, w=self.epw)
+            _ = save.image(path, w=self.epw)
 
 
 @contextmanager

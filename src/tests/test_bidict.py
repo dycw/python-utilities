@@ -1,8 +1,7 @@
 from hypothesis import given
 from pytest import raises
 
-from utilities.bidict import SnakeCaseContainsDuplicatesError
-from utilities.bidict import snake_case_mappings
+from utilities.bidict import SnakeCaseContainsDuplicatesError, snake_case_mappings
 from utilities.hypothesis import text_ascii
 from utilities.text import snake_case
 

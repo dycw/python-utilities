@@ -1,6 +1,4 @@
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.fastapi import APIRouter
 

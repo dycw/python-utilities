@@ -3,8 +3,7 @@ from typing import Any
 from beartype import beartype
 from hypothesis.strategies import composite
 
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import temp_paths
+from utilities.hypothesis import lift_draw, temp_paths
 
 
 @composite

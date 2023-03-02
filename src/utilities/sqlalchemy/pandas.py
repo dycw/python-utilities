@@ -1,45 +1,36 @@
 import datetime as dt
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from decimal import Decimal
-from typing import Any
-from typing import Optional
-from typing import Union
-from typing import overload
+from typing import Any, Optional, Union, overload
 
 from beartype import beartype
-from pandas import DataFrame
-from pandas import Series
-from sqlalchemy import Column
-from sqlalchemy import insert
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.engine import Row
+from pandas import DataFrame, Series
+from sqlalchemy import Column, insert
+from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnElement
-from sqlalchemy.sql import Select
+from sqlalchemy.sql import ColumnElement, Select
 
 from utilities.bidict import snake_case_mappings
-from utilities.iterables import IterableContainsDuplicatesError
-from utilities.iterables import check_duplicates
-from utilities.more_itertools import EmptyIterableError
-from utilities.more_itertools import one
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import datetime64nsutc
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
-from utilities.sqlalchemy import get_column_names
-from utilities.sqlalchemy import get_columns
-from utilities.sqlalchemy import get_dialect
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import model_to_dict
-from utilities.sqlalchemy import yield_connection
-from utilities.text import ensure_str
-from utilities.text import snake_case
+from utilities.iterables import IterableContainsDuplicatesError, check_duplicates
+from utilities.more_itertools import EmptyIterableError, one
+from utilities.numpy import datetime64ns, has_dtype
+from utilities.pandas import (
+    Int64,
+    boolean,
+    datetime64nsutc,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+)
+from utilities.sqlalchemy import (
+    get_column_names,
+    get_columns,
+    get_dialect,
+    get_table,
+    model_to_dict,
+    yield_connection,
+)
+from utilities.text import ensure_str, snake_case
 
 
 @beartype
@@ -91,7 +82,7 @@ def insert_items(
                             table_or_model,
                             snake=snake,
                             allow_naive_datetimes=allow_naive_datetimes,
-                        ),
+                        )
                     )
                 else:
                     msg = f"Invalid type: {first=}"
@@ -119,10 +110,7 @@ def _yield_dataframe_rows_as_dicts(
     """Yield the rows of a DataFrame as dicts, ready for insertion."""
     parsed = [
         _parse_series_against_table(
-            sr,
-            table_or_model,
-            snake=snake,
-            allow_naive_datetimes=allow_naive_datetimes,
+            sr, table_or_model, snake=snake, allow_naive_datetimes=allow_naive_datetimes
         )
         for _, sr in df.items()
     ]
@@ -165,9 +153,7 @@ def _parse_series_against_table(
         msg = f"Unable to map {series_name!r} to {table_or_model}"
         raise error(msg) from None
     _check_series_against_table_column(
-        series,
-        column,
-        allow_naive_datetimes=allow_naive_datetimes,
+        series, column, allow_naive_datetimes=allow_naive_datetimes
     )
     return column.name, _yield_insertion_elements(series)
 
@@ -182,11 +168,7 @@ class SeriesNameNotInTableError(ValueError):
 
 @beartype
 def _check_series_against_table_column(
-    series: Series,
-    table_column: Column[Any],
-    /,
-    *,
-    allow_naive_datetimes: bool = False,
+    series: Series, table_column: Column[Any], /, *, allow_naive_datetimes: bool = False
 ) -> None:
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
@@ -300,11 +282,7 @@ def _check_select_for_duplicates(sel: Select, /) -> None:
 
 @beartype
 def _rows_to_dataframe(
-    sel: Select,
-    rows: Iterable[Row],
-    /,
-    *,
-    snake: bool = False,
+    sel: Select, rows: Iterable[Row], /, *, snake: bool = False
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
     dtypes = {

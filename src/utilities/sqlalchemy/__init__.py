@@ -1,65 +1,49 @@
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import Mapping
-from collections.abc import Sequence
-from contextlib import contextmanager
-from contextlib import suppress
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
-from operator import ge
-from operator import itemgetter
-from operator import le
-from typing import Any
-from typing import Literal
-from typing import NoReturn
-from typing import Optional
-from typing import Union
-from typing import cast
+from operator import ge, itemgetter, le
+from typing import Any, Literal, NoReturn, Optional, Union, cast
 
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Enum
-from sqlalchemy import Float
-from sqlalchemy import Interval
-from sqlalchemy import LargeBinary
-from sqlalchemy import MetaData
-from sqlalchemy import Numeric
-from sqlalchemy import Select
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import Unicode
-from sqlalchemy import UnicodeText
-from sqlalchemy import Uuid
-from sqlalchemy import and_
-from sqlalchemy import case
-from sqlalchemy import quoted_name
-from sqlalchemy import text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    Interval,
+    LargeBinary,
+    MetaData,
+    Numeric,
+    Select,
+    String,
+    Table,
+    Unicode,
+    UnicodeText,
+    Uuid,
+    and_,
+    case,
+    quoted_name,
+    text,
+)
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.exc import NoSuchTableError
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.engine import URL, Connection, Engine
+from sqlalchemy.exc import DatabaseError, NoSuchTableError, OperationalError
 from sqlalchemy.orm import InstrumentedAttribute
-from sqlalchemy.pool import NullPool
-from sqlalchemy.pool import Pool
+from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.bidict import snake_case_mappings
 from utilities.errors import redirect_error
 from utilities.more_itertools import one
-from utilities.text import ensure_str
-from utilities.text import snake_case
+from utilities.text import ensure_str, snake_case
 from utilities.typing import never
 
 
@@ -127,11 +111,7 @@ def check_tables_equal(
 
 @beartype
 def _check_table_or_column_names_equal(
-    x: Union[str, quoted_name],
-    y: Union[str, quoted_name],
-    /,
-    *,
-    snake: bool = False,
+    x: Union[str, quoted_name], y: Union[str, quoted_name], /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
@@ -208,12 +188,7 @@ class UnequalSetOfColumnsError(ValueError):
 
 @beartype
 def _check_columns_equal(
-    x: Column[Any],
-    y: Column[Any],
-    /,
-    *,
-    snake: bool = False,
-    primary_key: bool = True,
+    x: Column[Any], y: Column[Any], /, *, snake: bool = False, primary_key: bool = True
 ) -> None:
     """Check that a pair of columns are equal."""
     _check_table_or_column_names_equal(x.name, y.name, snake=snake)
@@ -236,9 +211,7 @@ class UnequalNullableStatusError(ValueError):
 
 @beartype
 def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
-    x: Any,
-    y: Any,
-    /,
+    x: Any, y: Any, /
 ) -> None:
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
@@ -283,10 +256,7 @@ def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
         and (x_inst.timezone is not y_inst.timezone)
     ):
         raise UnequalDateTimeColumnTimezoneError(msg)
-    if isinstance(x_inst, (Float, Numeric)) and isinstance(
-        y_inst,
-        (Float, Numeric),
-    ):
+    if isinstance(x_inst, (Float, Numeric)) and isinstance(y_inst, (Float, Numeric)):
         if x_inst.precision != y_inst.precision:
             raise UnequalFloatColumnPrecisionsError(msg)
         if x_inst.decimal_return_scale != y_inst.decimal_return_scale:
@@ -307,8 +277,7 @@ def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
     ):
         raise UnequalLargeBinaryColumnLengthError(msg)
     if isinstance(x_inst, (String, Unicode, UnicodeText)) and isinstance(
-        y_inst,
-        (String, Unicode, UnicodeText),
+        y_inst, (String, Unicode, UnicodeText)
     ):
         if x_inst.length != y_inst.length:
             raise UnequalStringLengthError(msg)
@@ -445,10 +414,7 @@ def check_engine(
             rel_tol_use = 1e-9 if rel_tol is None else rel_tol
             abs_tol_use = 0.0 if abs_tol is None else abs_tol
             if not isclose(
-                n_rows,
-                num_tables,
-                rel_tol=rel_tol_use,
-                abs_tol=abs_tol_use,
+                n_rows, num_tables, rel_tol=rel_tol_use, abs_tol=abs_tol_use
             ):
                 msg = f"{len(rows)=}, {num_tables=}, {rel_tol=}, {abs_tol=}"
                 raise IncorrectNumberOfTablesError(msg)
@@ -556,9 +522,7 @@ class UnsupportedDialectError(TypeError):
 
 @beartype
 def ensure_table_created(
-    table_or_model: Any,
-    engine_or_connection: Union[Engine, Connection],
-    /,
+    table_or_model: Any, engine_or_connection: Union[Engine, Connection], /
 ) -> None:
     """Ensure a table is created."""
     table = get_table(table_or_model)
@@ -572,9 +536,7 @@ def ensure_table_created(
 
 @beartype
 def ensure_table_dropped(
-    table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
-    /,
+    table_or_model: Any, engine_or_conn: Union[Engine, Connection], /
 ) -> None:
     """Ensure a table is dropped."""
     table = get_table(table_or_model)
@@ -636,9 +598,7 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
 
 @beartype
 def redirect_to_no_such_table_error(
-    engine_or_conn: Union[Engine, Connection],
-    error: DatabaseError,
-    /,
+    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
@@ -657,9 +617,7 @@ def redirect_to_no_such_table_error(
 
 @beartype
 def redirect_to_table_already_exists_error(
-    engine_or_conn: Union[Engine, Connection],
-    error: DatabaseError,
-    /,
+    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
@@ -683,8 +641,7 @@ class TableAlreadyExistsError(Exception):
 @contextmanager
 @beartype
 def yield_connection(
-    engine_or_conn: Union[Engine, Connection],
-    /,
+    engine_or_conn: Union[Engine, Connection], /
 ) -> Iterator[Connection]:
     """Yield a connection."""
     if isinstance(engine_or_conn, Engine):
