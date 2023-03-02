@@ -1,6 +1,6 @@
 import datetime as dt
 from collections.abc import Hashable
-from typing import Annotated, Any, Optional, cast
+from typing import Any, Optional, cast
 
 from beartype import beartype
 from hypothesis import assume
@@ -8,8 +8,6 @@ from hypothesis.extra.pandas import indexes as _indexes
 from hypothesis.strategies import SearchStrategy, composite, dates, datetimes, integers
 from pandas import Index, Timedelta, Timestamp
 
-from utilities.beartype.numpy import DTypeI
-from utilities.beartype.pandas import DTypeString
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw, text_ascii
 from utilities.hypothesis.numpy import int64s
@@ -21,6 +19,7 @@ from utilities.pandas import (
     TIMESTAMP_MIN_AS_DATETIME,
     string,
 )
+from utilities.pandas.typing import IndexI, IndexS
 
 
 @beartype
@@ -69,7 +68,7 @@ def indexes(
     elements: Optional[SearchStrategy[Any]] = None,
     dtype: Any = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = False,
+    unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
 ) -> Index:
@@ -95,10 +94,10 @@ def indexes(
 def int_indexes(
     *,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = False,
+    unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[Annotated[Index, DTypeI]]:
+) -> SearchStrategy[IndexI]:
     """Strategy for generating integer Indexes."""
     return indexes(
         elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
@@ -111,21 +110,19 @@ def str_indexes(
     _draw: Any,
     /,
     *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[Optional[int]] = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = False,
+    unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> Annotated[Index, DTypeString]:
+) -> IndexS:
     """Strategy for generating string Indexes."""
     draw = lift_draw(_draw)
+    elements = text_ascii(min_size=min_size, max_size=max_size)
     index = draw(
         indexes(
-            elements=text_ascii(),
-            dtype=object,
-            n=n,
-            unique=unique,
-            name=name,
-            sort=sort,
+            elements=elements, dtype=object, n=n, unique=unique, name=name, sort=sort
         )
     )
     return index.astype(string)
