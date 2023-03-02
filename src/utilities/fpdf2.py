@@ -6,7 +6,6 @@ from typing import Any, Optional
 from beartype import beartype
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
-from holoviews import save
 
 from utilities.datetime import local_timezone
 from utilities.holoviews import save_plot
@@ -27,8 +26,8 @@ class _BasePDF(FPDF):
     def add_plot(self, plot: Any, /) -> None:  # pragma: no cover
         with TemporaryDirectory() as temp:
             path = temp.joinpath("image.png")
-            save_plot(plot, "plot.png")
-            _ = save.image(path, w=self.epw)
+            save_plot(plot, path)
+            _ = self.image(path, w=self.epw)
 
 
 @contextmanager
