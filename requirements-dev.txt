@@ -27,6 +27,10 @@ bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
 black==23.1.0
     # via dycw-utilities (pyproject.toml)
+bleach==6.0.0
+    # via panel
+bokeh==2.4.3
+    # via panel
 bottleneck==1.3.6
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
@@ -39,8 +43,11 @@ certifi==2022.12.7
     # via
     #   httpcore
     #   httpx
+    #   requests
 cffi==1.15.1
     # via cryptography
+charset-normalizer==3.0.1
+    # via requests
 click==8.1.3
     # via
     #   black
@@ -49,6 +56,8 @@ click==8.1.3
     #   pip-tools
     #   typed-settings
     #   userpath
+colorcet==3.0.1
+    # via holoviews
 colorlog==6.7.0
     # via nox
 coverage[toml]==7.2.1
@@ -63,6 +72,8 @@ cryptography==39.0.1
     # via secretstorage
 cx-oracle==8.3.0
     # via dycw-utilities (pyproject.toml)
+defusedxml==0.7.1
+    # via fpdf2
 distlib==0.3.6
     # via virtualenv
 docutils==0.19
@@ -79,6 +90,10 @@ fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
 filelock==3.9.0
     # via virtualenv
+fonttools==4.38.0
+    # via fpdf2
+fpdf2==2.6.1
+    # via dycw-utilities (pyproject.toml)
 freezegun==1.2.2
     # via dycw-utilities (pyproject.toml)
 fsspec==2023.1.0
@@ -91,6 +106,8 @@ hatch==1.6.3
     # via dycw-utilities (pyproject.toml)
 hatchling==1.13.0
     # via hatch
+holoviews==1.15.4
+    # via dycw-utilities (pyproject.toml)
 httpcore==0.16.3
     # via httpx
 httpx==0.23.3
@@ -107,6 +124,7 @@ idna==3.4
     # via
     #   anyio
     #   hyperlink
+    #   requests
     #   rfc3986
 importlib-metadata==6.0.0
     # via keyring
@@ -118,6 +136,8 @@ jeepney==0.8.0
     # via
     #   keyring
     #   secretstorage
+jinja2==3.1.2
+    # via bokeh
 keyring==23.13.1
     # via hatch
 lockfile==0.12.2
@@ -126,8 +146,12 @@ loguru==0.6.0
     # via dycw-utilities (pyproject.toml)
 luigi==3.2.0
     # via dycw-utilities (pyproject.toml)
+markdown==3.4.1
+    # via panel
 markdown-it-py==2.2.0
     # via rich
+markupsafe==2.1.2
+    # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
 memory-profiler==0.61.0
@@ -144,19 +168,23 @@ nox==2022.11.21
     # via dycw-utilities (pyproject.toml)
 numpy==1.24.2
     # via
+    #   bokeh
     #   bottleneck
     #   dycw-utilities (pyproject.toml)
     #   fastparquet
+    #   holoviews
     #   pandas
     #   xarray
 packaging==23.0
     # via
     #   black
+    #   bokeh
     #   build
     #   coverage-conditional-plugin
     #   fastparquet
     #   hatch
     #   hatchling
+    #   holoviews
     #   nox
     #   pytest
     #   xarray
@@ -164,13 +192,26 @@ pandas==1.5.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastparquet
+    #   holoviews
     #   xarray
+panel==0.14.3
+    # via holoviews
+param==1.12.3
+    # via
+    #   holoviews
+    #   panel
+    #   pyct
+    #   pyviz-comms
 pathspec==0.11.0
     # via
     #   black
     #   hatchling
 pexpect==4.8.0
     # via hatch
+pillow==9.4.0
+    # via
+    #   bokeh
+    #   fpdf2
 pip-tools==6.12.3
     # via dycw-utilities (pyproject.toml)
 platformdirs==3.0.0
@@ -194,6 +235,10 @@ ptyprocess==0.7.0
     # via pexpect
 pycparser==2.21
     # via cffi
+pyct==0.5.0
+    # via
+    #   colorcet
+    #   panel
 pydantic==1.10.5
     # via fastapi
 pygments==2.14.0
@@ -232,6 +277,14 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2022.7.1
     # via pandas
+pyviz-comms==2.2.1
+    # via
+    #   holoviews
+    #   panel
+pyyaml==6.0
+    # via bokeh
+requests==2.28.2
+    # via panel
 rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.1
@@ -243,7 +296,9 @@ secretstorage==3.3.3
 shellingham==1.5.0.post1
     # via hatch
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   bleach
+    #   python-dateutil
 sniffio==1.3.0
     # via
     #   anyio
@@ -264,25 +319,34 @@ tomli-w==1.0.0
 tomlkit==0.11.6
     # via hatch
 tornado==6.2
-    # via luigi
+    # via
+    #   bokeh
+    #   luigi
 tqdm==4.64.1
     # via
     #   dycw-utilities (pyproject.toml)
+    #   panel
     #   pqdm
 typed-settings[click]==2.0.2
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.5.0
     # via
+    #   bokeh
     #   dycw-utilities (pyproject.toml)
+    #   panel
     #   pqdm
     #   pydantic
     #   sqlalchemy
+urllib3==1.26.14
+    # via requests
 userpath==1.8.0
     # via hatch
 virtualenv==20.20.0
     # via
     #   hatch
     #   nox
+webencodings==0.5.1
+    # via bleach
 wheel==0.38.4
     # via pip-tools
 xarray==2023.2.0
@@ -295,5 +359,6 @@ pip==23.0.1
     # via pip-tools
 setuptools==67.4.0
     # via
+    #   panel
     #   pip-tools
     #   python-daemon
