@@ -63,9 +63,9 @@ def bool_data_arrays(
 @beartype
 def float_data_arrays(
     _draw: Any,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     /,
     *,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_value: MaybeSearchStrategy[Optional[float]] = None,
     max_value: MaybeSearchStrategy[Optional[float]] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
@@ -103,9 +103,9 @@ def float_data_arrays(
 @beartype
 def int_data_arrays(
     _draw: Any,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     /,
     *,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_value: MaybeSearchStrategy[Optional[int]] = None,
     max_value: MaybeSearchStrategy[Optional[int]] = None,
     fill: Optional[SearchStrategy[Any]] = None,
@@ -133,9 +133,9 @@ def int_data_arrays(
 @beartype
 def str_data_arrays(
     _draw: Any,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     /,
     *,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
     allow_none: MaybeSearchStrategy[bool] = False,
