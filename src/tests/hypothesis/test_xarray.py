@@ -10,6 +10,7 @@ from pandas.testing import assert_index_equal
 from utilities.hypothesis import assume_does_not_raise, hashables
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.xarray import (
+    _merge_into_dict_of_indexes,
     bool_data_arrays,
     dicts_of_indexes,
     float_data_arrays,
@@ -23,7 +24,7 @@ class TestBoolDataArrays:
     def test_main(
         self, data: DataObject, indexes: dict[Hashable, Index], name: Hashable
     ) -> None:
-        array = data.draw(bool_data_arrays(indexes=indexes, name=name))
+        array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
         assert array.dims == tuple(indexes)
         assert array.dtype == bool
@@ -153,6 +154,25 @@ class TestIntDataArrays:
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
             assert_index_equal(arr, exp, check_names=False)
+
+
+class TestMergeIntoDictOfIndexes:
+    @given(data=data())
+    def test_empty(self, data: DataObject) -> None:
+        _ = data.draw(_merge_into_dict_of_indexes())
+
+    @given(
+        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
+    )
+    def test_non_empty(
+        self,
+        data: DataObject,
+        indexes1: Optional[dict[Hashable, Index]],
+        indexes2: dict[str, Index],
+    ) -> None:
+        indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
+        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
+        assert set(indexes_) == expected
 
 
 class TestStrDataArrays:

@@ -43,16 +43,17 @@ def dicts_of_indexes(
 @beartype
 def bool_data_arrays(
     _draw: Any,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     /,
     *,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] = dicts_of_indexes(),
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
+    **indexes_kwargs: MaybeSearchStrategy[Index],
 ) -> DataArrayB:
     """Strategy for generating data arrays of booleans."""
     draw = lift_draw(_draw)
-    indexes_ = draw(indexes)
+    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
     shape = tuple(map(len, indexes_.values()))
     values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
     return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
@@ -64,7 +65,7 @@ def float_data_arrays(
     _draw: Any,
     /,
     *,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] = dicts_of_indexes(),
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_value: MaybeSearchStrategy[Optional[float]] = None,
     max_value: MaybeSearchStrategy[Optional[float]] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
@@ -75,10 +76,11 @@ def float_data_arrays(
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
+    **indexes_kwargs: MaybeSearchStrategy[Index],
 ) -> DataArrayF:
     """Strategy for generating data arrays of floats."""
     draw = lift_draw(_draw)
-    indexes_ = draw(indexes)
+    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
     shape = tuple(map(len, indexes_.values()))
     values = draw(
         float_arrays(
@@ -103,16 +105,17 @@ def int_data_arrays(
     _draw: Any,
     /,
     *,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] = dicts_of_indexes(),
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_value: MaybeSearchStrategy[Optional[int]] = None,
     max_value: MaybeSearchStrategy[Optional[int]] = None,
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
+    **indexes_kwargs: MaybeSearchStrategy[Index],
 ) -> DataArrayI:
     """Strategy for generating data arrays of ints."""
     draw = lift_draw(_draw)
-    indexes_ = draw(indexes)
+    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
     shape = tuple(map(len, indexes_.values()))
     values = draw(
         int_arrays(
@@ -132,17 +135,18 @@ def str_data_arrays(
     _draw: Any,
     /,
     *,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] = dicts_of_indexes(),
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
     min_size: MaybeSearchStrategy[int] = 0,
     max_size: MaybeSearchStrategy[Optional[int]] = None,
     allow_none: MaybeSearchStrategy[bool] = False,
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
+    **indexes_kwargs: MaybeSearchStrategy[Index],
 ) -> DataArrayO:
     """Strategy for generating data arrays of strings."""
     draw = lift_draw(_draw)
-    indexes_ = draw(indexes)
+    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
     shape = tuple(map(len, indexes_.values()))
     values = draw(
         str_arrays(
@@ -155,3 +159,22 @@ def str_data_arrays(
         )
     )
     return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
+
+
+@composite
+@beartype
+def _merge_into_dict_of_indexes(
+    _draw: Any,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    /,
+    **indexes_kwargs: MaybeSearchStrategy[Index],
+) -> dict[Hashable, Index]:
+    """Merge positional & kwargs of indexes into a dictionary."""
+    draw = lift_draw(_draw)
+    if (indexes is None) and (len(indexes_kwargs) == 0):
+        return draw(dicts_of_indexes())
+    indexes_out: dict[Hashable, Index] = {}
+    if indexes is not None:
+        indexes_out |= draw(indexes)
+    indexes_out |= {k: draw(v) for k, v in indexes_kwargs.items()}
+    return indexes_out
