@@ -100,7 +100,7 @@ class TestFloatDataArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 float_data_arrays(
-                    indexes=indexes,
+                    indexes,
                     min_value=min_value,
                     max_value=max_value,
                     allow_nan=allow_nan,
@@ -141,7 +141,7 @@ class TestIntDataArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 int_data_arrays(
-                    indexes=indexes,
+                    indexes,
                     min_value=min_value,
                     max_value=max_value,
                     unique=unique,
@@ -198,7 +198,7 @@ class TestStrDataArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 str_data_arrays(
-                    indexes=indexes,
+                    indexes,
                     min_size=min_size,
                     max_size=max_size,
                     allow_none=allow_none,
