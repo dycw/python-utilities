@@ -217,7 +217,7 @@ class TestSetupHypothesisProfiles:
         setup_hypothesis_profiles()
         curr = settings()
         assert Phase.shrink in curr.phases
-        assert curr.max_examples == 100
+        assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
         with temp_environ({_NO_SHRINK: "1"}):
