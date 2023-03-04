@@ -1,12 +1,26 @@
 from typing import Annotated, Any, cast
 
-from numpy import bool_, float64, int64, object_
+from beartype.vale import IsAttr, IsEqual
+from numpy import bool_, dtype, float64, int64, object_
 from numpy.typing import NDArray
 
-from utilities.beartype.numpy import NDim0, NDim1, NDim2, NDim3
-from utilities.numpy import datetime64D, datetime64ns, datetime64Y
+from utilities.beartype import NDim0, NDim1, NDim2, NDim3
 
-# dtype
+# dtypes
+datetime64D = dtype("datetime64[D]")  # noqa: N816
+datetime64Y = dtype("datetime64[Y]")  # noqa: N816
+datetime64ns = dtype("datetime64[ns]")
+
+# dtype checkers
+DTypeB = IsAttr["dtype", IsEqual[bool]]
+DTypeDD = IsAttr["dtype", IsEqual[datetime64D]]
+DTypeDY = IsAttr["dtype", IsEqual[datetime64Y]]
+DTypeDns = IsAttr["dtype", IsEqual[datetime64ns]]
+DTypeF = IsAttr["dtype", IsEqual[float]]
+DTypeI = IsAttr["dtype", IsEqual[int]]
+DTypeO = IsAttr["dtype", IsEqual[object]]
+
+# annotated; dtype
 NDArrayB = NDArray[bool_]
 NDArrayDD = NDArray[cast(Any, datetime64D)]
 NDArrayDY = NDArray[cast(Any, datetime64Y)]
@@ -15,13 +29,13 @@ NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
 
-# ndim
+# annotated; ndim
 NDArray0 = Annotated[NDArray[Any], NDim0]
 NDArray1 = Annotated[NDArray[Any], NDim1]
 NDArray2 = Annotated[NDArray[Any], NDim2]
 NDArray3 = Annotated[NDArray[Any], NDim3]
 
-# compound
+# annotated; dtype & ndim
 NDArrayB0 = Annotated[NDArrayB, NDim0]
 NDArrayDD0 = Annotated[NDArrayDD, NDim0]
 NDArrayDY0 = Annotated[NDArrayDY, NDim0]

@@ -2,15 +2,19 @@ import datetime as dt
 from typing import Any, Union, cast
 
 from beartype import beartype
-from pandas import DataFrame, DatetimeTZDtype, Index, NaT, RangeIndex, Series, Timestamp
+from pandas import DataFrame, Index, NaT, RangeIndex, Series, Timestamp
 
 from utilities.datetime import UTC
+from utilities.pandas.typing import (
+    Int64,
+    boolean,
+    category,
+    datetime64nshk,
+    datetime64nsutc,
+    string,
+)
 
-Int64 = "Int64"
-boolean = "boolean"
-category = "category"
-string = "string"
-datetime64nsutc = DatetimeTZDtype(tz=UTC)
+_ = (Int64, boolean, category, string, datetime64nsutc, datetime64nshk)
 
 
 @beartype

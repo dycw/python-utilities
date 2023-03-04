@@ -3,32 +3,23 @@ from typing import Annotated
 from typing_extensions import TypeAlias
 from xarray import DataArray
 
-from utilities.beartype.numpy import (
-    DTypeB,
-    DTypeDns,
-    DTypeF,
-    DTypeI,
-    DTypeO,
-    NDim0,
-    NDim1,
-    NDim2,
-    NDim3,
-)
+from utilities.beartype import NDim0, NDim1, NDim2, NDim3
+from utilities.numpy.typing import DTypeB, DTypeDns, DTypeF, DTypeI, DTypeO
 
-# dtype
+# dtype annotated;
 DataArrayB: TypeAlias = Annotated[DataArray, DTypeB]
 DataArrayDns: TypeAlias = Annotated[DataArray, DTypeDns]
 DataArrayF: TypeAlias = Annotated[DataArray, DTypeF]
 DataArrayI: TypeAlias = Annotated[DataArray, DTypeI]
 DataArrayO: TypeAlias = Annotated[DataArray, DTypeO]
 
-# ndim
+# ndim annotated;
 DataArray0: TypeAlias = Annotated[DataArray, NDim0]
 DataArray1: TypeAlias = Annotated[DataArray, NDim1]
 DataArray2: TypeAlias = Annotated[DataArray, NDim2]
 DataArray3: TypeAlias = Annotated[DataArray, NDim3]
 
-# compound
+# annotated; dtype & ndim
 DataArrayB0: TypeAlias = Annotated[DataArray, DTypeB & NDim0]
 DataArrayDns0: TypeAlias = Annotated[DataArray, DTypeDns & NDim0]
 DataArrayF0: TypeAlias = Annotated[DataArray, DTypeF & NDim0]
