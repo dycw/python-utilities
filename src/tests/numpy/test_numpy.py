@@ -1,10 +1,12 @@
-from typing import Any
+from typing import Any, Optional
 
-from numpy import array
+from numpy import array, nan
+from numpy.testing import assert_allclose
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param
 
-from utilities.numpy import has_dtype
+from utilities.numpy import ffill, has_dtype
+from utilities.numpy.typing import NDArrayF1
 
 
 class TestHasDtype:
@@ -33,3 +35,17 @@ class TestHasDtype:
     )
     def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
         assert has_dtype(x, dtype) is expected
+
+
+class TestFFill:
+    @mark.parametrize(
+        ("limit", "expected"),
+        [
+            param(None, array([0.1, 0.1, 0.2, 0.2, 0.2, 0.3])),
+            param(1, array([0.1, 0.1, 0.2, 0.2, nan, 0.3])),
+        ],
+    )
+    def test_main(self, limit: Optional[int], expected: NDArrayF1) -> None:
+        arr = array([0.1, nan, 0.2, nan, nan, 0.3])
+        result = ffill(arr, limit=limit)
+        assert_allclose(result, expected, equal_nan=True)
