@@ -4,7 +4,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
-from numpy import iinfo, inf, int64, isfinite, isinf, isnan, ravel, rint
+from numpy import array, iinfo, inf, int64, isfinite, isinf, isnan, ravel, rint
 
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis.numpy import (
@@ -122,6 +122,10 @@ class TestInt64s:
         assert isinstance(x, int)
         info = iinfo(int64)
         assert info.min <= x <= info.max
+
+    @given(x=int64s())
+    def test_array(self, x: int) -> None:
+        _ = array([x], dtype=int)
 
 
 class TestStrArrays:
