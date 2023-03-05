@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from functools import reduce
 from itertools import repeat
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Union, cast, overload
 
 import numpy as np
 from beartype import beartype
@@ -11,6 +11,7 @@ from numpy import (
     digitize,
     errstate,
     flatnonzero,
+    flip,
     full_like,
     inf,
     isclose,
@@ -185,11 +186,22 @@ def pct_change(
     axis: int = -1,
 ) -> NDArrayF:
     """Compute the percentage change in an array."""
-    filled = ffill(array.astype(float), limit=limit, axis=axis)
-    shifted = shift(filled, n=n, axis=axis)
-    with errstate(all="ignore"):
-        ratio = (filled / shifted) if n >= 0 else (shifted / filled)
-    return where(isfinite(array), ratio - 1.0, nan)
+    if n == 0:
+        msg = f"{n=}"
+        raise ZeroPercentageChangeSpanError(msg)
+    if n > 0:
+        filled = ffill(array.astype(float), limit=limit, axis=axis)
+        shifted = shift(filled, n=n, axis=axis)
+        with errstate(all="ignore"):
+            ratio = (filled / shifted) if n >= 0 else (shifted / filled)
+        return where(isfinite(array), ratio - 1.0, nan)
+    flipped = cast(Union[NDArrayF, NDArrayI], flip(array, axis=axis))
+    result = pct_change(flipped, limit=limit, n=-n, axis=axis)
+    return flip(result, axis=axis)
+
+
+class ZeroPercentageChangeSpanError(Exception):
+    """Raised when the percentage change span is zero."""
 
 
 @beartype
@@ -197,12 +209,19 @@ def shift(
     array: Union[NDArrayF, NDArrayI], /, *, n: int = 1, axis: int = -1
 ) -> NDArrayF:
     """Shift the elements of an array."""
+    if n == 0:
+        msg = f"{n=}"
+        raise ZeroShiftError(msg)
     as_float = array.astype(float)
     shifted = roll(as_float, n, axis=axis)
     indexer = list(repeat(slice(None), times=array.ndim))
     indexer[axis] = slice(n) if n >= 0 else slice(n, None)
     shifted[tuple(indexer)] = nan
     return shifted
+
+
+class ZeroShiftError(Exception):
+    """Raised when the shift is zero."""
 
 
 @beartype
