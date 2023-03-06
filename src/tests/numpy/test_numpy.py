@@ -33,6 +33,7 @@ from utilities.numpy import (
     datetime64D,
     discretize,
     ffill,
+    ffill_non_nan_slices,
     fillna,
     flatn0,
     has_dtype,
@@ -187,9 +188,36 @@ class TestHasDtype:
 class TestFFill:
     @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
     def test_main(self, limit: Optional[int], expected_v: float) -> None:
-        arr = array([0.1, nan, 0.2, nan, nan, 0.3])
+        arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
-        expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3])
+        expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3], dtype=float)
+        assert_allclose(result, expected, equal_nan=True)
+
+
+class TestFFillNonNanSlices:
+    @mark.parametrize(
+        ("limit", "axis", "expected_v"),
+        [
+            param(
+                None,
+                0,
+                [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]],
+            ),
+            param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
+            param(
+                1, 0, [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]]
+            ),
+            param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
+        ],
+    )
+    def test_main(
+        self, limit: Optional[int], axis: int, expected_v: list[list[float]]
+    ) -> None:
+        arr = array(
+            [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
+        )
+        result = ffill_non_nan_slices(arr, limit=limit, axis=axis)
+        expected = array(expected_v, dtype=float)
         assert_allclose(result, expected, equal_nan=True)
 
 
