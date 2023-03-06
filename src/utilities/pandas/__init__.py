@@ -1,10 +1,15 @@
 import datetime as dt
-from typing import Any, Union, cast
+from functools import partial, reduce
+from itertools import permutations
+from typing import Any, Literal, NoReturn, Union, cast
 
 from beartype import beartype
-from pandas import DataFrame, Index, NaT, RangeIndex, Series, Timestamp
+from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp
+from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
+from utilities.errors import redirect_error
+from utilities.numpy import has_dtype
 from utilities.pandas.typing import (
     Int64,
     boolean,
@@ -66,6 +71,51 @@ class SeriesRangeIndexError(ValueError):
 
 class DataFrameRangeIndexError(ValueError):
     """Raised when DataFrame does not have a standard RangeIndex."""
+
+
+@beartype
+def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
+    """Redirect to the `EmptyPandasConcatError`."""
+    redirect_error(error, "No objects to concatenate", EmptyPandasConcatError)
+
+
+class EmptyPandasConcatError(ValueError):
+    """Raised when there are no objects to concatenate."""
+
+
+@beartype
+def series_max(*series: Series) -> Series:
+    """Compute the maximum of a set of Series."""
+    return reduce(partial(_series_minmax, kind="lower"), series)
+
+
+@beartype
+def series_min(*series: Series) -> Series:
+    """Compute the minimum of a set of Series."""
+    return reduce(partial(_series_minmax, kind="upper"), series)
+
+
+@beartype
+def _series_minmax(
+    x: Series, y: Series, /, *, kind: Literal["lower", "upper"]
+) -> Series:
+    """Compute the minimum/maximum of a pair of Series."""
+    assert_index_equal(x.index, y.index)
+    if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
+        msg = f"{x=}, {y=}"
+        raise DifferentDTypeError(msg)
+    out = x.copy()
+    for first, second in permutations([x, y]):
+        i = first.notna() & second.isna()
+        out.loc[i] = first.loc[i]
+    i = x.notna() & y.notna()
+    out.loc[i] = x.loc[i].clip(**{kind: y.loc[i]})
+    out.loc[x.isna() & y.isna()] = NA
+    return out
+
+
+class DifferentDTypeError(ValueError):
+    """Raised when two series have different dtypes."""
 
 
 @beartype
