@@ -14,6 +14,7 @@ from numpy import (
     flip,
     full_like,
     inf,
+    int64,
     isclose,
     isfinite,
     isinf,
@@ -103,6 +104,37 @@ def ffill(
 ) -> NDArrayF:
     """Forward fill the elements in an array."""
     return push(array, n=limit, axis=axis)
+
+
+@beartype
+def ffill_non_nan_slices(
+    array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
+) -> NDArrayF:
+    """Forward fill the slices in an array which contain non-nan values."""
+    other_axes = list(range(array.ndim))
+    del other_axes[axis]
+    any_non_nan = (~isnan(array)).any(axis=tuple(other_axes))
+    (indices_any_non_nan,) = any_non_nan.nonzero()
+    (indices_all_nan,) = (~any_non_nan).nonzero()
+
+    @beartype
+    def get_index_from(idx_to: int64, /) -> Optional[int64]:
+        candidates = {idx_fr for idx_fr in indices_any_non_nan if idx_fr <= idx_to}
+        if limit is not None:
+            candidates = {idx_fr for idx_fr in candidates if (idx_to - idx_fr) <= limit}
+        return max(candidates, default=None)
+
+    @beartype
+    def lift(index: int64, /) -> tuple[Union[int64, slice], ...]:
+        indexer: list[Union[int64, slice]] = list(repeat(slice(None), times=array.ndim))
+        indexer[axis] = index
+        return tuple(indexer)
+
+    out = array.copy()
+    for idx_to in indices_all_nan:
+        if (idx_fr := get_index_from(idx_to)) is not None:
+            out[lift(idx_to)] = out[lift(idx_fr)]
+    return out
 
 
 @beartype
