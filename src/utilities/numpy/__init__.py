@@ -176,6 +176,127 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     return x.dtype == dtype
 
 
+@beartype
+def is_at_least(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if x >= y."""
+    return (x >= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
+
+
+@beartype
+def is_at_least_or_nan(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if x >= y or x == nan."""
+    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+
+
+@beartype
+def is_at_most(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if x <= y."""
+    return (x <= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
+
+
+@beartype
+def is_at_most_or_nan(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if x <= y or x == nan."""
+    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+
+
+@beartype
+def is_between(
+    x: Any,
+    low: Any,
+    high: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+    low_equal_nan: bool = False,
+    high_equal_nan: bool = False,
+) -> Any:
+    """Check if low <= x <= high."""
+    return is_at_least(
+        x, low, rtol=rtol, atol=atol, equal_nan=equal_nan or low_equal_nan
+    ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
+
+
+@beartype
+def is_between_or_nan(
+    x: Any,
+    low: Any,
+    high: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+    low_equal_nan: bool = False,
+    high_equal_nan: bool = False,
+) -> Any:
+    """Check if low <= x <= high or x == nan."""
+    return is_between(
+        x,
+        low,
+        high,
+        rtol=rtol,
+        atol=atol,
+        equal_nan=equal_nan,
+        low_equal_nan=low_equal_nan,
+        high_equal_nan=high_equal_nan,
+    ) | isnan(x)
+
+
+@beartype
+def _is_close(
+    x: Any,
+    y: Any,
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> Any:
+    """Check if `x` is close to `y`."""
+    return np.isclose(
+        x,
+        y,
+        **({} if rtol is None else {"rtol": rtol}),
+        **({} if atol is None else {"atol": atol}),
+        equal_nan=equal_nan,
+    )
+
+
 @overload
 def maximum(*xs: float) -> float:  # type: ignore[reportOverlappingOverload]
     ...
