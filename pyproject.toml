@@ -67,13 +67,14 @@ fastapi = ["fastapi >= 0.92.0"]
 fastparquet = ["atomicwrites >= 1.4.1", "fastparquet >= 2023.2.0"]
 fpdf2 = ["atomicwrites >= 1.4.1", "fpdf2 >= 2.6.1", "holoviews >= 1.15.4", "selenium >= 4.8.2"]
 hatch = ["hatch >= 1.6.3"]
+holoviews = ["holoviews >= 1.15.4"]
 hypothesis = ["hypothesis >= 6.68.2"]
 loguru = ["loguru >= 0.6.0"]
 luigi = ["luigi >= 3.2.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 9.1.0"]
 numpy = ["bottleneck >= 1.3.6", "numpy >= 1.23.5"]  # numba requires <= 1.23
-pandas = ["pandas >= 1.5.3"]
+pandas = ["bottleneck >= 1.3.6", "numpy >= 1.23.5", "pandas >= 1.5.3"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.4"]
 pyinstrument = ["atomicwrites >= 1.4.1", "pyinstrument >= 4.4.0"]
@@ -84,10 +85,10 @@ scripts = ["loguru >= 0.6.0", "typed-settings[click] >= 2.0.2"]
 sqlalchemy = [
   "bidict >= 0.22.1",
   "more-itertools >= 9.1.0",
-  "sqlalchemy >= 2.0.4",
+  "sqlalchemy >= 2.0.5",
 ]
 tqdm = ["tqdm >= 4.65.0"]
-typed-settings = ["typed-settings[click] >= 2.0.2"]
+typed-settings = ["typed-settings[click] >= 23.0.0"]
 xarray = ["bottleneck >= 1.3.6", "xarray >= 2023.2.0"]
 dev = [
   # main

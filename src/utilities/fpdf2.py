@@ -50,12 +50,13 @@ def yield_pdf(*, header: Optional[str] = None) -> Iterator[_BasePDF]:
                     new_x=XPos.RIGHT,
                     new_y=YPos.TOP,
                 )
+                self.ln(20)
 
         @beartype
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
-            page_no, now = self.page_no, dt.datetime.now(tz=local_timezone())
+            page_no, now = self.page_no(), dt.datetime.now(tz=local_timezone())
             txt = f"page {page_no}/{{nb}}; {now:%Y-%m-%d %H:%M:%S}"
             _ = self.cell(
                 w=0,
