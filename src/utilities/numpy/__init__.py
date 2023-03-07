@@ -39,9 +39,85 @@ from utilities.numpy.typing import (
     datetime64D,
     datetime64ns,
     datetime64Y,
+    is_at_least,
+    is_at_least_or_nan,
+    is_at_most,
+    is_at_most_or_nan,
+    is_between,
+    is_between_or_nan,
+    is_finite_and_integral,
+    is_finite_and_integral_or_nan,
+    is_finite_and_negative,
+    is_finite_and_negative_or_nan,
+    is_finite_and_non_negative,
+    is_finite_and_non_negative_or_nan,
+    is_finite_and_non_positive,
+    is_finite_and_non_positive_or_nan,
+    is_finite_and_non_zero,
+    is_finite_and_non_zero_or_nan,
+    is_finite_and_positive,
+    is_finite_and_positive_or_nan,
+    is_greater_than,
+    is_greater_than_or_nan,
+    is_integral,
+    is_integral_or_nan,
+    is_less_than,
+    is_less_than_or_nan,
+    is_negative,
+    is_negative_or_nan,
+    is_non_negative,
+    is_non_negative_or_nan,
+    is_non_positive,
+    is_non_positive_or_nan,
+    is_non_zero,
+    is_non_zero_or_nan,
+    is_positive,
+    is_positive_or_nan,
+    is_zero,
+    is_zero_or_nan,
 )
 
-_ = (datetime64D, datetime64Y, datetime64ns)
+_ = (
+    datetime64D,
+    datetime64Y,
+    datetime64ns,
+    is_at_least,
+    is_at_least_or_nan,
+    is_at_most,
+    is_at_most_or_nan,
+    is_between,
+    is_between_or_nan,
+    is_finite_and_integral,
+    is_finite_and_integral_or_nan,
+    is_finite_and_negative,
+    is_finite_and_negative_or_nan,
+    is_finite_and_non_negative,
+    is_finite_and_non_negative_or_nan,
+    is_finite_and_non_positive,
+    is_finite_and_non_positive_or_nan,
+    is_finite_and_non_zero,
+    is_finite_and_non_zero_or_nan,
+    is_finite_and_positive,
+    is_finite_and_positive_or_nan,
+    is_greater_than,
+    is_greater_than_or_nan,
+    is_integral,
+    is_integral_or_nan,
+    is_less_than,
+    is_less_than_or_nan,
+    is_negative,
+    is_negative_or_nan,
+    is_non_negative,
+    is_non_negative_or_nan,
+    is_non_positive,
+    is_non_positive_or_nan,
+    is_non_zero,
+    is_non_zero_or_nan,
+    is_positive,
+    is_positive_or_nan,
+    is_zero,
+    is_zero_or_nan,
+)
 
 
 @beartype
@@ -174,395 +250,6 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     if is_iterable_not_str(dtype):
         return any(has_dtype(x, d) for d in dtype)
     return x.dtype == dtype
-
-
-@beartype
-def is_at_least(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x >= y."""
-    return (x >= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
-
-
-@beartype
-def is_at_least_or_nan(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x >= y or x == nan."""
-    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
-
-
-@beartype
-def is_at_most(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x <= y."""
-    return (x <= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
-
-
-@beartype
-def is_at_most_or_nan(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x <= y or x == nan."""
-    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
-
-
-@beartype
-def is_between(
-    x: Any,
-    low: Any,
-    high: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-    low_equal_nan: bool = False,
-    high_equal_nan: bool = False,
-) -> Any:
-    """Check if low <= x <= high."""
-    return is_at_least(
-        x, low, rtol=rtol, atol=atol, equal_nan=equal_nan or low_equal_nan
-    ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
-
-
-@beartype
-def is_between_or_nan(
-    x: Any,
-    low: Any,
-    high: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-    low_equal_nan: bool = False,
-    high_equal_nan: bool = False,
-) -> Any:
-    """Check if low <= x <= high or x == nan."""
-    return is_between(
-        x,
-        low,
-        high,
-        rtol=rtol,
-        atol=atol,
-        equal_nan=equal_nan,
-        low_equal_nan=low_equal_nan,
-        high_equal_nan=high_equal_nan,
-    ) | isnan(x)
-
-
-@beartype
-def is_finite_and_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x < inf and x == int(x)."""
-    return isfinite(x) and is_integral(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x < inf and x == int(x), or x == nan."""
-    return is_finite_and_integral(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_finite_and_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x < 0."""
-    return isfinite(x) & is_negative(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x < 0 or x == nan."""
-    return is_finite_and_negative(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_finite_and_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if 0 <= x < inf."""
-    return isfinite(x) & is_non_negative(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if 0 <= x < inf or x == nan."""
-    return is_finite_and_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_finite_and_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x <= 0."""
-    return isfinite(x) & is_non_positive(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x <= 0 or x == nan."""
-    return is_finite_and_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_finite_and_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if -inf < x < inf, x != 0."""
-    return isfinite(x) & is_non_zero(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x != 0 or x == nan."""
-    return is_finite_and_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_finite_and_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if 0 < x < inf."""
-    return isfinite(x) & is_positive(x, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_finite_and_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if 0 < x < inf or x == nan."""
-    return is_finite_and_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_greater_than(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x > y."""
-    return ((x > y) & ~_is_close(x, y, rtol=rtol, atol=atol)) | (
-        equal_nan & isnan(x) & isnan(y)
-    )
-
-
-@beartype
-def is_greater_than_or_nan(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x > y or x == nan."""
-    return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
-
-
-@beartype
-def is_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x == int(x)."""
-    return _is_close(x, rint(x), rtol=rtol, atol=atol)
-
-
-@beartype
-def is_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x == int(x) or x == nan."""
-    return is_integral(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_less_than(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x < y."""
-    return ((x < y) & ~_is_close(x, y, rtol=rtol, atol=atol)) | (
-        equal_nan & isnan(x) & isnan(y)
-    )
-
-
-@beartype
-def is_less_than_or_nan(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if x < y or x == nan."""
-    return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
-
-
-@beartype
-def is_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x < 0."""
-    return is_less_than(x, 0.0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x < 0 or x == nan."""
-    return is_negative(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x >= 0."""
-    return is_at_least(x, 0.0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x >= 0 or x == nan."""
-    return is_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x <= 0."""
-    return is_at_most(x, 0.0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x <=0 or x == nan."""
-    return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x != 0."""
-    return ~_is_close(x, 0.0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x != 0 or x == nan."""
-    return is_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x > 0."""
-    return is_greater_than(x, 0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x > 0 or x == nan."""
-    return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x == 0."""
-    return _is_close(x, 0.0, rtol=rtol, atol=atol)
-
-
-@beartype
-def is_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
-) -> Any:
-    """Check if x > 0 or x == nan."""
-    return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def _is_close(
-    x: Any,
-    y: Any,
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> Any:
-    """Check if `x` is close to `y`."""
-    return np.isclose(
-        x,
-        y,
-        **({} if rtol is None else {"rtol": rtol}),
-        **({} if atol is None else {"atol": atol}),
-        equal_nan=equal_nan,
-    )
 
 
 @overload
