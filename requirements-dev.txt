@@ -10,7 +10,7 @@ anyio==3.6.2
     # via
     #   httpcore
     #   starlette
-argcomplete==2.0.5
+argcomplete==2.1.1
     # via nox
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
@@ -46,7 +46,7 @@ certifi==2022.12.7
     #   requests
 cffi==1.15.1
     # via cryptography
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via requests
 click==8.1.3
     # via
@@ -92,7 +92,7 @@ fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
 filelock==3.9.0
     # via virtualenv
-fonttools==4.38.0
+fonttools==4.39.0
     # via fpdf2
 fpdf2==2.6.1
     # via dycw-utilities (pyproject.toml)
@@ -308,7 +308,7 @@ sniffio==1.3.0
     #   httpx
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.4
+sqlalchemy==2.0.5.post1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -329,7 +329,7 @@ tqdm==4.65.0
     #   dycw-utilities (pyproject.toml)
     #   panel
     #   pqdm
-typed-settings[click]==2.0.2
+typed-settings[click]==23.0.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.5.0
     # via
@@ -359,7 +359,7 @@ zipp==3.15.0
 # The following packages are considered to be unsafe in a requirements file:
 pip==23.0.1
     # via pip-tools
-setuptools==67.4.0
+setuptools==67.5.1
     # via
     #   panel
     #   pip-tools
