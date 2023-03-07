@@ -6,6 +6,7 @@ from hypothesis.strategies import DataObject, data, dates, integers
 from numpy import (
     arange,
     array,
+    datetime64,
     full,
     inf,
     isclose,
@@ -485,7 +486,13 @@ class TestShiftBool:
 
 class TestYear:
     @given(date=dates())
-    def test_main(self, date: dt.date) -> None:
+    def test_scalar(self, date: dt.date) -> None:
+        date64 = datetime64(date, "D")
+        yr = year(date64)
+        assert yr == date.year
+
+    @given(date=dates())
+    def test_array(self, date: dt.date) -> None:
         dates = array([date], dtype=datetime64D)
         years = year(dates)
         assert years.item() == date.year

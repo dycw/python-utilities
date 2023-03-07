@@ -8,6 +8,7 @@ from beartype import beartype
 from bottleneck import push
 from numpy import (
     array,
+    datetime64,
     digitize,
     errstate,
     flatnonzero,
@@ -22,6 +23,7 @@ from numpy import (
     linspace,
     nan,
     nanquantile,
+    ndarray,
     rint,
     roll,
     where,
@@ -341,7 +343,18 @@ def shift_bool(
     return fillna(shifted, value=float(fill_value)).astype(bool)
 
 
+@overload
+def year(date: datetime64, /) -> int:
+    ...
+
+
+@overload
+def year(date: NDArrayDD, /) -> NDArrayI:
+    ...
+
+
 @beartype
-def year(array: NDArrayDD, /) -> NDArrayI:
-    """Convert an array of dates into an array of years."""
-    return 1970 + array.astype(datetime64Y).astype(int)
+def year(date: Union[datetime64, NDArrayDD], /) -> Union[int, NDArrayI]:
+    """Convert a date/array of dates into a year/array of years."""
+    years = 1970 + date.astype(datetime64Y).astype(int)
+    return years if isinstance(date, ndarray) else years.item()
