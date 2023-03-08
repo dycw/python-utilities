@@ -193,7 +193,7 @@ def is_finite_and_integral(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
     """Check if -inf < x < inf and x == int(x)."""
-    return isfinite(x) and is_integral(x, rtol=rtol, atol=atol)
+    return isfinite(x) & is_integral(x, rtol=rtol, atol=atol)
 
 
 @beartype
