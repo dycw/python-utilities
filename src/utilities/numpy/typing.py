@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, Union, cast
 
 import numpy as np
 from beartype import beartype
@@ -16,6 +16,7 @@ from numpy import (
     rint,
     unravel_index,
 )
+from numpy.linalg import det
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
@@ -415,6 +416,14 @@ def is_non_positive_or_nan(
 
 
 @beartype
+def is_non_singular(
+    array: NDArrayF2, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+) -> bool:
+    """Check if det(x) != 0."""
+    return is_non_zero(det(array), rtol=rtol, atol=atol).item()
+
+
+@beartype
 def is_non_zero(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -444,6 +453,23 @@ def is_positive_or_nan(
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+@beartype
+def is_symmetric(
+    array: Union[NDArrayF2, NDArrayI2],
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> bool:
+    """Check if x == x.T."""
+    return (
+        _is_close(array, array.T, rtol=rtol, atol=atol, equal_nan=equal_nan)
+        .all()
+        .item()
+    )
 
 
 @beartype
