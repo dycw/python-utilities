@@ -86,7 +86,7 @@ exceptiongroup==1.1.0
     # via dycw-utilities (pyproject.toml)
 execnet==1.9.0
     # via pytest-xdist
-fastapi==0.92.0
+fastapi==0.93.0
     # via dycw-utilities (pyproject.toml)
 fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
