@@ -32,6 +32,10 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[typed-settings]`
 - `pip install dycw-utilities[xarray]`
 
+or
+
+- `pip install dycw-utilities[core]`
+
 ### Dev packages
 
 - `pip install dycw-utilities[hatch]`
@@ -41,3 +45,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[pyinstrument]`
 - `pip install dycw-utilities[pytest]`
 - `pip install dycw-utilities[pytest-check]`
+
+or
+
+- `pip install dycw-utilities[test]`
