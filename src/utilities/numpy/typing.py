@@ -485,6 +485,23 @@ def is_zero(
 
 
 @beartype
+def is_zero_or_finite_and_non_micro(
+    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+) -> Any:
+    """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
+    zero = 0.0
+    return (x == zero) | is_finite_and_non_zero(x, rtol=rtol, atol=atol)
+
+
+@beartype
+def is_zero_or_finite_and_non_micro_or_nan(
+    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+) -> Any:
+    """Check if x == 0, or -inf < x < inf and ~isclose(x, 0), or x == nan."""
+    return is_zero_or_finite_and_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+@beartype
 def is_zero_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -496,7 +513,7 @@ def is_zero_or_nan(
 def is_zero_or_non_micro(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
-    """Check if x == 0 (exactly) or ~isclose(x, 0)."""
+    """Check if x == 0 or ~isclose(x, 0)."""
     zero = 0.0
     return (x == zero) | is_non_zero(x, rtol=rtol, atol=atol)
 
@@ -505,7 +522,7 @@ def is_zero_or_non_micro(
 def is_zero_or_non_micro_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
-    """Check if x == 0 (exactly) or ~isclose(x, 0) or x == nan."""
+    """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 

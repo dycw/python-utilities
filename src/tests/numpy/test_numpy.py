@@ -76,7 +76,10 @@ from utilities.numpy import (
     is_positive_or_nan,
     is_symmetric,
     is_zero,
+    is_zero_or_finite_and_non_micro,
     is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
     maximum,
     minimum,
     pct_change,
@@ -88,8 +91,7 @@ from utilities.numpy.typing import (
     NDArrayF1,
     NDArrayF2,
     NDArrayI2,
-    is_zero_or_non_micro,
-    is_zero_or_non_micro_or_nan,
+    is_zero_or_finite_and_non_micro_or_nan,
 )
 
 
@@ -607,6 +609,29 @@ class TestChecks:
     def test_is_zero(self, x: float, expected: bool) -> None:
         assert is_zero(x).item() is expected
 
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, True),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_is_zero_or_finite_and_non_micro(self, x: float, expected: bool) -> None:
+        assert is_zero_or_finite_and_non_micro(x).item() is expected
+
+    def test_is_zero_or_finite_and_non_micro_or_nan(self) -> None:
+        assert is_zero_or_finite_and_non_micro_or_nan(nan)
+
     def test_is_zero_or_nan(self) -> None:
         assert is_zero_or_nan(nan)
 
@@ -624,7 +649,7 @@ class TestChecks:
             param(1e-6, True),
             param(1.0, True),
             param(inf, True),
-            param(nan, False),
+            param(nan, True),
         ],
     )
     def test_is_zero_or_non_micro(self, x: float, expected: bool) -> None:
