@@ -8,14 +8,7 @@ from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast, overlo
 
 import luigi
 from beartype import beartype
-from luigi import (
-    DateSecondParameter,
-    Parameter,
-    PathParameter,
-    Target,
-    Task,
-    TaskParameter,
-)
+from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
@@ -26,12 +19,15 @@ from utilities.datetime import (
     EPOCH_UTC,
     UTC,
     ensure_date,
+    ensure_datetime,
     ensure_time,
     parse_date,
+    parse_datetime,
     parse_time,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_date,
+    serialize_datetime,
     serialize_time,
 )
 from utilities.enum import ensure_enum, parse_enum
@@ -42,6 +38,72 @@ _E = TypeVar("_E", bound=Enum)
 
 
 # paramaters
+
+
+class DateHourParameter(luigi.DateHourParameter):
+    """A parameter which takes the value of an hourly `dt.datetime`."""
+
+    @beartype
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @beartype
+    def normalize(  # noqa: D102
+        self, datetime: Union[dt.datetime, str], /
+    ) -> dt.datetime:
+        return ensure_datetime(datetime)
+
+    @beartype
+    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+        return parse_datetime(datetime)
+
+    @beartype
+    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+        return serialize_datetime(datetime)
+
+
+class DateMinuteParameter(luigi.DateMinuteParameter):
+    """A parameter which takes the value of a minutely `dt.datetime`."""
+
+    @beartype
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
+
+    @beartype
+    def normalize(  # noqa: D102
+        self, datetime: Union[dt.datetime, str], /
+    ) -> dt.datetime:
+        return ensure_datetime(datetime)
+
+    @beartype
+    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+        return parse_datetime(datetime)
+
+    @beartype
+    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+        return serialize_datetime(datetime)
+
+
+class DateSecondParameter(luigi.DateSecondParameter):
+    """A parameter which takes the value of a secondly `dt.datetime`."""
+
+    @beartype
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @beartype
+    def normalize(  # noqa: D102
+        self, datetime: Union[dt.datetime, str], /
+    ) -> dt.datetime:
+        return ensure_datetime(datetime)
+
+    @beartype
+    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+        return parse_datetime(datetime)
+
+    @beartype
+    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+        return serialize_datetime(datetime)
 
 
 class EnumParameter(Parameter, Generic[_E]):
@@ -193,7 +255,7 @@ class AwaitTask(ExternalTask, Generic[_Task]):
 class AwaitTime(ExternalTask):
     """Await a specific moment of time."""
 
-    datetime = cast(dt.datetime, DateSecondParameter(start=EPOCH_UTC))
+    datetime = cast(dt.datetime, DateSecondParameter())
 
     @beartype
     def exists(self) -> bool:  # noqa: D102
