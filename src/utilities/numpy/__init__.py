@@ -59,6 +59,7 @@ from utilities.numpy.typing import (
     is_finite_and_non_zero_or_nan,
     is_finite_and_positive,
     is_finite_and_positive_or_nan,
+    is_finite_or_nan,
     is_greater_than,
     is_greater_than_or_nan,
     is_integral,
@@ -71,12 +72,18 @@ from utilities.numpy.typing import (
     is_non_negative_or_nan,
     is_non_positive,
     is_non_positive_or_nan,
+    is_non_singular,
     is_non_zero,
     is_non_zero_or_nan,
     is_positive,
     is_positive_or_nan,
+    is_symmetric,
     is_zero,
+    is_zero_or_finite_and_non_micro,
+    is_zero_or_finite_and_non_micro_or_nan,
     is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
 )
 
 _ = (
@@ -101,6 +108,7 @@ _ = (
     is_finite_and_non_zero_or_nan,
     is_finite_and_positive,
     is_finite_and_positive_or_nan,
+    is_finite_or_nan,
     is_greater_than,
     is_greater_than_or_nan,
     is_integral,
@@ -113,12 +121,18 @@ _ = (
     is_non_negative_or_nan,
     is_non_positive,
     is_non_positive_or_nan,
+    is_non_singular,
     is_non_zero,
     is_non_zero_or_nan,
     is_positive,
     is_positive_or_nan,
+    is_symmetric,
     is_zero,
+    is_zero_or_finite_and_non_micro,
+    is_zero_or_finite_and_non_micro_or_nan,
     is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
 )
 
 
