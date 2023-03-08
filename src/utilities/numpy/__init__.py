@@ -80,6 +80,8 @@ from utilities.numpy.typing import (
     is_symmetric,
     is_zero,
     is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
 )
 
 _ = (
@@ -125,6 +127,8 @@ _ = (
     is_symmetric,
     is_zero,
     is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
 )
 
 

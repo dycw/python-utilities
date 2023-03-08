@@ -493,6 +493,23 @@ def is_zero_or_nan(
 
 
 @beartype
+def is_zero_or_non_micro(
+    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+) -> Any:
+    """Check if x == 0 (exactly) or ~isclose(x, 0)."""
+    zero = 0.0
+    return (x == zero) | is_non_zero(x, rtol=rtol, atol=atol)
+
+
+@beartype
+def is_zero_or_non_micro_or_nan(
+    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+) -> Any:
+    """Check if x == 0 (exactly) or ~isclose(x, 0) or x == nan."""
+    return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
+
+
+@beartype
 def _is_close(
     x: Any,
     y: Any,
