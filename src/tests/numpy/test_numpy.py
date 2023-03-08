@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, dates, integers
@@ -84,7 +84,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.numpy.typing import NDArrayF1, NDArrayF2
+from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
 
 
 class TestAsInt:
@@ -519,8 +519,11 @@ class TestChecks:
     @mark.parametrize(
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
-    def test_is_non_singular(self, array: NDArrayF2, expected: bool) -> None:
-        assert is_non_singular(array) is expected
+    @mark.parametrize("dtype", [param(float), param(int)])
+    def test_is_non_singular(
+        self, array: NDArrayF2, dtype: Any, expected: bool
+    ) -> None:
+        assert is_non_singular(array.astype(dtype)) is expected
 
     @mark.parametrize(
         ("x", "expected"),
@@ -573,7 +576,9 @@ class TestChecks:
         [param(eye(2), True), param(arange(4).reshape((2, 2)), False)],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_is_symmetric(self, array: NDArrayF2, dtype: Any, expected: bool) -> None:
+    def test_is_symmetric(
+        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
+    ) -> None:
         assert is_symmetric(array.astype(dtype)) is expected
 
     @mark.parametrize(

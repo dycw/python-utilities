@@ -417,7 +417,11 @@ def is_non_positive_or_nan(
 
 @beartype
 def is_non_singular(
-    array: NDArrayF2, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    array: Union[NDArrayF2, NDArrayI2],
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
 ) -> bool:
     """Check if det(x) != 0."""
     return is_non_zero(det(array), rtol=rtol, atol=atol).item()
