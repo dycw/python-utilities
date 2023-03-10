@@ -9,14 +9,19 @@ from hypothesis import assume, given, settings
 from hypothesis.strategies import DataObject, booleans, data, dates, sampled_from, times
 from luigi import BoolParameter, Task
 from luigi.notifications import smtp
+from luigi.task import Parameter
+from pytest import mark, param
 
-from utilities.datetime import serialize_date, serialize_time
+from utilities.datetime import serialize_date, serialize_datetime, serialize_time
 from utilities.hypothesis import datetimes_utc, temp_paths
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
     AwaitTask,
     AwaitTime,
+    DateHourParameter,
+    DateMinuteParameter,
     DateParameter,
+    DateSecondParameter,
     EnumParameter,
     ExternalFile,
     ExternalTask,
@@ -87,6 +92,25 @@ class TestDateParameter:
     def test_main(self, data: DataObject, date: dt.date) -> None:
         param = DateParameter()
         input_ = data.draw(sampled_from([date, serialize_date(date)]))
+        norm = param.normalize(input_)
+        assert param.parse(param.serialize(norm)) == norm
+
+
+class TestDateTimeParameter:
+    @given(data=data(), datetime=datetimes_utc())
+    @mark.parametrize(
+        "param_cls",
+        [
+            param(DateHourParameter),
+            param(DateMinuteParameter),
+            param(DateSecondParameter),
+        ],
+    )
+    def test_main(
+        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+    ) -> None:
+        param = param_cls()
+        input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
 

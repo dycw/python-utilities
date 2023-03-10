@@ -568,6 +568,7 @@ def _lift(check: Callable[..., Any], /) -> Any:
     return Is[cast(Any, predicate)]
 
 
+_is_finite = _lift(isfinite)
 _is_finite_and_integral = _lift(is_finite_and_integral)
 _is_finite_and_integral_or_nan = _lift(is_finite_and_integral_or_nan)
 _is_finite_and_negative = _lift(is_finite_and_negative)
@@ -611,6 +612,7 @@ NDArrayIZr = Annotated[NDArrayI, _is_zero]
 
 
 # annotated; float & checks
+NDArrayFFin = Annotated[NDArrayF, _is_finite]
 NDArrayFFinInt = Annotated[NDArrayF, _is_finite_and_integral]
 NDArrayFFinIntNan = Annotated[NDArrayF, _is_finite_and_integral_or_nan]
 NDArrayFFinNeg = Annotated[NDArrayF, _is_finite_and_negative]
@@ -673,6 +675,7 @@ NDArrayI3Pos = Annotated[NDArrayI, NDim3 & _is_positive]
 NDArrayI3Zr = Annotated[NDArrayI, NDim3 & _is_zero]
 
 # annotated; float, ndim & checks
+NDArrayF0Fin = Annotated[NDArrayF, NDim0 & _is_finite]
 NDArrayF0FinInt = Annotated[NDArrayF, NDim0 & _is_finite_and_integral]
 NDArrayF0FinIntNan = Annotated[NDArrayF, NDim0 & _is_finite_and_integral_or_nan]
 NDArrayF0FinNeg = Annotated[NDArrayF, NDim0 & _is_finite_and_negative]
@@ -707,6 +710,7 @@ NDArrayF0ZrNan = Annotated[NDArrayF, NDim0 & _is_zero_or_nan]
 NDArrayF0ZrNonMic = Annotated[NDArrayF, NDim0 & _is_zero_or_non_micro]
 NDArrayF0ZrNonMicNan = Annotated[NDArrayF, NDim0 & _is_zero_or_non_micro_or_nan]
 
+NDArrayF1Fin = Annotated[NDArrayF, NDim1 & _is_finite]
 NDArrayF1FinInt = Annotated[NDArrayF, NDim1 & _is_finite_and_integral]
 NDArrayF1FinIntNan = Annotated[NDArrayF, NDim1 & _is_finite_and_integral_or_nan]
 NDArrayF1FinNeg = Annotated[NDArrayF, NDim1 & _is_finite_and_negative]
@@ -741,6 +745,7 @@ NDArrayF1ZrNan = Annotated[NDArrayF, NDim1 & _is_zero_or_nan]
 NDArrayF1ZrNonMic = Annotated[NDArrayF, NDim1 & _is_zero_or_non_micro]
 NDArrayF1ZrNonMicNan = Annotated[NDArrayF, NDim1 & _is_zero_or_non_micro_or_nan]
 
+NDArrayF2Fin = Annotated[NDArrayF, NDim2 & _is_finite]
 NDArrayF2FinInt = Annotated[NDArrayF, NDim2 & _is_finite_and_integral]
 NDArrayF2FinIntNan = Annotated[NDArrayF, NDim2 & _is_finite_and_integral_or_nan]
 NDArrayF2FinNeg = Annotated[NDArrayF, NDim2 & _is_finite_and_negative]
@@ -775,6 +780,7 @@ NDArrayF2ZrNan = Annotated[NDArrayF, NDim2 & _is_zero_or_nan]
 NDArrayF2ZrNonMic = Annotated[NDArrayF, NDim2 & _is_zero_or_non_micro]
 NDArrayF2ZrNonMicNan = Annotated[NDArrayF, NDim2 & _is_zero_or_non_micro_or_nan]
 
+NDArrayF3Fin = Annotated[NDArrayF, NDim3 & _is_finite]
 NDArrayF3FinInt = Annotated[NDArrayF, NDim3 & _is_finite_and_integral]
 NDArrayF3FinIntNan = Annotated[NDArrayF, NDim3 & _is_finite_and_integral_or_nan]
 NDArrayF3FinNeg = Annotated[NDArrayF, NDim3 & _is_finite_and_negative]
