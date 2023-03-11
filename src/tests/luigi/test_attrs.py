@@ -30,6 +30,7 @@ from utilities.luigi import (
     DateParameter,
     DateSecondParameter,
     EnumParameter,
+    TimeParameter,
     WeekdayParameter,
 )
 from utilities.luigi.attrs import (
@@ -83,6 +84,7 @@ class TestMapAnnotation:
         ("ann", "expected"),
         [
             param(bool, BoolParameter),
+            param(dt.time, TimeParameter),
             param(float, FloatParameter),
             param(int, IntParameter),
             param(Path, PathParameter),
