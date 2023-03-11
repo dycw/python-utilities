@@ -31,6 +31,7 @@ from utilities.luigi import (
     DateParameter,
     DateSecondParameter,
     EnumParameter,
+    TimeParameter,
     WeekdayParameter,
 )
 from utilities.types import NoneType
@@ -124,6 +125,8 @@ def _map_annotation(  # noqa: C901, PLR0911
         if date is None:
             raise AmbiguousDateError
         return _map_date_annotation(kind=date)
+    if issubclass(ann, dt.time):
+        return TimeParameter
     if issubclass(ann, Enum):
         return partial(EnumParameter, ann)
     if issubclass(ann, float):
