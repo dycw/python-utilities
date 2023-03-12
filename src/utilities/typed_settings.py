@@ -1,7 +1,8 @@
 import datetime as dt
+import enum
 from collections.abc import Callable, Iterable
 from itertools import starmap
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from pathlib import Path
 from re import search
 from typing import Any, Optional, TypeVar, Union, cast
@@ -22,6 +23,7 @@ from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
 
+import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.datetime import (
     ensure_date,
@@ -145,6 +147,7 @@ def _make_click_handler() -> ClickHandler:
         (dt.date, Date, serialize_date),
         (dt.time, Time, serialize_time),
         (dt.timedelta, Timedelta, str),
+        (enum.Enum, utilities.click.Enum, attrgetter("name")),
     ]
     extra_types = cast(
         dict[type, TypeHandlerFunc],
@@ -161,9 +164,10 @@ def _make_type_handler_func(
 
     @beartype
     def handler(
-        _: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
+        type_: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
     ) -> StrDict:
-        mapping: StrDict = {"type": param()}
+        args = (type_,) if issubclass(type_, enum.Enum) else ()
+        mapping: StrDict = {"type": param(*args)}
         if isinstance(default, cls):  # pragma: no cover
             mapping["default"] = serialize(default)
         elif is_optional:  # pragma: no cover

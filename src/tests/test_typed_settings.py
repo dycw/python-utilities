@@ -1,5 +1,7 @@
 import datetime as dt
+import enum
 from collections.abc import Callable
+from enum import auto
 from pathlib import Path
 from subprocess import check_call
 from typing import Any, cast
@@ -14,6 +16,7 @@ from hypothesis.strategies import (
     dates,
     datetimes,
     just,
+    sampled_from,
     timedeltas,
     times,
     tuples,
@@ -131,13 +134,13 @@ class TestClickOptions:
         runner = CliRunner()
 
         @settings(frozen=True)
-        class Settings:
+        class Config:
             value: cls = default
 
         @command()
-        @click_options(Settings, appname=appname)
-        def cli1(settings: Settings, /) -> None:
-            echo(f"value = {serialize(settings.value)}")
+        @click_options(Config, appname=appname)
+        def cli1(config: Config, /) -> None:
+            echo(f"value = {serialize(config.value)}")
 
         result = runner.invoke(cli1)
         assert result.exit_code == 0
@@ -152,9 +155,9 @@ class TestClickOptions:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
 
         @command()
-        @click_options(Settings, appname=appname, config_files=[file])
-        def cli2(settings: Settings, /) -> None:
-            echo(f"value = {serialize(settings.value)}")
+        @click_options(Config, appname=appname, config_files=[file])
+        def cli2(config: Config, /) -> None:
+            echo(f"value = {serialize(config.value)}")
 
         result = runner.invoke(cli2)
         assert result.exit_code == 0
@@ -163,3 +166,29 @@ class TestClickOptions:
         result = runner.invoke(cli1, f'--value="{val_str}"')
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
+
+    @given(data=data())
+    def test_enum(self, data: DataObject) -> None:
+        class Truth(enum.Enum):
+            true = auto()
+            false = auto()
+
+        default = data.draw(sampled_from(Truth))
+
+        @settings(frozen=True)
+        class Config:
+            value: Truth = default
+
+        @command()
+        @click_options(Config)
+        def cli(config: Config, /) -> None:
+            echo(f"truth = {config.value.name}")
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0
+        assert result.stdout == f"truth = {default.name}\n"
+
+        arg = data.draw(sampled_from(Truth))
+        result = CliRunner().invoke(cli, ["--value", arg.name])
+        assert result.exit_code == 0
+        assert result.stdout == f"truth = {arg.name}\n"
