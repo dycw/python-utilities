@@ -31,6 +31,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[tqdm]`
 - `pip install dycw-utilities[typed-settings]`
 - `pip install dycw-utilities[xarray]`
+- `pip install dycw-utilities[zarr]`
 
 or
 

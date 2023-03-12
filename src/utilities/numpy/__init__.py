@@ -24,10 +24,12 @@ from numpy import (
     nan,
     nanquantile,
     ndarray,
+    prod,
     rint,
     roll,
     where,
 )
+from numpy.typing import NDArray
 
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
@@ -261,11 +263,52 @@ class MultipleTrueElementsError(Exception):
 
 
 @beartype
+def get_fill_value(dtype: Any, /) -> Any:
+    """Get the default fill value for a given dtype."""
+    if dtype == bool:
+        return False
+    if dtype in (datetime64D, datetime64Y, datetime64ns):
+        return datetime64("NaT")
+    if dtype == float:
+        return nan
+    if dtype == int:
+        return 0
+    if dtype == object:
+        return None
+    msg = f"{dtype=}"
+    raise InvalidDTypeError(msg)
+
+
+class InvalidDTypeError(TypeError):
+    """Raised when a dtype is invalid."""
+
+
+@beartype
 def has_dtype(x: Any, dtype: Any, /) -> bool:
     """Check if an object has the required dtype."""
     if is_iterable_not_str(dtype):
         return any(has_dtype(x, d) for d in dtype)
     return x.dtype == dtype
+
+
+@beartype
+def is_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
+    """Check if an ndarray is empty."""
+    if isinstance(shape_or_array, int):
+        return shape_or_array == 0
+    if isinstance(shape_or_array, tuple):
+        return (len(shape_or_array) == 0) or (prod(shape_or_array).item() == 0)
+    return is_empty(shape_or_array.shape)
+
+
+@beartype
+def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
+    """Check if an ndarray is non-empty."""
+    if isinstance(shape_or_array, int):
+        return shape_or_array >= 1
+    if isinstance(shape_or_array, tuple):
+        return (len(shape_or_array) >= 1) and (prod(shape_or_array).item() >= 1)
+    return is_non_empty(shape_or_array.shape)
 
 
 @overload
