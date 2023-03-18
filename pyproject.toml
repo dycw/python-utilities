@@ -82,6 +82,7 @@ pypi = ["loguru >= 0.6.0", "pypiserver[passlib] >= 1.5.1", "typed-settings[click
 pytest = ["atomicwrites >= 1.4.1", "pytest >= 7.2.2"]
 pytest-check = ["pytest-check >= 2.1.4"]
 scripts = ["loguru >= 0.6.0", "typed-settings[click] >= 23.0.0"]
+semver = ["semver >= 2.13.0"]
 sqlalchemy = [
   "bidict >= 0.22.1",
   "more-itertools >= 9.1.0",
@@ -110,6 +111,7 @@ core = [
   "pandas >= 1.5.3",
   "pqdm >= 0.2.0",
   "selenium >= 4.8.2",
+  "semver >= 2.13.0",
   "sqlalchemy >= 2.0.7",
   "tqdm >= 4.65.0",
   "typed-settings[click] >= 23.0.0",
@@ -150,6 +152,7 @@ dev = [
   "pypi",
   "pytest",
   "pytest-check",
+  "semver",
   "sqlalchemy",
   "tqdm",
   "typed-settings[click]",
