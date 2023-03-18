@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, dates, integers
@@ -25,6 +25,7 @@ from pytest import mark, param, raises
 from utilities.hypothesis.numpy import float_arrays
 from utilities.numpy import (
     InfElementsError,
+    InvalidDTypeError,
     MultipleTrueElementsError,
     NanElementsError,
     NonIntegralElementsError,
@@ -33,11 +34,14 @@ from utilities.numpy import (
     ZeroShiftError,
     as_int,
     datetime64D,
+    datetime64ns,
+    datetime64Y,
     discretize,
     ffill,
     ffill_non_nan_slices,
     fillna,
     flatn0,
+    get_fill_value,
     has_dtype,
     is_at_least,
     is_at_least_or_nan,
@@ -45,6 +49,7 @@ from utilities.numpy import (
     is_at_most_or_nan,
     is_between,
     is_between_or_nan,
+    is_empty,
     is_finite_and_integral,
     is_finite_and_integral_or_nan,
     is_finite_and_negative,
@@ -65,6 +70,7 @@ from utilities.numpy import (
     is_less_than_or_nan,
     is_negative,
     is_negative_or_nan,
+    is_non_empty,
     is_non_negative,
     is_non_negative_or_nan,
     is_non_positive,
@@ -730,6 +736,29 @@ class TestDiscretize:
         assert_allclose(result, expected, equal_nan=True)
 
 
+class TestGetFillValue:
+    @mark.parametrize(
+        "dtype",
+        [
+            param(bool),
+            param(datetime64D),
+            param(datetime64Y),
+            param(datetime64ns),
+            param(float),
+            param(int),
+            param(object),
+        ],
+    )
+    def test_main(self, dtype: Any) -> None:
+        fill_value = get_fill_value(dtype)
+        array = full(0, fill_value, dtype=dtype)
+        assert has_dtype(array, dtype)
+
+    def test_error(self) -> None:
+        with raises(InvalidDTypeError):
+            _ = get_fill_value(None)
+
+
 class TestHasDtype:
     @mark.parametrize(
         ("x", "dtype", "expected"),
@@ -834,6 +863,40 @@ class TestFlatN0:
         arr = ones(n, dtype=bool)
         with raises(MultipleTrueElementsError):
             _ = flatn0(arr)
+
+
+class TestIsEmptyAndIsNotEmpty:
+    @mark.parametrize(
+        ("shape", "expected"),
+        [
+            param(0, "empty"),
+            param(1, "non-empty"),
+            param(2, "non-empty"),
+            param((), "empty"),
+            param((0,), "empty"),
+            param((1,), "non-empty"),
+            param((2,), "non-empty"),
+            param((0, 0), "empty"),
+            param((0, 1), "empty"),
+            param((0, 2), "empty"),
+            param((1, 0), "empty"),
+            param((1, 1), "non-empty"),
+            param((1, 2), "non-empty"),
+            param((2, 0), "empty"),
+            param((2, 1), "non-empty"),
+            param((2, 2), "non-empty"),
+        ],
+    )
+    @mark.parametrize("kind", [param("shape"), param("array")])
+    def test_main(
+        self,
+        shape: Union[int, tuple[int, ...]],
+        kind: Literal["shape", "array"],
+        expected: Literal["empty", "non-empty"],
+    ) -> None:
+        shape_or_array = shape if kind == "shape" else zeros(shape, dtype=float)
+        assert is_empty(shape_or_array) is (expected == "empty")
+        assert is_non_empty(shape_or_array) is (expected == "non-empty")
 
 
 class TestMaximumMinimum:

@@ -198,7 +198,7 @@ def setup_hypothesis_profiles(
         yield Phase.reuse
         yield Phase.generate
         yield Phase.target
-        if not bool(getenv(no_shrink, default=False)):
+        if not bool(int(getenv(no_shrink, default="0"))):
             yield Phase.shrink
 
     phases = set(yield_phases())
