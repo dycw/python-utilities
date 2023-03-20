@@ -536,7 +536,7 @@ def _is_close(
     atol: Optional[float] = None,
     equal_nan: bool = False,
 ) -> Any:
-    """Check if `x` is close to `y`."""
+    """Check if x == y."""
     return np.isclose(
         x,
         y,
