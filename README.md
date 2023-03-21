@@ -27,6 +27,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[pqdm]`
 - `pip install dycw-utilities[pypi]`
 - `pip install dycw-utilities[scripts]`
+- `pip install dycw-utilities[semver]`
 - `pip install dycw-utilities[sqlalchemy]`
 - `pip install dycw-utilities[tqdm]`
 - `pip install dycw-utilities[typed-settings]`
