@@ -21,6 +21,7 @@ from luigi import (
     Task,
 )
 from pytest import mark, param, raises
+from sqlalchemy import Engine
 from typed_settings import settings
 
 from utilities.datetime import UTC
@@ -47,6 +48,7 @@ from utilities.luigi.attrs import (
     _map_union_annotation,
     build_params_mixin,
 )
+from utilities.luigi.sqlalchemy import EngineParameter
 from utilities.sentinel import Sentinel
 
 
@@ -87,6 +89,7 @@ class TestMapAnnotation:
         ("ann", "expected"),
         [
             param(bool, BoolParameter),
+            param(Engine, EngineParameter),
             param(dt.time, TimeParameter),
             param(float, FloatParameter),
             param(int, IntParameter),

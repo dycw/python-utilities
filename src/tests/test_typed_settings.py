@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from pytest import MonkeyPatch, mark, param, raises
+from sqlalchemy import Engine
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
 
@@ -33,6 +34,8 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import temp_paths, text_ascii
+from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import (
     AppNameContainsUnderscoreError,
     _get_loaders,
@@ -68,12 +71,13 @@ class TestGetLoaders:
 class TestLoadSettings:
     @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
-        ("cls", "strategy"),
+        ("cls", "strategy", "serialize"),
         [
-            param(dt.date, dates()),
-            param(dt.datetime, datetimes(timezones=just(UTC))),
-            param(dt.time, times()),
-            param(dt.timedelta, timedeltas()),
+            param(dt.date, dates(), serialize_date),
+            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(dt.time, times(), serialize_time),
+            param(dt.timedelta, timedeltas(), serialize_timedelta),
+            param(Engine, sqlite_engines(), serialize_engine),
         ],
     )
     def test_main(
@@ -83,6 +87,7 @@ class TestLoadSettings:
         root: Path,
         cls: Any,
         strategy: SearchStrategy[Any],
+        serialize: Callable[[Any], str],
     ) -> None:
         default, value = data.draw(tuples(strategy, strategy))
 
@@ -94,9 +99,12 @@ class TestLoadSettings:
         assert settings_default.value == default
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
-            _ = fh.write(f'[{appname}]\nvalue = "{value}"')
+            _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
         settings_loaded = load_settings(Settings, appname=appname, config_files=[file])
-        assert settings_loaded.value == value
+        try:
+            assert settings_loaded.value == value
+        except AssertionError:
+            assert settings_loaded.value.url == value.url
 
     @given(appname=app_names)
     @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
@@ -118,6 +126,7 @@ class TestClickOptions:
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
+            param(Engine, sqlite_engines(), serialize_engine),
         ],
     )
     def test_main(
