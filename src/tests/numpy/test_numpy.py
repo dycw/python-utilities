@@ -62,6 +62,7 @@ from utilities.numpy import (
     is_finite_and_non_zero_or_nan,
     is_finite_and_positive,
     is_finite_and_positive_or_nan,
+    is_finite_or_nan,
     is_greater_than,
     is_greater_than_or_nan,
     is_integral,
@@ -83,6 +84,7 @@ from utilities.numpy import (
     is_symmetric,
     is_zero,
     is_zero_or_finite_and_non_micro,
+    is_zero_or_finite_and_non_micro_or_nan,
     is_zero_or_nan,
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
@@ -93,12 +95,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.numpy.typing import (
-    NDArrayF1,
-    NDArrayF2,
-    NDArrayI2,
-    is_zero_or_finite_and_non_micro_or_nan,
-)
+from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
 
 
 class TestAsInt:
@@ -258,6 +255,20 @@ class TestChecks:
 
     def test_is_finite_and_integral_or_nan(self) -> None:
         assert is_finite_and_integral_or_nan(nan)
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(0.0, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, True),
+        ],
+    )
+    def test_is_finite_or_nan(self, x: float, expected: bool) -> None:
+        assert is_finite_or_nan(x).item() is expected
 
     @mark.parametrize(
         ("x", "expected"),

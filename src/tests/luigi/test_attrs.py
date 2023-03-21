@@ -24,6 +24,7 @@ from pytest import mark, param, raises
 from typed_settings import settings
 
 from utilities.datetime import UTC
+from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
     DateHourParameter,
     DateMinuteParameter,
@@ -50,7 +51,8 @@ from utilities.sentinel import Sentinel
 
 
 class TestBuildParamsMixin:
-    def test_no_field(self) -> None:
+    @given(namespace_mixin=namespace_mixins())
+    def test_no_field(self, namespace_mixin: Any) -> None:
         @settings
         class Config:
             value: int = 0
@@ -58,13 +60,14 @@ class TestBuildParamsMixin:
         config = Config()
         Params = build_params_mixin(config)  # noqa: N806
 
-        class Example(Params, Task):
+        class Example(namespace_mixin, Params, Task):
             pass
 
         task = Example()
         assert task.value == 0
 
-    def test_with_field(self) -> None:
+    @given(namespace_mixin=namespace_mixins())
+    def test_with_field(self, namespace_mixin: Any) -> None:
         @settings
         class Config:
             date: dt.date = dt.datetime.now(tz=UTC).date()
@@ -72,7 +75,7 @@ class TestBuildParamsMixin:
         config = Config()
         Params = build_params_mixin(config, date="date")  # noqa: N806
 
-        class Example(Params, Task):
+        class Example(namespace_mixin, Params, Task):
             pass
 
         task = Example()

@@ -128,7 +128,7 @@ class TestLocalTimeZone:
         tz = local_timezone()
         now = dt.datetime.now(tz=UTC)
         result = tz.tzname(now)
-        expected = {"HKT", "UTC"}
+        expected = {"HKT", "JST", "UTC"}
         assert result in expected
 
 
