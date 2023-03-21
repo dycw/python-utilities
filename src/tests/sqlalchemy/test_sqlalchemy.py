@@ -78,6 +78,7 @@ from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import (
     EngineError,
     IncorrectNumberOfTablesError,
+    ParseEngineError,
     TableAlreadyExistsError,
     UnequalBooleanColumnCreateConstraintError,
     UnequalBooleanColumnNameError,
@@ -117,6 +118,7 @@ from utilities.sqlalchemy import (
     columnwise_max,
     columnwise_min,
     create_engine,
+    ensure_engine,
     ensure_table_created,
     ensure_table_dropped,
     get_column_names,
@@ -125,8 +127,10 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_name,
     model_to_dict,
+    parse_engine,
     redirect_to_no_such_table_error,
     redirect_to_table_already_exists_error,
+    serialize_engine,
     yield_connection,
     yield_in_clause_rows,
 )
@@ -741,6 +745,16 @@ class TestCreateEngine:
         assert isinstance(engine, Engine)
 
 
+class TestEnsureEngine:
+    @given(data=data(), engine=sqlite_engines())
+    def test_main(self, data: DataObject, engine: Engine) -> None:
+        maybe_engine = data.draw(
+            sampled_from([engine, engine.url.render_as_string(hide_password=False)])
+        )
+        result = ensure_engine(maybe_engine)
+        assert result.url == engine.url
+
+
 class TestEnsureTableCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
@@ -913,6 +927,18 @@ class TestModelToDict:
         assert model_to_dict(example) == {"id": id_}
 
 
+class TestParseEngine:
+    @given(engine=sqlite_engines())
+    def test_str(self, engine: Engine) -> None:
+        url = engine.url
+        result = parse_engine(url.render_as_string(hide_password=False))
+        assert result.url == url
+
+    def test_error(self) -> None:
+        with raises(ParseEngineError):
+            _ = parse_engine("error")
+
+
 class TestRedirectToNoSuchTableError:
     @given(engine=sqlite_engines())
     def test_main(self, engine: Engine) -> None:
@@ -966,6 +992,14 @@ class TestReflectTable:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = _reflect_table(table, engine)
+
+
+class TestSerializeEngine:
+    @given(data=data())
+    def test_main(self, data: DataObject) -> None:
+        engine = data.draw(sqlite_engines())
+        result = parse_engine(serialize_engine(engine))
+        assert result.url == engine.url
 
 
 class TestYieldConnection:

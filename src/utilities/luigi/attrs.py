@@ -99,7 +99,7 @@ class InvalidAnnotationAndKeywordsError(Exception):
 
 
 @beartype
-def _map_annotation(  # noqa: C901, PLR0911
+def _map_annotation(  # noqa: C901, PLR0911, PLR0912
     ann: Any,
     /,
     *,
@@ -137,6 +137,15 @@ def _map_annotation(  # noqa: C901, PLR0911
         return PathParameter
     if issubclass(ann, str):
         return Parameter
+    try:
+        from sqlalchemy import Engine
+
+        from utilities.luigi.sqlalchemy import EngineParameter
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if issubclass(ann, Engine):
+            return EngineParameter
     raise InvalidAnnotationError(msg)
 
 

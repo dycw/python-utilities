@@ -35,7 +35,12 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.engine import URL, Connection, Engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError, OperationalError
+from sqlalchemy.exc import (
+    ArgumentError,
+    DatabaseError,
+    NoSuchTableError,
+    OperationalError,
+)
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
@@ -496,28 +501,12 @@ def create_engine(
     return _create_engine(url, poolclass=poolclass)
 
 
-Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
-
-
 @beartype
-def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
-    """Get the dialect of a database."""
-    if isinstance(dialect := engine_or_conn.dialect, mssql_dialect):
-        return "mssql"
-    if isinstance(dialect, mysql_dialect):
-        return "mysql"
-    if isinstance(dialect, oracle_dialect):
-        return "oracle"
-    if isinstance(dialect, postgresql_dialect):
-        return "postgresql"
-    if isinstance(dialect, sqlite_dialect):
-        return "sqlite"
-    msg = f"{dialect=}"  # pragma: no cover
-    raise UnsupportedDialectError(msg)  # pragma: no cover
-
-
-class UnsupportedDialectError(TypeError):
-    """Raised when a dialect is unsupported."""
+def ensure_engine(engine: Union[Engine, str], /) -> Engine:
+    """Ensure the object is an Engine."""
+    if isinstance(engine, Engine):
+        return engine
+    return parse_engine(engine)
 
 
 @beartype
@@ -560,6 +549,30 @@ def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
     return list(get_table(table_or_model).columns)
 
 
+Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+
+
+@beartype
+def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
+    """Get the dialect of a database."""
+    if isinstance(dialect := engine_or_conn.dialect, mssql_dialect):
+        return "mssql"
+    if isinstance(dialect, mysql_dialect):
+        return "mysql"
+    if isinstance(dialect, oracle_dialect):
+        return "oracle"
+    if isinstance(dialect, postgresql_dialect):
+        return "postgresql"
+    if isinstance(dialect, sqlite_dialect):
+        return "sqlite"
+    msg = f"{dialect=}"  # pragma: no cover
+    raise UnsupportedDialectError(msg)  # pragma: no cover
+
+
+class UnsupportedDialectError(TypeError):
+    """Raised when a dialect is unsupported."""
+
+
 @beartype
 def get_table(table_or_model: Any, /) -> Table:
     """Get the table from a ORM model."""
@@ -594,6 +607,19 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
             yield key, getattr(obj, attr)
 
     return dict(yield_items())
+
+
+@beartype
+def parse_engine(engine: str, /) -> Engine:
+    """Parse a string into an Engine."""
+    try:
+        return _create_engine(engine, poolclass=NullPool)
+    except ArgumentError:
+        raise ParseEngineError from None
+
+
+class ParseEngineError(ValueError):
+    """Raised when an `Engine` cannot be parsed."""
 
 
 @beartype
@@ -636,6 +662,12 @@ def redirect_to_table_already_exists_error(
 
 class TableAlreadyExistsError(Exception):
     """Raised when a table already exists."""
+
+
+@beartype
+def serialize_engine(engine: Engine, /) -> str:
+    """Serialize an Engine."""
+    return engine.url.render_as_string(hide_password=False)
 
 
 @contextmanager

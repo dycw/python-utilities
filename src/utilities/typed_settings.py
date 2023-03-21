@@ -1,6 +1,6 @@
 import datetime as dt
-import enum
 from collections.abc import Callable, Iterable
+from enum import Enum
 from itertools import starmap
 from operator import attrgetter, itemgetter
 from pathlib import Path
@@ -23,8 +23,8 @@ from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
 
-import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta
+from utilities.click import Enum as ClickEnum
 from utilities.datetime import (
     ensure_date,
     ensure_datetime,
@@ -111,12 +111,20 @@ class AppNameContainsUnderscoreError(ValueError):
 def _make_converter() -> Union[BaseConverter, Converter]:
     """Extend the default converter."""
     converter = default_converter()
-    cases = [
+    cases: list[tuple[type[Any], Callable[..., Any]]] = [
         (dt.datetime, ensure_datetime),
         (dt.date, ensure_date),
         (dt.time, ensure_time),
         (dt.timedelta, ensure_timedelta),
     ]
+    try:
+        from sqlalchemy import Engine
+
+        from utilities.sqlalchemy import ensure_engine
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        cases.append((Engine, ensure_engine))
     for cls, func in cases:
         hook = _make_structure_hook(cls, func)
         converter.register_structure_hook(cls, hook)
@@ -142,13 +150,22 @@ def _make_structure_hook(
 @beartype
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
-    cases = [
+    cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
         (dt.datetime, DateTime, serialize_datetime),
         (dt.date, Date, serialize_date),
         (dt.time, Time, serialize_time),
         (dt.timedelta, Timedelta, str),
-        (enum.Enum, utilities.click.Enum, attrgetter("name")),
+        (Enum, ClickEnum, attrgetter("name")),
     ]
+    try:
+        from sqlalchemy import Engine
+
+        from utilities.click.sqlalchemy import Engine as ClickEngine
+        from utilities.sqlalchemy import serialize_engine
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        cases.append((Engine, ClickEngine, serialize_engine))
     extra_types = cast(
         dict[type, TypeHandlerFunc],
         dict(zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))),
@@ -166,7 +183,7 @@ def _make_type_handler_func(
     def handler(
         type_: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
     ) -> StrDict:
-        args = (type_,) if issubclass(type_, enum.Enum) else ()
+        args = (type_,) if issubclass(type_, Enum) else ()
         mapping: StrDict = {"type": param(*args)}
         if isinstance(default, cls):  # pragma: no cover
             mapping["default"] = serialize(default)

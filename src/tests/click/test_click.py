@@ -1,7 +1,6 @@
 import datetime as dt
-import enum
 from collections.abc import Callable
-from enum import auto
+from enum import Enum, auto
 from typing import Any
 
 from click import ParamType, argument, command, echo, option
@@ -20,8 +19,8 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
-import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta, log_level_option
+from utilities.click import Enum as ClickEnum
 from utilities.datetime import (
     UTC,
     serialize_date,
@@ -81,7 +80,7 @@ class TestParameters:
 
         @command()
         @option("--value", type=param, default=value)
-        def cli(value: cls) -> None:
+        def cli(*, value: cls) -> None:
             echo(f"value = {serialize(value)}")
 
         result = CliRunner().invoke(cli)
@@ -90,7 +89,7 @@ class TestParameters:
 
 
 class TestEnum:
-    class Truth(enum.Enum):
+    class Truth(Enum):
         true = auto()
         false = auto()
 
@@ -99,7 +98,7 @@ class TestEnum:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @argument("truth", type=utilities.click.Enum(Truth))
+        @argument("truth", type=ClickEnum(Truth))
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
@@ -115,7 +114,7 @@ class TestEnum:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @argument("truth", type=utilities.click.Enum(Truth, case_sensitive=False))
+        @argument("truth", type=ClickEnum(Truth, case_sensitive=False))
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
@@ -130,7 +129,7 @@ class TestEnum:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @option("--truth", type=utilities.click.Enum(Truth), default=truth)
+        @option("--truth", type=ClickEnum(Truth), default=truth)
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
