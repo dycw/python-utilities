@@ -143,9 +143,9 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     @beartype
     def sel(
         self,
-        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        indexers: Optional[Mapping[Hashable, Any]] = None,
         /,
-        **indexer_kwargs: IselIndexer,
+        **indexer_kwargs: Any,
     ) -> Any:
         """Select orthogonally using index values."""
         empty = self._empty.sel(indexers, **indexer_kwargs)
