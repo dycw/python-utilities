@@ -124,7 +124,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
         /,
         **indexer_kwargs: IselIndexer,
-    ) -> Any:
+    ) -> DataArray:
         """Select orthogonally using integer indexes."""
         empty = self._empty.isel(indexers, **indexer_kwargs)
         return DataArray(
@@ -146,7 +146,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         indexers: Optional[Mapping[Hashable, Any]] = None,
         /,
         **indexer_kwargs: Any,
-    ) -> Any:
+    ) -> DataArray:
         """Select orthogonally using index values."""
         empty = self._empty.sel(indexers, **indexer_kwargs)
         return DataArray(
