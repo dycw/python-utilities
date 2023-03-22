@@ -1,19 +1,32 @@
-from collections.abc import Hashable, Iterator, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from functools import partial
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, cast
 
 from beartype import beartype
-from numpy import array, prod
+from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray
 from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
 from zarr.core import Attributes
 
 from utilities.atomicwrites import writer
-from utilities.numpy import get_fill_value
-from utilities.numpy.typing import NDArray1
+from utilities.datetime import ensure_date, ensure_datetime
+from utilities.iterables import is_iterable_not_str
+from utilities.numpy import (
+    MultipleTrueElementsError,
+    NoTrueElementsError,
+    datetime64D,
+    datetime64ns,
+    datetime64Y,
+    flatn0,
+    get_fill_value,
+    has_dtype,
+)
+from utilities.numpy.typing import NDArray1, NDArrayB1, NDArrayI1
 from utilities.pathlib import PathLike
+from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
 
 
@@ -74,6 +87,7 @@ def yield_group_and_array(
             fill_value=fill_value_use,
             shape=shape_use,
             chunks=chunks,
+            dtype=dtype,
             **_codec(dtype),
         )
         yield root, array
@@ -81,6 +95,9 @@ def yield_group_and_array(
 
 class NoIndexesError(ValueError):
     """Raised when there are no indexes."""
+
+
+IselIndexer = Union[int, slice, Sequence[int], NDArrayB1, NDArrayI1]
 
 
 @beartype
@@ -148,6 +165,19 @@ class NDArrayWithIndexes:
         """Whether the underlying array is empty or not."""
         return self.shape != ()
 
+    @beartype
+    def isel(
+        self,
+        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        /,
+        **indexer_kwargs: IselIndexer,
+    ) -> Any:
+        """Select orthogonally using integer indexes."""
+        merged = ({} if indexers is None else dict(indexers)) | indexer_kwargs
+        func = partial(self._get_isel_indexer, indexers=merged)
+        i = tuple(map(func, self.dims))
+        return self.array.oindex[i]
+
     @property
     @beartype
     def ndarray(self) -> NDArray[Any]:
@@ -162,6 +192,19 @@ class NDArrayWithIndexes:
     def ndim(self) -> int:
         """The number of dimensions of the underlying array."""
         return len(self.shape)
+
+    @beartype
+    def sel(
+        self,
+        indexers: Optional[Mapping[Hashable, Any]] = None,
+        /,
+        **indexer_kwargs: Any,
+    ) -> Any:
+        """Select orthogonally using index values."""
+        merged = ({} if indexers is None else dict(indexers)) | indexer_kwargs
+        func = partial(self._get_sel_indexer, indexers=merged)
+        i = tuple(map(func, self.dims))
+        return self.array.oindex[i]
 
     @property
     @beartype
@@ -196,6 +239,64 @@ class NDArrayWithIndexes:
             raise InvalidDimensionError(msg) from None
         return self._get_index_by_int(i)
 
+    @beartype
+    def _get_isel_indexer(
+        self, dim: Hashable, /, *, indexers: Mapping[Hashable, IselIndexer]
+    ) -> Any:
+        """Get the integer-indexer for a given dimension."""
+        try:
+            indexer = indexers[dim]
+        except KeyError:
+            return slice(None)
+        if isinstance(indexer, (int, ndarray, slice)):
+            return indexer
+        return array(indexer, dtype=int)
+
+    @beartype
+    def _get_sel_indexer(
+        self, dim: Hashable, /, *, indexers: Mapping[Hashable, Any]
+    ) -> Any:
+        """Get the value-indexer for a given dimension."""
+        try:
+            indexer = indexers[dim]
+        except KeyError:
+            return slice(None)
+        index = self._get_index_by_name(dim)
+        if has_dtype(index, (datetime64D, datetime64Y)):
+            indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
+        elif has_dtype(index, datetime64ns):
+            indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
+        if is_iterable_not_str(indexer):
+            bool_indexer = isin(index, indexer)
+            if sum(bool_indexer) == len(indexer):
+                return bool_indexer
+            msg = f"{dim=}, {indexer=}"
+            raise InvalidIndexValueError(msg) from None
+        try:
+            return flatn0(index == indexer)
+        except (NoTrueElementsError, MultipleTrueElementsError):
+            msg = f"{dim=}, {indexer=}"
+            raise InvalidIndexValueError(msg) from None
+
+    @beartype
+    def _cast_date_indexer(
+        self, indexer: Any, dtype: Any, ensure: Callable[[Any], Any], /
+    ) -> Any:
+        """Cast a `dt.date` or `dt.datetime` indexer."""
+        suffix = extract_group(r"^datetime64\[(\w+)\]$", dtype.name)
+
+        @beartype
+        def cast(x: Any, /) -> Any:
+            return datetime64(ensure(x), suffix)
+
+        if is_iterable_not_str(indexer):
+            return list(map(cast, indexer))
+        return cast(indexer)
+
 
 class InvalidDimensionError(ValueError):
     """Raised when an dimension is invalid."""
+
+
+class InvalidIndexValueError(ValueError):
+    """Raised when an index value is invalid."""

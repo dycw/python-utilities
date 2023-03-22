@@ -4,7 +4,7 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, integers
-from numpy import nan
+from numpy import arange, array, nan, zeros
 from numpy.testing import assert_equal
 from pandas import Index
 from pandas.testing import assert_index_equal
@@ -16,6 +16,7 @@ from utilities.hypothesis import hashables, temp_paths, text_ascii
 from utilities.hypothesis.numpy import float_arrays
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import int_data_arrays
+from utilities.warnings import suppress_warnings
 from utilities.xarray.typing import DataArray1
 from utilities.zarr.xarray import (
     DataArrayOnDisk,
@@ -47,6 +48,113 @@ class TestDataArrayOnDisk:
         assert set(view.indexes) == set(indexes)
         for dim, index in view.indexes.items():
             assert_index_equal(index, indexes[dim])
+
+    @mark.parametrize(
+        ("indexer", "expected"),
+        [
+            param({"x": 0}, DataArray([0, 1, 2], {"x": 0, "y": arange(3)}, ["y"])),
+            param({"x": -1}, DataArray([3, 4, 5], {"x": 1, "y": arange(3)}, ["y"])),
+            param(
+                {"x": slice(None, 1)},
+                DataArray([[0, 1, 2]], {"x": [0], "y": arange(3)}, ["x", "y"]),
+            ),
+            param(
+                {"x": []},
+                DataArray(
+                    zeros((0, 3), dtype=int), {"x": [], "y": arange(3)}, ["x", "y"]
+                ),
+            ),
+            param(
+                {"x": array([True, False])},
+                DataArray([[0, 1, 2]], {"x": [0], "y": arange(3)}, ["x", "y"]),
+            ),
+            param(
+                {"x": array([0])},
+                DataArray([[0, 1, 2]], {"x": [0], "y": arange(3)}, ["x", "y"]),
+            ),
+            param({"x": 0, "y": 0}, DataArray(0, {"x": 0, "y": 0}, [])),
+            param({"x": 0, "y": -1}, DataArray(2, {"x": 0, "y": 2}, [])),
+            param(
+                {"x": 0, "y": slice(None, 1)}, DataArray([0], {"x": 0, "y": [0]}, ["y"])
+            ),
+            param({"x": 0, "y": []}, DataArray([], {"x": 0, "y": []}, ["y"])),
+            param(
+                {"x": 0, "y": array([True, False, False])},
+                DataArray([0], {"x": 0, "y": [0]}, ["y"]),
+            ),
+            param({"x": 0, "y": array([0])}, DataArray([0], {"x": 0, "y": [0]}, ["y"])),
+        ],
+    )
+    def test_isel(
+        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+    ) -> None:
+        array = DataArray(
+            arange(6, dtype=int).reshape(2, 3),
+            {"x": arange(2), "y": arange(3)},
+            ["x", "y"],
+        )
+        path = tmp_path.joinpath("array")
+        save_data_array_to_disk(array, path := tmp_path.joinpath("array"))
+        view = DataArrayOnDisk(path)
+        assert_identical(view.isel(indexer), expected)
+
+    @mark.parametrize(
+        ("indexer", "expected"),
+        [
+            param(
+                {"x": "x0"},
+                DataArray([0, 1, 2], {"x": "x0", "y": ["y0", "y1", "y2"]}, ["y"]),
+            ),
+            param(
+                {"x": []},
+                DataArray(
+                    zeros((0, 3), dtype=int),
+                    {"x": [], "y": ["y0", "y1", "y2"]},
+                    ["x", "y"],
+                ),
+            ),
+            param(
+                {"x": ["x0"]},
+                DataArray(
+                    [[0, 1, 2]], {"x": ["x0"], "y": ["y0", "y1", "y2"]}, ["x", "y"]
+                ),
+            ),
+            param(
+                {"x": ["x0", "x1"]},
+                DataArray(
+                    [[0, 1, 2], [3, 4, 5]],
+                    {"x": ["x0", "x1"], "y": ["y0", "y1", "y2"]},
+                    ["x", "y"],
+                ),
+            ),
+            param({"x": "x0", "y": "y0"}, DataArray(0, {"x": "x0", "y": "y0"}, [])),
+            param(
+                {"x": "x0", "y": []},
+                DataArray(zeros(0, dtype=int), {"x": "x0", "y": []}, ["y"]),
+            ),
+            param(
+                {"x": "x0", "y": ["y0"]},
+                DataArray([0], {"x": "x0", "y": ["y0"]}, ["y"]),
+            ),
+            param(
+                {"x": "x0", "y": ["y0", "y1"]},
+                DataArray([0, 1], {"x": "x0", "y": ["y0", "y1"]}, ["y"]),
+            ),
+        ],
+    )
+    def test_sel(
+        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+    ) -> None:
+        array = DataArray(
+            arange(6, dtype=int).reshape(2, 3),
+            {"x": ["x0", "x1"], "y": ["y0", "y1", "y2"]},
+            ["x", "y"],
+        )
+        path = tmp_path.joinpath("array")
+        save_data_array_to_disk(array, path := tmp_path.joinpath("array"))
+        view = DataArrayOnDisk(path)
+        with suppress_warnings(category=FutureWarning):  # empty arrays trigger
+            assert_identical(view.sel(indexer), expected)
 
 
 class TestToNDArray1:

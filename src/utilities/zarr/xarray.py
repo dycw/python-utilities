@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union, cast
 
 from beartype import beartype
+from numpy import empty
 from pandas import Index
 from xarray import DataArray
 from zarr import Array, suppress
@@ -13,6 +14,7 @@ from utilities.sentinel import sentinel
 from utilities.text import ensure_str
 from utilities.zarr import (
     InvalidDimensionError,
+    IselIndexer,
     NDArrayWithIndexes,
     yield_group_and_array,
 )
@@ -116,11 +118,48 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         """The indexes of the underlying array."""
         return {ensure_str(dim): Index(index) for dim, index in super().indexes.items()}
 
+    @beartype
+    def isel(
+        self,
+        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        /,
+        **indexer_kwargs: IselIndexer,
+    ) -> Any:
+        """Select orthogonally using integer indexes."""
+        empty = self._empty.isel(indexers, **indexer_kwargs)
+        return DataArray(
+            super().isel(indexers, **indexer_kwargs),
+            empty.coords,
+            empty.dims,
+            self.name,
+        )
+
     @property
     @beartype
     def name(self) -> Hashable:
         """The name of the underlying array."""
         return self.attrs["name"]
+
+    @beartype
+    def sel(
+        self,
+        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        /,
+        **indexer_kwargs: IselIndexer,
+    ) -> Any:
+        """Select orthogonally using index values."""
+        empty = self._empty.sel(indexers, **indexer_kwargs)
+        return DataArray(
+            super().sel(indexers, **indexer_kwargs), empty.coords, empty.dims, self.name
+        )
+
+    @property
+    @beartype
+    def _empty(self, /) -> DataArray:
+        """An empty DataArray, for slicing."""
+        return DataArray(
+            empty(self.shape, dtype=bool), self.coords, self.dims, self.name
+        )
 
     @beartype
     def _get_coord(self, coord: str, /) -> Any:
