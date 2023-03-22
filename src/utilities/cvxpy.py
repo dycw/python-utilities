@@ -1,32 +1,33 @@
-from typing import Union, overload
+from typing import Union, cast, overload
 
 import cvxpy
 import numpy as np
+import numpy.linalg
 from beartype import beartype
 from cvxpy import Expression
 from numpy import maximum, minimum, ndarray, where
 
 from utilities.numpy import is_zero
-from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayF, NDArrayF1, NDArrayF2
 
 
 @overload
-def abs(x: float, /) -> float:  # noqa: A001
+def abs_(x: float, /) -> float:
     ...
 
 
 @overload
-def abs(x: NDArrayF, /) -> NDArrayF:  # noqa: A001
+def abs_(x: NDArrayF, /) -> NDArrayF:
     ...
 
 
 @overload
-def abs(x: Expression, /) -> Expression:  # noqa: A001
+def abs_(x: Expression, /) -> Expression:
     ...
 
 
 @beartype
-def abs(  # noqa: A001
+def abs_(
     x: Union[float, NDArrayF, Expression], /
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the absolute value."""
@@ -115,6 +116,24 @@ def neg(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expr
 
 
 @overload
+def norm(x: NDArrayF1, /) -> float:
+    ...
+
+
+@overload
+def norm(x: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def norm(x: Union[NDArrayF1, Expression], /) -> Union[float, Expression]:
+    """Compute the negative parts of a quantity."""
+    if isinstance(x, ndarray):
+        return cast(float, numpy.linalg.norm(x))
+    return cvxpy.norm(x)
+
+
+@overload
 def pos(x: float, /) -> float:
     ...
 
@@ -136,3 +155,68 @@ def pos(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expr
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.pos(x)
+
+
+@overload
+def quad_form(x: NDArrayF1, P: NDArrayF2, /) -> float:  # noqa: N803
+    ...
+
+
+@overload
+def quad_form(x: Expression, P: NDArrayF2, /) -> Expression:  # noqa: N803
+    ...
+
+
+@beartype
+def quad_form(
+    x: Union[NDArrayF1, Expression], P: NDArrayF2, /  # noqa: N803
+) -> Union[float, Expression]:
+    """Compute the quadratic form of a vector & matrix."""
+    if isinstance(x, ndarray):
+        return cast(float, x.T @ P @ x)
+    return cvxpy.quad_form(x, P)
+
+
+@overload
+def sqrt(x: float, /) -> float:
+    ...
+
+
+@overload
+def sqrt(x: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def sqrt(x: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def sqrt(
+    x: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
+    """Compute the square root of a quantity."""
+    if isinstance(x, (float, ndarray)):
+        return np.sqrt(x)
+    return cvxpy.sqrt(x)
+
+
+@overload
+def sum_(x: Union[float, NDArrayF], /) -> float:
+    ...
+
+
+@overload
+def sum_(x: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def sum_(x: Union[float, NDArrayF, Expression], /) -> Union[float, Expression]:
+    """Compute the sum of a quantity."""
+    if isinstance(x, float):
+        return x
+    if isinstance(x, ndarray):
+        return float(np.sum(x))
+    return cvxpy.sum(x)
