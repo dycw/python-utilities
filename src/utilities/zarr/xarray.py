@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union, cast
 
 from beartype import beartype
-from numpy import empty
+from numpy import empty, ndarray
 from pandas import Index
 from xarray import DataArray
 from zarr import Array, suppress
@@ -60,7 +60,7 @@ def yield_data_array_on_disk(
     """Save a `DataArray`, yielding a view into its values."""
     indexes: dict[Hashable, NDArray1] = {}
     for coord, value in coords.items():
-        with suppress(NotOneDimensionalDataArrayError):
+        with suppress(NotOneDimensionalArrayError):
             indexes[coord] = _to_ndarray1(value)
     with yield_group_and_array(
         indexes,
@@ -81,14 +81,16 @@ def yield_data_array_on_disk(
 @beartype
 def _to_ndarray1(x: Any, /) -> NDArray1:
     """Convert a coordinate into a 1-dimensional array."""
-    if isinstance(x, DataArray) and (x.ndim == 1):
+    if isinstance(x, ndarray) and (x.ndim == 1):
+        return x
+    if isinstance(x, (DataArray, Index)) and (x.ndim == 1):
         return x.to_numpy()
     msg = f"{x=}"
-    raise NotOneDimensionalDataArrayError(msg)
+    raise NotOneDimensionalArrayError(msg)
 
 
-class NotOneDimensionalDataArrayError(ValueError):
-    """Raised when an object is not a 1-dimensional DataArray."""
+class NotOneDimensionalArrayError(ValueError):
+    """Raised when an object is not a 1-dimensional array."""
 
 
 class DataArrayOnDisk(NDArrayWithIndexes):
