@@ -15,6 +15,7 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[bidict]`
 - `pip install dycw-utilities[click]`
 - `pip install dycw-utilities[cryptography]`
+- `pip install dycw-utilities[cvxpy]`
 - `pip install dycw-utilities[fastapi]`
 - `pip install dycw-utilities[fastparquet]`
 - `pip install dycw-utilities[fpdf2]`

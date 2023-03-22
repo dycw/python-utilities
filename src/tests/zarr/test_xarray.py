@@ -4,25 +4,26 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, integers
-from numpy import arange, array, nan, zeros
+from numpy import arange, array, zeros
 from numpy.testing import assert_equal
-from pandas import Index
+from pandas import Index, RangeIndex
 from pandas.testing import assert_index_equal
 from pytest import mark, param, raises
 from xarray import DataArray
 from xarray.testing import assert_identical
 
 from utilities.hypothesis import hashables, temp_paths, text_ascii
-from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.xarray import int_data_arrays
+from utilities.numpy.typing import NDArrayI1
 from utilities.warnings import suppress_warnings
 from utilities.xarray.typing import DataArray1
 from utilities.zarr.xarray import (
     DataArrayOnDisk,
-    NotOneDimensionalDataArrayError,
+    NotOneDimensionalArrayError,
     _to_ndarray1,
     save_data_array_to_disk,
+    yield_data_array_on_disk,
 )
 
 
@@ -157,20 +158,28 @@ class TestDataArrayOnDisk:
             assert_identical(view.sel(indexer), expected)
 
 
-class TestToNDArray1:
-    @given(array=int_data_arrays(x=int_indexes()))
-    def test_main(self, array: DataArray1) -> None:
-        assert_equal(_to_ndarray1(array), array.to_numpy())
+class TestYieldDataArrayOnDisk:
+    @mark.parametrize("length", [param(0), param(1), param(2)])
+    def test_main(self, tmp_path: Path, length: int) -> None:
+        coords = {"x": RangeIndex(length)}
+        with yield_data_array_on_disk(coords, tmp_path.joinpath("array")):
+            pass
 
-    @mark.parametrize(
-        "array",
-        [
-            param(None),
-            param(DataArray()),
-            param(DataArray(nan, {"x": 0, "y": 0}, [])),
-            param(DataArray(nan, {"x": [0], "y": [0]}, ["x", "y"])),
-        ],
-    )
+
+class TestToNDArray1:
+    @given(array=int_arrays(shape=integers(0, 10)))
+    def test_array(self, array: NDArrayI1) -> None:
+        assert_equal(_to_ndarray1(array), array)
+
+    @given(array=int_arrays(shape=integers(0, 10)))
+    def test_data_array(self, array: NDArrayI1) -> None:
+        assert_equal(_to_ndarray1(DataArray(array)), array)
+
+    @given(array=int_arrays(shape=integers(0, 10)))
+    def test_index(self, array: NDArrayI1) -> None:
+        assert_equal(_to_ndarray1(Index(array)), array)
+
+    @mark.parametrize("array", [param(None), param(zeros(())), param(zeros((1, 1)))])
     def test_error(self, array: DataArray1) -> None:
-        with raises(NotOneDimensionalDataArrayError):
+        with raises(NotOneDimensionalArrayError):
             _ = _to_ndarray1(array)
