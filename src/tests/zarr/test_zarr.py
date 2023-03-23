@@ -5,9 +5,10 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
-from numpy import arange, array, isclose, sort, zeros
+from numpy import arange, array, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
+from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.hypothesis import hashables, temp_paths
@@ -17,10 +18,25 @@ from utilities.numpy.typing import NDArray1, NDArrayI1, NDArrayO1
 from utilities.zarr import (
     InvalidIndexValueError,
     NDArrayWithIndexes,
+    ffill_non_nan_slices,
     yield_array_with_indexes,
 )
 
 indexes1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
+
+
+class TestFFillNonNanSlices:
+    def test_main(self, tmp_path: Path) -> None:
+        arr = array(
+            [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
+        )
+        z_arr = open_array(tmp_path.joinpath("array"), shape=arr.shape, dtype=float)
+        z_arr[:] = arr
+        ffill_non_nan_slices(z_arr)
+        expected = array(
+            [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]], dtype=float
+        )
+        assert_equal(z_arr[:], expected)
 
 
 class TestNDArrayWithIndexes:

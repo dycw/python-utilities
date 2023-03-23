@@ -18,7 +18,7 @@ from numpy import (
     zeros,
     zeros_like,
 )
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
 
@@ -32,6 +32,7 @@ from utilities.numpy import (
     NoTrueElementsError,
     ZeroPercentageChangeSpanError,
     ZeroShiftError,
+    array_indexer,
     as_int,
     datetime64D,
     datetime64ns,
@@ -98,13 +99,55 @@ from utilities.numpy import (
 from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
 
 
+class TestArrayIndexer:
+    @mark.parametrize(
+        ("i", "ndim", "expected"),
+        [
+            param(0, 1, (0,)),
+            param(0, 2, (slice(None), 0)),
+            param(1, 2, (slice(None), 1)),
+            param(0, 3, (slice(None), slice(None), 0)),
+            param(1, 3, (slice(None), slice(None), 1)),
+            param(2, 3, (slice(None), slice(None), 2)),
+        ],
+    )
+    def test_main(
+        self, i: int, ndim: int, expected: tuple[Union[int, slice], ...]
+    ) -> None:
+        assert array_indexer(i, ndim) == expected
+
+    @mark.parametrize(
+        ("i", "ndim", "axis", "expected"),
+        [
+            param(0, 1, 0, (0,)),
+            param(0, 2, 0, (0, slice(None))),
+            param(0, 2, 1, (slice(None), 0)),
+            param(1, 2, 0, (1, slice(None))),
+            param(1, 2, 1, (slice(None), 1)),
+            param(0, 3, 0, (0, slice(None), slice(None))),
+            param(0, 3, 1, (slice(None), 0, slice(None))),
+            param(0, 3, 2, (slice(None), slice(None), 0)),
+            param(1, 3, 0, (1, slice(None), slice(None))),
+            param(1, 3, 1, (slice(None), 1, slice(None))),
+            param(1, 3, 2, (slice(None), slice(None), 1)),
+            param(2, 3, 0, (2, slice(None), slice(None))),
+            param(2, 3, 1, (slice(None), 2, slice(None))),
+            param(2, 3, 2, (slice(None), slice(None), 2)),
+        ],
+    )
+    def test_axis(
+        self, i: int, ndim: int, axis: int, expected: tuple[Union[int, slice], ...]
+    ) -> None:
+        assert array_indexer(i, ndim, axis=axis) == expected
+
+
 class TestAsInt:
     @given(n=integers(-10, 10))
     def test_main(self, n: int) -> None:
         arr = array([n], dtype=float)
         result = as_int(arr)
         expected = array([n], dtype=int)
-        assert_allclose(result, expected)
+        assert_equal(result, expected)
 
     def test_nan_elements_error(self) -> None:
         arr = array([nan], dtype=float)
@@ -116,7 +159,7 @@ class TestAsInt:
         arr = array([nan], dtype=float)
         result = as_int(arr, nan=n)
         expected = array([n], dtype=int)
-        assert_allclose(result, expected)
+        assert_equal(result, expected)
 
     def test_inf_elements_error(self) -> None:
         arr = array([inf], dtype=float)
@@ -128,7 +171,7 @@ class TestAsInt:
         arr = array([inf], dtype=float)
         result = as_int(arr, inf=n)
         expected = array([n], dtype=int)
-        assert_allclose(result, expected)
+        assert_equal(result, expected)
 
     @given(n=integers(-10, 10))
     def test_non_integral_elements(self, n: int) -> None:
@@ -681,7 +724,7 @@ class TestDiscretize:
     def test_1_bin(self, arr: NDArrayF1) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
     @given(
         arr=float_arrays(
@@ -701,13 +744,13 @@ class TestDiscretize:
     def test_empty(self, bins: int) -> None:
         arr = array([], dtype=float)
         result = discretize(arr, bins)
-        assert_allclose(result, arr, equal_nan=True)
+        assert_equal(result, arr)
 
     @given(n=integers(0, 10), bins=integers(1, 10))
     def test_all_nan(self, n: int, bins: int) -> None:
         arr = full(n, nan, dtype=float)
         result = discretize(arr, bins)
-        assert_allclose(result, arr, equal_nan=True)
+        assert_equal(result, arr)
 
     @mark.parametrize(
         ("arr_v", "bins", "expected_v"),
@@ -744,7 +787,7 @@ class TestDiscretize:
         arr = array(arr_v, dtype=float)
         result = discretize(arr, bins)
         expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
 
 class TestGetFillValue:
@@ -804,7 +847,7 @@ class TestFFill:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
         expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3], dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
 
 class TestFFillNonNanSlices:
@@ -831,7 +874,20 @@ class TestFFillNonNanSlices:
         )
         result = ffill_non_nan_slices(arr, limit=limit, axis=axis)
         expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
+
+    @mark.parametrize(
+        ("axis", "expected_v"),
+        [
+            param(0, [4 * [nan], [nan, 0.1, nan, nan], [nan, 0.1, nan, nan]]),
+            param(1, [4 * [nan], [nan, 0.1, 0.1, 0.1], 4 * [nan]]),
+        ],
+    )
+    def test_initial_all_nan(self, axis: int, expected_v: list[list[float]]) -> None:
+        arr = array([4 * [nan], [nan, 0.1, nan, nan], 4 * [nan]], dtype=float)
+        result = ffill_non_nan_slices(arr, axis=axis)
+        expected = array(expected_v, dtype=float)
+        assert_equal(result, expected)
 
 
 class TestFillNa:
@@ -853,7 +909,7 @@ class TestFillNa:
         arr = array([init], dtype=float)
         result = fillna(arr, value=value)
         expected = array([expected_v], dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
 
 class TestFlatN0:
@@ -1049,7 +1105,7 @@ class TestShift:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
         expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
     @mark.parametrize(
         ("axis", "n", "expected_v"),
@@ -1100,7 +1156,7 @@ class TestShift:
         arr = arange(12, dtype=float).reshape((3, 4))
         result = shift(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, equal_nan=True)
+        assert_equal(result, expected)
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
@@ -1127,7 +1183,7 @@ class TestShiftBool:
         expected = array(
             [fill_value if e is None else e for e in expected_v], dtype=bool
         )
-        assert (result == expected).all()
+        assert_equal(result, expected)
 
 
 class TestYear:

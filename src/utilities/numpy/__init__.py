@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import repeat
 from typing import Any, Optional, Union, cast, overload
@@ -15,7 +15,6 @@ from numpy import (
     flip,
     full_like,
     inf,
-    int64,
     isclose,
     isfinite,
     isinf,
@@ -139,6 +138,16 @@ _ = (
 
 
 @beartype
+def array_indexer(
+    i: int, ndim: int, /, *, axis: int = -1
+) -> tuple[Union[int, slice], ...]:
+    """Get the indexer which returns the `ith` slice of an array along an axis."""
+    indexer: list[Union[int, slice]] = list(repeat(slice(None), times=ndim))
+    indexer[axis] = i
+    return tuple(indexer)
+
+
+@beartype
 def as_int(
     array: NDArrayF, /, *, nan: Optional[int] = None, inf: Optional[int] = None
 ) -> NDArrayI:
@@ -205,30 +214,30 @@ def ffill_non_nan_slices(
     array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
 ) -> NDArrayF:
     """Forward fill the slices in an array which contain non-nan values."""
-    other_axes = list(range(array.ndim))
-    del other_axes[axis]
-    any_non_nan = (~isnan(array)).any(axis=tuple(other_axes))
-    (indices_any_non_nan,) = any_non_nan.nonzero()
-    (indices_all_nan,) = (~any_non_nan).nonzero()
 
-    @beartype
-    def get_index_from(idx_to: int64, /) -> Optional[int64]:
-        candidates = {idx_fr for idx_fr in indices_any_non_nan if idx_fr <= idx_to}
-        if limit is not None:
-            candidates = {idx_fr for idx_fr in candidates if (idx_to - idx_fr) <= limit}
-        return max(candidates, default=None)
-
-    @beartype
-    def lift(index: int64, /) -> tuple[Union[int64, slice], ...]:
-        indexer: list[Union[int64, slice]] = list(repeat(slice(None), times=array.ndim))
-        indexer[axis] = index
-        return tuple(indexer)
-
+    ndim = array.ndim
+    arrays = (
+        array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
+    )
     out = array.copy()
-    for idx_to in indices_all_nan:
-        if (idx_fr := get_index_from(idx_to)) is not None:
-            out[lift(idx_to)] = out[lift(idx_fr)]
+    for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
+        out[array_indexer(i, ndim, axis=axis)] = repl_i
     return out
+
+
+@beartype
+def _ffill_non_nan_slices_helper(
+    arrays: Iterator[NDArrayF], /, *, limit: Optional[int] = None
+) -> Iterator[tuple[int, NDArrayF]]:
+    """Iterator yielding the slices to be pasted in."""
+    last: Optional[tuple[int, NDArrayF]] = None
+    for i, arr_i in enumerate(arrays):
+        if (~isnan(arr_i)).any():
+            last = i, arr_i
+        elif last is not None:
+            last_i, last_sl = last
+            if (limit is None) or ((i - last_i) <= limit):
+                yield i, last_sl
 
 
 @beartype

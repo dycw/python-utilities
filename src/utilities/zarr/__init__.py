@@ -17,6 +17,8 @@ from utilities.iterables import is_iterable_not_str
 from utilities.numpy import (
     MultipleTrueElementsError,
     NoTrueElementsError,
+    _ffill_non_nan_slices_helper,
+    array_indexer,
     datetime64D,
     datetime64ns,
     datetime64Y,
@@ -28,6 +30,20 @@ from utilities.numpy.typing import NDArray1, NDArrayB1, NDArrayI1
 from utilities.pathlib import PathLike
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
+
+
+@beartype
+def ffill_non_nan_slices(
+    array: Array, /, *, limit: Optional[int] = None, axis: int = -1
+) -> None:
+    """Forward fill the slices in an array which contain non-nan values."""
+    ndim = array.ndim
+    arrays = (
+        array.oindex[array_indexer(i, ndim, axis=axis)]
+        for i in range(array.shape[axis])
+    )
+    for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
+        array.oindex[array_indexer(i, ndim, axis=axis)] = repl_i
 
 
 @contextmanager
