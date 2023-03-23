@@ -18,7 +18,7 @@ class DatabaseTarget(Target):
         self._engine = engine
 
     @beartype
-    def exists(self) -> bool:  # noqa: D102
+    def exists(self) -> bool:
         try:
             with self._engine.begin() as conn:
                 res = conn.execute(self._sel).one_or_none()

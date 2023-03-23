@@ -166,6 +166,10 @@ class TestNDArrayWithIndexes:
         with raises(InvalidIndexValueError):
             _ = view.sel(indexer)
 
+    def test_missing(self, tmp_path: Path) -> None:
+        with raises(FileNotFoundError):
+            _ = NDArrayWithIndexes(tmp_path.joinpath("array"))
+
     @mark.parametrize(
         ("indexer", "expected"),
         [
