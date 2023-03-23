@@ -1,4 +1,3 @@
-from random import choice
 from typing import Any, cast
 
 from attrs import Factory, define, field, fields
@@ -7,6 +6,7 @@ from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 
 from utilities.class_name import get_class_name
+from utilities.random import SYSTEM_RANDOM
 
 
 @define
@@ -17,7 +17,7 @@ class AttrsBase:
     def __attrs_post_init__(self) -> None:
         all_fields = fields(cast(Any, type(self)))
         try:
-            field = choice(all_fields)
+            field = SYSTEM_RANDOM.choice(all_fields)
         except IndexError:
             pass
         else:

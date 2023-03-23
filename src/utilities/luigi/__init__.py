@@ -48,17 +48,15 @@ class DateHourParameter(luigi.DateHourParameter):
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @beartype
-    def normalize(  # noqa: D102
-        self, datetime: Union[dt.datetime, str], /
-    ) -> dt.datetime:
+    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     @beartype
-    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+    def parse(self, datetime: str, /) -> dt.datetime:
         return parse_datetime(datetime)
 
     @beartype
-    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+    def serialize(self, datetime: dt.datetime, /) -> str:
         return serialize_datetime(datetime)
 
 
@@ -70,17 +68,15 @@ class DateMinuteParameter(luigi.DateMinuteParameter):
         super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
 
     @beartype
-    def normalize(  # noqa: D102
-        self, datetime: Union[dt.datetime, str], /
-    ) -> dt.datetime:
+    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     @beartype
-    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+    def parse(self, datetime: str, /) -> dt.datetime:
         return parse_datetime(datetime)
 
     @beartype
-    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+    def serialize(self, datetime: dt.datetime, /) -> str:
         return serialize_datetime(datetime)
 
 
@@ -92,17 +88,15 @@ class DateSecondParameter(luigi.DateSecondParameter):
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @beartype
-    def normalize(  # noqa: D102
-        self, datetime: Union[dt.datetime, str], /
-    ) -> dt.datetime:
+    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     @beartype
-    def parse(self, datetime: str, /) -> dt.datetime:  # noqa: D102
+    def parse(self, datetime: str, /) -> dt.datetime:
         return parse_datetime(datetime)
 
     @beartype
-    def serialize(self, datetime: dt.datetime, /) -> str:  # noqa: D102
+    def serialize(self, datetime: dt.datetime, /) -> str:
         return serialize_datetime(datetime)
 
 
@@ -118,15 +112,15 @@ class EnumParameter(Parameter, Generic[_E]):
         self._case_sensitive = case_sensitive
 
     @beartype
-    def normalize(self, member: Union[_E, str], /) -> _E:  # noqa: D102
+    def normalize(self, member: Union[_E, str], /) -> _E:
         return ensure_enum(self._enum, member, case_sensitive=self._case_sensitive)
 
     @beartype
-    def parse(self, member: str, /) -> _E:  # noqa: D102
+    def parse(self, member: str, /) -> _E:
         return parse_enum(self._enum, member, case_sensitive=self._case_sensitive)
 
     @beartype
-    def serialize(self, member: _E, /) -> str:  # noqa: D102
+    def serialize(self, member: _E, /) -> str:
         return member.name
 
 
@@ -134,15 +128,15 @@ class DateParameter(luigi.DateParameter):
     """A parameter which takes the value of a `dt.date`."""
 
     @beartype
-    def normalize(self, date: Union[dt.date, str], /) -> dt.date:  # noqa: D102
+    def normalize(self, date: Union[dt.date, str], /) -> dt.date:
         return ensure_date(date)
 
     @beartype
-    def parse(self, date: str, /) -> dt.date:  # noqa: D102
+    def parse(self, date: str, /) -> dt.date:
         return parse_date(date)
 
     @beartype
-    def serialize(self, date: dt.date, /) -> str:  # noqa: D102
+    def serialize(self, date: dt.date, /) -> str:
         return serialize_date(date)
 
 
@@ -150,15 +144,15 @@ class TimeParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of a `dt.time`."""
 
     @beartype
-    def normalize(self, time: Union[dt.time, str], /) -> dt.time:  # noqa: D102
+    def normalize(self, time: Union[dt.time, str], /) -> dt.time:
         return ensure_time(time)
 
     @beartype
-    def parse(self, time: str, /) -> dt.time:  # noqa: D102
+    def parse(self, time: str, /) -> dt.time:
         return parse_time(time)
 
     @beartype
-    def serialize(self, time: dt.time, /) -> str:  # noqa: D102
+    def serialize(self, time: dt.time, /) -> str:
         return serialize_time(time)
 
 
@@ -176,7 +170,7 @@ class WeekdayParameter(Parameter):
             self._rounder = round_to_next_weekday
 
     @beartype
-    def normalize(self, date: Union[dt.date, str], /) -> dt.date:  # noqa: D102
+    def normalize(self, date: Union[dt.date, str], /) -> dt.date:
         with suppress(AttributeError, ModuleNotFoundError):
             from utilities.pandas import timestamp_to_date
 
@@ -184,11 +178,11 @@ class WeekdayParameter(Parameter):
         return self._rounder(ensure_date(date))
 
     @beartype
-    def parse(self, date: str, /) -> dt.date:  # noqa: D102
+    def parse(self, date: str, /) -> dt.date:
         return parse_date(date)
 
     @beartype
-    def serialize(self, date: dt.date, /) -> str:  # noqa: D102
+    def serialize(self, date: dt.date, /) -> str:
         return serialize_date(date)
 
 
@@ -222,7 +216,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @beartype
-    def output(self) -> "_ExternalTaskDummyTarget":  # noqa: D102
+    def output(self) -> "_ExternalTaskDummyTarget":
         return _ExternalTaskDummyTarget(self)
 
 
@@ -248,7 +242,7 @@ class AwaitTask(ExternalTask, Generic[_Task]):
     task = cast(_Task, TaskParameter())
 
     @beartype
-    def exists(self) -> bool:  # noqa: D102
+    def exists(self) -> bool:
         return self.task.complete()
 
 
@@ -258,7 +252,7 @@ class AwaitTime(ExternalTask):
     datetime = cast(dt.datetime, DateSecondParameter())
 
     @beartype
-    def exists(self) -> bool:  # noqa: D102
+    def exists(self) -> bool:
         return dt.datetime.now(tz=UTC) >= self.datetime
 
 
@@ -268,7 +262,7 @@ class ExternalFile(ExternalTask):
     path = cast(Path, PathParameter())
 
     @beartype
-    def exists(self) -> bool:  # noqa: D102
+    def exists(self) -> bool:
         return self.path.exists()
 
 

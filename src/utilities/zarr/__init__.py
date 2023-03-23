@@ -115,6 +115,9 @@ class NDArrayWithIndexes:
     ) -> None:
         super().__init__()
         self._path = Path(path)
+        if not self._path.exists():
+            msg = f"{self._path}"
+            raise FileNotFoundError(msg)
         self._mode = mode
 
     @property
