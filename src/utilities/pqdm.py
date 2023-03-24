@@ -8,6 +8,7 @@ from typing import Any, Literal, Optional, TypeVar, Union, cast
 from beartype import beartype
 from pqdm import processes
 
+from utilities.class_name import get_class_name
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
 from utilities.tqdm import _get_total, tqdm
@@ -142,7 +143,7 @@ def pstarmap(
     """Parallel starmap, powered by `pqdm`."""
     n_jobs = _get_n_jobs(n_jobs)
     tqdm_class = cast(Any, tqdm)
-    desc_kwargs = _get_desc(func, desc)
+    desc_kwargs = _get_desc(desc, func)
     total = _get_total(total, iterable)
     if parallelism == "processes":
         result = processes.pqdm(
@@ -226,13 +227,15 @@ def _get_n_jobs(n_jobs: Optional[int], /) -> int:
 
 @beartype
 def _get_desc(
-    func: Callable[..., Any], desc: Union[Optional[str], Sentinel], /
+    desc: Union[Optional[str], Sentinel], func: Callable[..., Any], /
 ) -> dict[str, str]:
     if isinstance(desc, Sentinel):
+        if isinstance(func, partial):
+            return _get_desc(desc, func.func)
         try:
             desc_use = func.__name__
         except AttributeError:
-            desc_use = None
+            desc_use = get_class_name(func) if isinstance(func, object) else None
     else:
         desc_use = desc
     return {} if desc_use is None else {"desc": desc_use}

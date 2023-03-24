@@ -4,27 +4,35 @@ from typing import Any, Callable, Literal, Optional, Union
 
 from pytest import mark, param
 
+from utilities.class_name import get_class_name
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
 
 
 class TestGetDesc:
     @mark.parametrize(
-        ("func", "desc", "expected"),
+        ("desc", "func", "expected"),
         [
-            param(neg, sentinel, {"desc": "neg"}),
-            param(neg, None, {}),
-            param(partial(neg), sentinel, {}),
-            param(partial(neg), None, {}),
+            param(sentinel, neg, {"desc": "neg"}),
+            param(sentinel, partial(neg), {"desc": "neg"}),
+            param(None, neg, {}),
+            param("custom", neg, {"desc": "custom"}),
         ],
     )
     def test_main(
         self,
-        func: Callable[..., Any],
         desc: Union[Optional[str], Sentinel],
+        func: Callable[..., Any],
         expected: dict[str, str],
     ) -> None:
-        assert _get_desc(func, desc) == expected
+        assert _get_desc(desc, func) == expected
+
+    def test_class(self) -> None:
+        class Example:
+            def __call__(self) -> None:
+                return
+
+        assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}
 
 
 class TestPMap:
