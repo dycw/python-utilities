@@ -31,7 +31,6 @@ from hypothesis.strategies import (
 
 from utilities.datetime import UTC
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME, TIMESTAMP_MIN_AS_DATETIME
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
@@ -64,8 +63,8 @@ def datetimes_utc(
     _draw: Any,
     /,
     *,
-    min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,
-    max_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MAX_AS_DATETIME,
+    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
+    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
 ) -> dt.datetime:
     """Strategy for generating datetimes with the UTC timezone."""
     draw = lift_draw(_draw)
