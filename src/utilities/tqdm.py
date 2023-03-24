@@ -81,7 +81,7 @@ class tqdm(_tqdm):  # noqa: N801
         super().__init__(
             iterable=cast(Any, iterable),
             desc=desc,
-            total=total,
+            total=_get_total(total, iterable),
             leave=leave,
             file=file,
             ncols=ncols,
@@ -107,3 +107,15 @@ class tqdm(_tqdm):  # noqa: N801
             gui=cast(Any, gui),
             **kwargs,
         )
+
+
+@beartype
+def _get_total(
+    total: Optional[Union[int, float]], iterable: Any, /
+) -> Optional[Union[int, float]]:
+    if total is not None:
+        return total
+    try:
+        return len(iterable)
+    except TypeError:
+        return None

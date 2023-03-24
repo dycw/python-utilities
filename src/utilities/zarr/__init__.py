@@ -12,6 +12,7 @@ from zarr.convenience import open_group
 from zarr.core import Attributes
 
 from utilities.atomicwrites import writer
+from utilities.class_name import get_class_name
 from utilities.datetime import ensure_date, ensure_datetime
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy import (
@@ -135,6 +136,18 @@ class NDArrayWithIndexes:
             msg = f"{self._path}"
             raise FileNotFoundError(msg)
         self._mode = mode
+
+    @beartype
+    def __repr__(self) -> str:
+        cls = get_class_name(self)
+        path = self._path.as_posix()
+        return f"{cls}({path!r})"
+
+    @beartype
+    def __str__(self) -> str:
+        cls = get_class_name(self)
+        path = self._path.as_posix()
+        return f"{cls}({path})"
 
     @property
     @beartype

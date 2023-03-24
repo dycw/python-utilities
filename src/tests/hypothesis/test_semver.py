@@ -1,4 +1,4 @@
-from hypothesis import assume, given, settings
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject, data
 from pytest import raises
@@ -15,21 +15,18 @@ class TestVersionInfos:
         assert isinstance(version, VersionInfo)
 
     @given(data=data())
-    @settings(max_examples=300)
     def test_min_version(self, data: DataObject) -> None:
         min_version = data.draw(version_infos())
         version = data.draw(version_infos(min_version=min_version))
         assert version >= min_version
 
     @given(data=data())
-    @settings(max_examples=300)
     def test_max_version(self, data: DataObject) -> None:
         max_version = data.draw(version_infos())
         version = data.draw(version_infos(max_version=max_version))
         assert version <= max_version
 
     @given(data=data())
-    @settings(max_examples=300)
     def test_min_and_max_version(self, data: DataObject) -> None:
         version1, version2 = data.draw(lists_fixed_length(version_infos(), 2))
         min_version = min(version1, version2)
