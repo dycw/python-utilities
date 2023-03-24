@@ -790,57 +790,6 @@ class TestDiscretize:
         assert_equal(result, expected)
 
 
-class TestGetFillValue:
-    @mark.parametrize(
-        "dtype",
-        [
-            param(bool),
-            param(datetime64D),
-            param(datetime64Y),
-            param(datetime64ns),
-            param(float),
-            param(int),
-            param(object),
-        ],
-    )
-    def test_main(self, dtype: Any) -> None:
-        fill_value = get_fill_value(dtype)
-        array = full(0, fill_value, dtype=dtype)
-        assert has_dtype(array, dtype)
-
-    def test_error(self) -> None:
-        with raises(InvalidDTypeError):
-            _ = get_fill_value(None)
-
-
-class TestHasDtype:
-    @mark.parametrize(
-        ("x", "dtype", "expected"),
-        [
-            param(array([]), float, True),
-            param(array([]), (float,), True),
-            param(array([]), int, False),
-            param(array([]), (int,), False),
-            param(array([]), "Int64", False),
-            param(array([]), ("Int64",), False),
-            param(Series([], dtype="Int64"), "Int64", True),
-            param(Series([], dtype="Int64"), int, False),
-            param(
-                Series([], dtype=DatetimeTZDtype(tz="UTC")),
-                DatetimeTZDtype(tz="UTC"),
-                True,
-            ),
-            param(
-                Series([], dtype=DatetimeTZDtype(tz="UTC")),
-                DatetimeTZDtype(tz="Asia/Hong_Kong"),
-                False,
-            ),
-        ],
-    )
-    def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
-        assert has_dtype(x, dtype) is expected
-
-
 class TestFFill:
     @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
     def test_main(self, limit: Optional[int], expected_v: float) -> None:
@@ -930,6 +879,57 @@ class TestFlatN0:
         arr = ones(n, dtype=bool)
         with raises(MultipleTrueElementsError):
             _ = flatn0(arr)
+
+
+class TestGetFillValue:
+    @mark.parametrize(
+        "dtype",
+        [
+            param(bool),
+            param(datetime64D),
+            param(datetime64Y),
+            param(datetime64ns),
+            param(float),
+            param(int),
+            param(object),
+        ],
+    )
+    def test_main(self, dtype: Any) -> None:
+        fill_value = get_fill_value(dtype)
+        array = full(0, fill_value, dtype=dtype)
+        assert has_dtype(array, dtype)
+
+    def test_error(self) -> None:
+        with raises(InvalidDTypeError):
+            _ = get_fill_value(None)
+
+
+class TestHasDtype:
+    @mark.parametrize(
+        ("x", "dtype", "expected"),
+        [
+            param(array([]), float, True),
+            param(array([]), (float,), True),
+            param(array([]), int, False),
+            param(array([]), (int,), False),
+            param(array([]), "Int64", False),
+            param(array([]), ("Int64",), False),
+            param(Series([], dtype="Int64"), "Int64", True),
+            param(Series([], dtype="Int64"), int, False),
+            param(
+                Series([], dtype=DatetimeTZDtype(tz="UTC")),
+                DatetimeTZDtype(tz="UTC"),
+                True,
+            ),
+            param(
+                Series([], dtype=DatetimeTZDtype(tz="UTC")),
+                DatetimeTZDtype(tz="Asia/Hong_Kong"),
+                False,
+            ),
+        ],
+    )
+    def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
+        assert has_dtype(x, dtype) is expected
 
 
 class TestIsEmptyAndIsNotEmpty:

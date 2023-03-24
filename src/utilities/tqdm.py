@@ -21,11 +21,15 @@ class _Defaults:
     maxinterval: Optional[float] = 10.0
     miniters: Optional[Union[int, float]] = None
     ascii: Union[bool, Optional[str]] = None  # noqa: A003
-    unit: Optional[str] = "it"
+    unit: Optional[str] = "i"
     unit_scale: Union[bool, int, Optional[str]] = False
-    dynamic_ncols: Optional[bool] = False
+    dynamic_ncols: Optional[bool] = True
     smoothing: Optional[float] = 0.3
-    bar_format: Optional[str] = None
+    bar_format: Optional[str] = (
+        "{desc}: {percentage:3.0f}% | "
+        "{elapsed} +{remaining} ={eta:%H:%M:%S} | "
+        "{n}/{total} | {rate_fmt}"
+    )
     initial: Optional[Union[int, float]] = 0
     position: Optional[int] = None
     postfix: Optional[Mapping[str, Any]] = None
