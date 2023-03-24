@@ -40,7 +40,6 @@ from utilities.hypothesis import (
     text_printable,
 )
 from utilities.os import temp_environ
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME, TIMESTAMP_MIN_AS_DATETIME
 from utilities.tempfile import TemporaryDirectory
 
 
@@ -79,11 +78,7 @@ class TestAssumeDoesNotRaise:
 
 
 class TestDatetimesUTC:
-    @given(
-        data=data(),
-        min_value=datetimes(min_value=TIMESTAMP_MIN_AS_DATETIME.replace(tzinfo=None)),
-        max_value=datetimes(max_value=TIMESTAMP_MAX_AS_DATETIME.replace(tzinfo=None)),
-    )
+    @given(data=data(), min_value=datetimes(), max_value=datetimes())
     def test_main(
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
