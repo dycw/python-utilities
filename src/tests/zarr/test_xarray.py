@@ -1,4 +1,4 @@
-from collections.abc import Hashable
+from collections.abc import Callable, Hashable
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +12,7 @@ from pytest import mark, param, raises
 from xarray import DataArray
 from xarray.testing import assert_identical
 
+from utilities.class_name import get_class_name
 from utilities.hypothesis import hashables, temp_paths, text_ascii
 from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.hypothesis.pandas import int_indexes
@@ -156,6 +157,13 @@ class TestDataArrayOnDisk:
         view = DataArrayOnDisk(path)
         with suppress_warnings(category=FutureWarning):  # empty arrays trigger
             assert_identical(view.sel(indexer), expected)
+
+    @mark.parametrize("func", [param(repr), param(str)])
+    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
+        view = DataArrayOnDisk(tmp_path)
+        cls = get_class_name(DataArrayOnDisk)
+        path = func(tmp_path.as_posix())
+        assert func(view) == f"{cls}({path})"
 
 
 class TestYieldDataArrayOnDisk:

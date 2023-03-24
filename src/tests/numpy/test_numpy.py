@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, dates, integers
@@ -96,7 +96,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
+from utilities.numpy.typing import NDArray2, NDArrayF1, NDArrayF2, NDArrayI2
 
 
 class TestArrayIndexer:
@@ -591,7 +591,7 @@ class TestChecks:
     def test_is_non_singular(
         self, array: NDArrayF2, dtype: Any, expected: bool
     ) -> None:
-        assert is_non_singular(array.astype(dtype)) is expected
+        assert is_non_singular(cast(NDArray2, array.astype(dtype))) is expected
 
     @mark.parametrize(
         ("x", "expected"),
@@ -647,7 +647,7 @@ class TestChecks:
     def test_is_symmetric(
         self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
     ) -> None:
-        assert is_symmetric(array.astype(dtype)) is expected
+        assert is_symmetric(cast(NDArray2, array.astype(dtype))) is expected
 
     @mark.parametrize(
         ("x", "expected"),

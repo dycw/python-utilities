@@ -10,7 +10,7 @@ from pqdm import processes
 
 from utilities.sentinel import Sentinel, sentinel
 from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
-from utilities.tqdm import tqdm
+from utilities.tqdm import _get_total, tqdm
 
 
 @beartype
@@ -74,7 +74,7 @@ def pmap(
         bounded=bounded,
         exception_behaviour=exception_behaviour,
         desc=desc,
-        total=_get_total(iterables, total),
+        total=total,
         leave=leave,
         file=file,
         ncols=ncols,
@@ -143,7 +143,7 @@ def pstarmap(
     n_jobs = _get_n_jobs(n_jobs)
     tqdm_class = cast(Any, tqdm)
     desc_kwargs = _get_desc(func, desc)
-    total = _get_total((iterable,), total)
+    total = _get_total(total, iterable)
     if parallelism == "processes":
         result = processes.pqdm(
             iterable,
@@ -228,23 +228,14 @@ def _get_n_jobs(n_jobs: Optional[int], /) -> int:
 def _get_desc(
     func: Callable[..., Any], desc: Union[Optional[str], Sentinel], /
 ) -> dict[str, str]:
-    desc_use = func.__name__ if isinstance(desc, Sentinel) else desc
-    return {} if desc_use is None else {"desc": desc_use}
-
-
-@beartype
-def _get_total(
-    iterables: tuple[Any, ...], total: Optional[Union[int, float]], /
-) -> Optional[Union[int, float]]:
-    if total is not None:
-        return total
-    lengths: list[int] = []
-    for iterable in iterables:
+    if isinstance(desc, Sentinel):
         try:
-            lengths.append(len(iterable))
-        except TypeError:
-            return None
-    return min(lengths, default=0)
+            desc_use = func.__name__
+        except AttributeError:
+            desc_use = None
+    else:
+        desc_use = desc
+    return {} if desc_use is None else {"desc": desc_use}
 
 
 @beartype
