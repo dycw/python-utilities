@@ -42,17 +42,27 @@ def multiply(x: float, y: float, /) -> float:
 
 
 @overload
-def multiply(x: float, y: NDArrayF, /) -> NDArrayF:
-    ...
-
-
-@overload
 def multiply(x: NDArrayF, y: float, /) -> NDArrayF:
     ...
 
 
 @overload
+def multiply(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def multiply(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
 def multiply(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def multiply(x: Expression, y: NDArrayF, /) -> Expression:
     ...
 
 
@@ -68,16 +78,6 @@ def multiply(x: NDArrayF, y: Expression, /) -> Expression:
 
 @overload
 def multiply(x: Expression, y: Expression, /) -> Expression:
-    ...
-
-
-@overload
-def multiply(x: Expression, y: float, /) -> Expression:
-    ...
-
-
-@overload
-def multiply(x: Expression, y: NDArrayF, /) -> Expression:
     ...
 
 
@@ -150,11 +150,51 @@ def pos(x: Expression, /) -> Expression:
 
 @beartype
 def pos(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expression]:
-    """Compute the posative parts of a quantity."""
+    """Compute the positive parts of a quantity."""
     if isinstance(x, (float, ndarray)):
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.pos(x)
+
+
+@overload
+def power(x: float, p: float, /) -> float:
+    ...
+
+
+@overload
+def power(x: NDArrayF, p: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def power(x: Expression, p: float, /) -> Expression:
+    ...
+
+
+@overload
+def power(x: float, p: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def power(x: NDArrayF, p: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def power(x: Expression, p: NDArrayF, /) -> Expression:
+    ...
+
+
+@beartype
+def power(
+    x: Union[float, NDArrayF, Expression], p: Union[float, NDArrayF], /
+) -> Union[float, NDArrayF, Expression]:
+    """Compute the power of a quantity."""
+    if isinstance(x, (float, ndarray)):
+        return np.power(x, p)
+    return cvxpy.power(x, p)
 
 
 @overload

@@ -75,7 +75,7 @@ coverage-conditional-plugin==0.8.0
     # via dycw-utilities (pyproject.toml)
 cramjam==2.6.2
     # via fastparquet
-cryptography==40.0.0
+cryptography==40.0.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   secretstorage
@@ -107,7 +107,7 @@ fasteners==0.18
     # via zarr
 fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
-filelock==3.10.3
+filelock==3.10.4
     # via virtualenv
 fonttools==4.39.2
     # via fpdf2
@@ -342,7 +342,7 @@ scs==3.2.2
     # via cvxpy
 secretstorage==3.3.3
     # via keyring
-selenium==4.8.2
+selenium==4.8.3
     # via dycw-utilities (pyproject.toml)
 semver==2.13.0
     # via dycw-utilities (pyproject.toml)
