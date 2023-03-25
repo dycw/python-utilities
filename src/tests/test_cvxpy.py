@@ -8,7 +8,7 @@ from numpy import array
 from numpy.testing import assert_equal
 from pytest import mark, param
 
-from utilities.cvxpy import abs_, multiply, neg, norm, pos, quad_form, sqrt, sum_
+from utilities.cvxpy import abs_, multiply, neg, norm, pos, power, quad_form, sqrt, sum_
 from utilities.numpy.typing import NDArrayF
 
 
@@ -148,6 +148,33 @@ class TestPos:
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(pos(var).value, pos(var.value))
+
+
+class TestPower:
+    @mark.parametrize(
+        ("x", "p", "expected"),
+        [
+            param(0.0, 0.0, 1.0),
+            param(2.0, 3.0, 8.0),
+            param(2.0, array([3.0]), array([8.0])),
+            param(array([2.0]), 3.0, array([8.0])),
+            param(array([2.0]), array([3.0]), array([8.0])),
+        ],
+    )
+    def test_float_and_array(
+        self,
+        x: Union[float, NDArrayF],
+        p: Union[float, NDArrayF],
+        expected: Union[float, NDArrayF],
+    ) -> None:
+        assert_equal(power(x, p), expected)
+
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_one_expression(
+        self, objective: Union[type[Maximize], type[Minimize]]
+    ) -> None:
+        var = _get_variable(objective)
+        assert_equal(power(var, 2.0).value, power(var.value, 2.0))
 
 
 class TestQuadForm:
