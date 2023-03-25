@@ -8,7 +8,19 @@ from numpy import array
 from numpy.testing import assert_equal
 from pytest import mark, param
 
-from utilities.cvxpy import abs_, multiply, neg, norm, pos, power, quad_form, sqrt, sum_
+from utilities.cvxpy import (
+    abs_,
+    add,
+    multiply,
+    neg,
+    norm,
+    pos,
+    power,
+    quad_form,
+    sqrt,
+    subtract,
+    sum_,
+)
 from utilities.numpy.typing import NDArrayF
 
 
@@ -50,6 +62,48 @@ class TestAbs:
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(abs_(var).value, abs_(var.value))
+
+
+class TestAdd:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(0.0, 0.0, 0.0),
+            param(1.0, 2.0, 3.0),
+            param(1.0, array([2.0]), array([3.0])),
+            param(array([1.0]), 2.0, array([3.0])),
+            param(array([1.0]), array([2.0]), array([3.0])),
+        ],
+    )
+    def test_float_and_array(
+        self,
+        x: Union[float, NDArrayF],
+        y: Union[float, NDArrayF],
+        expected: Union[float, NDArrayF],
+    ) -> None:
+        assert_equal(add(x, y), expected)
+
+    @mark.parametrize("x", [param(1.0), param(array([1.0]))])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_one_expression(
+        self,
+        x: Union[float, NDArrayF, Expression],
+        objective: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var = _get_variable(objective)
+        assert_equal(add(x, var).value, add(x, var.value))
+        assert_equal(add(var, x).value, add(var.value, x))
+
+    @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
+    @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    def test_two_expressions(
+        self,
+        objective1: Union[type[Maximize], type[Minimize]],
+        objective2: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var1 = _get_variable(objective1)
+        var2 = _get_variable(objective2)
+        assert_equal(add(var1, var2).value, add(var1.value, var2.value))
 
 
 class TestMultiply:
@@ -208,6 +262,48 @@ class TestSqrt:
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
         assert_equal(sqrt(var).value, sqrt(var.value))
+
+
+class TestSubtract:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(0.0, 0.0, 0.0),
+            param(1.0, 2.0, -1.0),
+            param(1.0, array([2.0]), array([-1.0])),
+            param(array([1.0]), 2.0, array([-1.0])),
+            param(array([1.0]), array([2.0]), array([-1.0])),
+        ],
+    )
+    def test_float_and_array(
+        self,
+        x: Union[float, NDArrayF],
+        y: Union[float, NDArrayF],
+        expected: Union[float, NDArrayF],
+    ) -> None:
+        assert_equal(subtract(x, y), expected)
+
+    @mark.parametrize("x", [param(1.0), param(array([1.0]))])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_one_expression(
+        self,
+        x: Union[float, NDArrayF, Expression],
+        objective: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var = _get_variable(objective)
+        assert_equal(subtract(x, var).value, subtract(x, var.value))
+        assert_equal(subtract(var, x).value, subtract(var.value, x))
+
+    @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
+    @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    def test_two_expressions(
+        self,
+        objective1: Union[type[Maximize], type[Minimize]],
+        objective2: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var1 = _get_variable(objective1)
+        var2 = _get_variable(objective2)
+        assert_equal(subtract(var1, var2).value, subtract(var1.value, var2.value))
 
 
 class TestSum:
