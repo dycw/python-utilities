@@ -1,4 +1,4 @@
-from typing import Union, cast, overload
+from typing import Any, Union, cast, overload
 
 import cvxpy
 import numpy as np
@@ -34,6 +34,61 @@ def abs_(
     if isinstance(x, (float, ndarray)):
         return np.abs(x)
     return cvxpy.abs(x)
+
+
+@overload
+def add(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def add(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def add(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def add(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def add(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def add(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def add(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def add(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def add(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def add(
+    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
+    """Compute the sum of two quantities."""
+    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+        return np.add(x, y)
+    return cast(Any, x) + cast(Any, y)
 
 
 @overload
@@ -240,6 +295,61 @@ def sqrt(
     if isinstance(x, (float, ndarray)):
         return np.sqrt(x)
     return cvxpy.sqrt(x)
+
+
+@overload
+def subtract(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def subtract(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def subtract(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def subtract(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def subtract(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def subtract(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def subtract(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def subtract(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def subtract(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def subtract(
+    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
+    """Compute the difference of two quantities."""
+    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+        return np.subtract(x, y)
+    return cast(Any, x) - cast(Any, y)
 
 
 @overload
