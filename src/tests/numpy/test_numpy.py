@@ -6,6 +6,7 @@ from hypothesis.strategies import DataObject, data, dates, integers
 from numpy import (
     arange,
     array,
+    concatenate,
     datetime64,
     eye,
     full,
@@ -22,10 +23,15 @@ from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
 
+from utilities.datetime import UTC
+from utilities.hypothesis import datetimes_utc
 from utilities.hypothesis.numpy import float_arrays
 from utilities.numpy import (
+    DateOverflowError,
+    EmptyNumpyConcatenateError,
     InfElementsError,
     InvalidDTypeError,
+    LossOfNanosecondsError,
     MultipleTrueElementsError,
     NanElementsError,
     NonIntegralElementsError,
@@ -34,9 +40,14 @@ from utilities.numpy import (
     ZeroShiftError,
     array_indexer,
     as_int,
+    date_to_datetime64,
+    datetime64_to_date,
+    datetime64_to_datetime,
     datetime64D,
     datetime64ns,
+    datetime64us,
     datetime64Y,
+    datetime_to_datetime64,
     discretize,
     ffill,
     ffill_non_nan_slices,
@@ -82,6 +93,7 @@ from utilities.numpy import (
     is_non_zero_or_nan,
     is_positive,
     is_positive_or_nan,
+    is_positive_semidefinite,
     is_symmetric,
     is_zero,
     is_zero_or_finite_and_non_micro,
@@ -92,6 +104,7 @@ from utilities.numpy import (
     maximum,
     minimum,
     pct_change,
+    redirect_to_empty_numpy_concatenate_error,
     shift,
     shift_bool,
     year,
@@ -640,16 +653,6 @@ class TestChecks:
         assert is_positive_or_nan(nan)
 
     @mark.parametrize(
-        ("array", "expected"),
-        [param(eye(2), True), param(arange(4).reshape((2, 2)), False)],
-    )
-    @mark.parametrize("dtype", [param(float), param(int)])
-    def test_is_symmetric(
-        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
-    ) -> None:
-        assert is_symmetric(cast(NDArray2, array.astype(dtype))) is expected
-
-    @mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -717,6 +720,82 @@ class TestChecks:
 
     def test_is_zero_or_non_micro_or_nan(self) -> None:
         assert is_zero_or_non_micro_or_nan(nan)
+
+
+class TestDateToDatetime64ns:
+    def test_example(self) -> None:
+        result = date_to_datetime64(dt.date(2000, 1, 1))
+        assert result == datetime64("2000-01-01", "D")
+        assert result.dtype == datetime64D
+
+    @given(date=dates())
+    def test_main(self, date: dt.date) -> None:
+        result = date_to_datetime64(date)
+        assert result.dtype == datetime64D
+
+
+class TestDatetimeToDatetime64ns:
+    def test_example(self) -> None:
+        result = datetime_to_datetime64(
+            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
+        )
+        assert result == datetime64("2000-01-01 00:00:00.123456", "us")
+        assert result.dtype == datetime64us
+
+    @given(datetime=datetimes_utc())
+    def test_main(self, datetime: dt.datetime) -> None:
+        result = datetime_to_datetime64(datetime)
+        assert result.dtype == datetime64us
+
+
+class TestDatetime64ToDate:
+    def test_example(self) -> None:
+        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
+
+    @given(date=dates())
+    def test_round_trip(self, date: dt.datetime) -> None:
+        assert datetime64_to_date(date_to_datetime64(date)) == date
+
+    @mark.parametrize(
+        ("datetime", "dtype", "error"),
+        [
+            param("10000-01-01", "D", DateOverflowError),
+            param("2000-01-01", "ns", NotImplementedError),
+        ],
+    )
+    def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
+        with raises(error):
+            _ = datetime64_to_date(datetime64(datetime, dtype))
+
+
+class TestDatetime64ToDatetime:
+    def test_example_ms(self) -> None:
+        assert datetime64_to_datetime(
+            datetime64("2000-01-01 00:00:00.123", "ms")
+        ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123000, tzinfo=UTC)
+
+    @mark.parametrize("dtype", [param("us"), param("ns")])
+    def test_examples_us_ns(self, dtype: str) -> None:
+        assert datetime64_to_datetime(
+            datetime64("2000-01-01 00:00:00.123456", dtype)
+        ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
+
+    @given(datetime=datetimes_utc())
+    def test_round_trip(self, datetime: dt.datetime) -> None:
+        assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
+
+    @mark.parametrize(
+        ("datetime", "dtype", "error"),
+        [
+            param("0000-12-31", "ms", DateOverflowError),
+            param("10000-01-01", "ms", DateOverflowError),
+            param("1970-01-01 00:00:00.000000001", "ns", LossOfNanosecondsError),
+            param("2000-01-01", "D", NotImplementedError),
+        ],
+    )
+    def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
+        with raises(error):
+            _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
 
 class TestDiscretize:
@@ -966,6 +1045,38 @@ class TestIsEmptyAndIsNotEmpty:
         assert is_non_empty(shape_or_array) is (expected == "non-empty")
 
 
+class TestIsPositiveSemiDefinite:
+    @mark.parametrize(
+        ("array", "expected"),
+        [
+            param(eye(2), True),
+            param(zeros((1, 2), dtype=float), False),
+            param(arange(4).reshape((2, 2)), False),
+        ],
+    )
+    @mark.parametrize("dtype", [param(float), param(int)])
+    def test_main(
+        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
+    ) -> None:
+        assert is_positive_semidefinite(cast(NDArray2, array.astype(dtype))) is expected
+
+
+class TestIsSymmetric:
+    @mark.parametrize(
+        ("array", "expected"),
+        [
+            param(eye(2), True),
+            param(zeros((1, 2), dtype=float), False),
+            param(arange(4).reshape((2, 2)), False),
+        ],
+    )
+    @mark.parametrize("dtype", [param(float), param(int)])
+    def test_main(
+        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
+    ) -> None:
+        assert is_symmetric(cast(NDArray2, array.astype(dtype))) is expected
+
+
 class TestMaximumMinimum:
     def test_maximum_floats(self) -> None:
         result = maximum(1.0, 2.0)
@@ -1088,6 +1199,15 @@ class TestPctChange:
         arr = array([], dtype=float)
         with raises(ZeroPercentageChangeSpanError):
             _ = pct_change(arr, n=0)
+
+
+class TestRedirectToEmptyNumpyConcatenateError:
+    def test_main(self) -> None:
+        with raises(EmptyNumpyConcatenateError):
+            try:
+                _ = concatenate([])
+            except ValueError as error:
+                redirect_to_empty_numpy_concatenate_error(error)
 
 
 class TestShift:

@@ -107,7 +107,7 @@ fasteners==0.18
     # via zarr
 fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
-filelock==3.10.4
+filelock==3.10.6
     # via virtualenv
 fonttools==4.39.2
     # via fpdf2
@@ -250,7 +250,7 @@ pillow==9.4.0
     #   fpdf2
 pip-tools==6.12.3
     # via dycw-utilities (pyproject.toml)
-platformdirs==3.1.1
+platformdirs==3.2.0
     # via
     #   black
     #   hatch
@@ -313,7 +313,7 @@ python-dateutil==2.8.2
     #   freezegun
     #   luigi
     #   pandas
-pytz==2022.7.1
+pytz==2023.2
     # via pandas
 pyviz-comms==2.2.1
     # via

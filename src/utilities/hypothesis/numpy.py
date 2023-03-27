@@ -3,10 +3,26 @@ from typing import Any, Optional
 from beartype import beartype
 from hypothesis.extra.numpy import array_shapes, arrays, from_dtype
 from hypothesis.strategies import SearchStrategy, booleans, composite, integers, none
-from numpy import dtype, iinfo, int64
+from numpy import (
+    concatenate,
+    dtype,
+    expand_dims,
+    iinfo,
+    int32,
+    int64,
+    uint32,
+    uint64,
+    zeros,
+)
+from numpy.typing import NDArray
 
-from utilities.hypothesis import floats_extra, lift_draw, text_ascii
+from utilities.hypothesis import floats_extra, lift_draw, lists_fixed_length, text_ascii
 from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
+from utilities.math.typing import IntNonNeg
+from utilities.numpy import (
+    EmptyNumpyConcatenateError,
+    redirect_to_empty_numpy_concatenate_error,
+)
 from utilities.numpy.typing import NDArrayB, NDArrayF, NDArrayI, NDArrayO
 
 
@@ -25,6 +41,35 @@ def bool_arrays(
     return draw(
         arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique))
     )
+
+
+@composite
+@beartype
+def concatenated_arrays(
+    _draw: Any,
+    strategy: SearchStrategy[NDArray[Any]],
+    size: MaybeSearchStrategy[IntNonNeg],
+    fallback: Shape,
+    /,
+    *,
+    dtype: Any = float,
+) -> NDArray[Any]:
+    """Strategy for generating arrays from lower-dimensional strategies."""
+    draw = lift_draw(_draw)
+    size_ = draw(size)
+    arrays = draw(lists_fixed_length(strategy, size_))
+    expanded = [expand_dims(array, axis=0) for array in arrays]
+    try:
+        return concatenate(expanded)
+    except ValueError as error:
+        try:
+            redirect_to_empty_numpy_concatenate_error(error)
+        except EmptyNumpyConcatenateError:
+            if isinstance(fallback, int):
+                shape = size_, fallback
+            else:
+                shape = (size_, *fallback)
+            return zeros(shape, dtype=dtype)
 
 
 @composite
@@ -85,6 +130,12 @@ def int_arrays(
 
 
 @beartype
+def int32s() -> SearchStrategy[int]:
+    """Strategy for generating int32s."""
+    return from_dtype(dtype(int32)).map(int)
+
+
+@beartype
 def int64s() -> SearchStrategy[int]:
     """Strategy for generating int64s."""
     return from_dtype(dtype(int64)).map(int)
@@ -111,3 +162,15 @@ def str_arrays(
     return draw(
         arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique))
     )
+
+
+@beartype
+def uint32s() -> SearchStrategy[int]:
+    """Strategy for generating uint32s."""
+    return from_dtype(dtype(uint32)).map(int)
+
+
+@beartype
+def uint64s() -> SearchStrategy[int]:
+    """Strategy for generating uint64s."""
+    return from_dtype(dtype(uint64)).map(int)

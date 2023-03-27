@@ -6,6 +6,7 @@ from fastparquet import ParquetFile, write
 from pandas import DataFrame, Series
 
 from utilities.atomicwrites import writer
+from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import Int64, category, check_range_index, string
@@ -92,7 +93,12 @@ def read_parquet(
 @beartype
 def _get_parquet_file(path: PathLike, /) -> ParquetFile:
     """Read a Parquet file."""
-    return ParquetFile(path, verify=True)
+    try:
+        return ParquetFile(path, verify=True)
+    except TypeError as error:
+        msg = f"{path=}"
+        new = FileNotFoundError(msg)
+        redirect_error(error, "argument of type 'PosixPath' is not iterable", new)
 
 
 @beartype
