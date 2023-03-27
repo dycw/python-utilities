@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from typing import cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
@@ -70,7 +71,7 @@ class TestEnsureEnum:
 class TestStrEnum:
     @given(data=data())
     def test_main(self, data: DataObject) -> None:
-        class Truth(StrEnum):
+        class Truth(cast(type[Enum], StrEnum)):
             true = auto()
             false = auto()
 

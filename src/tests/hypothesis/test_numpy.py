@@ -3,16 +3,42 @@ from typing import Optional
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
-from numpy import array, iinfo, inf, int64, isfinite, isinf, isnan, ravel, rint
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    floats,
+    integers,
+    just,
+    none,
+)
+from numpy import (
+    array,
+    iinfo,
+    inf,
+    int32,
+    int64,
+    isfinite,
+    isinf,
+    isnan,
+    ravel,
+    rint,
+    uint32,
+    uint64,
+    zeros,
+)
 
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis.numpy import (
     bool_arrays,
+    concatenated_arrays,
     float_arrays,
+    int32s,
     int64s,
     int_arrays,
     str_arrays,
+    uint32s,
+    uint64s,
 )
 from utilities.hypothesis.typing import Shape
 
@@ -23,6 +49,20 @@ class TestBoolArrays:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
+
+
+class TestConcatenatedArrays:
+    @given(data=data(), m=integers(0, 10), n=integers(0, 10))
+    def test_1d(self, data: DataObject, m: int, n: int) -> None:
+        arrays = just(zeros(n, dtype=float))
+        array = data.draw(concatenated_arrays(arrays, m, n))
+        assert array.shape == (m, n)
+
+    @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
+    def test_2d(self, data: DataObject, m: int, n: int, p: int) -> None:
+        arrays = just(zeros((n, p), dtype=float))
+        array = data.draw(concatenated_arrays(arrays, m, (n, p)))
+        assert array.shape == (m, n, p)
 
 
 class TestFloatArrays:
@@ -116,6 +156,18 @@ class TestIntArrays:
             assert len(set(flat)) == len(flat)
 
 
+class TestInt32s:
+    @given(x=int32s())
+    def test_main(self, x: int) -> None:
+        assert isinstance(x, int)
+        info = iinfo(int32)
+        assert info.min <= x <= info.max
+
+    @given(x=int32s())
+    def test_array(self, x: int) -> None:
+        _ = array([x], dtype=int32)
+
+
 class TestInt64s:
     @given(x=int64s())
     def test_main(self, x: int) -> None:
@@ -125,7 +177,7 @@ class TestInt64s:
 
     @given(x=int64s())
     def test_array(self, x: int) -> None:
-        _ = array([x], dtype=int)
+        _ = array([x], dtype=int64)
 
 
 class TestStrArrays:
@@ -168,3 +220,27 @@ class TestStrArrays:
         if unique:
             flat = ravel(array)
             assert len(set(flat)) == len(flat)
+
+
+class TestUInt32s:
+    @given(x=uint32s())
+    def test_main(self, x: int) -> None:
+        assert isinstance(x, int)
+        info = iinfo(uint32)
+        assert info.min <= x <= info.max
+
+    @given(x=uint32s())
+    def test_array(self, x: int) -> None:
+        _ = array([x], dtype=uint32)
+
+
+class TestUInt64s:
+    @given(x=uint64s())
+    def test_main(self, x: int) -> None:
+        assert isinstance(x, int)
+        info = iinfo(uint64)
+        assert info.min <= x <= info.max
+
+    @given(x=uint64s())
+    def test_array(self, x: int) -> None:
+        _ = array([x], dtype=uint64)

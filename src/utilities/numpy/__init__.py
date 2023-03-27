@@ -1,7 +1,8 @@
+import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, NoReturn, Optional, Union, cast, overload
 
 import numpy as np
 from beartype import beartype
@@ -28,8 +29,10 @@ from numpy import (
     roll,
     where,
 )
+from numpy.linalg import eig
 from numpy.typing import NDArray
 
+from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy.typing import (
@@ -38,9 +41,14 @@ from utilities.numpy.typing import (
     NDArrayDD,
     NDArrayF,
     NDArrayF1,
+    NDArrayF2,
     NDArrayI,
+    NDArrayI2,
+    _is_close,
     datetime64D,
+    datetime64ms,
     datetime64ns,
+    datetime64us,
     datetime64Y,
     is_at_least,
     is_at_least_or_nan,
@@ -78,7 +86,6 @@ from utilities.numpy.typing import (
     is_non_zero_or_nan,
     is_positive,
     is_positive_or_nan,
-    is_symmetric,
     is_zero,
     is_zero_or_finite_and_non_micro,
     is_zero_or_finite_and_non_micro_or_nan,
@@ -127,7 +134,6 @@ _ = (
     is_non_zero_or_nan,
     is_positive,
     is_positive_or_nan,
-    is_symmetric,
     is_zero,
     is_zero_or_finite_and_non_micro,
     is_zero_or_finite_and_non_micro_or_nan,
@@ -178,6 +184,67 @@ class InfElementsError(Exception):
 
 class NonIntegralElementsError(Exception):
     """Raised when there are non-integral elements."""
+
+
+@beartype
+def date_to_datetime64(date: dt.date, /) -> datetime64:
+    """Convert a `dt.date` to `numpy.datetime64`."""
+
+    return datetime64(date, "D")
+
+
+@beartype
+def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
+    """Convert a `dt.datetime` to `numpy.datetime64`."""
+
+    return datetime64(datetime, "us")
+
+
+@beartype
+def datetime64_to_date(datetime: datetime64, /) -> dt.date:
+    """Convert a `numpy.datetime64` to a `dt.date`."""
+
+    as_int = datetime.astype(int).item()
+    if (dtype := datetime.dtype) == datetime64D:
+        try:
+            return (EPOCH_UTC + dt.timedelta(days=as_int)).date()
+        except OverflowError:
+            msg = f"{datetime=}, {dtype=}"
+            raise DateOverflowError(msg) from None
+    msg = f"{datetime=}, {dtype=}"
+    raise NotImplementedError(msg)
+
+
+@beartype
+def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
+    """Convert a `numpy.datetime64` to a `dt.datetime`."""
+
+    as_int = datetime.astype(int).item()
+    if (dtype := datetime.dtype) == datetime64ms:
+        try:
+            return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
+        except OverflowError:
+            msg = f"{datetime=}, {dtype=}"
+            raise DateOverflowError(msg) from None
+    elif dtype == datetime64us:
+        return EPOCH_UTC + dt.timedelta(microseconds=as_int)
+    elif dtype == datetime64ns:
+        microseconds, nanoseconds = divmod(as_int, int(1e3))
+        if nanoseconds != 0:
+            msg = f"{datetime=}, {nanoseconds=}"
+            raise LossOfNanosecondsError(msg)
+        return EPOCH_UTC + dt.timedelta(microseconds=microseconds)
+    else:
+        msg = f"{datetime=}, {dtype=}"
+        raise NotImplementedError(msg)
+
+
+class DateOverflowError(ValueError):
+    """Raised when a date overflows."""
+
+
+class LossOfNanosecondsError(ValueError):
+    """Raised when nanoseconds are lost."""
 
 
 @beartype
@@ -318,6 +385,33 @@ def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -
     if isinstance(shape_or_array, tuple):
         return (len(shape_or_array) >= 1) and (prod(shape_or_array).item() >= 1)
     return is_non_empty(shape_or_array.shape)
+
+
+@beartype
+def is_positive_semidefinite(x: Union[NDArrayF2, NDArrayI2], /) -> bool:
+    """Check if `x` is positive semidefinite."""
+    if not is_symmetric(x):
+        return False
+    w, _ = eig(x)
+    return bool(is_non_negative(w).all())
+
+
+@beartype
+def is_symmetric(
+    array: Union[NDArrayF2, NDArrayI2],
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+    equal_nan: bool = False,
+) -> bool:
+    """Check if x == x.T."""
+    m, n = array.shape
+    return (m == n) and (
+        _is_close(array, array.T, rtol=rtol, atol=atol, equal_nan=equal_nan)
+        .all()
+        .item()
+    )
 
 
 @overload
@@ -488,6 +582,18 @@ def pct_change(
 
 class ZeroPercentageChangeSpanError(Exception):
     """Raised when the percentage change span is zero."""
+
+
+@beartype
+def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
+    """Redirect to the `EmptyNumpyConcatenateError`."""
+    redirect_error(
+        error, "need at least one array to concatenate", EmptyNumpyConcatenateError
+    )
+
+
+class EmptyNumpyConcatenateError(ValueError):
+    """Raised when there are no arrays to concatenate."""
 
 
 @beartype

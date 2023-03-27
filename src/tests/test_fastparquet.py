@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 
+from fastparquet import write
 from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
@@ -65,6 +66,21 @@ class TestGetDtypes:
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_dtypes(path)
         assert result == dtypes
+
+
+class TestGetParquetFile:
+    def test_main(self, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file")
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["column"])
+        write(path, df)
+        _ = _get_parquet_file(path)
+
+    @mark.parametrize("as_str", [param(True), param(False)])
+    def test_error(self, tmp_path: Path, as_str: bool) -> None:
+        path = tmp_path.joinpath("file")
+        path_use = path.as_posix() if as_str else path
+        with raises(FileNotFoundError):
+            _ = _get_parquet_file(path_use)
 
 
 class TestReadAndWriteParquet:

@@ -25,13 +25,17 @@ from utilities.beartype import NDim0, NDim1, NDim2, NDim3
 # dtypes
 datetime64D = dtype("datetime64[D]")  # noqa: N816
 datetime64Y = dtype("datetime64[Y]")  # noqa: N816
+datetime64ms = dtype("datetime64[ms]")
 datetime64ns = dtype("datetime64[ns]")
+datetime64us = dtype("datetime64[us]")
 
 # dtype checkers
 DTypeB = IsAttr["dtype", IsEqual[bool]]
 DTypeDD = IsAttr["dtype", IsEqual[datetime64D]]
 DTypeDY = IsAttr["dtype", IsEqual[datetime64Y]]
+DTypeDms = IsAttr["dtype", IsEqual[datetime64ms]]
 DTypeDns = IsAttr["dtype", IsEqual[datetime64ns]]
+DTypeDus = IsAttr["dtype", IsEqual[datetime64us]]
 DTypeF = IsAttr["dtype", IsEqual[float]]
 DTypeI = IsAttr["dtype", IsEqual[int]]
 DTypeO = IsAttr["dtype", IsEqual[object]]
@@ -40,7 +44,9 @@ DTypeO = IsAttr["dtype", IsEqual[object]]
 NDArrayB = NDArray[bool_]
 NDArrayDD = NDArray[cast(Any, datetime64D)]
 NDArrayDY = NDArray[cast(Any, datetime64Y)]
+NDArrayDms = NDArray[cast(Any, datetime64ms)]
 NDArrayDns = NDArray[cast(Any, datetime64ns)]
+NDArrayDus = NDArray[cast(Any, datetime64us)]
 NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
@@ -55,7 +61,9 @@ NDArray3 = Annotated[NDArray[Any], NDim3]
 NDArrayB0 = Annotated[NDArrayB, NDim0]
 NDArrayDD0 = Annotated[NDArrayDD, NDim0]
 NDArrayDY0 = Annotated[NDArrayDY, NDim0]
+NDArrayDms0 = Annotated[NDArrayDms, NDim0]
 NDArrayDns0 = Annotated[NDArrayDns, NDim0]
+NDArrayDus0 = Annotated[NDArrayDus, NDim0]
 NDArrayF0 = Annotated[NDArrayF, NDim0]
 NDArrayI0 = Annotated[NDArrayI, NDim0]
 NDArrayO0 = Annotated[NDArrayO, NDim0]
@@ -63,7 +71,9 @@ NDArrayO0 = Annotated[NDArrayO, NDim0]
 NDArrayB1 = Annotated[NDArrayB, NDim1]
 NDArrayDD1 = Annotated[NDArrayDD, NDim1]
 NDArrayDY1 = Annotated[NDArrayDY, NDim1]
+NDArrayDms1 = Annotated[NDArrayDms, NDim1]
 NDArrayDns1 = Annotated[NDArrayDns, NDim1]
+NDArrayDus1 = Annotated[NDArrayDus, NDim1]
 NDArrayF1 = Annotated[NDArrayF, NDim1]
 NDArrayI1 = Annotated[NDArrayI, NDim1]
 NDArrayO1 = Annotated[NDArrayO, NDim1]
@@ -71,7 +81,9 @@ NDArrayO1 = Annotated[NDArrayO, NDim1]
 NDArrayB2 = Annotated[NDArrayB, NDim2]
 NDArrayDD2 = Annotated[NDArrayDD, NDim2]
 NDArrayDY2 = Annotated[NDArrayDY, NDim2]
+NDArrayDms2 = Annotated[NDArrayDms, NDim2]
 NDArrayDns2 = Annotated[NDArrayDns, NDim2]
+NDArrayDus2 = Annotated[NDArrayDus, NDim2]
 NDArrayF2 = Annotated[NDArrayF, NDim2]
 NDArrayI2 = Annotated[NDArrayI, NDim2]
 NDArrayO2 = Annotated[NDArrayO, NDim2]
@@ -79,7 +91,9 @@ NDArrayO2 = Annotated[NDArrayO, NDim2]
 NDArrayB3 = Annotated[NDArrayB, NDim3]
 NDArrayDD3 = Annotated[NDArrayDD, NDim3]
 NDArrayDY3 = Annotated[NDArrayDY, NDim3]
+NDArrayDms3 = Annotated[NDArrayDms, NDim3]
 NDArrayDns3 = Annotated[NDArrayDns, NDim3]
+NDArrayDus3 = Annotated[NDArrayDus, NDim3]
 NDArrayF3 = Annotated[NDArrayF, NDim3]
 NDArrayI3 = Annotated[NDArrayI, NDim3]
 NDArrayO3 = Annotated[NDArrayO, NDim3]
@@ -457,23 +471,6 @@ def is_positive_or_nan(
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_symmetric(
-    array: Union[NDArrayF2, NDArrayI2],
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-    equal_nan: bool = False,
-) -> bool:
-    """Check if x == x.T."""
-    return (
-        _is_close(array, array.T, rtol=rtol, atol=atol, equal_nan=equal_nan)
-        .all()
-        .item()
-    )
 
 
 @beartype
