@@ -24,7 +24,7 @@ from pytest import mark, param, raises
 from sqlalchemy import Engine
 from typed_settings import settings
 
-from utilities.datetime import UTC
+from utilities.datetime import TODAY
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
     DateHourParameter,
@@ -72,7 +72,7 @@ class TestBuildParamsMixin:
     def test_with_field(self, namespace_mixin: Any) -> None:
         @settings
         class Config:
-            date: dt.date = dt.datetime.now(tz=UTC).date()
+            date: dt.date = TODAY
 
         config = Config()
         Params = build_params_mixin(config, date="date")  # noqa: N806
@@ -81,7 +81,7 @@ class TestBuildParamsMixin:
             pass
 
         task = Example()
-        assert task.date == dt.datetime.now(tz=UTC).date()
+        assert task.date == TODAY
 
 
 class TestMapAnnotation:
