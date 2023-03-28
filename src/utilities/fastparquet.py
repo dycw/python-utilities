@@ -18,7 +18,7 @@ Compression = Union[_Compression, Mapping[Hashable, Optional[_Compression]]]
 _Op = Literal["==", "=", ">", ">=", "<", "<=", "!=", "in", "not in"]
 _Filter = tuple[Hashable, _Op, Any]
 Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
-_PARQUET_DTYPES = [bool, datetime64ns, float, Int64, string]
+_PARQUET_DTYPES = {bool, datetime64ns, float, Int64, string}
 
 
 @beartype
@@ -136,6 +136,7 @@ def write_parquet(
     path: PathLike,
     /,
     *,
+    extra_dtypes: Optional[Mapping[Hashable, Any]] = None,
     overwrite: bool = False,
     row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
     compression: Optional[Compression] = "gzip",
@@ -144,13 +145,18 @@ def write_parquet(
     with writer(path, overwrite=overwrite) as temp:
         if isinstance(df, DataFrame):
             _write_parquet_core(
-                df, temp, row_group_offsets=row_group_offsets, compression=compression
+                df,
+                temp,
+                extra_dtypes=extra_dtypes,
+                row_group_offsets=row_group_offsets,
+                compression=compression,
             )
         else:
             for i, df_i in enumerate(df):
                 _write_parquet_core(
                     df_i,
                     temp,
+                    extra_dtypes=extra_dtypes,
                     row_group_offsets=row_group_offsets,
                     compression=compression,
                     append=i >= 1,
@@ -163,19 +169,28 @@ def _write_parquet_core(
     path: PathLike,
     /,
     *,
+    extra_dtypes: Optional[Mapping[Hashable, Any]] = None,
     row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
     compression: Optional[Compression] = "gzip",
     append: bool = False,
 ) -> None:
     """Atomically write a DataFrame to a Parquet file."""
     if len(df) == 0:
-        msg = f"DataFrame is empty: {df=}"
+        msg = f"{df=}"
         raise EmptyDataFrameError(msg)
     check_range_index(df)
-    for _, column in df.items():
-        if not has_dtype(column, _PARQUET_DTYPES):
-            msg = f"Invalid dtype: {column=}"
-            raise TypeError(msg)
+    for name, column in df.items():
+        allowed_dtypes = _PARQUET_DTYPES
+        if extra_dtypes is not None:
+            try:
+                extra_dtype = extra_dtypes[name]
+            except KeyError:
+                pass
+            else:
+                allowed_dtypes = allowed_dtypes | {extra_dtype}
+        if not has_dtype(column, allowed_dtypes):
+            msg = f"{column=}"
+            raise InvalidDTypeError(msg)
     write(
         path,
         df,
@@ -187,3 +202,7 @@ def _write_parquet_core(
 
 class EmptyDataFrameError(ValueError):
     """Raised when a DataFrame is empty."""
+
+
+class InvalidDTypeError(TypeError):
+    """Raised when an invalid dtype is encountered."""
