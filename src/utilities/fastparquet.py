@@ -10,7 +10,7 @@ from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.math.typing import IntNonNeg
 from utilities.numpy import datetime64ns, has_dtype
-from utilities.pandas import Int64, category, check_range_index, string
+from utilities.pandas import Int64, check_range_index, string
 from utilities.pathlib import PathLike
 
 _Compression = Literal["gzip", ",snappy", "brotli", "lz4", "zstandard"]
@@ -41,7 +41,7 @@ def get_dtypes(path: PathLike, /) -> dict[Hashable, Any]:
     instead of category here.
     """
     dtypes = cast(dict[Hashable, Any], _get_parquet_file(path).dtypes)
-    return {k: string if v == category else v for k, v in dtypes.items()}
+    return {k: string if v == object else v for k, v in dtypes.items()}
 
 
 @beartype
@@ -95,7 +95,7 @@ def read_parquet(
         df = file.to_pandas(columns=columns_use, filters=filters, **kwargs)
     else:
         df = file.head(head, columns=columns_use, filters=filters, **kwargs)
-    dtypes = {k: string for k, v in df.items() if has_dtype(v, [category, object])}
+    dtypes = {k: string for k, v in df.items() if has_dtype(v, object)}
     df = df.astype(dtypes).reset_index(drop=True)
     return df if as_df else df[columns]
 
@@ -176,8 +176,6 @@ def _write_parquet_core(
         if not has_dtype(column, _PARQUET_DTYPES):
             msg = f"Invalid dtype: {column=}"
             raise TypeError(msg)
-    dtypes = {k: category for k, v in df.dtypes.items() if v == string}
-    df = df.astype(dtypes)
     write(
         path,
         df,
