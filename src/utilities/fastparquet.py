@@ -1,4 +1,4 @@
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from typing import Any, Literal, Optional, Union, cast, overload
 
 from beartype import beartype
@@ -8,6 +8,7 @@ from pandas import DataFrame, Series
 from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
+from utilities.math.typing import IntNonNeg
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import Int64, category, check_range_index, string
 from utilities.pathlib import PathLike
@@ -43,12 +44,19 @@ def get_dtypes(path: PathLike, /) -> dict[Hashable, Any]:
     return {k: string if v == category else v for k, v in dtypes.items()}
 
 
+@beartype
+def get_num_row_groups(path: PathLike, /) -> IntNonNeg:
+    """Get the number of row groups in a Parquet file."""
+    return len(_get_parquet_file(path).row_groups)
+
+
 @overload
 def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[int] = None,
+    head: Optional[IntNonNeg] = None,
+    row_group: Optional[IntNonNeg] = None,
     columns: Hashable,
     filters: Optional[Filters] = None,
 ) -> Series:
@@ -60,7 +68,8 @@ def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[int] = None,
+    head: Optional[IntNonNeg] = None,
+    row_group: Optional[IntNonNeg] = None,
     columns: Optional[Sequence[Hashable]] = None,
     filters: Optional[Filters] = None,
 ) -> DataFrame:
@@ -72,12 +81,13 @@ def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[int] = None,
+    head: Optional[IntNonNeg] = None,
+    row_group: Optional[IntNonNeg] = None,
     columns: Optional[Union[Hashable, Sequence[Hashable]]] = None,
     filters: Optional[Filters] = None,
 ) -> Union[Series, DataFrame]:
     """Read a Parquet file into a Series/DataFrame."""
-    file = _get_parquet_file(path)
+    file = _get_parquet_file(path, row_group=row_group)
     as_df = (columns is None) or is_iterable_not_str(columns)
     columns_use = columns if as_df else [columns]
     kwargs = _maybe_row_filter(filters)
@@ -91,14 +101,27 @@ def read_parquet(
 
 
 @beartype
-def _get_parquet_file(path: PathLike, /) -> ParquetFile:
+def _get_parquet_file(
+    path: PathLike, /, *, row_group: Optional[IntNonNeg] = None
+) -> ParquetFile:
     """Read a Parquet file."""
     try:
-        return ParquetFile(path, verify=True)
+        file = ParquetFile(path, verify=True)
     except TypeError as error:
         msg = f"{path=}"
         new = FileNotFoundError(msg)
         redirect_error(error, "argument of type 'PosixPath' is not iterable", new)
+    if row_group is None:
+        return file
+    try:
+        return file[row_group]
+    except IndexError as error:
+        msg = f"{path=}, {row_group=}"
+        redirect_error(error, "list index out of range", InvalidRowGroupIndexError(msg))
+
+
+class InvalidRowGroupIndexError(IndexError):
+    """Raised when a row group index is invalid."""
 
 
 @beartype
@@ -109,12 +132,40 @@ def _maybe_row_filter(filters: Optional[Filters], /) -> dict[str, bool]:
 
 @beartype
 def write_parquet(
-    df: DataFrame,
+    df: Union[DataFrame, Iterable[DataFrame]],
     path: PathLike,
     /,
     *,
     overwrite: bool = False,
+    row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
     compression: Optional[Compression] = "gzip",
+) -> None:
+    """Atomically write a DataFrame to a Parquet file."""
+    with writer(path, overwrite=overwrite) as temp:
+        if isinstance(df, DataFrame):
+            _write_parquet_core(
+                df, temp, row_group_offsets=row_group_offsets, compression=compression
+            )
+        else:
+            for i, df_i in enumerate(df):
+                _write_parquet_core(
+                    df_i,
+                    temp,
+                    row_group_offsets=row_group_offsets,
+                    compression=compression,
+                    append=i >= 1,
+                )
+
+
+@beartype
+def _write_parquet_core(
+    df: DataFrame,
+    path: PathLike,
+    /,
+    *,
+    row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
+    compression: Optional[Compression] = "gzip",
+    append: bool = False,
 ) -> None:
     """Atomically write a DataFrame to a Parquet file."""
     if len(df) == 0:
@@ -127,8 +178,13 @@ def write_parquet(
             raise TypeError(msg)
     dtypes = {k: category for k, v in df.dtypes.items() if v == string}
     df = df.astype(dtypes)
-    with writer(path, overwrite=overwrite) as temp:
-        write(temp, df, compression=compression)
+    write(
+        path,
+        df,
+        row_group_offsets=row_group_offsets,
+        compression=compression,
+        append=append,
+    )
 
 
 class EmptyDataFrameError(ValueError):

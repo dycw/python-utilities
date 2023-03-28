@@ -1,15 +1,18 @@
 import datetime as dt
+from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from typing import Any, Literal, NoReturn, Union, cast
+from typing import Any, Literal, NoReturn, Optional, Union, cast
 
 from beartype import beartype
+from numpy import where
 from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp
 from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.numpy import has_dtype
+from utilities.numpy.typing import NDArray1, datetime64ns
 from utilities.pandas.typing import (
     Int64,
     boolean,
@@ -20,6 +23,39 @@ from utilities.pandas.typing import (
 )
 
 _ = (Int64, boolean, category, string, datetime64nsutc, datetime64nshk)
+
+
+@beartype
+def check_dataframe(
+    df: DataFrame,
+    /,
+    *,
+    columns: Optional[Sequence[Hashable]] = None,
+    dtypes: Optional[Mapping[Hashable, Any]] = None,
+) -> None:
+    """Check if the properties of a DataFrame."""
+    check_range_index(df.index)
+    if df.columns.name is not None:
+        msg = f"{df=}"
+        raise DataFrameColumnsNameError(msg)
+    if (columns is not None) and (list(df.columns) != columns):
+        msg = f"{df=}, {columns=}"
+        raise DataFrameColumnsError(msg)
+    if (dtypes is not None) and (dict(df.dtypes) != dict(dtypes)):
+        msg = f"{df=}, {dtypes=}"
+        raise DataFrameDTypesError(msg)
+
+
+class DataFrameColumnsNameError(ValueError):
+    """Raised when a DataFrame's columns index's name is not None."""
+
+
+class DataFrameColumnsError(ValueError):
+    """Raised when a DataFrame has the incorrect columns."""
+
+
+class DataFrameDTypesError(ValueError):
+    """Raised when a DataFrame has the incorrect dtypes."""
 
 
 @beartype
@@ -164,3 +200,16 @@ def _timestamp_minmax_to_datetime(
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor")
+
+
+@beartype
+def to_numpy(series: Series, /) -> NDArray1:
+    """Convert a series into a 1-dimensional `ndarray`."""
+    if has_dtype(series, (bool, datetime64ns, int, float)):
+        return series.to_numpy()
+    if has_dtype(series, (boolean, Int64, string)):
+        return where(
+            series.notna(), series.to_numpy(dtype=object), cast(Any, None)
+        ).astype(object)
+    msg = f"Invalid dtype: {series=}"  # pragma: no cover
+    raise TypeError(msg)  # pragma: no cover
