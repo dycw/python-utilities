@@ -8,7 +8,6 @@ from beartype import beartype
 
 from utilities.re import extract_groups
 
-
 UTC = dt.timezone.utc
 TODAY = dt.datetime.now(tz=UTC).date()
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)

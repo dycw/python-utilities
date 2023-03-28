@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from beartype import beartype
 from fastparquet import write
 from hypothesis import assume, given
+from hypothesis.extra.pandas import column, data_frames, range_indexes
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -18,7 +19,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from numpy import float32, nan
-from pandas import DataFrame, RangeIndex
+from pandas import DataFrame, RangeIndex, concat
 from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
@@ -34,10 +35,10 @@ from utilities.fastparquet import (
     read_parquet,
     write_parquet,
 )
-from utilities.hypothesis import temp_paths, text_ascii
+from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
 from utilities.hypothesis.pandas import dates_pd
 from utilities.numpy import datetime64ns
-from utilities.pandas import DataFrameRangeIndexError, Int64, category, string
+from utilities.pandas import DataFrameRangeIndexError, Int64, string
 
 
 class TestCountRows:
@@ -183,16 +184,43 @@ class TestReadAndWriteParquet:
         with raises(InvalidRowGroupIndexError):
             _ = read_parquet(path, row_group=2)
 
+    @given(
+        data=data(),
+        root=temp_paths(),
+        num_dfs=integers(1, 10),
+        row_group_offsets=integers(1, 10),
+    )
+    @beartype
+    def test_iterable_of_dfs_with_strings(
+        self, data: DataObject, root: Path, num_dfs: int, row_group_offsets: int
+    ) -> None:
+        @beartype
+        def as_str(df: DataFrame, /) -> DataFrame:
+            return df.astype(string)
+
+        elements = data_frames(
+            [cast(Any, column)("value", elements=text_ascii())],
+            index=range_indexes(min_size=1),
+        ).map(as_str)
+        dfs = data.draw(lists_fixed_length(elements, num_dfs))
+        write_parquet(
+            dfs, path := root.joinpath("df.parq"), row_group_offsets=row_group_offsets
+        )
+        result = read_parquet(path)
+        expected = concat(dfs).reset_index(drop=True)
+        assert_frame_equal(result, expected)
+
 
 class TestWriteParquet:
     @given(value=text_ascii(), root=temp_paths())
     @beartype
-    def test_strings_are_stored_as_categoricals(self, value: str, root: Path) -> None:
+    def test_strings_are_stored_as_objects(self, value: str, root: Path) -> None:
         df = DataFrame(value, index=RangeIndex(1), columns=["value"], dtype=string)
         write_parquet(df, path := root.joinpath("df.parq"))
         file = _get_parquet_file(path)
         dtypes = file.dtypes
-        assert dtypes == {"value": category}
+        expected = {"value": object}
+        assert dtypes == expected
 
     @beartype
     def test_empty_dataframe_error(self, tmp_path: Path) -> None:
