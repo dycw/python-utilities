@@ -222,6 +222,7 @@ dev = [
   "pyodbc",
   "pytest-cov",
   "pytest-instafail",
+  "pytest-rerunfailures",
   "pytest-xdist",
   "ruff",
 ]
