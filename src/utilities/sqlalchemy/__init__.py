@@ -652,8 +652,8 @@ def next_from_sequence(
     func = timeout_decorator.timeout(seconds=timeout)(inner)
     try:
         return func()
-    except TimeoutError:
-        return None  # pragma: no cover
+    except timeout_decorator.TimeoutError:  # pragma: no cover
+        return None
 
 
 @beartype

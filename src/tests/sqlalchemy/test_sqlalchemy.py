@@ -74,7 +74,6 @@ from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
-from timeout_decorator import TimeoutError
 
 from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
 from utilities.hypothesis.sqlalchemy import sqlite_engines
@@ -1024,8 +1023,8 @@ class TestNextFromSequence:
     @given(engine=sqlite_engines())
     @beartype
     def test_limit_breached(self, engine: Engine) -> None:
-        with raises(TimeoutError):
-            _ = next_from_sequence("test", engine, timeout=1e-9)
+        result = next_from_sequence("test", engine, timeout=1e-9)
+        assert result is None
 
 
 class TestParseEngine:
