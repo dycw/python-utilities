@@ -313,7 +313,7 @@ python-dateutil==2.8.2
     #   freezegun
     #   luigi
     #   pandas
-pytz==2023.2
+pytz==2023.3
     # via pandas
 pyviz-comms==2.2.1
     # via
@@ -371,6 +371,8 @@ starlette==0.26.1
     # via fastapi
 tenacity==8.2.2
     # via luigi
+timeout-decorator==0.5.0
+    # via dycw-utilities (pyproject.toml)
 tomli-w==1.0.0
     # via hatch
 tomlkit==0.11.7

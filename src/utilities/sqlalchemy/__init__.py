@@ -1,10 +1,13 @@
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+import collections.abc
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
 from operator import ge, itemgetter, le
 from typing import Any, Literal, NoReturn, Optional, Union, cast
 
+import sqlalchemy
+import timeout_decorator
 from beartype import beartype
 from more_itertools import chunked
 from sqlalchemy import (
@@ -41,15 +44,26 @@ from sqlalchemy.exc import (
     NoSuchTableError,
     OperationalError,
 )
-from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.orm import InstrumentedAttribute, declared_attr
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.bidict import snake_case_mappings
+from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
+from utilities.math.typing import FloatFinNonNeg, FloatNonNeg, IntNonNeg
 from utilities.more_itertools import one
 from utilities.text import ensure_str, snake_case
 from utilities.typing import never
+
+
+class TablenameMixin:
+    """Mix-in for an auto-generated tablename."""
+
+    @declared_attr
+    @cast(Any, beartype)
+    def __tablename__(cls) -> str:  # noqa: N805
+        return get_class_name(cls, snake=True)
 
 
 @beartype
@@ -384,9 +398,9 @@ def check_engine(
     engine: Engine,
     /,
     *,
-    num_tables: Optional[int] = None,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[int] = None,
+    num_tables: Optional[IntNonNeg] = None,
+    rel_tol: Optional[FloatNonNeg] = None,
+    abs_tol: Optional[IntNonNeg] = None,
 ) -> None:
     """Check that an engine can connect.
 
@@ -485,7 +499,7 @@ def create_engine(
     host: Optional[str] = None,
     port: Optional[int] = None,
     database: Optional[str] = None,
-    query: Optional[Mapping[str, Union[Sequence[str], str]]] = None,
+    query: Optional[Mapping[str, Union[collections.abc.Sequence[str], str]]] = None,
     poolclass: Optional[type[Pool]] = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
@@ -610,6 +624,39 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
 
 
 @beartype
+def next_from_sequence(
+    name: str,
+    engine_or_conn: Union[Engine, Connection],
+    /,
+    *,
+    timeout: Optional[FloatFinNonNeg] = None,
+) -> Optional[IntNonNeg]:
+    """Get the next element from a sequence."""
+
+    @beartype
+    def inner() -> int:
+        seq = sqlalchemy.Sequence(name)
+        try:
+            with yield_connection(engine_or_conn) as conn:  # pragma: no cover
+                return conn.scalar(seq)
+        except DatabaseError as error:
+            try:  # pragma: no cover
+                redirect_to_no_such_sequence_error(engine_or_conn, error)
+            except NoSuchSequenceError:  # pragma: no cover
+                with yield_connection(engine_or_conn) as conn:
+                    _ = seq.create(conn)
+                return inner()
+
+    if timeout is None:
+        return inner()
+    func = timeout_decorator.timeout(seconds=timeout)(inner)
+    try:
+        return func()
+    except TimeoutError:
+        return None  # pragma: no cover
+
+
+@beartype
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
     try:
@@ -620,6 +667,30 @@ def parse_engine(engine: str, /) -> Engine:
 
 class ParseEngineError(ValueError):
     """Raised when an `Engine` cannot be parsed."""
+
+
+@beartype
+def redirect_to_no_such_sequence_error(
+    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+) -> NoReturn:
+    """Redirect to the `NoSuchSequenceError`."""
+    dialect = get_dialect(engine_or_conn)  # pragma: no cover
+    if (  # pragma: no cover
+        dialect == "mssql"
+        or dialect == "mysql"
+        or dialect == "postgresql"
+        or dialect == "sqlite"
+    ):
+        raise NotImplementedError(dialect)  # pragma: no cover
+    if dialect == "oracle":  # pragma: no cover
+        pattern = "ORA-02289: sequence does not exist"
+    else:  # pragma: no cover
+        return never(dialect)
+    return redirect_error(error, pattern, NoSuchSequenceError)  # pragma: no cover
+
+
+class NoSuchSequenceError(Exception):
+    """Raised when a sequence does not exist."""
 
 
 @beartype
@@ -636,8 +707,8 @@ def redirect_to_no_such_table_error(
         pattern = "ORA-00942: table or view does not exist"
     elif dialect == "sqlite":
         pattern = "no such table"
-    else:
-        return never(dialect)  # pragma: no cover
+    else:  # pragma: no cover
+        return never(dialect)
     return redirect_error(error, pattern, NoSuchTableError)
 
 
@@ -707,8 +778,8 @@ def yield_in_clause_rows(
             max_params = 32767
         elif dialect == "sqlite":
             max_params = 100
-        else:
-            return never(dialect)  # pragma: no cover
+        else:  # pragma: no cover
+            return never(dialect)
         chunk_size_use = round(frac * max_params)
     else:
         chunk_size_use = chunk_size

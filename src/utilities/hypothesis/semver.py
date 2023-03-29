@@ -41,7 +41,7 @@ def version_infos(  # noqa: PLR0912
         else:
             minor = draw(integers(0, max_version_.minor))
             if minor < max_version_.minor:
-                patch = draw(integers(min_value=0))
+                patch = draw(integers(min_value=0))  # pragma: no cover
             else:
                 patch = draw(integers(0, max_version_.patch))
     elif (min_version_ is not None) and (max_version_ is not None):
