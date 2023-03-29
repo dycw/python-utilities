@@ -26,6 +26,7 @@ from pytest import mark, param, raises
 from utilities.fastparquet import (
     _PARQUET_DTYPES,
     EmptyDataFrameError,
+    InvalidDTypeError,
     InvalidRowGroupIndexError,
     _get_parquet_file,
     count_rows,
@@ -64,7 +65,9 @@ class TestGetColumns:
 
 class TestGetDtypes:
     @given(
-        dtypes=dictionaries(text_ascii(), sampled_from(_PARQUET_DTYPES)),
+        dtypes=dictionaries(
+            text_ascii(), sampled_from(sorted(_PARQUET_DTYPES, key=repr))
+        ),
         root=temp_paths(),
     )
     @beartype
@@ -237,5 +240,18 @@ class TestWriteParquet:
     @beartype
     def test_check_invalid_dtype(self, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
-        with raises(TypeError):
+        with raises(InvalidDTypeError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
+
+    @beartype
+    def test_extra_dtype(self, tmp_path: Path) -> None:
+        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+        write_parquet(df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32})
+
+    @beartype
+    def test_extra_dtype_ignored(self, tmp_path: Path) -> None:
+        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+        with raises(InvalidDTypeError):
+            write_parquet(
+                df, tmp_path.joinpath("df.parq"), extra_dtypes={"other": float32}
+            )
