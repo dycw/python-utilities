@@ -86,6 +86,19 @@ class TestClone:
         expected = B(truth)
         assert result is expected
 
+    @given(namespace_mixin=namespace_mixins(), truth=booleans())
+    def test_await(self, namespace_mixin: Any, truth: bool) -> None:
+        class A(namespace_mixin, Task):
+            truth = cast(bool, BoolParameter())
+
+        class B(namespace_mixin, Task):
+            truth = cast(bool, BoolParameter())
+
+        a = A(truth)
+        result = clone(a, B, await_=True)
+        expected = AwaitTask(B(truth))
+        assert result is expected
+
 
 class TestDateParameter:
     @given(data=data(), date=dates())

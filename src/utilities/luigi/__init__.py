@@ -318,10 +318,27 @@ def build(
 _Task = TypeVar("_Task", bound=Task)
 
 
+@overload
+def clone(
+    task: Task, cls: type[_Task], /, *, await_: Literal[True], **kwargs: Any
+) -> AwaitTask[_Task]:
+    ...
+
+
+@overload
+def clone(
+    task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
+) -> _Task:
+    ...
+
+
 @beartype
-def clone(task: Task, cls: type[_Task], /, **kwargs: Any) -> _Task:
+def clone(
+    task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
+) -> Union[_Task, AwaitTask[_Task]]:
     """Clone a task."""
-    return cast(_Task, task.clone(cls, **kwargs))
+    cloned = cast(_Task, task.clone(cls, **kwargs))
+    return AwaitTask(cloned) if await_ else cloned
 
 
 @overload
