@@ -111,6 +111,7 @@ pytest = [
   "pytest >= 7.2.2",
 ]
 pytest-check = ["pytest-check >= 2.1.4"]
+scipy = ["scipy >= 1.24.2, < 1.25"]
 scripts = [
   "loguru >= 0.6.0",
   "typed-settings[click] >= 23.0.0",
@@ -153,6 +154,7 @@ core = [
   "pqdm >= 0.2.0",
   "selenium >= 4.8.3",
   "semver >= 2.13.0",
+  "scipy >= 1.24.2, < 1.25",
   "sqlalchemy >= 2.0.7",
   "tqdm >= 4.65.0",
   "typed-settings[click] >= 23.0.0",
@@ -194,6 +196,7 @@ dev = [
   "pypi",
   "pytest",
   "pytest-check",
+  "scipy",
   "selenium",
   "semver",
   "sqlalchemy",
