@@ -1,10 +1,10 @@
-from typing import Any, Union, cast, overload
+from typing import Any, Literal, Union, cast, overload
 
 import cvxpy
 import numpy as np
 import numpy.linalg
 from beartype import beartype
-from cvxpy import Expression
+from cvxpy import Expression, Problem
 from numpy import maximum, minimum, ndarray, where
 
 from utilities.numpy import is_zero
@@ -270,6 +270,44 @@ def quad_form(
     if isinstance(x, ndarray):
         return cast(float, x.T @ P @ x)
     return cvxpy.quad_form(x, P)
+
+
+@beartype
+def solve(
+    problem: Problem,
+    /,
+    *,
+    solver: Literal["ECOS", "MOSEK"] = "ECOS",
+    verbose: bool = False,
+) -> float:
+    """Solve a problem."""
+    if solver == "MOSEK":  # pragma: no cover
+        kwargs = {"mosek_params": {"MSK_IPAR_LICENSE_WAIT": True}}
+    else:
+        kwargs = {}
+    obj = cast(float, problem.solve(solver=solver, verbose=verbose, **kwargs))
+    if (status := problem.status) in {"optimal", "optimal_inaccurate"}:
+        return obj
+    if status in {"infeasible", "infeasible_inaccurate"}:
+        msg = f"{problem=}"
+        raise InfeasibleProblemError(msg)
+    if status == "unbounded":
+        msg = f"{problem=}"
+        raise UnboundedProblemError(msg)
+    msg = f"{status=}"  # pragma: no cover
+    raise InvalidStatusError(msg)  # pragma: no cover
+
+
+class InfeasibleProblemError(ValueError):
+    """Raised when an infeasible problem is encountered."""
+
+
+class UnboundedProblemError(ValueError):
+    """Raised when an unbounded problem is encountered."""
+
+
+class InvalidStatusError(ValueError):
+    """Raised when an invalid status is encountered."""
 
 
 @overload

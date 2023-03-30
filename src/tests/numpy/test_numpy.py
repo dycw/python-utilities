@@ -1,6 +1,7 @@
 import datetime as dt
 from typing import Any, Literal, Optional, Union, cast
 
+from beartype import beartype
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, dates, integers
 from numpy import (
@@ -124,6 +125,7 @@ class TestArrayIndexer:
             param(2, 3, (slice(None), slice(None), 2)),
         ],
     )
+    @beartype
     def test_main(
         self, i: int, ndim: int, expected: tuple[Union[int, slice], ...]
     ) -> None:
@@ -148,6 +150,7 @@ class TestArrayIndexer:
             param(2, 3, 2, (slice(None), slice(None), 2)),
         ],
     )
+    @beartype
     def test_axis(
         self, i: int, ndim: int, axis: int, expected: tuple[Union[int, slice], ...]
     ) -> None:
@@ -156,30 +159,35 @@ class TestArrayIndexer:
 
 class TestAsInt:
     @given(n=integers(-10, 10))
+    @beartype
     def test_main(self, n: int) -> None:
         arr = array([n], dtype=float)
         result = as_int(arr)
         expected = array([n], dtype=int)
         assert_equal(result, expected)
 
+    @beartype
     def test_nan_elements_error(self) -> None:
         arr = array([nan], dtype=float)
         with raises(NanElementsError):
             _ = as_int(arr)
 
     @given(n=integers(-10, 10))
+    @beartype
     def test_nan_elements_fill(self, n: int) -> None:
         arr = array([nan], dtype=float)
         result = as_int(arr, nan=n)
         expected = array([n], dtype=int)
         assert_equal(result, expected)
 
+    @beartype
     def test_inf_elements_error(self) -> None:
         arr = array([inf], dtype=float)
         with raises(InfElementsError):
             _ = as_int(arr)
 
     @given(n=integers(-10, 10))
+    @beartype
     def test_inf_elements_fill(self, n: int) -> None:
         arr = array([inf], dtype=float)
         result = as_int(arr, inf=n)
@@ -187,6 +195,7 @@ class TestAsInt:
         assert_equal(result, expected)
 
     @given(n=integers(-10, 10))
+    @beartype
     def test_non_integral_elements(self, n: int) -> None:
         arr = array([n + 0.5], dtype=float)
         with raises(NonIntegralElementsError):
@@ -212,6 +221,7 @@ class TestChecks:
             param(nan, nan, True, True),
         ],
     )
+    @beartype
     def test_is_at_least(
         self, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
@@ -220,6 +230,7 @@ class TestChecks:
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
+    @beartype
     def test_is_at_least_or_nan(self, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
 
@@ -241,6 +252,7 @@ class TestChecks:
             param(nan, nan, True, True),
         ],
     )
+    @beartype
     def test_is_at_most(
         self, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
@@ -249,6 +261,7 @@ class TestChecks:
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
+    @beartype
     def test_is_at_most_or_nan(self, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
 
@@ -267,6 +280,7 @@ class TestChecks:
             param(nan, -1.0, 1.0, False, False),
         ],
     )
+    @beartype
     def test_is_between(
         self, x: float, low: float, high: float, equal_nan: bool, expected: bool
     ) -> None:
@@ -280,6 +294,7 @@ class TestChecks:
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
+    @beartype
     def test_is_between_or_nan(self, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
 
@@ -306,9 +321,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_integral(self, x: float, expected: bool) -> None:
         assert is_finite_and_integral(x).item() is expected
 
+    @beartype
     def test_is_finite_and_integral_or_nan(self) -> None:
         assert is_finite_and_integral_or_nan(nan)
 
@@ -323,6 +340,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
+    @beartype
     def test_is_finite_or_nan(self, x: float, expected: bool) -> None:
         assert is_finite_or_nan(x).item() is expected
 
@@ -343,9 +361,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_negative(self, x: float, expected: bool) -> None:
         assert is_finite_and_negative(x).item() is expected
 
+    @beartype
     def test_is_finite_and_negative_or_nan(self) -> None:
         assert is_finite_and_negative_or_nan(nan)
 
@@ -366,9 +386,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_non_negative(self, x: float, expected: bool) -> None:
         assert is_finite_and_non_negative(x).item() is expected
 
+    @beartype
     def test_is_finite_and_non_negative_or_nan(self) -> None:
         assert is_finite_and_non_negative_or_nan(nan)
 
@@ -389,9 +411,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_non_positive(self, x: float, expected: bool) -> None:
         assert is_finite_and_non_positive(x).item() is expected
 
+    @beartype
     def test_is_finite_and_non_positive_or_nan(self) -> None:
         assert is_finite_and_non_positive_or_nan(nan)
 
@@ -412,9 +436,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_non_zero(self, x: float, expected: bool) -> None:
         assert is_finite_and_non_zero(x).item() is expected
 
+    @beartype
     def test_is_finite_and_non_zero_or_nan(self) -> None:
         assert is_finite_and_non_zero_or_nan(nan)
 
@@ -435,9 +461,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_finite_and_positive(self, x: float, expected: bool) -> None:
         assert is_finite_and_positive(x).item() is expected
 
+    @beartype
     def test_is_finite_and_positive_or_nan(self) -> None:
         assert is_finite_and_positive_or_nan(nan)
 
@@ -459,6 +487,7 @@ class TestChecks:
             param(nan, nan, True, True),
         ],
     )
+    @beartype
     def test_is_greater_than(
         self, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
@@ -467,6 +496,7 @@ class TestChecks:
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
+    @beartype
     def test_is_greater_than_or_nan(self, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
 
@@ -493,9 +523,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_integral(self, x: float, expected: bool) -> None:
         assert is_integral(x).item() is expected
 
+    @beartype
     def test_is_integral_or_nan(self) -> None:
         assert is_integral_or_nan(nan)
 
@@ -517,6 +549,7 @@ class TestChecks:
             param(nan, nan, True, True),
         ],
     )
+    @beartype
     def test_is_less_than(
         self, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
@@ -525,6 +558,7 @@ class TestChecks:
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
+    @beartype
     def test_is_less_than_or_nan(self, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
 
@@ -545,9 +579,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_negative(self, x: float, expected: bool) -> None:
         assert is_negative(x).item() is expected
 
+    @beartype
     def test_is_negative_or_nan(self) -> None:
         assert is_negative_or_nan(nan)
 
@@ -568,9 +604,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_non_negative(self, x: float, expected: bool) -> None:
         assert is_non_negative(x).item() is expected
 
+    @beartype
     def test_is_non_negative_or_nan(self) -> None:
         assert is_non_negative_or_nan(nan)
 
@@ -591,20 +629,13 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_non_positive(self, x: float, expected: bool) -> None:
         assert is_non_positive(x).item() is expected
 
+    @beartype
     def test_is_non_positive_or_nan(self) -> None:
         assert is_non_positive_or_nan(nan)
-
-    @mark.parametrize(
-        ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
-    )
-    @mark.parametrize("dtype", [param(float), param(int)])
-    def test_is_non_singular(
-        self, array: NDArrayF2, dtype: Any, expected: bool
-    ) -> None:
-        assert is_non_singular(cast(NDArray2, array.astype(dtype))) is expected
 
     @mark.parametrize(
         ("x", "expected"),
@@ -623,9 +654,11 @@ class TestChecks:
             param(nan, True),
         ],
     )
+    @beartype
     def test_is_non_zero(self, x: float, expected: bool) -> None:
         assert is_non_zero(x).item() is expected
 
+    @beartype
     def test_is_non_zero_or_nan(self) -> None:
         assert is_non_zero_or_nan(nan)
 
@@ -646,9 +679,11 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_positive(self, x: float, expected: bool) -> None:
         assert is_positive(x).item() is expected
 
+    @beartype
     def test_is_positive_or_nan(self) -> None:
         assert is_positive_or_nan(nan)
 
@@ -669,6 +704,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_zero(self, x: float, expected: bool) -> None:
         assert is_zero(x).item() is expected
 
@@ -689,12 +725,15 @@ class TestChecks:
             param(nan, False),
         ],
     )
+    @beartype
     def test_is_zero_or_finite_and_non_micro(self, x: float, expected: bool) -> None:
         assert is_zero_or_finite_and_non_micro(x).item() is expected
 
+    @beartype
     def test_is_zero_or_finite_and_non_micro_or_nan(self) -> None:
         assert is_zero_or_finite_and_non_micro_or_nan(nan)
 
+    @beartype
     def test_is_zero_or_nan(self) -> None:
         assert is_zero_or_nan(nan)
 
@@ -715,26 +754,31 @@ class TestChecks:
             param(nan, True),
         ],
     )
+    @beartype
     def test_is_zero_or_non_micro(self, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x).item() is expected
 
+    @beartype
     def test_is_zero_or_non_micro_or_nan(self) -> None:
         assert is_zero_or_non_micro_or_nan(nan)
 
 
 class TestDateToDatetime64ns:
+    @beartype
     def test_example(self) -> None:
         result = date_to_datetime64(dt.date(2000, 1, 1))
         assert result == datetime64("2000-01-01", "D")
         assert result.dtype == datetime64D
 
     @given(date=dates())
+    @beartype
     def test_main(self, date: dt.date) -> None:
         result = date_to_datetime64(date)
         assert result.dtype == datetime64D
 
 
 class TestDatetimeToDatetime64ns:
+    @beartype
     def test_example(self) -> None:
         result = datetime_to_datetime64(
             dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
@@ -743,17 +787,20 @@ class TestDatetimeToDatetime64ns:
         assert result.dtype == datetime64us
 
     @given(datetime=datetimes_utc())
+    @beartype
     def test_main(self, datetime: dt.datetime) -> None:
         result = datetime_to_datetime64(datetime)
         assert result.dtype == datetime64us
 
 
 class TestDatetime64ToDate:
+    @beartype
     def test_example(self) -> None:
         assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
 
     @given(date=dates())
-    def test_round_trip(self, date: dt.datetime) -> None:
+    @beartype
+    def test_round_trip(self, date: dt.date) -> None:
         assert datetime64_to_date(date_to_datetime64(date)) == date
 
     @mark.parametrize(
@@ -763,24 +810,28 @@ class TestDatetime64ToDate:
             param("2000-01-01", "ns", NotImplementedError),
         ],
     )
+    @beartype
     def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
         with raises(error):
             _ = datetime64_to_date(datetime64(datetime, dtype))
 
 
 class TestDatetime64ToDatetime:
+    @beartype
     def test_example_ms(self) -> None:
         assert datetime64_to_datetime(
             datetime64("2000-01-01 00:00:00.123", "ms")
         ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123000, tzinfo=UTC)
 
     @mark.parametrize("dtype", [param("us"), param("ns")])
+    @beartype
     def test_examples_us_ns(self, dtype: str) -> None:
         assert datetime64_to_datetime(
             datetime64("2000-01-01 00:00:00.123456", dtype)
         ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
 
     @given(datetime=datetimes_utc())
+    @beartype
     def test_round_trip(self, datetime: dt.datetime) -> None:
         assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
 
@@ -793,6 +844,7 @@ class TestDatetime64ToDatetime:
             param("2000-01-01", "D", NotImplementedError),
         ],
     )
+    @beartype
     def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
         with raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
@@ -800,6 +852,7 @@ class TestDatetime64ToDatetime:
 
 class TestDiscretize:
     @given(arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0))
+    @beartype
     def test_1_bin(self, arr: NDArrayF1) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
@@ -810,6 +863,7 @@ class TestDiscretize:
             shape=integers(1, 10), min_value=-1.0, max_value=1.0, unique=True
         )
     )
+    @beartype
     def test_2_bins(self, arr: NDArrayF1) -> None:
         _ = assume(len(arr) % 2 == 0)
         result = discretize(arr, 2)
@@ -820,12 +874,14 @@ class TestDiscretize:
         assert isclose(result[is_above], 1.0).all()
 
     @given(bins=integers(1, 10))
+    @beartype
     def test_empty(self, bins: int) -> None:
         arr = array([], dtype=float)
         result = discretize(arr, bins)
         assert_equal(result, arr)
 
     @given(n=integers(0, 10), bins=integers(1, 10))
+    @beartype
     def test_all_nan(self, n: int, bins: int) -> None:
         arr = full(n, nan, dtype=float)
         result = discretize(arr, bins)
@@ -860,6 +916,7 @@ class TestDiscretize:
             ),
         ],
     )
+    @beartype
     def test_bins_of_floats(
         self, arr_v: list[float], bins: list[float], expected_v: list[float]
     ) -> None:
@@ -871,6 +928,7 @@ class TestDiscretize:
 
 class TestFFill:
     @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
+    @beartype
     def test_main(self, limit: Optional[int], expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
@@ -894,6 +952,7 @@ class TestFFillNonNanSlices:
             param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
         ],
     )
+    @beartype
     def test_main(
         self, limit: Optional[int], axis: int, expected_v: list[list[float]]
     ) -> None:
@@ -911,6 +970,7 @@ class TestFFillNonNanSlices:
             param(1, [4 * [nan], [nan, 0.1, 0.1, 0.1], 4 * [nan]]),
         ],
     )
+    @beartype
     def test_initial_all_nan(self, axis: int, expected_v: list[list[float]]) -> None:
         arr = array([4 * [nan], [nan, 0.1, nan, nan], 4 * [nan]], dtype=float)
         result = ffill_non_nan_slices(arr, axis=axis)
@@ -933,6 +993,7 @@ class TestFillNa:
             param(inf, inf, inf),
         ],
     )
+    @beartype
     def test_main(self, init: float, value: float, expected_v: float) -> None:
         arr = array([init], dtype=float)
         result = fillna(arr, value=value)
@@ -942,18 +1003,21 @@ class TestFillNa:
 
 class TestFlatN0:
     @given(data=data(), n=integers(1, 10))
+    @beartype
     def test_main(self, data: DataObject, n: int) -> None:
         i = data.draw(integers(0, n - 1))
         arr = arange(n) == i
         result = flatn0(arr)
         assert result == i
 
+    @beartype
     def test_no_true_elements(self) -> None:
         arr = zeros(0, dtype=bool)
         with raises(NoTrueElementsError):
             _ = flatn0(arr)
 
     @given(n=integers(2, 10))
+    @beartype
     def test_all_true_elements(self, n: int) -> None:
         arr = ones(n, dtype=bool)
         with raises(MultipleTrueElementsError):
@@ -973,11 +1037,13 @@ class TestGetFillValue:
             param(object),
         ],
     )
+    @beartype
     def test_main(self, dtype: Any) -> None:
         fill_value = get_fill_value(dtype)
         array = full(0, fill_value, dtype=dtype)
         assert has_dtype(array, dtype)
 
+    @beartype
     def test_error(self) -> None:
         with raises(InvalidDTypeError):
             _ = get_fill_value(None)
@@ -1007,6 +1073,7 @@ class TestHasDtype:
             ),
         ],
     )
+    @beartype
     def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
         assert has_dtype(x, dtype) is expected
 
@@ -1034,6 +1101,7 @@ class TestIsEmptyAndIsNotEmpty:
         ],
     )
     @mark.parametrize("kind", [param("shape"), param("array")])
+    @beartype
     def test_main(
         self,
         shape: Union[int, tuple[int, ...]],
@@ -1043,6 +1111,21 @@ class TestIsEmptyAndIsNotEmpty:
         shape_or_array = shape if kind == "shape" else zeros(shape, dtype=float)
         assert is_empty(shape_or_array) is (expected == "empty")
         assert is_non_empty(shape_or_array) is (expected == "non-empty")
+
+
+class TestIsNonSingular:
+    @mark.parametrize(
+        ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
+    )
+    @mark.parametrize("dtype", [param(float), param(int)])
+    @beartype
+    def test_main(self, array: NDArrayF2, dtype: Any, expected: bool) -> None:
+        assert is_non_singular(cast(NDArray2, array.astype(dtype))) is expected
+
+    @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
+    @beartype
+    def test_overflow(self, array: NDArrayF2) -> None:
+        _ = is_non_singular(array)
 
 
 class TestIsPositiveSemiDefinite:
@@ -1055,10 +1138,16 @@ class TestIsPositiveSemiDefinite:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
+    @beartype
     def test_main(
         self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
     ) -> None:
         assert is_positive_semidefinite(cast(NDArray2, array.astype(dtype))) is expected
+
+    @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
+    @beartype
+    def test_overflow(self, array: NDArrayF2) -> None:
+        _ = is_positive_semidefinite(array)
 
 
 class TestIsSymmetric:
@@ -1071,6 +1160,7 @@ class TestIsSymmetric:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
+    @beartype
     def test_main(
         self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
     ) -> None:
@@ -1078,18 +1168,22 @@ class TestIsSymmetric:
 
 
 class TestMaximumMinimum:
+    @beartype
     def test_maximum_floats(self) -> None:
         result = maximum(1.0, 2.0)
         assert isinstance(result, float)
 
+    @beartype
     def test_maximum_arrays(self) -> None:
         result = maximum(array([1.0], dtype=float), array([2.0], dtype=float))
         assert isinstance(result, ndarray)
 
+    @beartype
     def test_minimum_floats(self) -> None:
         result = minimum(1.0, 2.0)
         assert isinstance(result, float)
 
+    @beartype
     def test_minimum_arrays(self) -> None:
         result = minimum(array([1.0], dtype=float), array([2.0], dtype=float))
         assert isinstance(result, ndarray)
@@ -1106,6 +1200,7 @@ class TestPctChange:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
+    @beartype
     def test_1d(self, n: int, expected_v: list[float], dtype: type[Any]) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
@@ -1189,12 +1284,14 @@ class TestPctChange:
             ),
         ],
     )
+    @beartype
     def test_2d(self, axis: int, n: int, expected_v: list[list[float]]) -> None:
         arr = arange(10, 22, dtype=float).reshape((3, 4))
         result = pct_change(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
         assert_allclose(result, expected, atol=1e-4, equal_nan=True)
 
+    @beartype
     def test_error(self) -> None:
         arr = array([], dtype=float)
         with raises(ZeroPercentageChangeSpanError):
@@ -1202,6 +1299,7 @@ class TestPctChange:
 
 
 class TestRedirectToEmptyNumpyConcatenateError:
+    @beartype
     def test_main(self) -> None:
         with raises(EmptyNumpyConcatenateError):
             try:
@@ -1221,6 +1319,7 @@ class TestShift:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
+    @beartype
     def test_1d(self, n: int, expected_v: list[float], dtype: type[Any]) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
@@ -1272,12 +1371,14 @@ class TestShift:
             ),
         ],
     )
+    @beartype
     def test_2d(self, axis: int, n: int, expected_v: list[list[float]]) -> None:
         arr = arange(12, dtype=float).reshape((3, 4))
         result = shift(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
 
+    @beartype
     def test_error(self) -> None:
         arr = array([], dtype=float)
         with raises(ZeroShiftError):
@@ -1295,6 +1396,7 @@ class TestShiftBool:
         ],
     )
     @mark.parametrize("fill_value", [param(True), param(False)])
+    @beartype
     def test_main(
         self, n: int, expected_v: list[Optional[bool]], fill_value: bool
     ) -> None:
@@ -1308,12 +1410,14 @@ class TestShiftBool:
 
 class TestYear:
     @given(date=dates())
+    @beartype
     def test_scalar(self, date: dt.date) -> None:
         date64 = datetime64(date, "D")
         yr = year(date64)
         assert yr == date.year
 
     @given(date=dates())
+    @beartype
     def test_array(self, date: dt.date) -> None:
         dates = array([date], dtype=datetime64D)
         years = year(dates)
