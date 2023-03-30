@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated, Any, Optional, Union, cast
+from typing import Annotated, Any, Optional, cast
 
 import numpy as np
 from beartype import beartype
@@ -16,7 +16,6 @@ from numpy import (
     rint,
     unravel_index,
 )
-from numpy.linalg import det
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
@@ -427,18 +426,6 @@ def is_non_positive_or_nan(
 ) -> Any:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
-
-
-@beartype
-def is_non_singular(
-    array: Union[NDArrayF2, NDArrayI2],
-    /,
-    *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
-) -> bool:
-    """Check if det(x) != 0."""
-    return is_non_zero(det(array), rtol=rtol, atol=atol).item()
 
 
 @beartype

@@ -29,7 +29,7 @@ from numpy import (
     roll,
     where,
 )
-from numpy.linalg import eig
+from numpy.linalg import det, eig
 from numpy.typing import NDArray
 
 from utilities.datetime import EPOCH_UTC
@@ -81,7 +81,6 @@ from utilities.numpy.typing import (
     is_non_negative_or_nan,
     is_non_positive,
     is_non_positive_or_nan,
-    is_non_singular,
     is_non_zero,
     is_non_zero_or_nan,
     is_positive,
@@ -129,7 +128,6 @@ _ = (
     is_non_negative_or_nan,
     is_non_positive,
     is_non_positive_or_nan,
-    is_non_singular,
     is_non_zero,
     is_non_zero_or_nan,
     is_positive,
@@ -385,6 +383,22 @@ def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -
     if isinstance(shape_or_array, tuple):
         return (len(shape_or_array) >= 1) and (prod(shape_or_array).item() >= 1)
     return is_non_empty(shape_or_array.shape)
+
+
+@beartype
+def is_non_singular(
+    array: Union[NDArrayF2, NDArrayI2],
+    /,
+    *,
+    rtol: Optional[float] = None,
+    atol: Optional[float] = None,
+) -> bool:
+    """Check if det(x) != 0."""
+    try:
+        with errstate(over="raise"):
+            return is_non_zero(det(array), rtol=rtol, atol=atol).item()
+    except FloatingPointError:
+        return False
 
 
 @beartype

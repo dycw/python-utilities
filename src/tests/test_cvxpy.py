@@ -3,12 +3,15 @@ from typing import Any, Union, cast
 
 import cvxpy
 import numpy as np
+from beartype import beartype
 from cvxpy import Expression, Maximize, Minimize, Problem, Variable
 from numpy import array
 from numpy.testing import assert_equal
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.cvxpy import (
+    InfeasibleProblemError,
+    UnboundedProblemError,
     abs_,
     add,
     multiply,
@@ -17,6 +20,7 @@ from utilities.cvxpy import (
     pos,
     power,
     quad_form,
+    solve,
     sqrt,
     subtract,
     sum_,
@@ -25,6 +29,7 @@ from utilities.numpy.typing import NDArrayF
 
 
 @cache
+@beartype
 def _get_variable(
     objective: Union[type[Maximize], type[Minimize]], /, *, array: bool = False
 ) -> Variable:
@@ -53,12 +58,14 @@ class TestAbs:
             param(array([-1.0]), array([1.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self, x: Union[float, NDArrayF], expected: Union[float, NDArrayF]
     ) -> None:
         assert_equal(abs_(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(abs_(var).value, abs_(var.value))
@@ -75,6 +82,7 @@ class TestAdd:
             param(array([1.0]), array([2.0]), array([3.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self,
         x: Union[float, NDArrayF],
@@ -85,6 +93,7 @@ class TestAdd:
 
     @mark.parametrize("x", [param(1.0), param(array([1.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
@@ -96,6 +105,7 @@ class TestAdd:
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @beartype
     def test_two_expressions(
         self,
         objective1: Union[type[Maximize], type[Minimize]],
@@ -117,6 +127,7 @@ class TestMultiply:
             param(array([2.0]), array([3.0]), array([6.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self,
         x: Union[float, NDArrayF],
@@ -127,6 +138,7 @@ class TestMultiply:
 
     @mark.parametrize("x", [param(2.0), param(array([2.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
@@ -138,6 +150,7 @@ class TestMultiply:
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @beartype
     def test_two_expressions(
         self,
         objective1: Union[type[Maximize], type[Minimize]],
@@ -160,22 +173,26 @@ class TestNeg:
             param(array([-1.0]), array([1.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self, x: Union[float, NDArrayF], expected: Union[float, NDArrayF]
     ) -> None:
         assert_equal(neg(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(neg(var).value, neg(var.value))
 
 
 class TestNorm:
+    @beartype
     def test_array(self) -> None:
         assert_equal(norm(array([2.0, 3.0])), np.sqrt(13))
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective, array=True)
         assert_equal(norm(var).value, norm(var.value))
@@ -193,12 +210,14 @@ class TestPos:
             param(array([-1.0]), array([0.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self, x: Union[float, NDArrayF], expected: Union[float, NDArrayF]
     ) -> None:
         assert_equal(pos(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(pos(var).value, pos(var.value))
@@ -215,6 +234,7 @@ class TestPower:
             param(array([2.0]), array([3.0]), array([8.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self,
         x: Union[float, NDArrayF],
@@ -224,6 +244,7 @@ class TestPower:
         assert_equal(power(x, p), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_one_expression(
         self, objective: Union[type[Maximize], type[Minimize]]
     ) -> None:
@@ -232,16 +253,42 @@ class TestPower:
 
 
 class TestQuadForm:
+    @beartype
     def test_array(self) -> None:
         assert_equal(
             quad_form(array([2.0, 3.0]), array([[4.0, 5.0], [5.0, 4.0]])), 112.0
         )
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
         var = _get_variable(objective, array=True)
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
         assert_equal(quad_form(var, P).value, quad_form(var.value, P))
+
+
+class TestSolve:
+    @beartype
+    def test_main(self) -> None:
+        var = Variable()
+        problem = Problem(Minimize(sum_(abs_(var))), [])
+        _ = solve(problem)
+
+    @beartype
+    def test_infeasible_problem(self) -> None:
+        var = Variable()
+        problem = Problem(
+            Minimize(sum_(abs_(var))), [cast(Any, var) >= 1.0, cast(Any, var) <= -1.0]
+        )
+        with raises(InfeasibleProblemError):
+            _ = solve(problem)
+
+    @beartype
+    def test_unbounded_problem(self) -> None:
+        var = Variable()
+        problem = Problem(Maximize(sum_(var)), [])
+        with raises(UnboundedProblemError):
+            _ = solve(problem)
 
 
 class TestSqrt:
@@ -254,11 +301,13 @@ class TestSqrt:
             param(array([1.0]), array([1.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self, x: Union[float, NDArrayF], expected: Union[float, NDArrayF]
     ) -> None:
         assert_equal(sqrt(x), expected)
 
+    @beartype
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
         assert_equal(sqrt(var).value, sqrt(var.value))
@@ -275,6 +324,7 @@ class TestSubtract:
             param(array([1.0]), array([2.0]), array([-1.0])),
         ],
     )
+    @beartype
     def test_float_and_array(
         self,
         x: Union[float, NDArrayF],
@@ -285,6 +335,7 @@ class TestSubtract:
 
     @mark.parametrize("x", [param(1.0), param(array([1.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
@@ -296,6 +347,7 @@ class TestSubtract:
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @beartype
     def test_two_expressions(
         self,
         objective1: Union[type[Maximize], type[Minimize]],
@@ -318,9 +370,11 @@ class TestSum:
             param(array([-1.0]), -1.0),
         ],
     )
+    @beartype
     def test_float_and_array(self, x: Union[float, NDArrayF], expected: float) -> None:
         assert_equal(sum_(x), expected)
 
+    @beartype
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
         assert_equal(sum_(var).value, sum_(var.value))
