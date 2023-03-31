@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, Union, cast
 
 import numpy as np
 from beartype import beartype
@@ -539,7 +539,7 @@ def _lift(check: Callable[..., Any], /) -> Any:
     rng = default_rng()
 
     @beartype
-    def predicate(array: NDArrayF, /) -> bool:
+    def predicate(array: Union[NDArrayI, NDArrayF], /) -> bool:
         if (size := array.size) == 0:
             return True
         if size == 1:

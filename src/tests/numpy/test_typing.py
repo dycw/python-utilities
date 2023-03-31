@@ -8,7 +8,7 @@ from hypothesis import Phase, example, given, settings
 from numpy import array, empty, nan, zeros
 from pytest import mark, param
 
-from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.numpy.typing import (
     NDArray0,
     NDArray1,
@@ -341,10 +341,9 @@ class TestHints:
         arr = empty(zeros(ndim, dtype=int), dtype=dtype)
         die_if_unbearable(arr, hint)
 
-    @given(arr=float_arrays())
-    @example(arr=array([], dtype=float))
-    @example(arr=array([nan], dtype=float))
-    @example(arr=array([nan, nan], dtype=float))
+    @given(arr=int_arrays())
+    @example(arr=array([], dtype=int))
+    @mark.parametrize("dtype", [param(int), param(float)])
     @mark.parametrize(
         "hint",
         [
@@ -354,6 +353,45 @@ class TestHints:
             param(NDArrayINonZr),
             param(NDArrayIPos),
             param(NDArrayIZr),
+            param(NDArrayI0Neg),
+            param(NDArrayI0NonNeg),
+            param(NDArrayI0NonPos),
+            param(NDArrayI0NonZr),
+            param(NDArrayI0Pos),
+            param(NDArrayI0Zr),
+            param(NDArrayI1Neg),
+            param(NDArrayI1NonNeg),
+            param(NDArrayI1NonPos),
+            param(NDArrayI1NonZr),
+            param(NDArrayI1Pos),
+            param(NDArrayI1Zr),
+            param(NDArrayI2Neg),
+            param(NDArrayI2NonNeg),
+            param(NDArrayI2NonPos),
+            param(NDArrayI2NonZr),
+            param(NDArrayI2Pos),
+            param(NDArrayI2Zr),
+            param(NDArrayI3Neg),
+            param(NDArrayI3NonNeg),
+            param(NDArrayI3NonPos),
+            param(NDArrayI3NonZr),
+            param(NDArrayI3Pos),
+            param(NDArrayI3Zr),
+        ],
+    )
+    @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
+    @beartype
+    def test_int_checks(self, arr: NDArrayI, dtype: Any, hint: Any) -> None:
+        with suppress(BeartypeDoorHintViolation):
+            die_if_unbearable(arr.astype(dtype), hint)
+
+    @given(arr=float_arrays())
+    @example(arr=array([], dtype=float))
+    @example(arr=array([nan], dtype=float))
+    @example(arr=array([nan, nan], dtype=float))
+    @mark.parametrize(
+        "hint",
+        [
             param(NDArrayFFin),
             param(NDArrayFFinInt),
             param(NDArrayFFinIntNan),
@@ -386,30 +424,6 @@ class TestHints:
             param(NDArrayFZrNan),
             param(NDArrayFZrFinNonMic),
             param(NDArrayFZrFinNonMicNan),
-            param(NDArrayI0Neg),
-            param(NDArrayI0NonNeg),
-            param(NDArrayI0NonPos),
-            param(NDArrayI0NonZr),
-            param(NDArrayI0Pos),
-            param(NDArrayI0Zr),
-            param(NDArrayI1Neg),
-            param(NDArrayI1NonNeg),
-            param(NDArrayI1NonPos),
-            param(NDArrayI1NonZr),
-            param(NDArrayI1Pos),
-            param(NDArrayI1Zr),
-            param(NDArrayI2Neg),
-            param(NDArrayI2NonNeg),
-            param(NDArrayI2NonPos),
-            param(NDArrayI2NonZr),
-            param(NDArrayI2Pos),
-            param(NDArrayI2Zr),
-            param(NDArrayI3Neg),
-            param(NDArrayI3NonNeg),
-            param(NDArrayI3NonPos),
-            param(NDArrayI3NonZr),
-            param(NDArrayI3Pos),
-            param(NDArrayI3Zr),
             param(NDArrayF0Fin),
             param(NDArrayF0FinInt),
             param(NDArrayF0FinIntNan),
@@ -542,6 +556,6 @@ class TestHints:
     )
     @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
     @beartype
-    def test_checks(self, arr: NDArrayF, hint: Any) -> None:
+    def test_float_checks(self, arr: NDArrayF, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(arr, hint)
