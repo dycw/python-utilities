@@ -125,7 +125,7 @@ h11==0.14.0
     #   wsproto
 hatch==1.6.3
     # via dycw-utilities (pyproject.toml)
-hatchling==1.13.0
+hatchling==1.14.0
     # via hatch
 holoviews==1.15.4
     # via dycw-utilities (pyproject.toml)
@@ -135,7 +135,7 @@ httpx==0.23.3
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.70.1
+hypothesis==6.70.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -245,7 +245,7 @@ pathspec==0.11.1
     #   hatchling
 pexpect==4.8.0
     # via hatch
-pillow==9.4.0
+pillow==9.5.0
     # via
     #   bokeh
     #   fpdf2
@@ -304,7 +304,7 @@ pytest-check==2.1.4
     # via dycw-utilities (pyproject.toml)
 pytest-cov==4.0.0
     # via dycw-utilities (pyproject.toml)
-pytest-instafail==0.4.2
+pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==11.1.2
     # via dycw-utilities (pyproject.toml)
@@ -333,7 +333,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.3
     # via hatch
-ruff==0.0.259
+ruff==0.0.260
     # via dycw-utilities (pyproject.toml)
 scipy==1.10.1
     # via
@@ -349,7 +349,7 @@ secretstorage==3.3.3
     # via keyring
 selenium==4.8.3
     # via dycw-utilities (pyproject.toml)
-semver==2.13.0
+semver==3.0.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.0.post1
     # via hatch
@@ -367,7 +367,7 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   trio
-sqlalchemy==2.0.7
+sqlalchemy==2.0.8
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -396,6 +396,8 @@ trio==0.22.0
     #   trio-websocket
 trio-websocket==0.10.2
     # via selenium
+trove-classifiers==2023.3.9
+    # via hatchling
 typed-settings[click]==23.0.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.5.0

@@ -1122,7 +1122,7 @@ class TestIsNonSingular:
     def test_main(self, array: NDArrayF2, dtype: Any, expected: bool) -> None:
         assert is_non_singular(cast(NDArray2, array.astype(dtype))) is expected
 
-    @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
+    @given(array=float_arrays(shape=(2, 2), min_value=-1e-10, max_value=1e-10))
     @beartype
     def test_overflow(self, array: NDArrayF2) -> None:
         _ = is_non_singular(array)

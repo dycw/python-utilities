@@ -4,7 +4,7 @@ from beartype import beartype
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import composite, integers
-from semver import VersionInfo
+from semver import Version
 
 from utilities.hypothesis import lift_draw, lists_fixed_length
 from utilities.hypothesis.typing import MaybeSearchStrategy
@@ -12,14 +12,14 @@ from utilities.hypothesis.typing import MaybeSearchStrategy
 
 @composite
 @beartype
-def version_infos(  # noqa: PLR0912
+def versions(  # noqa: PLR0912
     _draw: Any,
     /,
     *,
-    min_version: MaybeSearchStrategy[Optional[VersionInfo]] = None,
-    max_version: MaybeSearchStrategy[Optional[VersionInfo]] = None,
-) -> VersionInfo:
-    """Strategy for generating `VersionInfo`s."""
+    min_version: MaybeSearchStrategy[Optional[Version]] = None,
+    max_version: MaybeSearchStrategy[Optional[Version]] = None,
+) -> Version:
+    """Strategy for generating `Version`s."""
     draw = lift_draw(_draw)
     min_version_, max_version_ = map(draw, [min_version, max_version])
     if (min_version_ is None) and (max_version_ is None):
@@ -50,10 +50,10 @@ def version_infos(  # noqa: PLR0912
             raise InvalidArgument(msg)
         major = draw(integers(min_version_.major, max_version_.major))
         minor, patch = draw(lists_fixed_length(integers(min_value=0), 2))
-        version = VersionInfo(major=major, minor=minor, patch=patch)
+        version = Version(major=major, minor=minor, patch=patch)
         _ = assume(min_version_ <= version <= max_version_)
         return version
     else:
         msg = "Invalid case"  # pragma: no cover
         raise RuntimeError(msg)  # pragma: no cover
-    return VersionInfo(major=major, minor=minor, patch=patch)
+    return Version(major=major, minor=minor, patch=patch)

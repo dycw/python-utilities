@@ -1,7 +1,7 @@
 repos:
   # fixers
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.259
+    rev: v0.0.260
     hooks:
       - id: ruff
         args: [--fix]
@@ -34,7 +34,7 @@ repos:
       - id: black-jupyter
   # linters
   - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.33.0
+    rev: v0.33.1
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
