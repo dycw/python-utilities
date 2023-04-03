@@ -116,7 +116,7 @@ scripts = [
   "loguru >= 0.6.0",
   "typed-settings[click] >= 23.0.0",
 ]
-semver = ["semver >= 2.13.0"]
+semver = ["semver >= 3.0.0"]
 sqlalchemy = [
   "bidict >= 0.22.1",
   "more-itertools >= 9.1.0",
@@ -154,7 +154,7 @@ core = [
   "pandas >= 1.5.3",
   "pqdm >= 0.2.0",
   "selenium >= 4.8.3",
-  "semver >= 2.13.0",
+  "semver >= 3.0.0",
   "scipy >= 1.10.1, < 1.11",
   "sqlalchemy >= 2.0.7",
   "timeout-decorator >= 0.5.0, < 0.6",
