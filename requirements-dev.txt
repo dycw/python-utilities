@@ -111,7 +111,7 @@ filelock==3.10.7
     # via virtualenv
 fonttools==4.39.3
     # via fpdf2
-fpdf2==2.7.1
+fpdf2==2.7.3
     # via dycw-utilities (pyproject.toml)
 freezegun==1.2.2
     # via dycw-utilities (pyproject.toml)
@@ -123,7 +123,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   wsproto
-hatch==1.6.3
+hatch==1.7.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.14.0
     # via hatch
@@ -266,7 +266,7 @@ psutil==5.9.4
     # via
     #   dycw-utilities (pyproject.toml)
     #   memory-profiler
-psycopg2==2.9.5
+psycopg2==2.9.6
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
@@ -325,7 +325,7 @@ pyviz-comms==2.2.1
     #   panel
 pyyaml==6.0
     # via bokeh
-qdldl==0.1.5.post3
+qdldl==0.1.7
     # via osqp
 requests==2.28.2
     # via panel

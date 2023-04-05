@@ -92,6 +92,61 @@ def add(
 
 
 @overload
+def divide(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def divide(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def divide(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def divide(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def divide(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def divide(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def divide(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def divide(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def divide(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
+@beartype
+def divide(
+    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
+    """Compute the quotient of two quantities."""
+    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+        return np.divide(x, y)
+    return cast(Any, x) / cast(Any, y)
+
+
+@overload
 def multiply(x: float, y: float, /) -> float:
     ...
 
