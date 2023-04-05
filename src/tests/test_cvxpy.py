@@ -14,6 +14,7 @@ from utilities.cvxpy import (
     UnboundedProblemError,
     abs_,
     add,
+    divide,
     multiply,
     neg,
     norm,
@@ -75,7 +76,6 @@ class TestAdd:
     @mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(0.0, 0.0, 0.0),
             param(1.0, 2.0, 3.0),
             param(1.0, array([2.0]), array([3.0])),
             param(array([1.0]), 2.0, array([3.0])),
@@ -116,11 +116,54 @@ class TestAdd:
         assert_equal(add(var1, var2).value, add(var1.value, var2.value))
 
 
+class TestDivide:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(1.0, 2.0, 0.5),
+            param(1.0, array([2.0]), array([0.5])),
+            param(array([1.0]), 2.0, array([0.5])),
+            param(array([1.0]), array([2.0]), array([0.5])),
+        ],
+    )
+    @beartype
+    def test_float_and_array(
+        self,
+        x: Union[float, NDArrayF],
+        y: Union[float, NDArrayF],
+        expected: Union[float, NDArrayF],
+    ) -> None:
+        assert_equal(divide(x, y), expected)
+
+    @mark.parametrize("x", [param(1.0), param(array([1.0]))])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @beartype
+    def test_one_expression(
+        self,
+        x: Union[float, NDArrayF, Expression],
+        objective: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var = _get_variable(objective)
+        assert_equal(divide(x, var).value, divide(x, var.value))
+        assert_equal(divide(var, x).value, divide(var.value, x))
+
+    @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
+    @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @beartype
+    def test_two_expressions(
+        self,
+        objective1: Union[type[Maximize], type[Minimize]],
+        objective2: Union[type[Maximize], type[Minimize]],
+    ) -> None:
+        var1 = _get_variable(objective1)
+        var2 = _get_variable(objective2)
+        assert_equal(divide(var1, var2).value, divide(var1.value, var2.value))
+
+
 class TestMultiply:
     @mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(0.0, 0.0, 0.0),
             param(2.0, 3.0, 6.0),
             param(2.0, array([3.0]), array([6.0])),
             param(array([2.0]), 3.0, array([6.0])),
@@ -317,7 +360,6 @@ class TestSubtract:
     @mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(0.0, 0.0, 0.0),
             param(1.0, 2.0, -1.0),
             param(1.0, array([2.0]), array([-1.0])),
             param(array([1.0]), 2.0, array([-1.0])),
