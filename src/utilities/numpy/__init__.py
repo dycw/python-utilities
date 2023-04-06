@@ -146,6 +146,7 @@ _ = (
 Datetime64Unit = Literal[
     "Y", "M", "W", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"
 ]
+Datetime64Kind = Literal["date", "time"]
 
 
 @beartype
@@ -209,6 +210,10 @@ def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     return datetime64(datetime, "us")
 
 
+DATETIME_MIN_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.min)
+DATETIME_MAX_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.max)
+
+
 @beartype
 def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     """Convert a `numpy.datetime64` to a `dt.date`."""
@@ -231,11 +236,17 @@ def datetime64_to_int(datetime: datetime64, /) -> int:
     return datetime.astype(int).item()
 
 
+DATE_MIN_AS_INT = datetime64_to_int(DATE_MIN_AS_DATETIME64)
+DATE_MAX_AS_INT = datetime64_to_int(DATE_MAX_AS_DATETIME64)
+DATETIME_MIN_AS_INT = datetime64_to_int(DATETIME_MIN_AS_DATETIMETIME64)
+DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIMETIME64)
+
+
 @beartype
 def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     """Convert a `numpy.datetime64` to a `dt.datetime`."""
 
-    as_int = datetime.astype(int).item()
+    as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == datetime64ms:
         try:
             return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
@@ -265,6 +276,12 @@ def datetime64_dtype_to_unit(dtype: Any, /) -> Datetime64Unit:
 def datetime64_unit_to_dtype(unit: Datetime64Unit, /) -> Any:
     """Convert a `datetime64` unit to a dtype."""
     return dtype(f"datetime64[{unit}]")
+
+
+@beartype
+def datetime64_unit_to_kind(unit: Datetime64Unit, /) -> Datetime64Kind:
+    """Convert a `datetime64` unit to a kind."""
+    return "date" if unit in {"Y", "M", "W", "D"} else "time"
 
 
 class DateOverflowError(ValueError):

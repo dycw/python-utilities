@@ -34,6 +34,7 @@ from utilities.hypothesis.numpy import (
 )
 from utilities.numpy import (
     DateOverflowError,
+    Datetime64Kind,
     Datetime64Unit,
     EmptyNumpyConcatenateError,
     InfElementsError,
@@ -53,6 +54,7 @@ from utilities.numpy import (
     datetime64_to_datetime,
     datetime64_to_int,
     datetime64_unit_to_dtype,
+    datetime64_unit_to_kind,
     datetime64D,
     datetime64ns,
     datetime64us,
@@ -892,7 +894,7 @@ class TestDatetime64DTypeToUnit:
         assert datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
 
 
-class TestDatetime64DUnitToType:
+class TestDatetime64DUnitToDType:
     @mark.parametrize(
         ("unit", "expected"),
         [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
@@ -905,6 +907,16 @@ class TestDatetime64DUnitToType:
     @beartype
     def test_round_trip(self, unit: Datetime64Unit) -> None:
         assert datetime64_dtype_to_unit(datetime64_unit_to_dtype(unit)) == unit
+
+
+class TestDatetime64DUnitToKind:
+    @mark.parametrize(
+        ("unit", "expected"),
+        [param("D", "date"), param("Y", "date"), param("ns", "time")],
+    )
+    @beartype
+    def test_example(self, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
+        assert datetime64_unit_to_kind(unit) == expected
 
 
 class TestDiscretize:
