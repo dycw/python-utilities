@@ -333,7 +333,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rich==13.3.3
     # via hatch
-ruff==0.0.260
+ruff==0.0.261
     # via dycw-utilities (pyproject.toml)
 scipy==1.10.1
     # via
@@ -343,7 +343,7 @@ scipy==1.10.1
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.2
+scs==3.2.3
     # via cvxpy
 secretstorage==3.3.3
     # via keyring
@@ -367,7 +367,7 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   trio
-sqlalchemy==2.0.8
+sqlalchemy==2.0.9
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy

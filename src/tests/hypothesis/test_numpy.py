@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Any, Optional
 
+from beartype import beartype
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -13,7 +14,6 @@ from hypothesis.strategies import (
     none,
 )
 from numpy import (
-    array,
     iinfo,
     inf,
     int32,
@@ -21,6 +21,7 @@ from numpy import (
     isfinite,
     isinf,
     isnan,
+    isnat,
     ravel,
     rint,
     uint32,
@@ -32,6 +33,10 @@ from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis.numpy import (
     bool_arrays,
     concatenated_arrays,
+    datetime64_dtypes,
+    datetime64_units,
+    datetime64D_arrays,
+    datetime64s,
     float_arrays,
     int32s,
     int64s,
@@ -41,10 +46,17 @@ from utilities.hypothesis.numpy import (
     uint64s,
 )
 from utilities.hypothesis.typing import Shape
+from utilities.numpy import (
+    Datetime64Unit,
+    datetime64_dtype_to_unit,
+    datetime64_to_int,
+    datetime64D,
+)
 
 
 class TestBoolArrays:
     @given(data=data(), shape=array_shapes())
+    @beartype
     def test_main(self, data: DataObject, shape: Shape) -> None:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
@@ -53,16 +65,68 @@ class TestBoolArrays:
 
 class TestConcatenatedArrays:
     @given(data=data(), m=integers(0, 10), n=integers(0, 10))
+    @beartype
     def test_1d(self, data: DataObject, m: int, n: int) -> None:
         arrays = just(zeros(n, dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, n))
         assert array.shape == (m, n)
 
     @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
+    @beartype
     def test_2d(self, data: DataObject, m: int, n: int, p: int) -> None:
         arrays = just(zeros((n, p), dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, (n, p)))
         assert array.shape == (m, n, p)
+
+
+class TestDatetime64DArrays:
+    @given(data=data(), shape=array_shapes())
+    @beartype
+    def test_main(self, data: DataObject, shape: Shape) -> None:
+        array = data.draw(datetime64D_arrays(shape=shape))
+        assert array.dtype == datetime64D
+        assert array.shape == shape
+
+
+class TestDatetime64s:
+    @given(data=data(), unit=datetime64_units())
+    @beartype
+    def test_main(self, data: DataObject, unit: Datetime64Unit) -> None:
+        min_value = data.draw(datetime64s(unit=unit) | none())
+        max_value = data.draw(datetime64s(unit=unit) | none())
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(
+                datetime64s(min_value=min_value, max_value=max_value, unit=unit)
+            )
+        assert datetime64_dtype_to_unit(datetime.dtype) == unit
+        assert not isnat(datetime)
+        if min_value is not None:
+            assert datetime >= min_value
+        if max_value is not None:
+            assert datetime <= max_value
+
+    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    def test_bounds_as_ints(
+        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            datetime = data.draw(datetime64s(min_value=min_value, max_value=max_value))
+        if min_value is not None:
+            assert datetime64_to_int(datetime) >= min_value
+        if max_value is not None:
+            assert datetime64_to_int(datetime) <= max_value
+
+
+class TestDatetime64DTypes:
+    @given(dtype=datetime64_dtypes())
+    def test_main(self, dtype: Any) -> None:
+        _ = dtype
+
+
+class TestDatetime64Units:
+    @given(unit=datetime64_units())
+    def test_main(self, unit: Datetime64Unit) -> None:
+        _ = unit
 
 
 class TestFloatArrays:
@@ -157,27 +221,33 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(x=int32s())
-    def test_main(self, x: int) -> None:
-        assert isinstance(x, int)
+    @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
+    def test_main(
+        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int32s(min_value=min_value, max_value=max_value))
         info = iinfo(int32)
         assert info.min <= x <= info.max
-
-    @given(x=int32s())
-    def test_array(self, x: int) -> None:
-        _ = array([x], dtype=int32)
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestInt64s:
-    @given(x=int64s())
-    def test_main(self, x: int) -> None:
-        assert isinstance(x, int)
+    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    def test_main(
+        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int64s(min_value=min_value, max_value=max_value))
         info = iinfo(int64)
         assert info.min <= x <= info.max
-
-    @given(x=int64s())
-    def test_array(self, x: int) -> None:
-        _ = array([x], dtype=int64)
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestStrArrays:
@@ -223,24 +293,30 @@ class TestStrArrays:
 
 
 class TestUInt32s:
-    @given(x=uint32s())
-    def test_main(self, x: int) -> None:
-        assert isinstance(x, int)
+    @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
+    def test_main(
+        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
         info = iinfo(uint32)
         assert info.min <= x <= info.max
-
-    @given(x=uint32s())
-    def test_array(self, x: int) -> None:
-        _ = array([x], dtype=uint32)
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestUInt64s:
-    @given(x=uint64s())
-    def test_main(self, x: int) -> None:
-        assert isinstance(x, int)
+    @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
+    def test_main(
+        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
         info = iinfo(uint64)
         assert info.min <= x <= info.max
-
-    @given(x=uint64s())
-    def test_array(self, x: int) -> None:
-        _ = array([x], dtype=uint64)
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
