@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Any, NoReturn, Optional, Union, cast, overload
+from typing import Any, Literal, NoReturn, Optional, Union, cast, overload
 
 import numpy as np
 from beartype import beartype
@@ -11,6 +11,7 @@ from numpy import (
     array,
     datetime64,
     digitize,
+    dtype,
     errstate,
     flatnonzero,
     flip,
@@ -92,6 +93,7 @@ from utilities.numpy.typing import (
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
 )
+from utilities.re import extract_group
 
 _ = (
     datetime64D,
@@ -139,6 +141,11 @@ _ = (
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
 )
+
+
+Datetime64Unit = Literal[
+    "Y", "M", "W", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"
+]
 
 
 @beartype
@@ -191,6 +198,10 @@ def date_to_datetime64(date: dt.date, /) -> datetime64:
     return datetime64(date, "D")
 
 
+DATE_MIN_AS_DATETIME64 = date_to_datetime64(dt.date.min)
+DATE_MAX_AS_DATETIME64 = date_to_datetime64(dt.date.max)
+
+
 @beartype
 def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     """Convert a `dt.datetime` to `numpy.datetime64`."""
@@ -202,7 +213,7 @@ def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
 def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     """Convert a `numpy.datetime64` to a `dt.date`."""
 
-    as_int = datetime.astype(int).item()
+    as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == datetime64D:
         try:
             return (EPOCH_UTC + dt.timedelta(days=as_int)).date()
@@ -211,6 +222,13 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
             raise DateOverflowError(msg) from None
     msg = f"{datetime=}, {dtype=}"
     raise NotImplementedError(msg)
+
+
+@beartype
+def datetime64_to_int(datetime: datetime64, /) -> int:
+    """Convert a `numpy.datetime64` to an `int`."""
+
+    return datetime.astype(int).item()
 
 
 @beartype
@@ -235,6 +253,18 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     else:
         msg = f"{datetime=}, {dtype=}"
         raise NotImplementedError(msg)
+
+
+@beartype
+def datetime64_dtype_to_unit(dtype: Any, /) -> Datetime64Unit:
+    """Convert a `datetime64` dtype to a unit."""
+    return cast(Datetime64Unit, extract_group(r"^<M8\[(\w+)\]$", dtype.str))
+
+
+@beartype
+def datetime64_unit_to_dtype(unit: Datetime64Unit, /) -> Any:
+    """Convert a `datetime64` unit to a dtype."""
+    return dtype(f"datetime64[{unit}]")
 
 
 class DateOverflowError(ValueError):
