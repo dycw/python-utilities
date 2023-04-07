@@ -1,7 +1,9 @@
-from typing import Any, Optional, Union
+import datetime as dt
+from typing import Any, Optional, Union, cast
 
 from beartype import beartype
 from hypothesis import assume
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes, arrays
 from hypothesis.strategies import (
     SearchStrategy,
@@ -28,11 +30,19 @@ from utilities.hypothesis import floats_extra, lift_draw, lists_fixed_length, te
 from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
 from utilities.math.typing import IntNonNeg
 from utilities.numpy import (
+    DATE_MAX_AS_INT,
+    DATE_MIN_AS_INT,
+    DATETIME_MAX_AS_INT,
+    DATETIME_MIN_AS_INT,
+    Datetime64Kind,
     Datetime64Unit,
     EmptyNumpyConcatenateError,
+    date_to_datetime64,
     datetime64_to_int,
     datetime64_unit_to_dtype,
+    datetime64_unit_to_kind,
     datetime64D,
+    datetime_to_datetime64,
     redirect_to_empty_numpy_concatenate_error,
 )
 from utilities.numpy.typing import NDArrayB, NDArrayDD, NDArrayF, NDArrayI, NDArrayO
@@ -86,68 +96,29 @@ def concatenated_arrays(
 
 @composite
 @beartype
-def datetime64D_arrays(  # noqa: N802
-    _draw: Any,
-    /,
-    *,
-    shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
-    fill: Optional[SearchStrategy[Any]] = None,
-    unique: MaybeSearchStrategy[bool] = False,
-) -> NDArrayDD:
-    """Strategy for generating arrays of dates."""
-    draw = lift_draw(_draw)
-    return draw(
-        arrays(
-            datetime64D,
-            draw(shape),
-            elements=datetime64s(min_value=min_value, max_value=max_value, unit="D"),
-            fill=fill,
-            unique=draw(unique),
-        )
-    )
-
-
-@composite
-@beartype
-def datetime64s(
-    _draw: Any,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int]]] = None,
-    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-) -> datetime64:
-    """Strategy for generating datetime64s."""
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = map(draw, [min_value, max_value])
-
-    @beartype
-    def convert(value: Optional[Union[int, datetime64]], /) -> Optional[int]:
-        if (value is None) or isinstance(value, int):
-            return value
-        return datetime64_to_int(value)
-
-    i = draw(int64s(min_value=convert(min_value_), max_value=convert(max_value_)))
-    _ = assume(i != iinfo(int64).min)
-    if (unit_ := draw(unit)) is None:
-        unit_ = draw(datetime64_units())
-    return datetime64(i, unit_)
-
-
-@composite
-@beartype
-def datetime64_dtypes(_draw: Any, /) -> Any:
+def datetime64_dtypes(
+    _draw: Any, /, *, kind: MaybeSearchStrategy[Optional[Datetime64Kind]] = None
+) -> Any:
     """Strategy for generating datetime64 dtypes."""
     draw = lift_draw(_draw)
-    unit = draw(datetime64_units())
+    unit = draw(datetime64_units(kind=kind))
     return datetime64_unit_to_dtype(unit)
 
 
 @beartype
-def datetime64_units() -> SearchStrategy[Datetime64Unit]:
+def datetime64_kinds() -> SearchStrategy[Datetime64Kind]:
+    """Strategy for generating datetime64 kinds."""
+    kinds: list[Datetime64Kind] = ["date", "time"]
+    return sampled_from(kinds)
+
+
+@composite
+@beartype
+def datetime64_units(
+    _draw: Any, /, *, kind: MaybeSearchStrategy[Optional[Datetime64Kind]] = None
+) -> Datetime64Unit:
     """Strategy for generating datetime64 units."""
+    draw = lift_draw(_draw)
     units: list[Datetime64Unit] = [
         "Y",
         "M",
@@ -163,7 +134,136 @@ def datetime64_units() -> SearchStrategy[Datetime64Unit]:
         "fs",
         "as",
     ]
-    return sampled_from(units)
+    kind_ = draw(kind)
+    if kind_ is not None:
+        units = [unit for unit in units if datetime64_unit_to_kind(unit) == kind_]
+    return draw(sampled_from(units))
+
+
+@composite
+@beartype
+def datetime64D_arrays(  # noqa: N802
+    _draw: Any,
+    /,
+    *,
+    shape: MaybeSearchStrategy[Shape] = array_shapes(),
+    min_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
+    max_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
+    valid_dates: MaybeSearchStrategy[bool] = False,
+    valid_datetimes: MaybeSearchStrategy[bool] = False,
+    fill: Optional[SearchStrategy[Any]] = None,
+    unique: MaybeSearchStrategy[bool] = False,
+) -> NDArrayDD:
+    """Strategy for generating arrays of dates."""
+    draw = lift_draw(_draw)
+    elements = datetime64s(
+        unit="D",
+        min_value=min_value,
+        max_value=max_value,
+        valid_dates=valid_dates,
+        valid_datetimes=valid_datetimes,
+    )
+    return draw(
+        arrays(
+            datetime64D, draw(shape), elements=elements, fill=fill, unique=draw(unique)
+        )
+    )
+
+
+@composite
+@beartype
+def datetime64s(
+    _draw: Any,
+    /,
+    *,
+    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
+    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    valid_dates: MaybeSearchStrategy[bool] = False,
+    valid_datetimes: MaybeSearchStrategy[bool] = False,
+) -> datetime64:
+    """Strategy for generating datetime64s."""
+    draw = lift_draw(_draw)
+    unit_ = draw(unit)
+    min_value_, max_value_ = map(
+        _datetime64s_convert, map(draw, [min_value, max_value])
+    )
+    valid_dates_, valid_datetimes_ = map(draw, [valid_dates, valid_datetimes])
+    if valid_dates_:
+        unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
+            unit=cast(Optional[Datetime64Unit], unit_),
+            min_value=min_value_,
+            max_value=max_value_,
+        )
+    if valid_datetimes_:
+        unit_, min_value_, max_value_ = _datetime64s_check_valid_datetimes(
+            unit=cast(Optional[Datetime64Unit], unit_),
+            min_value=min_value_,
+            max_value=max_value_,
+        )
+    i = draw(int64s(min_value=min_value_, max_value=max_value_))
+    _ = assume(i != iinfo(int64).min)
+    if unit_ is None:
+        unit_ = draw(datetime64_units())
+    return datetime64(i, unit_)
+
+
+@beartype
+def _datetime64s_convert(
+    value: Optional[Union[int, datetime64, dt.date]], /
+) -> Optional[int]:
+    """Convert a min/max value supplied into `datetime64s`."""
+    if (value is None) or isinstance(value, int):
+        return value
+    if isinstance(value, datetime64):
+        return datetime64_to_int(value)
+    if isinstance(value, dt.datetime):
+        return _datetime64s_convert(datetime_to_datetime64(value))
+    return _datetime64s_convert(date_to_datetime64(value))
+
+
+@beartype
+def _datetime64s_check_valid_dates(
+    *,
+    unit: Optional[Datetime64Unit] = None,
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
+) -> tuple[Datetime64Unit, Optional[int], Optional[int]]:
+    """Check/clip the bounds to generate valid `dt.date`s."""
+    if (unit is not None) and (unit != "D"):
+        msg = f"{unit=}"
+        raise InvalidArgument(msg)
+    if min_value is None:
+        min_value = DATE_MIN_AS_INT
+    else:
+        min_value = max(min_value, DATE_MIN_AS_INT)
+    if max_value is None:
+        max_value = DATE_MAX_AS_INT
+    else:
+        max_value = min(max_value, DATE_MAX_AS_INT)
+    return "D", min_value, max_value
+
+
+@beartype
+def _datetime64s_check_valid_datetimes(
+    *,
+    unit: Optional[Datetime64Unit] = None,
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
+) -> tuple[Datetime64Unit, Optional[int], Optional[int]]:
+    """Check/clip the bounds to generate valid `dt.datetime`s."""
+    if (unit is not None) and (unit != "us"):
+        msg = f"{unit=}"
+        raise InvalidArgument(msg)
+    if min_value is None:
+        min_value = DATETIME_MIN_AS_INT
+    else:
+        min_value = max(min_value, DATETIME_MIN_AS_INT)
+    if max_value is None:
+        max_value = DATETIME_MAX_AS_INT
+    else:
+        max_value = min(max_value, DATETIME_MAX_AS_INT)
+    return "us", min_value, max_value
 
 
 @composite
@@ -300,6 +400,6 @@ def _fixed_width_ints(
     draw = lift_draw(_draw)
     min_value_, max_value_ = map(draw, [min_value, max_value])
     info = iinfo(dtype)
-    min_value_use = info.min if min_value_ is None else max(info.min, min_value_)
+    min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
     max_value_use = info.max if max_value_ is None else min(info.max, max_value_)
-    return draw(integers(min_value_use, max_value_use))
+    return draw(integers(min_value_, max_value_use))
