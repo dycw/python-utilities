@@ -1,6 +1,7 @@
 import datetime as dt
 from typing import Any, Optional, Union, cast
 
+import numpy as np
 from beartype import beartype
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
@@ -11,6 +12,7 @@ from hypothesis.strategies import (
     composite,
     integers,
     none,
+    nothing,
     sampled_from,
 )
 from numpy import (
@@ -41,11 +43,19 @@ from utilities.numpy import (
     datetime64_to_int,
     datetime64_unit_to_dtype,
     datetime64_unit_to_kind,
-    datetime64D,
     datetime_to_datetime64,
     redirect_to_empty_numpy_concatenate_error,
 )
-from utilities.numpy.typing import NDArrayB, NDArrayDD, NDArrayF, NDArrayI, NDArrayO
+from utilities.numpy.typing import (
+    NDArrayB,
+    NDArrayD,
+    NDArrayD1,
+    NDArrayDD1,
+    NDArrayDus1,
+    NDArrayF,
+    NDArrayI,
+    NDArrayO,
+)
 
 
 @composite
@@ -142,31 +152,87 @@ def datetime64_units(
 
 @composite
 @beartype
-def datetime64D_arrays(  # noqa: N802
+def datetime64_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[int, datetime64]]] = None,
+    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
+    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
-) -> NDArrayDD:
-    """Strategy for generating arrays of dates."""
+) -> NDArrayD:
+    """Strategy for generating arrays of datetime64s."""
     draw = lift_draw(_draw)
+    if (unit_ := draw(unit)) is None:
+        unit_ = draw(datetime64_units())
+    dtype = datetime64_unit_to_dtype(cast(Datetime64Unit, unit_))
     elements = datetime64s(
-        unit="D",
+        unit=cast(Datetime64Unit, unit_),
         min_value=min_value,
         max_value=max_value,
         valid_dates=valid_dates,
         valid_datetimes=valid_datetimes,
     )
     return draw(
-        arrays(
-            datetime64D, draw(shape), elements=elements, fill=fill, unique=draw(unique)
+        arrays(dtype, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+    )
+
+
+@composite
+@beartype
+def datetime64_indexes(
+    _draw: Any,
+    /,
+    *,
+    n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
+    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
+    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    valid_dates: MaybeSearchStrategy[bool] = False,
+    valid_datetimes: MaybeSearchStrategy[bool] = False,
+    unique: MaybeSearchStrategy[bool] = True,
+    sort: MaybeSearchStrategy[bool] = True,
+) -> NDArrayD1:
+    """Strategy for generating indexes of datetime64s."""
+    draw = lift_draw(_draw)
+    array = draw(
+        datetime64_arrays(
+            shape=n,
+            unit=unit,
+            min_value=min_value,
+            max_value=max_value,
+            valid_dates=valid_dates,
+            valid_datetimes=valid_datetimes,
+            fill=nothing(),
+            unique=unique,
         )
+    )
+    return np.sort(array) if sort else array
+
+
+@beartype
+def datetime64D_indexes(  # noqa: N802
+    *,
+    n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
+    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    valid_dates: MaybeSearchStrategy[bool] = True,
+    unique: MaybeSearchStrategy[bool] = True,
+    sort: MaybeSearchStrategy[bool] = True,
+) -> SearchStrategy[NDArrayDD1]:
+    """Strategy for generating arrays of dates."""
+    return datetime64_indexes(
+        n=n,
+        unit="D",
+        min_value=min_value,
+        max_value=max_value,
+        valid_dates=valid_dates,
+        unique=unique,
+        sort=sort,
     )
 
 
@@ -264,6 +330,32 @@ def _datetime64s_check_valid_datetimes(
     else:
         max_value = min(max_value, DATETIME_MAX_AS_INT)
     return "us", min_value, max_value
+
+
+@beartype
+def datetime64us_indexes(
+    *,
+    n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
+    min_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.datetime]]
+    ] = None,
+    max_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.datetime]]
+    ] = None,
+    valid_datetimes: MaybeSearchStrategy[bool] = True,
+    unique: MaybeSearchStrategy[bool] = True,
+    sort: MaybeSearchStrategy[bool] = True,
+) -> SearchStrategy[NDArrayDus1]:
+    """Strategy for generating arrays of datetimes."""
+    return datetime64_indexes(
+        n=n,
+        unit="us",
+        min_value=min_value,
+        max_value=max_value,
+        valid_datetimes=valid_datetimes,
+        unique=unique,
+        sort=sort,
+    )
 
 
 @composite

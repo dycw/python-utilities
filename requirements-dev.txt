@@ -67,7 +67,7 @@ colorcet==3.0.1
     # via holoviews
 colorlog==6.7.0
     # via nox
-coverage[toml]==7.2.2
+coverage[toml]==7.2.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -107,7 +107,7 @@ fasteners==0.18
     # via zarr
 fastparquet==2023.2.0
     # via dycw-utilities (pyproject.toml)
-filelock==3.10.7
+filelock==3.11.0
     # via virtualenv
 fonttools==4.39.3
     # via fpdf2
@@ -135,7 +135,7 @@ httpx==0.23.3
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.70.2
+hypothesis==6.71.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -148,7 +148,7 @@ idna==3.4
     #   requests
     #   rfc3986
     #   trio
-importlib-metadata==6.1.0
+importlib-metadata==6.2.0
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -249,7 +249,7 @@ pillow==9.5.0
     # via
     #   bokeh
     #   fpdf2
-pip-tools==6.12.3
+pip-tools==6.13.0
     # via dycw-utilities (pyproject.toml)
 platformdirs==3.2.0
     # via
