@@ -22,30 +22,84 @@ from numpy.typing import NDArray
 from utilities.beartype import NDim0, NDim1, NDim2, NDim3
 
 # dtypes
-datetime64D = dtype("datetime64[D]")  # noqa: N816
 datetime64Y = dtype("datetime64[Y]")  # noqa: N816
+datetime64M = dtype("datetime64[M]")  # noqa: N816
+datetime64W = dtype("datetime64[W]")  # noqa: N816
+datetime64D = dtype("datetime64[D]")  # noqa: N816
+datetime64h = dtype("datetime64[h]")
+datetime64m = dtype("datetime64[m]")
+datetime64s = dtype("datetime64[s]")
 datetime64ms = dtype("datetime64[ms]")
-datetime64ns = dtype("datetime64[ns]")
 datetime64us = dtype("datetime64[us]")
+datetime64ns = dtype("datetime64[ns]")
+datetime64ps = dtype("datetime64[ps]")
+datetime64fs = dtype("datetime64[fs]")
+datetime64as = dtype("datetime64[as]")
 
 # dtype checkers
 DTypeB = IsAttr["dtype", IsEqual[bool]]
-DTypeDD = IsAttr["dtype", IsEqual[datetime64D]]
 DTypeDY = IsAttr["dtype", IsEqual[datetime64Y]]
+DTypeDM = IsAttr["dtype", IsEqual[datetime64M]]
+DTypeDW = IsAttr["dtype", IsEqual[datetime64W]]
+DTypeDD = IsAttr["dtype", IsEqual[datetime64D]]
+DTypeDh = IsAttr["dtype", IsEqual[datetime64h]]
+DTypeDm = IsAttr["dtype", IsEqual[datetime64m]]
+DTypeDs = IsAttr["dtype", IsEqual[datetime64s]]
 DTypeDms = IsAttr["dtype", IsEqual[datetime64ms]]
-DTypeDns = IsAttr["dtype", IsEqual[datetime64ns]]
 DTypeDus = IsAttr["dtype", IsEqual[datetime64us]]
+DTypeDns = IsAttr["dtype", IsEqual[datetime64ns]]
+DTypeDps = IsAttr["dtype", IsEqual[datetime64ps]]
+DTypeDfs = IsAttr["dtype", IsEqual[datetime64fs]]
+DTypeDas = IsAttr["dtype", IsEqual[datetime64as]]
+DTypeD = (
+    DTypeDY
+    | DTypeDM
+    | DTypeDW
+    | DTypeDD
+    | DTypeDh
+    | DTypeDm
+    | DTypeDs
+    | DTypeDms
+    | DTypeDus
+    | DTypeDns
+    | DTypeDps
+    | DTypeDfs
+    | DTypeDas
+)
 DTypeF = IsAttr["dtype", IsEqual[float]]
 DTypeI = IsAttr["dtype", IsEqual[int]]
 DTypeO = IsAttr["dtype", IsEqual[object]]
 
 # annotated; dtype
 NDArrayB = NDArray[bool_]
-NDArrayDD = NDArray[cast(Any, datetime64D)]
 NDArrayDY = NDArray[cast(Any, datetime64Y)]
+NDArrayDM = NDArray[cast(Any, datetime64M)]
+NDArrayDW = NDArray[cast(Any, datetime64W)]
+NDArrayDD = NDArray[cast(Any, datetime64D)]
+NDArrayDh = NDArray[cast(Any, datetime64h)]
+NDArrayDm = NDArray[cast(Any, datetime64m)]
+NDArrayDs = NDArray[cast(Any, datetime64s)]
 NDArrayDms = NDArray[cast(Any, datetime64ms)]
-NDArrayDns = NDArray[cast(Any, datetime64ns)]
 NDArrayDus = NDArray[cast(Any, datetime64us)]
+NDArrayDns = NDArray[cast(Any, datetime64ns)]
+NDArrayDps = NDArray[cast(Any, datetime64ps)]
+NDArrayDfs = NDArray[cast(Any, datetime64fs)]
+NDArrayDas = NDArray[cast(Any, datetime64as)]
+NDArrayD = Union[
+    NDArrayDY,
+    NDArrayDM,
+    NDArrayDW,
+    NDArrayDD,
+    NDArrayDh,
+    NDArrayDm,
+    NDArrayDs,
+    NDArrayDms,
+    NDArrayDus,
+    NDArrayDns,
+    NDArrayDps,
+    NDArrayDfs,
+    NDArrayDas,
+]
 NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
@@ -58,41 +112,77 @@ NDArray3 = Annotated[NDArray[Any], NDim3]
 
 # annotated; dtype & ndim
 NDArrayB0 = Annotated[NDArrayB, NDim0]
-NDArrayDD0 = Annotated[NDArrayDD, NDim0]
+NDArrayD0 = Annotated[NDArrayD, NDim0]
 NDArrayDY0 = Annotated[NDArrayDY, NDim0]
+NDArrayDM0 = Annotated[NDArrayDM, NDim0]
+NDArrayDW0 = Annotated[NDArrayDW, NDim0]
+NDArrayDD0 = Annotated[NDArrayDD, NDim0]
+NDArrayDh0 = Annotated[NDArrayDh, NDim0]
+NDArrayDm0 = Annotated[NDArrayDm, NDim0]
+NDArrayDs0 = Annotated[NDArrayDs, NDim0]
 NDArrayDms0 = Annotated[NDArrayDms, NDim0]
-NDArrayDns0 = Annotated[NDArrayDns, NDim0]
 NDArrayDus0 = Annotated[NDArrayDus, NDim0]
+NDArrayDns0 = Annotated[NDArrayDns, NDim0]
+NDArrayDps0 = Annotated[NDArrayDps, NDim0]
+NDArrayDfs0 = Annotated[NDArrayDfs, NDim0]
+NDArrayDas0 = Annotated[NDArrayDas, NDim0]
 NDArrayF0 = Annotated[NDArrayF, NDim0]
 NDArrayI0 = Annotated[NDArrayI, NDim0]
 NDArrayO0 = Annotated[NDArrayO, NDim0]
 
 NDArrayB1 = Annotated[NDArrayB, NDim1]
-NDArrayDD1 = Annotated[NDArrayDD, NDim1]
+NDArrayD1 = Annotated[NDArrayD, NDim1]
 NDArrayDY1 = Annotated[NDArrayDY, NDim1]
+NDArrayDM1 = Annotated[NDArrayDM, NDim1]
+NDArrayDW1 = Annotated[NDArrayDW, NDim1]
+NDArrayDD1 = Annotated[NDArrayDD, NDim1]
+NDArrayDh1 = Annotated[NDArrayDh, NDim1]
+NDArrayDm1 = Annotated[NDArrayDm, NDim1]
+NDArrayDs1 = Annotated[NDArrayDs, NDim1]
 NDArrayDms1 = Annotated[NDArrayDms, NDim1]
-NDArrayDns1 = Annotated[NDArrayDns, NDim1]
 NDArrayDus1 = Annotated[NDArrayDus, NDim1]
+NDArrayDns1 = Annotated[NDArrayDns, NDim1]
+NDArrayDps1 = Annotated[NDArrayDps, NDim1]
+NDArrayDfs1 = Annotated[NDArrayDfs, NDim1]
+NDArrayDas1 = Annotated[NDArrayDas, NDim1]
 NDArrayF1 = Annotated[NDArrayF, NDim1]
 NDArrayI1 = Annotated[NDArrayI, NDim1]
 NDArrayO1 = Annotated[NDArrayO, NDim1]
 
 NDArrayB2 = Annotated[NDArrayB, NDim2]
-NDArrayDD2 = Annotated[NDArrayDD, NDim2]
+NDArrayD2 = Annotated[NDArrayD, NDim2]
 NDArrayDY2 = Annotated[NDArrayDY, NDim2]
+NDArrayDM2 = Annotated[NDArrayDM, NDim2]
+NDArrayDW2 = Annotated[NDArrayDW, NDim2]
+NDArrayDD2 = Annotated[NDArrayDD, NDim2]
+NDArrayDh2 = Annotated[NDArrayDh, NDim2]
+NDArrayDm2 = Annotated[NDArrayDm, NDim2]
+NDArrayDs2 = Annotated[NDArrayDs, NDim2]
 NDArrayDms2 = Annotated[NDArrayDms, NDim2]
-NDArrayDns2 = Annotated[NDArrayDns, NDim2]
 NDArrayDus2 = Annotated[NDArrayDus, NDim2]
+NDArrayDns2 = Annotated[NDArrayDns, NDim2]
+NDArrayDps2 = Annotated[NDArrayDps, NDim2]
+NDArrayDfs2 = Annotated[NDArrayDfs, NDim2]
+NDArrayDas2 = Annotated[NDArrayDas, NDim2]
 NDArrayF2 = Annotated[NDArrayF, NDim2]
 NDArrayI2 = Annotated[NDArrayI, NDim2]
 NDArrayO2 = Annotated[NDArrayO, NDim2]
 
 NDArrayB3 = Annotated[NDArrayB, NDim3]
-NDArrayDD3 = Annotated[NDArrayDD, NDim3]
+NDArrayD3 = Annotated[NDArrayD, NDim3]
 NDArrayDY3 = Annotated[NDArrayDY, NDim3]
+NDArrayDM3 = Annotated[NDArrayDM, NDim3]
+NDArrayDW3 = Annotated[NDArrayDW, NDim3]
+NDArrayDD3 = Annotated[NDArrayDD, NDim3]
+NDArrayDh3 = Annotated[NDArrayDh, NDim3]
+NDArrayDm3 = Annotated[NDArrayDm, NDim3]
+NDArrayDs3 = Annotated[NDArrayDs, NDim3]
 NDArrayDms3 = Annotated[NDArrayDms, NDim3]
-NDArrayDns3 = Annotated[NDArrayDns, NDim3]
 NDArrayDus3 = Annotated[NDArrayDus, NDim3]
+NDArrayDns3 = Annotated[NDArrayDns, NDim3]
+NDArrayDps3 = Annotated[NDArrayDps, NDim3]
+NDArrayDfs3 = Annotated[NDArrayDfs, NDim3]
+NDArrayDas3 = Annotated[NDArrayDas, NDim3]
 NDArrayF3 = Annotated[NDArrayF, NDim3]
 NDArrayI3 = Annotated[NDArrayI, NDim3]
 NDArrayO3 = Annotated[NDArrayO, NDim3]

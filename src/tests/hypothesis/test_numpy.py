@@ -1,6 +1,7 @@
 import datetime as dt
 from typing import Any, Literal, Optional, Union
 
+import numpy as np
 from beartype import beartype
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
@@ -31,17 +32,21 @@ from numpy import (
     uint64,
     zeros,
 )
+from numpy.testing import assert_equal
 from pytest import raises
 
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc
 from utilities.hypothesis.numpy import (
     bool_arrays,
     concatenated_arrays,
+    datetime64_arrays,
     datetime64_dtypes,
+    datetime64_indexes,
     datetime64_kinds,
     datetime64_units,
-    datetime64D_arrays,
+    datetime64D_indexes,
     datetime64s,
+    datetime64us_indexes,
     float_arrays,
     int32s,
     int64s,
@@ -60,6 +65,7 @@ from utilities.numpy import (
     datetime64_to_int,
     datetime64_unit_to_kind,
     datetime64D,
+    datetime64us,
 )
 
 
@@ -88,11 +94,121 @@ class TestConcatenatedArrays:
         assert array.shape == (m, n, p)
 
 
+class TestDatetime64Arrays:
+    @given(
+        data=data(),
+        shape=array_shapes(),
+        unit=datetime64_units() | none(),
+        valid_dates=booleans(),
+        valid_datetimes=booleans(),
+        unique=booleans(),
+    )
+    @beartype
+    def test_main(
+        self,
+        data: DataObject,
+        shape: Shape,
+        unit: Optional[Datetime64Unit],
+        valid_dates: bool,
+        valid_datetimes: bool,
+        unique: bool,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            array = data.draw(
+                datetime64_arrays(
+                    shape=shape,
+                    unit=unit,
+                    valid_dates=valid_dates,
+                    valid_datetimes=valid_datetimes,
+                    unique=unique,
+                )
+            )
+        assert array.shape == shape
+        if unit is not None:
+            assert datetime64_dtype_to_unit(array.dtype) == unit
+        if valid_dates:
+            _ = [datetime64_to_date(d) for d in ravel(array)]
+        if valid_datetimes:
+            _ = [datetime64_to_datetime(d) for d in ravel(array)]
+        if unique:
+            assert len(ravel(array)) == len(np.unique(ravel(array)))
+
+
+class TestDatetime64DIndexes:
+    @given(
+        data=data(),
+        n=integers(0, 10),
+        valid_dates=booleans(),
+        unique=booleans(),
+        sort=booleans(),
+    )
+    @beartype
+    def test_main(
+        self, data: DataObject, n: int, valid_dates: bool, unique: bool, sort: bool
+    ) -> None:
+        index = data.draw(
+            datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
+        )
+        assert index.dtype == datetime64D
+        assert len(index) == n
+        if valid_dates:
+            _ = [datetime64_to_date(d) for d in index]
+        if unique:
+            assert len(index) == len(np.unique(index))
+        if sort:
+            assert_equal(index, np.sort(index))
+
+
 class TestDatetime64DTypes:
     @given(dtype=datetime64_dtypes())
     @beartype
     def test_main(self, dtype: Any) -> None:
         _ = dtype
+
+
+class TestDatetime64Indexes:
+    @given(
+        data=data(),
+        n=integers(0, 10),
+        unit=datetime64_units() | none(),
+        valid_dates=booleans(),
+        valid_datetimes=booleans(),
+        unique=booleans(),
+        sort=booleans(),
+    )
+    @beartype
+    def test_main(
+        self,
+        data: DataObject,
+        n: int,
+        unit: Optional[Datetime64Unit],
+        valid_dates: bool,
+        valid_datetimes: bool,
+        unique: bool,
+        sort: bool,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            index = data.draw(
+                datetime64_indexes(
+                    n=n,
+                    unit=unit,
+                    valid_dates=valid_dates,
+                    valid_datetimes=valid_datetimes,
+                    unique=unique,
+                    sort=sort,
+                )
+            )
+        assert len(index) == n
+        if unit is not None:
+            assert datetime64_dtype_to_unit(index.dtype) == unit
+        if valid_dates:
+            _ = [datetime64_to_date(d) for d in index]
+        if valid_datetimes:
+            _ = [datetime64_to_datetime(d) for d in index]
+        if unique:
+            assert len(index) == len(np.unique(index))
+        if sort:
+            assert_equal(index, np.sort(index))
 
 
 class TestDatetime64Kinds:
@@ -111,13 +227,31 @@ class TestDatetime64Units:
             assert datetime64_unit_to_kind(unit) == kind
 
 
-class TestDatetime64DArrays:
-    @given(data=data(), shape=array_shapes())
+class TestDatetime64usIndexes:
+    @given(
+        data=data(),
+        n=integers(0, 10),
+        valid_datetimes=booleans(),
+        unique=booleans(),
+        sort=booleans(),
+    )
     @beartype
-    def test_main(self, data: DataObject, shape: Shape) -> None:
-        array = data.draw(datetime64D_arrays(shape=shape))
-        assert array.dtype == datetime64D
-        assert array.shape == shape
+    def test_main(
+        self, data: DataObject, n: int, valid_datetimes: bool, unique: bool, sort: bool
+    ) -> None:
+        index = data.draw(
+            datetime64us_indexes(
+                n=n, valid_datetimes=valid_datetimes, unique=unique, sort=sort
+            )
+        )
+        assert index.dtype == datetime64us
+        assert len(index) == n
+        if valid_datetimes:
+            _ = [datetime64_to_datetime(d) for d in index]
+        if unique:
+            assert len(index) == len(np.unique(index))
+        if sort:
+            assert_equal(index, np.sort(index))
 
 
 class TestDatetime64s:
