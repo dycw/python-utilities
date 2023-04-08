@@ -24,10 +24,9 @@ attrs==22.2.0
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   outcome
-    #   pytest
     #   trio
     #   typed-settings
-beartype==0.12.0
+beartype==0.13.0
     # via dycw-utilities (pyproject.toml)
 bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
@@ -115,7 +114,7 @@ fpdf2==2.7.3
     # via dycw-utilities (pyproject.toml)
 freezegun==1.2.2
     # via dycw-utilities (pyproject.toml)
-fsspec==2023.3.0
+fsspec==2023.4.0
     # via fastparquet
 greenlet==2.0.2
     # via sqlalchemy
@@ -148,7 +147,7 @@ idna==3.4
     #   requests
     #   rfc3986
     #   trio
-importlib-metadata==6.2.0
+importlib-metadata==6.3.0
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -164,7 +163,7 @@ keyring==23.13.1
     # via hatch
 lockfile==0.12.2
     # via python-daemon
-loguru==0.6.0
+loguru==0.7.0
     # via dycw-utilities (pyproject.toml)
 luigi==3.2.1
     # via dycw-utilities (pyproject.toml)
@@ -292,7 +291,7 @@ pyproject-hooks==1.0.0
     # via build
 pysocks==1.7.1
     # via urllib3
-pytest==7.2.2
+pytest==7.3.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-check
