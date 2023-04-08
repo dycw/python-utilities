@@ -14,14 +14,14 @@ class TestPytestOptions:
             """
             from pytest import mark
 
-            @mark.slow
+            @mark.unknown
             def test_main():
                 assert True
             """
         )
         result = testdir.runpytest()
         result.assert_outcomes(errors=1)
-        result.stdout.re_match_lines([r".*Unknown pytest\.mark\.slow"])
+        result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
     def test_configured_mark_unknown_option(self, testdir: Any) -> None:
         testdir.makeconftest(
@@ -92,10 +92,24 @@ class TestPytestOptions:
                 [],
                 1,
                 3,
-                [".*6: pass --slow", ".*10: pass --fast", ".*14: pass --slow --fast"],
+                [
+                    "SKIPPED.*: pass --slow",
+                    "SKIPPED.*: pass --fast",
+                    "SKIPPED.*: pass --slow --fast",
+                ],
             ),
-            param(["--slow"], 2, 2, [".*10: pass --fast", ".*14: pass --slow --fast"]),
-            param(["--fast"], 2, 2, [".*6: pass --slow", ".*14: pass --slow --fast"]),
+            param(
+                ["--slow"],
+                2,
+                2,
+                ["SKIPPED.*: pass --fast", "SKIPPED.*: pass --slow --fast"],
+            ),
+            param(
+                ["--fast"],
+                2,
+                2,
+                ["SKIPPED.*: pass --slow", "SKIPPED.*: pass --slow --fast"],
+            ),
             param(["--slow", "--fast"], 4, 0, []),
         ],
     )
@@ -148,7 +162,7 @@ class TestPytestOptions:
                 assert True
             """
         )
-        result = testdir.runpytest("-rs", *case)
+        result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(matches)
 
