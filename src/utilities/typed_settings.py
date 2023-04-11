@@ -22,6 +22,7 @@ from typed_settings.cli_utils import (
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
+from typed_settings.types import AUTO, _Auto
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
@@ -64,9 +65,18 @@ def load_settings(
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
+    config_file_section: Union[str, _Auto] = AUTO,
+    config_files_var: Union[None, str, _Auto] = AUTO,
+    env_prefix: Union[None, str, _Auto] = AUTO,
 ) -> _T:
     """Load a settings object with the extended converter."""
-    loaders = _get_loaders(appname=appname, config_files=config_files)
+    loaders = _get_loaders(
+        appname=appname,
+        config_files=config_files,
+        config_file_section=config_file_section,
+        config_files_var=config_files_var,
+        env_prefix=env_prefix,
+    )
     converter = _make_converter()
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
@@ -94,13 +104,24 @@ def click_options(
 
 
 def _get_loaders(
-    *, appname: str = "appname", config_files: Iterable[PathLike] = _CONFIG_FILES
+    *,
+    appname: str = "appname",
+    config_files: Iterable[PathLike] = _CONFIG_FILES,
+    config_file_section: Union[str, _Auto] = AUTO,
+    config_files_var: Union[None, str, _Auto] = AUTO,
+    env_prefix: Union[None, str, _Auto] = AUTO,
 ) -> list[Loader]:
     # cannot @beartype as Loader is a protocol
     if search("_", appname):
         msg = f"{appname=}"
         raise AppNameContainsUnderscoreError(msg)
-    return default_loaders(appname, config_files=config_files)
+    return default_loaders(
+        appname,
+        config_files=config_files,
+        config_file_section=config_file_section,
+        config_files_var=config_files_var,
+        env_prefix=env_prefix,
+    )
 
 
 class AppNameContainsUnderscoreError(ValueError):
