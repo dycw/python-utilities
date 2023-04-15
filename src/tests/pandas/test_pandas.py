@@ -131,7 +131,7 @@ class TestCheckRangeIndex:
 
     @beartype
     def test_series_fail(self) -> None:
-        series = Series(dtype=float)
+        series = Series(index=Index([], dtype=int), dtype=float)
         with raises(SeriesRangeIndexError):
             check_range_index(series)
 
@@ -142,7 +142,7 @@ class TestCheckRangeIndex:
 
     @beartype
     def test_dataframe_fail(self) -> None:
-        df = DataFrame()
+        df = DataFrame(index=Index([], dtype=int))
         with raises(DataFrameRangeIndexError):
             check_range_index(df)
 

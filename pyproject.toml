@@ -54,7 +54,7 @@ dynamic = ["version"]
 readme = "README.md"
 requires-python = ">= 3.9"
 authors = [{ name = "Derek Wan", email = "d.wan@icloud.com" }]
-dependencies = ["beartype >= 0.13.0", "typing-extensions >= 4.5.0"]
+dependencies = ["beartype >= 0.13.1", "typing-extensions >= 4.5.0"]
 
 [project.optional-dependencies]
 airium = ["airium >= 0.2.5"]
@@ -62,9 +62,9 @@ atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 22.2.0"]
 bidict = ["bidict >= 0.22.1"]
 click = ["click >= 8.1.3"]
-cryptography = ["cryptography >= 40.0.1"]
+cryptography = ["cryptography >= 40.0.2"]
 cvxpy = ["cvxpy >= 1.3.1"]
-fastapi = ["fastapi >= 0.95.0"]
+fastapi = ["fastapi >= 0.95.1"]
 fastparquet = [
   "atomicwrites >= 1.4.1",
   "fastparquet >= 2023.2.0",
@@ -93,7 +93,7 @@ numpy = [
 pandas = [
   "bottleneck >= 1.3.7",
   "numpy >= 1.23.5",
-  "pandas >= 1.5.3",
+  "pandas >= 2.0.0",
 ]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.4"]
@@ -108,7 +108,7 @@ pypi = [
 ]
 pytest = [
   "atomicwrites >= 1.4.1",
-  "pytest >= 7.3.0",
+  "pytest >= 7.3.1",
 ]
 pytest-check = ["pytest-check >= 2.1.4"]
 scipy = ["scipy >= 1.10.1, < 1.11"]
@@ -128,7 +128,7 @@ typed-settings = ["typed-settings[click] >= 23.0.0"]
 xarray = [
   "bottleneck >= 1.3.7",
   "numpy >= 1.23.5",
-  "xarray >= 2023.2.0",
+  "xarray >= 2023.4.0",
 ]
 zarr = [
   "atomicwrites >= 1.4.1",
@@ -142,7 +142,7 @@ core = [
   "bidict >= 0.22.1",
   "bottleneck >= 1.3.7",
   "click >= 8.1.3",
-  "cryptography >= 40.0.1",
+  "cryptography >= 40.0.2",
   "cvxpy >= 1.3.1",
   "fastparquet >= 2023.2.0",
   "fpdf2 >= 2.7.3",
@@ -151,7 +151,7 @@ core = [
   "luigi >= 3.2.1",
   "more-itertools >= 9.1.0",
   "numpy >= 1.23.5",
-  "pandas >= 1.5.3",
+  "pandas >= 2.0.0",
   "pqdm >= 0.2.0",
   "selenium >= 4.8.3",
   "semver >= 3.0.0",
@@ -160,14 +160,14 @@ core = [
   "timeout-decorator >= 0.5.0, < 0.6",
   "tqdm >= 4.65.0",
   "typed-settings[click] >= 23.0.0",
-  "xarray >= 2023.2.0",
+  "xarray >= 2023.4.0",
   "zarr >= 2.14.2",
 ]
 test = [
   "atomicwrites >= 1.4.1",
   "exceptiongroup >= 1.1.1",
   "hypothesis >= 6.71.0",
-  "pytest >= 7.3.0",
+  "pytest >= 7.3.1",
   "pytest-check >= 2.1.4",
   "pytest-cov >= 4.0.0",
   "pytest-instafail >= 0.5.0",

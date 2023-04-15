@@ -4,7 +4,7 @@
 #
 #    pip-compile --allow-unsafe pyproject.toml
 #
-beartype==0.13.0
+beartype==0.13.1
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.5.0
     # via dycw-utilities (pyproject.toml)
