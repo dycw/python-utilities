@@ -48,7 +48,7 @@ def get_repo_root_config(
     """Get the config under the repo root, if it exists."""
     try:
         root = get_repo_root(cwd=cwd)
-    except InvalidRepoError:
+    except (FileNotFoundError, InvalidRepoError):
         return None
     if (path := root.joinpath(filename)).exists():
         return path
