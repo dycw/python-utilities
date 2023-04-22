@@ -1,5 +1,6 @@
 from os import getenv
 
+from beartype import beartype
 from hypothesis import given
 
 from utilities.hypothesis import text_ascii
@@ -9,19 +10,23 @@ text = text_ascii(min_size=1, max_size=10)
 
 
 class TestCPUCount:
+    @beartype
     def test_function(self) -> None:
         assert isinstance(_get_cpu_count(), int)
 
+    @beartype
     def test_constant(self) -> None:
         assert isinstance(CPU_COUNT, int)
 
 
+@beartype
 def prefix(text: str, /) -> str:
     return f"_TEST_OS_{text}"
 
 
 class TestTempEnviron:
     @given(key=text.map(prefix), value=text)
+    @beartype
     def test_set(self, key: str, value: str) -> None:
         assert getenv(key) is None
         with temp_environ({key: value}):
@@ -29,6 +34,7 @@ class TestTempEnviron:
         assert getenv(key) is None
 
     @given(key=text.map(prefix), prev=text, new=text)
+    @beartype
     def test_override(self, key: str, prev: str, new: str) -> None:
         with temp_environ({key: prev}):
             assert getenv(key) == prev
@@ -37,6 +43,7 @@ class TestTempEnviron:
             assert getenv(key) == prev
 
     @given(key=text.map(prefix), value=text)
+    @beartype
     def test_unset(self, key: str, value: str) -> None:
         with temp_environ({key: value}):
             assert getenv(key) == value

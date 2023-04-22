@@ -6,6 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from, sets
 
 from utilities.hypothesis import temp_paths
+from utilities.platform import maybe_yield_lower_case
 from utilities.zipfile import yield_zip_file_contents
 
 
@@ -15,6 +16,7 @@ class TestYieldZipFileContents:
         contents=sets(sampled_from(ascii_letters), min_size=1, max_size=10),
     )
     def test_main(self, temp_path: Path, contents: set[str]) -> None:
+        contents = set(maybe_yield_lower_case(contents))
         assert temp_path.exists()
         assert not list(temp_path.iterdir())
         path_zip = temp_path.joinpath("zipfile")

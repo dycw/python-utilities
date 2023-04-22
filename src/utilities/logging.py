@@ -1,9 +1,9 @@
-from enum import unique
+from enum import Enum, unique
 from logging import basicConfig
 
 from beartype import beartype
 
-from utilities.enum import StrEnum
+from utilities.platform.datetime import maybe_sub_pct_y
 
 
 @beartype
@@ -11,14 +11,14 @@ def basic_config() -> None:
     """Do the basic config."""
     basicConfig(
         format="{asctime} | {name} | {levelname:8} | {message}",
-        datefmt="%4Y-%m-%d %H:%M:%S",
+        datefmt=maybe_sub_pct_y("%Y-%m-%d %H:%M:%S"),
         style="{",
         level=LogLevel.DEBUG.name,
     )
 
 
 @unique
-class LogLevel(StrEnum):
+class LogLevel(str, Enum):
     """An enumeration of the logging levels."""
 
     DEBUG = "DEBUG"

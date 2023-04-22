@@ -17,8 +17,10 @@ from psutil import swap_memory, virtual_memory
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
 from utilities.monitor_memory.classes import Config, Item
+from utilities.platform import SYSTEM, System
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
+from utilities.typing import never
 
 _CONFIG = Config()
 
@@ -73,7 +75,21 @@ def _yield_writer(
 
 @beartype
 def _get_memory_usage() -> Item:
-    virtual = virtual_memory()
+    virtual = cast(Any, virtual_memory())
+    if SYSTEM is System.windows:  # pragma: os-ne-windows
+        msg = f"{SYSTEM=}"
+        raise NotImplementedError(msg)
+    if SYSTEM is System.mac_os:  # pragma: os-ne-macos
+        kwargs = {"virtual_wired": virtual.wired}
+    elif SYSTEM is System.linux:  # pragma: os-ne-linux
+        kwargs = {
+            "virtual_buffers": virtual.buffers,
+            "virtual_cached": virtual.cached,
+            "virtual_shared": virtual.shared,
+            "virtual_slab": virtual.slab,
+        }
+    else:  # pragma: no cover
+        never(SYSTEM)
     swap = swap_memory()
     return Item(
         datetime=dt.datetime.now(tz=UTC),
@@ -84,10 +100,7 @@ def _get_memory_usage() -> Item:
         virtual_free=virtual.free,
         virtual_active=virtual.active,
         virtual_inactive=virtual.inactive,
-        virtual_buffers=virtual.buffers,
-        virtual_cached=virtual.cached,
-        virtual_shared=virtual.shared,
-        virtual_slab=virtual.slab,
+        **kwargs,
         swap_total=swap.total,
         swap_used=swap.used,
         swap_free=swap.free,
