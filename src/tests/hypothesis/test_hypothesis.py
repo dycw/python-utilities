@@ -4,6 +4,7 @@ from pathlib import Path
 from re import search
 from typing import Optional
 
+from beartype import beartype
 from hypothesis import Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -40,11 +41,13 @@ from utilities.hypothesis import (
     text_printable,
 )
 from utilities.os import temp_environ
+from utilities.platform import maybe_yield_lower_case
 from utilities.tempfile import TemporaryDirectory
 
 
 class TestAssumeDoesNotRaise:
     @given(x=booleans())
+    @beartype
     def test_no_match_and_suppressed(self, x: bool) -> None:
         with assume_does_not_raise(ValueError):
             if x is True:
@@ -53,6 +56,7 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=booleans())
+    @beartype
     def test_no_match_and_not_suppressed(self, x: bool) -> None:
         msg = "x is True"
         if x is True:
@@ -60,6 +64,7 @@ class TestAssumeDoesNotRaise:
                 raise ValueError(msg)
 
     @given(x=booleans())
+    @beartype
     def test_with_match_and_suppressed(self, x: bool) -> None:
         msg = "x is True"
         if x is True:
@@ -68,6 +73,7 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=just(True))
+    @beartype
     def test_with_match_and_not_suppressed(self, x: bool) -> None:
         msg = "x is True"
         if x is True:
@@ -79,6 +85,7 @@ class TestAssumeDoesNotRaise:
 
 class TestDatetimesUTC:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
+    @beartype
     def test_main(
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
@@ -99,6 +106,7 @@ class TestFloatsExtra:
         allow_neg_inf=booleans(),
         integral=booleans(),
     )
+    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -141,6 +149,7 @@ class TestFloatsExtra:
 
 class TestHashables:
     @given(data=data())
+    @beartype
     def test_fixed(self, data: DataObject) -> None:
         x = data.draw(hashables())
         _ = hash(x)
@@ -148,6 +157,7 @@ class TestHashables:
 
 class TestLiftDraw:
     @given(data=data(), x=booleans())
+    @beartype
     def test_fixed(self, data: DataObject, x: bool) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
@@ -158,6 +168,7 @@ class TestLiftDraw:
         assert result is x
 
     @given(data=data())
+    @beartype
     def test_strategy(self, data: DataObject) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
@@ -175,6 +186,7 @@ class TestListsFixedLength:
     @mark.parametrize(
         "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
+    @beartype
     def test_main(
         self, data: DataObject, size: int, unique: bool, sorted_: bool
     ) -> None:
@@ -191,6 +203,7 @@ class TestListsFixedLength:
 
 class TestSlices:
     @given(data=data(), iter_len=integers(0, 10))
+    @beartype
     def test_main(self, data: DataObject, iter_len: int) -> None:
         slice_len = data.draw(integers(0, iter_len) | none())
         slice_ = data.draw(slices(iter_len, slice_len=slice_len))
@@ -200,6 +213,7 @@ class TestSlices:
             assert len(range_slice) == slice_len
 
     @given(data=data(), iter_len=integers(0, 10))
+    @beartype
     def test_error(self, data: DataObject, iter_len: int) -> None:
         with raises(
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
@@ -208,18 +222,21 @@ class TestSlices:
 
 
 class TestSetupHypothesisProfiles:
+    @beartype
     def test_main(self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
         assert Phase.shrink in curr.phases
         assert curr.max_examples in {10, 100, 1000}
 
+    @beartype
     def test_no_shrink(self) -> None:
         with temp_environ({_NO_SHRINK: "1"}):
             setup_hypothesis_profiles()
         assert Phase.shrink not in settings().phases
 
     @given(max_examples=integers(1, 100))
+    @beartype
     def test_max_examples(self, max_examples: int) -> None:
         with temp_environ({_MAX_EXAMPLES: str(max_examples)}):
             setup_hypothesis_profiles()
@@ -228,10 +245,12 @@ class TestSetupHypothesisProfiles:
 
 class TestTempDirs:
     @given(temp_dir=temp_dirs())
+    @beartype
     def test_main(self, temp_dir: TemporaryDirectory) -> None:
         _test_temp_path(temp_dir.name)
 
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
+    @beartype
     def test_writing_files(
         self, temp_dir: TemporaryDirectory, contents: set[str]
     ) -> None:
@@ -240,21 +259,26 @@ class TestTempDirs:
 
 class TestTempPaths:
     @given(temp_path=temp_paths())
+    @beartype
     def test_main(self, temp_path: Path) -> None:
         _test_temp_path(temp_path)
 
     @given(temp_path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
+    @beartype
     def test_writing_files(self, temp_path: Path, contents: set[str]) -> None:
         _test_writing_to_temp_path(temp_path, contents)
 
 
+@beartype
 def _test_temp_path(path: Path, /) -> None:
     assert path.is_dir()
     assert len(set(path.iterdir())) == 0
 
 
+@beartype
 def _test_writing_to_temp_path(path: Path, contents: set[str], /) -> None:
     assert len(set(path.iterdir())) == 0
+    contents = set(maybe_yield_lower_case(contents))
     for content in contents:
         path.joinpath(content).touch()
     assert len(set(path.iterdir())) == len(contents)
@@ -267,6 +291,7 @@ class TestTextAscii:
         max_size=integers(0, 100) | none(),
         disallow_na=booleans(),
     )
+    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -295,6 +320,7 @@ class TestTextClean:
         max_size=integers(0, 100) | none(),
         disallow_na=booleans(),
     )
+    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -323,6 +349,7 @@ class TestTextPrintable:
         max_size=integers(0, 100) | none(),
         disallow_na=booleans(),
     )
+    @beartype
     def test_main(
         self,
         data: DataObject,

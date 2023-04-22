@@ -48,6 +48,7 @@ from utilities.datetime import (
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise
+from utilities.platform.datetime import maybe_sub_pct_y
 
 
 class TestAddWeekdays:
@@ -145,7 +146,7 @@ class TestParseDate:
 
     @given(date=dates())
     def test_yyyymmdd(self, date: dt.date) -> None:
-        result = parse_date(date.strftime("%4Y%m%d"))
+        result = parse_date(date.strftime(maybe_sub_pct_y("%Y%m%d")))
         assert result == date
 
     def test_error(self) -> None:
@@ -166,7 +167,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%4Y%m%dT%H%M%S.%f%z", "%4Y-%m-%d %H:%M:%S.%f%z"]),
+        fmt=sampled_from(["%Y%m%dT%H%M%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z"]).map(
+            maybe_sub_pct_y
+        ),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(self, datetime: dt.datetime, fmt: str) -> None:
         result = parse_datetime(datetime.strftime(fmt))
@@ -174,7 +177,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%4Y%m%dT%H%M%S.%f", "%4Y-%m-%d %H:%M:%S.%f"]),
+        fmt=sampled_from(["%Y%m%dT%H%M%S.%f", "%Y-%m-%d %H:%M:%S.%f"]).map(
+            maybe_sub_pct_y
+        ),
     )
     def test_yyyymmdd_hhmmss_fff(self, datetime: dt.datetime, fmt: str) -> None:
         result = parse_datetime(datetime.strftime(fmt))
@@ -183,8 +188,8 @@ class TestParseDateTime:
     @given(
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(
-            ["%4Y%m%dT%H%M%S", "%4Y-%m-%d %H:%M:%S", "%4Y-%m-%dT%H:%M:%S"]
-        ),
+            ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
@@ -193,7 +198,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%4Y%m%dT%H%M", "%4Y-%m-%d %H:%M", "%4Y-%m-%dT%H:%M"]),
+        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
+            maybe_sub_pct_y
+        ),
     )
     def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
@@ -202,7 +209,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%4Y%m%dT%H", "%4Y-%m-%d %H", "%4Y-%m-%dT%H"]),
+        fmt=sampled_from(["%Y%m%dT%H", "%Y-%m-%d %H", "%Y-%m-%dT%H"]).map(
+            maybe_sub_pct_y
+        ),
     )
     def test_yyyymmdd_hh(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
@@ -211,7 +220,7 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%4Y%m%d", "%4Y-%m-%d"]),
+        fmt=sampled_from(["%Y%m%d", "%Y-%m-%d"]).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)

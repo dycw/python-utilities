@@ -24,5 +24,5 @@ def relabel_plot(plot: _T, label: str, /) -> _T:
 @beartype
 def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a plot to disk."""
-    with writer(path, overwrite=overwrite) as temp:
+    with writer(path, overwrite=overwrite) as temp:  # pragma: os-ne-linux
         save(plot, temp, backend="bokeh")

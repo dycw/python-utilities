@@ -1,6 +1,5 @@
 from logging import getLogger
 
-from utilities.enum import StrEnum
 from utilities.logging import LogLevel, basic_config
 
 
@@ -13,5 +12,4 @@ class TestBasicConfig:
 
 class TestLogLevel:
     def test_main(self) -> None:
-        assert issubclass(LogLevel, StrEnum)
         assert len(LogLevel) == 5

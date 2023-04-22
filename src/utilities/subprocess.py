@@ -36,7 +36,9 @@ def get_shell_output(
         else:
             raise MultipleActivateError(activates)
     with temp_environ(env):
-        return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)
+        return check_output(
+            cmd, stderr=PIPE, shell=True, cwd=cwd, text=True  # noqa: S602
+        )
 
 
 class NoActivateError(ValueError):
@@ -51,7 +53,7 @@ class MultipleActivateError(ValueError):
 def run_accept_address_in_use(args: list[str], /, *, exist_ok: bool) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
-        _ = check_output(args, stderr=PIPE, text=True)
+        _ = check_output(args, stderr=PIPE, text=True)  # noqa: S603
     except CalledProcessError as error:  # pragma: no cover
         pattern = _address_already_in_use_pattern()
         if exist_ok and search(pattern, error.stderr, flags=MULTILINE):

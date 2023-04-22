@@ -6,9 +6,9 @@ from beartype import beartype
 
 from utilities.sys import PYTHON_AT_LEAST_3_11
 
-if PYTHON_AT_LEAST_3_11:  # pragma: py-le-310
-    from enum import StrEnum as _StrEnum  # type:ignore[]  # pragma: py-ne-310
-else:  # pragma: py-ge-311
+if PYTHON_AT_LEAST_3_11:  # pragma: version-le-310
+    from enum import StrEnum as _StrEnum  # type:ignore[]  # pragma: version-ne-310
+else:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
         """An enum whose elements are themselves strings."""
