@@ -1,3 +1,10 @@
+from pytest import skip
+
+from utilities.platform import SYSTEM, System
+
+if SYSTEM is not System.linux:
+    skip(reason="Linux only", allow_module_level=True)
+
 from functools import cache
 from typing import Any, Union, cast
 

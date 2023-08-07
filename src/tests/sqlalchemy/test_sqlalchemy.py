@@ -77,6 +77,7 @@ from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
 from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.platform import SYSTEM, System
 from utilities.sqlalchemy import (
     EngineError,
     IncorrectNumberOfTablesError,
@@ -935,7 +936,11 @@ class TestGetDialect:
     @mark.parametrize(
         ("url", "expected"),
         [
-            param("mssql+pyodbc://scott:tiger@mydsn", "mssql"),
+            param(
+                "mssql+pyodbc://scott:tiger@mydsn",
+                "mssql",
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+            ),
             param("mysql://scott:tiger@localhost/foo", "mysql"),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param("postgresql://scott:tiger@localhost/mydatabase", "postgresql"),

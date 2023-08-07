@@ -57,171 +57,143 @@ dynamic = ["version"]
 readme = "README.md"
 requires-python = ">= 3.9"
 authors = [{ name = "Derek Wan", email = "d.wan@icloud.com" }]
-dependencies = ["beartype >= 0.13.1", "typing-extensions >= 4.5.0"]
+dependencies = ["beartype >= 0.15.0", "typing-extensions >= 4.7.0"]
 
 [project.optional-dependencies]
 airium = ["airium >= 0.2.5"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 23.1.0"]
 bidict = ["bidict >= 0.22.1"]
-click = ["click >= 8.1.3"]
-cryptography = ["cryptography >= 40.0.2"]
-cvxpy = ["cvxpy >= 1.3.1"]
-fastapi = ["fastapi >= 0.95.1"]
+click = ["click >= 8.1.6"]
+cryptography = ["cryptography >= 41.0.3"]
+cvxpy = [
+  "cvxpy >= 1.3.1; sys_platform == 'Linux'",
+  "dycw-utilities[numpy]; sys_platform == 'Linux'",
+  "dycw-utilities[scipy]; sys_platform == 'Linux'",
+]
+fastapi = ["fastapi >= 0.101.0"]
 fastparquet = [
-  "atomicwrites >= 1.4.1",
-  "fastparquet >= 2023.2.0",
+  "dycw-utilities[atomicwrites]",
+  "fastparquet >= 2023.7.0",
 ]
 fpdf2 = [
-  "atomicwrites >= 1.4.1",
-  "fpdf2 >= 2.7.3",
-  "holoviews >= 1.15.4",
-  "selenium >= 4.9.0",
+  "dycw-utilities[holoviews]",
+  "fpdf2 >= 2.7.5",
 ]
-hatch = ["hatch >= 1.6.3"]
+hatch = ["hatch >= 1.7.0"]
 holoviews = [
-  "atomicwrites >= 1.4.1",
-  "holoviews >= 1.15.4",
+  "dycw-utilities[atomicwrites]",
+  "holoviews >= 1.17.0",
   "selenium >= 4.9.0",
 ]
 hypothesis = ["hypothesis >= 6.72.1"]
 loguru = ["loguru >= 0.7.0"]
-luigi = ["luigi >= 3.2.1"]
+luigi = ["luigi >= 3.3.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
-more-itertools = ["more-itertools >= 9.1.0"]
+more-itertools = ["more-itertools >= 10.1.0"]
 numpy = [
   "bottleneck >= 1.3.7",
-  "numpy >= 1.23.5",
+  "numpy >= 1.25.2",
 ]
 pandas = [
-  "bottleneck >= 1.3.7",
-  "numpy >= 1.23.5",
-  "pandas >= 2.0.0",
+  "dycw-utilities[numpy]",
+  "pandas >= 2.0.3",
 ]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.5"]
 pyinstrument = [
-  "atomicwrites >= 1.4.1",
-  "pyinstrument >= 4.4.0",
+  "dycw-utilities[atomicwrites]",
+  "pyinstrument >= 4.5.1",
 ]
 pypi = [
-  "loguru >= 0.7.0",
-  "pypiserver[passlib] >= 1.5.1",
-  "typed-settings[click] >= 23.0.0",
+  "dycw-utilities[loguru]",
+  "dycw-utilities[typed-settings]",
+  "pypiserver[passlib] >= 1.5.2",
 ]
 pytest = [
-  "atomicwrites >= 1.4.1",
-  "pytest >= 7.3.1",
+  "dycw-utilities[atomicwrites]",
+  "pytest >= 7.4.0",
 ]
-pytest-check = ["pytest-check >= 2.1.4"]
-scipy = ["scipy >= 1.10.1, < 1.11"]
+pytest-check = [
+  "dycw-utilities[pytest]",
+  "pytest-check >= 2.2.0"]
+scipy = [
+  "dycw-utilities[numpy]",
+  "scipy >= 1.11.1, < 1.12",
+]
 scripts = [
-  "loguru >= 0.7.0",
-  "typed-settings[click] >= 23.0.0",
+  "dycw-utilities[loguru]",
+  "dycw-utilities[typed-settings]",
 ]
 semver = ["semver >= 3.0.0"]
 sqlalchemy = [
-  "bidict >= 0.22.1",
-  "more-itertools >= 9.1.0",
+  "dycw-utilities[bidict]",
+  "dycw-utilities[more-itertools]",
+  "dycw-utilities[numpy]",
   "sqlalchemy >= 2.0.10",
   "timeout-decorator >= 0.5.0",
 ]
 tqdm = ["tqdm >= 4.65.0"]
-typed-settings = ["typed-settings[click] >= 23.0.0"]
+typed-settings = [
+  "dycw-utilities[click]",
+  "typed-settings[click] >= 23.0.0",
+]
 xarray = [
-  "bottleneck >= 1.3.7",
-  "numpy >= 1.23.5",
+  "dycw-utilities[numpy]",
   "xarray >= 2023.4.2",
 ]
 zarr = [
-  "atomicwrites >= 1.4.1",
+  "dycw-utilities[atomicwrites]",
   "zarr >= 2.14.2",
 ]
 # groups
-core = [
-  "airium >= 0.2.5",
-  "atomicwrites >= 1.4.1",
-  "attrs >= 23.1.0",
-  "bidict >= 0.22.1",
-  "bottleneck >= 1.3.7",
-  "click >= 8.1.3",
-  "cryptography >= 40.0.2",
-  "cvxpy >= 1.3.1",
-  "fastparquet >= 2023.2.0",
-  "fpdf2 >= 2.7.3",
-  "holoviews >= 1.15.4",
-  "loguru >= 0.7.0",
-  "luigi >= 3.2.1",
-  "more-itertools >= 9.1.0",
-  "numpy >= 1.23.5",
-  "pandas >= 2.0.0",
-  "pqdm >= 0.2.0",
-  "selenium >= 4.9.0",
-  "semver >= 3.0.0",
-  "scipy >= 1.10.1, < 1.11",
-  "sqlalchemy >= 2.0.10",
-  "timeout-decorator >= 0.5.0, < 0.6",
-  "tqdm >= 4.65.0",
-  "typed-settings[click] >= 23.0.0",
-  "xarray >= 2023.4.2",
-  "zarr >= 2.14.2",
-]
 test = [
-  "atomicwrites >= 1.4.1",
-  "exceptiongroup >= 1.1.1",
-  "hypothesis >= 6.72.1",
-  "pytest >= 7.3.1",
-  "pytest-check >= 2.1.4",
-  "pytest-cov >= 4.0.0",
+  "dycw-utilities[hypothesis]",
+  "dycw-utilities[pytest]",
+  "dycw-utilities[pytest-check]",
+  "exceptiongroup >= 1.1.2",
+  "pytest-cov >= 4.1.0",
   "pytest-instafail >= 0.5.0",
-  "pytest-randomly >= 3.12.0",
-  "pytest-rerunfailures >= 11.1.2",
-  "pytest-xdist >= 3.2.1",
+  "pytest-randomly >= 3.13.0",
+  "pytest-rerunfailures >= 12.0",
+  "pytest-xdist >= 3.3.1",
 ]
 # dev
 dev = [
-  # main
-  "airium",
-  "atomicwrites",
-  "attrs",
-  "bidict",
-  "bottleneck",
-  "click",
-  "cryptography",
-  "cvxpy",
-  "exceptiongroup",
-  "fastapi",
-  "fastparquet",
-  "fpdf2",
-  "hatch",
-  "holoviews",
-  "hypothesis",
-  "loguru",
-  "luigi",
-  "memory-profiler",
-  "more-itertools",
-  "numpy",
-  "pandas",
-  "pqdm",
-  "psutil",
-  "pyinstrument",
-  "pypi",
-  "pytest",
-  "pytest-check",
-  "pytest-cov",
-  "pytest-instafail",
-  "pytest-randomly",
-  "pytest-rerunfailures",
-  "pytest-xdist",
-  "scipy",
-  "selenium",
-  "semver",
-  "sqlalchemy",
-  "timeout-decorator",
-  "tqdm",
-  "typed-settings[click]",
-  "xarray",
-  "zarr",
+  "dycw-utilities[airium]",
+  "dycw-utilities[atomicwrites]",
+  "dycw-utilities[attrs]",
+  "dycw-utilities[bidict]",
+  "dycw-utilities[click]",
+  "dycw-utilities[cryptography]",
+  "dycw-utilities[cvxpy]",
+  "dycw-utilities[fastapi]",
+  "dycw-utilities[fastparquet]",
+  "dycw-utilities[fpdf2]",
+  "dycw-utilities[hatch]",
+  "dycw-utilities[holoviews]",
+  "dycw-utilities[hypothesis]",
+  "dycw-utilities[loguru]",
+  "dycw-utilities[luigi]",
+  "dycw-utilities[memory-profiler]",
+  "dycw-utilities[more-itertools]",
+  "dycw-utilities[numpy]",
+  "dycw-utilities[pandas]",
+  "dycw-utilities[pqdm]",
+  "dycw-utilities[psutil]",
+  "dycw-utilities[pyinstrument]",
+  "dycw-utilities[pypi]",
+  "dycw-utilities[pytest-check]",
+  "dycw-utilities[pytest]",
+  "dycw-utilities[scipy]",
+  "dycw-utilities[semver]",
+  "dycw-utilities[sqlalchemy]",
+  "dycw-utilities[tqdm]",
+  "dycw-utilities[typed-settings]",
+  "dycw-utilities[xarray]",
+  "dycw-utilities[zarr]",
+  # groups
+  "dycw-utilities[test]",
   # dev
   "black",
   "coverage-conditional-plugin",
