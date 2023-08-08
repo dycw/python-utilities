@@ -1,13 +1,21 @@
 from functools import cache
 from typing import Any, Union, cast
 
-import cvxpy
 import numpy as np
 from beartype import beartype
-from cvxpy import Expression, Maximize, Minimize, Problem, Variable
 from numpy import array
 from numpy.testing import assert_equal
-from pytest import mark, param, raises
+from pytest import mark, param, raises, skip
+
+from utilities.numpy.typing import NDArrayF
+
+try:
+    import cvxpy
+except ModuleNotFoundError:
+    skip(reason="`cvxpy` missing", allow_module_level=True)
+
+
+from cvxpy import Expression, Maximize, Minimize, Problem, Variable
 
 from utilities.cvxpy import (
     InfeasibleProblemError,
@@ -26,7 +34,6 @@ from utilities.cvxpy import (
     subtract,
     sum_,
 )
-from utilities.numpy.typing import NDArrayF
 
 
 @cache

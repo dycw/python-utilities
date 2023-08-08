@@ -81,7 +81,7 @@ def is_weekday(date: dt.date, /) -> bool:
 @beartype
 def local_timezone() -> tzinfo:
     """Get the local timezone."""
-    tz = dt.datetime.now().astimezone().tzinfo  # noqa: DTZ005
+    tz = dt.datetime.now().astimezone().tzinfo
     if tz is None:  # pragma: no cover
         msg = f"{tz=}"
         raise LocalTimeZoneError(msg)

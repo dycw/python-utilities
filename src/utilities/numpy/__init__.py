@@ -444,7 +444,7 @@ def is_non_singular(
     try:
         with errstate(over="raise"):
             return is_non_zero(det(array), rtol=rtol, atol=atol).item()
-    except FloatingPointError:
+    except FloatingPointError:  # pragma: no cover
         return False
 
 

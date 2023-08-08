@@ -27,7 +27,7 @@ def abs_(x: Expression, /) -> Expression:
 
 
 @beartype
-def abs_(
+def abs_(  # pragma: has-cvxpy
     x: Union[float, NDArrayF, Expression], /
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the absolute value."""

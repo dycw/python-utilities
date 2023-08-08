@@ -55,7 +55,7 @@ def yield_data_array_on_disk(
     dtype: Any = float,
     fill_value: Any = sentinel,
     chunks: Union[bool, int, tuple[Optional[int], ...]] = True,
-    name: Hashable = None,
+    name: Optional[Hashable] = None,
 ) -> Iterator[Array]:
     """Save a `DataArray`, yielding a view into its values."""
     indexes: dict[Hashable, NDArray1] = {}
