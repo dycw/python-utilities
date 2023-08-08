@@ -2,7 +2,7 @@ from pytest import skip
 
 from utilities.platform import SYSTEM, System
 
-if SYSTEM is not System.linux:
+if SYSTEM is not System.linux:  # pragma: os-eq-linux
     skip(reason="Linux only", allow_module_level=True)
 
 from functools import cache

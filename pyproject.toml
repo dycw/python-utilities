@@ -21,6 +21,9 @@ skip_empty = true
 directory = ".coverage/html"
 
 [tool.coverage.coverage_conditional_plugin.rules]
+os-eq-windows = 'sys_platform == "windows"'
+os-eq-macos = 'sys_platform == "darwin"'
+os-eq-linux = 'sys_platform == "linux"'
 os-ne-windows = 'sys_platform != "windows"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-linux = 'sys_platform != "linux"'
