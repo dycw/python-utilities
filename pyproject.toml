@@ -21,9 +21,9 @@ skip_empty = true
 directory = ".coverage/html"
 
 [tool.coverage.coverage_conditional_plugin.rules]
-os-ne-windows = 'sys_platform != "Windows"'
-os-ne-macos = 'sys_platform != "Darwin"'
-os-ne-linux = 'sys_platform != "Linux"'
+os-ne-windows = 'sys_platform != "windows"'
+os-ne-macos = 'sys_platform != "darwin"'
+os-ne-linux = 'sys_platform != "linux"'
 version-le-310 = "sys_version_info <= (3, 10)"
 version-ne-310 = "sys_version_info != (3, 10)"
 version-ge-311 = "sys_version_info >= (3, 11)"
@@ -66,7 +66,7 @@ attrs = ["attrs >= 23.1.0"]
 bidict = ["bidict >= 0.22.1"]
 click = ["click >= 8.1.6"]
 cryptography = ["cryptography >= 41.0.3"]
-cvxpy = ["cvxpy >= 1.3.1; sys_platform == 'Linux'"]
+cvxpy = ["cvxpy >= 1.3.1; sys_platform == 'linux'"]
 fastapi = ["fastapi >= 0.101.0"]
 fastparquet = [
   "fastparquet >= 2023.7.0",
@@ -152,7 +152,7 @@ dev = [
   "bottleneck >= 1.3.7",                      # xarray
   "click >= 8.1.6",                           # click
   "cryptography >= 41.0.3",                   # cryptography
-  "cvxpy >= 1.3.1; sys_platform == 'Linux'",  # cvxpy
+  "cvxpy >= 1.3.1; sys_platform == 'linux'",  # cvxpy
   "fastapi >= 0.101.0",                       # fastapi
   "fastparquet >= 2023.7.0",                  # fastparquet
   "fpdf2 >= 2.7.5",                           # fpdf2
@@ -194,11 +194,11 @@ dev = [
   "freezegun",
   "hatch",
   "hypothesis-sqlalchemy",
-  "mysqlclient; sys_platform == 'Linux'",
+  "mysqlclient; sys_platform == 'linux'",
   "nox",
   "pip-tools",
-  "psycopg2-binary; sys_platform == 'Linux'",
-  "pyodbc; sys_platform == 'Linux'",
+  "psycopg2-binary; sys_platform == 'linux'",
+  "pyodbc; sys_platform == 'linux'",
   "ruff",
 ]
 
