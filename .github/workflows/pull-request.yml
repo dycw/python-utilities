@@ -20,5 +20,5 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
       - run: python -m pip install --upgrade pip-tools
-      - run: pip-sync requirements.txt ".github/requirements/${{ matrix.os }}.txt"
+      - run: pip-sync requirements.txt "ci/${{ matrix.os }}.txt"
       - run: pytest --cov-report=term-missing:skip-covered -n=auto
