@@ -70,9 +70,11 @@ def bool_arrays(
 ) -> NDArrayB:
     """Strategy for generating arrays of booleans."""
     draw = lift_draw(_draw)
-    return draw(
-        arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique))
+    strategy = cast(
+        SearchStrategy[NDArrayB],
+        arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique)),
     )
+    return draw(strategy)
 
 
 @composite
@@ -251,10 +253,10 @@ def datetime64s(
     """Strategy for generating datetime64s."""
     draw = lift_draw(_draw)
     unit_ = draw(unit)
-    min_value_, max_value_ = map(
-        _datetime64s_convert, map(draw, [min_value, max_value])
+    min_value_, max_value_ = (
+        _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
     )
-    valid_dates_, valid_datetimes_ = map(draw, [valid_dates, valid_datetimes])
+    valid_dates_, valid_datetimes_ = (draw(vd) for vd in (valid_dates, valid_datetimes))
     if valid_dates_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
             unit=cast(Optional[Datetime64Unit], unit_),
@@ -386,9 +388,11 @@ def float_arrays(
         allow_neg_inf=allow_neg_inf,
         integral=integral,
     )
-    return draw(
-        arrays(float, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+    strategy = cast(
+        SearchStrategy[NDArrayF],
+        arrays(float, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
+    return draw(strategy)
 
 
 @composite
@@ -410,9 +414,11 @@ def int_arrays(
     min_value_use = info.min if min_value_ is None else min_value_
     max_value_use = info.max if max_value_ is None else max_value_
     elements = integers(min_value=min_value_use, max_value=max_value_use)
-    return draw(
-        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+    strategy = cast(
+        SearchStrategy[NDArrayI],
+        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
+    return draw(strategy)
 
 
 @beartype
@@ -453,9 +459,11 @@ def str_arrays(
     elements = text_ascii(min_size=min_size, max_size=max_size)
     if draw(allow_none):
         elements |= none()
-    return draw(
-        arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+    strategy = cast(
+        SearchStrategy[NDArrayO],
+        arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
+    return draw(strategy)
 
 
 @beartype
@@ -490,7 +498,7 @@ def _fixed_width_ints(
 ) -> int:
     """Strategy for generating int64s."""
     draw = lift_draw(_draw)
-    min_value_, max_value_ = map(draw, [min_value, max_value])
+    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
     info = iinfo(dtype)
     min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
     max_value_use = info.max if max_value_ is None else min(info.max, max_value_)

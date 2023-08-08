@@ -6,6 +6,7 @@ from beartype import beartype
 from numpy import empty, ndarray
 from pandas import Index
 from xarray import DataArray
+from xarray.core.types import ErrorOptionsWithWarn
 from zarr import Array, suppress
 
 from utilities.numpy.typing import NDArray1
@@ -131,10 +132,15 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         self,
         indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
         /,
+        *,
+        drop: bool = False,
+        missing_dims: ErrorOptionsWithWarn = "raise",
         **indexer_kwargs: IselIndexer,
     ) -> DataArray:
         """Select orthogonally using integer indexes."""
-        empty = self._empty.isel(indexers, drop=False, **indexer_kwargs)
+        empty = self._empty.isel(
+            indexers, drop=drop, missing_dims=missing_dims, **indexer_kwargs
+        )
         return DataArray(
             super().isel(indexers, **indexer_kwargs),
             empty.coords,
@@ -153,10 +159,16 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         self,
         indexers: Optional[Mapping[Hashable, Any]] = None,
         /,
+        *,
+        method: Optional[str] = None,
+        tolerance: Any = None,
+        drop: bool = False,
         **indexer_kwargs: Any,
     ) -> DataArray:
         """Select orthogonally using index values."""
-        empty = self._empty.sel(indexers, **indexer_kwargs)
+        empty = self._empty.sel(
+            indexers, method=method, tolerance=tolerance, drop=drop, **indexer_kwargs
+        )
         return DataArray(
             super().sel(indexers, **indexer_kwargs), empty.coords, empty.dims, self.name
         )

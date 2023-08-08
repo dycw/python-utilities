@@ -7,7 +7,7 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from sys import _getframe, stdout
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, TypedDict, Union, cast
 
 from beartype import beartype
 from loguru import logger
@@ -143,28 +143,25 @@ def _add_sink(
 ) -> None:
     """Add a sink."""
     filter_ = {name: level.name for name, level in levels.items()}
+
+    class Kwargs(TypedDict, total=False):
+        rotation: Optional[Union[str, int, dt.time, dt.timedelta]]
+        retention: Optional[Union[str, int, dt.timedelta]]
+
     if isinstance(sink, (Path, str)):
-        _ = logger.add(
-            sink,
-            level=level.name,
-            format=_get_format(live=live),
-            filter=cast(Any, filter_),
-            colorize=live,
-            backtrace=True,
-            enqueue=True,
-            rotation=rotation,
-            retention=retention,
-        )
+        kwargs = cast(Kwargs, {"rotation": rotation, "retention": retention})
     else:
-        _ = logger.add(
-            sink,
-            level=level.name,
-            format=_get_format(live=live),
-            filter=cast(Any, filter_),
-            colorize=live,
-            backtrace=True,
-            enqueue=True,
-        )
+        kwargs = cast(Kwargs, {})
+    _ = logger.add(
+        sink,
+        level=level.name,
+        format=_get_format(live=live),
+        filter=cast(Any, filter_),
+        colorize=live,
+        backtrace=True,
+        enqueue=True,
+        **kwargs,
+    )
 
 
 @beartype

@@ -139,7 +139,7 @@ def timestamps(
 ) -> Timestamp:
     """Strategy for generating Timestamps."""
     draw = lift_draw(_draw)
-    min_value, max_value = map(draw, [min_value, max_value])
+    min_value, max_value = (draw(mv) for mv in (min_value, max_value))
     datetime = draw(datetimes_pd(min_value=min_value, max_value=max_value))
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
