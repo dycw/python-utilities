@@ -134,7 +134,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         **indexer_kwargs: IselIndexer,
     ) -> DataArray:
         """Select orthogonally using integer indexes."""
-        empty = self._empty.isel(indexers, **indexer_kwargs)
+        empty = self._empty.isel(indexers, drop=False, **indexer_kwargs)
         return DataArray(
             super().isel(indexers, **indexer_kwargs),
             empty.coords,

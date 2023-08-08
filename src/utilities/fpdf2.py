@@ -19,7 +19,7 @@ class _BasePDF(FPDF):
     def add_fixed_width_text(self, text: str, /) -> None:
         """Add a block of fixed witth text."""
         self.set_font("Courier")
-        self.write(txt=text)
+        _ = self.write(txt=text)
         self.ln()
 
     @beartype

@@ -259,7 +259,7 @@ class TestCheckColumnCollectionsEqual:
 
 
 class TestCheckColumnTypesEqual:
-    groups = [
+    groups = (
         [BIGINT, INT, INTEGER, SMALLINT, BigInteger, Integer, SmallInteger],
         [BOOLEAN, Boolean],
         [DATE, Date],
@@ -292,7 +292,7 @@ class TestCheckColumnTypesEqual:
         ],
         [TIME, Time],
         [UUID, Uuid],
-    ]
+    )
 
     @given(data=data())
     @beartype
