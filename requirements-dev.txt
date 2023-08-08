@@ -153,6 +153,8 @@ keyring==24.2.0
     # via hatch
 linkify-it-py==2.0.2
     # via panel
+llvmlite==0.40.1
+    # via numba
 lockfile==0.12.2
     # via python-daemon
 loguru==0.7.0
@@ -182,9 +184,11 @@ mypy-extensions==1.0.0
     # via black
 nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
+numba==0.57.1
+    # via dycw-utilities (pyproject.toml)
 numcodecs==0.11.0
     # via zarr
-numpy==1.25.2
+numpy==1.24.4
     # via
     #   bokeh
     #   bottleneck
@@ -192,6 +196,7 @@ numpy==1.25.2
     #   dycw-utilities (pyproject.toml)
     #   fastparquet
     #   holoviews
+    #   numba
     #   numcodecs
     #   pandas
     #   scipy
@@ -362,7 +367,7 @@ tornado==6.3.2
     # via
     #   bokeh
     #   luigi
-tqdm==4.65.0
+tqdm==4.65.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   panel
