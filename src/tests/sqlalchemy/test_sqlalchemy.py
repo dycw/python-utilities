@@ -830,7 +830,7 @@ class TestEnsureTableCreated:
     @mark.parametrize("runs", [param(1), param(2)])
     @beartype
     def test_orm(self, engine: Engine, runs: int) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -862,7 +862,7 @@ class TestEnsureTableDropped:
     @mark.parametrize("runs", [param(1), param(2)])
     @beartype
     def test_orm(self, engine: Engine, runs: int) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -892,7 +892,7 @@ class TestGetColumnNames:
 
     @beartype
     def test_orm(self) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -912,7 +912,7 @@ class TestGetColumns:
 
     @beartype
     def test_orm(self) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -968,7 +968,7 @@ class TestGetTable:
 
     @beartype
     def test_orm(self) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -988,7 +988,7 @@ class TestGetTableName:
 
     @beartype
     def test_orm(self) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -1002,7 +1002,7 @@ class TestModelToDict:
     @given(id_=integers())
     @beartype
     def test_main(self, id_: int) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
             id_ = Column(Integer, primary_key=True)
 
@@ -1012,7 +1012,7 @@ class TestModelToDict:
     @given(id_=integers())
     @beartype
     def test_explicitly_named_column(self, id_: int) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
             ID = Column(Integer, primary_key=True, name="id")
 
@@ -1134,7 +1134,7 @@ class TestSerializeEngine:
 class TestTablenameMixin:
     @beartype
     def test_main(self) -> None:
-        class Example(cast(Any, declarative_base(cls=TablenameMixin))):
+        class Example(declarative_base(cls=TablenameMixin)):
             Id = Column(Integer, primary_key=True)
 
         assert get_table_name(Example) == "example"

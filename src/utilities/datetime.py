@@ -131,7 +131,7 @@ class ParseDateTimeError(ValueError):
 
 
 @beartype
-def parse_time(time: str) -> dt.time:
+def parse_time(time: str, /) -> dt.time:
     """Parse a string into a time."""
     with suppress(ValueError):
         return dt.time.fromisoformat(time)
@@ -146,26 +146,37 @@ class ParseTimeError(ValueError):
 
 
 @beartype
-def parse_timedelta(timedelta: str) -> dt.timedelta:
+def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
-    for fmt in ["%H:%M:%S", "%H:%M:%S.%f"]:
-        try:
-            as_dt = dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
-        except ValueError:
-            pass
-        else:
-            return dt.timedelta(
-                hours=as_dt.hour,
-                minutes=as_dt.minute,
-                seconds=as_dt.second,
-                microseconds=as_dt.microsecond,
-            )
+    try:
+        as_dt = next(
+            parsed
+            for fmt in ("%H:%M:%S", "%H:%M:%S.%f")
+            if (parsed := _parse_timedelta(timedelta, fmt)) is not None
+        )
+    except StopIteration:
+        pass
+    else:
+        return dt.timedelta(
+            hours=as_dt.hour,
+            minutes=as_dt.minute,
+            seconds=as_dt.second,
+            microseconds=as_dt.microsecond,
+        )
     try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
     except ValueError:
         raise TimedeltaError(timedelta) from None
     else:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
+
+
+@beartype
+def _parse_timedelta(timedelta: str, fmt: str, /) -> Optional[dt.datetime]:
+    try:
+        return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
+    except ValueError:
+        return None
 
 
 class TimedeltaError(ValueError):

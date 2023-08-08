@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterator
+from contextlib import suppress
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
@@ -21,12 +22,9 @@ def yield_modules(
     except AttributeError:
         yield module
     else:
-        for info in walk_packages(path):
-            try:
+        with suppress(ModuleNotFoundError):
+            for info in walk_packages(path):
                 imported = import_module(f"{name}.{info.name}")
-            except ModuleNotFoundError:  # pragma: no cover
-                pass
-            else:
                 if (is_pkg := info.ispkg) and recursive:
                     yield from yield_modules(imported, recursive=recursive)
                 elif not is_pkg:

@@ -368,15 +368,22 @@ def _yield_dependencies_downstream(
     task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
-        try:
-            cloned = clone(task, task_cls)
-        except (MissingParameterException, TypeError):
-            pass
-        else:
-            if task in get_dependencies_upstream(cloned, recursive=recursive):
-                yield cloned
-                if recursive:
-                    yield from get_dependencies_downstream(cloned, recursive=recursive)
+        yield from _yield_dependencies_downstream_1(task, task_cls, recursive=recursive)
+
+
+@beartype
+def _yield_dependencies_downstream_1(
+    task: Task, task_cls: type[Task], /, *, recursive: bool = False
+) -> Iterator[Task]:
+    try:
+        cloned = clone(task, task_cls)
+    except (MissingParameterException, TypeError):
+        pass
+    else:
+        if task in get_dependencies_upstream(cloned, recursive=recursive):
+            yield cloned
+            if recursive:
+                yield from get_dependencies_downstream(cloned, recursive=recursive)
 
 
 @beartype
