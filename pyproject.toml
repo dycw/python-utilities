@@ -20,10 +20,8 @@ skip_empty = true
 [tool.coverage.html]
 directory = ".coverage/html"
 
-[tool.coverage.coverage_conditional_plugin.omit]
-"utilities/cvxpy.py" = 'not is_installed("cvxpy")'
-
 [tool.coverage.coverage_conditional_plugin.rules]
+has-no-cvxpy = 'not is_installed("cvxpy")'
 os-ne-windows = 'sys_platform != "windows"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-linux = 'sys_platform != "linux"'
