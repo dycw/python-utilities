@@ -569,9 +569,9 @@ Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 @beartype
 def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
     """Get the dialect of a database."""
-    if isinstance(  # pragma: os-ne-linux
+    if isinstance(
         dialect := engine_or_conn.dialect, mssql_dialect
-    ):
+    ):  # pragma: os-ne-linux
         return "mssql"
     if isinstance(dialect, mysql_dialect):  # pragma: os-ne-linux
         return "mysql"
