@@ -102,7 +102,7 @@ pyinstrument = [
 ]
 pypi = [
   "pypiserver[passlib] >= 1.5.2",
-  "loguru >= 0.7.0",  # loguru
+  "loguru >= 0.7.0",                  # loguru
   "typed-settings[click] >= 23.0.0",  # typed-settings
 ]
 pytest = [

@@ -47,6 +47,7 @@ from sqlalchemy.exc import (
 from sqlalchemy.orm import InstrumentedAttribute, declared_attr
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
+from typing_extensions import assert_never
 
 from utilities.bidict import snake_case_mappings
 from utilities.class_name import get_class_name
@@ -409,7 +410,9 @@ def check_engine(
     """
     dialect = get_dialect(engine)
     if (  # pragma: no cover
-        (dialect == "mssql") or (dialect == "mysql") or (dialect == "postgresql")
+        (dialect == "mssql")  # noqa: PLR1714
+        or (dialect == "mysql")
+        or (dialect == "postgresql")
     ):
         query = "select * from information_schema.tables"  # pragma: no cover
     elif dialect == "oracle":  # pragma: no cover
@@ -678,7 +681,7 @@ def redirect_to_no_such_sequence_error(
     """Redirect to the `NoSuchSequenceError`."""
     dialect = get_dialect(engine_or_conn)  # pragma: no cover
     if (  # pragma: no cover
-        dialect == "mssql"
+        dialect == "mssql"  # noqa: PLR1714
         or dialect == "mysql"
         or dialect == "postgresql"
         or dialect == "sqlite"
@@ -702,7 +705,9 @@ def redirect_to_no_such_table_error(
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
-        dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
+        dialect == "mssql"  # noqa: PLR1714
+        or dialect == "mysql"
+        or dialect == "postgresql"
     ):
         raise NotImplementedError(dialect)  # pragma: no cover
     if dialect == "oracle":  # pragma: no cover
@@ -721,7 +726,9 @@ def redirect_to_table_already_exists_error(
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
-        dialect == "mssql" or dialect == "mysql" or dialect == "postgresql"
+        dialect == "mssql"  # noqa: PLR1714
+        or dialect == "mysql"
+        or dialect == "postgresql"
     ):
         raise NotImplementedError(dialect)  # pragma: no cover
     if dialect == "oracle":  # pragma: no cover
@@ -729,7 +736,7 @@ def redirect_to_table_already_exists_error(
     elif dialect == "sqlite":
         pattern = "table .* already exists"
     else:
-        return never(dialect)  # pragma: no cover
+        assert_never(dialect)  # pragma: no cover
     return redirect_error(error, pattern, TableAlreadyExistsError)
 
 

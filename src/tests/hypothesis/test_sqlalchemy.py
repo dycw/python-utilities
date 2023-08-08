@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sets
@@ -25,7 +25,7 @@ class TestSQLiteEngines:
 
     @given(data=data(), ids=sets(integers(0, 100), min_size=1, max_size=10))
     def test_orm(self, data: DataObject, ids: set[int]) -> None:
-        Base = cast(Any, declarative_base())  # noqa: N806
+        Base = declarative_base()  # noqa: N806
 
         class Example(Base):
             __tablename__ = "example"

@@ -34,7 +34,7 @@ def setup_loguru(
     files_root: Path = Path.cwd(),
     files_env_var: Optional[str] = _FILES_ENV_VAR,
     rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.time, dt.timedelta]] = _RETENTION,
+    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
 ) -> None:
     """Set up `loguru` logging."""
     logger.remove()
@@ -139,26 +139,32 @@ def _add_sink(
     *,
     live: bool,
     rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.time, dt.timedelta]] = _RETENTION,
+    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
 ) -> None:
     """Add a sink."""
     filter_ = {name: level.name for name, level in levels.items()}
     if isinstance(sink, (Path, str)):
-        rotation_kwargs = {"rotation": rotation}
-        retention_kwargs = {"retention": retention}
+        _ = logger.add(
+            sink,
+            level=level.name,
+            format=_get_format(live=live),
+            filter=cast(Any, filter_),
+            colorize=live,
+            backtrace=True,
+            enqueue=True,
+            rotation=rotation,
+            retention=retention,
+        )
     else:
-        rotation_kwargs = retention_kwargs = {}
-    _ = logger.add(
-        sink,
-        level=level.name,
-        format=_get_format(live=live),
-        filter=cast(Any, filter_),
-        colorize=live,
-        backtrace=True,
-        enqueue=True,
-        **rotation_kwargs,
-        **retention_kwargs,
-    )
+        _ = logger.add(
+            sink,
+            level=level.name,
+            format=_get_format(live=live),
+            filter=cast(Any, filter_),
+            colorize=live,
+            backtrace=True,
+            enqueue=True,
+        )
 
 
 @beartype
@@ -197,7 +203,7 @@ def _add_file_sink(
     *,
     live: bool,
     rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.time, dt.timedelta]] = _RETENTION,
+    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
 ) -> None:
     """Add a file sink."""
     _add_sink(
@@ -218,7 +224,7 @@ def _add_live_file_sink(
     /,
     *,
     rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.time, dt.timedelta]] = _RETENTION,
+    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
 ) -> None:
     """Add a live file sink."""
     _add_file_sink(
