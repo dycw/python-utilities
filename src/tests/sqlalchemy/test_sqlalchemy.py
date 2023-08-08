@@ -941,9 +941,15 @@ class TestGetDialect:
                 "mssql",
                 marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
             ),
-            param("mysql://scott:tiger@localhost/foo", "mysql"),
+            param("mysql://scott:tiger@localhost/foo", "mysql",
+
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+                  ),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
-            param("postgresql://scott:tiger@localhost/mydatabase", "postgresql"),
+            param("postgresql://scott:tiger@localhost/mydatabase", "postgresql",
+
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+                  ),
         ],
     )
     @beartype
