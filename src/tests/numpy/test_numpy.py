@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union
 
 from beartype import beartype
 from hypothesis import assume, given
@@ -121,7 +121,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.numpy.typing import NDArray2, NDArrayF1, NDArrayF2, NDArrayI2
+from utilities.numpy.typing import NDArrayF1, NDArrayF2, NDArrayI2
 
 
 class TestArrayIndexer:
@@ -1189,7 +1189,7 @@ class TestIsNonSingular:
     @mark.parametrize("dtype", [param(float), param(int)])
     @beartype
     def test_main(self, array: NDArrayF2, dtype: Any, expected: bool) -> None:
-        assert is_non_singular(cast(NDArray2, array.astype(dtype))) is expected
+        assert is_non_singular(array.astype(dtype)) is expected
 
     @beartype
     def test_overflow(self) -> None:
@@ -1211,7 +1211,7 @@ class TestIsPositiveSemiDefinite:
     def test_main(
         self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
     ) -> None:
-        assert is_positive_semidefinite(cast(NDArray2, array.astype(dtype))) is expected
+        assert is_positive_semidefinite(array.astype(dtype)) is expected
 
     @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
     @beartype
@@ -1233,7 +1233,7 @@ class TestIsSymmetric:
     def test_main(
         self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
     ) -> None:
-        assert is_symmetric(cast(NDArray2, array.astype(dtype))) is expected
+        assert is_symmetric(array.astype(dtype)) is expected
 
 
 class TestMaximumMinimum:

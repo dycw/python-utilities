@@ -156,7 +156,7 @@ class TestInsertItems:
 
     @given(data=data(), engine=sqlite_engines())
     def test_model(self, data: DataObject, engine: Engine) -> None:
-        class Example(cast(Any, declarative_base())):
+        class Example(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)

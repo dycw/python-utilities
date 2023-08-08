@@ -1,9 +1,8 @@
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 from beartype import beartype
 from holoviews import Curve
 from holoviews.plotting import bokeh
-from xarray import DataArray
 
 from utilities.holoviews import apply_opts
 from utilities.numpy import has_dtype
@@ -24,7 +23,6 @@ def plot_curve(
     """Plot a 1D array as a curve."""
     if has_dtype(array, bool):
         return plot_curve(array.astype(int), label=label, aspect=aspect)
-    array = cast(DataArray, array)
     (kdim,) = array.dims
     try:
         vdim = ensure_str(array.name)

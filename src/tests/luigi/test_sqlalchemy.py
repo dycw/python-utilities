@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers
@@ -49,7 +49,7 @@ class TestTableParameter:
         class ExampleTask(namespace_mixin, Task):
             table = TableParameter()
 
-        class ExampleTable(cast(Any, declarative_base())):
+        class ExampleTable(declarative_base()):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
