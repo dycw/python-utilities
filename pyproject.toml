@@ -194,11 +194,11 @@ dev = [
   "freezegun",
   "hatch",
   "hypothesis-sqlalchemy",
-  "mysqlclient",
+  "mysqlclient; sys_platform == 'Linux'",
   "nox",
   "pip-tools",
-  "psycopg2-binary",
-  "pyodbc",
+  "psycopg2-binary; sys_platform == 'Linux'",
+  "pyodbc; sys_platform == 'Linux'",
   "ruff",
 ]
 
