@@ -5,7 +5,7 @@ import numpy as np
 from beartype import beartype
 from numpy import array
 from numpy.testing import assert_equal
-from pytest import mark, param, raises
+from pytest import mark, param, raises, skip
 
 from utilities.numpy.typing import NDArrayF
 
@@ -30,8 +30,8 @@ try:
         subtract,
         sum_,
     )
-except ModuleNotFoundError:  # noqa: TRY302 # pragma: has-no-cvxpy
-    raise
+except ModuleNotFoundError:  # pragma: has-no-cvxpy
+    skip(reason="Linux only", allow_module_level=True)
 else:
 
     @cache
