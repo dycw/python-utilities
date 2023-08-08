@@ -7,7 +7,7 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from string import ascii_letters, printable
-from typing import Any, Optional, Protocol, TypeVar, cast, overload
+from typing import Any, Optional, Protocol, TypedDict, TypeVar, cast, overload
 
 from beartype import beartype
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -201,6 +201,10 @@ def setup_hypothesis_profiles(
             yield Phase.shrink
 
     phases = set(yield_phases())
+
+    class Kwargs(TypedDict, total=False):
+        verbosity: Verbosity
+
     for name, default_max_examples, verbosity in [
         ("dev", 10, None),
         ("default", 100, None),
@@ -213,7 +217,9 @@ def setup_hypothesis_profiles(
             max_examples_use = default_max_examples
         else:
             max_examples_use = int(env_var)
-        verbosity_use = {} if verbosity is None else {"verbosity": verbosity}
+        verbosity_use = cast(
+            Kwargs, {} if verbosity is None else {"verbosity": verbosity}
+        )
         settings.register_profile(
             name,
             max_examples=max_examples_use,

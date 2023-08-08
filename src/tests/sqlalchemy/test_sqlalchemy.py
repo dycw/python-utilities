@@ -1,7 +1,7 @@
 import enum
 from enum import auto
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, TypedDict, Union, cast
 
 import sqlalchemy
 from beartype import beartype
@@ -724,11 +724,16 @@ class TestCheckTableOrColumnNamesEqual:
     @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
     @beartype
     def test_orm(self, name: Optional[str], expected: str) -> None:
+        class Kwargs(TypedDict, total=False):
+            name: str
+
         class Example(declarative_base()):
             __tablename__ = "example"
 
             Id = Column(
-                Integer, primary_key=True, **({} if name is None else {"name": name})
+                Integer,
+                primary_key=True,
+                **(cast(Kwargs, {} if name is None else {"name": name})),
             )
 
         _check_table_or_column_names_equal(Example.Id.name, expected)

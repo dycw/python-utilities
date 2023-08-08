@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, TypedDict, Union, cast
 from warnings import catch_warnings, filterwarnings
 
 from beartype import beartype
@@ -59,7 +59,10 @@ def _handle_warnings_1(
     message: str = "",
     category: Optional[type[Warning]] = None,
 ) -> Iterator[None]:
+    class Kwargs(TypedDict, total=False):
+        category: type[Warning]
+
     with catch_warnings():
-        kwargs = {} if category is None else {"category": category}
+        kwargs = cast(Kwargs, {} if category is None else {"category": category})
         filterwarnings(action, message=message, **kwargs)
         yield
