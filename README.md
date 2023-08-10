@@ -35,10 +35,6 @@ Miscellaneous Python utilities.
 - `pip install dycw-utilities[xarray]`
 - `pip install dycw-utilities[zarr]`
 
-or
-
-- `pip install dycw-utilities[core]`
-
 ### Dev packages
 
 - `pip install dycw-utilities[hatch]`

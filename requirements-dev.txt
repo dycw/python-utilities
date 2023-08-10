@@ -246,7 +246,7 @@ pillow==10.0.0
     # via
     #   bokeh
     #   fpdf2
-pip-tools==7.2.0
+pip-tools==7.3.0
     # via dycw-utilities (pyproject.toml)
 platformdirs==3.10.0
     # via
@@ -325,7 +325,7 @@ requests==2.31.0
     # via panel
 rich==13.5.2
     # via hatch
-ruff==0.0.282
+ruff==0.0.284
     # via dycw-utilities (pyproject.toml)
 scipy==1.11.1
     # via dycw-utilities (pyproject.toml)
@@ -367,7 +367,7 @@ tornado==6.3.2
     # via
     #   bokeh
     #   luigi
-tqdm==4.65.1
+tqdm==4.66.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   panel

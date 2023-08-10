@@ -26,7 +26,7 @@ class Timer:
         return self
 
     @beartype
-    def __exit__(self, *_: Any) -> bool:
+    def __exit__(self, *_: object) -> bool:
         self._end = default_timer()
         return False
 
@@ -44,7 +44,7 @@ class Timer:
         return str(self.timedelta)
 
     @beartype
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return self._compare(other, eq)
 
     @beartype
@@ -64,7 +64,7 @@ class Timer:
         return self._compare(other, lt)
 
     @beartype
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return self._compare(other, ne)
 
     @property
