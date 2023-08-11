@@ -22,6 +22,8 @@ except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Function
     from typing import Any as Parser
 
+    mark = skip = None
+
 
 @beartype
 def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
@@ -59,7 +61,8 @@ def add_pytest_collection_modifyitems(
         if len(missing & set(opts_on_item)) >= 1:
             flags = [f"--{opt}" for opt in opts_on_item]
             joined = " ".join(flags)
-            _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
+            if mark is not None:  # pragma: no cover
+                _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
 @beartype
@@ -100,7 +103,7 @@ def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
             else:
                 prev = None
             now = dt.datetime.now(tz=UTC).timestamp()
-            if (prev is not None) and ((now - prev) < duration):
+            if (skip is not None) and (prev is not None) and ((now - prev) < duration):
                 skip(reason=f"{test} throttled")
             with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(str(now))
