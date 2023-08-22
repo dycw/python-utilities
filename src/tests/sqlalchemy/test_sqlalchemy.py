@@ -440,7 +440,7 @@ class TestCheckColumnTypesEqual:
     )
     @beartype
     def test_float_precision(
-        self, cls: type[Union[Float, Numeric]], precisions: list[Optional[int]]
+        self, cls: Union[type[Float], type[Numeric]], precisions: list[Optional[int]]
     ) -> None:
         precision_x, precision_y = precisions
         x, y = (cls(precision=p) for p in precisions)
@@ -455,7 +455,7 @@ class TestCheckColumnTypesEqual:
     )
     @beartype
     def test_float_asdecimal(
-        self, cls: type[Union[Float, Numeric]], asdecimals: list[bool]
+        self, cls: Union[type[Float], type[Numeric]], asdecimals: list[bool]
     ) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (cls(asdecimal=cast(Any, a)) for a in asdecimals)
@@ -471,7 +471,9 @@ class TestCheckColumnTypesEqual:
     )
     @beartype
     def test_float_dec_ret_scale(
-        self, cls: type[Union[Float, Numeric]], dec_ret_scales: list[Optional[int]]
+        self,
+        cls: Union[type[Float], type[Numeric]],
+        dec_ret_scales: list[Optional[int]],
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (cls(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -545,7 +547,7 @@ class TestCheckColumnTypesEqual:
     @beartype
     def test_string_length(
         self,
-        cls: type[Union[String, Unicode, UnicodeText]],
+        cls: Union[type[String], type[Unicode], type[UnicodeText]],
         lengths: list[Optional[int]],
     ) -> None:
         length_x, length_y = lengths
