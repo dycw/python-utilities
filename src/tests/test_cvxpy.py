@@ -39,7 +39,7 @@ from utilities.cvxpy import (
 @cache
 @beartype
 def _get_variable(
-    objective: Union[type[Maximize], type[Minimize]], /, *, array: bool = False
+    objective: type[Union[Maximize, Minimize]], /, *, array: bool = False
 ) -> Variable:
     if array:
         var = Variable(2)
@@ -74,7 +74,7 @@ class TestAbs:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
+    def test_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(abs_(var).value, abs_(var.value))
 
@@ -104,7 +104,7 @@ class TestAdd:
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
-        objective: Union[type[Maximize], type[Minimize]],
+        objective: type[Union[Maximize, Minimize]],
     ) -> None:
         var = _get_variable(objective)
         assert_equal(add(x, var).value, add(x, var.value))
@@ -115,8 +115,8 @@ class TestAdd:
     @beartype
     def test_two_expressions(
         self,
-        objective1: Union[type[Maximize], type[Minimize]],
-        objective2: Union[type[Maximize], type[Minimize]],
+        objective1: type[Union[Maximize, Minimize]],
+        objective2: type[Union[Maximize, Minimize]],
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
@@ -148,7 +148,7 @@ class TestDivide:
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
-        objective: Union[type[Maximize], type[Minimize]],
+        objective: type[Union[Maximize, Minimize]],
     ) -> None:
         var = _get_variable(objective)
         assert_equal(divide(x, var).value, divide(x, var.value))
@@ -159,8 +159,8 @@ class TestDivide:
     @beartype
     def test_two_expressions(
         self,
-        objective1: Union[type[Maximize], type[Minimize]],
-        objective2: Union[type[Maximize], type[Minimize]],
+        objective1: type[Union[Maximize, Minimize]],
+        objective2: type[Union[Maximize, Minimize]],
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
@@ -192,7 +192,7 @@ class TestMultiply:
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
-        objective: Union[type[Maximize], type[Minimize]],
+        objective: type[Union[Maximize, Minimize]],
     ) -> None:
         var = _get_variable(objective)
         assert_equal(multiply(x, var).value, multiply(x, var.value))
@@ -203,8 +203,8 @@ class TestMultiply:
     @beartype
     def test_two_expressions(
         self,
-        objective1: Union[type[Maximize], type[Minimize]],
-        objective2: Union[type[Maximize], type[Minimize]],
+        objective1: type[Union[Maximize, Minimize]],
+        objective2: type[Union[Maximize, Minimize]],
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
@@ -231,7 +231,7 @@ class TestNeg:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
+    def test_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(neg(var).value, neg(var.value))
 
@@ -243,7 +243,7 @@ class TestNorm:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
+    def test_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective, array=True)
         assert_equal(norm(var).value, norm(var.value))
 
@@ -268,7 +268,7 @@ class TestPos:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
+    def test_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(pos(var).value, pos(var.value))
 
@@ -295,9 +295,7 @@ class TestPower:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_one_expression(
-        self, objective: Union[type[Maximize], type[Minimize]]
-    ) -> None:
+    def test_one_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective)
         assert_equal(power(var, 2.0).value, power(var.value, 2.0))
 
@@ -311,7 +309,7 @@ class TestQuadForm:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     @beartype
-    def test_expression(self, objective: Union[type[Maximize], type[Minimize]]) -> None:
+    def test_expression(self, objective: type[Union[Maximize, Minimize]]) -> None:
         var = _get_variable(objective, array=True)
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
         assert_equal(quad_form(var, P).value, quad_form(var.value, P))
@@ -388,7 +386,7 @@ class TestSubtract:
     def test_one_expression(
         self,
         x: Union[float, NDArrayF, Expression],
-        objective: Union[type[Maximize], type[Minimize]],
+        objective: type[Union[Maximize, Minimize]],
     ) -> None:
         var = _get_variable(objective)
         assert_equal(subtract(x, var).value, subtract(x, var.value))
@@ -399,8 +397,8 @@ class TestSubtract:
     @beartype
     def test_two_expressions(
         self,
-        objective1: Union[type[Maximize], type[Minimize]],
-        objective2: Union[type[Maximize], type[Minimize]],
+        objective1: type[Union[Maximize, Minimize]],
+        objective2: type[Union[Maximize, Minimize]],
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
