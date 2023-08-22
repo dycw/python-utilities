@@ -279,6 +279,8 @@ ignore = [
   "PLR0913", # refactor, too-many-arguments
   "PT012", # flake8-pytest-style, raises-with-multiple-statements
   "PT013", # flake8-pytest-style, incorrect-pytest-import
+  "PYI041", # flake8-pyi, redundant-numeric-union
+  "PYI055", # flake8-pyi, unnecessary-type-union
   "TCH001", # flake8-type-checking, typing-only-first-party-import
   "TCH002", # flake8-type-checking, typing-only-third-party-import
   "TCH003", # flake8-type-checking, typing-only-standard-library-import
