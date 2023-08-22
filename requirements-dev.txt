@@ -34,7 +34,7 @@ black==23.7.0
     # via dycw-utilities (pyproject.toml)
 bleach==6.0.0
     # via panel
-bokeh==3.2.1
+bokeh==3.2.2
     # via panel
 bottleneck==1.3.7
     # via dycw-utilities (pyproject.toml)
@@ -54,7 +54,7 @@ cffi==1.15.1
     # via cryptography
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via
     #   black
     #   dycw-utilities (pyproject.toml)
@@ -68,7 +68,7 @@ colorlog==6.7.0
     # via nox
 contourpy==1.1.0
     # via bokeh
-coverage[toml]==7.2.7
+coverage[toml]==7.3.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -90,13 +90,13 @@ editables==0.5
     # via hatchling
 entrypoints==0.4
     # via numcodecs
-exceptiongroup==1.1.2
+exceptiongroup==1.1.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   trio-websocket
 execnet==2.0.2
     # via pytest-xdist
-fastapi==0.101.0
+fastapi==0.101.1
     # via dycw-utilities (pyproject.toml)
 fasteners==0.18
     # via zarr
@@ -104,7 +104,7 @@ fastparquet==2023.7.0
     # via dycw-utilities (pyproject.toml)
 filelock==3.12.2
     # via virtualenv
-fonttools==4.42.0
+fonttools==4.42.1
     # via fpdf2
 fpdf2==2.7.5
     # via dycw-utilities (pyproject.toml)
@@ -120,7 +120,7 @@ hatch==1.7.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.18.0
     # via hatch
-holoviews==1.17.0
+holoviews==1.17.1
     # via dycw-utilities (pyproject.toml)
 httpcore==0.17.3
     # via httpx
@@ -128,7 +128,7 @@ httpx==0.24.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.82.3
+hypothesis==6.82.6
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -269,9 +269,9 @@ pycparser==2.21
     # via cffi
 pyct==0.5.0
     # via colorcet
-pydantic==2.1.1
+pydantic==2.2.1
     # via fastapi
-pydantic-core==2.4.0
+pydantic-core==2.6.1
     # via pydantic
 pygments==2.16.1
     # via rich
@@ -294,13 +294,13 @@ pytest==7.4.0
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-check==2.2.0
+pytest-check==2.2.1
     # via dycw-utilities (pyproject.toml)
 pytest-cov==4.1.0
     # via dycw-utilities (pyproject.toml)
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
-pytest-randomly==3.13.0
+pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==12.0
     # via dycw-utilities (pyproject.toml)
@@ -315,7 +315,7 @@ python-dateutil==2.8.2
     #   pandas
 pytz==2023.3
     # via pandas
-pyviz-comms==2.3.2
+pyviz-comms==3.0.0
     # via
     #   holoviews
     #   panel
@@ -325,15 +325,15 @@ requests==2.31.0
     # via panel
 rich==13.5.2
     # via hatch
-ruff==0.0.284
+ruff==0.0.285
     # via dycw-utilities (pyproject.toml)
-scipy==1.11.1
+scipy==1.11.2
     # via dycw-utilities (pyproject.toml)
 selenium==4.11.2
     # via dycw-utilities (pyproject.toml)
 semver==3.0.1
     # via dycw-utilities (pyproject.toml)
-shellingham==1.5.0.post1
+shellingham==1.5.3
     # via hatch
 six==1.16.0
     # via
@@ -349,13 +349,13 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   trio
-sqlalchemy==2.0.19
+sqlalchemy==2.0.20
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
 starlette==0.27.0
     # via fastapi
-tenacity==8.2.2
+tenacity==8.2.3
     # via luigi
 timeout-decorator==0.5.0
     # via dycw-utilities (pyproject.toml)
@@ -363,7 +363,7 @@ tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.1
     # via hatch
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   bokeh
     #   luigi
@@ -401,7 +401,7 @@ urllib3[socks]==2.0.4
     #   selenium
 userpath==1.9.0
     # via hatch
-virtualenv==20.24.2
+virtualenv==20.24.3
     # via
     #   hatch
     #   nox
@@ -411,13 +411,13 @@ wheel==0.41.1
     # via pip-tools
 wsproto==1.2.0
     # via trio-websocket
-xarray==2023.7.0
+xarray==2023.8.0
     # via dycw-utilities (pyproject.toml)
 xyzservices==2023.7.0
     # via
     #   bokeh
     #   panel
-zarr==2.16.0
+zarr==2.16.1
     # via dycw-utilities (pyproject.toml)
 zipp==3.16.2
     # via importlib-metadata
@@ -427,7 +427,7 @@ pip==23.2.1
     # via
     #   pip-tools
     #   pypiserver
-setuptools==68.0.0
+setuptools==68.1.2
     # via
     #   pip-tools
     #   python-daemon
