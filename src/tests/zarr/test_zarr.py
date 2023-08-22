@@ -174,7 +174,6 @@ class TestNDArrayWithIndexes:
         ("index", "indexer"),
         [
             param(array(["x0", "x1"]), {"x": "x2"}),
-            param(array(["x0", "x1"]), {"x": "x2"}),
             param(array(["x0", "x0"]), {"x": "x0"}),
             param(array(["x0", "x0"]), {"x": ["x0"]}),
         ],

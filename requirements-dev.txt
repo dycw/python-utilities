@@ -407,7 +407,7 @@ virtualenv==20.24.3
     #   nox
 webencodings==0.5.1
     # via bleach
-wheel==0.41.1
+wheel==0.41.2
     # via pip-tools
 wsproto==1.2.0
     # via trio-websocket
