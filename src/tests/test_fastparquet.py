@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal, Union, cast
+from typing import Any, Literal, cast
 
 from fastparquet import write
 from hypothesis import assume, given
@@ -142,14 +142,13 @@ class TestReadAndWriteParquet:
         write_parquet(df, path := root.joinpath("df.parq"))
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
-        read = cast(
-            Union[Series[Any], DataFrame],
-            read_parquet(path, head=head, columns=columns),
-        )
+        read = read_parquet(path, head=head, columns=columns)
         if as_series:
-            assert_series_equal(cast(Series[Any], read), df["value"])
+            assert isinstance(read, Series)
+            assert_series_equal(read, df["value"])
         else:
-            assert_frame_equal(cast(DataFrame, read), df)
+            assert isinstance(read, DataFrame)
+            assert_frame_equal(read, df)
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
     def test_writing_iterable_of_dfs(

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Literal, Optional, Union, cast, overload
 
 from fastparquet import ParquetFile, write
@@ -13,13 +13,14 @@ from utilities.math.typing import IntNonNeg
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import Int64, check_range_index, string
 from utilities.pathlib import PathLike
+from utilities.text import ensure_str
 
 _Compression = Literal["gzip", ",snappy", "brotli", "lz4", "zstandard"]
-Compression = Union[_Compression, Mapping[Hashable, Optional[_Compression]]]
+Compression = Union[_Compression, Mapping[str, Optional[_Compression]]]
 _Op = Literal["==", "=", ">", ">=", "<", "<=", "!=", "in", "not in"]
-_Filter = tuple[Hashable, _Op, Any]
+_Filter = tuple[str, _Op, Any]
 Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
-_PARQUET_DTYPES = {bool, cast(Hashable, datetime64ns), float, Int64, string}
+_PARQUET_DTYPES = {bool, cast(str, datetime64ns), float, Int64, string}
 
 
 def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
@@ -29,18 +30,18 @@ def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
     )
 
 
-def get_columns(path: PathLike, /) -> list[Hashable]:
+def get_columns(path: PathLike, /) -> list[str]:
     """Get the columns in a Parquet file."""
     return _get_parquet_file(path).columns
 
 
-def get_dtypes(path: PathLike, /) -> dict[Hashable, Any]:
+def get_dtypes(path: PathLike, /) -> dict[str, Any]:
     """Get the dtypes in a Parquet file.
 
     Note that we store strings as categoricals, so we will report `string`
     instead of category here.
     """
-    dtypes = cast(dict[Hashable, Any], _get_parquet_file(path).dtypes)
+    dtypes = _get_parquet_file(path).dtypes
     return {k: string if v == object else v for k, v in dtypes.items()}
 
 
@@ -56,7 +57,7 @@ def read_parquet(
     *,
     head: IntNonNeg | None = None,
     row_group: IntNonNeg | None = None,
-    columns: Hashable,
+    columns: str,
     filters: Filters | None = None,
 ) -> Series[Any]:
     ...
@@ -69,7 +70,7 @@ def read_parquet(
     *,
     head: IntNonNeg | None = None,
     row_group: IntNonNeg | None = None,
-    columns: Sequence[Hashable] | None = None,
+    columns: list[str] | None = None,
     filters: Filters | None = None,
 ) -> DataFrame:
     ...
@@ -81,7 +82,7 @@ def read_parquet(
     *,
     head: IntNonNeg | None = None,
     row_group: IntNonNeg | None = None,
-    columns: Hashable | Sequence[Hashable] | None = None,
+    columns: str | list[str] | None = None,
     filters: Filters | None = None,
 ) -> Series[Any] | DataFrame:
     """Read a Parquet file into a Series/DataFrame."""
@@ -135,9 +136,9 @@ def write_parquet(
     path: PathLike,
     /,
     *,
-    extra_dtypes: Mapping[Hashable, Any] | None = None,
+    extra_dtypes: Mapping[str, Any] | None = None,
     overwrite: bool = False,
-    row_group_offsets: IntNonNeg | list[IntNonNeg] | None = None,
+    row_group_offsets: int | Sequence[int] | None = None,
     compression: Compression | None = "gzip",
 ) -> None:
     """Atomically write a DataFrame to a Parquet file."""
@@ -167,8 +168,8 @@ def _write_parquet_core(
     path: PathLike,
     /,
     *,
-    extra_dtypes: Mapping[Hashable, Any] | None = None,
-    row_group_offsets: IntNonNeg | list[IntNonNeg] | None = None,
+    extra_dtypes: Mapping[str, Any] | None = None,
+    row_group_offsets: int | Sequence[int] | None = None,
     compression: Compression | None = "gzip",
     append: bool = False,
 ) -> None:
@@ -181,7 +182,7 @@ def _write_parquet_core(
         allowed_dtypes = _PARQUET_DTYPES
         if extra_dtypes is not None:
             try:
-                extra_dtype = extra_dtypes[name]
+                extra_dtype = extra_dtypes[ensure_str(name)]
             except KeyError:
                 pass
             else:
