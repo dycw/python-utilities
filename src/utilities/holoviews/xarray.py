@@ -22,7 +22,9 @@ def plot_curve(
 ) -> Curve:
     """Plot a 1D array as a curve."""
     if has_dtype(array, bool):
-        return plot_curve(array.astype(int), label=label, smooth=smooth, aspect=aspect)
+        return plot_curve(
+            array.astype(int), label=label, smooth=smooth, aspect=aspect
+        )
     (kdim,) = array.dims
     try:
         vdim = ensure_str(array.name)

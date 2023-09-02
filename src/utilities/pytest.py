@@ -61,7 +61,9 @@ def add_pytest_collection_modifyitems(
                 _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
-def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:
+def add_pytest_configure(
+    config: Config, options: Iterable[tuple[str, str]], /
+) -> None:
     """Add the `--slow`, etc markers to pytest.
 
     Usage:
@@ -94,9 +96,15 @@ def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
             else:
                 prev = None
             now = dt.datetime.now(tz=UTC).timestamp()
-            if (skip is not None) and (prev is not None) and ((now - prev) < duration):
+            if (
+                (skip is not None)
+                and (prev is not None)
+                and ((now - prev) < duration)
+            ):
                 skip(reason=f"{test} throttled")
-            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
+            with writer(path, overwrite=True) as temp, temp.open(
+                mode="w"
+            ) as fh:
                 _ = fh.write(str(now))
             return func(*args, **kwargs)
 

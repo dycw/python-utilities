@@ -18,7 +18,9 @@ class _Defaults:
     parallelism: Literal["processes", "threads"] = "processes"
     n_jobs: Optional[int] = None
     bounded: bool = False
-    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate"
+    exception_behaviour: Literal[
+        "ignore", "immediate", "deferred"
+    ] = "immediate"
 
 
 _PQDM_DEFAULTS = _Defaults()
@@ -229,7 +231,9 @@ def _get_desc(
         try:
             desc_use = func.__name__
         except AttributeError:
-            desc_use = get_class_name(func) if isinstance(func, object) else None
+            desc_use = (
+                get_class_name(func) if isinstance(func, object) else None
+            )
     else:
         desc_use = desc
     return {} if desc_use is None else {"desc": desc_use}

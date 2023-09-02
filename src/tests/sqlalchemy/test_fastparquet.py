@@ -37,6 +37,8 @@ class TestSelectToParquet:
         ensure_table_created(Example, engine)
         insert_items([(rows, Example)], engine)
         sel = select(Example.Id)
-        select_to_parquet(sel, engine, path := root.joinpath("df.parq"), stream=stream)
+        select_to_parquet(
+            sel, engine, path := root.joinpath("df.parq"), stream=stream
+        )
         dtypes = get_dtypes(path)
         assert dtypes == {"Id": Int64}

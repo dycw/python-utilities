@@ -176,7 +176,9 @@ class NDArrayWithIndexes:
     @property
     def indexes(self) -> dict[Hashable, NDArray1]:
         """The indexes of the underlying array."""
-        return {dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)}
+        return {
+            dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)
+        }
 
     @property
     def is_scalar(self) -> bool:
@@ -277,7 +279,9 @@ class NDArrayWithIndexes:
         if has_dtype(index, (datetime64D, datetime64Y)):
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
         elif has_dtype(index, datetime64ns):
-            indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
+            indexer = self._cast_date_indexer(
+                indexer, index.dtype, ensure_datetime
+            )
         if is_iterable_not_str(indexer):
             bool_indexer = isin(index, indexer)
             if sum(bool_indexer) == len(indexer):

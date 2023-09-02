@@ -36,7 +36,9 @@ class FieldTypeError(TypeError):
 
 def make_dict_field() -> Any:
     """Create a `__dict__` field."""
-    return field(default=Factory(cast(Any, dict)), init=False, repr=False, eq=False)
+    return field(
+        default=Factory(cast(Any, dict)), init=False, repr=False, eq=False
+    )
 
 
 class DictMixin:

@@ -31,7 +31,9 @@ class TestGetDesc:
             def __call__(self) -> None:
                 return
 
-        assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}
+        assert _get_desc(sentinel, Example()) == {
+            "desc": get_class_name(Example)
+        }
 
 
 class TestPMap:

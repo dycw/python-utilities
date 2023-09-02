@@ -68,7 +68,9 @@ def bool_data_arrays(
     indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
     shape = tuple(map(len, indexes_.values()))
     values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
+    return DataArray(
+        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
+    )
 
 
 @composite
@@ -107,7 +109,9 @@ def float_data_arrays(
             unique=unique,
         )
     )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
+    return DataArray(
+        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
+    )
 
 
 @composite
@@ -136,7 +140,9 @@ def int_data_arrays(
             unique=unique,
         )
     )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
+    return DataArray(
+        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
+    )
 
 
 @composite
@@ -167,7 +173,9 @@ def str_data_arrays(
             unique=unique,
         )
     )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
+    return DataArray(
+        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
+    )
 
 
 @composite

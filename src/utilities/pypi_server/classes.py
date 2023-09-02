@@ -16,5 +16,9 @@ class Config:
         click={"param_decls": ("-pk", "--path-packages")},
     )
     port: int = option(default=1461, click={"param_decls": ("-po", "--port")})
-    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
-    exist_ok: bool = option(default=False, click={"param_decls": ("-e", "--exist-ok")})
+    dry_run: bool = option(
+        default=False, click={"param_decls": ("-dr", "--dry-run")}
+    )
+    exist_ok: bool = option(
+        default=False, click={"param_decls": ("-e", "--exist-ok")}
+    )

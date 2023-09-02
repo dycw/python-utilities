@@ -145,7 +145,9 @@ class TestDatetime64DIndexes:
         sort: bool,
     ) -> None:
         index = data.draw(
-            datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
+            datetime64D_indexes(
+                n=n, valid_dates=valid_dates, unique=unique, sort=sort
+            )
         )
         assert index.dtype == datetime64D
         assert len(index) == n
@@ -215,7 +217,9 @@ class TestDatetime64Kinds:
 
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
-    def test_main(self, data: DataObject, kind: Optional[Datetime64Kind]) -> None:
+    def test_main(
+        self, data: DataObject, kind: Optional[Datetime64Kind]
+    ) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
             assert datetime64_unit_to_kind(unit) == kind
@@ -310,7 +314,9 @@ class TestDatetime64s:
                 assert date <= max_value
 
     @given(data=data(), unit=datetime64_units())
-    def test_valid_dates_error(self, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_valid_dates_error(
+        self, data: DataObject, unit: Datetime64Unit
+    ) -> None:
         _ = assume(unit != "D")
         with raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_dates=True))
@@ -402,9 +408,13 @@ class TestFloatArrays:
         assert array.dtype == float
         assert array.shape == shape
         if min_value is not None:
-            assert ((isfinite(array) & (array >= min_value)) | ~isfinite(array)).all()
+            assert (
+                (isfinite(array) & (array >= min_value)) | ~isfinite(array)
+            ).all()
         if max_value is not None:
-            assert ((isfinite(array) & (array <= max_value)) | ~isfinite(array)).all()
+            assert (
+                (isfinite(array) & (array <= max_value)) | ~isfinite(array)
+            ).all()
         if not allow_nan:
             assert (~isnan(array)).all()
         if not allow_inf:
@@ -454,7 +464,9 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
+    @given(
+        data=data(), min_value=int32s() | none(), max_value=int32s() | none()
+    )
     def test_main(
         self,
         data: DataObject,
@@ -472,7 +484,9 @@ class TestInt32s:
 
 
 class TestInt64s:
-    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    @given(
+        data=data(), min_value=int64s() | none(), max_value=int64s() | none()
+    )
     def test_main(
         self,
         data: DataObject,
@@ -532,7 +546,9 @@ class TestStrArrays:
 
 
 class TestUInt32s:
-    @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
+    @given(
+        data=data(), min_value=uint32s() | none(), max_value=uint32s() | none()
+    )
     def test_main(
         self,
         data: DataObject,
@@ -550,7 +566,9 @@ class TestUInt32s:
 
 
 class TestUInt64s:
-    @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
+    @given(
+        data=data(), min_value=uint64s() | none(), max_value=uint64s() | none()
+    )
     def test_main(
         self,
         data: DataObject,

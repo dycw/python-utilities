@@ -176,7 +176,9 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff_zzzz(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss_fff_zzzz(
+        self, datetime: dt.datetime, fmt: str
+    ) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -203,9 +205,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
-            maybe_sub_pct_y
-        ),
+        fmt=sampled_from(
+            ["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)

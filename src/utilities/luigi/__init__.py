@@ -105,10 +105,14 @@ class EnumParameter(Parameter, Generic[_E]):
         self._case_sensitive = case_sensitive
 
     def normalize(self, member: _E | str, /) -> _E:
-        return ensure_enum(self._enum, member, case_sensitive=self._case_sensitive)
+        return ensure_enum(
+            self._enum, member, case_sensitive=self._case_sensitive
+        )
 
     def parse(self, member: str, /) -> _E:
-        return parse_enum(self._enum, member, case_sensitive=self._case_sensitive)
+        return parse_enum(
+            self._enum, member, case_sensitive=self._case_sensitive
+        )
 
     def serialize(self, member: _E, /) -> str:
         return member.name
@@ -332,14 +336,18 @@ def get_dependencies_downstream(
     task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
-    return frozenset(_yield_dependencies_downstream(task, cls=cls, recursive=recursive))
+    return frozenset(
+        _yield_dependencies_downstream(task, cls=cls, recursive=recursive)
+    )
 
 
 def _yield_dependencies_downstream(
     task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
-        yield from _yield_dependencies_downstream_1(task, task_cls, recursive=recursive)
+        yield from _yield_dependencies_downstream_1(
+            task, task_cls, recursive=recursive
+        )
 
 
 def _yield_dependencies_downstream_1(
@@ -353,7 +361,9 @@ def _yield_dependencies_downstream_1(
         if task in get_dependencies_upstream(cloned, recursive=recursive):
             yield cloned
             if recursive:
-                yield from get_dependencies_downstream(cloned, recursive=recursive)
+                yield from get_dependencies_downstream(
+                    cloned, recursive=recursive
+                )
 
 
 def get_dependencies_upstream(
@@ -382,16 +392,21 @@ def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
     ...
 
 
-def get_task_classes(*, cls: type[_Task] | None = None) -> frozenset[type[_Task]]:
+def get_task_classes(
+    *, cls: type[_Task] | None = None
+) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     return frozenset(_yield_task_classes(cls=cls))
 
 
-def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Task]]:
+def _yield_task_classes(
+    *, cls: type[_Task] | None = None
+) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     for name in cast(Any, Register).task_names():
         task_cls = cast(Any, Register).get_task_cls(name)
         if (
-            (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
+            (cls is None)
+            or ((cls is not task_cls) and issubclass(task_cls, cls))
         ) and (task_cls is not smtp):
             yield cast(type[_Task], task_cls)

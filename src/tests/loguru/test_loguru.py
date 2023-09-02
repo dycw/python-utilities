@@ -145,7 +145,9 @@ class TestGetFilesPath:
         env_var_key=env_var_prefixes,
         env_var_value=text_ascii(min_size=1),
     )
-    def test_both(self, files: str, env_var_key: str, env_var_value: str) -> None:
+    def test_both(
+        self, files: str, env_var_key: str, env_var_value: str
+    ) -> None:
         with temp_environ({env_var_key: env_var_value}):
             result = _get_files_path(files=files, env_var=env_var_key)
         assert result == files

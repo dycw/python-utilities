@@ -213,7 +213,9 @@ def is_at_least_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y or x == nan."""
-    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
+        x
+    )
 
 
 def is_at_most(
@@ -239,7 +241,9 @@ def is_at_most_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y or x == nan."""
-    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
+        x
+    )
 
 
 def is_between(
@@ -257,7 +261,9 @@ def is_between(
     """Check if low <= x <= high."""
     return is_at_least(
         x, low, rtol=rtol, atol=atol, equal_nan=equal_nan or low_equal_nan
-    ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
+    ) & is_at_most(
+        x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan
+    )
 
 
 def is_between_or_nan(
@@ -399,7 +405,9 @@ def is_greater_than_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y or x == nan."""
-    return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_greater_than(
+        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
+    ) | isnan(x)
 
 
 def is_integral(
@@ -441,7 +449,9 @@ def is_less_than_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y or x == nan."""
-    return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_less_than(
+        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
+    ) | isnan(x)
 
 
 def is_negative(
@@ -625,7 +635,9 @@ _is_positive = _lift(is_positive)
 _is_positive_or_nan = _lift(is_positive_or_nan)
 _is_zero = _lift(is_zero)
 _is_zero_or_finite_and_non_micro = _lift(is_zero_or_finite_and_non_micro)
-_is_zero_or_finite_and_non_micro_or_nan = _lift(is_zero_or_finite_and_non_micro_or_nan)
+_is_zero_or_finite_and_non_micro_or_nan = _lift(
+    is_zero_or_finite_and_non_micro_or_nan
+)
 _is_zero_or_nan = _lift(is_zero_or_nan)
 _is_zero_or_non_micro = _lift(is_zero_or_non_micro)
 _is_zero_or_non_micro_or_nan = _lift(is_zero_or_non_micro_or_nan)
@@ -669,7 +681,9 @@ NDArrayFPos = Annotated[NDArrayF, _is_positive]
 NDArrayFPosNan = Annotated[NDArrayF, _is_positive_or_nan]
 NDArrayFZr = Annotated[NDArrayF, _is_zero]
 NDArrayFZrFinNonMic = Annotated[NDArrayF, _is_zero_or_finite_and_non_micro]
-NDArrayFZrFinNonMicNan = Annotated[NDArrayF, _is_zero_or_finite_and_non_micro_or_nan]
+NDArrayFZrFinNonMicNan = Annotated[
+    NDArrayF, _is_zero_or_finite_and_non_micro_or_nan
+]
 NDArrayFZrNan = Annotated[NDArrayF, _is_zero_or_nan]
 NDArrayFZrNonMic = Annotated[NDArrayF, _is_zero_or_non_micro]
 NDArrayFZrNonMicNan = Annotated[NDArrayF, _is_zero_or_non_micro_or_nan]
@@ -710,11 +724,17 @@ NDArrayF0FinIntNan = Annotated[NDArrayF, NDim0 & _is_finite_and_integral_or_nan]
 NDArrayF0FinNeg = Annotated[NDArrayF, NDim0 & _is_finite_and_negative]
 NDArrayF0FinNegNan = Annotated[NDArrayF, NDim0 & _is_finite_and_negative_or_nan]
 NDArrayF0FinNonNeg = Annotated[NDArrayF, NDim0 & _is_finite_and_non_negative]
-NDArrayF0FinNonNegNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_negative_or_nan]
+NDArrayF0FinNonNegNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF0FinNonPos = Annotated[NDArrayF, NDim0 & _is_finite_and_non_positive]
-NDArrayF0FinNonPosNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_positive_or_nan]
+NDArrayF0FinNonPosNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF0FinNonZr = Annotated[NDArrayF, NDim0 & _is_finite_and_non_zero]
-NDArrayF0FinNonZrNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_zero_or_nan]
+NDArrayF0FinNonZrNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF0FinPos = Annotated[NDArrayF, NDim0 & _is_finite_and_positive]
 NDArrayF0FinPosNan = Annotated[NDArrayF, NDim0 & _is_finite_and_positive_or_nan]
 NDArrayF0FinNan = Annotated[NDArrayF, NDim0 & _is_finite_or_nan]
@@ -731,7 +751,9 @@ NDArrayF0NonZrNan = Annotated[NDArrayF, NDim0 & _is_non_zero_or_nan]
 NDArrayF0Pos = Annotated[NDArrayF, NDim0 & _is_positive]
 NDArrayF0PosNan = Annotated[NDArrayF, NDim0 & _is_positive_or_nan]
 NDArrayF0Zr = Annotated[NDArrayF, NDim0 & _is_zero]
-NDArrayF0ZrFinNonMic = Annotated[NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro]
+NDArrayF0ZrFinNonMic = Annotated[
+    NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF0ZrFinNonMicNan = Annotated[
     NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -745,11 +767,17 @@ NDArrayF1FinIntNan = Annotated[NDArrayF, NDim1 & _is_finite_and_integral_or_nan]
 NDArrayF1FinNeg = Annotated[NDArrayF, NDim1 & _is_finite_and_negative]
 NDArrayF1FinNegNan = Annotated[NDArrayF, NDim1 & _is_finite_and_negative_or_nan]
 NDArrayF1FinNonNeg = Annotated[NDArrayF, NDim1 & _is_finite_and_non_negative]
-NDArrayF1FinNonNegNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_negative_or_nan]
+NDArrayF1FinNonNegNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF1FinNonPos = Annotated[NDArrayF, NDim1 & _is_finite_and_non_positive]
-NDArrayF1FinNonPosNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_positive_or_nan]
+NDArrayF1FinNonPosNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF1FinNonZr = Annotated[NDArrayF, NDim1 & _is_finite_and_non_zero]
-NDArrayF1FinNonZrNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_zero_or_nan]
+NDArrayF1FinNonZrNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF1FinPos = Annotated[NDArrayF, NDim1 & _is_finite_and_positive]
 NDArrayF1FinPosNan = Annotated[NDArrayF, NDim1 & _is_finite_and_positive_or_nan]
 NDArrayF1FinNan = Annotated[NDArrayF, NDim1 & _is_finite_or_nan]
@@ -766,7 +794,9 @@ NDArrayF1NonZrNan = Annotated[NDArrayF, NDim1 & _is_non_zero_or_nan]
 NDArrayF1Pos = Annotated[NDArrayF, NDim1 & _is_positive]
 NDArrayF1PosNan = Annotated[NDArrayF, NDim1 & _is_positive_or_nan]
 NDArrayF1Zr = Annotated[NDArrayF, NDim1 & _is_zero]
-NDArrayF1ZrFinNonMic = Annotated[NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro]
+NDArrayF1ZrFinNonMic = Annotated[
+    NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF1ZrFinNonMicNan = Annotated[
     NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -780,11 +810,17 @@ NDArrayF2FinIntNan = Annotated[NDArrayF, NDim2 & _is_finite_and_integral_or_nan]
 NDArrayF2FinNeg = Annotated[NDArrayF, NDim2 & _is_finite_and_negative]
 NDArrayF2FinNegNan = Annotated[NDArrayF, NDim2 & _is_finite_and_negative_or_nan]
 NDArrayF2FinNonNeg = Annotated[NDArrayF, NDim2 & _is_finite_and_non_negative]
-NDArrayF2FinNonNegNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_negative_or_nan]
+NDArrayF2FinNonNegNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF2FinNonPos = Annotated[NDArrayF, NDim2 & _is_finite_and_non_positive]
-NDArrayF2FinNonPosNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_positive_or_nan]
+NDArrayF2FinNonPosNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF2FinNonZr = Annotated[NDArrayF, NDim2 & _is_finite_and_non_zero]
-NDArrayF2FinNonZrNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_zero_or_nan]
+NDArrayF2FinNonZrNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF2FinPos = Annotated[NDArrayF, NDim2 & _is_finite_and_positive]
 NDArrayF2FinPosNan = Annotated[NDArrayF, NDim2 & _is_finite_and_positive_or_nan]
 NDArrayF2FinNan = Annotated[NDArrayF, NDim2 & _is_finite_or_nan]
@@ -801,7 +837,9 @@ NDArrayF2NonZrNan = Annotated[NDArrayF, NDim2 & _is_non_zero_or_nan]
 NDArrayF2Pos = Annotated[NDArrayF, NDim2 & _is_positive]
 NDArrayF2PosNan = Annotated[NDArrayF, NDim2 & _is_positive_or_nan]
 NDArrayF2Zr = Annotated[NDArrayF, NDim2 & _is_zero]
-NDArrayF2ZrFinNonMic = Annotated[NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro]
+NDArrayF2ZrFinNonMic = Annotated[
+    NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF2ZrFinNonMicNan = Annotated[
     NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -815,11 +853,17 @@ NDArrayF3FinIntNan = Annotated[NDArrayF, NDim3 & _is_finite_and_integral_or_nan]
 NDArrayF3FinNeg = Annotated[NDArrayF, NDim3 & _is_finite_and_negative]
 NDArrayF3FinNegNan = Annotated[NDArrayF, NDim3 & _is_finite_and_negative_or_nan]
 NDArrayF3FinNonNeg = Annotated[NDArrayF, NDim3 & _is_finite_and_non_negative]
-NDArrayF3FinNonNegNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_negative_or_nan]
+NDArrayF3FinNonNegNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF3FinNonPos = Annotated[NDArrayF, NDim3 & _is_finite_and_non_positive]
-NDArrayF3FinNonPosNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_positive_or_nan]
+NDArrayF3FinNonPosNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF3FinNonZr = Annotated[NDArrayF, NDim3 & _is_finite_and_non_zero]
-NDArrayF3FinNonZrNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_zero_or_nan]
+NDArrayF3FinNonZrNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF3FinPos = Annotated[NDArrayF, NDim3 & _is_finite_and_positive]
 NDArrayF3FinPosNan = Annotated[NDArrayF, NDim3 & _is_finite_and_positive_or_nan]
 NDArrayF3FinNan = Annotated[NDArrayF, NDim3 & _is_finite_or_nan]
@@ -836,7 +880,9 @@ NDArrayF3NonZrNan = Annotated[NDArrayF, NDim3 & _is_non_zero_or_nan]
 NDArrayF3Pos = Annotated[NDArrayF, NDim3 & _is_positive]
 NDArrayF3PosNan = Annotated[NDArrayF, NDim3 & _is_positive_or_nan]
 NDArrayF3Zr = Annotated[NDArrayF, NDim3 & _is_zero]
-NDArrayF3ZrFinNonMic = Annotated[NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro]
+NDArrayF3ZrFinNonMic = Annotated[
+    NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF3ZrFinNonMicNan = Annotated[
     NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro_or_nan
 ]

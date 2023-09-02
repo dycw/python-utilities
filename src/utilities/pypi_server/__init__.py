@@ -27,7 +27,9 @@ def main(config: Config, /) -> None:
         path_packages=config.path_packages,
     )
     if not config.dry_run:
-        run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
+        run_accept_address_in_use(
+            args, exist_ok=config.exist_ok
+        )  # pragma: no cover
 
 
 def _log_config(config: Config, /) -> None:
@@ -35,7 +37,9 @@ def _log_config(config: Config, /) -> None:
         logger.info("{key:13} = {value}", key=key, value=value)
 
 
-def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
+def _check_password_file(
+    *, path_password: PathLike = _CONFIG.path_password
+) -> None:
     if not Path(path_password).exists():
         msg = f"{path_password=!s}"
         raise FileNotFoundError(msg)

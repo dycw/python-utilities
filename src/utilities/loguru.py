@@ -37,7 +37,9 @@ def setup_loguru(
     """Set up `loguru` logging."""
     logger.remove()
     basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
-    all_levels = _augment_levels(levels=levels, env_var_prefix=levels_env_var_prefix)
+    all_levels = _augment_levels(
+        levels=levels, env_var_prefix=levels_env_var_prefix
+    )
     for name, level in all_levels.items():
         _setup_standard_logger(name, level)
     if enable is not None:
@@ -47,7 +49,9 @@ def setup_loguru(
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
         full_files_path = files_root.joinpath(files_path)
-        _add_file_sink(full_files_path, "log", LogLevel.DEBUG, all_levels, live=False)
+        _add_file_sink(
+            full_files_path, "log", LogLevel.DEBUG, all_levels, live=False
+        )
         for level in set(LogLevel) - {LogLevel.CRITICAL}:
             _add_live_file_sink(
                 full_files_path,

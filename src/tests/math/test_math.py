@@ -566,7 +566,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_zero_or_finite_and_non_micro(self, x: float, expected: bool) -> None:
+    def test_is_zero_or_finite_and_non_micro(
+        self, x: float, expected: bool
+    ) -> None:
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
 
     def test_is_zero_or_finite_and_non_micro_or_nan(self) -> None:

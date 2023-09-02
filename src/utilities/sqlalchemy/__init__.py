@@ -232,7 +232,9 @@ class UnequalNullableStatusError(ValueError):
     """Raised when two columns differ in nullable status."""
 
 
-def _check_column_types_equal(x: Any, y: Any, /) -> None:  # noqa: PLR0912, PLR0915
+def _check_column_types_equal(
+    x: Any, y: Any, /
+) -> None:  # noqa: PLR0912, PLR0915
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
@@ -252,7 +254,9 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:  # noqa: PLR0912, PLR0
             or (
                 (x_enum is not None)
                 and (y_enum is not None)
-                and not (issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum))
+                and not (
+                    issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum)
+                )
             )
         ):
             raise UnequalEnumColumnTypesError(msg)
@@ -276,7 +280,9 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:  # noqa: PLR0912, PLR0
         and (x_inst.timezone is not y_inst.timezone)
     ):
         raise UnequalDateTimeColumnTimezoneError(msg)
-    if isinstance(x_inst, (Float, Numeric)) and isinstance(y_inst, (Float, Numeric)):
+    if isinstance(x_inst, (Float, Numeric)) and isinstance(
+        y_inst, (Float, Numeric)
+    ):
         if x_inst.precision != y_inst.precision:
             raise UnequalFloatColumnPrecisionsError(msg)
         if x_inst.decimal_return_scale != y_inst.decimal_return_scale:
@@ -475,7 +481,9 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
         )
         # try auto-label
         names = {
-            value for col in [x, y] if (value := getattr(col, "name", None)) is not None
+            value
+            for col in [x, y]
+            if (value := getattr(col, "name", None)) is not None
         }
         try:
             (name,) = names
@@ -496,7 +504,9 @@ def create_engine(
     host: Optional[str] = None,
     port: Optional[int] = None,
     database: Optional[str] = None,
-    query: Optional[Mapping[str, Union[collections.abc.Sequence[str], str]]] = None,
+    query: Optional[
+        Mapping[str, Union[collections.abc.Sequence[str], str]]
+    ] = None,
     poolclass: Optional[type[Pool]] = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
@@ -605,7 +615,9 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
 
     def yield_items() -> Iterator[tuple[str, Any]]:
         for key in get_column_names(cls):
-            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
+            attr = one(
+                attr for attr in dir(cls) if is_attr(attr, key) is not None
+            )
             yield key, getattr(obj, attr)
 
     return dict(yield_items())
@@ -670,7 +682,9 @@ def redirect_to_no_such_sequence_error(
         pattern = "ORA-02289: sequence does not exist"
     else:  # pragma: no cover
         return never(dialect)
-    return redirect_error(error, pattern, NoSuchSequenceError)  # pragma: no cover
+    return redirect_error(
+        error, pattern, NoSuchSequenceError
+    )  # pragma: no cover
 
 
 class NoSuchSequenceError(Exception):

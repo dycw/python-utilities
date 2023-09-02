@@ -22,7 +22,9 @@ class TestCatchWarningsAsErrors:
 
         with warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
-        with raises(CustomWarning), catch_warnings_as_errors(category=CustomWarning):
+        with raises(CustomWarning), catch_warnings_as_errors(
+            category=CustomWarning
+        ):
             warn("", category=CustomWarning, stacklevel=2)
 
     @given(data=data())

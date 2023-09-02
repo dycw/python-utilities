@@ -153,7 +153,9 @@ def datetime64_units(
     ]
     kind_ = draw(kind)
     if kind_ is not None:
-        units = [unit for unit in units if datetime64_unit_to_kind(unit) == kind_]
+        units = [
+            unit for unit in units if datetime64_unit_to_kind(unit) == kind_
+        ]
     return draw(sampled_from(units))
 
 
@@ -164,8 +166,12 @@ def datetime64_arrays(
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
     unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    min_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
+    max_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
     fill: Optional[SearchStrategy[Any]] = None,
@@ -201,8 +207,12 @@ def datetime64_indexes(
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
     unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    min_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
+    max_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
     unique: MaybeSearchStrategy[bool] = True,
@@ -228,8 +238,12 @@ def datetime64_indexes(
 def datetime64D_indexes(  # noqa: N802
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    min_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
+    max_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
     valid_dates: MaybeSearchStrategy[bool] = True,
     unique: MaybeSearchStrategy[bool] = True,
     sort: MaybeSearchStrategy[bool] = True,
@@ -252,8 +266,12 @@ def datetime64s(
     /,
     *,
     unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    min_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
+    max_value: MaybeSearchStrategy[
+        Optional[Union[datetime64, int, dt.date]]
+    ] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
 ) -> datetime64:
@@ -263,7 +281,9 @@ def datetime64s(
     min_value_, max_value_ = (
         _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
     )
-    valid_dates_, valid_datetimes_ = (draw(vd) for vd in (valid_dates, valid_datetimes))
+    valid_dates_, valid_datetimes_ = (
+        draw(vd) for vd in (valid_dates, valid_datetimes)
+    )
     if valid_dates_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
             unit=cast(Optional[Datetime64Unit], unit_),
@@ -423,7 +443,9 @@ def int_arrays(
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy = cast(
         SearchStrategy[NDArrayI],
-        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
+        arrays(
+            int, draw(shape), elements=elements, fill=fill, unique=draw(unique)
+        ),
     )
     return draw(strategy)
 
@@ -508,5 +530,7 @@ def _fixed_width_ints(
     min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
     info = iinfo(dtype)
     min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
-    max_value_use = info.max if max_value_ is None else min(info.max, max_value_)
+    max_value_use = (
+        info.max if max_value_ is None else min(info.max, max_value_)
+    )
     return draw(integers(min_value_, max_value_use))

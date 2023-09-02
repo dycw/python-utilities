@@ -77,7 +77,9 @@ def is_between_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if low <= x <= high or x == nan."""
-    return is_between(x, low, high, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_between(x, low, high, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
 def is_finite_and_integral(
@@ -99,7 +101,9 @@ def is_finite_and_integral_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if -inf < x < inf and x == int(x), or x == nan."""
-    return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
+    return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(
+        x
+    )
 
 
 def is_finite_and_negative(
@@ -121,7 +125,9 @@ def is_finite_and_negative_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if -inf < x < 0 or x == nan."""
-    return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
 def is_finite_and_non_negative(
@@ -143,7 +149,9 @@ def is_finite_and_non_negative_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if 0 <= x < inf or x == nan."""
-    return is_finite_and_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_negative(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    ) or isnan(x)
 
 
 def is_finite_and_non_positive(
@@ -165,7 +173,9 @@ def is_finite_and_non_positive_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if -inf < x <= 0 or x == nan."""
-    return is_finite_and_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_positive(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    ) or isnan(x)
 
 
 def is_finite_and_non_zero(
@@ -187,7 +197,9 @@ def is_finite_and_non_zero_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if x != 0 or x == nan."""
-    return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
 def is_finite_and_positive(
@@ -209,7 +221,9 @@ def is_finite_and_positive_or_nan(
     abs_tol: Optional[float] = None,
 ) -> bool:
     """Check if 0 < x < inf or x == nan."""
-    return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
 def is_finite_or_nan(x: Union[int, float], /) -> bool:
@@ -421,7 +435,9 @@ def is_zero_or_finite_and_non_micro(
 ) -> bool:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
     zero = 0.0
-    return (x == zero) or is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol)
+    return (x == zero) or is_finite_and_non_zero(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    )
 
 
 def is_zero_or_finite_and_non_micro_or_nan(

@@ -13,7 +13,9 @@ from utilities.xarray.typing import DataArrayB1, DataArrayF1
 
 
 class TestPlotCurve:
-    @given(array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)))
+    @given(
+        array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1))
+    )
     def test_main(self, array: DataArrayF1) -> None:
         curve = plot_curve(array)
         assert curve.kdims == ["dim"]
@@ -49,11 +51,15 @@ class TestPlotCurve:
         with raises(ArrayNameNotAStringError):
             _ = plot_curve(array)
 
-    @given(array=float_data_arrays(dim=int_indexes(), name=text_ascii(max_size=0)))
+    @given(
+        array=float_data_arrays(dim=int_indexes(), name=text_ascii(max_size=0))
+    )
     def test_array_name_is_empty_string(self, array: DataArrayF1) -> None:
         with raises(ArrayNameIsEmptyStringError):
             _ = plot_curve(array)
 
-    @given(array=bool_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)))
+    @given(
+        array=bool_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1))
+    )
     def test_boolean(self, array: DataArrayB1) -> None:
         _ = plot_curve(array)

@@ -19,7 +19,9 @@ class Config:
     chunk_size: Optional[int] = option(
         default=None, click={"param_decls": ("-cs", "--chunk-size")}
     )
-    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
+    dry_run: bool = option(
+        default=False, click={"param_decls": ("-dr", "--dry-run")}
+    )
 
 
 @dataclass(frozen=True)

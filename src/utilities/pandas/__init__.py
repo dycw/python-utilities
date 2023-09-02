@@ -152,7 +152,9 @@ def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
     return timestamp_to_datetime(timestamp, warn=warn).date()
 
 
-def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetime:
+def timestamp_to_datetime(
+    timestamp: Any, /, *, warn: bool = True
+) -> dt.datetime:
     """Convert a timestamp to a datetime."""
     if timestamp is NaT:
         msg = f"{timestamp=}"
@@ -167,7 +169,9 @@ class TimestampIsNaTError(ValueError):
     """Raised when a NaT is received."""
 
 
-def _timestamp_minmax_to_date(timestamp: Timestamp, method_name: str, /) -> dt.date:
+def _timestamp_minmax_to_date(
+    timestamp: Timestamp, method_name: str, /
+) -> dt.date:
     """Get the maximum Timestamp as a date."""
     method = getattr(timestamp, method_name)
     rounded = cast(Timestamp, method("D"))
@@ -188,7 +192,9 @@ def _timestamp_minmax_to_datetime(
 
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
-TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor")
+TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
+    Timestamp.max, "floor"
+)
 
 
 def to_numpy(series: Series, /) -> NDArray1:

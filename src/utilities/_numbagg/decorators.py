@@ -75,7 +75,9 @@ class NumbaNDMoving:
 
         for sig in signature:
             if not isinstance(sig, tuple):
-                raise TypeError(f"signatures for ndmoving must be tuples: {signature}")
+                raise TypeError(
+                    f"signatures for ndmoving must be tuples: {signature}"
+                )
         self.signature = signature
 
     @property

@@ -36,7 +36,9 @@ class TestFFillNonNanSlices:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
         )
-        z_arr = open_array(tmp_path.joinpath("array"), shape=arr.shape, dtype=float)
+        z_arr = open_array(
+            tmp_path.joinpath("array"), shape=arr.shape, dtype=float
+        )
         z_arr[:] = arr
         ffill_non_nan_slices(z_arr)
         expected = array(
@@ -133,7 +135,9 @@ class TestNDArrayWithIndexes:
         assert_equal(view.isel(indexer), expected)
 
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
-    def test_isel_error(self, tmp_path: Path, indexer: dict[Hashable, Any]) -> None:
+    def test_isel_error(
+        self, tmp_path: Path, indexer: dict[Hashable, Any]
+    ) -> None:
         indexes: dict[Hashable, NDArray1] = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -143,7 +147,9 @@ class TestNDArrayWithIndexes:
             _ = view.isel(indexer)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
+    def test_repr_and_str(
+        self, func: Callable[[Any], str], tmp_path: Path
+    ) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
         path = func(tmp_path.as_posix())
@@ -205,7 +211,9 @@ class TestNDArrayWithIndexes:
             param({"x": "2000-01-01"}, 0),
             param({"x": [dt.date(2000, 1, 1)]}, array([0])),
             param({"x": ["2000-01-01"]}, array([0])),
-            param({"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])),
+            param(
+                {"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])
+            ),
             param({"x": [dt.date(2000, 1, 1), "2000-01-02"]}, array([0, 1])),
             param({"x": ["2000-01-01", dt.date(2000, 1, 2)]}, array([0, 1])),
             param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
@@ -215,7 +223,9 @@ class TestNDArrayWithIndexes:
         self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
     ) -> None:
         indexes: dict[Hashable, NDArray1] = {
-            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
+            "x": array(
+                [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D
+            )
         }
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -254,7 +264,9 @@ class TestNDArrayWithIndexes:
         self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
     ) -> None:
         indexes: dict[Hashable, NDArray1] = {
-            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)
+            "x": array(
+                [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns
+            )
         }
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:

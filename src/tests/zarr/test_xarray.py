@@ -30,7 +30,9 @@ from xarray.testing import assert_identical
 class TestDataArrayOnDisk:
     @given(
         data=data(),
-        coords=dictionaries(text_ascii(), integers() | int_indexes(), max_size=3),
+        coords=dictionaries(
+            text_ascii(), integers() | int_indexes(), max_size=3
+        ),
         name=hashables(),
         root=temp_paths(),
     )
@@ -43,7 +45,9 @@ class TestDataArrayOnDisk:
     ) -> None:
         indexes = {k: v for k, v in coords.items() if isinstance(v, Index)}
         shape = tuple(map(len, indexes.values()))
-        values = data.draw(float_arrays(shape=shape, allow_nan=True, allow_inf=True))
+        values = data.draw(
+            float_arrays(shape=shape, allow_nan=True, allow_inf=True)
+        )
         dims = list(indexes)
         array = DataArray(values, coords, dims, name)
         save_data_array_to_disk(array, path := root.joinpath("array"))
@@ -57,8 +61,12 @@ class TestDataArrayOnDisk:
     @mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": 0}, DataArray([0, 1, 2], {"x": 0, "y": arange(3)}, ["y"])),
-            param({"x": -1}, DataArray([3, 4, 5], {"x": 1, "y": arange(3)}, ["y"])),
+            param(
+                {"x": 0}, DataArray([0, 1, 2], {"x": 0, "y": arange(3)}, ["y"])
+            ),
+            param(
+                {"x": -1}, DataArray([3, 4, 5], {"x": 1, "y": arange(3)}, ["y"])
+            ),
             param(
                 {"x": slice(None, 1)},
                 DataArray([[0, 1, 2]], {"x": [0], "y": arange(3)}, ["x", "y"]),
@@ -114,7 +122,9 @@ class TestDataArrayOnDisk:
         [
             param(
                 {"x": "x0"},
-                DataArray([0, 1, 2], {"x": "x0", "y": ["y0", "y1", "y2"]}, ["y"]),
+                DataArray(
+                    [0, 1, 2], {"x": "x0", "y": ["y0", "y1", "y2"]}, ["y"]
+                ),
             ),
             param(
                 {"x": []},
@@ -140,7 +150,9 @@ class TestDataArrayOnDisk:
                     ["x", "y"],
                 ),
             ),
-            param({"x": "x0", "y": "y0"}, DataArray(0, {"x": "x0", "y": "y0"}, [])),
+            param(
+                {"x": "x0", "y": "y0"}, DataArray(0, {"x": "x0", "y": "y0"}, [])
+            ),
             param(
                 {"x": "x0", "y": []},
                 DataArray(zeros(0, dtype=int), {"x": "x0", "y": []}, ["y"]),
@@ -170,7 +182,9 @@ class TestDataArrayOnDisk:
             assert_identical(view.sel(indexer), expected)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
+    def test_repr_and_str(
+        self, func: Callable[[Any], str], tmp_path: Path
+    ) -> None:
         view = DataArrayOnDisk(tmp_path)
         cls = get_class_name(DataArrayOnDisk)
         path = func(tmp_path.as_posix())
@@ -198,7 +212,9 @@ class TestToNDArray1:
     def test_index(self, array: NDArrayI1) -> None:
         assert_equal(_to_ndarray1(Index(array)), array)
 
-    @mark.parametrize("array", [param(None), param(zeros(())), param(zeros((1, 1)))])
+    @mark.parametrize(
+        "array", [param(None), param(zeros(())), param(zeros((1, 1)))]
+    )
     def test_error(self, array: DataArray1) -> None:
         with raises(NotOneDimensionalArrayError):
             _ = _to_ndarray1(array)

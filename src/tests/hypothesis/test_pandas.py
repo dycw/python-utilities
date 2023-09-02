@@ -50,7 +50,9 @@ class TestDatetimesPd:
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
+        datetime = data.draw(
+            datetimes_pd(min_value=min_value, max_value=max_value)
+        )
         _ = Timestamp(datetime)
         assert min_value <= datetime <= max_value
 

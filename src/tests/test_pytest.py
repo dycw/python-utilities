@@ -41,7 +41,9 @@ class TestPytestOptions:
             """
         )
         result = testdir.runpytest("--slow")
-        result.stderr.re_match_lines(["-c: error: unrecognized arguments: --slow"])
+        result.stderr.re_match_lines(
+            ["-c: error: unrecognized arguments: --slow"]
+        )
 
     @mark.parametrize(
         ("case", "passed", "skipped", "matches"),

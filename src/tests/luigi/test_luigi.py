@@ -138,7 +138,9 @@ class TestDateTimeParameter:
         param_cls: type[Parameter],
     ) -> None:
         param = param_cls()
-        input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
+        input_ = data.draw(
+            sampled_from([datetime, serialize_datetime(datetime)])
+        )
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
 

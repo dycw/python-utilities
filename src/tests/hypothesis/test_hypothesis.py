@@ -56,7 +56,9 @@ class TestAssumeDoesNotRaise:
     def test_no_match_and_not_suppressed(self, x: bool) -> None:
         msg = "x is True"
         if x is True:
-            with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
+            with raises(ValueError, match=msg), assume_does_not_raise(
+                RuntimeError
+            ):
                 raise ValueError(msg)
 
     @given(x=booleans())
@@ -82,9 +84,13 @@ class TestDatetimesUTC:
     def test_main(
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
-        min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
+        min_value, max_value = (
+            v.replace(tzinfo=UTC) for v in [min_value, max_value]
+        )
         _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_utc(min_value=min_value, max_value=max_value))
+        datetime = data.draw(
+            datetimes_utc(min_value=min_value, max_value=max_value)
+        )
         assert min_value <= datetime <= max_value
 
 
@@ -232,7 +238,9 @@ class TestTempDirs:
     def test_main(self, temp_dir: TemporaryDirectory) -> None:
         _test_temp_path(temp_dir.name)
 
-    @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
+    @given(
+        temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10)
+    )
     def test_writing_files(
         self, temp_dir: TemporaryDirectory, contents: set[str]
     ) -> None:
@@ -347,7 +355,9 @@ class TestTextPrintable:
                     disallow_na=disallow_na,
                 )
             )
-        assert search(r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text)
+        assert search(
+            r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text
+        )
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size

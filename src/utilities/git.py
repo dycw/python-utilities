@@ -41,7 +41,9 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
-        if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
+        if search(
+            "fatal: not a git repository", error.stderr, flags=IGNORECASE
+        ):
             raise InvalidRepoError(cwd) from None
         raise  # pragma: no cover
     else:

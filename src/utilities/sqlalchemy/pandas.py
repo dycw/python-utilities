@@ -177,14 +177,20 @@ def _check_series_against_table_column(
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
     if not (
-        (has_dtype(series, (bool, boolean)) and issubclass(py_type, (bool, int)))
+        (
+            has_dtype(series, (bool, boolean))
+            and issubclass(py_type, (bool, int))
+        )
         or (has_dtype(series, float) and issubclass(py_type, float))
         or (
             has_dtype(series, datetime64ns)
             and issubclass(py_type, dt.date)
             and not issubclass(py_type, dt.datetime)
         )
-        or (has_dtype(series, datetime64nsutc) and issubclass(py_type, dt.datetime))
+        or (
+            has_dtype(series, datetime64nsutc)
+            and issubclass(py_type, dt.datetime)
+        )
         or (
             allow_naive_datetimes
             and has_dtype(series, datetime64ns)
@@ -286,7 +292,8 @@ def _rows_to_dataframe(
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
     dtypes = {
-        col.name: _table_column_to_dtype(col) for col in sel.selected_columns.values()
+        col.name: _table_column_to_dtype(col)
+        for col in sel.selected_columns.values()
     }
     df = DataFrame(rows, columns=list(dtypes)).astype(dtypes)
     if snake:
@@ -333,7 +340,9 @@ def _stream_dataframes(
             yield from _stream_dataframes(sel, conn, stream, snake=snake)
     else:
         for rows in (
-            engine_or_conn.execution_options(yield_per=stream).execute(sel).partitions()
+            engine_or_conn.execution_options(yield_per=stream)
+            .execute(sel)
+            .partitions()
         ):
             yield _rows_to_dataframe(sel, rows, snake=snake)
 

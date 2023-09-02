@@ -27,13 +27,17 @@ class TestBottleNeckInstalled:
 class TestEwma:
     @given(
         data=data(),
-        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
+        indexes=dictionaries(
+            text_ascii(), int_indexes(), min_size=1, max_size=3
+        ),
         halflife=integers(1, 10),
     )
     def test_main(
         self, data: DataObject, indexes: dict[str, Index], halflife: int
     ) -> None:
-        array = data.draw(float_data_arrays(cast(dict[Hashable, Index], indexes)))
+        array = data.draw(
+            float_data_arrays(cast(dict[Hashable, Index], indexes))
+        )
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):
             _ = ewma(array, {dim: halflife})
@@ -42,13 +46,17 @@ class TestEwma:
 class TestExpMovingSum:
     @given(
         data=data(),
-        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
+        indexes=dictionaries(
+            text_ascii(), int_indexes(), min_size=1, max_size=3
+        ),
         halflife=integers(1, 10),
     )
     def test_main(
         self, data: DataObject, indexes: dict[str, Index], halflife: int
     ) -> None:
-        array = data.draw(float_data_arrays(cast(dict[Hashable, Index], indexes)))
+        array = data.draw(
+            float_data_arrays(cast(dict[Hashable, Index], indexes))
+        )
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):
             _ = exp_moving_sum(array, {dim: halflife})

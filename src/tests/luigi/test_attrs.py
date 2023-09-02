@@ -117,7 +117,9 @@ class TestMapAnnotation:
             _ = _map_annotation(dt.date)
 
     @mark.parametrize("kind", [param("hour"), param("minute"), param("second")])
-    def test_datetime_success(self, kind: Literal["hour", "minute", "second"]) -> None:
+    def test_datetime_success(
+        self, kind: Literal["hour", "minute", "second"]
+    ) -> None:
         _ = _map_annotation(dt.datetime, datetime=kind)
 
     def test_datetime_error(self) -> None:

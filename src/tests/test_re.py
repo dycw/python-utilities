@@ -35,7 +35,9 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_success(self, pattern: str, text: str, expected: list[str]) -> None:
+    def test_success(
+        self, pattern: str, text: str, expected: list[str]
+    ) -> None:
         assert extract_groups(pattern, text) == expected
 
     def test_no_groups(self) -> None:

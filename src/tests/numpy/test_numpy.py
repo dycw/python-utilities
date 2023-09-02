@@ -742,7 +742,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_zero_or_finite_and_non_micro(self, x: float, expected: bool) -> None:
+    def test_is_zero_or_finite_and_non_micro(
+        self, x: float, expected: bool
+    ) -> None:
         assert is_zero_or_finite_and_non_micro(x).item() is expected
 
     def test_is_zero_or_finite_and_non_micro_or_nan(self) -> None:
@@ -803,7 +805,9 @@ class TestDatetimeToDatetime64ns:
 
 class TestDatetime64ToDate:
     def test_example(self) -> None:
-        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
+        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(
+            2000, 1, 1
+        )
 
     @given(date=dates())
     def test_round_trip(self, date: dt.date) -> None:
@@ -816,7 +820,9 @@ class TestDatetime64ToDate:
             param("2000-01-01", "ns", NotImplementedError),
         ],
     )
-    def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
+    def test_error(
+        self, datetime: str, dtype: str, error: type[Exception]
+    ) -> None:
         with raises(error):
             _ = datetime64_to_date(datetime64(datetime, dtype))
 
@@ -850,18 +856,24 @@ class TestDatetime64ToDatetime:
 
     @given(datetime=datetimes_utc())
     def test_round_trip(self, datetime: dt.datetime) -> None:
-        assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
+        assert (
+            datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
+        )
 
     @mark.parametrize(
         ("datetime", "dtype", "error"),
         [
             param("0000-12-31", "ms", DateOverflowError),
             param("10000-01-01", "ms", DateOverflowError),
-            param("1970-01-01 00:00:00.000000001", "ns", LossOfNanosecondsError),
+            param(
+                "1970-01-01 00:00:00.000000001", "ns", LossOfNanosecondsError
+            ),
             param("2000-01-01", "D", NotImplementedError),
         ],
     )
-    def test_error(self, datetime: str, dtype: str, error: type[Exception]) -> None:
+    def test_error(
+        self, datetime: str, dtype: str, error: type[Exception]
+    ) -> None:
         with raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
@@ -880,7 +892,9 @@ class TestDatetime64DTypeToUnit:
 
     @given(dtype=datetime64_dtypes())
     def test_round_trip(self, dtype: Any) -> None:
-        assert datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
+        assert (
+            datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
+        )
 
 
 class TestDatetime64DUnitToDType:
@@ -905,12 +919,16 @@ class TestDatetime64DUnitToKind:
         ("unit", "expected"),
         [param("D", "date"), param("Y", "date"), param("ns", "time")],
     )
-    def test_example(self, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
+    def test_example(
+        self, unit: Datetime64Unit, expected: Datetime64Kind
+    ) -> None:
         assert datetime64_unit_to_kind(unit) == expected
 
 
 class TestDiscretize:
-    @given(arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0))
+    @given(
+        arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0)
+    )
     def test_1_bin(self, arr: NDArrayF1) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
@@ -982,7 +1000,9 @@ class TestDiscretize:
 
 class TestEwma:
     @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+    def test_main(
+        self, data: DataObject, array: NDArrayF, halflife: float
+    ) -> None:
         axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
         with assume_does_not_raise(RuntimeWarning):
             _ = ewma(array, halflife, axis=axis)
@@ -990,14 +1010,18 @@ class TestEwma:
 
 class TestExpMovingSum:
     @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+    def test_main(
+        self, data: DataObject, array: NDArrayF, halflife: float
+    ) -> None:
         axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
         with assume_does_not_raise(RuntimeWarning):
             _ = exp_moving_sum(array, halflife, axis=axis)
 
 
 class TestFFill:
-    @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
+    @mark.parametrize(
+        ("limit", "expected_v"), [param(None, 0.2), param(1, nan)]
+    )
     def test_main(self, limit: Optional[int], expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
@@ -1018,7 +1042,9 @@ class TestFFillNonNanSlices:
                     [0.3, nan, nan, nan],
                 ],
             ),
-            param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
+            param(
+                None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]
+            ),
             param(
                 1,
                 0,
@@ -1028,7 +1054,9 @@ class TestFFillNonNanSlices:
                     [0.3, nan, nan, nan],
                 ],
             ),
-            param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
+            param(
+                1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]
+            ),
         ],
     )
     def test_main(
@@ -1048,7 +1076,9 @@ class TestFFillNonNanSlices:
             param(1, [4 * [nan], [nan, 0.1, 0.1, 0.1], 4 * [nan]]),
         ],
     )
-    def test_initial_all_nan(self, axis: int, expected_v: list[list[float]]) -> None:
+    def test_initial_all_nan(
+        self, axis: int, expected_v: list[list[float]]
+    ) -> None:
         arr = array([4 * [nan], [nan, 0.1, nan, nan], 4 * [nan]], dtype=float)
         result = ffill_non_nan_slices(arr, axis=axis)
         expected = array(expected_v, dtype=float)
@@ -1260,7 +1290,9 @@ class TestPctChange:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(self, n: int, expected_v: list[float], dtype: type[Any]) -> None:
+    def test_1d(
+        self, n: int, expected_v: list[float], dtype: type[Any]
+    ) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
         expected = array(expected_v, dtype=float)
@@ -1375,7 +1407,9 @@ class TestShift:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(self, n: int, expected_v: list[float], dtype: type[Any]) -> None:
+    def test_1d(
+        self, n: int, expected_v: list[float], dtype: type[Any]
+    ) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
         expected = array(expected_v, dtype=float)

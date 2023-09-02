@@ -33,7 +33,9 @@ def main(config: Config, /) -> None:
         ):
             logger.debug("{path}", path=item.path)
     else:
-        _clean_dir(paths=config.paths, days=config.days, chunk_size=config.chunk_size)
+        _clean_dir(
+            paths=config.paths, days=config.days, chunk_size=config.chunk_size
+        )
 
 
 def _log_config(config: Config, /) -> None:

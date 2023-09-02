@@ -73,7 +73,9 @@ class TestLoadSettings:
         ("cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine),
@@ -99,14 +101,18 @@ class TestLoadSettings:
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
-        settings_loaded = load_settings(Settings, appname=appname, config_files=[file])
+        settings_loaded = load_settings(
+            Settings, appname=appname, config_files=[file]
+        )
         try:
             assert settings_loaded.value == value
         except AssertionError:
             assert settings_loaded.value.url == value.url
 
     @given(appname=app_names)
-    @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
+    @mark.parametrize(
+        "cls", [param(dt.date), param(dt.time), param(dt.timedelta)]
+    )
     def test_errors(self, appname: str, cls: Any) -> None:
         @settings(frozen=True)
         class Settings:
@@ -122,7 +128,9 @@ class TestClickOptions:
         ("cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine),

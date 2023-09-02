@@ -28,7 +28,9 @@ class TestYieldModules:
             param(package_with, True, 5),
         ],
     )
-    def test_main(self, module: ModuleType, recursive: bool, expected: int) -> None:
+    def test_main(
+        self, module: ModuleType, recursive: bool, expected: int
+    ) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 
 

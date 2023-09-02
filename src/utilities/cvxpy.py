@@ -217,7 +217,9 @@ def neg(x: Expression, /) -> Expression:
     ...
 
 
-def neg(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expression]:
+def neg(
+    x: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
     """Compute the negative parts of a quantity."""
     if isinstance(x, (float, ndarray)):
         result = -minimum(x, 0.0)
@@ -257,7 +259,9 @@ def pos(x: Expression, /) -> Expression:
     ...
 
 
-def pos(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expression]:
+def pos(
+    x: Union[float, NDArrayF, Expression], /
+) -> Union[float, NDArrayF, Expression]:
     """Compute the positive parts of a quantity."""
     if isinstance(x, (float, ndarray)):
         result = maximum(x, 0.0)

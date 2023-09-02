@@ -305,7 +305,9 @@ def discretize(x: NDArrayF1, bins: Union[int, Iterable[float]], /) -> NDArrayF1:
     return out
 
 
-def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArrayF:
+def ewma(
+    array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1
+) -> NDArrayF:
     """Compute the EWMA of an array."""
     alpha = _exp_weighted_alpha(halflife)
     return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
@@ -340,7 +342,8 @@ def ffill_non_nan_slices(
 
     ndim = array.ndim
     arrays = (
-        array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
+        array[array_indexer(i, ndim, axis=axis)]
+        for i in range(array.shape[axis])
     )
     out = array.copy()
     for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
@@ -418,7 +421,9 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     return x.dtype == dtype
 
 
-def is_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
+def is_empty(
+    shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /
+) -> bool:
     """Check if an ndarray is empty."""
     if isinstance(shape_or_array, int):
         return shape_or_array == 0
@@ -427,7 +432,9 @@ def is_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bo
     return is_empty(shape_or_array.shape)
 
 
-def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
+def is_non_empty(
+    shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /
+) -> bool:
     """Check if an ndarray is non-empty."""
     if isinstance(shape_or_array, int):
         return shape_or_array >= 1

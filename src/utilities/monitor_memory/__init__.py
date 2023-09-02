@@ -30,7 +30,9 @@ def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     setup_loguru()
     _log_config(config)
-    _monitor_memory(path=config.path, freq=config.freq, duration=config.duration)
+    _monitor_memory(
+        path=config.path, freq=config.freq, duration=config.duration
+    )
 
 
 def _log_config(config: Config, /) -> None:

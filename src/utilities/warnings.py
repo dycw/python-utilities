@@ -57,6 +57,8 @@ def _handle_warnings_1(
         category: type[Warning]
 
     with catch_warnings():
-        kwargs = cast(Kwargs, {} if category is None else {"category": category})
+        kwargs = cast(
+            Kwargs, {} if category is None else {"category": category}
+        )
         filterwarnings(action, message=message, **kwargs)
         yield

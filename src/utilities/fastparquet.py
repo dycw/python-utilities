@@ -22,7 +22,9 @@ _PARQUET_DTYPES = {bool, datetime64ns, float, Int64, string}
 
 def count_rows(path: PathLike, /, *, filters: Optional[Filters] = None) -> int:
     """Count the number of rows in a Parquet file."""
-    return _get_parquet_file(path).count(filters=filters, **_maybe_row_filter(filters))
+    return _get_parquet_file(path).count(
+        filters=filters, **_maybe_row_filter(filters)
+    )
 
 
 def get_columns(path: PathLike, /) -> list[Hashable]:
@@ -103,14 +105,18 @@ def _get_parquet_file(
     except TypeError as error:
         msg = f"{path=}"
         new = FileNotFoundError(msg)
-        redirect_error(error, "argument of type 'PosixPath' is not iterable", new)
+        redirect_error(
+            error, "argument of type 'PosixPath' is not iterable", new
+        )
     if row_group is None:
         return file
     try:
         return file[row_group]
     except IndexError as error:
         msg = f"{path=}, {row_group=}"
-        redirect_error(error, "list index out of range", InvalidRowGroupIndexError(msg))
+        redirect_error(
+            error, "list index out of range", InvalidRowGroupIndexError(msg)
+        )
 
 
 class InvalidRowGroupIndexError(IndexError):

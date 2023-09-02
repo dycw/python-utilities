@@ -322,7 +322,9 @@ def _draw_text(
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
     draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    drawn = draw(
+        text(alphabet, min_size=draw(min_size), max_size=draw(max_size))
+    )
     if draw(disallow_na):
         _ = assume(drawn != "NA")
     return drawn

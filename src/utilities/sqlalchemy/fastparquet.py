@@ -28,7 +28,9 @@ def select_to_parquet(
     """
     if stream is None:
         df = select_to_dataframe(sel, engine_or_conn, snake=snake)
-        return write_parquet(df, path, overwrite=overwrite, compression=compression)
+        return write_parquet(
+            df, path, overwrite=overwrite, compression=compression
+        )
     with writer(path, overwrite=overwrite) as temp, yield_connection(
         engine_or_conn
     ) as conn:

@@ -6,7 +6,9 @@ from utilities.numpy import is_zero
 from utilities.numpy.typing import NDArrayF, NDArrayF1
 
 
-def ppf(array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1) -> NDArrayF:
+def ppf(
+    array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1
+) -> NDArrayF:
     """Apply the PPF transform to an array of data."""
     return apply_along_axis(_ppf_1d, axis, array, cutoff)
 
