@@ -7,6 +7,7 @@ from loguru import logger
 from luigi import IntParameter, Task
 from numpy import arange, array
 from numpy.random import default_rng, random
+from typing_extensions import override
 
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
@@ -22,9 +23,11 @@ class Example(Task):
 
     messages = cast(int, IntParameter())
 
+    @override
     def output(self) -> PathTarget:
         return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
 
+    @override
     def run(self) -> None:
         rng = default_rng(get_native_id())
         levels = [level.name for level in LogLevel]

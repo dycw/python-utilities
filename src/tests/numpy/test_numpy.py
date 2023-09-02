@@ -165,7 +165,11 @@ class TestArrayIndexer:
     )
     @beartype
     def test_axis(
-        self, i: int, ndim: int, axis: int, expected: tuple[Union[int, slice], ...]
+        self,
+        i: int,
+        ndim: int,
+        axis: int,
+        expected: tuple[Union[int, slice], ...],
     ) -> None:
         assert array_indexer(i, ndim, axis=axis) == expected
 
@@ -241,7 +245,15 @@ class TestChecks:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @beartype
     def test_is_at_least_or_nan(self, y: float) -> None:
@@ -272,7 +284,15 @@ class TestChecks:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @beartype
     def test_is_at_most_or_nan(self, y: float) -> None:
@@ -301,11 +321,25 @@ class TestChecks:
 
     @mark.parametrize(
         "low",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @mark.parametrize(
         "high",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @beartype
     def test_is_between_or_nan(self, low: float, high: float) -> None:
@@ -507,7 +541,15 @@ class TestChecks:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @beartype
     def test_is_greater_than_or_nan(self, y: float) -> None:
@@ -569,7 +611,15 @@ class TestChecks:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
     )
     @beartype
     def test_is_less_than_or_nan(self, y: float) -> None:
@@ -884,7 +934,11 @@ class TestDatetime64ToDatetime:
 class TestDatetime64DTypeToUnit:
     @mark.parametrize(
         ("dtype", "expected"),
-        [param(datetime64D, "D"), param(datetime64Y, "Y"), param(datetime64ns, "ns")],
+        [
+            param(datetime64D, "D"),
+            param(datetime64Y, "Y"),
+            param(datetime64ns, "ns"),
+        ],
     )
     @beartype
     def test_example(self, dtype: Any, expected: Datetime64Unit) -> None:
@@ -899,7 +953,11 @@ class TestDatetime64DTypeToUnit:
 class TestDatetime64DUnitToDType:
     @mark.parametrize(
         ("unit", "expected"),
-        [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
+        [
+            param("D", datetime64D),
+            param("Y", datetime64Y),
+            param("ns", datetime64ns),
+        ],
     )
     @beartype
     def test_example(self, unit: Datetime64Unit, expected: Any) -> None:
@@ -1030,11 +1088,21 @@ class TestFFillNonNanSlices:
             param(
                 None,
                 0,
-                [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]],
+                [
+                    [0.1, nan, nan, 0.2],
+                    [0.1, nan, nan, 0.2],
+                    [0.3, nan, nan, nan],
+                ],
             ),
             param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
             param(
-                1, 0, [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]]
+                1,
+                0,
+                [
+                    [0.1, nan, nan, 0.2],
+                    [0.1, nan, nan, 0.2],
+                    [0.3, nan, nan, nan],
+                ],
             ),
             param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
         ],
@@ -1422,7 +1490,12 @@ class TestShift:
                 [4 * [nan], [0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]],
                 id="axis=0, n=1",
             ),
-            param(0, 2, [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]], id="axis=0, n=2"),
+            param(
+                0,
+                2,
+                [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]],
+                id="axis=0, n=2",
+            ),
             param(
                 0,
                 -1,
@@ -1430,30 +1503,49 @@ class TestShift:
                 id="axis=0, n=-1",
             ),
             param(
-                0, -2, [[8.0, 9.0, 10.0, 11.0], 4 * [nan], 4 * [nan]], id="axis=0, n=-2"
+                0,
+                -2,
+                [[8.0, 9.0, 10.0, 11.0], 4 * [nan], 4 * [nan]],
+                id="axis=0, n=-2",
             ),
             param(
                 1,
                 1,
-                [[nan, 0.0, 1.0, 2.0], [nan, 4.0, 5.0, 6.0], [nan, 8.0, 9.0, 10.0]],
+                [
+                    [nan, 0.0, 1.0, 2.0],
+                    [nan, 4.0, 5.0, 6.0],
+                    [nan, 8.0, 9.0, 10.0],
+                ],
                 id="axis=1, n=1",
             ),
             param(
                 1,
                 2,
-                [[nan, nan, 0.0, 1.0], [nan, nan, 4.0, 5.0], [nan, nan, 8.0, 9.0]],
+                [
+                    [nan, nan, 0.0, 1.0],
+                    [nan, nan, 4.0, 5.0],
+                    [nan, nan, 8.0, 9.0],
+                ],
                 id="axis=1, n=1",
             ),
             param(
                 1,
                 -1,
-                [[1.0, 2.0, 3.0, nan], [5.0, 6.0, 7.0, nan], [9.0, 10.0, 11.0, nan]],
+                [
+                    [1.0, 2.0, 3.0, nan],
+                    [5.0, 6.0, 7.0, nan],
+                    [9.0, 10.0, 11.0, nan],
+                ],
                 id="axis=1, n=-1",
             ),
             param(
                 1,
                 -2,
-                [[2.0, 3.0, nan, nan], [6.0, 7.0, nan, nan], [10.0, 11.0, nan, nan]],
+                [
+                    [2.0, 3.0, nan, nan],
+                    [6.0, 7.0, nan, nan],
+                    [10.0, 11.0, nan, nan],
+                ],
                 id="axis=1, n=-2",
             ),
         ],

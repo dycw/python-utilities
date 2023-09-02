@@ -34,7 +34,6 @@ from numpy import (
 )
 from numpy.testing import assert_equal
 from pytest import raises
-
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc
 from utilities.hypothesis.numpy import (
     bool_arrays,
@@ -144,10 +143,17 @@ class TestDatetime64DIndexes:
     )
     @beartype
     def test_main(
-        self, data: DataObject, n: int, valid_dates: bool, unique: bool, sort: bool
+        self,
+        data: DataObject,
+        n: int,
+        valid_dates: bool,
+        unique: bool,
+        sort: bool,
     ) -> None:
         index = data.draw(
-            datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
+            datetime64D_indexes(
+                n=n, valid_dates=valid_dates, unique=unique, sort=sort
+            )
         )
         assert index.dtype == datetime64D
         assert len(index) == n
@@ -221,7 +227,9 @@ class TestDatetime64Kinds:
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
     @beartype
-    def test_main(self, data: DataObject, kind: Optional[Datetime64Kind]) -> None:
+    def test_main(
+        self, data: DataObject, kind: Optional[Datetime64Kind]
+    ) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
             assert datetime64_unit_to_kind(unit) == kind
@@ -237,7 +245,12 @@ class TestDatetime64usIndexes:
     )
     @beartype
     def test_main(
-        self, data: DataObject, n: int, valid_datetimes: bool, unique: bool, sort: bool
+        self,
+        data: DataObject,
+        n: int,
+        valid_datetimes: bool,
+        unique: bool,
+        sort: bool,
     ) -> None:
         index = data.draw(
             datetime64us_indexes(
@@ -315,7 +328,9 @@ class TestDatetime64s:
 
     @given(data=data(), unit=datetime64_units())
     @beartype
-    def test_valid_dates_error(self, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_valid_dates_error(
+        self, data: DataObject, unit: Datetime64Unit
+    ) -> None:
         _ = assume(unit != "D")
         with raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_dates=True))
@@ -410,9 +425,13 @@ class TestFloatArrays:
         assert array.dtype == float
         assert array.shape == shape
         if min_value is not None:
-            assert ((isfinite(array) & (array >= min_value)) | ~isfinite(array)).all()
+            assert (
+                (isfinite(array) & (array >= min_value)) | ~isfinite(array)
+            ).all()
         if max_value is not None:
-            assert ((isfinite(array) & (array <= max_value)) | ~isfinite(array)).all()
+            assert (
+                (isfinite(array) & (array <= max_value)) | ~isfinite(array)
+            ).all()
         if not allow_nan:
             assert (~isnan(array)).all()
         if not allow_inf:
@@ -449,7 +468,10 @@ class TestIntArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 int_arrays(
-                    shape=shape, min_value=min_value, max_value=max_value, unique=unique
+                    shape=shape,
+                    min_value=min_value,
+                    max_value=max_value,
+                    unique=unique,
                 )
             )
         assert array.dtype == int
@@ -460,10 +482,15 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
+    @given(
+        data=data(), min_value=int32s() | none(), max_value=int32s() | none()
+    )
     @beartype
     def test_main(
-        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+        self,
+        data: DataObject,
+        min_value: Optional[int],
+        max_value: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
@@ -476,10 +503,15 @@ class TestInt32s:
 
 
 class TestInt64s:
-    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    @given(
+        data=data(), min_value=int64s() | none(), max_value=int64s() | none()
+    )
     @beartype
     def test_main(
-        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+        self,
+        data: DataObject,
+        min_value: Optional[int],
+        max_value: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
@@ -535,10 +567,15 @@ class TestStrArrays:
 
 
 class TestUInt32s:
-    @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
+    @given(
+        data=data(), min_value=uint32s() | none(), max_value=uint32s() | none()
+    )
     @beartype
     def test_main(
-        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+        self,
+        data: DataObject,
+        min_value: Optional[int],
+        max_value: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint32s(min_value=min_value, max_value=max_value))
@@ -551,10 +588,15 @@ class TestUInt32s:
 
 
 class TestUInt64s:
-    @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
+    @given(
+        data=data(), min_value=uint64s() | none(), max_value=uint64s() | none()
+    )
     @beartype
     def test_main(
-        self, data: DataObject, min_value: Optional[int], max_value: Optional[int]
+        self,
+        data: DataObject,
+        min_value: Optional[int],
+        max_value: Optional[int],
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint64s(min_value=min_value, max_value=max_value))

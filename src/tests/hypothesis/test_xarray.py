@@ -3,9 +3,17 @@ from typing import Optional
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    floats,
+    integers,
+    none,
+)
 from pandas import Index
 from pandas.testing import assert_index_equal
+from typing_extensions import Self
 
 from utilities.hypothesis import assume_does_not_raise, hashables
 from utilities.hypothesis.numpy import int64s
@@ -162,7 +170,9 @@ class TestMergeIntoDictOfIndexes:
         _ = data.draw(_merge_into_dict_of_indexes())
 
     @given(
-        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
+        data=data(),
+        indexes1=dicts_of_indexes() | none(),
+        indexes2=dicts_of_indexes(),
     )
     def test_non_empty(
         self,
@@ -186,7 +196,7 @@ class TestStrDataArrays:
         name=hashables(),
     )
     def test_main(
-        self,
+        self: Self,
         data: DataObject,
         indexes: dict[Hashable, Index],
         min_size: int,
