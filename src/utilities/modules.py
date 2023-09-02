@@ -1,14 +1,13 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from contextlib import suppress
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
-from typing import Any, Optional, Union
-
-from beartype import beartype
+from typing import Any
 
 
-@beartype
 def yield_modules(
     module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
@@ -31,14 +30,13 @@ def yield_modules(
                     yield imported
 
 
-@beartype
 def yield_module_contents(
     module: ModuleType,
     /,
     *,
     recursive: bool = False,
-    type: Optional[Union[type[Any], tuple[type[Any], ...]]] = None,  # noqa: A002
-    predicate: Optional[Callable[[Any], bool]] = None,
+    type: type[Any] | tuple[type[Any], ...] | None = None,  # noqa: A002
+    predicate: Callable[[Any], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.
 
@@ -53,21 +51,19 @@ def yield_module_contents(
                 yield obj
 
 
-@beartype
 def yield_module_subclasses(
     module: ModuleType,
     cls: type[Any],
     /,
     *,
     recursive: bool = False,
-    predicate: Optional[Callable[[type[Any]], bool]] = None,
+    predicate: Callable[[type[Any]], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module subclasses under a package.
 
     Optionally, recurse into sub-packages.
     """
 
-    @beartype
     def predicate_use(obj: type[Any], /) -> bool:
         return (
             issubclass(obj, cls)

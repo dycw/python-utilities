@@ -1,6 +1,5 @@
-from typing import Optional, Union
+from __future__ import annotations
 
-from beartype import beartype
 from holoviews import Curve
 from holoviews.plotting import bokeh
 
@@ -13,18 +12,19 @@ from utilities.xarray.typing import DataArrayB1, DataArrayF1, DataArrayI1
 _ = bokeh
 
 
-@beartype
 def plot_curve(
-    array: Union[DataArrayB1, DataArrayI1, DataArrayF1],
+    array: DataArrayB1 | DataArrayI1 | DataArrayF1,
     /,
     *,
-    label: Optional[str] = None,
-    smooth: Optional[int] = None,
-    aspect: Optional[float] = None,
+    label: str | None = None,
+    smooth: int | None = None,
+    aspect: float | None = None,
 ) -> Curve:
     """Plot a 1D array as a curve."""
     if has_dtype(array, bool):
-        return plot_curve(array.astype(int), label=label, smooth=smooth, aspect=aspect)
+        return plot_curve(
+            array.astype(int), label=label, smooth=smooth, aspect=aspect
+        )
     (kdim,) = array.dims
     try:
         vdim = ensure_str(array.name)

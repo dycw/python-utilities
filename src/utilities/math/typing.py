@@ -1,72 +1,67 @@
-from math import isclose, isfinite, isnan
-from typing import Annotated, Optional, Union
+from __future__ import annotations
 
-from beartype import beartype
+from math import isclose, isfinite, isnan
+from typing import Annotated
 
 # checks
 
 
-@beartype
 def is_at_least(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if -inf < x < inf and x == int(x)."""
     return (x >= y) or _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_at_least_or_nan(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x >= y or x == nan."""
     return is_at_least(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_at_most(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x <= y."""
     return (x <= y) or _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_at_most_or_nan(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x <= y or x == nan."""
     return is_at_most(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_between(
-    x: Union[int, float],
-    low: Union[int, float],
-    high: Union[int, float],
+    x: float,
+    low: float,
+    high: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if low <= x <= high."""
     return is_at_least(x, low, rel_tol=rel_tol, abs_tol=abs_tol) and is_at_most(
@@ -74,203 +69,148 @@ def is_between(
     )
 
 
-@beartype
 def is_between_or_nan(
-    x: Union[int, float],
-    low: Union[int, float],
-    high: Union[int, float],
+    x: float,
+    low: float,
+    high: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if low <= x <= high or x == nan."""
-    return is_between(x, low, high, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_between(x, low, high, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
-@beartype
 def is_finite_and_integral(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf and x == int(x)."""
     return isfinite(x) & is_integral(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_integral_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf and x == int(x), or x == nan."""
-    return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
+    return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(
+        x
+    )
 
 
-@beartype
 def is_finite_and_negative(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < 0."""
     return isfinite(x) and is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_negative_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < 0 or x == nan."""
-    return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
-@beartype
 def is_finite_and_non_negative(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 <= x < inf."""
     return isfinite(x) and is_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_non_negative_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 <= x < inf or x == nan."""
-    return is_finite_and_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_negative(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    ) or isnan(x)
 
 
-@beartype
 def is_finite_and_non_positive(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x <= 0."""
     return isfinite(x) and is_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_non_positive_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x <= 0 or x == nan."""
-    return is_finite_and_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_positive(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    ) or isnan(x)
 
 
-@beartype
 def is_finite_and_non_zero(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf, x != 0."""
     return isfinite(x) and is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_non_zero_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0 or x == nan."""
-    return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
-@beartype
 def is_finite_and_positive(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 < x < inf."""
     return isfinite(x) and is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_finite_and_positive_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 < x < inf or x == nan."""
-    return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
+    return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
+        x
+    )
 
 
-@beartype
-def is_finite_or_nan(x: Union[int, float], /) -> bool:
+def is_finite_or_nan(x: float, /) -> bool:
     """Check if -inf < x < inf or x == nan."""
     return isfinite(x) or isnan(x)
 
 
-@beartype
 def is_greater_than(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x > y."""
     return (x > y) and not _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_greater_than_or_nan(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x > y or x == nan."""
     return is_greater_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_integral(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == int(x)."""
     try:
@@ -280,196 +220,126 @@ def is_integral(
     return _is_close(x, rounded, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_integral_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == int(x) or x == nan."""
     return is_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
 
 
-@beartype
 def is_less_than(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x < y."""
     return (x < y) and not _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_less_than_or_nan(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x < y or x == nan."""
     return is_less_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_negative(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < 0."""
     return is_less_than(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_negative_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < 0 or x == nan."""
     return is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_non_negative(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x >= 0."""
     return is_at_least(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_non_negative_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x >= 0 or x == nan."""
     return is_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_non_positive(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <= 0."""
     return is_at_most(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_non_positive_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_non_zero(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0."""
     return not _is_close(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_non_zero_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_positive(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0."""
     return is_greater_than(x, 0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_positive_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_zero(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0."""
     return _is_close(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_zero_or_finite_and_non_micro(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
     zero = 0.0
-    return (x == zero) or is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol)
+    return (x == zero) or is_finite_and_non_zero(
+        x, rel_tol=rel_tol, abs_tol=abs_tol
+    )
 
 
-@beartype
 def is_zero_or_finite_and_non_micro_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0), or x == nan."""
     return is_zero_or_finite_and_non_micro(
@@ -477,51 +347,35 @@ def is_zero_or_finite_and_non_micro_or_nan(
     ) or isnan(x)
 
 
-@beartype
 def is_zero_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0 or x == nan."""
     return is_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def is_zero_or_non_micro(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0 or ~isclose(x, 0)."""
     zero = 0.0
     return (x == zero) or is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@beartype
 def is_zero_or_non_micro_or_nan(
-    x: Union[int, float],
-    /,
-    *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
-@beartype
 def _is_close(
-    x: Union[int, float],
-    y: Union[int, float],
+    x: float,
+    y: float,
     /,
     *,
-    rel_tol: Optional[float] = None,
-    abs_tol: Optional[float] = None,
+    rel_tol: float | None = None,
+    abs_tol: float | None = None,
 ) -> bool:
     """Check if x == y."""
     return isclose(

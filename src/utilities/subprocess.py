@@ -1,26 +1,26 @@
-from collections.abc import Iterator, Mapping
+from __future__ import annotations
+
+from collections.abc import Iterator, Mapping, Sequence
 from functools import partial
 from itertools import chain, repeat, starmap
 from pathlib import Path
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import Any, Optional
+from typing import Any
 
-from beartype import beartype
 from loguru import logger
 
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 
 
-@beartype
 def get_shell_output(
     cmd: str,
     /,
     *,
     cwd: PathLike = Path.cwd(),
-    activate: Optional[PathLike] = None,
-    env: Optional[Mapping[str, Optional[str]]] = None,
+    activate: PathLike | None = None,
+    env: Mapping[str, str | None] | None = None,
 ) -> str:
     """Get the output of a shell call.
 
@@ -49,8 +49,9 @@ class MultipleActivateError(ValueError):
     """Raised when multiple `activate` scripts can be found."""
 
 
-@beartype
-def run_accept_address_in_use(args: list[str], /, *, exist_ok: bool) -> None:
+def run_accept_address_in_use(
+    args: Sequence[str], /, *, exist_ok: bool
+) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
         _ = check_output(args, stderr=PIPE, text=True)  # noqa: S603
@@ -63,7 +64,6 @@ def run_accept_address_in_use(args: list[str], /, *, exist_ok: bool) -> None:
             raise
 
 
-@beartype
 def _address_already_in_use_pattern() -> str:
     """Get the 'address_already_in_use' pattern."""
     text = "OSError: [Errno 98] Address already in use"
@@ -71,7 +71,6 @@ def _address_already_in_use_pattern() -> str:
     return f"^{escaped}$"
 
 
-@beartype
 def tabulate_called_process_error(error: CalledProcessError, /) -> str:
     """Tabulate the components of a CalledProcessError."""
     mapping = {
@@ -85,11 +84,9 @@ def tabulate_called_process_error(error: CalledProcessError, /) -> str:
     return "\n".join(starmap(tabulate, mapping.items()))
 
 
-@beartype
 def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
     template = f"{{:{buffer}}}{{}}"
 
-    @beartype
     def yield_lines() -> Iterator[str]:
         keys = chain([key], repeat(buffer * " "))
         value_lines = str(value).splitlines()

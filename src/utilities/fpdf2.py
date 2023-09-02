@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
-from beartype import beartype
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
+from typing_extensions import override
 
 from utilities.datetime import local_timezone
 from utilities.holoviews import save_plot
@@ -15,14 +17,12 @@ from utilities.tempfile import TemporaryDirectory
 class _BasePDF(FPDF):
     """Base class for PDFs."""
 
-    @beartype
     def add_fixed_width_text(self, text: str, /) -> None:
         """Add a block of fixed witth text."""
         self.set_font("Courier")
         _ = self.write(txt=text)
         self.ln()
 
-    @beartype
     def add_plot(self, plot: Any, /) -> None:  # pragma: no cover
         with TemporaryDirectory() as temp:
             path = temp.joinpath("image.png")
@@ -31,12 +31,11 @@ class _BasePDF(FPDF):
 
 
 @contextmanager
-@beartype
-def yield_pdf(*, header: Optional[str] = None) -> Iterator[_BasePDF]:
+def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     """Yield a PDF."""
 
     class OutputPDF(_BasePDF):
-        @beartype
+        @override
         def header(self) -> None:
             if header is not None:
                 self.set_font(family="Helvetica", style="B", size=15)
@@ -52,7 +51,7 @@ def yield_pdf(*, header: Optional[str] = None) -> Iterator[_BasePDF]:
                 )
                 self.ln(20)
 
-        @beartype
+        @override
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)

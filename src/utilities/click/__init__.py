@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 from enum import Enum as _Enum
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
-from beartype import beartype
 from click import Context, Parameter, ParamType, option
+from typing_extensions import override
 
 from utilities.datetime import (
     ParseDateError,
@@ -28,9 +30,9 @@ class Date(ParamType):
 
     name = "date"
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -44,9 +46,9 @@ class DateTime(ParamType):
 
     name = "datetime"
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -60,9 +62,9 @@ class Time(ParamType):
 
     name = "time"
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -76,9 +78,9 @@ class Timedelta(ParamType):
 
     name = "timedelta"
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
@@ -95,19 +97,22 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    @beartype
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+    def __init__(
+        self, enum: type[_E], /, *, case_sensitive: bool = True
+    ) -> None:
         super().__init__()
         self._enum = enum
         self._case_sensitive = case_sensitive
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
-            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
+            return ensure_enum(
+                self._enum, value, case_sensitive=self._case_sensitive
+            )
         except (NoMatchingMemberError, MultipleMatchingMembersError):
             return self.fail(f"Unable to parse {value}", param, ctx)
 

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from functools import partial
 from operator import le, lt
 from re import search
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any
 
 from pytest import mark, param
 
@@ -28,7 +30,9 @@ class TestYieldModules:
             param(package_with, True, 5),
         ],
     )
-    def test_main(self, module: ModuleType, recursive: bool, expected: int) -> None:
+    def test_main(
+        self, *, module: ModuleType, recursive: bool, expected: int
+    ) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 
 
@@ -47,7 +51,7 @@ class TestYieldModuleContents:
     @mark.parametrize(
         ("type_", "predicate", "expected"),
         [
-            param(None, None, 17),
+            param(None, None, 18),
             param(int, None, 3),
             param(float, None, 3),
             param((int, float), None, 6),
@@ -60,8 +64,9 @@ class TestYieldModuleContents:
     )
     def test_main(
         self,
+        *,
         module: ModuleType,
-        type_: Optional[Union[type[Any], tuple[type[Any], ...]]],
+        type_: type[Any] | tuple[type[Any], ...] | None,
         recursive: bool,
         predicate: Callable[[Any], bool],
         expected: int,
@@ -99,6 +104,7 @@ class TestYieldModuleSubclasses:
     )
     def test_main(
         self,
+        *,
         module: ModuleType,
         type_: type[Any],
         recursive: bool,

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from re import search
 from time import sleep
-from typing import Optional
 
 from hypothesis import given, settings
 from hypothesis.strategies import dictionaries, lists, none, sampled_from
@@ -35,7 +37,7 @@ class TestSetupLoguru:
         logger.info("test")
 
     @given(enable=lists(text_ascii(min_size=1)))
-    def test_enable(self, enable: list[str]) -> None:
+    def test_enable(self, enable: Sequence[str]) -> None:
         setup_loguru(enable=enable)
         logger.info("test")
 
@@ -75,12 +77,14 @@ class TestAugmentLevels:
         assert result == {}
 
     @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
-    def test_main(self, levels: Optional[dict[str, LogLevel]]) -> None:
+    def test_main(self, levels: Mapping[str, LogLevel] | None) -> None:
         result = _augment_levels(levels=levels)
         assert result == levels
 
     @given(
-        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
+        env_var_prefix=env_var_prefixes,
+        module=modules,
+        level=sampled_from(LogLevel),
     )
     def test_with_env_var(
         self, env_var_prefix: str, module: str, level: LogLevel
@@ -90,7 +94,9 @@ class TestAugmentLevels:
         assert result == {module: level}
 
     @given(
-        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
+        env_var_prefix=env_var_prefixes,
+        module=modules,
+        level=sampled_from(LogLevel),
     )
     def test_without_env_var(
         self, env_var_prefix: str, module: str, level: LogLevel
@@ -121,7 +127,7 @@ class TestAugmentLevels:
 
 class TestGetFilesPath:
     @given(files=text_ascii(min_size=1) | none())
-    def test_main(self, files: Optional[PathLike]) -> None:
+    def test_main(self, files: PathLike | None) -> None:
         result = _get_files_path(files=files)
         assert result == files
 
@@ -142,7 +148,9 @@ class TestGetFilesPath:
         env_var_key=env_var_prefixes,
         env_var_value=text_ascii(min_size=1),
     )
-    def test_both(self, files: str, env_var_key: str, env_var_value: str) -> None:
+    def test_both(
+        self, files: str, env_var_key: str, env_var_value: str
+    ) -> None:
         with temp_environ({env_var_key: env_var_value}):
             result = _get_files_path(files=files, env_var=env_var_key)
         assert result == files

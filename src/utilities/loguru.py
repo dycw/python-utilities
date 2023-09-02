@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 import logging
 from collections.abc import Iterator, Mapping
@@ -7,10 +9,10 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from sys import _getframe, stdout
-from typing import Any, Optional, TypedDict, Union, cast
+from typing import Any, TypedDict, cast
 
-from beartype import beartype
 from loguru import logger
+from typing_extensions import override
 
 from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
@@ -23,23 +25,24 @@ _ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
 
 
-@beartype
 def setup_loguru(
     *,
-    levels: Optional[Mapping[str, LogLevel]] = None,
-    levels_env_var_prefix: Optional[str] = _LEVELS_ENV_VAR_PREFIX,
-    enable: Optional[IterableStrs] = None,
+    levels: Mapping[str, LogLevel] | None = None,
+    levels_env_var_prefix: str | None = _LEVELS_ENV_VAR_PREFIX,
+    enable: IterableStrs | None = None,
     console: LogLevel = LogLevel.INFO,
-    files: Optional[PathLike] = None,
+    files: PathLike | None = None,
     files_root: Path = Path.cwd(),
-    files_env_var: Optional[str] = _FILES_ENV_VAR,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    files_env_var: str | None = _FILES_ENV_VAR,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Set up `loguru` logging."""
     logger.remove()
     basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
-    all_levels = _augment_levels(levels=levels, env_var_prefix=levels_env_var_prefix)
+    all_levels = _augment_levels(
+        levels=levels, env_var_prefix=levels_env_var_prefix
+    )
     for name, level in all_levels.items():
         _setup_standard_logger(name, level)
     if enable is not None:
@@ -49,7 +52,9 @@ def setup_loguru(
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
         full_files_path = files_root.joinpath(files_path)
-        _add_file_sink(full_files_path, "log", LogLevel.DEBUG, all_levels, live=False)
+        _add_file_sink(
+            full_files_path, "log", LogLevel.DEBUG, all_levels, live=False
+        )
         for level in set(LogLevel) - {LogLevel.CRITICAL}:
             _add_live_file_sink(
                 full_files_path,
@@ -66,7 +71,8 @@ class _InterceptHandler(Handler):
     https://github.com/Delgan/loguru#entirely-compatible-with-standard-logging
     """
 
-    def emit(self, record: LogRecord, /) -> None:
+    @override
+    def emit(self, record: LogRecord) -> None:
         # Get corresponding Loguru level if it exists.
         try:
             level = logger.level(record.levelname).name
@@ -84,11 +90,10 @@ class _InterceptHandler(Handler):
         )
 
 
-@beartype
 def _augment_levels(
     *,
-    levels: Optional[Mapping[str, LogLevel]] = None,
-    env_var_prefix: Optional[str] = _LEVELS_ENV_VAR_PREFIX,
+    levels: Mapping[str, LogLevel] | None = None,
+    env_var_prefix: str | None = _LEVELS_ENV_VAR_PREFIX,
 ) -> dict[str, LogLevel]:
     """Augment the mapping of levels with the env vars."""
     out: dict[str, LogLevel] = {}
@@ -103,7 +108,6 @@ def _augment_levels(
     return out
 
 
-@beartype
 def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
     """Set up the standard loggers."""
     if search("luigi", name):
@@ -118,10 +122,9 @@ def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
     std_logger.setLevel(level.name)
 
 
-@beartype
 def _get_files_path(
-    *, files: Optional[PathLike] = None, env_var: Optional[str] = _FILES_ENV_VAR
-) -> Optional[PathLike]:
+    *, files: PathLike | None = None, env_var: str | None = _FILES_ENV_VAR
+) -> PathLike | None:
     """Get the path of the files, possibly from the env var."""
     if files is not None:
         return files
@@ -130,7 +133,6 @@ def _get_files_path(
     return None
 
 
-@beartype
 def _add_sink(
     sink: Any,
     level: LogLevel,
@@ -138,15 +140,15 @@ def _add_sink(
     /,
     *,
     live: bool,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a sink."""
     filter_ = {name: level.name for name, level in levels.items()}
 
     class Kwargs(TypedDict, total=False):
-        rotation: Optional[Union[str, int, dt.time, dt.timedelta]]
-        retention: Optional[Union[str, int, dt.timedelta]]
+        rotation: str | int | dt.time | dt.timedelta | None
+        retention: str | int | dt.timedelta | None
 
     if isinstance(sink, (Path, str)):
         kwargs = cast(Kwargs, {"rotation": rotation, "retention": retention})
@@ -164,11 +166,9 @@ def _add_sink(
     )
 
 
-@beartype
 def _get_format(*, live: bool) -> str:
     """Get the format string."""
 
-    @beartype
     def yield_parts() -> Iterator[str]:
         yield (
             "<green>{time:YYYY-MM-DD}</green>"
@@ -190,7 +190,6 @@ def _get_format(*, live: bool) -> str:
     return "".join(yield_parts())
 
 
-@beartype
 def _add_file_sink(
     path: PathLike,
     name: str,
@@ -199,8 +198,8 @@ def _add_file_sink(
     /,
     *,
     live: bool,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a file sink."""
     _add_sink(
@@ -213,15 +212,14 @@ def _add_file_sink(
     )
 
 
-@beartype
 def _add_live_file_sink(
     path: PathLike,
     level: LogLevel,
     levels: Mapping[str, LogLevel],
     /,
     *,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a live file sink."""
     _add_file_sink(

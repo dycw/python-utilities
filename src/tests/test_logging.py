@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from logging import getLogger
 
 from utilities.logging import LogLevel, basic_config

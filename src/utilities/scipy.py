@@ -1,4 +1,5 @@
-from beartype import beartype
+from __future__ import annotations
+
 from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
 from scipy.stats import norm
 
@@ -7,13 +8,13 @@ from utilities.numpy import is_zero
 from utilities.numpy.typing import NDArrayF, NDArrayF1
 
 
-@beartype
-def ppf(array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1) -> NDArrayF:
+def ppf(
+    array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1
+) -> NDArrayF:
     """Apply the PPF transform to an array of data."""
     return apply_along_axis(_ppf_1d, axis, array, cutoff)
 
 
-@beartype
 def _ppf_1d(array: NDArrayF1, cutoff: FloatFinNonNeg, /) -> NDArrayF1:
     if (i := isnan(array)).all():
         return array

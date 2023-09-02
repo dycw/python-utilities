@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from utilities.sys import PYTHON_AT_LEAST_3_11, VERSION_MAJOR_MINOR
 
 

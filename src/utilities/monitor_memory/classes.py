@@ -1,16 +1,16 @@
+from __future__ import annotations
+
 import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from beartype import beartype
 from typed_settings import option, settings
 
 from utilities.platform import SYSTEM, System
 from utilities.typing import never
 
 
-@beartype
 @settings(frozen=True)
 class Config:
     """Settings for the `monitor_memory` script."""
@@ -21,13 +21,14 @@ class Config:
     freq: int = option(
         default=60, help="in seconds", click={"param_decls": ("-f", "--freq")}
     )
-    duration: Optional[int] = option(
-        default=None, help="in seconds", click={"param_decls": ("-d", "--duration")}
+    duration: Optional[int] = option(  # noqa: UP007
+        default=None,
+        help="in seconds",
+        click={"param_decls": ("-d", "--duration")},
     )
 
 
 @dataclass
-@beartype
 class ItemMacOS:
     """A set of memory statistics."""
 
@@ -49,7 +50,6 @@ class ItemMacOS:
 
 
 @dataclass
-@beartype
 class ItemLinux:
     """A set of memory statistics."""
 

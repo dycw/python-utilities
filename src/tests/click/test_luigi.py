@@ -1,4 +1,6 @@
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Sequence
 
 from click import command, echo
 from click.testing import CliRunner
@@ -18,7 +20,9 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], True), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_local(self, args: list[str], expected: bool) -> None:
+    def test_default_local(
+        self, *, args: Sequence[str], expected: bool
+    ) -> None:
         @command()
         @local_scheduler_option_default_local
         def cli(*, local_scheduler: bool) -> None:
@@ -32,7 +36,9 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_central(self, args: list[str], expected: bool) -> None:
+    def test_default_central(
+        self, *, args: Sequence[str], expected: bool
+    ) -> None:
         @command()
         @local_scheduler_option_default_central
         def cli(*, local_scheduler: bool) -> None:
@@ -45,10 +51,10 @@ class TestLocalSchedulerOption:
 
 class TestWorkersOption:
     @given(workers=integers() | none())
-    def test_main(self, workers: Optional[int]) -> None:
+    def test_main(self, workers: int | None) -> None:
         @command()
         @workers_option
-        def cli(*, workers: Optional[int]) -> None:
+        def cli(*, workers: int | None) -> None:
             echo(f"workers = {workers}")
 
         args = [] if workers is None else ["--workers", str(workers)]

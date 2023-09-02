@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import datetime as dt
 from typing import Any, Callable, cast
 
-from beartype import beartype
 from hypothesis import assume, given
 from hypothesis.extra.pandas import range_indexes
 from hypothesis.strategies import integers
@@ -56,34 +57,30 @@ from utilities.pandas import (
 
 
 class TestCheckDataFrame:
-    @beartype
     def test_main(self) -> None:
         df = DataFrame(index=RangeIndex(0))
         check_dataframe(df)
 
-    @beartype
     def test_columns_name_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"], name="name"))
+        df = DataFrame(
+            0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
+        )
         with raises(DataFrameColumnsNameError):
             check_dataframe(df)
 
-    @beartype
     def test_columns_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         check_dataframe(df, columns=["value"])
 
-    @beartype
     def test_columns_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         with raises(DataFrameColumnsError):
             check_dataframe(df, columns=["other"])
 
-    @beartype
     def test_dtypes_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         check_dataframe(df, dtypes={"value": float})
 
-    @beartype
     def test_dtypes_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         with raises(DataFrameDTypesError):
@@ -92,18 +89,15 @@ class TestCheckDataFrame:
 
 class TestCheckRangeIndex:
     @given(index=range_indexes())
-    @beartype
     def test_main(self, index: RangeIndex) -> None:
         check_range_index(index)
 
-    @beartype
     def test_type(self) -> None:
         index = Index([], dtype=float)
         with raises(TypeError):
             check_range_index(index)
 
     @given(start=integers(-10, 10), stop=integers(-10, 10))
-    @beartype
     def test_start(self, start: int, stop: int) -> None:
         _ = assume(start != 0)
         index = RangeIndex(start=start, stop=stop)
@@ -111,7 +105,6 @@ class TestCheckRangeIndex:
             check_range_index(index)
 
     @given(step=integers(-10, 10))
-    @beartype
     def test_step(self, step: int) -> None:
         _ = assume(step not in {0, 1})
         index = RangeIndex(step=step)
@@ -119,28 +112,23 @@ class TestCheckRangeIndex:
             check_range_index(index)
 
     @given(index=range_indexes(name=text_ascii()))
-    @beartype
     def test_name(self, index: RangeIndex) -> None:
         with raises(RangeIndexNameError):
             check_range_index(index)
 
-    @beartype
     def test_series_pass(self) -> None:
         series = Series(index=RangeIndex(0), dtype=float)
         check_range_index(series)
 
-    @beartype
     def test_series_fail(self) -> None:
         series = Series(index=Index([], dtype=int), dtype=float)
         with raises(SeriesRangeIndexError):
             check_range_index(series)
 
-    @beartype
     def test_dataframe_pass(self) -> None:
         df = DataFrame(index=RangeIndex(0))
         check_range_index(df)
 
-    @beartype
     def test_dataframe_fail(self) -> None:
         df = DataFrame(index=Index([], dtype=int))
         with raises(DataFrameRangeIndexError):
@@ -149,13 +137,11 @@ class TestCheckRangeIndex:
 
 class TestDTypes:
     @mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
-    @beartype
     def test_main(self, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
 
 
 class TestRedirectToEmptyPandasConcatError:
-    @beartype
     def test_main(self) -> None:
         with raises(EmptyPandasConcatError):
             try:
@@ -200,9 +186,13 @@ class TestSeriesMinMax:
             param(NaT, NaT, datetime64ns, NaT, NaT),
         ],
     )
-    @beartype
     def test_main(
-        self, x_v: Any, y_v: Any, dtype: Any, expected_min_v: Any, expected_max_v: Any
+        self,
+        x_v: Any,
+        y_v: Any,
+        dtype: Any,
+        expected_min_v: Any,
+        expected_max_v: Any,
     ) -> None:
         x = Series(data=[x_v], dtype=dtype)
         y = Series(data=[y_v], dtype=dtype)
@@ -214,31 +204,31 @@ class TestSeriesMinMax:
         assert_series_equal(result_max, expected_max)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    @beartype
-    def test_different_index(self, func: Callable[[Series, Series], Series]) -> None:
+    def test_different_index(
+        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+    ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
         with raises(AssertionError):
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    @beartype
-    def test_different_dtype(self, func: Callable[[Series, Series], Series]) -> None:
+    def test_different_dtype(
+        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+    ) -> None:
         x = Series(data=nan, dtype=float)
-        y = Series(data=NA, dtype=Int64)
+        y = Series(data=NA, dtype=Int64)  # type: ignore
         with raises(DifferentDTypeError):
             _ = func(x, y)
 
 
 class TestTimestampMinMaxAsDate:
-    @beartype
     def test_min(self) -> None:
         date = TIMESTAMP_MIN_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(cast(Timestamp, date - dt.timedelta(days=1)))
 
-    @beartype
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
@@ -247,14 +237,12 @@ class TestTimestampMinMaxAsDate:
 
 
 class TestTimestampMinMaxAsDateTime:
-    @beartype
     def test_min(self) -> None:
         date = TIMESTAMP_MIN_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(date - dt.timedelta(microseconds=1))
 
-    @beartype
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
@@ -270,11 +258,9 @@ class TestTimestampToDate:
             param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
         ],
     )
-    @beartype
     def test_main(self, timestamp: Any, expected: dt.date) -> None:
         assert timestamp_to_date(timestamp) == expected
 
-    @beartype
     def test_error(self) -> None:
         with raises(TimestampIsNaTError):
             _ = timestamp_to_date(NaT)
@@ -284,7 +270,9 @@ class TestTimestampToDateTime:
     @mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
+            param(
+                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+            ),
             param(
                 to_datetime("2000-01-01 12:00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
@@ -295,18 +283,17 @@ class TestTimestampToDateTime:
             ),
         ],
     )
-    @beartype
     def test_main(self, timestamp: Any, expected: dt.datetime) -> None:
         assert timestamp_to_datetime(timestamp) == expected
 
     @given(timestamp=timestamps(allow_nanoseconds=True))
-    @beartype
     def test_warn(self, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
+        with raises(
+            UserWarning, match="Discarding nonzero nanoseconds in conversion"
+        ):
             _ = timestamp_to_datetime(timestamp)
 
-    @beartype
     def test_error(self) -> None:
         with raises(TimestampIsNaTError):
             _ = timestamp_to_datetime(NaT)
@@ -330,7 +317,6 @@ class TestToNumpy:
             param(NA, string, None, object),
         ],
     )
-    @beartype
     def test_main(
         self, series_v: Any, series_d: Any, array_v: Any, array_d: Any
     ) -> None:

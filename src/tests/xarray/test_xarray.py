@@ -1,8 +1,16 @@
-from collections.abc import Hashable
-from typing import cast
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, dictionaries, integers, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dictionaries,
+    integers,
+    sampled_from,
+)
 from pandas import Index
 from pytest import mark
 from xarray import DataArray
@@ -22,13 +30,15 @@ class TestBottleNeckInstalled:
 class TestEwma:
     @given(
         data=data(),
-        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
+        indexes=dictionaries(
+            text_ascii(), int_indexes(), min_size=1, max_size=3
+        ),
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index], halflife: int
+        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
     ) -> None:
-        array = data.draw(float_data_arrays(cast(dict[Hashable, Index], indexes)))
+        array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):
             _ = ewma(array, {dim: halflife})
@@ -37,13 +47,15 @@ class TestEwma:
 class TestExpMovingSum:
     @given(
         data=data(),
-        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
+        indexes=dictionaries(
+            text_ascii(), int_indexes(), min_size=1, max_size=3
+        ),
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index], halflife: int
+        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
     ) -> None:
-        array = data.draw(float_data_arrays(cast(dict[Hashable, Index], indexes)))
+        array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):
             _ = exp_moving_sum(array, {dim: halflife})

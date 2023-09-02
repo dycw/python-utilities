@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from contextlib import suppress
-from typing import Any, Union
+from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
@@ -95,6 +97,6 @@ class TestHints:
         ],
     )
     @settings(max_examples=1, phases={Phase.generate})
-    def test_checks(self, x: Union[int, float], hint: Any) -> None:
+    def test_checks(self, x: float, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(x, hint)

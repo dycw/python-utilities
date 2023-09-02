@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable
 from operator import eq, gt, lt
@@ -120,7 +122,13 @@ class TestIsWeekday:
     def test_is_weekday(self, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
-        expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+        expected = name in {
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+        }
         assert result is expected
 
 
@@ -171,7 +179,9 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff_zzzz(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss_fff_zzzz(
+        self, datetime: dt.datetime, fmt: str
+    ) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -198,9 +208,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
-            maybe_sub_pct_y
-        ),
+        fmt=sampled_from(
+            ["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
@@ -288,7 +298,11 @@ class TestSerialize:
         ("strategy", "serialize", "parse"),
         [
             param(dates(), serialize_date, parse_date),
-            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
+            param(
+                datetimes(timezones=just(UTC)),
+                serialize_datetime,
+                parse_datetime,
+            ),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),

@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Hashable
-from typing import Any, Optional, cast
+from typing import Any
 
-from beartype import beartype
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
-from hypothesis.strategies import SearchStrategy, composite, dates, datetimes, integers
-from pandas import Index, Timedelta, Timestamp
+from hypothesis.strategies import (
+    SearchStrategy,
+    composite,
+    dates,
+    datetimes,
+    integers,
+)
+from pandas import Index, StringDtype, Timedelta, Timestamp
 
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw, text_ascii
@@ -19,10 +26,8 @@ from utilities.pandas import (
     TIMESTAMP_MIN_AS_DATETIME,
     string,
 )
-from utilities.pandas.typing import IndexI, IndexS
 
 
-@beartype
 @composite
 def dates_pd(
     _draw: Any,
@@ -37,7 +42,6 @@ def dates_pd(
 
 
 @composite
-@beartype
 def datetimes_pd(
     _draw: Any,
     /,
@@ -60,18 +64,17 @@ _INDEX_LENGTHS = integers(0, 10)
 
 
 @composite
-@beartype
 def indexes(
     _draw: Any,
     /,
     *,
-    elements: Optional[SearchStrategy[Any]] = None,
+    elements: SearchStrategy[Any] | None = None,
     dtype: Any = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> Index:
+) -> Index[Any]:
     """Strategy for generating Indexes."""
     draw = lift_draw(_draw)
     n_ = draw(n)
@@ -84,20 +87,19 @@ def indexes(
             unique=draw(unique),
         )
     )
-    index = cast(Index, index.rename(draw(name)))
+    index = index.rename(draw(name))
     if draw(sort):
-        return cast(Index, index.sort_values())
+        return index.sort_values()
     return index
 
 
-@beartype
 def int_indexes(
     *,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[IndexI]:
+) -> SearchStrategy[Index[int]]:
     """Strategy for generating integer Indexes."""
     return indexes(
         elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
@@ -105,24 +107,28 @@ def int_indexes(
 
 
 @composite
-@beartype
 def str_indexes(
     _draw: Any,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> IndexS:
+) -> Index[StringDtype]:
     """Strategy for generating string Indexes."""
     draw = lift_draw(_draw)
     elements = text_ascii(min_size=min_size, max_size=max_size)
     index = draw(
         indexes(
-            elements=elements, dtype=object, n=n, unique=unique, name=name, sort=sort
+            elements=elements,
+            dtype=object,
+            n=n,
+            unique=unique,
+            name=name,
+            sort=sort,
         )
     )
     return index.astype(string)
@@ -144,7 +150,7 @@ def timestamps(
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta: Timedelta = Timedelta(nanoseconds=nanoseconds)
+        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
         timestamp += timedelta
         _ = assume(min_value <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value)

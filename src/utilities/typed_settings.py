@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -5,9 +7,8 @@ from itertools import starmap
 from operator import attrgetter, itemgetter
 from pathlib import Path
 from re import search
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
-from beartype import beartype
 from cattrs import BaseConverter, Converter
 from click import ParamType
 from typed_settings import default_converter, default_loaders
@@ -41,10 +42,9 @@ from utilities.pathlib import PathLike
 _T = TypeVar("_T")
 
 
-@beartype
 def get_repo_root_config(
     *, cwd: PathLike = Path.cwd(), filename: str = "config.toml"
-) -> Optional[Path]:
+) -> Path | None:
     """Get the config under the repo root, if it exists."""
     try:
         root = get_repo_root(cwd=cwd)
@@ -58,16 +58,15 @@ def get_repo_root_config(
 _CONFIG_FILES = [p for p in [get_repo_root_config()] if p is not None]
 
 
-@beartype
 def load_settings(
     cls: type[_T],
     /,
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    config_file_section: Union[str, _Auto] = AUTO,
-    config_files_var: Union[None, str, _Auto] = AUTO,
-    env_prefix: Union[None, str, _Auto] = AUTO,
+    config_file_section: str | _Auto = AUTO,
+    config_files_var: None | str | _Auto = AUTO,
+    env_prefix: None | str | _Auto = AUTO,
 ) -> _T:
     """Load a settings object with the extended converter."""
     loaders = _get_loaders(
@@ -81,14 +80,13 @@ def load_settings(
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
 
-@beartype
 def click_options(
     cls: type[Any],
     /,
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    argname: Optional[str] = None,
+    argname: str | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
     loaders = _get_loaders(appname=appname, config_files=config_files)
@@ -107,11 +105,11 @@ def _get_loaders(
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    config_file_section: Union[str, _Auto] = AUTO,
-    config_files_var: Union[None, str, _Auto] = AUTO,
-    env_prefix: Union[None, str, _Auto] = AUTO,
+    config_file_section: str | _Auto = AUTO,
+    config_files_var: None | str | _Auto = AUTO,
+    env_prefix: None | str | _Auto = AUTO,
 ) -> list[Loader]:
-    # cannot @beartype as Loader is a protocol
+    # cannot  as Loader is a protocol
     if search("_", appname):
         msg = f"{appname=}"
         raise AppNameContainsUnderscoreError(msg)
@@ -128,8 +126,7 @@ class AppNameContainsUnderscoreError(ValueError):
     """Raised when the appname contains a space."""
 
 
-@beartype
-def _make_converter() -> Union[BaseConverter, Converter]:
+def _make_converter() -> BaseConverter | Converter:
     """Extend the default converter."""
     converter = default_converter()
     cases: list[tuple[type[Any], Callable[..., Any]]] = [
@@ -152,13 +149,11 @@ def _make_converter() -> Union[BaseConverter, Converter]:
     return converter
 
 
-@beartype
 def _make_structure_hook(
     cls: type[Any], func: Callable[[Any], Any], /
 ) -> Callable[[Any, type[Any]], Any]:
     """Make the structure hook for a given type."""
 
-    @beartype
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
         if not isinstance(value, (cls, str)):
             msg = f"Invalid type: {value=}"
@@ -168,7 +163,6 @@ def _make_structure_hook(
     return hook
 
 
-@beartype
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
     cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
@@ -187,20 +181,17 @@ def _make_click_handler() -> ClickHandler:
         pass
     else:
         cases.append((Engine, ClickEngine, serialize_engine))
-    extra_types = cast(
-        dict[type, TypeHandlerFunc],
-        dict(zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))),
+    extra_types = dict(
+        zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))
     )
     return ClickHandler(extra_types=extra_types)
 
 
-@beartype
 def _make_type_handler_func(
     cls: type[Any], param: type[ParamType], serialize: Callable[[Any], str], /
-) -> Callable[[Any, Any, Any], StrDict]:
+) -> TypeHandlerFunc:
     """Make the type handler for a given type/parameter."""
 
-    @beartype
     def handler(
         type_: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
     ) -> StrDict:
@@ -212,4 +203,4 @@ def _make_type_handler_func(
             mapping["default"] = None
         return mapping
 
-    return handler
+    return cast(TypeHandlerFunc, handler)

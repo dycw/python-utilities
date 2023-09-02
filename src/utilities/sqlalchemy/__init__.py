@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import collections.abc
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
 from operator import ge, itemgetter, le
-from typing import Any, Literal, NoReturn, Optional, Union, cast
+from typing import Any, Literal, NoReturn, cast
 
 import sqlalchemy
 import timeout_decorator
@@ -67,13 +69,12 @@ class TablenameMixin:
         return get_class_name(cls, snake=True)
 
 
-@beartype
 def check_table_against_reflection(
     table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    schema: Optional[str] = None,
+    schema: str | None = None,
     snake_table: bool = False,
     snake_columns: bool = False,
     allow_permutations_columns: bool = False,
@@ -91,13 +92,12 @@ def check_table_against_reflection(
     )
 
 
-@beartype
 def _reflect_table(
     table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    schema: Optional[str] = None,
+    schema: str | None = None,
 ) -> Table:
     """Reflect a table from a database."""
     name = get_table_name(table_or_model)
@@ -106,7 +106,6 @@ def _reflect_table(
         return Table(name, metadata, autoload_with=conn)
 
 
-@beartype
 def check_tables_equal(
     x: Any,
     y: Any,
@@ -129,9 +128,8 @@ def check_tables_equal(
     )
 
 
-@beartype
 def _check_table_or_column_names_equal(
-    x: Union[str, quoted_name], y: Union[str, quoted_name], /, *, snake: bool = False
+    x: str | quoted_name, y: str | quoted_name, /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
@@ -150,7 +148,6 @@ class UnequalTableOrColumnSnakeCaseNamesError(ValueError):
     """Raised when two table/columns' snake case names differ."""
 
 
-@beartype
 def _check_column_collections_equal(
     x: ReadOnlyColumnCollection[Any, Any],
     y: ReadOnlyColumnCollection[Any, Any],
@@ -206,9 +203,13 @@ class UnequalSetOfColumnsError(ValueError):
     """Raised when two column collections' set of columns differ."""
 
 
-@beartype
 def _check_columns_equal(
-    x: Column[Any], y: Column[Any], /, *, snake: bool = False, primary_key: bool = True
+    x: Column[Any],
+    y: Column[Any],
+    /,
+    *,
+    snake: bool = False,
+    primary_key: bool = True,
 ) -> None:
     """Check that a pair of columns are equal."""
     _check_table_or_column_names_equal(x.name, y.name, snake=snake)
@@ -229,8 +230,7 @@ class UnequalNullableStatusError(ValueError):
     """Raised when two columns differ in nullable status."""
 
 
-@beartype
-def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
+def _check_column_types_equal(  # noqa: PLR0912, PLR0915
     x: Any, y: Any, /
 ) -> None:
     """Check that a pair of column types are equal."""
@@ -252,7 +252,9 @@ def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
             or (
                 (x_enum is not None)
                 and (y_enum is not None)
-                and not (issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum))
+                and not (
+                    issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum)
+                )
             )
         ):
             raise UnequalEnumColumnTypesError(msg)
@@ -276,7 +278,9 @@ def _check_column_types_equal(  # noqa: C901, PLR0912, PLR0915
         and (x_inst.timezone is not y_inst.timezone)
     ):
         raise UnequalDateTimeColumnTimezoneError(msg)
-    if isinstance(x_inst, (Float, Numeric)) and isinstance(y_inst, (Float, Numeric)):
+    if isinstance(x_inst, (Float, Numeric)) and isinstance(
+        y_inst, (Float, Numeric)
+    ):
         if x_inst.precision != y_inst.precision:
             raise UnequalFloatColumnPrecisionsError(msg)
         if x_inst.decimal_return_scale != y_inst.decimal_return_scale:
@@ -394,14 +398,13 @@ class UnequalUUIDNativeUUIDError(TypeError):
     """Raised when two UUID columns' native UUID differ."""
 
 
-@beartype
 def check_engine(
     engine: Engine,
     /,
     *,
-    num_tables: Optional[IntNonNeg] = None,
-    rel_tol: Optional[FloatNonNeg] = None,
-    abs_tol: Optional[IntNonNeg] = None,
+    num_tables: IntNonNeg | None = None,
+    rel_tol: FloatNonNeg | None = None,
+    abs_tol: IntNonNeg | None = None,
 ) -> None:
     """Check that an engine can connect.
 
@@ -451,23 +454,19 @@ class IncorrectNumberOfTablesError(ValueError):
     """Raised when there are an incorrect number of tables."""
 
 
-@beartype
 def columnwise_max(*columns: Any) -> Any:
     """Compute the columnwise max of a number of columns."""
     return _columnwise_minmax(*columns, op=ge)
 
 
-@beartype
 def columnwise_min(*columns: Any) -> Any:
     """Compute the columnwise min of a number of columns."""
     return _columnwise_minmax(*columns, op=le)
 
 
-@beartype
 def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     """Compute the columnwise min of a number of columns."""
 
-    @beartype
     def func(x: Any, y: Any, /) -> Any:
         x_none = x.is_(None)
         y_none = y.is_(None)
@@ -480,7 +479,9 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
         )
         # try auto-label
         names = {
-            value for col in [x, y] if (value := getattr(col, "name", None)) is not None
+            value
+            for col in [x, y]
+            if (value := getattr(col, "name", None)) is not None
         }
         try:
             (name,) = names
@@ -492,18 +493,17 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     return reduce(func, columns)
 
 
-@beartype
 def create_engine(
     drivername: str,
     /,
     *,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    database: Optional[str] = None,
-    query: Optional[Mapping[str, Union[collections.abc.Sequence[str], str]]] = None,
-    poolclass: Optional[type[Pool]] = NullPool,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: Mapping[str, collections.abc.Sequence[str] | str] | None = None,
+    poolclass: type[Pool] | None = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
     url = URL.create(
@@ -518,17 +518,15 @@ def create_engine(
     return _create_engine(url, poolclass=poolclass)
 
 
-@beartype
-def ensure_engine(engine: Union[Engine, str], /) -> Engine:
+def ensure_engine(engine: Engine | str, /) -> Engine:
     """Ensure the object is an Engine."""
     if isinstance(engine, Engine):
         return engine
     return parse_engine(engine)
 
 
-@beartype
 def ensure_table_created(
-    table_or_model: Any, engine_or_connection: Union[Engine, Connection], /
+    table_or_model: Any, engine_or_connection: Engine | Connection, /
 ) -> None:
     """Ensure a table is created."""
     table = get_table(table_or_model)
@@ -540,9 +538,8 @@ def ensure_table_created(
             redirect_to_table_already_exists_error(engine_or_connection, error)
 
 
-@beartype
 def ensure_table_dropped(
-    table_or_model: Any, engine_or_conn: Union[Engine, Connection], /
+    table_or_model: Any, engine_or_conn: Engine | Connection, /
 ) -> None:
     """Ensure a table is dropped."""
     table = get_table(table_or_model)
@@ -554,13 +551,11 @@ def ensure_table_dropped(
             redirect_to_no_such_table_error(engine_or_conn, error)
 
 
-@beartype
 def get_column_names(table_or_model: Any, /) -> list[str]:
     """Get the column names from a table or model."""
     return [col.name for col in get_columns(table_or_model)]
 
 
-@beartype
 def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
     """Get the columns from a table or model."""
     return list(get_table(table_or_model).columns)
@@ -569,8 +564,7 @@ def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 
 
-@beartype
-def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
+def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     """Get the dialect of a database."""
     if isinstance(
         dialect := engine_or_conn.dialect, mssql_dialect
@@ -592,7 +586,6 @@ class UnsupportedDialectError(TypeError):
     """Raised when a dialect is unsupported."""
 
 
-@beartype
 def get_table(table_or_model: Any, /) -> Table:
     """Get the table from a ORM model."""
     if isinstance(table_or_model, Table):
@@ -600,45 +593,41 @@ def get_table(table_or_model: Any, /) -> Table:
     return table_or_model.__table__
 
 
-@beartype
 def get_table_name(table_or_model: Any, /) -> str:
     """Get the table name from a ORM model."""
     return get_table(table_or_model).name
 
 
-@beartype
 def model_to_dict(obj: Any, /) -> dict[str, Any]:
     """Construct a dictionary of elements for insertion."""
     cls = type(obj)
 
-    @beartype
-    def is_attr(attr: str, key: str, /) -> Optional[str]:
+    def is_attr(attr: str, key: str, /) -> str | None:
         if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
             value.name == key
         ):
             return attr
         return None
 
-    @beartype
     def yield_items() -> Iterator[tuple[str, Any]]:
         for key in get_column_names(cls):
-            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
+            attr = one(
+                attr for attr in dir(cls) if is_attr(attr, key) is not None
+            )
             yield key, getattr(obj, attr)
 
     return dict(yield_items())
 
 
-@beartype
 def next_from_sequence(
     name: str,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    timeout: Optional[FloatFinNonNeg] = None,
-) -> Optional[IntNonNeg]:
+    timeout: FloatFinNonNeg | None = None,
+) -> IntNonNeg | None:
     """Get the next element from a sequence."""
 
-    @beartype
     def inner() -> int:
         seq = sqlalchemy.Sequence(name)
         try:
@@ -661,7 +650,6 @@ def next_from_sequence(
         return None
 
 
-@beartype
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
     try:
@@ -674,9 +662,8 @@ class ParseEngineError(ValueError):
     """Raised when an `Engine` cannot be parsed."""
 
 
-@beartype
 def redirect_to_no_such_sequence_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `NoSuchSequenceError`."""
     dialect = get_dialect(engine_or_conn)  # pragma: no cover
@@ -691,16 +678,17 @@ def redirect_to_no_such_sequence_error(
         pattern = "ORA-02289: sequence does not exist"
     else:  # pragma: no cover
         return never(dialect)
-    return redirect_error(error, pattern, NoSuchSequenceError)  # pragma: no cover
+    return redirect_error(
+        error, pattern, NoSuchSequenceError
+    )  # pragma: no cover
 
 
 class NoSuchSequenceError(Exception):
     """Raised when a sequence does not exist."""
 
 
-@beartype
 def redirect_to_no_such_table_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
@@ -719,9 +707,8 @@ def redirect_to_no_such_table_error(
     return redirect_error(error, pattern, NoSuchTableError)
 
 
-@beartype
 def redirect_to_table_already_exists_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
@@ -744,16 +731,14 @@ class TableAlreadyExistsError(Exception):
     """Raised when a table already exists."""
 
 
-@beartype
 def serialize_engine(engine: Engine, /) -> str:
     """Serialize an Engine."""
     return engine.url.render_as_string(hide_password=False)
 
 
 @contextmanager
-@beartype
 def yield_connection(
-    engine_or_conn: Union[Engine, Connection], /
+    engine_or_conn: Engine | Connection, /
 ) -> Iterator[Connection]:
     """Yield a connection."""
     if isinstance(engine_or_conn, Engine):
@@ -763,15 +748,14 @@ def yield_connection(
         yield engine_or_conn
 
 
-@beartype
 def yield_in_clause_rows(
-    sel: Select,
+    sel: Select[Any],
     column: Any,
     values: Iterable[Any],
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    chunk_size: Optional[int] = None,
+    chunk_size: int | None = None,
     frac: float = 0.95,
 ) -> Iterator[Any]:
     """Yield the rows from an `in` clause."""

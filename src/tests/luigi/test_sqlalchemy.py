@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from hypothesis import given
@@ -9,7 +11,11 @@ from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.luigi.sqlalchemy import DatabaseTarget, EngineParameter, TableParameter
+from utilities.luigi.sqlalchemy import (
+    DatabaseTarget,
+    EngineParameter,
+    TableParameter,
+)
 
 
 class TestDatabaseTarget:
@@ -25,7 +31,9 @@ class TestDatabaseTarget:
         target = DatabaseTarget(sel, engine)
         assert not target.exists()
         rows = data.draw(
-            table_records_lists(table, id1=integers(0, 10), min_size=1, max_size=10)
+            table_records_lists(
+                table, id1=integers(0, 10), min_size=1, max_size=10
+            )
         )
         with engine.begin() as conn:
             table.create(conn)
