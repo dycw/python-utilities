@@ -15,6 +15,7 @@ from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
 from luigi.task import Register, flatten
+from typing_extensions import override
 
 from utilities.datetime import (
     EPOCH_UTC,
@@ -47,14 +48,17 @@ class DateHourParameter(luigi.DateHourParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
-        return ensure_datetime(datetime)
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
 
-    def parse(self, datetime: str, /) -> dt.datetime:
-        return parse_datetime(datetime)
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
 
-    def serialize(self, datetime: dt.datetime, /) -> str:
-        return serialize_datetime(datetime)
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
 
 
 class DateMinuteParameter(luigi.DateMinuteParameter):
@@ -63,14 +67,17 @@ class DateMinuteParameter(luigi.DateMinuteParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
-        return ensure_datetime(datetime)
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
 
-    def parse(self, datetime: str, /) -> dt.datetime:
-        return parse_datetime(datetime)
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
 
-    def serialize(self, datetime: dt.datetime, /) -> str:
-        return serialize_datetime(datetime)
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
 
 
 class DateSecondParameter(luigi.DateSecondParameter):
@@ -79,14 +86,17 @@ class DateSecondParameter(luigi.DateSecondParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
-        return ensure_datetime(datetime)
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
 
-    def parse(self, datetime: str, /) -> dt.datetime:
-        return parse_datetime(datetime)
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
 
-    def serialize(self, datetime: dt.datetime, /) -> str:
-        return serialize_datetime(datetime)
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
 
 
 class EnumParameter(Parameter, Generic[_E]):
@@ -104,44 +114,49 @@ class EnumParameter(Parameter, Generic[_E]):
         self._enum = enum
         self._case_sensitive = case_sensitive
 
-    def normalize(self, member: _E | str, /) -> _E:
-        return ensure_enum(
-            self._enum, member, case_sensitive=self._case_sensitive
-        )
+    @override
+    def normalize(self, x: _E | str) -> _E:
+        return ensure_enum(self._enum, x, case_sensitive=self._case_sensitive)
 
-    def parse(self, member: str, /) -> _E:
-        return parse_enum(
-            self._enum, member, case_sensitive=self._case_sensitive
-        )
+    @override
+    def parse(self, x: str) -> _E:
+        return parse_enum(self._enum, x, case_sensitive=self._case_sensitive)
 
-    def serialize(self, member: _E, /) -> str:
-        return member.name
+    @override
+    def serialize(self, x: _E) -> str:
+        return x.name
 
 
 class DateParameter(luigi.DateParameter):
     """A parameter which takes the value of a `dt.date`."""
 
-    def normalize(self, date: dt.date | str, /) -> dt.date:
-        return ensure_date(date)
+    @override
+    def normalize(self, value: dt.date | str) -> dt.date:
+        return ensure_date(value)
 
-    def parse(self, date: str, /) -> dt.date:
-        return parse_date(date)
+    @override
+    def parse(self, s: str) -> dt.date:
+        return parse_date(s)
 
-    def serialize(self, date: dt.date, /) -> str:
-        return serialize_date(date)
+    @override
+    def serialize(self, dt: dt.date) -> str:
+        return serialize_date(dt)
 
 
 class TimeParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of a `dt.time`."""
 
-    def normalize(self, time: dt.time | str, /) -> dt.time:
-        return ensure_time(time)
+    @override
+    def normalize(self, x: dt.time | str) -> dt.time:
+        return ensure_time(x)
 
-    def parse(self, time: str, /) -> dt.time:
-        return parse_time(time)
+    @override
+    def parse(self, x: str) -> dt.time:
+        return parse_time(x)
 
-    def serialize(self, time: dt.time, /) -> str:
-        return serialize_time(time)
+    @override
+    def serialize(self, x: dt.time) -> str:
+        return serialize_time(x)
 
 
 class WeekdayParameter(Parameter):
@@ -159,18 +174,21 @@ class WeekdayParameter(Parameter):
         else:
             self._rounder = round_to_next_weekday
 
-    def normalize(self, date: dt.date | str, /) -> dt.date:
+    @override
+    def normalize(self, x: dt.date | str) -> dt.date:
         with suppress(AttributeError, ModuleNotFoundError):
             from utilities.pandas import timestamp_to_date
 
-            date = timestamp_to_date(date)
-        return self._rounder(ensure_date(date))
+            x = timestamp_to_date(x)
+        return self._rounder(ensure_date(x))
 
-    def parse(self, date: str, /) -> dt.date:
-        return parse_date(date)
+    @override
+    def parse(self, x: str) -> dt.date:
+        return parse_date(x)
 
-    def serialize(self, date: dt.date, /) -> str:
-        return serialize_date(date)
+    @override
+    def serialize(self, x: dt.date) -> str:
+        return serialize_date(x)
 
 
 # targets
@@ -183,7 +201,8 @@ class PathTarget(Target):
         super().__init__()
         self.path = Path(path)
 
-    def exists(self) -> bool:
+    @override
+    def exists(self) -> bool:  # type: ignore
         """Check if the target exists."""
         return self.path.exists()
 
@@ -200,7 +219,8 @@ class ExternalTask(ABC, luigi.ExternalTask):
         msg = f"{self=}"  # pragma: no cover
         raise NotImplementedError(msg)  # pragma: no cover
 
-    def output(self) -> _ExternalTaskDummyTarget:
+    @override
+    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore
         return _ExternalTaskDummyTarget(self)
 
 
@@ -211,7 +231,8 @@ class _ExternalTaskDummyTarget(Target):
         super().__init__()
         self._task = task
 
-    def exists(self) -> bool:
+    @override
+    def exists(self) -> bool:  # type: ignore
         return self._task.exists()
 
 
@@ -223,6 +244,7 @@ class AwaitTask(ExternalTask, Generic[_Task]):
 
     task = cast(_Task, TaskParameter())
 
+    @override
     def exists(self) -> bool:
         return self.task.complete()
 
@@ -232,6 +254,7 @@ class AwaitTime(ExternalTask):
 
     datetime = cast(dt.datetime, DateSecondParameter())
 
+    @override
     def exists(self) -> bool:
         return dt.datetime.now(tz=UTC) >= self.datetime
 
@@ -241,6 +264,7 @@ class ExternalFile(ExternalTask):
 
     path = cast(Path, PathParameter())
 
+    @override
     def exists(self) -> bool:
         return self.path.exists()
 

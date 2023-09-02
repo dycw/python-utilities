@@ -22,10 +22,7 @@ class TestGetTotal:
         ],
     )
     def test_main(
-        self,
-        total: int | float | None,
-        iterable: Any,
-        expected: int | float | None,
+        self, total: float | None, iterable: Any, expected: float | None
     ) -> None:
         assert _get_total(total, iterable) == expected
 

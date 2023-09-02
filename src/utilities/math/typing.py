@@ -7,8 +7,8 @@ from typing import Annotated
 
 
 def is_at_least(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -19,8 +19,8 @@ def is_at_least(
 
 
 def is_at_least_or_nan(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -31,8 +31,8 @@ def is_at_least_or_nan(
 
 
 def is_at_most(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -43,8 +43,8 @@ def is_at_most(
 
 
 def is_at_most_or_nan(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -55,9 +55,9 @@ def is_at_most_or_nan(
 
 
 def is_between(
-    x: int | float,
-    low: int | float,
-    high: int | float,
+    x: float,
+    low: float,
+    high: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -70,9 +70,9 @@ def is_between(
 
 
 def is_between_or_nan(
-    x: int | float,
-    low: int | float,
-    high: int | float,
+    x: float,
+    low: float,
+    high: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -85,22 +85,14 @@ def is_between_or_nan(
 
 
 def is_finite_and_integral(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf and x == int(x)."""
     return isfinite(x) & is_integral(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_integral_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf and x == int(x), or x == nan."""
     return is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(
@@ -109,22 +101,14 @@ def is_finite_and_integral_or_nan(
 
 
 def is_finite_and_negative(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < 0."""
     return isfinite(x) and is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_negative_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < 0 or x == nan."""
     return is_finite_and_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
@@ -133,22 +117,14 @@ def is_finite_and_negative_or_nan(
 
 
 def is_finite_and_non_negative(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 <= x < inf."""
     return isfinite(x) and is_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_non_negative_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 <= x < inf or x == nan."""
     return is_finite_and_non_negative(
@@ -157,22 +133,14 @@ def is_finite_and_non_negative_or_nan(
 
 
 def is_finite_and_non_positive(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x <= 0."""
     return isfinite(x) and is_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_non_positive_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x <= 0 or x == nan."""
     return is_finite_and_non_positive(
@@ -181,22 +149,14 @@ def is_finite_and_non_positive_or_nan(
 
 
 def is_finite_and_non_zero(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf, x != 0."""
     return isfinite(x) and is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_non_zero_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0 or x == nan."""
     return is_finite_and_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
@@ -205,22 +165,14 @@ def is_finite_and_non_zero_or_nan(
 
 
 def is_finite_and_positive(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 < x < inf."""
     return isfinite(x) and is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_finite_and_positive_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if 0 < x < inf or x == nan."""
     return is_finite_and_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(
@@ -228,14 +180,14 @@ def is_finite_and_positive_or_nan(
     )
 
 
-def is_finite_or_nan(x: int | float, /) -> bool:
+def is_finite_or_nan(x: float, /) -> bool:
     """Check if -inf < x < inf or x == nan."""
     return isfinite(x) or isnan(x)
 
 
 def is_greater_than(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -246,8 +198,8 @@ def is_greater_than(
 
 
 def is_greater_than_or_nan(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -258,11 +210,7 @@ def is_greater_than_or_nan(
 
 
 def is_integral(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == int(x)."""
     try:
@@ -273,19 +221,15 @@ def is_integral(
 
 
 def is_integral_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == int(x) or x == nan."""
     return is_integral(x, rel_tol=rel_tol, abs_tol=abs_tol) | isnan(x)
 
 
 def is_less_than(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -296,8 +240,8 @@ def is_less_than(
 
 
 def is_less_than_or_nan(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,
@@ -308,132 +252,84 @@ def is_less_than_or_nan(
 
 
 def is_negative(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < 0."""
     return is_less_than(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_negative_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < 0 or x == nan."""
     return is_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_non_negative(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x >= 0."""
     return is_at_least(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_non_negative_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x >= 0 or x == nan."""
     return is_non_negative(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_non_positive(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <= 0."""
     return is_at_most(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_non_positive_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_non_zero(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0."""
     return not _is_close(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_non_zero_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_positive(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0."""
     return is_greater_than(x, 0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_positive_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_zero(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0."""
     return _is_close(x, 0.0, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_zero_or_finite_and_non_micro(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
     zero = 0.0
@@ -443,11 +339,7 @@ def is_zero_or_finite_and_non_micro(
 
 
 def is_zero_or_finite_and_non_micro_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0), or x == nan."""
     return is_zero_or_finite_and_non_micro(
@@ -456,22 +348,14 @@ def is_zero_or_finite_and_non_micro_or_nan(
 
 
 def is_zero_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > 0 or x == nan."""
     return is_zero(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_zero_or_non_micro(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0 or ~isclose(x, 0)."""
     zero = 0.0
@@ -479,19 +363,15 @@ def is_zero_or_non_micro(
 
 
 def is_zero_or_non_micro_or_nan(
-    x: int | float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def _is_close(
-    x: int | float,
-    y: int | float,
+    x: float,
+    y: float,
     /,
     *,
     rel_tol: float | None = None,

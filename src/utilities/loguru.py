@@ -12,6 +12,7 @@ from sys import _getframe, stdout
 from typing import Any, TypedDict, cast
 
 from loguru import logger
+from typing_extensions import override
 
 from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
@@ -70,7 +71,8 @@ class _InterceptHandler(Handler):
     https://github.com/Delgan/loguru#entirely-compatible-with-standard-logging
     """
 
-    def emit(self, record: LogRecord, /) -> None:
+    @override
+    def emit(self, record: LogRecord) -> None:
         # Get corresponding Loguru level if it exists.
         try:
             level = logger.level(record.levelname).name

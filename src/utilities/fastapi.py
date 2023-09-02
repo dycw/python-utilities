@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter as _APIRouter
 from fastapi.types import DecoratedCallable
+from typing_extensions import override
 
 _PATTERN = re.compile(r"(^/$)|(^.+[^\/]$)")
 
@@ -13,7 +14,8 @@ _PATTERN = re.compile(r"(^/$)|(^.+[^\/]$)")
 class APIRouter(_APIRouter):
     """Subclass which handles paths with & without trailing slashes."""
 
-    def api_route(
+    @override
+    def api_route(  # type: ignore
         self, *, path: str, include_in_schema: bool = True, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """N/A."""

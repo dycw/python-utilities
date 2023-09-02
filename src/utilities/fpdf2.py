@@ -7,6 +7,7 @@ from typing import Any
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
+from typing_extensions import override
 
 from utilities.datetime import local_timezone
 from utilities.holoviews import save_plot
@@ -34,6 +35,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     """Yield a PDF."""
 
     class OutputPDF(_BasePDF):
+        @override
         def header(self) -> None:
             if header is not None:
                 self.set_font(family="Helvetica", style="B", size=15)
@@ -49,6 +51,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
                 )
                 self.ln(20)
 
+        @override
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)

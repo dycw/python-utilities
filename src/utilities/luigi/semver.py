@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from luigi import Parameter
 from semver import Version
+from typing_extensions import override
 
 from utilities.semver import ensure_version
 
@@ -9,14 +10,17 @@ from utilities.semver import ensure_version
 class VersionParameter(Parameter):
     """Parameter taking the value of a `Version`."""
 
-    def normalize(self, version: Version | str, /) -> Version:
+    @override
+    def normalize(self, x: Version | str) -> Version:
         """Normalize a `Version` argument."""
-        return ensure_version(version)
+        return ensure_version(x)
 
-    def parse(self, version: str, /) -> Version:
+    @override
+    def parse(self, x: str) -> Version:
         """Parse a `Version` argument."""
-        return Version.parse(version)
+        return Version.parse(x)
 
-    def serialize(self, version: Version, /) -> str:
+    @override
+    def serialize(self, x: Version) -> str:
         """Serialize a `Version` argument."""
-        return str(version)
+        return str(x)

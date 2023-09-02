@@ -5,6 +5,7 @@ from typing import Any
 from luigi import Parameter, Target
 from sqlalchemy import Engine, Select, create_engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from typing_extensions import override
 
 from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
 
@@ -12,12 +13,12 @@ from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
 class DatabaseTarget(Target):
     """A target point to a set of rows in a database."""
 
-    def __init__(self, sel: Select, engine: Engine, /) -> None:
+    def __init__(self, sel: Select[Any], engine: Engine, /) -> None:
         super().__init__()
         self._sel = sel.limit(1)
         self._engine = engine
 
-    def exists(self) -> bool:
+    def exists(self) -> bool:  # type: ignore
         try:
             with self._engine.begin() as conn:
                 res = conn.execute(self._sel).one_or_none()
@@ -33,26 +34,31 @@ class DatabaseTarget(Target):
 class EngineParameter(Parameter):
     """Parameter taking the value of a SQLAlchemy engine."""
 
-    def normalize(self, engine: Engine, /) -> Engine:
+    @override
+    def normalize(self, x: Engine) -> Engine:
         """Normalize an `Engine` argument."""
-        return engine
+        return x
 
-    def parse(self, engine: str, /) -> Engine:
+    @override
+    def parse(self, x: str) -> Engine:
         """Parse an `Engine` argument."""
-        return create_engine(engine)
+        return create_engine(x)
 
-    def serialize(self, engine: Engine, /) -> str:
+    @override
+    def serialize(self, x: Engine) -> str:
         """Serialize an `Engine` argument."""
-        return engine.url.render_as_string()
+        return x.url.render_as_string()
 
 
 class TableParameter(Parameter):
     """Parameter taking the value of a SQLAlchemy table."""
 
-    def normalize(self, table_or_model: Any, /) -> Any:
+    @override
+    def normalize(self, x: Any) -> Any:
         """Normalize a `Table` or model argument."""
-        return table_or_model
+        return x
 
-    def serialize(self, table_or_model: Any, /) -> str:
+    @override
+    def serialize(self, x: Any) -> str:
         """Serialize a `Table` or model argument."""
-        return get_table_name(table_or_model)
+        return get_table_name(x)
