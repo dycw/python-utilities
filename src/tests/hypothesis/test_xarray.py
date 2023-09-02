@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Hashable
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
@@ -28,7 +30,10 @@ from utilities.hypothesis.xarray import (
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=hashables())
     def test_main(
-        self, data: DataObject, indexes: dict[Hashable, Index[Any]], name: Hashable
+        self,
+        data: DataObject,
+        indexes: dict[Hashable, Index[Any]],
+        name: Hashable,
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -51,9 +56,9 @@ class TestDictsOfIndexes:
         self,
         data: DataObject,
         min_dims: int,
-        max_dims: Optional[int],
+        max_dims: int | None,
         min_side: int,
-        max_side: Optional[int],
+        max_side: int | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             indexes = data.draw(
@@ -94,8 +99,8 @@ class TestFloatDataArrays:
         *,
         data: DataObject,
         indexes: dict[Hashable, Index[Any]],
-        min_value: Optional[float],
-        max_value: Optional[float],
+        min_value: float | None,
+        max_value: float | None,
         allow_nan: bool,
         allow_inf: bool,
         allow_pos_inf: bool,
@@ -141,8 +146,8 @@ class TestIntDataArrays:
         *,
         data: DataObject,
         indexes: dict[Hashable, Index[Any]],
-        min_value: Optional[int],
-        max_value: Optional[int],
+        min_value: int | None,
+        max_value: int | None,
         unique: bool,
         name: Hashable,
     ) -> None:
@@ -177,7 +182,7 @@ class TestMergeIntoDictOfIndexes:
     def test_non_empty(
         self,
         data: DataObject,
-        indexes1: Optional[dict[Hashable, Index[Any]]],
+        indexes1: dict[Hashable, Index[Any]] | None,
         indexes2: dict[str, Index[Any]],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
@@ -201,7 +206,7 @@ class TestStrDataArrays:
         data: DataObject,
         indexes: dict[Hashable, Index[Any]],
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         allow_none: bool,
         unique: bool,
         name: Hashable,

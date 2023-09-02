@@ -241,7 +241,12 @@ class TestMapUnionAnnotation:
         assert isinstance(param, expected)
 
     @mark.parametrize(
-        "ann", [param(list[bool]), param(Optional[Sentinel]), param(Union[int, float])]
+        "ann",
+        [
+            param(list[bool]),
+            param(Optional[Sentinel]),
+            param(Union[int, float]),
+        ],
     )
     def test_invalid(self, ann: Any) -> None:
         with raises(InvalidAnnotationError):

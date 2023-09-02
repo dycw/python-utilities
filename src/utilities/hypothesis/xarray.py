@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Hashable
-from typing import Any, Optional
+from typing import Any
 
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import SearchStrategy, composite
@@ -30,9 +32,9 @@ def dicts_of_indexes(
     /,
     *,
     min_dims: int = 1,
-    max_dims: Optional[int] = None,
+    max_dims: int | None = None,
     min_side: int = 1,
-    max_side: Optional[int] = None,
+    max_side: int | None = None,
 ) -> dict[Hashable, IndexI]:
     """Strategy for generating dictionaries of indexes."""
     draw = lift_draw(_draw)
@@ -53,10 +55,10 @@ def dicts_of_indexes(
 @composite
 def bool_data_arrays(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index[Any]]]] = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
     /,
     *,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
@@ -72,17 +74,17 @@ def bool_data_arrays(
 @composite
 def float_data_arrays(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
     /,
     *,
-    min_value: MaybeSearchStrategy[Optional[float]] = None,
-    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    min_value: MaybeSearchStrategy[float | None] = None,
+    max_value: MaybeSearchStrategy[float | None] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
     allow_inf: MaybeSearchStrategy[bool] = False,
     allow_pos_inf: MaybeSearchStrategy[bool] = False,
     allow_neg_inf: MaybeSearchStrategy[bool] = False,
     integral: MaybeSearchStrategy[bool] = False,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index],
@@ -111,12 +113,12 @@ def float_data_arrays(
 @composite
 def int_data_arrays(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
     /,
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
-    fill: Optional[SearchStrategy[Any]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index],
@@ -140,13 +142,13 @@ def int_data_arrays(
 @composite
 def str_data_arrays(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     allow_none: MaybeSearchStrategy[bool] = False,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index],
@@ -171,7 +173,7 @@ def str_data_arrays(
 @composite
 def _merge_into_dict_of_indexes(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
     /,
     **indexes_kwargs: MaybeSearchStrategy[Index],
 ) -> dict[Hashable, Index]:

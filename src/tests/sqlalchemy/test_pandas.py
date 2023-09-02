@@ -181,12 +181,18 @@ class TestInsertItems:
 class TestParseSeriesAgainstTable:
     @mark.parametrize(
         ("series_name", "table_column_name", "snake"),
-        [param("id", "id", False), param("id", "Id", True), param("Id", "id", True)],
+        [
+            param("id", "id", False),
+            param("id", "Id", True),
+            param("Id", "id", True),
+        ],
     )
     def test_main(self, series_name: str, table_column_name: str, snake: bool) -> None:
         series = Series([], dtype=int, name=series_name)
         table = Table(
-            "example", MetaData(), Column(table_column_name, Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column(table_column_name, Integer, primary_key=True),
         )
         key, _ = _parse_series_against_table(series, table, snake=snake)
         assert key == table_column_name
@@ -290,7 +296,10 @@ class TestYieldDataFrameRowsAsDicts:
             param(booleans() | none(), boolean, Boolean, (bool, NoneType)),
             param(dates_pd(), datetime64ns, Date, dt.date),
             param(
-                dates_pd() | just(NaT) | none(), datetime64ns, Date, (dt.date, NoneType)
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                Date,
+                (dt.date, NoneType),
             ),
             param(datetimes_pd(), datetime64nsutc, DateTime, dt.datetime),
             param(
@@ -333,7 +342,11 @@ class TestYieldInsertionElements:
             param(booleans(), bool, bool),
             param(booleans() | none(), boolean, (bool, NoneType)),
             param(dates_pd(), datetime64ns, dt.date),
-            param(dates_pd() | just(NaT) | none(), datetime64ns, (dt.date, NoneType)),
+            param(
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                (dt.date, NoneType),
+            ),
             param(datetimes_pd(), datetime64nsutc, dt.datetime),
             param(
                 datetimes_pd() | just(NaT) | none(),

@@ -8,7 +8,11 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Table, insert, select
 from sqlalchemy.orm import declarative_base
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.luigi.sqlalchemy import DatabaseTarget, EngineParameter, TableParameter
+from utilities.luigi.sqlalchemy import (
+    DatabaseTarget,
+    EngineParameter,
+    TableParameter,
+)
 
 
 class TestDatabaseTarget:

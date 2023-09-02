@@ -74,7 +74,10 @@ class TestPStarMap:
         self, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pstarmap(
-            pow, [(2, 5), (3, 2), (10, 3)], parallelism=parallelism, n_jobs=n_jobs
+            pow,
+            [(2, 5), (3, 2), (10, 3)],
+            parallelism=parallelism,
+            n_jobs=n_jobs,
         )
         expected = [32, 9, 1000]
         assert result == expected

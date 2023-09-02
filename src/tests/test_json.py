@@ -13,14 +13,16 @@ class TestSerialize:
         [
             param(dt.date(2000, 1, 1), '"2000-01-01"'),
             param(
-                dt.datetime(2000, 1, 1, 12, tzinfo=UTC), '"2000-01-01T12:00:00+00:00"'
+                dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
+                '"2000-01-01T12:00:00+00:00"',
             ),
             param(Path("a/b/c"), '"a/b/c"'),
             param({1, 2, 3}, '"set([1, 2, 3])"'),
             param({"a", "b", "c"}, '"set([\\"a\\", \\"b\\", \\"c\\"])"'),
             param(frozenset([1, 2, 3]), '"frozenset([1, 2, 3])"'),
             param(
-                frozenset(["a", "b", "c"]), '"frozenset([\\"a\\", \\"b\\", \\"c\\"])"'
+                frozenset(["a", "b", "c"]),
+                '"frozenset([\\"a\\", \\"b\\", \\"c\\"])"',
             ),
         ],
     )

@@ -119,7 +119,13 @@ class TestIsWeekday:
     def test_is_weekday(self, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
-        expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+        expected = name in {
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+        }
         assert result is expected
 
 
@@ -287,7 +293,11 @@ class TestSerialize:
         ("strategy", "serialize", "parse"),
         [
             param(dates(), serialize_date, parse_date),
-            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
+            param(
+                datetimes(timezones=just(UTC)),
+                serialize_datetime,
+                parse_datetime,
+            ),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),

@@ -2,7 +2,13 @@ from collections.abc import Hashable
 from typing import cast
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, dictionaries, integers, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dictionaries,
+    integers,
+    sampled_from,
+)
 from pandas import Index
 from pytest import mark
 from utilities.hypothesis import assume_does_not_raise, text_ascii

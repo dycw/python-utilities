@@ -31,6 +31,7 @@ repos:
     rev: 23.7.0
     hooks:
       - id: black
+        args: [--line-length=80, --skip-magic-trailing-comma]
       - id: black-jupyter
   # linters
   # - repo: https://github.com/andreoliwa/nitpick

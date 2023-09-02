@@ -4,7 +4,13 @@ from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dictionaries,
+    floats,
+    integers,
+)
 from numpy import arange, array, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises

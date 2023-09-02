@@ -1,19 +1,12 @@
+from __future__ import annotations
+
 import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from enum import Enum
 from pathlib import Path
-from typing import (
-    Any,
-    Generic,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
@@ -54,7 +47,7 @@ class DateHourParameter(luigi.DateHourParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
+    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     def parse(self, datetime: str, /) -> dt.datetime:
@@ -70,7 +63,7 @@ class DateMinuteParameter(luigi.DateMinuteParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
+    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     def parse(self, datetime: str, /) -> dt.datetime:
@@ -86,7 +79,7 @@ class DateSecondParameter(luigi.DateSecondParameter):
     def __init__(self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
-    def normalize(self, datetime: Union[dt.datetime, str], /) -> dt.datetime:
+    def normalize(self, datetime: dt.datetime | str, /) -> dt.datetime:
         return ensure_datetime(datetime)
 
     def parse(self, datetime: str, /) -> dt.datetime:
@@ -111,7 +104,7 @@ class EnumParameter(Parameter, Generic[_E]):
         self._enum = enum
         self._case_sensitive = case_sensitive
 
-    def normalize(self, member: Union[_E, str], /) -> _E:
+    def normalize(self, member: _E | str, /) -> _E:
         return ensure_enum(self._enum, member, case_sensitive=self._case_sensitive)
 
     def parse(self, member: str, /) -> _E:
@@ -124,7 +117,7 @@ class EnumParameter(Parameter, Generic[_E]):
 class DateParameter(luigi.DateParameter):
     """A parameter which takes the value of a `dt.date`."""
 
-    def normalize(self, date: Union[dt.date, str], /) -> dt.date:
+    def normalize(self, date: dt.date | str, /) -> dt.date:
         return ensure_date(date)
 
     def parse(self, date: str, /) -> dt.date:
@@ -137,7 +130,7 @@ class DateParameter(luigi.DateParameter):
 class TimeParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of a `dt.time`."""
 
-    def normalize(self, time: Union[dt.time, str], /) -> dt.time:
+    def normalize(self, time: dt.time | str, /) -> dt.time:
         return ensure_time(time)
 
     def parse(self, time: str, /) -> dt.time:
@@ -162,7 +155,7 @@ class WeekdayParameter(Parameter):
         else:
             self._rounder = round_to_next_weekday
 
-    def normalize(self, date: Union[dt.date, str], /) -> dt.date:
+    def normalize(self, date: dt.date | str, /) -> dt.date:
         with suppress(AttributeError, ModuleNotFoundError):
             from utilities.pandas import timestamp_to_date
 
@@ -203,7 +196,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         msg = f"{self=}"  # pragma: no cover
         raise NotImplementedError(msg)  # pragma: no cover
 
-    def output(self) -> "_ExternalTaskDummyTarget":
+    def output(self) -> _ExternalTaskDummyTarget:
         return _ExternalTaskDummyTarget(self)
 
 
@@ -258,8 +251,8 @@ def build(
     *,
     detailed_summary: Literal[False] = False,
     local_scheduler: bool = False,
-    log_level: Optional[LogLevel] = None,
-    workers: Optional[int] = None,
+    log_level: LogLevel | None = None,
+    workers: int | None = None,
 ) -> bool:
     ...
 
@@ -271,8 +264,8 @@ def build(
     *,
     detailed_summary: Literal[True],
     local_scheduler: bool = False,
-    log_level: Optional[LogLevel] = None,
-    workers: Optional[int] = None,
+    log_level: LogLevel | None = None,
+    workers: int | None = None,
 ) -> LuigiRunResult:
     ...
 
@@ -283,9 +276,9 @@ def build(
     *,
     detailed_summary: bool = False,
     local_scheduler: bool = False,
-    log_level: Optional[LogLevel] = None,
-    workers: Optional[int] = None,
-) -> Union[bool, LuigiRunResult]:
+    log_level: LogLevel | None = None,
+    workers: int | None = None,
+) -> bool | LuigiRunResult:
     """Build a set of tasks."""
     return _build(
         task,
@@ -315,7 +308,7 @@ def clone(
 
 def clone(
     task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
-) -> Union[_Task, AwaitTask[_Task]]:
+) -> _Task | AwaitTask[_Task]:
     """Clone a task."""
     cloned = cast(_Task, task.clone(cls, **kwargs))
     return AwaitTask(cloned) if await_ else cloned
@@ -336,14 +329,14 @@ def get_dependencies_downstream(
 
 
 def get_dependencies_downstream(
-    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
+    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
     return frozenset(_yield_dependencies_downstream(task, cls=cls, recursive=recursive))
 
 
 def _yield_dependencies_downstream(
-    task: Task, /, *, cls: Optional[type[Task]] = None, recursive: bool = False
+    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
         yield from _yield_dependencies_downstream_1(task, task_cls, recursive=recursive)
@@ -389,12 +382,12 @@ def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
     ...
 
 
-def get_task_classes(*, cls: Optional[type[_Task]] = None) -> frozenset[type[_Task]]:
+def get_task_classes(*, cls: type[_Task] | None = None) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     return frozenset(_yield_task_classes(cls=cls))
 
 
-def _yield_task_classes(*, cls: Optional[type[_Task]] = None) -> Iterator[type[_Task]]:
+def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     for name in cast(Any, Register).task_names():
         task_cls = cast(Any, Register).get_task_cls(name)
