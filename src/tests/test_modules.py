@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from functools import partial
 from operator import le, lt
@@ -63,7 +65,7 @@ class TestYieldModuleContents:
     def test_main(
         self,
         module: ModuleType,
-        type_: Optional[Union[type[Any], tuple[type[Any], ...]]],
+        type_: type[Any] | tuple[type[Any], ...] | None,
         recursive: bool,
         predicate: Callable[[Any], bool],
         expected: int,

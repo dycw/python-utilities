@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import datetime as dt
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import numpy as np
 from hypothesis import assume, given
@@ -102,7 +104,7 @@ class TestDatetime64Arrays:
         self,
         data: DataObject,
         shape: Shape,
-        unit: Optional[Datetime64Unit],
+        unit: Datetime64Unit | None,
         valid_dates: bool,
         valid_datetimes: bool,
         unique: bool,
@@ -179,7 +181,7 @@ class TestDatetime64Indexes:
         self,
         data: DataObject,
         n: int,
-        unit: Optional[Datetime64Unit],
+        unit: Datetime64Unit | None,
         valid_dates: bool,
         valid_datetimes: bool,
         unique: bool,
@@ -217,9 +219,7 @@ class TestDatetime64Kinds:
 
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
-    def test_main(
-        self, data: DataObject, kind: Optional[Datetime64Kind]
-    ) -> None:
+    def test_main(self, data: DataObject, kind: Datetime64Kind | None) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
             assert datetime64_unit_to_kind(unit) == kind
@@ -287,9 +287,9 @@ class TestDatetime64s:
     def test_valid_dates(
         self,
         data: DataObject,
-        min_value: Optional[Union[datetime64, dt.date]],
-        max_value: Optional[Union[datetime64, dt.date]],
-        unit: Optional[Literal["D"]],
+        min_value: datetime64 | dt.date | None,
+        max_value: datetime64 | dt.date | None,
+        unit: Literal["D"] | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             datetime = data.draw(
@@ -330,9 +330,9 @@ class TestDatetime64s:
     def test_valid_datetimes(
         self,
         data: DataObject,
-        min_value: Optional[Union[datetime64, dt.datetime]],
-        max_value: Optional[Union[datetime64, dt.datetime]],
-        unit: Optional[Literal["us"]],
+        min_value: datetime64 | dt.datetime | None,
+        max_value: datetime64 | dt.datetime | None,
+        unit: Literal["us"] | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             np_datetime = data.draw(
@@ -382,8 +382,8 @@ class TestFloatArrays:
         self,
         data: DataObject,
         shape: Shape,
-        min_value: Optional[float],
-        max_value: Optional[float],
+        min_value: float | None,
+        max_value: float | None,
         allow_nan: bool,
         allow_inf: bool,
         allow_pos_inf: bool,
@@ -443,8 +443,8 @@ class TestIntArrays:
         self,
         data: DataObject,
         shape: Shape,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        min_value: int | None,
+        max_value: int | None,
         unique: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
@@ -468,10 +468,7 @@ class TestInt32s:
         data=data(), min_value=int32s() | none(), max_value=int32s() | none()
     )
     def test_main(
-        self,
-        data: DataObject,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        self, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
@@ -488,10 +485,7 @@ class TestInt64s:
         data=data(), min_value=int64s() | none(), max_value=int64s() | none()
     )
     def test_main(
-        self,
-        data: DataObject,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        self, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
@@ -517,7 +511,7 @@ class TestStrArrays:
         data: DataObject,
         shape: Shape,
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         allow_none: bool,
         unique: bool,
     ) -> None:
@@ -550,10 +544,7 @@ class TestUInt32s:
         data=data(), min_value=uint32s() | none(), max_value=uint32s() | none()
     )
     def test_main(
-        self,
-        data: DataObject,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        self, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint32s(min_value=min_value, max_value=max_value))
@@ -570,10 +561,7 @@ class TestUInt64s:
         data=data(), min_value=uint64s() | none(), max_value=uint64s() | none()
     )
     def test_main(
-        self,
-        data: DataObject,
-        min_value: Optional[int],
-        max_value: Optional[int],
+        self, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint64s(min_value=min_value, max_value=max_value))

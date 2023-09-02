@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Optional, Union
 
 from pytest import mark, param
@@ -20,9 +22,9 @@ class TestGetTotal:
     )
     def test_main(
         self,
-        total: Optional[Union[int, float]],
+        total: int | float | None,
         iterable: Any,
-        expected: Optional[Union[int, float]],
+        expected: int | float | None,
     ) -> None:
         assert _get_total(total, iterable) == expected
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable
 from contextlib import suppress
@@ -107,10 +109,10 @@ def _map_annotation(  # noqa: PLR0911, PLR0912
     ann: Any,
     /,
     *,
-    date: Optional[Literal["date", "weekday"]] = None,
-    datetime: Optional[Literal["hour", "minute", "second"]] = None,
+    date: Literal["date", "weekday"] | None = None,
+    datetime: Literal["hour", "minute", "second"] | None = None,
     interval: int = 1,
-) -> Union[type[Parameter], Callable[..., Parameter]]:
+) -> type[Parameter] | Callable[..., Parameter]:
     """Map an annotation to a parameter class."""
     with suppress(InvalidAnnotationError):
         return _map_iterable_annotation(ann)
@@ -167,7 +169,7 @@ def _map_iterable_annotation(ann: Any, /) -> type[ListParameter]:
 
 def _map_union_annotation(
     ann: Any, /
-) -> Union[type[Parameter], Callable[..., Parameter]]:
+) -> type[Parameter] | Callable[..., Parameter]:
     """Map a union annotation to a parameter class."""
     msg = f"{ann=}"
     if get_origin(ann) is not Union:
@@ -194,7 +196,7 @@ def _map_union_annotation(
 
 def _map_date_annotation(
     *, kind: Literal["date", "weekday"]
-) -> Union[type[Parameter], Callable[..., Parameter]]:
+) -> type[Parameter] | Callable[..., Parameter]:
     """Map a date annotation to a parameter class."""
     if kind == "date":
         return DateParameter
@@ -209,7 +211,7 @@ class AmbiguousDateError(Exception):
 
 def _map_datetime_annotation(
     *, kind: Literal["hour", "minute", "second"], interval: int = 1
-) -> Union[type[Parameter], Callable[..., Parameter]]:
+) -> type[Parameter] | Callable[..., Parameter]:
     """Map a datetime annotation to a parameter class."""
     if kind == "hour":
         cls = DateHourParameter

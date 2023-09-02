@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
@@ -39,24 +41,24 @@ def date_to_datetime(
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
 
 
-def ensure_date(date: Union[dt.date, str], /) -> dt.date:
+def ensure_date(date: dt.date | str, /) -> dt.date:
     """Ensure the object is a date."""
     return date if isinstance(date, dt.date) else parse_date(date)
 
 
-def ensure_datetime(datetime: Union[dt.datetime, str], /) -> dt.datetime:
+def ensure_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
     return parse_datetime(datetime)
 
 
-def ensure_time(time: Union[dt.time, str], /) -> dt.time:
+def ensure_time(time: dt.time | str, /) -> dt.time:
     """Ensure the object is a time."""
     return time if isinstance(time, dt.time) else parse_time(time)
 
 
-def ensure_timedelta(timedelta: Union[dt.timedelta, str], /) -> dt.timedelta:
+def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
     if isinstance(timedelta, dt.timedelta):
         return timedelta
@@ -161,7 +163,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-def _parse_timedelta(timedelta: str, fmt: str, /) -> Optional[dt.datetime]:
+def _parse_timedelta(timedelta: str, fmt: str, /) -> dt.datetime | None:
     try:
         return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
     except ValueError:
@@ -217,9 +219,9 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 
 def yield_weekdays(
     *,
-    start: Optional[dt.date] = None,
-    end: Optional[dt.date] = None,
-    days: Optional[int] = None,
+    start: dt.date | None = None,
+    end: dt.date | None = None,
+    days: int | None = None,
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
     if (start is not None) and (end is not None) and (days is None):

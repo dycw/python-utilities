@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import suppress
 from pathlib import Path
 from typing import Union
@@ -16,7 +18,7 @@ class TestWriter:
         ],
     )
     def test_file_writing(
-        self, tmp_path: Path, is_binary: bool, contents: Union[str, bytes]
+        self, tmp_path: Path, is_binary: bool, contents: str | bytes
     ) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp, temp.open(

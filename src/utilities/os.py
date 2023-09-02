@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from os import cpu_count, environ, getenv
@@ -21,8 +23,7 @@ CPU_COUNT = _get_cpu_count()
 
 @contextmanager
 def temp_environ(
-    env: Optional[Mapping[str, Optional[str]]] = None,
-    **env_kwargs: Optional[str],
+    env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
 ) -> Iterator[None]:
     """Context manager with temporary environment variable set."""
     all_env = (
@@ -36,7 +37,7 @@ def temp_environ(
         _apply_environment(prev)
 
 
-def _apply_environment(items: Iterable[tuple[str, Optional[str]]], /) -> None:
+def _apply_environment(items: Iterable[tuple[str, str | None]], /) -> None:
     for key, value in items:
         if value is None:
             with suppress(KeyError):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from re import search
 from typing import NoReturn, Union
 
@@ -9,7 +11,7 @@ class DirectoryExistsError(Exception):
 
 
 def redirect_error(
-    old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
+    old: Exception, pattern: str, new: Exception | type[Exception], /
 ) -> NoReturn:
     """Redirect an error if a matching string is found."""
     args = old.args

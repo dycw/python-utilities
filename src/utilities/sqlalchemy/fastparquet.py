@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional, Union
 
 from fastparquet import write
@@ -13,14 +15,14 @@ from utilities.sqlalchemy.pandas import select_to_dataframe
 
 def select_to_parquet(
     sel: Select,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     path: PathLike,
     /,
     *,
-    stream: Optional[int] = None,
+    stream: int | None = None,
     snake: bool = False,
     overwrite: bool = False,
-    compression: Optional[Compression] = "gzip",
+    compression: Compression | None = "gzip",
 ) -> None:
     """Read a table from a database into a Parquet file.
 

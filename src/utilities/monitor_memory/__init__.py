@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import datetime as dt
 from collections.abc import Iterator
@@ -6,7 +8,7 @@ from csv import DictWriter
 from dataclasses import fields
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import attrs
 from click import command
@@ -44,7 +46,7 @@ def _monitor_memory(
     *,
     path: Path = _CONFIG.path,
     freq: int = _CONFIG.freq,
-    duration: Optional[int] = _CONFIG.duration,
+    duration: int | None = _CONFIG.duration,
 ) -> None:
     max_timedelta = None if duration is None else dt.timedelta(seconds=duration)
     timer = Timer()

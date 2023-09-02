@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Any, Literal, NoReturn, Optional, Union, cast, overload
+from typing import Any, Literal, NoReturn, Union, cast, overload
 
 import numpy as np
 from bottleneck import push
@@ -156,15 +156,15 @@ Datetime64Kind = Literal["date", "time"]
 
 def array_indexer(
     i: int, ndim: int, /, *, axis: int = -1
-) -> tuple[Union[int, slice], ...]:
+) -> tuple[int | slice, ...]:
     """Get the indexer which returns the `ith` slice of an array along an axis."""
-    indexer: list[Union[int, slice]] = list(repeat(slice(None), times=ndim))
+    indexer: list[int | slice] = list(repeat(slice(None), times=ndim))
     indexer[axis] = i
     return tuple(indexer)
 
 
 def as_int(
-    array: NDArrayF, /, *, nan: Optional[int] = None, inf: Optional[int] = None
+    array: NDArrayF, /, *, nan: int | None = None, inf: int | None = None
 ) -> NDArrayI:
     """Safely cast an array of floats into ints."""
     if (is_nan := isnan(array)).any():
@@ -287,7 +287,7 @@ class LossOfNanosecondsError(ValueError):
     """Raised when nanoseconds are lost."""
 
 
-def discretize(x: NDArrayF1, bins: Union[int, Iterable[float]], /) -> NDArrayF1:
+def discretize(x: NDArrayF1, bins: int | Iterable[float], /) -> NDArrayF1:
     """Discretize an array of floats.
 
     Finite values are mapped to {0, ..., bins-1}.
@@ -331,14 +331,14 @@ def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
 
 
 def ffill(
-    array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
+    array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
 ) -> NDArrayF:
     """Forward fill the elements in an array."""
     return push(array, n=limit, axis=axis)
 
 
 def ffill_non_nan_slices(
-    array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
+    array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
 ) -> NDArrayF:
     """Forward fill the slices in an array which contain non-nan values."""
 
@@ -354,10 +354,10 @@ def ffill_non_nan_slices(
 
 
 def _ffill_non_nan_slices_helper(
-    arrays: Iterator[NDArrayF], /, *, limit: Optional[int] = None
+    arrays: Iterator[NDArrayF], /, *, limit: int | None = None
 ) -> Iterator[tuple[int, NDArrayF]]:
     """Iterator yielding the slices to be pasted in."""
-    last: Optional[tuple[int, NDArrayF]] = None
+    last: tuple[int, NDArrayF] | None = None
     for i, arr_i in enumerate(arrays):
         if (~isnan(arr_i)).any():
             last = i, arr_i
@@ -423,9 +423,7 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     return x.dtype == dtype
 
 
-def is_empty(
-    shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /
-) -> bool:
+def is_empty(shape_or_array: int | tuple[int, ...] | NDArray[Any], /) -> bool:
     """Check if an ndarray is empty."""
     if isinstance(shape_or_array, int):
         return shape_or_array == 0
@@ -435,7 +433,7 @@ def is_empty(
 
 
 def is_non_empty(
-    shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /
+    shape_or_array: int | tuple[int, ...] | NDArray[Any], /
 ) -> bool:
     """Check if an ndarray is non-empty."""
     if isinstance(shape_or_array, int):
@@ -446,11 +444,11 @@ def is_non_empty(
 
 
 def is_non_singular(
-    array: Union[NDArrayF2, NDArrayI2],
+    array: NDArrayF2 | NDArrayI2,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
 ) -> bool:
     """Check if det(x) != 0."""
     try:
@@ -460,7 +458,7 @@ def is_non_singular(
         return False
 
 
-def is_positive_semidefinite(x: Union[NDArrayF2, NDArrayI2], /) -> bool:
+def is_positive_semidefinite(x: NDArrayF2 | NDArrayI2, /) -> bool:
     """Check if `x` is positive semidefinite."""
     if not is_symmetric(x):
         return False
@@ -469,11 +467,11 @@ def is_positive_semidefinite(x: Union[NDArrayF2, NDArrayI2], /) -> bool:
 
 
 def is_symmetric(
-    array: Union[NDArrayF2, NDArrayI2],
+    array: NDArrayF2 | NDArrayI2,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> bool:
     """Check if x == x.T."""
@@ -550,7 +548,7 @@ def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
-def maximum(*xs: Union[float, NDArrayF]) -> Union[float, NDArrayF]:
+def maximum(*xs: float | NDArrayF) -> float | NDArrayF:
     """Compute the maximum of a number of quantities."""
     return reduce(np.maximum, xs)
 
@@ -620,16 +618,16 @@ def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
-def minimum(*xs: Union[float, NDArrayF]) -> Union[float, NDArrayF]:
+def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     """Compute the minimum of a number of quantities."""
     return reduce(np.minimum, xs)
 
 
 def pct_change(
-    array: Union[NDArrayF, NDArrayI],
+    array: NDArrayF | NDArrayI,
     /,
     *,
-    limit: Optional[int] = None,
+    limit: int | None = None,
     n: int = 1,
     axis: int = -1,
 ) -> NDArrayF:
@@ -666,7 +664,7 @@ class EmptyNumpyConcatenateError(ValueError):
 
 
 def shift(
-    array: Union[NDArrayF, NDArrayI], /, *, n: int = 1, axis: int = -1
+    array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1
 ) -> NDArrayF:
     """Shift the elements of an array."""
     if n == 0:
@@ -702,7 +700,7 @@ def year(date: NDArrayDD, /) -> NDArrayI:
     ...
 
 
-def year(date: Union[datetime64, NDArrayDD], /) -> Union[int, NDArrayI]:
+def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
     """Convert a date/array of dates into a year/array of years."""
     years = 1970 + date.astype(datetime64Y).astype(int)
     return years if isinstance(date, ndarray) else years.item()

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 import logging
 from collections.abc import Iterator, Mapping
@@ -24,15 +26,15 @@ _RETENTION = dt.timedelta(weeks=1)
 
 def setup_loguru(
     *,
-    levels: Optional[Mapping[str, LogLevel]] = None,
-    levels_env_var_prefix: Optional[str] = _LEVELS_ENV_VAR_PREFIX,
-    enable: Optional[IterableStrs] = None,
+    levels: Mapping[str, LogLevel] | None = None,
+    levels_env_var_prefix: str | None = _LEVELS_ENV_VAR_PREFIX,
+    enable: IterableStrs | None = None,
     console: LogLevel = LogLevel.INFO,
-    files: Optional[PathLike] = None,
+    files: PathLike | None = None,
     files_root: Path = Path.cwd(),
-    files_env_var: Optional[str] = _FILES_ENV_VAR,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    files_env_var: str | None = _FILES_ENV_VAR,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Set up `loguru` logging."""
     logger.remove()
@@ -88,8 +90,8 @@ class _InterceptHandler(Handler):
 
 def _augment_levels(
     *,
-    levels: Optional[Mapping[str, LogLevel]] = None,
-    env_var_prefix: Optional[str] = _LEVELS_ENV_VAR_PREFIX,
+    levels: Mapping[str, LogLevel] | None = None,
+    env_var_prefix: str | None = _LEVELS_ENV_VAR_PREFIX,
 ) -> dict[str, LogLevel]:
     """Augment the mapping of levels with the env vars."""
     out: dict[str, LogLevel] = {}
@@ -119,8 +121,8 @@ def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
 
 
 def _get_files_path(
-    *, files: Optional[PathLike] = None, env_var: Optional[str] = _FILES_ENV_VAR
-) -> Optional[PathLike]:
+    *, files: PathLike | None = None, env_var: str | None = _FILES_ENV_VAR
+) -> PathLike | None:
     """Get the path of the files, possibly from the env var."""
     if files is not None:
         return files
@@ -136,15 +138,15 @@ def _add_sink(
     /,
     *,
     live: bool,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a sink."""
     filter_ = {name: level.name for name, level in levels.items()}
 
     class Kwargs(TypedDict, total=False):
-        rotation: Optional[Union[str, int, dt.time, dt.timedelta]]
-        retention: Optional[Union[str, int, dt.timedelta]]
+        rotation: str | int | dt.time | dt.timedelta | None
+        retention: str | int | dt.timedelta | None
 
     if isinstance(sink, (Path, str)):
         kwargs = cast(Kwargs, {"rotation": rotation, "retention": retention})
@@ -194,8 +196,8 @@ def _add_file_sink(
     /,
     *,
     live: bool,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a file sink."""
     _add_sink(
@@ -214,8 +216,8 @@ def _add_live_file_sink(
     levels: Mapping[str, LogLevel],
     /,
     *,
-    rotation: Optional[Union[str, int, dt.time, dt.timedelta]] = _ROTATION,
-    retention: Optional[Union[str, int, dt.timedelta]] = _RETENTION,
+    rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
+    retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a live file sink."""
     _add_file_sink(

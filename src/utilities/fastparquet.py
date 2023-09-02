@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from typing import Any, Literal, Optional, Union, cast, overload
 
@@ -20,7 +22,7 @@ Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
 _PARQUET_DTYPES = {bool, datetime64ns, float, Int64, string}
 
 
-def count_rows(path: PathLike, /, *, filters: Optional[Filters] = None) -> int:
+def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
     """Count the number of rows in a Parquet file."""
     return _get_parquet_file(path).count(
         filters=filters, **_maybe_row_filter(filters)
@@ -52,10 +54,10 @@ def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[IntNonNeg] = None,
-    row_group: Optional[IntNonNeg] = None,
+    head: IntNonNeg | None = None,
+    row_group: IntNonNeg | None = None,
     columns: Hashable,
-    filters: Optional[Filters] = None,
+    filters: Filters | None = None,
 ) -> Series:
     ...
 
@@ -65,10 +67,10 @@ def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[IntNonNeg] = None,
-    row_group: Optional[IntNonNeg] = None,
-    columns: Optional[Sequence[Hashable]] = None,
-    filters: Optional[Filters] = None,
+    head: IntNonNeg | None = None,
+    row_group: IntNonNeg | None = None,
+    columns: Sequence[Hashable] | None = None,
+    filters: Filters | None = None,
 ) -> DataFrame:
     ...
 
@@ -77,11 +79,11 @@ def read_parquet(
     path: PathLike,
     /,
     *,
-    head: Optional[IntNonNeg] = None,
-    row_group: Optional[IntNonNeg] = None,
-    columns: Optional[Union[Hashable, Sequence[Hashable]]] = None,
-    filters: Optional[Filters] = None,
-) -> Union[Series, DataFrame]:
+    head: IntNonNeg | None = None,
+    row_group: IntNonNeg | None = None,
+    columns: Hashable | Sequence[Hashable] | None = None,
+    filters: Filters | None = None,
+) -> Series | DataFrame:
     """Read a Parquet file into a Series/DataFrame."""
     file = _get_parquet_file(path, row_group=row_group)
     as_df = (columns is None) or is_iterable_not_str(columns)
@@ -97,7 +99,7 @@ def read_parquet(
 
 
 def _get_parquet_file(
-    path: PathLike, /, *, row_group: Optional[IntNonNeg] = None
+    path: PathLike, /, *, row_group: IntNonNeg | None = None
 ) -> ParquetFile:
     """Read a Parquet file."""
     try:
@@ -123,20 +125,20 @@ class InvalidRowGroupIndexError(IndexError):
     """Raised when a row group index is invalid."""
 
 
-def _maybe_row_filter(filters: Optional[Filters], /) -> dict[str, bool]:
+def _maybe_row_filter(filters: Filters | None, /) -> dict[str, bool]:
     """Add the `row_filter` argument if necessary."""
     return {} if filters is None else {"row_filter": True}
 
 
 def write_parquet(
-    df: Union[DataFrame, Iterable[DataFrame]],
+    df: DataFrame | Iterable[DataFrame],
     path: PathLike,
     /,
     *,
-    extra_dtypes: Optional[Mapping[Hashable, Any]] = None,
+    extra_dtypes: Mapping[Hashable, Any] | None = None,
     overwrite: bool = False,
-    row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
-    compression: Optional[Compression] = "gzip",
+    row_group_offsets: IntNonNeg | list[IntNonNeg] | None = None,
+    compression: Compression | None = "gzip",
 ) -> None:
     """Atomically write a DataFrame to a Parquet file."""
     with writer(path, overwrite=overwrite) as temp:
@@ -165,9 +167,9 @@ def _write_parquet_core(
     path: PathLike,
     /,
     *,
-    extra_dtypes: Optional[Mapping[Hashable, Any]] = None,
-    row_group_offsets: Optional[Union[IntNonNeg, list[IntNonNeg]]] = None,
-    compression: Optional[Compression] = "gzip",
+    extra_dtypes: Mapping[Hashable, Any] | None = None,
+    row_group_offsets: IntNonNeg | list[IntNonNeg] | None = None,
+    compression: Compression | None = "gzip",
     append: bool = False,
 ) -> None:
     """Atomically write a DataFrame to a Parquet file."""

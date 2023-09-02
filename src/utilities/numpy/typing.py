@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Annotated, Any, Optional, Union, cast
 
@@ -195,8 +197,8 @@ def is_at_least(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y."""
@@ -208,8 +210,8 @@ def is_at_least_or_nan(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y or x == nan."""
@@ -223,8 +225,8 @@ def is_at_most(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y."""
@@ -236,8 +238,8 @@ def is_at_most_or_nan(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y or x == nan."""
@@ -252,8 +254,8 @@ def is_between(
     high: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
     low_equal_nan: bool = False,
     high_equal_nan: bool = False,
@@ -272,8 +274,8 @@ def is_between_or_nan(
     high: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
     low_equal_nan: bool = False,
     high_equal_nan: bool = False,
@@ -292,84 +294,84 @@ def is_between_or_nan(
 
 
 def is_finite_and_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf and x == int(x)."""
     return isfinite(x) & is_integral(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf and x == int(x), or x == nan."""
     return is_finite_and_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_finite_and_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < 0."""
     return isfinite(x) & is_negative(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < 0 or x == nan."""
     return is_finite_and_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_finite_and_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 <= x < inf."""
     return isfinite(x) & is_non_negative(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 <= x < inf or x == nan."""
     return is_finite_and_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_finite_and_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x <= 0."""
     return isfinite(x) & is_non_positive(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x <= 0 or x == nan."""
     return is_finite_and_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_finite_and_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf, x != 0."""
     return isfinite(x) & is_non_zero(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0 or x == nan."""
     return is_finite_and_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_finite_and_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 < x < inf."""
     return isfinite(x) & is_positive(x, rtol=rtol, atol=atol)
 
 
 def is_finite_and_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 < x < inf or x == nan."""
     return is_finite_and_positive(x, rtol=rtol, atol=atol) | isnan(x)
@@ -385,8 +387,8 @@ def is_greater_than(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y."""
@@ -400,8 +402,8 @@ def is_greater_than_or_nan(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y or x == nan."""
@@ -411,14 +413,14 @@ def is_greater_than_or_nan(
 
 
 def is_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == int(x)."""
     return _is_close(x, rint(x), rtol=rtol, atol=atol)
 
 
 def is_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == int(x) or x == nan."""
     return is_integral(x, rtol=rtol, atol=atol) | isnan(x)
@@ -429,8 +431,8 @@ def is_less_than(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y."""
@@ -444,8 +446,8 @@ def is_less_than_or_nan(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y or x == nan."""
@@ -455,84 +457,84 @@ def is_less_than_or_nan(
 
 
 def is_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x < 0."""
     return is_less_than(x, 0.0, rtol=rtol, atol=atol)
 
 
 def is_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x < 0 or x == nan."""
     return is_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x >= 0."""
     return is_at_least(x, 0.0, rtol=rtol, atol=atol)
 
 
 def is_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x >= 0 or x == nan."""
     return is_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x <= 0."""
     return is_at_most(x, 0.0, rtol=rtol, atol=atol)
 
 
 def is_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0."""
     return ~_is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
 def is_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0."""
     return is_greater_than(x, 0, rtol=rtol, atol=atol)
 
 
 def is_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0."""
     return _is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
 def is_zero_or_finite_and_non_micro(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
     zero = 0.0
@@ -540,21 +542,21 @@ def is_zero_or_finite_and_non_micro(
 
 
 def is_zero_or_finite_and_non_micro_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0), or x == nan."""
     return is_zero_or_finite_and_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
 def is_zero_or_non_micro(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0 or ~isclose(x, 0)."""
     zero = 0.0
@@ -562,7 +564,7 @@ def is_zero_or_non_micro(
 
 
 def is_zero_or_non_micro_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
@@ -573,8 +575,8 @@ def _is_close(
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x == y."""
@@ -594,7 +596,7 @@ def _lift(check: Callable[..., Any], /) -> Any:
     """Lift a check to work on a subset of a float array."""
     rng = default_rng()
 
-    def predicate(array: Union[NDArrayI, NDArrayF], /) -> bool:
+    def predicate(array: NDArrayI | NDArrayF, /) -> bool:
         if (size := array.size) == 0:
             return True
         if size == 1:

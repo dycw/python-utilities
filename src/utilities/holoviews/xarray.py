@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional, Union
 
 from holoviews import Curve
@@ -13,12 +15,12 @@ _ = bokeh
 
 
 def plot_curve(
-    array: Union[DataArrayB1, DataArrayI1, DataArrayF1],
+    array: DataArrayB1 | DataArrayI1 | DataArrayF1,
     /,
     *,
-    label: Optional[str] = None,
-    smooth: Optional[int] = None,
-    aspect: Optional[float] = None,
+    label: str | None = None,
+    smooth: int | None = None,
+    aspect: float | None = None,
 ) -> Curve:
     """Plot a 1D array as a curve."""
     if has_dtype(array, bool):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import partial
 from operator import neg, pow
 from typing import Any, Callable, Literal, Optional, Union
@@ -20,7 +22,7 @@ class TestGetDesc:
     )
     def test_main(
         self,
-        desc: Union[Optional[str], Sentinel],
+        desc: str | None | Sentinel,
         func: Callable[..., Any],
         expected: dict[str, str],
     ) -> None:

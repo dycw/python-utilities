@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Union
 
 from luigi import Parameter
@@ -9,7 +11,7 @@ from utilities.semver import ensure_version
 class VersionParameter(Parameter):
     """Parameter taking the value of a `Version`."""
 
-    def normalize(self, version: Union[Version, str], /) -> Version:
+    def normalize(self, version: Version | str, /) -> Version:
         """Normalize a `Version` argument."""
         return ensure_version(version)
 

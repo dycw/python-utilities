@@ -71,10 +71,10 @@ class TablenameMixin:
 
 def check_table_against_reflection(
     table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    schema: Optional[str] = None,
+    schema: str | None = None,
     snake_table: bool = False,
     snake_columns: bool = False,
     allow_permutations_columns: bool = False,
@@ -94,10 +94,10 @@ def check_table_against_reflection(
 
 def _reflect_table(
     table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    schema: Optional[str] = None,
+    schema: str | None = None,
 ) -> Table:
     """Reflect a table from a database."""
     name = get_table_name(table_or_model)
@@ -129,11 +129,7 @@ def check_tables_equal(
 
 
 def _check_table_or_column_names_equal(
-    x: Union[str, quoted_name],
-    y: Union[str, quoted_name],
-    /,
-    *,
-    snake: bool = False,
+    x: str | quoted_name, y: str | quoted_name, /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
@@ -234,9 +230,7 @@ class UnequalNullableStatusError(ValueError):
     """Raised when two columns differ in nullable status."""
 
 
-def _check_column_types_equal(
-    x: Any, y: Any, /
-) -> None:  # noqa: PLR0912, PLR0915
+def _check_column_types_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
@@ -406,9 +400,9 @@ def check_engine(
     engine: Engine,
     /,
     *,
-    num_tables: Optional[IntNonNeg] = None,
-    rel_tol: Optional[FloatNonNeg] = None,
-    abs_tol: Optional[IntNonNeg] = None,
+    num_tables: IntNonNeg | None = None,
+    rel_tol: FloatNonNeg | None = None,
+    abs_tol: IntNonNeg | None = None,
 ) -> None:
     """Check that an engine can connect.
 
@@ -501,15 +495,13 @@ def create_engine(
     drivername: str,
     /,
     *,
-    username: Optional[str] = None,
-    password: Optional[str] = None,
-    host: Optional[str] = None,
-    port: Optional[int] = None,
-    database: Optional[str] = None,
-    query: Optional[
-        Mapping[str, Union[collections.abc.Sequence[str], str]]
-    ] = None,
-    poolclass: Optional[type[Pool]] = NullPool,
+    username: str | None = None,
+    password: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    database: str | None = None,
+    query: Mapping[str, collections.abc.Sequence[str] | str] | None = None,
+    poolclass: type[Pool] | None = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
     url = URL.create(
@@ -524,7 +516,7 @@ def create_engine(
     return _create_engine(url, poolclass=poolclass)
 
 
-def ensure_engine(engine: Union[Engine, str], /) -> Engine:
+def ensure_engine(engine: Engine | str, /) -> Engine:
     """Ensure the object is an Engine."""
     if isinstance(engine, Engine):
         return engine
@@ -532,7 +524,7 @@ def ensure_engine(engine: Union[Engine, str], /) -> Engine:
 
 
 def ensure_table_created(
-    table_or_model: Any, engine_or_connection: Union[Engine, Connection], /
+    table_or_model: Any, engine_or_connection: Engine | Connection, /
 ) -> None:
     """Ensure a table is created."""
     table = get_table(table_or_model)
@@ -545,7 +537,7 @@ def ensure_table_created(
 
 
 def ensure_table_dropped(
-    table_or_model: Any, engine_or_conn: Union[Engine, Connection], /
+    table_or_model: Any, engine_or_conn: Engine | Connection, /
 ) -> None:
     """Ensure a table is dropped."""
     table = get_table(table_or_model)
@@ -570,7 +562,7 @@ def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
 
 
-def get_dialect(engine_or_conn: Union[Engine, Connection], /) -> Dialect:
+def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     """Get the dialect of a database."""
     if isinstance(
         dialect := engine_or_conn.dialect, mssql_dialect
@@ -608,7 +600,7 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
     """Construct a dictionary of elements for insertion."""
     cls = type(obj)
 
-    def is_attr(attr: str, key: str, /) -> Optional[str]:
+    def is_attr(attr: str, key: str, /) -> str | None:
         if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
             value.name == key
         ):
@@ -627,11 +619,11 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
 
 def next_from_sequence(
     name: str,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    timeout: Optional[FloatFinNonNeg] = None,
-) -> Optional[IntNonNeg]:
+    timeout: FloatFinNonNeg | None = None,
+) -> IntNonNeg | None:
     """Get the next element from a sequence."""
 
     def inner() -> int:
@@ -669,7 +661,7 @@ class ParseEngineError(ValueError):
 
 
 def redirect_to_no_such_sequence_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `NoSuchSequenceError`."""
     dialect = get_dialect(engine_or_conn)  # pragma: no cover
@@ -694,7 +686,7 @@ class NoSuchSequenceError(Exception):
 
 
 def redirect_to_no_such_table_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
@@ -714,7 +706,7 @@ def redirect_to_no_such_table_error(
 
 
 def redirect_to_table_already_exists_error(
-    engine_or_conn: Union[Engine, Connection], error: DatabaseError, /
+    engine_or_conn: Engine | Connection, error: DatabaseError, /
 ) -> NoReturn:
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
@@ -744,7 +736,7 @@ def serialize_engine(engine: Engine, /) -> str:
 
 @contextmanager
 def yield_connection(
-    engine_or_conn: Union[Engine, Connection], /
+    engine_or_conn: Engine | Connection, /
 ) -> Iterator[Connection]:
     """Yield a connection."""
     if isinstance(engine_or_conn, Engine):
@@ -758,10 +750,10 @@ def yield_in_clause_rows(
     sel: Select,
     column: Any,
     values: Iterable[Any],
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
-    chunk_size: Optional[int] = None,
+    chunk_size: int | None = None,
     frac: float = 0.95,
 ) -> Iterator[Any]:
     """Yield the rows from an `in` clause."""

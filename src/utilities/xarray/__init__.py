@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Hashable, Mapping
 from typing import Any, Optional, Union, cast
 
@@ -6,11 +8,11 @@ from utilities.xarray.typing import DataArrayF, DataArrayI
 
 
 def ewma(
-    array: Union[DataArrayI, DataArrayF],
-    halflife: Optional[Mapping[Hashable, int]] = None,
+    array: DataArrayI | DataArrayF,
+    halflife: Mapping[Hashable, int] | None = None,
     /,
     *,
-    keep_attrs: Optional[bool] = None,
+    keep_attrs: bool | None = None,
     **halflife_kwargs: int,
 ) -> DataArrayF:
     """Compute the EWMA of an array."""
@@ -32,11 +34,11 @@ def _move_exp_nanmean(array: Any, /, *, axis: Any, alpha: Any) -> Any:
 
 
 def exp_moving_sum(
-    array: Union[DataArrayI, DataArrayF],
-    halflife: Optional[Mapping[Hashable, int]] = None,
+    array: DataArrayI | DataArrayF,
+    halflife: Mapping[Hashable, int] | None = None,
     /,
     *,
-    keep_attrs: Optional[bool] = None,
+    keep_attrs: bool | None = None,
     **halflife_kwargs: int,
 ) -> DataArrayF:
     """Compute the exponentially-weighted moving sum of an array."""

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 from typing import Literal, Optional, TypedDict, Union, cast
@@ -8,7 +10,7 @@ from warnings import catch_warnings, filterwarnings
 def catch_warnings_as_errors(
     *,
     message: str = "",
-    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
+    category: type[Warning] | tuple[type[Warning], ...] | None = None,
 ) -> Iterator[None]:
     """Catch warnings as errors."""
     with _handle_warnings("error", message=message, category=category):
@@ -19,7 +21,7 @@ def catch_warnings_as_errors(
 def suppress_warnings(
     *,
     message: str = "",
-    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
+    category: type[Warning] | tuple[type[Warning], ...] | None = None,
 ) -> Iterator[None]:
     """Suppress warnings."""
     with _handle_warnings("ignore", message=message, category=category):
@@ -34,7 +36,7 @@ def _handle_warnings(
     /,
     *,
     message: str = "",
-    category: Optional[Union[type[Warning], tuple[type[Warning], ...]]] = None,
+    category: type[Warning] | tuple[type[Warning], ...] | None = None,
 ) -> ExitStack:
     """Suppress warnings."""
     stack = ExitStack()
@@ -51,7 +53,7 @@ def _handle_warnings_1(
     /,
     *,
     message: str = "",
-    category: Optional[type[Warning]] = None,
+    category: type[Warning] | None = None,
 ) -> Iterator[None]:
     class Kwargs(TypedDict, total=False):
         category: type[Warning]

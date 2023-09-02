@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from io import StringIO, TextIOWrapper
@@ -10,34 +12,34 @@ from utilities.pytest import is_pytest
 
 @dataclass(frozen=True)
 class _Defaults:
-    desc: Optional[str] = None
-    total: Optional[Union[int, float]] = None
-    leave: Optional[bool] = True
-    file: Optional[Union[TextIOWrapper, StringIO]] = None
-    ncols: Optional[int] = None
-    mininterval: Optional[float] = 0.1
-    maxinterval: Optional[float] = 10.0
-    miniters: Optional[Union[int, float]] = None
-    ascii: Union[bool, Optional[str]] = None  # noqa: A003
-    unit: Optional[str] = "i"
-    unit_scale: Union[bool, int, Optional[str]] = False
-    dynamic_ncols: Optional[bool] = True
-    smoothing: Optional[float] = 0.3
-    bar_format: Optional[str] = (
+    desc: str | None = None
+    total: int | float | None = None
+    leave: bool | None = True
+    file: TextIOWrapper | StringIO | None = None
+    ncols: int | None = None
+    mininterval: float | None = 0.1
+    maxinterval: float | None = 10.0
+    miniters: int | float | None = None
+    ascii: bool | str | None = None  # noqa: A003
+    unit: str | None = "i"
+    unit_scale: bool | int | str | None = False
+    dynamic_ncols: bool | None = True
+    smoothing: float | None = 0.3
+    bar_format: str | None = (
         "{desc}: {percentage:3.0f}% | "
         "{elapsed} +{remaining} ={eta:%H:%M:%S} | "
         "{n}/{total} | {rate_fmt}"
     )
-    initial: Optional[Union[int, float]] = 0
-    position: Optional[int] = None
-    postfix: Optional[Mapping[str, Any]] = None
-    unit_divisor: Optional[float] = 1000.0
-    write_bytes: Optional[bool] = None
-    lock_args: Optional[tuple[Any, ...]] = None
-    nrows: Optional[int] = None
-    colour: Optional[str] = None
-    delay: Optional[float] = 0.0
-    gui: Optional[bool] = False
+    initial: int | float | None = 0
+    position: int | None = None
+    postfix: Mapping[str, Any] | None = None
+    unit_divisor: float | None = 1000.0
+    write_bytes: bool | None = None
+    lock_args: tuple[Any, ...] | None = None
+    nrows: int | None = None
+    colour: str | None = None
+    delay: float | None = 0.0
+    gui: bool | None = False
 
 
 _DEFAULTS = _Defaults()
@@ -48,31 +50,31 @@ class tqdm(_tqdm):  # noqa: N801
 
     def __init__(
         self,
-        iterable: Optional[Iterable[Any]] = None,
-        desc: Optional[str] = _DEFAULTS.desc,
-        total: Optional[Union[int, float]] = _DEFAULTS.total,
-        leave: Optional[bool] = _DEFAULTS.leave,
-        file: Optional[Union[TextIOWrapper, StringIO]] = _DEFAULTS.file,
-        ncols: Optional[int] = _DEFAULTS.ncols,
-        mininterval: Optional[float] = _DEFAULTS.mininterval,
-        maxinterval: Optional[float] = _DEFAULTS.maxinterval,
-        miniters: Optional[Union[int, float]] = _DEFAULTS.miniters,
-        ascii: Union[bool, Optional[str]] = None,  # noqa: A002
-        unit: Optional[str] = _DEFAULTS.unit,
-        unit_scale: Union[bool, int, Optional[str]] = _DEFAULTS.unit_scale,
-        dynamic_ncols: Optional[bool] = _DEFAULTS.dynamic_ncols,
-        smoothing: Optional[float] = _DEFAULTS.smoothing,
-        bar_format: Optional[str] = _DEFAULTS.bar_format,
-        initial: Optional[Union[int, float]] = 0,
-        position: Optional[int] = _DEFAULTS.position,
-        postfix: Optional[Mapping[str, Any]] = _DEFAULTS.postfix,
-        unit_divisor: Optional[float] = _DEFAULTS.unit_divisor,
-        write_bytes: Optional[bool] = _DEFAULTS.write_bytes,
-        lock_args: Optional[tuple[Any, ...]] = _DEFAULTS.lock_args,
-        nrows: Optional[int] = _DEFAULTS.nrows,
-        colour: Optional[str] = _DEFAULTS.colour,
-        delay: Optional[float] = _DEFAULTS.delay,
-        gui: Optional[bool] = _DEFAULTS.gui,
+        iterable: Iterable[Any] | None = None,
+        desc: str | None = _DEFAULTS.desc,
+        total: int | float | None = _DEFAULTS.total,
+        leave: bool | None = _DEFAULTS.leave,
+        file: TextIOWrapper | StringIO | None = _DEFAULTS.file,
+        ncols: int | None = _DEFAULTS.ncols,
+        mininterval: float | None = _DEFAULTS.mininterval,
+        maxinterval: float | None = _DEFAULTS.maxinterval,
+        miniters: int | float | None = _DEFAULTS.miniters,
+        ascii: bool | str | None = None,  # noqa: A002
+        unit: str | None = _DEFAULTS.unit,
+        unit_scale: bool | int | str | None = _DEFAULTS.unit_scale,
+        dynamic_ncols: bool | None = _DEFAULTS.dynamic_ncols,
+        smoothing: float | None = _DEFAULTS.smoothing,
+        bar_format: str | None = _DEFAULTS.bar_format,
+        initial: int | float | None = 0,
+        position: int | None = _DEFAULTS.position,
+        postfix: Mapping[str, Any] | None = _DEFAULTS.postfix,
+        unit_divisor: float | None = _DEFAULTS.unit_divisor,
+        write_bytes: bool | None = _DEFAULTS.write_bytes,
+        lock_args: tuple[Any, ...] | None = _DEFAULTS.lock_args,
+        nrows: int | None = _DEFAULTS.nrows,
+        colour: str | None = _DEFAULTS.colour,
+        delay: float | None = _DEFAULTS.delay,
+        gui: bool | None = _DEFAULTS.gui,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -107,8 +109,8 @@ class tqdm(_tqdm):  # noqa: N801
 
 
 def _get_total(
-    total: Optional[Union[int, float]], iterable: Any, /
-) -> Optional[Union[int, float]]:
+    total: int | float | None, iterable: Any, /
+) -> int | float | None:
     if total is not None:
         return total
     try:

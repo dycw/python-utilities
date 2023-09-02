@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Sized
 from typing import Any, Optional, Union, cast
@@ -256,7 +258,7 @@ class TestSelectToDataFrame:
         data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none()
     )
     def test_main(
-        self, data: DataObject, engine: Engine, stream: Optional[int]
+        self, data: DataObject, engine: Engine, stream: int | None
     ) -> None:
         table = Table(
             "example", MetaData(), Column("id", Integer, primary_key=True)
@@ -393,7 +395,7 @@ class TestYieldInsertionElements:
         data: DataObject,
         elements: SearchStrategy[Any],
         dtype: Any,
-        expected: Union[type, tuple[type, ...]],
+        expected: type | tuple[type, ...],
     ) -> None:
         values = data.draw(lists(elements, max_size=10))
         series = Series(values, dtype=dtype)

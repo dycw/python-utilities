@@ -36,7 +36,7 @@ from utilities.sentinel import Sentinel, sentinel
 
 
 def ffill_non_nan_slices(
-    array: Array, /, *, limit: Optional[int] = None, axis: int = -1
+    array: Array, /, *, limit: int | None = None, axis: int = -1
 ) -> None:
     """Forward fill the slices in an array which contain non-nan values."""
     ndim = array.ndim
@@ -57,7 +57,7 @@ def yield_array_with_indexes(
     overwrite: bool = False,
     dtype: Any = float,
     fill_value: Any = sentinel,
-    chunks: Union[bool, int, tuple[Optional[int], ...]] = True,
+    chunks: bool | int | tuple[int | None, ...] = True,
 ) -> Iterator[Array]:
     """Save an `ndarray` with indexes, yielding a view into its values."""
     with yield_group_and_array(
@@ -80,7 +80,7 @@ def yield_group_and_array(
     overwrite: bool = False,
     dtype: Any = float,
     fill_value: Any = sentinel,
-    chunks: Union[bool, int, tuple[Optional[int], ...]] = True,
+    chunks: bool | int | tuple[int | None, ...] = True,
 ) -> Iterator[tuple[Group, Array]]:
     """Core context manager for the group and array.
 
@@ -194,7 +194,7 @@ class NDArrayWithIndexes:
 
     def isel(
         self,
-        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        indexers: Mapping[Hashable, IselIndexer] | None = None,
         /,
         **indexer_kwargs: IselIndexer,
     ) -> Any:
@@ -219,7 +219,7 @@ class NDArrayWithIndexes:
 
     def sel(
         self,
-        indexers: Optional[Mapping[Hashable, Any]] = None,
+        indexers: Mapping[Hashable, Any] | None = None,
         /,
         **indexer_kwargs: Any,
     ) -> Any:

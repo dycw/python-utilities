@@ -30,8 +30,8 @@ def check_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: Optional[Sequence[Hashable]] = None,
-    dtypes: Optional[Mapping[Hashable, Any]] = None,
+    columns: Sequence[Hashable] | None = None,
+    dtypes: Mapping[Hashable, Any] | None = None,
 ) -> None:
     """Check if the properties of a DataFrame."""
     check_range_index(df.index)
@@ -58,7 +58,7 @@ class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-def check_range_index(obj: Union[Index, Series, DataFrame], /) -> None:
+def check_range_index(obj: Index | Series | DataFrame, /) -> None:
     """Check if a RangeIndex is the default one."""
     if isinstance(obj, Index):
         if not isinstance(obj, RangeIndex):

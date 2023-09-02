@@ -40,7 +40,7 @@ from utilities.text import ensure_str, snake_case
 def insert_dataframe(
     df: DataFrame,
     table_or_model: Any,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
@@ -57,7 +57,7 @@ def insert_dataframe(
 
 def insert_items(
     items: Iterable[Any],
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
@@ -238,7 +238,7 @@ class DatesWithTimeComponentsError(ValueError):
 @overload
 def select_to_dataframe(
     sel: Select,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
@@ -250,7 +250,7 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
@@ -261,12 +261,12 @@ def select_to_dataframe(
 
 def select_to_dataframe(
     sel: Select,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
-    stream: Optional[int] = None,
-) -> Union[DataFrame, Iterator[DataFrame]]:
+    stream: int | None = None,
+) -> DataFrame | Iterator[DataFrame]:
     """Read a table from a database into a DataFrame.
 
     Optionally stream it in chunks.
@@ -329,7 +329,7 @@ def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
 
 def _stream_dataframes(
     sel: Select,
-    engine_or_conn: Union[Engine, Connection],
+    engine_or_conn: Engine | Connection,
     stream: int,
     /,
     *,

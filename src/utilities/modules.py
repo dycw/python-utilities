@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterator
 from contextlib import suppress
 from importlib import import_module
@@ -33,10 +35,8 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: Optional[
-        Union[type[Any], tuple[type[Any], ...]]
-    ] = None,  # noqa: A002
-    predicate: Optional[Callable[[Any], bool]] = None,
+    type: type[Any] | tuple[type[Any], ...] | None = None,
+    predicate: Callable[[Any], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.
 
@@ -57,7 +57,7 @@ def yield_module_subclasses(
     /,
     *,
     recursive: bool = False,
-    predicate: Optional[Callable[[type[Any]], bool]] = None,
+    predicate: Callable[[type[Any]], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module subclasses under a package.
 

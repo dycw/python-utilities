@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from typing import Any, Literal, Optional, Union
 
@@ -137,7 +139,7 @@ class TestArrayIndexer:
         ],
     )
     def test_main(
-        self, i: int, ndim: int, expected: tuple[Union[int, slice], ...]
+        self, i: int, ndim: int, expected: tuple[int | slice, ...]
     ) -> None:
         assert array_indexer(i, ndim) == expected
 
@@ -161,11 +163,7 @@ class TestArrayIndexer:
         ],
     )
     def test_axis(
-        self,
-        i: int,
-        ndim: int,
-        axis: int,
-        expected: tuple[Union[int, slice], ...],
+        self, i: int, ndim: int, axis: int, expected: tuple[int | slice, ...]
     ) -> None:
         assert array_indexer(i, ndim, axis=axis) == expected
 
@@ -1022,7 +1020,7 @@ class TestFFill:
     @mark.parametrize(
         ("limit", "expected_v"), [param(None, 0.2), param(1, nan)]
     )
-    def test_main(self, limit: Optional[int], expected_v: float) -> None:
+    def test_main(self, limit: int | None, expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
         expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3], dtype=float)
@@ -1060,7 +1058,7 @@ class TestFFillNonNanSlices:
         ],
     )
     def test_main(
-        self, limit: Optional[int], axis: int, expected_v: list[list[float]]
+        self, limit: int | None, axis: int, expected_v: list[list[float]]
     ) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
@@ -1203,7 +1201,7 @@ class TestIsEmptyAndIsNotEmpty:
     @mark.parametrize("kind", [param("shape"), param("array")])
     def test_main(
         self,
-        shape: Union[int, tuple[int, ...]],
+        shape: int | tuple[int, ...],
         kind: Literal["shape", "array"],
         expected: Literal["empty", "non-empty"],
     ) -> None:
@@ -1236,7 +1234,7 @@ class TestIsPositiveSemiDefinite:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
+        self, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_positive_semidefinite(array.astype(dtype)) is expected
 
@@ -1256,7 +1254,7 @@ class TestIsSymmetric:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, array: Union[NDArrayF2, NDArrayI2], dtype: Any, expected: bool
+        self, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_symmetric(array.astype(dtype)) is expected
 
@@ -1508,7 +1506,7 @@ class TestShiftBool:
     )
     @mark.parametrize("fill_value", [param(True), param(False)])
     def test_main(
-        self, n: int, expected_v: list[Optional[bool]], fill_value: bool
+        self, n: int, expected_v: list[bool | None], fill_value: bool
     ) -> None:
         arr = array([True, False, True], dtype=bool)
         result = shift_bool(arr, n=n, fill_value=fill_value)
