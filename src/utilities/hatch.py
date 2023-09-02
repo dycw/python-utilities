@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 
 from utilities.pathlib import PathLike
 from utilities.re import extract_groups
@@ -7,7 +8,7 @@ from utilities.subprocess import get_shell_output
 
 
 def get_hatch_version(
-    *, cwd: PathLike = Path.cwd(), activate: Optional[PathLike] = None
+    *, cwd: PathLike = Path.cwd(), activate: PathLike | None = None
 ) -> tuple[int, int, int]:
     """Get the `hatch` version."""
     version = get_shell_output(

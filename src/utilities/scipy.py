@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
 from scipy.stats import norm
 

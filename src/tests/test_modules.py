@@ -5,7 +5,7 @@ from functools import partial
 from operator import le, lt
 from re import search
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any
 
 from pytest import mark, param
 from utilities.class_name import get_class_name

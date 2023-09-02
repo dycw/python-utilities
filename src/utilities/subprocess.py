@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from collections.abc import Iterator, Mapping
 from functools import partial
 from itertools import chain, repeat, starmap
 from pathlib import Path
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -17,8 +19,8 @@ def get_shell_output(
     /,
     *,
     cwd: PathLike = Path.cwd(),
-    activate: Optional[PathLike] = None,
-    env: Optional[Mapping[str, Optional[str]]] = None,
+    activate: PathLike | None = None,
+    env: Mapping[str, str | None] | None = None,
 ) -> str:
     """Get the output of a shell call.
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any, Optional, Union, cast
+from typing import Annotated, Any, Union, cast
 
 import numpy as np
 from beartype.vale import Is, IsAttr, IsEqual

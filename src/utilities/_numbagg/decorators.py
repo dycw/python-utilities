@@ -1,4 +1,5 @@
 from functools import cached_property
+from __future__ import annotations
 
 import numba
 import numpy as np

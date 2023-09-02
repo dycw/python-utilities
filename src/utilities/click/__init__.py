@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime as dt
 from enum import Enum as _Enum
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
@@ -30,7 +32,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -46,7 +48,7 @@ class DateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -62,7 +64,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -78,7 +80,7 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
@@ -104,7 +106,7 @@ class Enum(ParamType, Generic[_E]):
 
     @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:

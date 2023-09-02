@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Any
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
@@ -28,7 +30,7 @@ class _BasePDF(FPDF):
 
 
 @contextmanager
-def yield_pdf(*, header: Optional[str] = None) -> Iterator[_BasePDF]:
+def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     """Yield a PDF."""
 
     class OutputPDF(_BasePDF):

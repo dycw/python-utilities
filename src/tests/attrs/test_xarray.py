@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from attrs import define
 from hypothesis import given
@@ -9,12 +9,10 @@ from xarray import DataArray
 
 class TestRenameDataArrays:
     @given(name_array=hashables(), name_other=hashables())
-    def test_main(
-        self, name_array: Optional[str], name_other: Optional[str]
-    ) -> None:
+    def test_main(self, name_array: str | None, name_other: str | None) -> None:
         @define
         class Other:
-            name: Optional[str]
+            name: str | None
 
         @define
         class Example:

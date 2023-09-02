@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from re import search, sub
 from textwrap import dedent
 from typing import Any

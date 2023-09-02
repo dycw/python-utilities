@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Hashable
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
@@ -67,7 +69,7 @@ def indexes(
     _draw: Any,
     /,
     *,
-    elements: Optional[SearchStrategy[Any]] = None,
+    elements: SearchStrategy[Any] | None = None,
     dtype: Any = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
     unique: MaybeSearchStrategy[bool] = True,
@@ -111,7 +113,7 @@ def str_indexes(
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,

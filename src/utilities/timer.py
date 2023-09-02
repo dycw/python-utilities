@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable
 from numbers import Number
 from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
@@ -14,9 +16,9 @@ class Timer:
     def __init__(self) -> None:
         super().__init__()
         self._start = default_timer()
-        self._end: Optional[float] = None
+        self._end: float | None = None
 
-    def __enter__(self: "Timer") -> "Timer":
+    def __enter__(self: Timer) -> Timer:
         self._start = default_timer()
         return self
 

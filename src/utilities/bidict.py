@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from bidict import ValueDuplicationError, bidict
 
 from utilities.beartype import IterableStrs

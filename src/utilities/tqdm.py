@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from io import StringIO, TextIOWrapper
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from tqdm import tqdm as _tqdm
 

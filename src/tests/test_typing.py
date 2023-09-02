@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from beartype.door import die_if_unbearable
 from pytest import mark, param, raises
 from utilities.types import Number

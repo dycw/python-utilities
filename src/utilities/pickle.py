@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import gzip
 from pickle import dump, load
 from typing import Any

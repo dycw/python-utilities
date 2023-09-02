@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Iterable
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from smtplib import SMTP
-from typing import Any, Optional
+from typing import Any
 
 from utilities.beartype import IterableStrs
 from utilities.pathlib import PathLike
@@ -16,13 +18,13 @@ def send_email(
     to: IterableStrs,
     /,
     *,
-    subject: Optional[str] = None,
+    subject: str | None = None,
     contents: Any = None,
     subtype: str = "plain",
     host: str = "",
     port: int = 0,
-    attachments: Optional[Iterable[PathLike]] = None,
-    disable: Optional[Callable[[], bool]] = is_pytest,
+    attachments: Iterable[PathLike] | None = None,
+    disable: Callable[[], bool] | None = is_pytest,
 ) -> None:
     """Send an email."""
     if (disable is not None) and disable():

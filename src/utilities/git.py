@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output

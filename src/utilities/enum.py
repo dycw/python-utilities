@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from typing_extensions import override
 
@@ -58,7 +58,7 @@ class MultipleMatchingMembersError(Exception):
 
 
 def ensure_enum(
-    enum: type[_E], member: Union[_E, str], /, *, case_sensitive: bool = True
+    enum: type[_E], member: _E | str, /, *, case_sensitive: bool = True
 ) -> _E:
     """Ensure the object is a member of the enum."""
     if isinstance(member, Enum):

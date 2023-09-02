@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from holoviews import Curve
 from hypothesis import given
 from pytest import mark

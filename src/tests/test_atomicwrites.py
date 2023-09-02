@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from contextlib import suppress
 from pathlib import Path
-from typing import Union
 
 from pytest import mark, param, raises
 from utilities.atomicwrites import writer

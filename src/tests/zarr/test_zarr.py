@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable, Hashable
 from pathlib import Path
@@ -236,26 +238,19 @@ class TestNDArrayWithIndexes:
     @mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": dt.datetime(2000, 1, 1)}, 0),  # noqa: DTZ001
+            param({"x": dt.datetime(2000, 1, 1)}, 0),
             param({"x": "2000-01-01"}, 0),
-            param({"x": [dt.datetime(2000, 1, 1)]}, array([0])),  # noqa: DTZ001
+            param({"x": [dt.datetime(2000, 1, 1)]}, array([0])),
             param({"x": ["2000-01-01"]}, array([0])),
             param(
-                {
-                    "x": [
-                        dt.datetime(2000, 1, 1),  # noqa: DTZ001
-                        dt.datetime(2000, 1, 2),  # noqa: DTZ001
-                    ]
-                },
+                {"x": [dt.datetime(2000, 1, 1), dt.datetime(2000, 1, 2)]},
                 array([0, 1]),
             ),
             param(
-                {"x": [dt.datetime(2000, 1, 1), "2000-01-02"]},  # noqa: DTZ001
-                array([0, 1]),
+                {"x": [dt.datetime(2000, 1, 1), "2000-01-02"]}, array([0, 1])
             ),
             param(
-                {"x": ["2000-01-01", dt.datetime(2000, 1, 2)]},  # noqa: DTZ001
-                array([0, 1]),
+                {"x": ["2000-01-01", dt.datetime(2000, 1, 2)]}, array([0, 1])
             ),
             param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
         ],

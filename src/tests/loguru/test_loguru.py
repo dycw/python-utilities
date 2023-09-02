@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from pathlib import Path
 from re import search
 from time import sleep
-from typing import Optional
 
 from hypothesis import given, settings
 from hypothesis.strategies import dictionaries, lists, none, sampled_from
@@ -74,7 +75,7 @@ class TestAugmentLevels:
         assert result == {}
 
     @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
-    def test_main(self, levels: Optional[dict[str, LogLevel]]) -> None:
+    def test_main(self, levels: dict[str, LogLevel] | None) -> None:
         result = _augment_levels(levels=levels)
         assert result == levels
 
@@ -124,7 +125,7 @@ class TestAugmentLevels:
 
 class TestGetFilesPath:
     @given(files=text_ascii(min_size=1) | none())
-    def test_main(self, files: Optional[PathLike]) -> None:
+    def test_main(self, files: PathLike | None) -> None:
         result = _get_files_path(files=files)
         assert result == files
 

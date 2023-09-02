@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import partial
@@ -5,7 +7,6 @@ from getpass import getuser
 from itertools import islice
 from pathlib import Path
 from shutil import rmtree
-from typing import Optional
 
 from attrs import asdict
 from click import command
@@ -47,7 +48,7 @@ def _clean_dir(
     *,
     paths: Iterable[PathLike] = _CONFIG.paths,
     days: int = _CONFIG.days,
-    chunk_size: Optional[int] = _CONFIG.chunk_size,
+    chunk_size: int | None = _CONFIG.chunk_size,
 ) -> None:
     while True:
         iterator = _yield_items(paths=paths, days=days, chunk_size=chunk_size)
@@ -62,7 +63,7 @@ def _yield_items(
     *,
     paths: Iterable[PathLike] = _CONFIG.paths,
     days: int = _CONFIG.days,
-    chunk_size: Optional[int] = _CONFIG.chunk_size,
+    chunk_size: int | None = _CONFIG.chunk_size,
 ) -> Iterator[Item]:
     it = _yield_inner(paths=paths, days=days)
     if chunk_size is not None:
