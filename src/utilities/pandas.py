@@ -7,23 +7,30 @@ from itertools import permutations
 from typing import Any, Literal, NoReturn, cast
 
 from numpy import where
-from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp
+from pandas import (
+    NA,
+    DataFrame,
+    DatetimeTZDtype,
+    Index,
+    NaT,
+    RangeIndex,
+    Series,
+    Timestamp,
+)
 from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.numpy import has_dtype
 from utilities.numpy.typing import NDArray1, datetime64ns
-from utilities.pandas.typing import (
-    Int64,
-    boolean,
-    category,
-    datetime64nshk,
-    datetime64nsutc,
-    string,
-)
+from utilities.zoneinfo import HONG_KONG
 
-_ = (Int64, boolean, category, string, datetime64nsutc, datetime64nshk)
+Int64 = "Int64"
+boolean = "boolean"
+category = "category"
+string = "string"
+datetime64nsutc = DatetimeTZDtype(tz=UTC)
+datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
 
 
 def check_dataframe(
