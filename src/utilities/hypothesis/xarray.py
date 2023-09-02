@@ -17,7 +17,6 @@ from utilities.hypothesis.numpy import (
 )
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.pandas.typing import IndexI
 from utilities.xarray.typing import (
     DataArrayB,
     DataArrayF,
@@ -35,7 +34,7 @@ def dicts_of_indexes(
     max_dims: int | None = None,
     min_side: int = 1,
     max_side: int | None = None,
-) -> dict[Hashable, IndexI]:
+) -> dict[Hashable, Index[int]]:
     """Strategy for generating dictionaries of indexes."""
     draw = lift_draw(_draw)
     shape = draw(

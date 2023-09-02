@@ -13,7 +13,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
 )
-from pandas import Index, Timedelta, Timestamp
+from pandas import Index, StringDtype, Timedelta, Timestamp
 
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw, text_ascii
@@ -26,7 +26,6 @@ from utilities.pandas import (
     TIMESTAMP_MIN_AS_DATETIME,
     string,
 )
-from utilities.pandas.typing import IndexI, IndexS
 
 
 @composite
@@ -100,7 +99,7 @@ def int_indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[IndexI]:
+) -> SearchStrategy[Index[int]]:
     """Strategy for generating integer Indexes."""
     return indexes(
         elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
@@ -118,7 +117,7 @@ def str_indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> IndexS:
+) -> Index[StringDtype]:
     """Strategy for generating string Indexes."""
     draw = lift_draw(_draw)
     elements = text_ascii(min_size=min_size, max_size=max_size)
