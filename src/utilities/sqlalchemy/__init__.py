@@ -230,9 +230,9 @@ class UnequalNullableStatusError(ValueError):
     """Raised when two columns differ in nullable status."""
 
 
-def _check_column_types_equal(  # noqa: PLR0912, PLR0915
+def _check_column_types_equal(
     x: Any, y: Any, /
-) -> None:
+) -> None:  # noqa: PLR0912, PLR0915
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
@@ -628,23 +628,23 @@ def next_from_sequence(
 ) -> IntNonNeg | None:
     """Get the next element from a sequence."""
 
-    def inner() -> int:
+    def inner() -> int:  # pragma: no cover
         seq = sqlalchemy.Sequence(name)
         try:
-            with yield_connection(engine_or_conn) as conn:  # pragma: no cover
+            with yield_connection(engine_or_conn) as conn:
                 return conn.scalar(seq)
         except DatabaseError as error:
-            try:  # pragma: no cover
+            try:
                 redirect_to_no_such_sequence_error(engine_or_conn, error)
-            except NoSuchSequenceError:  # pragma: no cover
+            except NoSuchSequenceError:
                 with yield_connection(engine_or_conn) as conn:
                     _ = seq.create(conn)
                 return inner()
 
-    if timeout is None:
+    if timeout is None:  # pragma: no cover
         return inner()
-    func = timeout_decorator.timeout(seconds=timeout)(inner)
-    try:
+    func = timeout_decorator.timeout(seconds=timeout)(inner)  # pragma: no cover
+    try:  # pragma: no cover
         return func()
     except timeout_decorator.TimeoutError:  # pragma: no cover
         return None

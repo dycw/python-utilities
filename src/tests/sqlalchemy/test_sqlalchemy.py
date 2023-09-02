@@ -133,7 +133,6 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_name,
     model_to_dict,
-    next_from_sequence,
     parse_engine,
     redirect_to_no_such_table_error,
     redirect_to_table_already_exists_error,
@@ -1024,23 +1023,6 @@ class TestModelToDict:
 
         example = Example(ID=id_)
         assert model_to_dict(example) == {"id": id_}
-
-
-class TestNextFromSequence:
-    @given(engine=sqlite_engines())
-    def test_main(self, engine: Engine) -> None:
-        with raises(NotImplementedError):
-            _ = next_from_sequence("test", engine)
-
-    @given(engine=sqlite_engines())
-    def test_limit_within(self, engine: Engine) -> None:
-        with raises(NotImplementedError):
-            _ = next_from_sequence("test", engine, timeout=1.0)
-
-    @given(engine=sqlite_engines())
-    def test_limit_breached(self, engine: Engine) -> None:
-        result = next_from_sequence("test", engine, timeout=1e-9)
-        assert result is None
 
 
 class TestParseEngine:
