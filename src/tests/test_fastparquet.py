@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Literal, Union, cast
 
@@ -67,7 +69,9 @@ class TestGetDtypes:
         root=temp_paths(),
     )
     def test_main(self, dtypes: dict[str, Any], root: Path) -> None:
-        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(dtypes)
+        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(
+            dtypes
+        )
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_dtypes(path)
         assert result == dtypes
@@ -76,7 +80,9 @@ class TestGetDtypes:
 class TestGetNumRowGroups:
     def test_main(self, tmp_path: Path) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        write_parquet(df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1)
+        write_parquet(
+            df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1
+        )
         result = get_num_row_groups(path)
         expected = 2
         assert result == expected
@@ -129,7 +135,9 @@ class TestReadAndWriteParquet:
     ) -> None:
         rows = data.draw(lists(elements, min_size=1))
         n = len(rows)
-        df = DataFrame(rows, index=RangeIndex(n), columns=["value"]).astype(dtype)
+        df = DataFrame(rows, index=RangeIndex(n), columns=["value"]).astype(
+            dtype
+        )
         write_parquet(df, path := root.joinpath("df.parq"))
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
@@ -146,7 +154,9 @@ class TestReadAndWriteParquet:
     def test_writing_iterable_of_dfs(
         self, value1: float, value2: float, root: Path
     ) -> None:
-        df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
+        df = DataFrame(
+            [[value1], [value2]], index=RangeIndex(2), columns=["value"]
+        )
         parts = [df.iloc[:1], df.iloc[1:].reset_index(drop=True)]
         write_parquet(parts, path := root.joinpath("df.parq"))
         result = read_parquet(path)
@@ -175,8 +185,12 @@ class TestReadAndWriteParquet:
         assert_series_equal(sr, df[column1])
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
-    def test_read_row_groups(self, value1: float, value2: float, root: Path) -> None:
-        df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
+    def test_read_row_groups(
+        self, value1: float, value2: float, root: Path
+    ) -> None:
+        df = DataFrame(
+            [[value1], [value2]], index=RangeIndex(2), columns=["value"]
+        )
         write_parquet(df, path := root.joinpath("df.parq"), row_group_offsets=1)
         result1 = read_parquet(path, row_group=0)
         expected1 = df.iloc[:1]
@@ -216,8 +230,12 @@ class TestReadAndWriteParquet:
 
 class TestWriteParquet:
     @given(value=text_ascii(), root=temp_paths())
-    def test_strings_are_stored_as_objects(self, value: str, root: Path) -> None:
-        df = DataFrame(value, index=RangeIndex(1), columns=["value"], dtype=string)
+    def test_strings_are_stored_as_objects(
+        self, value: str, root: Path
+    ) -> None:
+        df = DataFrame(
+            value, index=RangeIndex(1), columns=["value"], dtype=string
+        )
         write_parquet(df, path := root.joinpath("df.parq"))
         file = _get_parquet_file(path)
         dtypes = file.dtypes
@@ -235,16 +253,24 @@ class TestWriteParquet:
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
     def test_check_invalid_dtype(self, tmp_path: Path) -> None:
-        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+        df = DataFrame(
+            nan, index=RangeIndex(1), columns=["value"], dtype=float32
+        )
         with raises(InvalidDTypeError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
     def test_extra_dtype(self, tmp_path: Path) -> None:
-        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
-        write_parquet(df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32})
+        df = DataFrame(
+            nan, index=RangeIndex(1), columns=["value"], dtype=float32
+        )
+        write_parquet(
+            df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32}
+        )
 
     def test_extra_dtype_ignored(self, tmp_path: Path) -> None:
-        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+        df = DataFrame(
+            nan, index=RangeIndex(1), columns=["value"], dtype=float32
+        )
         with raises(InvalidDTypeError):
             write_parquet(
                 df,
