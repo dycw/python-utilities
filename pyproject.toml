@@ -22,7 +22,6 @@ directory = ".coverage/html"
 os-ne-windows = 'sys_platform != "windows"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-linux = 'sys_platform != "linux"'
-version-le-310 = "sys_version_info <= (3, 10)"
 version-ge-311 = "sys_version_info >= (3, 11)"
 
 

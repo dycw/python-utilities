@@ -6,9 +6,9 @@ from typing import Any, TypeVar, cast
 
 from typing_extensions import override
 
-try:  # pragma: version-ge-311
+try:
     from enum import StrEnum as _StrEnum  # type: ignore
-except ImportError:  # pragma: version-le-310
+except ImportError:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
         """An enum whose elements are themselves strings."""
