@@ -23,8 +23,8 @@ os-ne-windows = 'sys_platform != "windows"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-linux = 'sys_platform != "linux"'
 version-le-310 = "sys_version_info <= (3, 10)"
-version-ne-310 = "sys_version_info != (3, 10)"
 version-ge-311 = "sys_version_info >= (3, 11)"
+
 
 #### hatch ####################################################################
 [build-system]
@@ -40,6 +40,7 @@ packages = ["src/utilities"]
 [tool.hatch.version]
 path = "src/utilities/__init__.py"
 
+
 #### nitpick ##################################################################
 [tool.nitpick]
 style = [
@@ -47,6 +48,7 @@ style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.9.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
 ]
+
 
 #### project ##################################################################
 [project]
@@ -208,6 +210,7 @@ monitor-memory = "utilities.monitor_memory:main"
 start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
+
 #### pyright ##################################################################
 [tool.pyright]
 exclude = [
@@ -217,6 +220,7 @@ exclude = [
   ".nox",
   "src/utilities/_numbagg",
 ]
+
 
 #### pytest ###################################################################
 [tool.pytest.ini_options]
@@ -239,6 +243,7 @@ filterwarnings = [
 minversion = "7.0"
 testpaths = ["src/tests"]
 xfail_strict = true
+
 
 #### ruff #####################################################################
 [tool.ruff.isort]

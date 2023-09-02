@@ -9,7 +9,9 @@ from typing_extensions import override
 from utilities.sys import PYTHON_AT_LEAST_3_11
 
 if PYTHON_AT_LEAST_3_11:  # pragma: version-le-310
-    from enum import StrEnum as _StrEnum  # type: ignore
+    from enum import (  # pragma: version-le-310
+        StrEnum as _StrEnum,  # type: ignore
+    )
 else:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
