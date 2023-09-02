@@ -50,7 +50,7 @@ from utilities.luigi import (
 
 class TestAwaitTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
-    def test_main(self, namespace_mixin: Any, is_complete: bool) -> None:
+    def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, Task):
             is_complete = cast(bool, BoolParameter())
 
@@ -86,7 +86,7 @@ class TestBuild:
 
 class TestClone:
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
-    def test_main(self, namespace_mixin: Any, truth: bool) -> None:
+    def test_main(self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
@@ -99,7 +99,7 @@ class TestClone:
         assert result is expected
 
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
-    def test_await(self, namespace_mixin: Any, truth: bool) -> None:
+    def test_await(self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
@@ -171,7 +171,7 @@ class TestExternalFile:
 
 class TestExternalTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
-    def test_main(self, namespace_mixin: Any, is_complete: bool) -> None:
+    def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, ExternalTask):
             is_complete = cast(bool, BoolParameter())
 
@@ -192,10 +192,12 @@ class TestGetDependencies:
             ...
 
         class B(namespace_mixin, Task):
+            @override
             def requires(self) -> A:
                 return clone(self, A)
 
         class C(namespace_mixin, Task):
+            @override
             def requires(self) -> B:
                 return clone(self, B)
 

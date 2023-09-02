@@ -208,34 +208,6 @@ monitor-memory = "utilities.monitor_memory:main"
 start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
-#### pyright ##################################################################
-[tool.pyright]
-include = ["src"]
-exclude = [
-  "**/__pycache__",
-  ".direnv",
-  ".git",
-  ".venv",
-  "src/utilities/_numbagg",
-]
-pythonVersion = "3.9"
-executionEnvironments = [{ root = "src" }]
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportIncompatibleMethodOverride = false
-reportMissingTypeArgument = false
-reportPrivateUsage = false
-reportPrivateImportUsage = false
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUntypedBaseClass = false
-reportMissingSuperCall = "error"
-reportPropertyTypeMismatch = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
-reportUnusedCallResult = "error"
-
 #### pytest ###################################################################
 [tool.pytest.ini_options]
 addopts = [
@@ -260,31 +232,26 @@ xfail_strict = true
 
 #### ruff #####################################################################
 # [tool.ruff]
-ignore = [
-  "ANN101",  # flake8-annotations, missing-type-self
-  "ANN102",  # flake8-annotations, missing-type-cls
-  "ANN401",  # flake8-annotations, dynamically-typed-expression
-  "B008",    # flake8-bugbear, function-call-argument-default
-  "COM812",  # flake8-commas, trailing-comma-missing
-  "D",       # pydocstyle
-  "FA100",   # flake8-future-annotations, future-rewritable-type-annotation
-  "PD",      # pandas-vet
-  "PLR0913", # refactor, too-many-arguments
-  "PT012",   # flake8-pytest-style, raises-with-multiple-statements
-  "PT013",   # flake8-pytest-style, incorrect-pytest-import
-  "PYI041",  # flake8-pyi, redundant-numeric-union
-  "PYI055",  # flake8-pyi, unnecessary-type-union
-  "TCH001",  # flake8-type-checking, typing-only-first-party-import
-  "TCH002",  # flake8-type-checking, typing-only-third-party-import
-  "TCH003",  # flake8-type-checking, typing-only-standard-library-import
-  "TRY200",  # tryceratops, reraise-no-cause
-  "TRY301",  # tryceratops, raise-within-try
-]
-
+# ignore = [
+#   "ANN101",  # flake8-annotations, missing-type-self
+#   "ANN102",  # flake8-annotations, missing-type-cls
+#   "ANN401",  # flake8-annotations, dynamically-typed-expression
+#   "B008",    # flake8-bugbear, function-call-argument-default
+#   "COM812",  # flake8-commas, trailing-comma-missing
+#   "D",       # pydocstyle
+#   "FA100",   # flake8-future-annotations, future-rewritable-type-annotation
+#   "PD",      # pandas-vet
+#   "PLR0913", # refactor, too-many-arguments
+#   "PT012",   # flake8-pytest-style, raises-with-multiple-statements
+#   "PT013",   # flake8-pytest-style, incorrect-pytest-import
+#   "PYI041",  # flake8-pyi, redundant-numeric-union
+#   "PYI055",  # flake8-pyi, unnecessary-type-union
+#   "TCH001",  # flake8-type-checking, typing-only-first-party-import
+#   "TCH002",  # flake8-type-checking, typing-only-third-party-import
+#   "TCH003",  # flake8-type-checking, typing-only-standard-library-import
+#   "TRY200",  # tryceratops, reraise-no-cause
+#   "TRY301",  # tryceratops, raise-within-try
 # ]
-# select = ["ALL"]
-# src = ["src", "tests"]
-# target-version = "py39"
 
 # [tool.ruff.flake8-tidy-imports]
 # ban-relative-imports = "all"

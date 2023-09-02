@@ -36,7 +36,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestDictsOfIndexes:
@@ -91,6 +91,7 @@ class TestFloatDataArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         indexes: dict[Hashable, Index],
         min_value: Optional[float],
@@ -123,7 +124,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestIntDataArrays:
@@ -137,6 +138,7 @@ class TestIntDataArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         indexes: dict[Hashable, Index],
         min_value: Optional[int],
@@ -159,7 +161,7 @@ class TestIntDataArrays:
         assert array.dtype == int
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestMergeIntoDictOfIndexes:
@@ -195,6 +197,7 @@ class TestStrDataArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         indexes: dict[Hashable, Index],
         min_size: int,
@@ -219,4 +222,4 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]

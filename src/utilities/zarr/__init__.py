@@ -7,6 +7,7 @@ from typing import Any, Literal, Optional, Union, cast
 from beartype import beartype
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray
+from typing_extensions import override
 from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
 from zarr.core import Attributes
@@ -128,7 +129,11 @@ class NDArrayWithIndexes:
 
     @beartype
     def __init__(
-        self, path: PathLike, /, *, mode: Literal["r", "r+", "a", "w", "w-"] = "a"
+        self,
+        path: PathLike,
+        /,
+        *,
+        mode: Literal["r", "r+", "a", "w", "w-"] = "a",
     ) -> None:
         super().__init__()
         self._path = Path(path)
@@ -137,12 +142,14 @@ class NDArrayWithIndexes:
             raise FileNotFoundError(msg)
         self._mode = mode
 
+    @override
     @beartype
     def __repr__(self) -> str:
         cls = get_class_name(self)
         path = self._path.as_posix()
         return f"{cls}({path!r})"
 
+    @override
     @beartype
     def __str__(self) -> str:
         cls = get_class_name(self)

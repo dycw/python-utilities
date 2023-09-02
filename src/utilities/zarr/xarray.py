@@ -5,6 +5,7 @@ from typing import Any, Optional, Union, cast
 from beartype import beartype
 from numpy import empty, ndarray
 from pandas import Index
+from typing_extensions import override
 from xarray import DataArray
 from xarray.core.types import ErrorOptionsWithWarn
 from zarr import Array, suppress
@@ -122,11 +123,13 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         return DataArray(self.ndarray, self.coords, self.dims, self.name)
 
     @property
+    @override
     @beartype
     def indexes(self) -> dict[str, Index]:
         """The indexes of the underlying array."""
         return {ensure_str(dim): Index(index) for dim, index in super().indexes.items()}
 
+    @override
     @beartype
     def isel(
         self,
@@ -154,6 +157,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         """The name of the underlying array."""
         return self.attrs["name"]
 
+    @override
     @beartype
     def sel(
         self,
@@ -167,10 +171,17 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     ) -> DataArray:
         """Select orthogonally using index values."""
         empty = self._empty.sel(
-            indexers, method=method, tolerance=tolerance, drop=drop, **indexer_kwargs
+            indexers,
+            method=method,
+            tolerance=tolerance,
+            drop=drop,
+            **indexer_kwargs,
         )
         return DataArray(
-            super().sel(indexers, **indexer_kwargs), empty.coords, empty.dims, self.name
+            super().sel(indexers, **indexer_kwargs),
+            empty.coords,
+            empty.dims,
+            self.name,
         )
 
     @property

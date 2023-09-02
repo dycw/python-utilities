@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, Union, cast
 
 from beartype import beartype
 from fastparquet import write
@@ -19,7 +19,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from numpy import float32, nan
-from pandas import DataFrame, RangeIndex, concat
+from pandas import DataFrame, RangeIndex, Series, concat
 from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 from utilities.fastparquet import (
@@ -83,7 +83,8 @@ class TestGetNumRowGroups:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         write_parquet(df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1)
         result = get_num_row_groups(path)
-        assert result == 2
+        expected = 2
+        assert result == expected
 
 
 class TestGetParquetFile:
@@ -106,7 +107,7 @@ class TestGetParquetFile:
 
     @mark.parametrize("as_str", [param(True), param(False)])
     @beartype
-    def test_error(self, tmp_path: Path, as_str: bool) -> None:
+    def test_error(self, *, tmp_path: Path, as_str: bool) -> None:
         path = tmp_path.joinpath("file")
         path_use = path.as_posix() if as_str else path
         with raises(FileNotFoundError):
@@ -128,6 +129,7 @@ class TestReadAndWriteParquet:
     @beartype
     def test_writing_df(
         self,
+        *,
         data: DataObject,
         elements: SearchStrategy[Any],
         dtype: Any,
@@ -140,11 +142,14 @@ class TestReadAndWriteParquet:
         write_parquet(df, path := root.joinpath("df.parq"))
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
-        read = read_parquet(path, head=head, columns=columns)
+        read = cast(
+            Union[Series, DataFrame],
+            read_parquet(path, head=head, columns=columns),
+        )
         if as_series:
-            assert_series_equal(read, df["value"])
+            assert_series_equal(cast(Series, read), df["value"])
         else:
-            assert_frame_equal(read, df)
+            assert_frame_equal(cast(DataFrame, read), df)
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
     @beartype
@@ -157,7 +162,12 @@ class TestReadAndWriteParquet:
         result = read_parquet(path)
         assert_frame_equal(result, df)
 
-    @given(data=data(), column1=text_ascii(), column2=text_ascii(), root=temp_paths())
+    @given(
+        data=data(),
+        column1=text_ascii(),
+        column2=text_ascii(),
+        root=temp_paths(),
+    )
     @beartype
     def test_series_from_dataframe_with_two_string_columns(
         self, data: DataObject, column1: str, column2: str, root: Path
@@ -166,7 +176,10 @@ class TestReadAndWriteParquet:
         elements = text_ascii() | none()
         rows = data.draw(lists(tuples(elements, elements), min_size=1))
         df = DataFrame(
-            rows, index=RangeIndex(len(rows)), columns=[column1, column2], dtype=string
+            rows,
+            index=RangeIndex(len(rows)),
+            columns=[column1, column2],
+            dtype=string,
         )
         write_parquet(df, path := root.joinpath("df.parq"))
         sr = read_parquet(path, columns=column1)
@@ -198,7 +211,7 @@ class TestReadAndWriteParquet:
     ) -> None:
         @beartype
         def as_str(df: DataFrame, /) -> DataFrame:
-            return df.astype(string)
+            return df.astype(cast(Literal["string"], string))
 
         elements = data_frames(
             [cast(Any, column)("value", elements=text_ascii())],
@@ -206,7 +219,9 @@ class TestReadAndWriteParquet:
         ).map(as_str)
         dfs = data.draw(lists_fixed_length(elements, num_dfs))
         write_parquet(
-            dfs, path := root.joinpath("df.parq"), row_group_offsets=row_group_offsets
+            dfs,
+            path := root.joinpath("df.parq"),
+            row_group_offsets=row_group_offsets,
         )
         result = read_parquet(path)
         expected = concat(dfs).reset_index(drop=True)
@@ -252,5 +267,7 @@ class TestWriteParquet:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(
-                df, tmp_path.joinpath("df.parq"), extra_dtypes={"other": float32}
+                df,
+                tmp_path.joinpath("df.parq"),
+                extra_dtypes={"other": float32},
             )

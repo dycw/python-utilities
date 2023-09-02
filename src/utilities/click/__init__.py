@@ -4,6 +4,7 @@ from typing import Any, Generic, Optional, TypeVar
 
 from beartype import beartype
 from click import Context, Parameter, ParamType, option
+from typing_extensions import override
 
 from utilities.datetime import (
     ParseDateError,
@@ -28,6 +29,7 @@ class Date(ParamType):
 
     name = "date"
 
+    @override
     @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
@@ -44,6 +46,7 @@ class DateTime(ParamType):
 
     name = "datetime"
 
+    @override
     @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
@@ -60,6 +63,7 @@ class Time(ParamType):
 
     name = "time"
 
+    @override
     @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
@@ -76,6 +80,7 @@ class Timedelta(ParamType):
 
     name = "timedelta"
 
+    @override
     @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
@@ -101,6 +106,7 @@ class Enum(ParamType, Generic[_E]):
         self._enum = enum
         self._case_sensitive = case_sensitive
 
+    @override
     @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
