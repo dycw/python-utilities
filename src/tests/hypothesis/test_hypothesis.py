@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import datetime as dt
 from math import inf, isfinite, isinf, isnan
 from pathlib import Path
 from re import search
-from typing import Optional
 
 from hypothesis import Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
@@ -108,8 +109,8 @@ class TestFloatsExtra:
     def test_main(
         self,
         data: DataObject,
-        min_value: Optional[float],
-        max_value: Optional[float],
+        min_value: float | None,
+        max_value: float | None,
         allow_nan: bool,
         allow_inf: bool,
         allow_pos_inf: bool,
@@ -284,7 +285,7 @@ class TestTextAscii:
         self,
         data: DataObject,
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
@@ -314,7 +315,7 @@ class TestTextClean:
         self,
         data: DataObject,
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):
@@ -344,7 +345,7 @@ class TestTextPrintable:
         self,
         data: DataObject,
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         disallow_na: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument, AssertionError):

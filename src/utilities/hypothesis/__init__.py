@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator
@@ -7,7 +9,7 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from string import ascii_letters, printable
-from typing import Any, Optional, Protocol, TypedDict, TypeVar, cast, overload
+from typing import Any, Protocol, TypedDict, TypeVar, cast, overload
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -36,7 +38,7 @@ from utilities.text import ensure_str
 
 @contextmanager
 def assume_does_not_raise(
-    *exceptions: type[Exception], match: Optional[str] = None
+    *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised.
 
@@ -79,8 +81,8 @@ def floats_extra(
     _draw: Any,
     /,
     *,
-    min_value: MaybeSearchStrategy[Optional[float]] = None,
-    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    min_value: MaybeSearchStrategy[float | None] = None,
+    max_value: MaybeSearchStrategy[float | None] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
     allow_inf: MaybeSearchStrategy[bool] = False,
     allow_pos_inf: MaybeSearchStrategy[bool] = False,
@@ -230,7 +232,7 @@ def slices(
     iter_len: int,
     /,
     *,
-    slice_len: MaybeSearchStrategy[Optional[int]] = None,
+    slice_len: MaybeSearchStrategy[int | None] = None,
 ) -> slice:
     """Strategy for generating continuous slices from an iterable."""
     draw = lift_draw(_draw)
@@ -269,7 +271,7 @@ def temp_paths(_draw: Any, /) -> Path:
 def text_ascii(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
@@ -284,7 +286,7 @@ def text_ascii(
 def text_clean(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
@@ -299,7 +301,7 @@ def text_clean(
 def text_printable(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
@@ -318,7 +320,7 @@ def _draw_text(
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
     draw = lift_draw(_draw)

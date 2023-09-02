@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from click import command, echo
 from click.testing import CliRunner
@@ -44,10 +44,10 @@ class TestLocalSchedulerOption:
 
 class TestWorkersOption:
     @given(workers=integers() | none())
-    def test_main(self, workers: Optional[int]) -> None:
+    def test_main(self, workers: int | None) -> None:
         @command()
         @workers_option
-        def cli(*, workers: Optional[int]) -> None:
+        def cli(*, workers: int | None) -> None:
             echo(f"workers = {workers}")
 
         args = [] if workers is None else ["--workers", str(workers)]

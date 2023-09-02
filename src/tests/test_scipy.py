@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan

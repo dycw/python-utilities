@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from typed_settings import option, settings
 
@@ -19,7 +20,7 @@ class Config:
     freq: int = option(
         default=60, help="in seconds", click={"param_decls": ("-f", "--freq")}
     )
-    duration: Optional[int] = option(
+    duration: int | None = option(
         default=None,
         help="in seconds",
         click={"param_decls": ("-d", "--duration")},

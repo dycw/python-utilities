@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from beartype.door import die_if_unbearable

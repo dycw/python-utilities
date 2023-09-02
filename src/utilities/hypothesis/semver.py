@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
@@ -14,8 +16,8 @@ def versions(  # noqa: PLR0912
     _draw: Any,
     /,
     *,
-    min_version: MaybeSearchStrategy[Optional[Version]] = None,
-    max_version: MaybeSearchStrategy[Optional[Version]] = None,
+    min_version: MaybeSearchStrategy[Version | None] = None,
+    max_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Version:
     """Strategy for generating `Version`s."""
     draw = lift_draw(_draw)

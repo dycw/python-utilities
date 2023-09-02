@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from numpy import inf, nan
 from pytest import mark, param
 from utilities.math import (

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pytest import mark, param
 from utilities.class_name import get_class_name
 

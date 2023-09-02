@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import given
 from semver import VersionInfo
 from utilities.hypothesis.semver import versions

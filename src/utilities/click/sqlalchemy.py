@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import sqlalchemy
 from click import Context, Parameter, ParamType
@@ -12,7 +14,7 @@ class Engine(ParamType):
     name = "engine"
 
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> sqlalchemy.Engine:
         """Convert a value into the `Engine` type."""
         try:

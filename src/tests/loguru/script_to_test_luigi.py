@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from threading import get_native_id
 from time import sleep
 from typing import Any, cast

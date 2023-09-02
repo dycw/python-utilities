@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import given
 from pytest import raises
 from utilities.bidict import (

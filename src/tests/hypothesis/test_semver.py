@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject, data
