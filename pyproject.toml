@@ -293,12 +293,12 @@ xfail_strict = true
 # [tool.ruff.flake8-tidy-imports]
 # ban-relative-imports = "all"
 
-# [tool.ruff.per-file-ignores]
-# "src/tests/**/*.py" = [
+[tool.ruff.per-file-ignores]
+"src/tests/**/*.py" = [
 #   "FBT001", # flake8-boolean-trap, boolean-positional-arg-in-function-definition
 #   "FBT003", # flake8-boolean-trap, boolean-positional-value-in-function-call
 #   "PLR2004", # refactor, magic-value-comparison
-#   "S101", # flake8-bandit, assert-used
+  "S101", # flake8-bandit, assert-used
 
-# ]
+]
 # "src/utilities/_numbagg/*.py" = ["ALL"]

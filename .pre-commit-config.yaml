@@ -33,10 +33,10 @@ repos:
       - id: black
       - id: black-jupyter
   # linters
-  - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.34.0
-    hooks:
-      - id: nitpick-check
+  # - repo: https://github.com/andreoliwa/nitpick
+  #   rev: v0.34.0
+  #   hooks:
+  #     - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.5
     hooks:

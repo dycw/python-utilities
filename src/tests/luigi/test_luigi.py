@@ -6,13 +6,24 @@ from typing import Any, Literal, cast
 
 from freezegun import freeze_time
 from hypothesis import assume, given, settings
-from hypothesis.strategies import DataObject, booleans, data, dates, sampled_from, times
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    dates,
+    sampled_from,
+    times,
+)
 from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 from luigi.task import Parameter
 from pytest import mark, param
-
-from utilities.datetime import serialize_date, serialize_datetime, serialize_time
+from typing_extensions import override
+from utilities.datetime import (
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+)
 from utilities.hypothesis import datetimes_utc, temp_paths
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (
@@ -43,6 +54,7 @@ class TestAwaitTask:
         class Example(namespace_mixin, Task):
             is_complete = cast(bool, BoolParameter())
 
+            @override
             def complete(self) -> bool:
                 return self.is_complete
 
@@ -120,7 +132,10 @@ class TestDateTimeParameter:
         ],
     )
     def test_main(
-        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+        self,
+        data: DataObject,
+        datetime: dt.datetime,
+        param_cls: type[Parameter],
     ) -> None:
         param = param_cls()
         input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
@@ -160,6 +175,7 @@ class TestExternalTask:
         class Example(namespace_mixin, ExternalTask):
             is_complete = cast(bool, BoolParameter())
 
+            @override
             def exists(self) -> bool:
                 return self.is_complete
 
@@ -194,9 +210,11 @@ class TestGetDependencies:
         assert up_c == {b}
         assert down_c == set()
 
-        ((up_a_rec, down_a_rec), (up_b_rec, down_b_rec), (up_c_rec, down_c_rec)) = map(
-            partial(self._get_sets, recursive=True), [a, b, c]
-        )
+        (
+            (up_a_rec, down_a_rec),
+            (up_b_rec, down_b_rec),
+            (up_c_rec, down_c_rec),
+        ) = map(partial(self._get_sets, recursive=True), [a, b, c])
         assert up_a_rec == set()
         assert down_a_rec == {b, c}
         assert up_b_rec == {a}
