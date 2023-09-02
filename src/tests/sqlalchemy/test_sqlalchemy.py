@@ -424,9 +424,7 @@ class TestCheckColumnTypesEqual:
         precisions=lists_fixed_length(integers(0, 10) | none(), 2),
     )
     def test_float_precision(
-        self,
-        cls: type[Float[Any]] | type[Numeric[Any]],
-        precisions: list[int | None],
+        self, cls: type[Float[Any] | Numeric[Any]], precisions: list[int | None]
     ) -> None:
         precision_x, precision_y = precisions
         x, y = (cls(precision=p) for p in precisions)
@@ -829,12 +827,6 @@ class TestEnsureTableCreated:
         self, table_or_model: Any, engine: Engine, runs: int, /
     ) -> None:
         sel = get_table(table_or_model).select()
-        # with engine.begin() as conn:
-        #     try:
-        #         with raises(NoSuchTableError):
-        #             _ = conn.execute(sel).all()
-        #     except DatabaseError as error:
-        #         redirect_to_no_such_table_error(engine, error)
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
                 _ = conn.execute(sel).all()

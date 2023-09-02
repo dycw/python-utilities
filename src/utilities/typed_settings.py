@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Callable, Iterable
 from enum import Enum
@@ -21,7 +23,7 @@ from typed_settings.cli_utils import (
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
-from typed_settings.types import AUTO, _Auto  # type: ignore
+from typed_settings.types import AUTO, _Auto
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
@@ -42,7 +44,7 @@ _T = TypeVar("_T")
 
 def get_repo_root_config(
     *, cwd: PathLike = Path.cwd(), filename: str = "config.toml"
-) -> Optional[Path]:
+) -> Path | None:
     """Get the config under the repo root, if it exists."""
     try:
         root = get_repo_root(cwd=cwd)
@@ -62,9 +64,9 @@ def load_settings(
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    config_file_section: Union[str, _Auto] = AUTO,
-    config_files_var: Union[None, str, _Auto] = AUTO,
-    env_prefix: Union[None, str, _Auto] = AUTO,
+    config_file_section: str | _Auto = AUTO,
+    config_files_var: None | str | _Auto = AUTO,
+    env_prefix: None | str | _Auto = AUTO,
 ) -> _T:
     """Load a settings object with the extended converter."""
     loaders = _get_loaders(
@@ -84,7 +86,7 @@ def click_options(
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    argname: Optional[str] = None,
+    argname: str | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
     loaders = _get_loaders(appname=appname, config_files=config_files)
@@ -103,9 +105,9 @@ def _get_loaders(
     *,
     appname: str = "appname",
     config_files: Iterable[PathLike] = _CONFIG_FILES,
-    config_file_section: Union[str, _Auto] = AUTO,
-    config_files_var: Union[None, str, _Auto] = AUTO,
-    env_prefix: Union[None, str, _Auto] = AUTO,
+    config_file_section: str | _Auto = AUTO,
+    config_files_var: None | str | _Auto = AUTO,
+    env_prefix: None | str | _Auto = AUTO,
 ) -> list[Loader]:
     # cannot  as Loader is a protocol
     if search("_", appname):
@@ -124,7 +126,7 @@ class AppNameContainsUnderscoreError(ValueError):
     """Raised when the appname contains a space."""
 
 
-def _make_converter() -> Union[BaseConverter, Converter]:
+def _make_converter() -> BaseConverter | Converter:
     """Extend the default converter."""
     converter = default_converter()
     cases: list[tuple[type[Any], Callable[..., Any]]] = [

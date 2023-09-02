@@ -61,7 +61,9 @@ class TestCheckDataFrame:
         check_dataframe(df)
 
     def test_columns_name_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"], name="name"))
+        df = DataFrame(
+            0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
+        )
         with raises(DataFrameColumnsNameError):
             check_dataframe(df)
 
@@ -201,16 +203,20 @@ class TestSeriesMinMax:
         assert_series_equal(result_max, expected_max)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_index(self, func: Callable[[Series, Series], Series]) -> None:
+    def test_different_index(
+        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+    ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
         with raises(AssertionError):
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_dtype(self, func: Callable[[Series, Series], Series]) -> None:
+    def test_different_dtype(
+        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+    ) -> None:
         x = Series(data=nan, dtype=float)
-        y = Series(data=NA, dtype=Int64)
+        y = Series(data=NA, dtype=Int64)  # type: ignore
         with raises(DifferentDTypeError):
             _ = func(x, y)
 
@@ -263,7 +269,9 @@ class TestTimestampToDateTime:
     @mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
+            param(
+                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+            ),
             param(
                 to_datetime("2000-01-01 12:00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
@@ -280,7 +288,9 @@ class TestTimestampToDateTime:
     @given(timestamp=timestamps(allow_nanoseconds=True))
     def test_warn(self, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
+        with raises(
+            UserWarning, match="Discarding nonzero nanoseconds in conversion"
+        ):
             _ = timestamp_to_datetime(timestamp)
 
     def test_error(self) -> None:
