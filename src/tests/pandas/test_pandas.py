@@ -21,6 +21,7 @@ from pandas import (
 )
 from pandas.testing import assert_series_equal
 from pytest import mark, param, raises
+
 from utilities.datetime import TODAY, UTC
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import timestamps

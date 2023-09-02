@@ -211,7 +211,12 @@ start-pypi-server = "utilities.pypi_server:main"
 #### pyright ##################################################################
 [tool.pyright]
 exclude = [
-  "**/__pycache__", ".direnv", ".git", ".nox", ".venv", "src/utilities/_numbagg",
+  "**/__pycache__",
+  ".direnv",
+  ".git",
+  ".nox",
+  ".venv",
+  "src/utilities/_numbagg",
 ]
 
 #### pytest ###################################################################
@@ -237,6 +242,9 @@ testpaths = ["src/tests"]
 xfail_strict = true
 
 #### ruff #####################################################################
+[tool.ruff.isort]
+known-first-party = ["utilities"]
+
 # [tool.ruff]
 # ignore = [
 #   "ANN101",  # flake8-annotations, missing-type-self

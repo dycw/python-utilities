@@ -5,6 +5,7 @@ from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import integers, none
 from pytest import mark, param
+
 from utilities.click.luigi import (
     local_scheduler_option_default_central,
     local_scheduler_option_default_local,

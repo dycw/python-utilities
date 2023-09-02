@@ -3,6 +3,7 @@ from __future__ import annotations
 from os import getenv
 
 from hypothesis import given
+
 from utilities.hypothesis import text_ascii
 from utilities.os import CPU_COUNT, _get_cpu_count, temp_environ
 

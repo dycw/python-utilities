@@ -3,6 +3,7 @@ from __future__ import annotations
 from re import escape
 
 from pytest import raises
+
 from utilities.more_itertools import (
     EmptyIterableError,
     MultipleElementsError,

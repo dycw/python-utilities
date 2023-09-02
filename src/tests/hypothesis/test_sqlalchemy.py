@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sets
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, insert, select
 from sqlalchemy.orm import declarative_base
+
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 
 

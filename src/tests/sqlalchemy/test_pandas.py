@@ -37,6 +37,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
+
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.pandas import dates_pd, datetimes_pd

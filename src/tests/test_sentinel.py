@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from pytest import mark, param
+
 from utilities.sentinel import _REPR, Sentinel, sentinel
 
 

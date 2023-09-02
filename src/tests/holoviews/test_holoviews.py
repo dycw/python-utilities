@@ -4,6 +4,7 @@ from pathlib import Path
 
 from holoviews import Curve
 from pytest import mark
+
 from utilities.holoviews import apply_opts, relabel_plot, save_plot
 from utilities.platform import SYSTEM, System
 

@@ -23,6 +23,7 @@ from numpy import float32, nan
 from pandas import DataFrame, RangeIndex, Series, concat
 from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
+
 from utilities.fastparquet import (
     _PARQUET_DTYPES,
     EmptyDataFrameError,

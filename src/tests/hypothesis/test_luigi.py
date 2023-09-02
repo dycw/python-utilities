@@ -5,6 +5,7 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
 from luigi import Task
+
 from utilities.hypothesis.luigi import namespace_mixins
 
 

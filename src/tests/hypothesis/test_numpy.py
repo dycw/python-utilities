@@ -35,6 +35,7 @@ from numpy import (
 )
 from numpy.testing import assert_equal
 from pytest import raises
+
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc
 from utilities.hypothesis.numpy import (
     bool_arrays,

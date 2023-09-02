@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 from pytest import mark, param
 from tqdm import tqdm as _tqdm
+
 from utilities.tqdm import _get_total, tqdm
 
 

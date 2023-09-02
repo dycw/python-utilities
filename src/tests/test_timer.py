@@ -8,6 +8,7 @@ from time import sleep
 from typing import Any
 
 from pytest import mark, param, raises
+
 from utilities.timer import Timer
 
 

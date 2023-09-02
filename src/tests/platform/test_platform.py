@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hypothesis import given
 from hypothesis.strategies import sets
+
 from utilities.hypothesis import text_ascii
 from utilities.platform import (
     SYSTEM,

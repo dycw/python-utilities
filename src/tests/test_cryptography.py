@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 from hypothesis import given
 from hypothesis.strategies import text
 from pytest import raises
+
 from utilities.cryptography import (
     _ENV_VAR,
     FernetKeyMissingError,

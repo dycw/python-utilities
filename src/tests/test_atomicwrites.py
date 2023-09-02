@@ -4,6 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from pytest import mark, param, raises
+
 from utilities.atomicwrites import writer
 from utilities.errors import DirectoryExistsError
 

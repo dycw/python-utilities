@@ -7,6 +7,7 @@ from time import sleep
 from hypothesis import given, settings
 from hypothesis.strategies import dictionaries, lists, none, sampled_from
 from loguru import logger
+
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.logging import LogLevel
 from utilities.loguru import (

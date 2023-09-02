@@ -15,6 +15,7 @@ from hypothesis.strategies import (
 )
 from pandas import Index
 from pandas.testing import assert_index_equal
+
 from utilities.hypothesis import assume_does_not_raise, hashables
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.xarray import (

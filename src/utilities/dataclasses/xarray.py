@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Any
 
-from attrs import asdict
 from xarray import DataArray
 
 

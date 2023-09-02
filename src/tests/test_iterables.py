@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     sets,
 )
 from pytest import mark, param, raises
+
 from utilities.iterables import (
     IterableContainsDuplicatesError,
     check_duplicates,

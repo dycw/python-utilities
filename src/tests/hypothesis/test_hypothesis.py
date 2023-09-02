@@ -22,6 +22,7 @@ from hypothesis.strategies import (
 )
 from more_itertools import pairwise
 from pytest import mark, param, raises
+
 from utilities.datetime import UTC
 from utilities.hypothesis import (
     _MAX_EXAMPLES,

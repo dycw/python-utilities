@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from attrs import define
 from hypothesis import given
-from utilities.attrs.xarray import rename_data_arrays
-from utilities.hypothesis import hashables
 from xarray import DataArray
+
+from utilities.dataclasses.xarray import rename_data_arrays
+from utilities.hypothesis import hashables
 
 
 class TestRenameDataArrays:

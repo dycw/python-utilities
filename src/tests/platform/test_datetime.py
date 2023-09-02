@@ -3,6 +3,7 @@ from __future__ import annotations
 from re import search
 
 from hypothesis import given
+
 from utilities.hypothesis import text_clean
 from utilities.platform import SYSTEM, System
 from utilities.platform.datetime import maybe_sub_pct_y

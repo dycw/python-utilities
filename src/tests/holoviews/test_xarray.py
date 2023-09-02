@@ -3,6 +3,7 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from pytest import raises
+
 from utilities.holoviews.xarray import (
     ArrayNameIsEmptyStringError,
     ArrayNameNotAStringError,

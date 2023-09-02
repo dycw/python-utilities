@@ -16,6 +16,9 @@ from hypothesis.strategies import (
 from numpy import arange, array, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
+from zarr import open_array
+from zarr.errors import BoundsCheckError
+
 from utilities.class_name import get_class_name
 from utilities.hypothesis import hashables, temp_paths
 from utilities.hypothesis.numpy import float_arrays, int_arrays
@@ -27,8 +30,6 @@ from utilities.zarr import (
     ffill_non_nan_slices,
     yield_array_with_indexes,
 )
-from zarr import open_array
-from zarr.errors import BoundsCheckError
 
 indexes1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 

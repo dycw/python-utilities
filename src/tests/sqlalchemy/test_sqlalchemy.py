@@ -75,6 +75,7 @@ from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
+
 from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.platform import SYSTEM, System

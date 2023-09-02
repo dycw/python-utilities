@@ -7,6 +7,7 @@ import numpy as np
 from numpy import array
 from numpy.testing import assert_equal
 from pytest import mark, param, raises, skip
+
 from utilities.numpy.typing import NDArrayF
 
 try:
@@ -16,6 +17,7 @@ except ModuleNotFoundError:
 
 
 from cvxpy import Expression, Maximize, Minimize, Problem, Variable
+
 from utilities.cvxpy import (
     InfeasibleProblemError,
     UnboundedProblemError,

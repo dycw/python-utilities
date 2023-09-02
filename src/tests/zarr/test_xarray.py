@@ -11,6 +11,9 @@ from numpy.testing import assert_equal
 from pandas import Index, RangeIndex
 from pandas.testing import assert_index_equal
 from pytest import mark, param, raises
+from xarray import DataArray
+from xarray.testing import assert_identical
+
 from utilities.class_name import get_class_name
 from utilities.hypothesis import hashables, temp_paths, text_ascii
 from utilities.hypothesis.numpy import float_arrays, int_arrays
@@ -25,8 +28,6 @@ from utilities.zarr.xarray import (
     save_data_array_to_disk,
     yield_data_array_on_disk,
 )
-from xarray import DataArray
-from xarray.testing import assert_identical
 
 
 class TestDataArrayOnDisk:

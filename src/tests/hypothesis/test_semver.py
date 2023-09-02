@@ -5,6 +5,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject, data
 from pytest import raises
 from semver import Version
+
 from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis.semver import versions
 

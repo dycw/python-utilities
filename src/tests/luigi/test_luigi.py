@@ -21,6 +21,7 @@ from luigi.notifications import smtp
 from luigi.task import Parameter
 from pytest import mark, param
 from typing_extensions import override
+
 from utilities.datetime import (
     serialize_date,
     serialize_datetime,

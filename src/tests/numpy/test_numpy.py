@@ -24,6 +24,7 @@ from numpy import (
 from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
+
 from utilities.datetime import UTC
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc
 from utilities.hypothesis.numpy import (

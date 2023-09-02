@@ -5,6 +5,7 @@ from typing import Any
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark, param, raises
+
 from utilities.types import (
     NoneType,
     Number,
