@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Literal, Union, cast, overload
 
 import cvxpy
@@ -26,8 +28,8 @@ def abs_(x: Expression, /) -> Expression:
 
 
 def abs_(  # pragma: has-cvxpy
-    x: Union[float, NDArrayF, Expression], /
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
     """Compute the absolute value."""
     if isinstance(x, (float, ndarray)):
         return np.abs(x)
@@ -80,10 +82,8 @@ def add(x: Expression, y: Expression, /) -> Expression:
 
 
 def add(
-    x: Union[float, NDArrayF, Expression],
-    y: Union[float, NDArrayF, Expression],
-    /,
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
     """Compute the sum of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
         return np.add(x, y)
@@ -136,10 +136,8 @@ def divide(x: Expression, y: Expression, /) -> Expression:
 
 
 def divide(
-    x: Union[float, NDArrayF, Expression],
-    y: Union[float, NDArrayF, Expression],
-    /,
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
     """Compute the quotient of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
         return np.divide(x, y)
@@ -192,10 +190,8 @@ def multiply(x: Expression, y: Expression, /) -> Expression:
 
 
 def multiply(
-    x: Union[float, NDArrayF, Expression],
-    y: Union[float, NDArrayF, Expression],
-    /,
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
     """Compute the product of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
         return np.multiply(x, y)
@@ -217,9 +213,7 @@ def neg(x: Expression, /) -> Expression:
     ...
 
 
-def neg(
-    x: Union[float, NDArrayF, Expression], /
-) -> Union[float, NDArrayF, Expression]:
+def neg(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the negative parts of a quantity."""
     if isinstance(x, (float, ndarray)):
         result = -minimum(x, 0.0)
@@ -237,7 +231,7 @@ def norm(x: Expression, /) -> Expression:
     ...
 
 
-def norm(x: Union[NDArrayF1, Expression], /) -> Union[float, Expression]:
+def norm(x: NDArrayF1 | Expression, /) -> float | Expression:
     """Compute the negative parts of a quantity."""
     if isinstance(x, ndarray):
         return cast(float, numpy.linalg.norm(x))
@@ -259,9 +253,7 @@ def pos(x: Expression, /) -> Expression:
     ...
 
 
-def pos(
-    x: Union[float, NDArrayF, Expression], /
-) -> Union[float, NDArrayF, Expression]:
+def pos(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the positive parts of a quantity."""
     if isinstance(x, (float, ndarray)):
         result = maximum(x, 0.0)
@@ -300,8 +292,8 @@ def power(x: Expression, p: NDArrayF, /) -> Expression:
 
 
 def power(
-    x: Union[float, NDArrayF, Expression], p: Union[float, NDArrayF], /
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, p: float | NDArrayF, /
+) -> float | NDArrayF | Expression:
     """Compute the power of a quantity."""
     if isinstance(x, (float, ndarray)):
         return np.power(x, p)
@@ -319,8 +311,8 @@ def quad_form(x: Expression, P: NDArrayF2, /) -> Expression:  # noqa: N803
 
 
 def quad_form(
-    x: Union[NDArrayF1, Expression], P: NDArrayF2, /  # noqa: N803
-) -> Union[float, Expression]:
+    x: NDArrayF1 | Expression, P: NDArrayF2, /  # noqa: N803
+) -> float | Expression:
     """Compute the quadratic form of a vector & matrix."""
     if isinstance(x, ndarray):
         return cast(float, x.T @ P @ x)
@@ -379,9 +371,7 @@ def sqrt(x: Expression, /) -> Expression:
     ...
 
 
-def sqrt(
-    x: Union[float, NDArrayF, Expression], /
-) -> Union[float, NDArrayF, Expression]:
+def sqrt(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the square root of a quantity."""
     if isinstance(x, (float, ndarray)):
         return np.sqrt(x)
@@ -434,10 +424,8 @@ def subtract(x: Expression, y: Expression, /) -> Expression:
 
 
 def subtract(
-    x: Union[float, NDArrayF, Expression],
-    y: Union[float, NDArrayF, Expression],
-    /,
-) -> Union[float, NDArrayF, Expression]:
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
     """Compute the difference of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
         return np.subtract(x, y)
@@ -445,7 +433,7 @@ def subtract(
 
 
 @overload
-def sum_(x: Union[float, NDArrayF], /) -> float:
+def sum_(x: float | NDArrayF, /) -> float:
     ...
 
 
@@ -454,7 +442,7 @@ def sum_(x: Expression, /) -> Expression:
     ...
 
 
-def sum_(x: Union[float, NDArrayF, Expression], /) -> Union[float, Expression]:
+def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
     """Compute the sum of a quantity."""
     if isinstance(x, float):
         return x
