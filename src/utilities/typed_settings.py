@@ -7,7 +7,7 @@ from itertools import starmap
 from operator import attrgetter, itemgetter
 from pathlib import Path
 from re import search
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from cattrs import BaseConverter, Converter
 from click import ParamType

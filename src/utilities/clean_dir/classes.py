@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from typed_settings import option, settings
 
@@ -17,7 +18,7 @@ class Config:
         default=[TEMP_DIR], click={"param_decls": ("-p", "--path")}
     )
     days: int = option(default=7, click={"param_decls": ("-d", "--days")})
-    chunk_size: int | None = option(
+    chunk_size: Optional[int] = option(  # noqa: UP007
         default=None, click={"param_decls": ("-cs", "--chunk-size")}
     )
     dry_run: bool = option(
