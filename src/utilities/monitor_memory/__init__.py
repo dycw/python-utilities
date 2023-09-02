@@ -66,7 +66,7 @@ def _monitor_memory(
 @contextmanager
 def _yield_writer(
     *, path: Path = _CONFIG.path, mode: str = "r"
-) -> Iterator[DictWriter]:
+) -> Iterator[DictWriter[Any]]:
     fieldnames = [f.name for f in fields(cast(Any, Item))]
     with path.open(mode=mode) as fh:
         yield DictWriter(fh, fieldnames=fieldnames)

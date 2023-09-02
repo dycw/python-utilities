@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Hashable
-from typing import Any, cast
+from typing import Any
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
@@ -75,7 +75,7 @@ def indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> Index:
+) -> Index[Any]:
     """Strategy for generating Indexes."""
     draw = lift_draw(_draw)
     n_ = draw(n)
@@ -88,9 +88,9 @@ def indexes(
             unique=draw(unique),
         )
     )
-    index = cast(Index, index.rename(draw(name)))
+    index = index.rename(draw(name))
     if draw(sort):
-        return cast(Index, index.sort_values())
+        return index.sort_values()
     return index
 
 
@@ -151,7 +151,7 @@ def timestamps(
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta: Timedelta = Timedelta(nanoseconds=nanoseconds)
+        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
         timestamp += timedelta
         _ = assume(min_value <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value)

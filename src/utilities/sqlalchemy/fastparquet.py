@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastparquet import write
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql import Select
@@ -12,7 +14,7 @@ from utilities.sqlalchemy.pandas import select_to_dataframe
 
 
 def select_to_parquet(
-    sel: Select,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     path: PathLike,
     /,

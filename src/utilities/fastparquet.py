@@ -19,7 +19,7 @@ Compression = Union[_Compression, Mapping[Hashable, Optional[_Compression]]]
 _Op = Literal["==", "=", ">", ">=", "<", "<=", "!=", "in", "not in"]
 _Filter = tuple[Hashable, _Op, Any]
 Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
-_PARQUET_DTYPES = {bool, datetime64ns, float, Int64, string}
+_PARQUET_DTYPES = {bool, cast(Hashable, datetime64ns), float, Int64, string}
 
 
 def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
@@ -58,7 +58,7 @@ def read_parquet(
     row_group: IntNonNeg | None = None,
     columns: Hashable,
     filters: Filters | None = None,
-) -> Series:
+) -> Series[Any]:
     ...
 
 
@@ -83,7 +83,7 @@ def read_parquet(
     row_group: IntNonNeg | None = None,
     columns: Hashable | Sequence[Hashable] | None = None,
     filters: Filters | None = None,
-) -> Series | DataFrame:
+) -> Series[Any] | DataFrame:
     """Read a Parquet file into a Series/DataFrame."""
     file = _get_parquet_file(path, row_group=row_group)
     as_df = (columns is None) or is_iterable_not_str(columns)

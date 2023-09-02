@@ -143,11 +143,11 @@ class TestReadAndWriteParquet:
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
         read = cast(
-            Union[Series, DataFrame],
+            Union[Series[Any], DataFrame],
             read_parquet(path, head=head, columns=columns),
         )
         if as_series:
-            assert_series_equal(cast(Series, read), df["value"])
+            assert_series_equal(cast(Series[Any], read), df["value"])
         else:
             assert_frame_equal(cast(DataFrame, read), df)
 

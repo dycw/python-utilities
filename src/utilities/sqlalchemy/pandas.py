@@ -124,7 +124,7 @@ def _yield_dataframe_rows_as_dicts(
 
 
 def _parse_series_against_table(
-    series: Series,
+    series: Series[Any],
     table_or_model: Any,
     /,
     *,
@@ -170,7 +170,7 @@ class SeriesNameNotInTableError(ValueError):
 
 
 def _check_series_against_table_column(
-    series: Series,
+    series: Series[Any],
     table_column: Column[Any],
     /,
     *,
@@ -209,7 +209,7 @@ class SeriesAgainstTableColumnError(TypeError):
     """Raised when a series has incompatible dtype with a table column."""
 
 
-def _yield_insertion_elements(series: Series, /) -> Iterator[Any]:
+def _yield_insertion_elements(series: Series[Any], /) -> Iterator[Any]:
     """Yield the elements for insertion."""
     if has_dtype(series, (bool, boolean)):
         cast = bool
@@ -237,7 +237,7 @@ class DatesWithTimeComponentsError(ValueError):
 
 @overload
 def select_to_dataframe(
-    sel: Select,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -249,7 +249,7 @@ def select_to_dataframe(
 
 @overload
 def select_to_dataframe(
-    sel: Select,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -260,7 +260,7 @@ def select_to_dataframe(
 
 
 def select_to_dataframe(
-    sel: Select,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -279,7 +279,7 @@ def select_to_dataframe(
     return _stream_dataframes(sel, engine_or_conn, stream, snake=snake)
 
 
-def _check_select_for_duplicates(sel: Select, /) -> None:
+def _check_select_for_duplicates(sel: Select[Any], /) -> None:
     """Check a select statement contains no duplicates."""
     col_names = [col.name for col in sel.selected_columns.values()]
     try:
@@ -290,7 +290,7 @@ def _check_select_for_duplicates(sel: Select, /) -> None:
 
 
 def _rows_to_dataframe(
-    sel: Select, rows: Iterable[Row], /, *, snake: bool = False
+    sel: Select[Any], rows: Iterable[Row[Any]], /, *, snake: bool = False
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
     dtypes = {
@@ -322,13 +322,12 @@ def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
 
 def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
     """Convert the columns of a DataFrame to snake case."""
-    columns = [c for c in df.columns if isinstance(c, str)]
-    mapping = snake_case_mappings(columns)
+    mapping = snake_case_mappings(list(df.columns))
     return df.rename(columns=mapping)
 
 
 def _stream_dataframes(
-    sel: Select,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     stream: int,
     /,

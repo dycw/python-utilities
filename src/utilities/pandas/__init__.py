@@ -58,16 +58,16 @@ class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-def check_range_index(obj: Index | Series | DataFrame, /) -> None:
+def check_range_index(obj: Index[Any] | Series[Any] | DataFrame, /) -> None:
     """Check if a RangeIndex is the default one."""
     if isinstance(obj, Index):
         if not isinstance(obj, RangeIndex):
             msg = f"Invalid type: {obj=}"
             raise TypeError(msg)
-        if obj.start != 0:
+        if cast(int, obj.start) != 0:
             msg = f"{obj=}"
             raise RangeIndexStartError(msg)
-        if obj.step != 1:
+        if cast(int, obj.step) != 1:
             msg = f"{obj=}"
             raise RangeIndexStepError(msg)
         if obj.name is not None:
@@ -117,19 +117,19 @@ class EmptyPandasConcatError(ValueError):
     """Raised when there are no objects to concatenate."""
 
 
-def series_max(*series: Series) -> Series:
+def series_max(*series: Series[Any]) -> Series[Any]:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
 
 
-def series_min(*series: Series) -> Series:
+def series_min(*series: Series[Any]) -> Series[Any]:
     """Compute the minimum of a set of Series."""
     return reduce(partial(_series_minmax, kind="upper"), series)
 
 
 def _series_minmax(
-    x: Series, y: Series, /, *, kind: Literal["lower", "upper"]
-) -> Series:
+    x: Series[Any], y: Series[Any], /, *, kind: Literal["lower", "upper"]
+) -> Series[Any]:
     """Compute the minimum/maximum of a pair of Series."""
     assert_index_equal(x.index, y.index)
     if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
@@ -140,7 +140,7 @@ def _series_minmax(
         i = first.notna() & second.isna()
         out.loc[i] = first.loc[i]
     i = x.notna() & y.notna()
-    out.loc[i] = x.loc[i].clip(**{kind: y.loc[i]})
+    out.loc[i] = x.loc[i].clip(**{kind: cast(Any, y.loc[i])})
     out.loc[x.isna() & y.isna()] = NA
     return out
 
@@ -199,7 +199,7 @@ TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
 )
 
 
-def to_numpy(series: Series, /) -> NDArray1:
+def to_numpy(series: Series[Any], /) -> NDArray1:
     """Convert a series into a 1-dimensional `ndarray`."""
     if has_dtype(series, (bool, datetime64ns, int, float)):
         return series.to_numpy()

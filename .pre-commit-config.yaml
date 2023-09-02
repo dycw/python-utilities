@@ -42,7 +42,11 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: [flake8-future-import]
-        args: [--select=FI18]
+        args:
+          [
+            --select=FI18,
+            --per-file-ignores=src/tests/test_typed_settings.py:FI18,
+          ]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.5
     hooks:

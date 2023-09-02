@@ -45,27 +45,27 @@ class _Defaults:
 _DEFAULTS = _Defaults()
 
 
-class tqdm(_tqdm):  # noqa: N801
+class tqdm(_tqdm[Any]):  # noqa: N801
     """Sub-class of `tqdm` which is disabled during pytest."""
 
     def __init__(
         self,
         iterable: Iterable[Any] | None = None,
         desc: str | None = _DEFAULTS.desc,
-        total: int | float | None = _DEFAULTS.total,
+        total: float | None = _DEFAULTS.total,
         leave: bool | None = _DEFAULTS.leave,
         file: TextIOWrapper | StringIO | None = _DEFAULTS.file,
         ncols: int | None = _DEFAULTS.ncols,
         mininterval: float | None = _DEFAULTS.mininterval,
         maxinterval: float | None = _DEFAULTS.maxinterval,
-        miniters: int | float | None = _DEFAULTS.miniters,
+        miniters: float | None = _DEFAULTS.miniters,
         ascii: bool | str | None = None,  # noqa: A002
         unit: str | None = _DEFAULTS.unit,
         unit_scale: bool | int | str | None = _DEFAULTS.unit_scale,
         dynamic_ncols: bool | None = _DEFAULTS.dynamic_ncols,
         smoothing: float | None = _DEFAULTS.smoothing,
         bar_format: str | None = _DEFAULTS.bar_format,
-        initial: int | float | None = 0,
+        initial: float | None = 0,
         position: int | None = _DEFAULTS.position,
         postfix: Mapping[str, Any] | None = _DEFAULTS.postfix,
         unit_divisor: float | None = _DEFAULTS.unit_divisor,
@@ -108,9 +108,7 @@ class tqdm(_tqdm):  # noqa: N801
         )
 
 
-def _get_total(
-    total: int | float | None, iterable: Any, /
-) -> int | float | None:
+def _get_total(total: float | None, iterable: Any, /) -> float | None:
     if total is not None:
         return total
     try:

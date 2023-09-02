@@ -3,16 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
+from typing import Any
 
 from typing_extensions import override
 
 from utilities.pathlib import PathLike
 
 
-class TemporaryDirectory(_TemporaryDirectory):
+class TemporaryDirectory(_TemporaryDirectory[Any]):
     """Sub-class of TemporaryDirectory whose name attribute is a Path."""
-
-    name: Path
 
     def __init__(
         self,

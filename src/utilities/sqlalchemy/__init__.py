@@ -230,7 +230,9 @@ class UnequalNullableStatusError(ValueError):
     """Raised when two columns differ in nullable status."""
 
 
-def _check_column_types_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_equal(  # noqa: PLR0912, PLR0915
+    x: Any, y: Any, /
+) -> None:
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
@@ -747,7 +749,7 @@ def yield_connection(
 
 
 def yield_in_clause_rows(
-    sel: Select,
+    sel: Select[Any],
     column: Any,
     values: Iterable[Any],
     engine_or_conn: Engine | Connection,

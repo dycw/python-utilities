@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Hashable
-from typing import cast
+from typing import Any, cast
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -36,10 +36,10 @@ class TestEwma:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index], halflife: int
+        self, data: DataObject, indexes: dict[str, Index[Any]], halflife: int
     ) -> None:
         array = data.draw(
-            float_data_arrays(cast(dict[Hashable, Index], indexes))
+            float_data_arrays(cast(dict[Hashable, Index[Any]], indexes))
         )
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):
@@ -55,10 +55,10 @@ class TestExpMovingSum:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index], halflife: int
+        self, data: DataObject, indexes: dict[str, Index[Any]], halflife: int
     ) -> None:
         array = data.draw(
-            float_data_arrays(cast(dict[Hashable, Index], indexes))
+            float_data_arrays(cast(dict[Hashable, Index[Any]], indexes))
         )
         dim = data.draw(sampled_from(list(indexes)))
         with assume_does_not_raise(RuntimeWarning):

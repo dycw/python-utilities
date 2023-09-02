@@ -4,7 +4,7 @@ from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Union, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray

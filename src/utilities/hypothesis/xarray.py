@@ -76,7 +76,7 @@ def bool_data_arrays(
 @composite
 def float_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
@@ -89,7 +89,7 @@ def float_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index],
+    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayF:
     """Strategy for generating data arrays of floats."""
     draw = lift_draw(_draw)
@@ -117,7 +117,7 @@ def float_data_arrays(
 @composite
 def int_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[int | None] = None,
@@ -125,7 +125,7 @@ def int_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index],
+    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayI:
     """Strategy for generating data arrays of ints."""
     draw = lift_draw(_draw)
@@ -148,7 +148,7 @@ def int_data_arrays(
 @composite
 def str_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
@@ -157,7 +157,7 @@ def str_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index],
+    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayO:
     """Strategy for generating data arrays of strings."""
     draw = lift_draw(_draw)
@@ -181,15 +181,15 @@ def str_data_arrays(
 @composite
 def _merge_into_dict_of_indexes(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index]] | None = None,
+    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
     /,
-    **indexes_kwargs: MaybeSearchStrategy[Index],
-) -> dict[Hashable, Index]:
+    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
+) -> dict[Hashable, Index[Any]]:
     """Merge positional & kwargs of indexes into a dictionary."""
     draw = lift_draw(_draw)
     if (indexes is None) and (len(indexes_kwargs) == 0):
         return draw(dicts_of_indexes())
-    indexes_out: dict[Hashable, Index] = {}
+    indexes_out: dict[Hashable, Index[Any]] = {}
     if indexes is not None:
         indexes_out |= draw(indexes)
     indexes_out |= {k: draw(v) for k, v in indexes_kwargs.items()}
