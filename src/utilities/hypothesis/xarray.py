@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Mapping
 from typing import Any
 
 from hypothesis.extra.numpy import array_shapes
@@ -34,7 +34,7 @@ def dicts_of_indexes(
     max_dims: int | None = None,
     min_side: int = 1,
     max_side: int | None = None,
-) -> dict[Hashable, Index[int]]:
+) -> dict[str, Index[int]]:
     """Strategy for generating dictionaries of indexes."""
     draw = lift_draw(_draw)
     shape = draw(
@@ -54,12 +54,12 @@ def dicts_of_indexes(
 @composite
 def bool_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
     /,
     *,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[Hashable] = None,
+    name: MaybeSearchStrategy[str | None] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayB:
     """Strategy for generating data arrays of booleans."""
@@ -75,7 +75,7 @@ def bool_data_arrays(
 @composite
 def float_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
@@ -87,7 +87,7 @@ def float_data_arrays(
     integral: MaybeSearchStrategy[bool] = False,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[Hashable] = None,
+    name: MaybeSearchStrategy[str | None] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayF:
     """Strategy for generating data arrays of floats."""
@@ -116,14 +116,14 @@ def float_data_arrays(
 @composite
 def int_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[int | None] = None,
     max_value: MaybeSearchStrategy[int | None] = None,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[Hashable] = None,
+    name: MaybeSearchStrategy[str | None] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayI:
     """Strategy for generating data arrays of ints."""
@@ -147,7 +147,7 @@ def int_data_arrays(
 @composite
 def str_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
@@ -155,7 +155,7 @@ def str_data_arrays(
     allow_none: MaybeSearchStrategy[bool] = False,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[Hashable] = None,
+    name: MaybeSearchStrategy[str | None] = None,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayO:
     """Strategy for generating data arrays of strings."""
@@ -180,16 +180,16 @@ def str_data_arrays(
 @composite
 def _merge_into_dict_of_indexes(
     _draw: Any,
-    indexes: MaybeSearchStrategy[dict[Hashable, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
     /,
     **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
-) -> dict[Hashable, Index[Any]]:
+) -> dict[str, Index[Any]]:
     """Merge positional & kwargs of indexes into a dictionary."""
     draw = lift_draw(_draw)
     if (indexes is None) and (len(indexes_kwargs) == 0):
         return draw(dicts_of_indexes())
-    indexes_out: dict[Hashable, Index[Any]] = {}
+    indexes_out: dict[str, Index[Any]] = {}
     if indexes is not None:
-        indexes_out |= draw(indexes)
+        indexes_out |= dict(draw(indexes))
     indexes_out |= {k: draw(v) for k, v in indexes_kwargs.items()}
     return indexes_out

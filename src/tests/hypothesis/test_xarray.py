@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Mapping
 from typing import Any
 
 from hypothesis import given
@@ -16,7 +16,7 @@ from hypothesis.strategies import (
 from pandas import Index
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import assume_does_not_raise, hashables
+from utilities.hypothesis import assume_does_not_raise, text_ascii
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.xarray import (
     _merge_into_dict_of_indexes,
@@ -29,12 +29,9 @@ from utilities.hypothesis.xarray import (
 
 
 class TestBoolDataArrays:
-    @given(data=data(), indexes=dicts_of_indexes(), name=hashables())
+    @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self,
-        data: DataObject,
-        indexes: dict[Hashable, Index[Any]],
-        name: Hashable,
+        self, data: DataObject, indexes: dict[str, Index[Any]], name: str | None
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -93,13 +90,13 @@ class TestFloatDataArrays:
         allow_neg_inf=booleans(),
         integral=booleans(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index[Any]],
+        indexes: Mapping[str, Index[Any]],
         min_value: float | None,
         max_value: float | None,
         allow_nan: bool,
@@ -108,7 +105,7 @@ class TestFloatDataArrays:
         allow_neg_inf: bool,
         integral: bool,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -140,17 +137,17 @@ class TestIntDataArrays:
         min_value=int64s() | none(),
         max_value=int64s() | none(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index[Any]],
+        indexes: Mapping[str, Index[Any]],
         min_value: int | None,
         max_value: int | None,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -183,8 +180,8 @@ class TestMergeIntoDictOfIndexes:
     def test_non_empty(
         self,
         data: DataObject,
-        indexes1: dict[Hashable, Index[Any]] | None,
-        indexes2: dict[str, Index[Any]],
+        indexes1: Mapping[str, Index[Any]] | None,
+        indexes2: Mapping[str, Index[Any]],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
         expected = (set() if indexes1 is None else set(indexes1)) | set(
@@ -201,18 +198,18 @@ class TestStrDataArrays:
         max_size=integers(0, 100) | none(),
         allow_none=booleans(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index[Any]],
+        indexes: Mapping[str, Index[Any]],
         min_size: int,
         max_size: int | None,
         allow_none: bool,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
