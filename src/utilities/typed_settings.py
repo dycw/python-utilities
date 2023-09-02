@@ -181,21 +181,15 @@ def _make_click_handler() -> ClickHandler:
         pass
     else:
         cases.append((Engine, ClickEngine, serialize_engine))
-    extra_types = cast(
-        dict[type, TypeHandlerFunc],
-        dict(
-            zip(
-                map(itemgetter(0), cases),
-                starmap(_make_type_handler_func, cases),
-            )
-        ),
+    extra_types = dict(
+        zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))
     )
     return ClickHandler(extra_types=extra_types)
 
 
 def _make_type_handler_func(
     cls: type[Any], param: type[ParamType], serialize: Callable[[Any], str], /
-) -> Callable[[Any, Any, Any], StrDict]:
+) -> TypeHandlerFunc:
     """Make the type handler for a given type/parameter."""
 
     def handler(
@@ -209,4 +203,4 @@ def _make_type_handler_func(
             mapping["default"] = None
         return mapping
 
-    return handler
+    return cast(TypeHandlerFunc, handler)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from functools import partial
 from operator import neg, pow
 from typing import Any, Callable, Literal
@@ -25,7 +26,7 @@ class TestGetDesc:
         self,
         desc: str | None | Sentinel,
         func: Callable[..., Any],
-        expected: dict[str, str],
+        expected: Mapping[str, str],
     ) -> None:
         assert _get_desc(desc, func) == expected
 

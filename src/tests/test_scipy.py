@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan
@@ -25,7 +27,9 @@ class TestPPF:
             param([0.0, nan, 0.1], [-1.0, nan, 1.0]),
         ],
     )
-    def test_examples(self, values: list[float], expected: list[float]) -> None:
+    def test_examples(
+        self, values: Sequence[float], expected: Sequence[float]
+    ) -> None:
         result = ppf(array(values, dtype=float), 1.0)
         assert_allclose(result, array(expected, dtype=float))
 

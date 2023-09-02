@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from itertools import chain
 from typing import Any
 
@@ -27,7 +28,7 @@ class TestCheckDuplicates:
         check_duplicates(x)
 
     @given(data=data(), x=lists(integers(), min_size=1))
-    def test_error(self, data: DataObject, x: list[int]) -> None:
+    def test_error(self, data: DataObject, x: Sequence[int]) -> None:
         x_i = data.draw(sampled_from(x))
         y = chain(x, [x_i])
         with raises(IterableContainsDuplicatesError):

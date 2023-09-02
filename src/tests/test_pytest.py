@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from time import sleep
 from typing import Any
@@ -55,10 +56,10 @@ class TestPytestOptions:
     def test_configured_one_mark_and_option(
         self,
         testdir: Any,
-        case: list[str],
+        case: Sequence[str],
         passed: int,
         skipped: int,
-        matches: list[str],
+        matches: Sequence[str],
     ) -> None:
         testdir.makeconftest(
             """
@@ -120,10 +121,10 @@ class TestPytestOptions:
     def test_configured_two_marks_and_options(
         self,
         testdir: Any,
-        case: list[str],
+        case: Sequence[str],
         passed: int,
         skipped: int,
-        matches: list[str],
+        matches: Sequence[str],
     ) -> None:
         testdir.makeconftest(
             """

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -46,7 +46,7 @@ from utilities.pandas import DataFrameRangeIndexError, Int64, string
 
 class TestCountRows:
     @given(rows=lists(booleans(), min_size=1), root=temp_paths())
-    def test_main(self, rows: list[bool], root: Path) -> None:
+    def test_main(self, rows: Sequence[bool], root: Path) -> None:
         n = len(rows)
         df = DataFrame(rows, index=RangeIndex(n), columns=["value"])
         write_parquet(df, path := root.joinpath("df.parq"))
