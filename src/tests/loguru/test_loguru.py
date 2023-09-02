@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from re import search
 from time import sleep
@@ -76,7 +77,7 @@ class TestAugmentLevels:
         assert result == {}
 
     @given(levels=dictionaries(text_ascii(min_size=1), sampled_from(LogLevel)))
-    def test_main(self, levels: dict[str, LogLevel] | None) -> None:
+    def test_main(self, levels: Mapping[str, LogLevel] | None) -> None:
         result = _augment_levels(levels=levels)
         assert result == levels
 

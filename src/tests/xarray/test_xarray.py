@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from hypothesis import given
@@ -35,7 +36,7 @@ class TestEwma:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index[Any]], halflife: int
+        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))
@@ -52,7 +53,7 @@ class TestExpMovingSum:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index[Any]], halflife: int
+        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))

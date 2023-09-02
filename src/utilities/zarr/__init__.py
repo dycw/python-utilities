@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
@@ -50,7 +50,7 @@ def ffill_non_nan_slices(
 
 @contextmanager
 def yield_array_with_indexes(
-    indexes: Mapping[Hashable, NDArray1],
+    indexes: Mapping[str, NDArray1],
     path: PathLike,
     /,
     *,
@@ -73,7 +73,7 @@ def yield_array_with_indexes(
 
 @contextmanager
 def yield_group_and_array(
-    indexes: Mapping[Hashable, NDArray1],
+    indexes: Mapping[str, NDArray1],
     path: PathLike,
     /,
     *,
@@ -161,7 +161,7 @@ class NDArrayWithIndexes:
         return self.group.attrs
 
     @property
-    def dims(self) -> tuple[Hashable, ...]:
+    def dims(self) -> tuple[str, ...]:
         """The dimensions of the underlying array."""
         return tuple(self.attrs["dims"])
 
@@ -176,7 +176,7 @@ class NDArrayWithIndexes:
         return open_group(self._path, mode=self._mode)
 
     @property
-    def indexes(self) -> dict[Hashable, NDArray1]:
+    def indexes(self) -> dict[str, NDArray1]:
         """The indexes of the underlying array."""
         return {
             dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)
@@ -194,7 +194,7 @@ class NDArrayWithIndexes:
 
     def isel(
         self,
-        indexers: Mapping[Hashable, IselIndexer] | None = None,
+        indexers: Mapping[str, IselIndexer] | None = None,
         /,
         **indexer_kwargs: IselIndexer,
     ) -> Any:
@@ -219,7 +219,7 @@ class NDArrayWithIndexes:
 
     def sel(
         self,
-        indexers: Mapping[Hashable, Any] | None = None,
+        indexers: Mapping[str, Any] | None = None,
         /,
         **indexer_kwargs: Any,
     ) -> Any:
@@ -240,7 +240,7 @@ class NDArrayWithIndexes:
         return 0 if self.is_scalar else int(prod(self.shape).item())
 
     @property
-    def sizes(self) -> dict[Hashable, int]:
+    def sizes(self) -> dict[str, int]:
         """The sizes of the underlying array."""
         return {dim: len(index) for dim, index in self.indexes.items()}
 
@@ -248,7 +248,7 @@ class NDArrayWithIndexes:
         """Get the index of a given dimension, by its integer index."""
         return cast(NDArray1, self.group[f"index_{i}"][:])
 
-    def _get_index_by_name(self, dim: Hashable, /) -> NDArray1:
+    def _get_index_by_name(self, dim: str, /) -> NDArray1:
         """Get the index of a given dimension, by its dimension name."""
         try:
             i = self.dims.index(dim)
@@ -258,7 +258,7 @@ class NDArrayWithIndexes:
         return self._get_index_by_int(i)
 
     def _get_isel_indexer(
-        self, dim: Hashable, /, *, indexers: Mapping[Hashable, IselIndexer]
+        self, dim: str, /, *, indexers: Mapping[str, IselIndexer]
     ) -> Any:
         """Get the integer-indexer for a given dimension."""
         try:
@@ -270,7 +270,7 @@ class NDArrayWithIndexes:
         return array(indexer, dtype=int)
 
     def _get_sel_indexer(
-        self, dim: Hashable, /, *, indexers: Mapping[Hashable, Any]
+        self, dim: str, /, *, indexers: Mapping[str, Any]
     ) -> Any:
         """Get the value-indexer for a given dimension."""
         try:

@@ -31,7 +31,10 @@ from utilities.hypothesis.xarray import (
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self, data: DataObject, indexes: dict[str, Index[Any]], name: str | None
+        self,
+        data: DataObject,
+        indexes: Mapping[str, Index[Any]],
+        name: str | None,
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)

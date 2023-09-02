@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any, cast
 
@@ -32,13 +32,14 @@ def save_data_array_to_disk(
     chunks: bool | int | tuple[int | None, ...] = True,
 ) -> None:
     """Save a `DataArray` to disk."""
+    name_use = None if (name := array.name) is None else ensure_str(name)
     with yield_data_array_on_disk(
         cast(Mapping[str, Any], array.coords),
         path,
         overwrite=overwrite,
         dtype=array.dtype,
         chunks=chunks,
-        name=array.name,
+        name=name_use,
     ) as z_array:
         if (values := array.to_numpy()).shape == ():
             z_array[:] = values.item()
@@ -56,10 +57,10 @@ def yield_data_array_on_disk(
     dtype: Any = float,
     fill_value: Any = sentinel,
     chunks: bool | int | tuple[int | None, ...] = True,
-    name: Hashable | None = None,
+    name: str | None = None,
 ) -> Iterator[Array]:
     """Save a `DataArray`, yielding a view into its values."""
-    indexes: dict[Hashable, NDArray1] = {}
+    indexes: dict[str, NDArray1] = {}
     for coord, value in coords.items():
         with suppress(NotOneDimensionalArrayError):
             indexes[coord] = _to_ndarray1(value)
@@ -103,7 +104,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     """A `DataArray` stored on disk."""
 
     @property
-    def coords(self) -> dict[Hashable, Any]:
+    def coords(self) -> dict[str, Any]:
         """The coordinates of the underlying array."""
         return {coord: self._get_coord(coord) for coord in self.attrs["coords"]}
 
@@ -129,7 +130,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     @override
     def isel(
         self,
-        indexers: Mapping[Hashable, IselIndexer] | None = None,
+        indexers: Mapping[str, IselIndexer] | None = None,
         /,
         *,
         drop: bool = False,
@@ -148,14 +149,14 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         )
 
     @property
-    def name(self) -> Hashable:
+    def name(self) -> str | None:
         """The name of the underlying array."""
         return self.attrs["name"]
 
     @override
     def sel(
         self,
-        indexers: Mapping[Hashable, Any] | None = None,
+        indexers: Mapping[str, Any] | None = None,
         /,
         *,
         method: str | None = None,

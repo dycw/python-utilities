@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -733,7 +734,7 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: list[dict[str, int | None]], engine: Engine
+        self, values: list[Mapping[str, int | None]], engine: Engine
     ) -> None:
         table = Table(
             "example",

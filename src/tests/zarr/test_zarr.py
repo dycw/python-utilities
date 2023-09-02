@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -20,10 +20,10 @@ from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import hashables, temp_paths
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.numpy import datetime64D, datetime64ns
-from utilities.numpy.typing import NDArray1, NDArrayI1, NDArrayO1
+from utilities.numpy.typing import NDArrayI1, NDArrayO1
 from utilities.zarr import (
     InvalidIndexValueError,
     NDArrayWithIndexes,
@@ -53,11 +53,11 @@ class TestFFillNonNanSlices:
 class TestNDArrayWithIndexes:
     @given(
         data=data(),
-        indexes=dictionaries(hashables(), indexes1d, max_size=3),
+        indexes=dictionaries(text_ascii(), indexes1d, max_size=3),
         root=temp_paths(),
     )
     def test_main(
-        self, data: DataObject, indexes: dict[Hashable, NDArrayI1], root: Path
+        self, data: DataObject, indexes: Mapping[str, NDArrayI1], root: Path
     ) -> None:
         shape = tuple(map(len, indexes.values()))
         arrays = float_arrays(shape=shape, allow_nan=True, allow_inf=True)
@@ -97,12 +97,12 @@ class TestNDArrayWithIndexes:
         assert view.dtype == int
 
     @given(
-        indexes=dictionaries(hashables(), indexes1d, max_size=3),
+        indexes=dictionaries(text_ascii(), indexes1d, max_size=3),
         root=temp_paths(),
         fill_value=floats(allow_infinity=True, allow_nan=True),
     )
     def test_fill_value(
-        self, indexes: dict[Hashable, NDArrayI1], root: Path, fill_value: float
+        self, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
     ) -> None:
         path = root.joinpath("array")
         with yield_array_with_indexes(indexes, path, fill_value=fill_value):
@@ -128,9 +128,9 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_isel(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes: dict[Hashable, NDArray1] = {"x": arange(2), "y": arange(3)}
+        indexes = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
@@ -139,9 +139,9 @@ class TestNDArrayWithIndexes:
 
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
     def test_isel_error(
-        self, tmp_path: Path, indexer: dict[Hashable, Any]
+        self, tmp_path: Path, indexer: Mapping[str, Any]
     ) -> None:
-        indexes: dict[Hashable, NDArray1] = {"x": arange(2), "y": arange(3)}
+        indexes = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
@@ -172,12 +172,9 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes: dict[Hashable, NDArray1] = {
-            "x": array(["x0", "x1"]),
-            "y": array(["y0", "y1", "y2"]),
-        }
+        indexes = {"x": array(["x0", "x1"]), "y": array(["y0", "y1", "y2"])}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
@@ -193,9 +190,9 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_error(
-        self, tmp_path: Path, index: NDArrayO1, indexer: dict[Hashable, Any]
+        self, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
     ) -> None:
-        indexes: dict[Hashable, NDArrayO1] = {"x": index}
+        indexes = {"x": index}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(2, dtype=int)
@@ -223,9 +220,9 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_date(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes: dict[Hashable, NDArray1] = {
+        indexes = {
             "x": array(
                 [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D
             )
@@ -257,9 +254,9 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_datetime(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes: dict[Hashable, NDArray1] = {
+        indexes = {
             "x": array(
                 [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns
             )

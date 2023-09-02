@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -69,7 +70,7 @@ class TestGetDtypes:
         ),
         root=temp_paths(),
     )
-    def test_main(self, dtypes: dict[str, Any], root: Path) -> None:
+    def test_main(self, dtypes: Mapping[str, Any], root: Path) -> None:
         df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(
             dtypes
         )

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, dictionaries, integers
+from hypothesis.strategies import DataObject, data, dictionaries, integers, none
 from numpy import arange, array, zeros
 from numpy.testing import assert_equal
 from pandas import Index, RangeIndex
@@ -15,7 +15,7 @@ from xarray import DataArray
 from xarray.testing import assert_identical
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import hashables, temp_paths, text_ascii
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.hypothesis.pandas import int_indexes
 from utilities.numpy.typing import NDArrayI1
@@ -36,14 +36,14 @@ class TestDataArrayOnDisk:
         coords=dictionaries(
             text_ascii(), integers() | int_indexes(), max_size=3
         ),
-        name=hashables(),
+        name=text_ascii() | none(),
         root=temp_paths(),
     )
     def test_main(
         self,
         data: DataObject,
-        coords: dict[str, Any],
-        name: Hashable,
+        coords: Mapping[str, Any],
+        name: str | None,
         root: Path,
     ) -> None:
         indexes = {k: v for k, v in coords.items() if isinstance(v, Index)}
@@ -108,7 +108,7 @@ class TestDataArrayOnDisk:
         ],
     )
     def test_isel(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         array = DataArray(
             arange(6, dtype=int).reshape(2, 3),
@@ -171,7 +171,7 @@ class TestDataArrayOnDisk:
         ],
     )
     def test_sel(
-        self, tmp_path: Path, indexer: dict[Hashable, Any], expected: Any
+        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         array = DataArray(
             arange(6, dtype=int).reshape(2, 3),
