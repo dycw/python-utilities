@@ -1,9 +1,6 @@
 from re import compile
 
-from beartype import beartype
 
-
-@beartype
 def extract_group(pattern: str, text: str, /) -> str:
     """Extract a group.
 
@@ -19,7 +16,6 @@ class MultipleCaptureGroupsError(ValueError):
     """Raised when multiple capture groups are found."""
 
 
-@beartype
 def extract_groups(pattern: str, text: str, /) -> list[str]:
     """Extract multiple groups.
 

@@ -1,14 +1,11 @@
 from pathlib import Path
 from typing import Optional
 
-from beartype import beartype
-
 from utilities.pathlib import PathLike
 from utilities.re import extract_groups
 from utilities.subprocess import get_shell_output
 
 
-@beartype
 def get_hatch_version(
     *, cwd: PathLike = Path.cwd(), activate: Optional[PathLike] = None
 ) -> tuple[int, int, int]:

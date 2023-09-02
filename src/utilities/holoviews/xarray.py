@@ -1,6 +1,5 @@
 from typing import Optional, Union
 
-from beartype import beartype
 from holoviews import Curve
 from holoviews.plotting import bokeh
 
@@ -13,7 +12,6 @@ from utilities.xarray.typing import DataArrayB1, DataArrayF1, DataArrayI1
 _ = bokeh
 
 
-@beartype
 def plot_curve(
     array: Union[DataArrayB1, DataArrayI1, DataArrayF1],
     /,

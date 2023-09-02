@@ -1,11 +1,9 @@
 from pathlib import Path
 
-from beartype import beartype
 from nox import Session, session
 
 
 @session
-@beartype
 def ruff(session: Session, /) -> None:
     """Run `ruff`."""
     session.install("ruff")
@@ -13,7 +11,6 @@ def ruff(session: Session, /) -> None:
 
 
 @session(python=["3.9", "3.10", "3.11"])
-@beartype
 def tests(session: Session, /) -> None:
     """Run the tests."""
     session.install("--upgrade", "pip-tools")

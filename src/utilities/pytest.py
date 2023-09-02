@@ -4,8 +4,6 @@ from os import environ
 from pathlib import Path
 from typing import Any
 
-from beartype import beartype
-
 from utilities.atomicwrites import writer
 from utilities.beartype import IterableStrs
 from utilities.datetime import UTC
@@ -25,7 +23,6 @@ except ModuleNotFoundError:  # pragma: no cover
     mark = skip = None
 
 
-@beartype
 def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
     """Add the `--slow`, etc options to pytest.
 
@@ -43,7 +40,6 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
         )
 
 
-@beartype
 def add_pytest_collection_modifyitems(
     config: Config, items: Iterable[Function], options: IterableStrs, /
 ) -> None:
@@ -65,7 +61,6 @@ def add_pytest_collection_modifyitems(
                 _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
-@beartype
 def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:
     """Add the `--slow`, etc markers to pytest.
 
@@ -77,21 +72,17 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
         _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
 
 
-@beartype
 def is_pytest() -> bool:
     """Check if pytest is currently running."""
     return "PYTEST_CURRENT_TEST" in environ
 
 
-@beartype
 def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
     """Throttle a test."""
 
-    @beartype
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
 
-        @beartype
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]

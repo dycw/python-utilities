@@ -3,7 +3,6 @@ from collections.abc import Iterable, Iterator
 from decimal import Decimal
 from typing import Any, Optional, Union, overload
 
-from beartype import beartype
 from pandas import DataFrame, Series
 from sqlalchemy import Column, insert
 from sqlalchemy.engine import Connection, Engine, Row
@@ -11,7 +10,10 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement, Select
 
 from utilities.bidict import snake_case_mappings
-from utilities.iterables import IterableContainsDuplicatesError, check_duplicates
+from utilities.iterables import (
+    IterableContainsDuplicatesError,
+    check_duplicates,
+)
 from utilities.more_itertools import EmptyIterableError, one
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import (
@@ -33,7 +35,6 @@ from utilities.sqlalchemy import (
 from utilities.text import ensure_str, snake_case
 
 
-@beartype
 def insert_dataframe(
     df: DataFrame,
     table_or_model: Any,
@@ -52,7 +53,6 @@ def insert_dataframe(
     )
 
 
-@beartype
 def insert_items(
     items: Iterable[Any],
     engine_or_conn: Union[Engine, Connection],
@@ -98,7 +98,6 @@ def insert_items(
                     _ = conn.execute(ins.values(values))
 
 
-@beartype
 def _yield_dataframe_rows_as_dicts(
     df: DataFrame,
     table_or_model: Any,
@@ -110,7 +109,10 @@ def _yield_dataframe_rows_as_dicts(
     """Yield the rows of a DataFrame as dicts, ready for insertion."""
     parsed = [
         _parse_series_against_table(
-            sr, table_or_model, snake=snake, allow_naive_datetimes=allow_naive_datetimes
+            sr,
+            table_or_model,
+            snake=snake,
+            allow_naive_datetimes=allow_naive_datetimes,
         )
         for _, sr in df.items()
     ]
@@ -119,7 +121,6 @@ def _yield_dataframe_rows_as_dicts(
         yield dict(zip(keys, row))
 
 
-@beartype
 def _parse_series_against_table(
     series: Series,
     table_or_model: Any,
@@ -166,9 +167,12 @@ class SeriesNameNotInTableError(ValueError):
     """Raised when a Series name is not in a table."""
 
 
-@beartype
 def _check_series_against_table_column(
-    series: Series, table_column: Column[Any], /, *, allow_naive_datetimes: bool = False
+    series: Series,
+    table_column: Column[Any],
+    /,
+    *,
+    allow_naive_datetimes: bool = False,
 ) -> None:
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
@@ -197,7 +201,6 @@ class SeriesAgainstTableColumnError(TypeError):
     """Raised when a series has incompatible dtype with a table column."""
 
 
-@beartype
 def _yield_insertion_elements(series: Series, /) -> Iterator[Any]:
     """Yield the elements for insertion."""
     if has_dtype(series, (bool, boolean)):
@@ -248,7 +251,6 @@ def select_to_dataframe(
     ...
 
 
-@beartype
 def select_to_dataframe(
     sel: Select,
     engine_or_conn: Union[Engine, Connection],
@@ -269,7 +271,6 @@ def select_to_dataframe(
     return _stream_dataframes(sel, engine_or_conn, stream, snake=snake)
 
 
-@beartype
 def _check_select_for_duplicates(sel: Select, /) -> None:
     """Check a select statement contains no duplicates."""
     col_names = [col.name for col in sel.selected_columns.values()]
@@ -280,7 +281,6 @@ def _check_select_for_duplicates(sel: Select, /) -> None:
         raise DuplicateColumnError(msg) from None
 
 
-@beartype
 def _rows_to_dataframe(
     sel: Select, rows: Iterable[Row], /, *, snake: bool = False
 ) -> DataFrame:
@@ -294,7 +294,6 @@ def _rows_to_dataframe(
     return df
 
 
-@beartype
 def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
     """Map a table column to a DataFrame dtype."""
     py_type = column.type.python_type
@@ -312,7 +311,6 @@ def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
     raise TypeError(msg)  # pragma: no cover
 
 
-@beartype
 def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
     """Convert the columns of a DataFrame to snake case."""
     columns = [c for c in df.columns if isinstance(c, str)]
@@ -320,7 +318,6 @@ def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
     return df.rename(columns=mapping)
 
 
-@beartype
 def _stream_dataframes(
     sel: Select,
     engine_or_conn: Union[Engine, Connection],

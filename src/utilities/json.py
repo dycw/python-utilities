@@ -3,10 +3,7 @@ from json import dumps
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from beartype import beartype
 
-
-@beartype
 def serialize(
     x: Any,
     /,
@@ -35,7 +32,6 @@ def serialize(
     )
 
 
-@beartype
 def _default(x: Any, /) -> str:
     """Extension for the JSON serializer."""
     if isinstance(x, dt.date):

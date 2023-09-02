@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from attrs import asdict
-from beartype import beartype
 from click import command
 from loguru import logger
 
@@ -16,7 +15,6 @@ _CONFIG = Config()
 
 @command()
 @click_options(Config, appname="pypiserver")
-@beartype
 def main(config: Config, /) -> None:
     """CLI for starting the PyPI server."""
     setup_loguru()
@@ -32,20 +30,17 @@ def main(config: Config, /) -> None:
         run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
 
 
-@beartype
 def _log_config(config: Config, /) -> None:
     for key, value in asdict(config).items():
         logger.info("{key:13} = {value}", key=key, value=value)
 
 
-@beartype
 def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
     if not Path(path_password).exists():
         msg = f"{path_password=!s}"
         raise FileNotFoundError(msg)
 
 
-@beartype
 def _get_args(
     *,
     port: int = _CONFIG.port,

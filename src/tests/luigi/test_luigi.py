@@ -59,7 +59,7 @@ class TestAwaitTask:
                 return self.is_complete
 
         example = Example(is_complete=is_complete)
-        task: AwaitTask = cast(Any, AwaitTask)(example)
+        task: AwaitTask[Any] = cast(Any, AwaitTask)(example)
         result = task.complete()
         assert result is is_complete
 

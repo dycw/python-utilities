@@ -3,11 +3,8 @@ from contextlib import ExitStack, contextmanager
 from typing import Literal, Optional, TypedDict, Union, cast
 from warnings import catch_warnings, filterwarnings
 
-from beartype import beartype
-
 
 @contextmanager
-@beartype
 def catch_warnings_as_errors(
     *,
     message: str = "",
@@ -19,7 +16,6 @@ def catch_warnings_as_errors(
 
 
 @contextmanager
-@beartype
 def suppress_warnings(
     *,
     message: str = "",
@@ -33,7 +29,6 @@ def suppress_warnings(
 _ActionKind = Literal["error", "ignore"]
 
 
-@beartype
 def _handle_warnings(
     action: _ActionKind,
     /,
@@ -51,7 +46,6 @@ def _handle_warnings(
 
 
 @contextmanager
-@beartype
 def _handle_warnings_1(
     action: _ActionKind,
     /,

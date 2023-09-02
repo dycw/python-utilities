@@ -1,22 +1,30 @@
 from collections.abc import Hashable
 from typing import Any, Optional
 
-from beartype import beartype
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import SearchStrategy, composite
 from pandas import Index
 from xarray import DataArray
 
 from utilities.hypothesis import lift_draw, lists_fixed_length, text_ascii
-from utilities.hypothesis.numpy import bool_arrays, float_arrays, int_arrays, str_arrays
+from utilities.hypothesis.numpy import (
+    bool_arrays,
+    float_arrays,
+    int_arrays,
+    str_arrays,
+)
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.pandas.typing import IndexI
-from utilities.xarray.typing import DataArrayB, DataArrayF, DataArrayI, DataArrayO
+from utilities.xarray.typing import (
+    DataArrayB,
+    DataArrayF,
+    DataArrayI,
+    DataArrayO,
+)
 
 
 @composite
-@beartype
 def dicts_of_indexes(
     _draw: Any,
     /,
@@ -30,7 +38,10 @@ def dicts_of_indexes(
     draw = lift_draw(_draw)
     shape = draw(
         array_shapes(
-            min_dims=min_dims, max_dims=max_dims, min_side=min_side, max_side=max_side
+            min_dims=min_dims,
+            max_dims=max_dims,
+            min_side=min_side,
+            max_side=max_side,
         )
     )
     ndims = len(shape)
@@ -40,16 +51,15 @@ def dicts_of_indexes(
 
 
 @composite
-@beartype
 def bool_data_arrays(
     _draw: Any,
-    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
+    indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index[Any]]]] = None,
     /,
     *,
     fill: Optional[SearchStrategy[Any]] = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[Hashable] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index],
+    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
 ) -> DataArrayB:
     """Strategy for generating data arrays of booleans."""
     draw = lift_draw(_draw)
@@ -60,7 +70,6 @@ def bool_data_arrays(
 
 
 @composite
-@beartype
 def float_data_arrays(
     _draw: Any,
     indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
@@ -100,7 +109,6 @@ def float_data_arrays(
 
 
 @composite
-@beartype
 def int_data_arrays(
     _draw: Any,
     indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
@@ -130,7 +138,6 @@ def int_data_arrays(
 
 
 @composite
-@beartype
 def str_data_arrays(
     _draw: Any,
     indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,
@@ -162,7 +169,6 @@ def str_data_arrays(
 
 
 @composite
-@beartype
 def _merge_into_dict_of_indexes(
     _draw: Any,
     indexes: Optional[MaybeSearchStrategy[dict[Hashable, Index]]] = None,

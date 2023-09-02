@@ -2,7 +2,6 @@ from pathlib import Path
 from re import search
 from subprocess import CalledProcessError, check_call
 
-from beartype import beartype
 from pytest import raises
 from utilities.subprocess import (
     MultipleActivateError,
@@ -15,12 +14,10 @@ from utilities.text import strip_and_dedent
 
 
 class TestGetShellOutput:
-    @beartype
     def test_main(self) -> None:
         output = get_shell_output("ls")
         assert any(line == "pyproject.toml" for line in output.splitlines())
 
-    @beartype
     def test_activate(self, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         activate = venv.joinpath("activate")
@@ -28,13 +25,11 @@ class TestGetShellOutput:
         activate.touch()
         _ = get_shell_output("ls", cwd=venv, activate=venv)
 
-    @beartype
     def test_no_activate(self, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         with raises(NoActivateError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
-    @beartype
     def test_multiple_activates(self, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         for i in range(2):
@@ -46,7 +41,6 @@ class TestGetShellOutput:
 
 
 class TestAddressAlreadyInUsePattern:
-    @beartype
     def test_pattern(self) -> None:
         pattern = _address_already_in_use_pattern()
         text = "OSError: [Errno 98] Address already in use"
@@ -54,7 +48,6 @@ class TestAddressAlreadyInUsePattern:
 
 
 class TestTabulateCalledProcessError:
-    @beartype
     def test_main(self) -> None:
         def which() -> None:
             _ = check_call(["which"], text=True)  # noqa: S603, S607

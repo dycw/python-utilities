@@ -2,7 +2,6 @@ import datetime as dt
 from typing import Any, Literal, Optional, Union
 
 import numpy as np
-from beartype import beartype
 from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -70,7 +69,6 @@ from utilities.numpy import (
 
 class TestBoolArrays:
     @given(data=data(), shape=array_shapes())
-    @beartype
     def test_main(self, data: DataObject, shape: Shape) -> None:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
@@ -79,14 +77,12 @@ class TestBoolArrays:
 
 class TestConcatenatedArrays:
     @given(data=data(), m=integers(0, 10), n=integers(0, 10))
-    @beartype
     def test_1d(self, data: DataObject, m: int, n: int) -> None:
         arrays = just(zeros(n, dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, n))
         assert array.shape == (m, n)
 
     @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
-    @beartype
     def test_2d(self, data: DataObject, m: int, n: int, p: int) -> None:
         arrays = just(zeros((n, p), dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, (n, p)))
@@ -102,7 +98,6 @@ class TestDatetime64Arrays:
         valid_datetimes=booleans(),
         unique=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -141,7 +136,6 @@ class TestDatetime64DIndexes:
         unique=booleans(),
         sort=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -165,7 +159,6 @@ class TestDatetime64DIndexes:
 
 class TestDatetime64DTypes:
     @given(dtype=datetime64_dtypes())
-    @beartype
     def test_main(self, dtype: Any) -> None:
         _ = dtype
 
@@ -180,7 +173,6 @@ class TestDatetime64Indexes:
         unique=booleans(),
         sort=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -217,14 +209,12 @@ class TestDatetime64Indexes:
 
 class TestDatetime64Kinds:
     @given(kind=datetime64_kinds())
-    @beartype
     def test_main(self, kind: Datetime64Kind) -> None:
         _ = kind
 
 
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
-    @beartype
     def test_main(self, data: DataObject, kind: Optional[Datetime64Kind]) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
@@ -239,7 +229,6 @@ class TestDatetime64usIndexes:
         unique=booleans(),
         sort=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -265,7 +254,6 @@ class TestDatetime64usIndexes:
 
 class TestDatetime64s:
     @given(data=data(), unit=datetime64_units())
-    @beartype
     def test_main(self, data: DataObject, unit: Datetime64Unit) -> None:
         min_value = data.draw(datetime64s(unit=unit) | int64s() | none())
         max_value = data.draw(datetime64s(unit=unit) | int64s() | none())
@@ -292,7 +280,6 @@ class TestDatetime64s:
         max_value=datetime64s(unit="D") | dates() | none(),
         unit=just("D") | none(),
     )
-    @beartype
     def test_valid_dates(
         self,
         data: DataObject,
@@ -323,7 +310,6 @@ class TestDatetime64s:
                 assert date <= max_value
 
     @given(data=data(), unit=datetime64_units())
-    @beartype
     def test_valid_dates_error(self, data: DataObject, unit: Datetime64Unit) -> None:
         _ = assume(unit != "D")
         with raises(InvalidArgument):
@@ -335,7 +321,6 @@ class TestDatetime64s:
         max_value=datetime64s(unit="us") | datetimes_utc() | none(),
         unit=just("us") | none(),
     )
-    @beartype
     def test_valid_datetimes(
         self,
         data: DataObject,
@@ -366,7 +351,6 @@ class TestDatetime64s:
                 assert py_datetime <= max_value
 
     @given(data=data(), unit=datetime64_units())
-    @beartype
     def test_valid_datetimes_error(
         self, data: DataObject, unit: Datetime64Unit
     ) -> None:
@@ -388,7 +372,6 @@ class TestFloatArrays:
         integral=booleans(),
         unique=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -446,7 +429,6 @@ class TestIntArrays:
         max_value=int64s() | none(),
         unique=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -473,7 +455,6 @@ class TestIntArrays:
 
 class TestInt32s:
     @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -492,7 +473,6 @@ class TestInt32s:
 
 class TestInt64s:
     @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -518,7 +498,6 @@ class TestStrArrays:
         allow_none=booleans(),
         unique=booleans(),
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -554,7 +533,6 @@ class TestStrArrays:
 
 class TestUInt32s:
     @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -573,7 +551,6 @@ class TestUInt32s:
 
 class TestUInt64s:
     @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
-    @beartype
     def test_main(
         self,
         data: DataObject,

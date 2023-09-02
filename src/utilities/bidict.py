@@ -1,4 +1,3 @@
-from beartype import beartype
 from bidict import ValueDuplicationError, bidict
 
 from utilities.beartype import IterableStrs
@@ -6,7 +5,6 @@ from utilities.iterables import check_duplicates
 from utilities.text import snake_case
 
 
-@beartype
 def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
     """Map a set of text into their snake cases."""
     text = list(text)

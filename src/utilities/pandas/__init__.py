@@ -4,7 +4,6 @@ from functools import partial, reduce
 from itertools import permutations
 from typing import Any, Literal, NoReturn, Optional, Union, cast
 
-from beartype import beartype
 from numpy import where
 from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp
 from pandas.testing import assert_index_equal
@@ -25,7 +24,6 @@ from utilities.pandas.typing import (
 _ = (Int64, boolean, category, string, datetime64nsutc, datetime64nshk)
 
 
-@beartype
 def check_dataframe(
     df: DataFrame,
     /,
@@ -58,7 +56,6 @@ class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-@beartype
 def check_range_index(obj: Union[Index, Series, DataFrame], /) -> None:
     """Check if a RangeIndex is the default one."""
     if isinstance(obj, Index):
@@ -109,7 +106,6 @@ class DataFrameRangeIndexError(ValueError):
     """Raised when DataFrame does not have a standard RangeIndex."""
 
 
-@beartype
 def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
     """Redirect to the `EmptyPandasConcatError`."""
     redirect_error(error, "No objects to concatenate", EmptyPandasConcatError)
@@ -119,19 +115,16 @@ class EmptyPandasConcatError(ValueError):
     """Raised when there are no objects to concatenate."""
 
 
-@beartype
 def series_max(*series: Series) -> Series:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
 
 
-@beartype
 def series_min(*series: Series) -> Series:
     """Compute the minimum of a set of Series."""
     return reduce(partial(_series_minmax, kind="upper"), series)
 
 
-@beartype
 def _series_minmax(
     x: Series, y: Series, /, *, kind: Literal["lower", "upper"]
 ) -> Series:
@@ -154,13 +147,11 @@ class DifferentDTypeError(ValueError):
     """Raised when two series have different dtypes."""
 
 
-@beartype
 def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
     """Convert a timestamp to a date."""
     return timestamp_to_datetime(timestamp, warn=warn).date()
 
 
-@beartype
 def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetime:
     """Convert a timestamp to a datetime."""
     if timestamp is NaT:
@@ -176,7 +167,6 @@ class TimestampIsNaTError(ValueError):
     """Raised when a NaT is received."""
 
 
-@beartype
 def _timestamp_minmax_to_date(timestamp: Timestamp, method_name: str, /) -> dt.date:
     """Get the maximum Timestamp as a date."""
     method = getattr(timestamp, method_name)
@@ -188,7 +178,6 @@ TIMESTAMP_MIN_AS_DATE = _timestamp_minmax_to_date(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(Timestamp.max, "floor")
 
 
-@beartype
 def _timestamp_minmax_to_datetime(
     timestamp: Timestamp, method_name: str, /
 ) -> dt.datetime:
@@ -202,7 +191,6 @@ TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor")
 
 
-@beartype
 def to_numpy(series: Series, /) -> NDArray1:
     """Convert a series into a 1-dimensional `ndarray`."""
     if has_dtype(series, (bool, datetime64ns, int, float)):

@@ -2,8 +2,6 @@ from collections.abc import Iterator
 from enum import Enum, unique
 from platform import system
 
-from beartype import beartype
-
 from utilities.beartype import IterableStrs
 from utilities.typing import never
 
@@ -17,7 +15,6 @@ class System(str, Enum):
     linux = "linux"
 
 
-@beartype
 def _get_system() -> System:
     """Get the system/OS name."""
     if (sys := system()) == "Windows":  # pragma: os-ne-windows
@@ -36,7 +33,6 @@ class UnableToDetermineSystemError(ValueError):
 SYSTEM = _get_system()
 
 
-@beartype
 def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     if SYSTEM is System.windows:  # noqa: SIM114 # pragma: os-ne-windows

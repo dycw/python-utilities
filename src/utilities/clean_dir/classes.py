@@ -3,13 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from beartype import beartype
 from typed_settings import option, settings
 
 from utilities.tempfile import TEMP_DIR
 
 
-@beartype
 @settings(frozen=True)
 class Config:
     """Settings for the `clean_dir` script."""
@@ -24,7 +22,6 @@ class Config:
     dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
 
 
-@beartype
 @dataclass(frozen=True)
 class Item:
     """An item to clean up."""

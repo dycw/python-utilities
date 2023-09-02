@@ -3,7 +3,6 @@ from typing import Any, Literal, Union, cast, overload
 import cvxpy
 import numpy as np
 import numpy.linalg
-from beartype import beartype
 from cvxpy import Expression, Problem
 from numpy import maximum, minimum, ndarray, where
 
@@ -26,7 +25,6 @@ def abs_(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def abs_(  # pragma: has-cvxpy
     x: Union[float, NDArrayF, Expression], /
 ) -> Union[float, NDArrayF, Expression]:
@@ -81,9 +79,10 @@ def add(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def add(
-    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+    x: Union[float, NDArrayF, Expression],
+    y: Union[float, NDArrayF, Expression],
+    /,
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the sum of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
@@ -136,9 +135,10 @@ def divide(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def divide(
-    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+    x: Union[float, NDArrayF, Expression],
+    y: Union[float, NDArrayF, Expression],
+    /,
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the quotient of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
@@ -191,9 +191,10 @@ def multiply(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def multiply(
-    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+    x: Union[float, NDArrayF, Expression],
+    y: Union[float, NDArrayF, Expression],
+    /,
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the product of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
@@ -216,7 +217,6 @@ def neg(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def neg(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expression]:
     """Compute the negative parts of a quantity."""
     if isinstance(x, (float, ndarray)):
@@ -235,7 +235,6 @@ def norm(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def norm(x: Union[NDArrayF1, Expression], /) -> Union[float, Expression]:
     """Compute the negative parts of a quantity."""
     if isinstance(x, ndarray):
@@ -258,7 +257,6 @@ def pos(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def pos(x: Union[float, NDArrayF, Expression], /) -> Union[float, NDArrayF, Expression]:
     """Compute the positive parts of a quantity."""
     if isinstance(x, (float, ndarray)):
@@ -297,7 +295,6 @@ def power(x: Expression, p: NDArrayF, /) -> Expression:
     ...
 
 
-@beartype
 def power(
     x: Union[float, NDArrayF, Expression], p: Union[float, NDArrayF], /
 ) -> Union[float, NDArrayF, Expression]:
@@ -317,7 +314,6 @@ def quad_form(x: Expression, P: NDArrayF2, /) -> Expression:  # noqa: N803
     ...
 
 
-@beartype
 def quad_form(
     x: Union[NDArrayF1, Expression], P: NDArrayF2, /  # noqa: N803
 ) -> Union[float, Expression]:
@@ -327,7 +323,6 @@ def quad_form(
     return cvxpy.quad_form(x, P)
 
 
-@beartype
 def solve(
     problem: Problem,
     /,
@@ -380,7 +375,6 @@ def sqrt(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def sqrt(
     x: Union[float, NDArrayF, Expression], /
 ) -> Union[float, NDArrayF, Expression]:
@@ -435,9 +429,10 @@ def subtract(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def subtract(
-    x: Union[float, NDArrayF, Expression], y: Union[float, NDArrayF, Expression], /
+    x: Union[float, NDArrayF, Expression],
+    y: Union[float, NDArrayF, Expression],
+    /,
 ) -> Union[float, NDArrayF, Expression]:
     """Compute the difference of two quantities."""
     if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
@@ -455,7 +450,6 @@ def sum_(x: Expression, /) -> Expression:
     ...
 
 
-@beartype
 def sum_(x: Union[float, NDArrayF, Expression], /) -> Union[float, Expression]:
     """Compute the sum of a quantity."""
     if isinstance(x, float):

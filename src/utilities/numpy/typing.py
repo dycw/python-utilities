@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import Annotated, Any, Optional, Union, cast
 
 import numpy as np
-from beartype import beartype
 from beartype.vale import Is, IsAttr, IsEqual
 from numpy import (
     bool_,
@@ -191,7 +190,6 @@ NDArrayO3 = Annotated[NDArrayO, NDim3]
 # checks
 
 
-@beartype
 def is_at_least(
     x: Any,
     y: Any,
@@ -205,7 +203,6 @@ def is_at_least(
     return (x >= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
-@beartype
 def is_at_least_or_nan(
     x: Any,
     y: Any,
@@ -219,7 +216,6 @@ def is_at_least_or_nan(
     return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
-@beartype
 def is_at_most(
     x: Any,
     y: Any,
@@ -233,7 +229,6 @@ def is_at_most(
     return (x <= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
-@beartype
 def is_at_most_or_nan(
     x: Any,
     y: Any,
@@ -247,7 +242,6 @@ def is_at_most_or_nan(
     return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
-@beartype
 def is_between(
     x: Any,
     low: Any,
@@ -266,7 +260,6 @@ def is_between(
     ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
 
 
-@beartype
 def is_between_or_nan(
     x: Any,
     low: Any,
@@ -292,7 +285,6 @@ def is_between_or_nan(
     ) | isnan(x)
 
 
-@beartype
 def is_finite_and_integral(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -300,7 +292,6 @@ def is_finite_and_integral(
     return isfinite(x) & is_integral(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_integral_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -308,7 +299,6 @@ def is_finite_and_integral_or_nan(
     return is_finite_and_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_negative(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -316,7 +306,6 @@ def is_finite_and_negative(
     return isfinite(x) & is_negative(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_negative_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -324,7 +313,6 @@ def is_finite_and_negative_or_nan(
     return is_finite_and_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_negative(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -332,7 +320,6 @@ def is_finite_and_non_negative(
     return isfinite(x) & is_non_negative(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_negative_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -340,7 +327,6 @@ def is_finite_and_non_negative_or_nan(
     return is_finite_and_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_positive(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -348,7 +334,6 @@ def is_finite_and_non_positive(
     return isfinite(x) & is_non_positive(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_positive_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -356,7 +341,6 @@ def is_finite_and_non_positive_or_nan(
     return is_finite_and_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_zero(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -364,7 +348,6 @@ def is_finite_and_non_zero(
     return isfinite(x) & is_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_zero_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -372,7 +355,6 @@ def is_finite_and_non_zero_or_nan(
     return is_finite_and_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_positive(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -380,7 +362,6 @@ def is_finite_and_positive(
     return isfinite(x) & is_positive(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_positive_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -388,13 +369,11 @@ def is_finite_and_positive_or_nan(
     return is_finite_and_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_or_nan(x: Any, /) -> Any:
     """Check if -inf < x < inf or x == nan."""
     return isfinite(x) | isnan(x)
 
 
-@beartype
 def is_greater_than(
     x: Any,
     y: Any,
@@ -410,7 +389,6 @@ def is_greater_than(
     )
 
 
-@beartype
 def is_greater_than_or_nan(
     x: Any,
     y: Any,
@@ -424,7 +402,6 @@ def is_greater_than_or_nan(
     return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
-@beartype
 def is_integral(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -432,7 +409,6 @@ def is_integral(
     return _is_close(x, rint(x), rtol=rtol, atol=atol)
 
 
-@beartype
 def is_integral_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -440,7 +416,6 @@ def is_integral_or_nan(
     return is_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_less_than(
     x: Any,
     y: Any,
@@ -456,7 +431,6 @@ def is_less_than(
     )
 
 
-@beartype
 def is_less_than_or_nan(
     x: Any,
     y: Any,
@@ -470,7 +444,6 @@ def is_less_than_or_nan(
     return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
-@beartype
 def is_negative(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -478,7 +451,6 @@ def is_negative(
     return is_less_than(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_negative_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -486,7 +458,6 @@ def is_negative_or_nan(
     return is_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_negative(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -494,7 +465,6 @@ def is_non_negative(
     return is_at_least(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_negative_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -502,7 +472,6 @@ def is_non_negative_or_nan(
     return is_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_positive(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -510,7 +479,6 @@ def is_non_positive(
     return is_at_most(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_positive_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -518,7 +486,6 @@ def is_non_positive_or_nan(
     return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_zero(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -526,7 +493,6 @@ def is_non_zero(
     return ~_is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_zero_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -534,7 +500,6 @@ def is_non_zero_or_nan(
     return is_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_positive(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -542,7 +507,6 @@ def is_positive(
     return is_greater_than(x, 0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_positive_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -550,7 +514,6 @@ def is_positive_or_nan(
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -558,7 +521,6 @@ def is_zero(
     return _is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_finite_and_non_micro(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -567,7 +529,6 @@ def is_zero_or_finite_and_non_micro(
     return (x == zero) | is_finite_and_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_finite_and_non_micro_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -575,7 +536,6 @@ def is_zero_or_finite_and_non_micro_or_nan(
     return is_zero_or_finite_and_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -583,7 +543,6 @@ def is_zero_or_nan(
     return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero_or_non_micro(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -592,7 +551,6 @@ def is_zero_or_non_micro(
     return (x == zero) | is_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_non_micro_or_nan(
     x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
 ) -> Any:
@@ -600,7 +558,6 @@ def is_zero_or_non_micro_or_nan(
     return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def _is_close(
     x: Any,
     y: Any,
@@ -623,12 +580,10 @@ def _is_close(
 # lifted checks
 
 
-@beartype
 def _lift(check: Callable[..., Any], /) -> Any:
     """Lift a check to work on a subset of a float array."""
     rng = default_rng()
 
-    @beartype
     def predicate(array: Union[NDArrayI, NDArrayF], /) -> bool:
         if (size := array.size) == 0:
             return True

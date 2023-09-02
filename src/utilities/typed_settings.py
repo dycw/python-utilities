@@ -7,7 +7,6 @@ from pathlib import Path
 from re import search
 from typing import Any, Optional, TypeVar, Union, cast
 
-from beartype import beartype
 from cattrs import BaseConverter, Converter
 from click import ParamType
 from typed_settings import default_converter, default_loaders
@@ -22,7 +21,7 @@ from typed_settings.cli_utils import (
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
-from typed_settings.types import AUTO, _Auto
+from typed_settings.types import AUTO, _Auto  # type: ignore[reportPrivateUsage]
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
@@ -41,7 +40,6 @@ from utilities.pathlib import PathLike
 _T = TypeVar("_T")
 
 
-@beartype
 def get_repo_root_config(
     *, cwd: PathLike = Path.cwd(), filename: str = "config.toml"
 ) -> Optional[Path]:
@@ -58,7 +56,6 @@ def get_repo_root_config(
 _CONFIG_FILES = [p for p in [get_repo_root_config()] if p is not None]
 
 
-@beartype
 def load_settings(
     cls: type[_T],
     /,
@@ -81,7 +78,6 @@ def load_settings(
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
 
-@beartype
 def click_options(
     cls: type[Any],
     /,
@@ -111,7 +107,7 @@ def _get_loaders(
     config_files_var: Union[None, str, _Auto] = AUTO,
     env_prefix: Union[None, str, _Auto] = AUTO,
 ) -> list[Loader]:
-    # cannot @beartype as Loader is a protocol
+    # cannot  as Loader is a protocol
     if search("_", appname):
         msg = f"{appname=}"
         raise AppNameContainsUnderscoreError(msg)
@@ -128,7 +124,6 @@ class AppNameContainsUnderscoreError(ValueError):
     """Raised when the appname contains a space."""
 
 
-@beartype
 def _make_converter() -> Union[BaseConverter, Converter]:
     """Extend the default converter."""
     converter = default_converter()
@@ -152,13 +147,11 @@ def _make_converter() -> Union[BaseConverter, Converter]:
     return converter
 
 
-@beartype
 def _make_structure_hook(
     cls: type[Any], func: Callable[[Any], Any], /
 ) -> Callable[[Any, type[Any]], Any]:
     """Make the structure hook for a given type."""
 
-    @beartype
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
         if not isinstance(value, (cls, str)):
             msg = f"Invalid type: {value=}"
@@ -168,7 +161,6 @@ def _make_structure_hook(
     return hook
 
 
-@beartype
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
     cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
@@ -189,18 +181,21 @@ def _make_click_handler() -> ClickHandler:
         cases.append((Engine, ClickEngine, serialize_engine))
     extra_types = cast(
         dict[type, TypeHandlerFunc],
-        dict(zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))),
+        dict(
+            zip(
+                map(itemgetter(0), cases),
+                starmap(_make_type_handler_func, cases),
+            )
+        ),
     )
     return ClickHandler(extra_types=extra_types)
 
 
-@beartype
 def _make_type_handler_func(
     cls: type[Any], param: type[ParamType], serialize: Callable[[Any], str], /
 ) -> Callable[[Any, Any, Any], StrDict]:
     """Make the type handler for a given type/parameter."""
 
-    @beartype
     def handler(
         type_: type[Any], default: Default, is_optional: bool, /  # noqa: FBT001
     ) -> StrDict:

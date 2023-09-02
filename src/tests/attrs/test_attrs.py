@@ -2,15 +2,18 @@ from functools import cached_property
 from typing import Any, cast
 
 from attrs import define, fields
-from beartype import beartype
 from beartype.door import die_if_unbearable
 from pytest import mark, raises
-from utilities.attrs import AttrsBase, DictMixin, FieldTypeError, make_dict_field
+from utilities.attrs import (
+    AttrsBase,
+    DictMixin,
+    FieldTypeError,
+    make_dict_field,
+)
 from utilities.timer import Timer
 
 
 class TestAttrsBase:
-    @beartype
     def test_main(self) -> None:
         @define
         class Example(AttrsBase):
@@ -20,7 +23,6 @@ class TestAttrsBase:
         with raises(FieldTypeError, match=match):
             _ = Example(None)  # type: ignore[]
 
-    @beartype
     def test_no_fields(self) -> None:
         @define
         class Example(AttrsBase):
@@ -29,7 +31,6 @@ class TestAttrsBase:
         _ = Example()
 
     @mark.flaky(reruns=5)
-    @beartype
     def test_speed(self) -> None:
         @define
         class Example(AttrsBase):
@@ -60,7 +61,6 @@ class TestAttrsBase:
 
 
 class TestCachedProperties:
-    @beartype
     def test_with_base(self) -> None:
         class Base:
             ...
@@ -79,7 +79,6 @@ class TestCachedProperties:
         for _ in range(2):
             assert obj.value == 1
 
-    @beartype
     def test_without_base(self) -> None:
         counter = 0
 

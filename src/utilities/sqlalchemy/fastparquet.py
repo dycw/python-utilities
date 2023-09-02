@@ -1,6 +1,5 @@
 from typing import Optional, Union
 
-from beartype import beartype
 from fastparquet import write
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql import Select
@@ -12,7 +11,6 @@ from utilities.sqlalchemy import yield_connection
 from utilities.sqlalchemy.pandas import select_to_dataframe
 
 
-@beartype
 def select_to_parquet(
     sel: Select,
     engine_or_conn: Union[Engine, Connection],

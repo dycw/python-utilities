@@ -3,13 +3,11 @@ from dataclasses import dataclass
 from io import StringIO, TextIOWrapper
 from typing import Any, Optional, Union, cast
 
-from beartype import beartype
 from tqdm import tqdm as _tqdm
 
 from utilities.pytest import is_pytest
 
 
-@beartype
 @dataclass(frozen=True)
 class _Defaults:
     desc: Optional[str] = None
@@ -48,7 +46,6 @@ _DEFAULTS = _Defaults()
 class tqdm(_tqdm):  # noqa: N801
     """Sub-class of `tqdm` which is disabled during pytest."""
 
-    @beartype
     def __init__(
         self,
         iterable: Optional[Iterable[Any]] = None,
@@ -109,7 +106,6 @@ class tqdm(_tqdm):  # noqa: N801
         )
 
 
-@beartype
 def _get_total(
     total: Optional[Union[int, float]], iterable: Any, /
 ) -> Optional[Union[int, float]]:

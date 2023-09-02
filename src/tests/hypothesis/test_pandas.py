@@ -4,7 +4,7 @@ from typing import Any, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, booleans, data, dates, integers
-from pandas import Index, Timestamp
+from pandas import Timestamp
 from pandas.testing import assert_index_equal
 from utilities.hypothesis import datetimes_utc, hashables
 from utilities.hypothesis.numpy import int64s

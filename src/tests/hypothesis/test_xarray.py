@@ -1,5 +1,5 @@
 from collections.abc import Hashable
-from typing import Optional
+from typing import Any, Optional
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
@@ -28,7 +28,7 @@ from utilities.hypothesis.xarray import (
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=hashables())
     def test_main(
-        self, data: DataObject, indexes: dict[Hashable, Index], name: Hashable
+        self, data: DataObject, indexes: dict[Hashable, Index[Any]], name: Hashable
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -93,7 +93,7 @@ class TestFloatDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
+        indexes: dict[Hashable, Index[Any]],
         min_value: Optional[float],
         max_value: Optional[float],
         allow_nan: bool,
@@ -140,7 +140,7 @@ class TestIntDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
+        indexes: dict[Hashable, Index[Any]],
         min_value: Optional[int],
         max_value: Optional[int],
         unique: bool,
@@ -177,8 +177,8 @@ class TestMergeIntoDictOfIndexes:
     def test_non_empty(
         self,
         data: DataObject,
-        indexes1: Optional[dict[Hashable, Index]],
-        indexes2: dict[str, Index],
+        indexes1: Optional[dict[Hashable, Index[Any]]],
+        indexes2: dict[str, Index[Any]],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
         expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
@@ -199,7 +199,7 @@ class TestStrDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
+        indexes: dict[Hashable, Index[Any]],
         min_size: int,
         max_size: Optional[int],
         allow_none: bool,

@@ -1,7 +1,6 @@
 from typing import Any, cast
 
 from attrs import Factory, define, field, fields
-from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 
@@ -13,7 +12,6 @@ from utilities.random import SYSTEM_RANDOM
 class AttrsBase:
     """Base class for `attrs` class which applies `beartype` checking."""
 
-    @beartype
     def __attrs_post_init__(self) -> None:
         all_fields = fields(cast(Any, type(self)))
         try:
@@ -36,7 +34,6 @@ class FieldTypeError(TypeError):
     """Raised when an `attrs` field has the wrong type."""
 
 
-@beartype
 def make_dict_field() -> Any:
     """Create a `__dict__` field."""
     return field(default=Factory(cast(Any, dict)), init=False, repr=False, eq=False)

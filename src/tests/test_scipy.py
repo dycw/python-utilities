@@ -1,4 +1,3 @@
-from beartype import beartype
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan
@@ -23,18 +22,19 @@ class TestPPF:
             param([0.0, nan, 0.1], [-1.0, nan, 1.0]),
         ],
     )
-    @beartype
     def test_examples(self, values: list[float], expected: list[float]) -> None:
         result = ppf(array(values, dtype=float), 1.0)
         assert_allclose(result, array(expected, dtype=float))
 
     @given(
         array=float_arrays(
-            shape=integers(0, 10), min_value=-10.0, max_value=10.0, allow_nan=True
+            shape=integers(0, 10),
+            min_value=-10.0,
+            max_value=10.0,
+            allow_nan=True,
         ),
         cutoff=floats(0.0, 10.0),
     )
-    @beartype
     def test_main(self, array: NDArrayF1, cutoff: float) -> None:
         result = ppf(array, cutoff)
         assert_equal(isfinite(result), isfinite(array))

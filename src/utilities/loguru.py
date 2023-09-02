@@ -9,7 +9,6 @@ from re import search
 from sys import _getframe, stdout
 from typing import Any, Optional, TypedDict, Union, cast
 
-from beartype import beartype
 from loguru import logger
 
 from utilities.beartype import IterableStrs
@@ -23,7 +22,6 @@ _ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
 
 
-@beartype
 def setup_loguru(
     *,
     levels: Optional[Mapping[str, LogLevel]] = None,
@@ -84,7 +82,6 @@ class _InterceptHandler(Handler):
         )
 
 
-@beartype
 def _augment_levels(
     *,
     levels: Optional[Mapping[str, LogLevel]] = None,
@@ -103,7 +100,6 @@ def _augment_levels(
     return out
 
 
-@beartype
 def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
     """Set up the standard loggers."""
     if search("luigi", name):
@@ -118,7 +114,6 @@ def _setup_standard_logger(name: str, level: LogLevel, /) -> None:
     std_logger.setLevel(level.name)
 
 
-@beartype
 def _get_files_path(
     *, files: Optional[PathLike] = None, env_var: Optional[str] = _FILES_ENV_VAR
 ) -> Optional[PathLike]:
@@ -130,7 +125,6 @@ def _get_files_path(
     return None
 
 
-@beartype
 def _add_sink(
     sink: Any,
     level: LogLevel,
@@ -164,11 +158,9 @@ def _add_sink(
     )
 
 
-@beartype
 def _get_format(*, live: bool) -> str:
     """Get the format string."""
 
-    @beartype
     def yield_parts() -> Iterator[str]:
         yield (
             "<green>{time:YYYY-MM-DD}</green>"
@@ -190,7 +182,6 @@ def _get_format(*, live: bool) -> str:
     return "".join(yield_parts())
 
 
-@beartype
 def _add_file_sink(
     path: PathLike,
     name: str,
@@ -213,7 +204,6 @@ def _add_file_sink(
     )
 
 
-@beartype
 def _add_live_file_sink(
     path: PathLike,
     level: LogLevel,

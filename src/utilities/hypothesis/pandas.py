@@ -2,10 +2,15 @@ import datetime as dt
 from collections.abc import Hashable
 from typing import Any, Optional, cast
 
-from beartype import beartype
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
-from hypothesis.strategies import SearchStrategy, composite, dates, datetimes, integers
+from hypothesis.strategies import (
+    SearchStrategy,
+    composite,
+    dates,
+    datetimes,
+    integers,
+)
 from pandas import Index, Timedelta, Timestamp
 
 from utilities.datetime import UTC
@@ -22,7 +27,6 @@ from utilities.pandas import (
 from utilities.pandas.typing import IndexI, IndexS
 
 
-@beartype
 @composite
 def dates_pd(
     _draw: Any,
@@ -37,7 +41,6 @@ def dates_pd(
 
 
 @composite
-@beartype
 def datetimes_pd(
     _draw: Any,
     /,
@@ -60,7 +63,6 @@ _INDEX_LENGTHS = integers(0, 10)
 
 
 @composite
-@beartype
 def indexes(
     _draw: Any,
     /,
@@ -90,7 +92,6 @@ def indexes(
     return index
 
 
-@beartype
 def int_indexes(
     *,
     n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
@@ -105,7 +106,6 @@ def int_indexes(
 
 
 @composite
-@beartype
 def str_indexes(
     _draw: Any,
     /,
@@ -122,7 +122,12 @@ def str_indexes(
     elements = text_ascii(min_size=min_size, max_size=max_size)
     index = draw(
         indexes(
-            elements=elements, dtype=object, n=n, unique=unique, name=name, sort=sort
+            elements=elements,
+            dtype=object,
+            n=n,
+            unique=unique,
+            name=name,
+            sort=sort,
         )
     )
     return index.astype(string)

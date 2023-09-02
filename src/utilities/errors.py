@@ -1,8 +1,6 @@
 from re import search
 from typing import NoReturn, Union
 
-from beartype import beartype
-
 from utilities.text import ensure_str
 
 
@@ -10,7 +8,6 @@ class DirectoryExistsError(Exception):
     """Raised when a directory already exists."""
 
 
-@beartype
 def redirect_error(
     old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
 ) -> NoReturn:

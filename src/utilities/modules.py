@@ -5,10 +5,7 @@ from pkgutil import walk_packages
 from types import ModuleType
 from typing import Any, Optional, Union
 
-from beartype import beartype
 
-
-@beartype
 def yield_modules(
     module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
@@ -31,7 +28,6 @@ def yield_modules(
                     yield imported
 
 
-@beartype
 def yield_module_contents(
     module: ModuleType,
     /,
@@ -53,7 +49,6 @@ def yield_module_contents(
                 yield obj
 
 
-@beartype
 def yield_module_subclasses(
     module: ModuleType,
     cls: type[Any],
@@ -67,7 +62,6 @@ def yield_module_subclasses(
     Optionally, recurse into sub-packages.
     """
 
-    @beartype
     def predicate_use(obj: type[Any], /) -> bool:
         return (
             issubclass(obj, cls)

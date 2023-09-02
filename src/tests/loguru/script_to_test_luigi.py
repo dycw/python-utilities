@@ -23,7 +23,7 @@ class Example(Task):
     messages = cast(int, IntParameter())
 
     @override
-    def output(self) -> PathTarget:
+    def output(self) -> PathTarget:  # type: ignore[reportIncompatibleMethodOverride]
         return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
 
     @override

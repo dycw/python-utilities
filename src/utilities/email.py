@@ -6,14 +6,11 @@ from pathlib import Path
 from smtplib import SMTP
 from typing import Any, Optional
 
-from beartype import beartype
-
 from utilities.beartype import IterableStrs
 from utilities.pathlib import PathLike
 from utilities.pytest import is_pytest
 
 
-@beartype
 def send_email(
     from_: str,
     to: IterableStrs,
@@ -55,7 +52,6 @@ def send_email(
         _ = smtp.send_message(message)
 
 
-@beartype
 def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
     """Add an attachment to an email."""
     path = Path(path)

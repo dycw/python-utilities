@@ -5,7 +5,6 @@ from io import StringIO, TextIOWrapper
 from multiprocessing import cpu_count
 from typing import Any, Literal, Optional, TypeVar, Union, cast
 
-from beartype import beartype
 from pqdm import processes
 
 from utilities.class_name import get_class_name
@@ -14,7 +13,6 @@ from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
 from utilities.tqdm import _get_total, tqdm
 
 
-@beartype
 @dataclass(frozen=True)
 class _Defaults:
     parallelism: Literal["processes", "threads"] = "processes"
@@ -29,7 +27,6 @@ _PQDM_DEFAULTS = _Defaults()
 _T = TypeVar("_T")
 
 
-@beartype
 def pmap(
     func: Callable[..., _T],
     /,
@@ -102,7 +99,6 @@ def pmap(
     )
 
 
-@beartype
 def pstarmap(
     func: Callable[..., _T],
     iterable: Iterable[tuple[Any, ...]],
@@ -218,14 +214,12 @@ def pstarmap(
     return list(result)
 
 
-@beartype
 def _get_n_jobs(n_jobs: Optional[int], /) -> int:
     if (n_jobs is None) or (n_jobs <= 0):
         return cpu_count()  # pragma: no cover
     return n_jobs
 
 
-@beartype
 def _get_desc(
     desc: Union[Optional[str], Sentinel], func: Callable[..., Any], /
 ) -> dict[str, str]:
@@ -241,6 +235,5 @@ def _get_desc(
     return {} if desc_use is None else {"desc": desc_use}
 
 
-@beartype
 def _starmap_helper(func: Callable[..., _T], *args: Any) -> _T:
     return func(*args)

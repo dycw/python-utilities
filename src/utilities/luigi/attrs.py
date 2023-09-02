@@ -5,10 +5,18 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import new_class
-from typing import Any, Literal, Optional, TypeVar, Union, cast, get_args, get_origin
+from typing import (
+    Any,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
 
 from attrs import asdict, fields
-from beartype import beartype
 from luigi import (
     BoolParameter,
     FloatParameter,
@@ -40,12 +48,10 @@ from utilities.typing import never
 _T = TypeVar("_T")
 
 
-@beartype
 def build_params_mixin(obj: _T, /, **kwargs: Any) -> type[_T]:
     """Build a mixin of parameters for use in a `Task`."""
     mapping = asdict(obj)
 
-    @beartype
     def exec_body(namespace: dict[str, Any], /) -> None:
         for field in fields(type(obj)):
             key = field.name
@@ -63,7 +69,6 @@ def build_params_mixin(obj: _T, /, **kwargs: Any) -> type[_T]:
     return cast(type[_T], new_class(f"{name}Params", exec_body=exec_body))
 
 
-@beartype
 def _map_keywords(ann: Any, kwargs: Any, /) -> dict[str, Any]:
     """Map an annotation and a set of keywords to a dictionary."""
     msg = f"{ann=}, {kwargs=}"
@@ -98,8 +103,7 @@ class InvalidAnnotationAndKeywordsError(Exception):
     """Raised when an (annotation, keywords) pair is invalid."""
 
 
-@beartype
-def _map_annotation(  # noqa: C901, PLR0911, PLR0912
+def _map_annotation(  # noqa: PLR0911, PLR0912
     ann: Any,
     /,
     *,
@@ -153,7 +157,6 @@ class InvalidAnnotationError(Exception):
     """Raised when an annotation is invalid."""
 
 
-@beartype
 def _map_iterable_annotation(ann: Any, /) -> type[ListParameter]:
     """Map an iterable annotation to a parameter class."""
     if get_origin(ann) in {frozenset, list, set}:
@@ -162,7 +165,6 @@ def _map_iterable_annotation(ann: Any, /) -> type[ListParameter]:
     raise InvalidAnnotationError(msg)
 
 
-@beartype
 def _map_union_annotation(
     ann: Any, /
 ) -> Union[type[Parameter], Callable[..., Parameter]]:
@@ -190,7 +192,6 @@ def _map_union_annotation(
     raise InvalidAnnotationError(msg)
 
 
-@beartype
 def _map_date_annotation(
     *, kind: Literal["date", "weekday"]
 ) -> Union[type[Parameter], Callable[..., Parameter]]:
@@ -206,7 +207,6 @@ class AmbiguousDateError(Exception):
     """Raised when a date is ambiguous."""
 
 
-@beartype
 def _map_datetime_annotation(
     *, kind: Literal["hour", "minute", "second"], interval: int = 1
 ) -> Union[type[Parameter], Callable[..., Parameter]]:

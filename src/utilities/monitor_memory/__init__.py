@@ -9,7 +9,6 @@ from time import sleep
 from typing import Any, Optional, cast
 
 import attrs
-from beartype import beartype
 from click import command
 from loguru import logger
 from psutil import swap_memory, virtual_memory
@@ -27,7 +26,6 @@ _CONFIG = Config()
 
 @command()
 @click_options(Config, appname="monitormemory")
-@beartype
 def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     setup_loguru()
@@ -35,13 +33,11 @@ def main(config: Config, /) -> None:
     _monitor_memory(path=config.path, freq=config.freq, duration=config.duration)
 
 
-@beartype
 def _log_config(config: Config, /) -> None:
     for key, value in attrs.asdict(config).items():
         logger.info("{key:8} = {value}", key=key, value=value)
 
 
-@beartype
 def _monitor_memory(
     *,
     path: Path = _CONFIG.path,
@@ -64,7 +60,6 @@ def _monitor_memory(
 
 
 @contextmanager
-@beartype
 def _yield_writer(
     *, path: Path = _CONFIG.path, mode: str = "r"
 ) -> Iterator[DictWriter]:
@@ -73,7 +68,6 @@ def _yield_writer(
         yield DictWriter(fh, fieldnames=fieldnames)
 
 
-@beartype
 def _get_memory_usage() -> Item:
     virtual = cast(Any, virtual_memory())
     if SYSTEM is System.windows:  # pragma: os-ne-windows

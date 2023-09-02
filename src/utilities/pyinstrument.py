@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from beartype import beartype
 from pyinstrument.profiler import Profiler
 
 from utilities.atomicwrites import writer
@@ -12,7 +11,6 @@ from utilities.pathlib import PathLike
 
 
 @contextmanager
-@beartype
 def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     """Profile the contents of a block."""
     with Profiler() as profiler:

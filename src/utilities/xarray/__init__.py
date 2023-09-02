@@ -1,13 +1,10 @@
 from collections.abc import Hashable, Mapping
 from typing import Any, Optional, Union, cast
 
-from beartype import beartype
-
 from utilities._numbagg import move_exp_nanmean, move_exp_nansum
 from utilities.xarray.typing import DataArrayF, DataArrayI
 
 
-@beartype
 def ewma(
     array: Union[DataArrayI, DataArrayF],
     halflife: Optional[Mapping[Hashable, int]] = None,
@@ -26,14 +23,12 @@ def ewma(
     )
 
 
-@beartype
 def _move_exp_nanmean(array: Any, /, *, axis: Any, alpha: Any) -> Any:
     if axis == ():  # pragma: no cover
         return array.astype(float)
     return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
 
 
-@beartype
 def exp_moving_sum(
     array: Union[DataArrayI, DataArrayF],
     halflife: Optional[Mapping[Hashable, int]] = None,
@@ -52,7 +47,6 @@ def exp_moving_sum(
     )
 
 
-@beartype
 def _move_exp_nansum(array: Any, /, *, axis: Any, alpha: Any) -> Any:
     if axis == ():  # pragma: no cover
         return array.astype(float)

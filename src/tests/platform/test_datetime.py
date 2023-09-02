@@ -1,6 +1,5 @@
 from re import search
 
-from beartype import beartype
 from hypothesis import given
 from utilities.hypothesis import text_clean
 from utilities.platform import SYSTEM, System
@@ -10,7 +9,6 @@ from utilities.typing import never
 
 class TestMaybeMaybeSubPctY:
     @given(text=text_clean())
-    @beartype
     def test_main(self, text: str) -> None:
         result = maybe_sub_pct_y(text)
         if SYSTEM is System.windows:  # noqa: SIM114 # pragma: os-ne-windows

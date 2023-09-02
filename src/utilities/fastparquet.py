@@ -1,7 +1,6 @@
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from typing import Any, Literal, Optional, Union, cast, overload
 
-from beartype import beartype
 from fastparquet import ParquetFile, write
 from pandas import DataFrame, Series
 
@@ -21,19 +20,16 @@ Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
 _PARQUET_DTYPES = {bool, datetime64ns, float, Int64, string}
 
 
-@beartype
 def count_rows(path: PathLike, /, *, filters: Optional[Filters] = None) -> int:
     """Count the number of rows in a Parquet file."""
     return _get_parquet_file(path).count(filters=filters, **_maybe_row_filter(filters))
 
 
-@beartype
 def get_columns(path: PathLike, /) -> list[Hashable]:
     """Get the columns in a Parquet file."""
     return _get_parquet_file(path).columns
 
 
-@beartype
 def get_dtypes(path: PathLike, /) -> dict[Hashable, Any]:
     """Get the dtypes in a Parquet file.
 
@@ -44,7 +40,6 @@ def get_dtypes(path: PathLike, /) -> dict[Hashable, Any]:
     return {k: string if v == object else v for k, v in dtypes.items()}
 
 
-@beartype
 def get_num_row_groups(path: PathLike, /) -> IntNonNeg:
     """Get the number of row groups in a Parquet file."""
     return len(_get_parquet_file(path).row_groups)
@@ -76,7 +71,6 @@ def read_parquet(
     ...
 
 
-@beartype
 def read_parquet(
     path: PathLike,
     /,
@@ -100,7 +94,6 @@ def read_parquet(
     return df if as_df else df[columns]
 
 
-@beartype
 def _get_parquet_file(
     path: PathLike, /, *, row_group: Optional[IntNonNeg] = None
 ) -> ParquetFile:
@@ -124,13 +117,11 @@ class InvalidRowGroupIndexError(IndexError):
     """Raised when a row group index is invalid."""
 
 
-@beartype
 def _maybe_row_filter(filters: Optional[Filters], /) -> dict[str, bool]:
     """Add the `row_filter` argument if necessary."""
     return {} if filters is None else {"row_filter": True}
 
 
-@beartype
 def write_parquet(
     df: Union[DataFrame, Iterable[DataFrame]],
     path: PathLike,
@@ -163,7 +154,6 @@ def write_parquet(
                 )
 
 
-@beartype
 def _write_parquet_core(
     df: DataFrame,
     path: PathLike,

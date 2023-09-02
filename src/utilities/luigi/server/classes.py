@@ -1,10 +1,8 @@
 from pathlib import Path
 
-from beartype import beartype
 from typed_settings import option, settings
 
 
-@beartype
 @settings(frozen=True)
 class Config:
     """Settings for the `pypi_server` script."""

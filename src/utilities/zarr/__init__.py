@@ -4,7 +4,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, cast
 
-from beartype import beartype
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray
 from typing_extensions import override
@@ -34,7 +33,6 @@ from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
 
 
-@beartype
 def ffill_non_nan_slices(
     array: Array, /, *, limit: Optional[int] = None, axis: int = -1
 ) -> None:
@@ -49,7 +47,6 @@ def ffill_non_nan_slices(
 
 
 @contextmanager
-@beartype
 def yield_array_with_indexes(
     indexes: Mapping[Hashable, NDArray1],
     path: PathLike,
@@ -73,7 +70,6 @@ def yield_array_with_indexes(
 
 
 @contextmanager
-@beartype
 def yield_group_and_array(
     indexes: Mapping[Hashable, NDArray1],
     path: PathLike,
@@ -118,7 +114,6 @@ class NoIndexesError(ValueError):
 IselIndexer = Union[int, slice, Sequence[int], NDArrayB1, NDArrayI1]
 
 
-@beartype
 def _codec(dtype: Any, /) -> dict[str, Any]:
     """Generate the object codec if necesary."""
     return {"object_codec": JSON()} if dtype == object else {}
@@ -127,7 +122,6 @@ def _codec(dtype: Any, /) -> dict[str, Any]:
 class NDArrayWithIndexes:
     """An `ndarray` with indexes stored on disk."""
 
-    @beartype
     def __init__(
         self,
         path: PathLike,
@@ -143,68 +137,57 @@ class NDArrayWithIndexes:
         self._mode = mode
 
     @override
-    @beartype
     def __repr__(self) -> str:
         cls = get_class_name(self)
         path = self._path.as_posix()
         return f"{cls}({path!r})"
 
     @override
-    @beartype
     def __str__(self) -> str:
         cls = get_class_name(self)
         path = self._path.as_posix()
         return f"{cls}({path})"
 
     @property
-    @beartype
     def array(self) -> Array:
         """The underlying `zarr.Array`."""
         return cast(Array, self.group["values"])
 
     @property
-    @beartype
     def attrs(self) -> Attributes:
         """The underlying attributes."""
         return self.group.attrs
 
     @property
-    @beartype
     def dims(self) -> tuple[Hashable, ...]:
         """The dimensions of the underlying array."""
         return tuple(self.attrs["dims"])
 
     @property
-    @beartype
     def dtype(self) -> Any:
         """The type of the underlying array."""
         return self.array.dtype
 
     @property
-    @beartype
     def group(self) -> Group:
         """The dimensions of the underlying array."""
         return open_group(self._path, mode=self._mode)
 
     @property
-    @beartype
     def indexes(self) -> dict[Hashable, NDArray1]:
         """The indexes of the underlying array."""
         return {dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)}
 
     @property
-    @beartype
     def is_scalar(self) -> bool:
         """Whether the underlying array is scalar or not."""
         return self.shape == ()
 
     @property
-    @beartype
     def is_non_scalar(self) -> bool:
         """Whether the underlying array is empty or not."""
         return self.shape != ()
 
-    @beartype
     def isel(
         self,
         indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
@@ -218,7 +201,6 @@ class NDArrayWithIndexes:
         return self.array.oindex[i]
 
     @property
-    @beartype
     def ndarray(self) -> NDArray[Any]:
         """The underlying `numpy.ndarray`."""
         arr = self.array[:]
@@ -227,12 +209,10 @@ class NDArrayWithIndexes:
         return arr
 
     @property
-    @beartype
     def ndim(self) -> int:
         """The number of dimensions of the underlying array."""
         return len(self.shape)
 
-    @beartype
     def sel(
         self,
         indexers: Optional[Mapping[Hashable, Any]] = None,
@@ -246,29 +226,24 @@ class NDArrayWithIndexes:
         return self.array.oindex[i]
 
     @property
-    @beartype
     def shape(self) -> tuple[int, ...]:
         """The shape of the underlying array."""
         return tuple(self.attrs["shape"])
 
     @property
-    @beartype
     def size(self) -> int:
         """The size of the underlying array."""
         return 0 if self.is_scalar else int(prod(self.shape).item())
 
     @property
-    @beartype
     def sizes(self) -> dict[Hashable, int]:
         """The sizes of the underlying array."""
         return {dim: len(index) for dim, index in self.indexes.items()}
 
-    @beartype
     def _get_index_by_int(self, i: int, /) -> NDArray1:
         """Get the index of a given dimension, by its integer index."""
         return cast(NDArray1, self.group[f"index_{i}"][:])
 
-    @beartype
     def _get_index_by_name(self, dim: Hashable, /) -> NDArray1:
         """Get the index of a given dimension, by its dimension name."""
         try:
@@ -278,7 +253,6 @@ class NDArrayWithIndexes:
             raise InvalidDimensionError(msg) from None
         return self._get_index_by_int(i)
 
-    @beartype
     def _get_isel_indexer(
         self, dim: Hashable, /, *, indexers: Mapping[Hashable, IselIndexer]
     ) -> Any:
@@ -291,7 +265,6 @@ class NDArrayWithIndexes:
             return indexer
         return array(indexer, dtype=int)
 
-    @beartype
     def _get_sel_indexer(
         self, dim: Hashable, /, *, indexers: Mapping[Hashable, Any]
     ) -> Any:
@@ -317,14 +290,12 @@ class NDArrayWithIndexes:
             msg = f"{dim=}, {indexer=}"
             raise InvalidIndexValueError(msg) from None
 
-    @beartype
     def _cast_date_indexer(
         self, indexer: Any, dtype: Any, ensure: Callable[[Any], Any], /
     ) -> Any:
         """Cast a `dt.date` or `dt.datetime` indexer."""
         suffix = extract_group(r"^datetime64\[(\w+)\]$", dtype.name)
 
-        @beartype
         def cast(x: Any, /) -> Any:
             return datetime64(ensure(x), suffix)
 

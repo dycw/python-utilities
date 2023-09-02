@@ -208,6 +208,12 @@ monitor-memory = "utilities.monitor_memory:main"
 start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
+#### pyright ##################################################################
+[tool.pyright]
+exclude = [
+  "**/__pycache__", ".direnv", ".git", ".nox", ".venv", "src/utilities/_numbagg",
+]
+
 #### pytest ###################################################################
 [tool.pytest.ini_options]
 addopts = [
@@ -257,11 +263,4 @@ xfail_strict = true
 # ban-relative-imports = "all"
 
 [tool.ruff.per-file-ignores]
-"src/tests/**/*.py" = [
-  #   "FBT001", # flake8-boolean-trap, boolean-positional-arg-in-function-definition
-  #   "FBT003", # flake8-boolean-trap, boolean-positional-value-in-function-call
-  #   "PLR2004", # refactor, magic-value-comparison
-  "S101", # flake8-bandit, assert-used
-
-]
-# "src/utilities/_numbagg/*.py" = ["ALL"]
+"src/utilities/_numbagg/*.py" = ["ALL"]

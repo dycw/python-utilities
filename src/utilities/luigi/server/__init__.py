@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from attrs import asdict
-from beartype import beartype
 from click import command
 from loguru import logger
 
@@ -16,7 +15,6 @@ _CONFIG = Config()
 
 @command()
 @click_options(Config, appname="pypiserver")
-@beartype
 def main(config: Config, /) -> None:
     """CLI for starting the luigi server."""
     setup_loguru()
@@ -32,13 +30,11 @@ def main(config: Config, /) -> None:
         run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
 
 
-@beartype
 def _log_config(config: Config, /) -> None:
     for key, value in asdict(config).items():
         logger.info("{key:10} = {value}", key=key, value=value)
 
 
-@beartype
 def _get_args(
     *,
     pid_file: PathLike = _CONFIG.pid_file,

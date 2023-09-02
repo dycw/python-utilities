@@ -3,7 +3,6 @@ from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
 from typing import Optional
 
-from beartype import beartype
 from typing_extensions import override
 
 from utilities.pathlib import PathLike
@@ -14,7 +13,6 @@ class TemporaryDirectory(_TemporaryDirectory):
 
     name: Path
 
-    @beartype
     def __init__(
         self,
         *,
@@ -26,12 +24,10 @@ class TemporaryDirectory(_TemporaryDirectory):
         self.name = Path(self.name)
 
     @override
-    @beartype
     def __enter__(self) -> Path:
         return super().__enter__()
 
 
-@beartype
 def gettempdir() -> Path:
     """Get the name of the directory used for temporary files."""
     return Path(_gettempdir())

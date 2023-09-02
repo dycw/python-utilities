@@ -2,7 +2,6 @@ import datetime as dt
 from enum import Enum as _Enum
 from typing import Any, Generic, Optional, TypeVar
 
-from beartype import beartype
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
@@ -30,7 +29,6 @@ class Date(ParamType):
     name = "date"
 
     @override
-    @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
@@ -47,7 +45,6 @@ class DateTime(ParamType):
     name = "datetime"
 
     @override
-    @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.date:
@@ -64,7 +61,6 @@ class Time(ParamType):
     name = "time"
 
     @override
-    @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.time:
@@ -81,7 +77,6 @@ class Timedelta(ParamType):
     name = "timedelta"
 
     @override
-    @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> dt.timedelta:
@@ -100,14 +95,12 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    @beartype
     def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
         super().__init__()
         self._enum = enum
         self._case_sensitive = case_sensitive
 
     @override
-    @beartype
     def convert(
         self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
     ) -> _E:

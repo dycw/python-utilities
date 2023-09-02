@@ -5,7 +5,6 @@ from itertools import repeat
 from typing import Any, Literal, NoReturn, Optional, Union, cast, overload
 
 import numpy as np
-from beartype import beartype
 from bottleneck import push
 from numpy import (
     array,
@@ -153,7 +152,6 @@ Datetime64Unit = Literal[
 Datetime64Kind = Literal["date", "time"]
 
 
-@beartype
 def array_indexer(
     i: int, ndim: int, /, *, axis: int = -1
 ) -> tuple[Union[int, slice], ...]:
@@ -163,7 +161,6 @@ def array_indexer(
     return tuple(indexer)
 
 
-@beartype
 def as_int(
     array: NDArrayF, /, *, nan: Optional[int] = None, inf: Optional[int] = None
 ) -> NDArrayI:
@@ -196,7 +193,6 @@ class NonIntegralElementsError(Exception):
     """Raised when there are non-integral elements."""
 
 
-@beartype
 def date_to_datetime64(date: dt.date, /) -> datetime64:
     """Convert a `dt.date` to `numpy.datetime64`."""
 
@@ -207,7 +203,6 @@ DATE_MIN_AS_DATETIME64 = date_to_datetime64(dt.date.min)
 DATE_MAX_AS_DATETIME64 = date_to_datetime64(dt.date.max)
 
 
-@beartype
 def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     """Convert a `dt.datetime` to `numpy.datetime64`."""
 
@@ -218,7 +213,6 @@ DATETIME_MIN_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.min)
 DATETIME_MAX_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.max)
 
 
-@beartype
 def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     """Convert a `numpy.datetime64` to a `dt.date`."""
 
@@ -233,7 +227,6 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     raise NotImplementedError(msg)
 
 
-@beartype
 def datetime64_to_int(datetime: datetime64, /) -> int:
     """Convert a `numpy.datetime64` to an `int`."""
 
@@ -246,7 +239,6 @@ DATETIME_MIN_AS_INT = datetime64_to_int(DATETIME_MIN_AS_DATETIMETIME64)
 DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIMETIME64)
 
 
-@beartype
 def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     """Convert a `numpy.datetime64` to a `dt.datetime`."""
 
@@ -270,19 +262,16 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
         raise NotImplementedError(msg)
 
 
-@beartype
 def datetime64_dtype_to_unit(dtype: Any, /) -> Datetime64Unit:
     """Convert a `datetime64` dtype to a unit."""
     return cast(Datetime64Unit, extract_group(r"^<M8\[(\w+)\]$", dtype.str))
 
 
-@beartype
 def datetime64_unit_to_dtype(unit: Datetime64Unit, /) -> Any:
     """Convert a `datetime64` unit to a dtype."""
     return dtype(f"datetime64[{unit}]")
 
 
-@beartype
 def datetime64_unit_to_kind(unit: Datetime64Unit, /) -> Datetime64Kind:
     """Convert a `datetime64` unit to a kind."""
     return "date" if unit in {"Y", "M", "W", "D"} else "time"
@@ -296,7 +285,6 @@ class LossOfNanosecondsError(ValueError):
     """Raised when nanoseconds are lost."""
 
 
-@beartype
 def discretize(x: NDArrayF1, bins: Union[int, Iterable[float]], /) -> NDArrayF1:
     """Discretize an array of floats.
 
@@ -317,14 +305,12 @@ def discretize(x: NDArrayF1, bins: Union[int, Iterable[float]], /) -> NDArrayF1:
     return out
 
 
-@beartype
 def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArrayF:
     """Compute the EWMA of an array."""
     alpha = _exp_weighted_alpha(halflife)
     return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
 
 
-@beartype
 def exp_moving_sum(
     array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1
 ) -> NDArrayF:
@@ -333,7 +319,6 @@ def exp_moving_sum(
     return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
 
 
-@beartype
 def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
     """Get the alpha."""
     decay = 1.0 - exp(log(0.5) / halflife)
@@ -341,7 +326,6 @@ def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
     return 1.0 / (1.0 + com)
 
 
-@beartype
 def ffill(
     array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
 ) -> NDArrayF:
@@ -349,7 +333,6 @@ def ffill(
     return push(array, n=limit, axis=axis)
 
 
-@beartype
 def ffill_non_nan_slices(
     array: NDArrayF, /, *, limit: Optional[int] = None, axis: int = -1
 ) -> NDArrayF:
@@ -365,7 +348,6 @@ def ffill_non_nan_slices(
     return out
 
 
-@beartype
 def _ffill_non_nan_slices_helper(
     arrays: Iterator[NDArrayF], /, *, limit: Optional[int] = None
 ) -> Iterator[tuple[int, NDArrayF]]:
@@ -380,13 +362,11 @@ def _ffill_non_nan_slices_helper(
                 yield i, last_sl
 
 
-@beartype
 def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
     """Fill the null elements in an array."""
     return where(isnan(array), value, array)
 
 
-@beartype
 def flatn0(array: NDArrayB1, /) -> int:
     """Return the index of the unique True element."""
     if not array.any():
@@ -411,7 +391,6 @@ class MultipleTrueElementsError(Exception):
     """Raised when an array has multiple true elements."""
 
 
-@beartype
 def get_fill_value(dtype: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
     if dtype == bool:
@@ -432,7 +411,6 @@ class InvalidDTypeError(TypeError):
     """Raised when a dtype is invalid."""
 
 
-@beartype
 def has_dtype(x: Any, dtype: Any, /) -> bool:
     """Check if an object has the required dtype."""
     if is_iterable_not_str(dtype):
@@ -440,7 +418,6 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     return x.dtype == dtype
 
 
-@beartype
 def is_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
     """Check if an ndarray is empty."""
     if isinstance(shape_or_array, int):
@@ -450,7 +427,6 @@ def is_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bo
     return is_empty(shape_or_array.shape)
 
 
-@beartype
 def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -> bool:
     """Check if an ndarray is non-empty."""
     if isinstance(shape_or_array, int):
@@ -460,7 +436,6 @@ def is_non_empty(shape_or_array: Union[int, tuple[int, ...], NDArray[Any]], /) -
     return is_non_empty(shape_or_array.shape)
 
 
-@beartype
 def is_non_singular(
     array: Union[NDArrayF2, NDArrayI2],
     /,
@@ -476,7 +451,6 @@ def is_non_singular(
         return False
 
 
-@beartype
 def is_positive_semidefinite(x: Union[NDArrayF2, NDArrayI2], /) -> bool:
     """Check if `x` is positive semidefinite."""
     if not is_symmetric(x):
@@ -485,7 +459,6 @@ def is_positive_semidefinite(x: Union[NDArrayF2, NDArrayI2], /) -> bool:
     return bool(is_non_negative(w).all())
 
 
-@beartype
 def is_symmetric(
     array: Union[NDArrayF2, NDArrayI2],
     /,
@@ -568,7 +541,6 @@ def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
-@beartype
 def maximum(*xs: Union[float, NDArrayF]) -> Union[float, NDArrayF]:
     """Compute the maximum of a number of quantities."""
     return reduce(np.maximum, xs)
@@ -639,13 +611,11 @@ def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
     ...
 
 
-@beartype
 def minimum(*xs: Union[float, NDArrayF]) -> Union[float, NDArrayF]:
     """Compute the minimum of a number of quantities."""
     return reduce(np.minimum, xs)
 
 
-@beartype
 def pct_change(
     array: Union[NDArrayF, NDArrayI],
     /,
@@ -673,11 +643,12 @@ class ZeroPercentageChangeSpanError(Exception):
     """Raised when the percentage change span is zero."""
 
 
-@beartype
 def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
     """Redirect to the `EmptyNumpyConcatenateError`."""
     redirect_error(
-        error, "need at least one array to concatenate", EmptyNumpyConcatenateError
+        error,
+        "need at least one array to concatenate",
+        EmptyNumpyConcatenateError,
     )
 
 
@@ -685,7 +656,6 @@ class EmptyNumpyConcatenateError(ValueError):
     """Raised when there are no arrays to concatenate."""
 
 
-@beartype
 def shift(
     array: Union[NDArrayF, NDArrayI], /, *, n: int = 1, axis: int = -1
 ) -> NDArrayF:
@@ -705,7 +675,6 @@ class ZeroShiftError(Exception):
     """Raised when the shift is zero."""
 
 
-@beartype
 def shift_bool(
     array: NDArrayB, /, *, n: int = 1, axis: int = -1, fill_value: bool = False
 ) -> NDArrayB:
@@ -724,7 +693,6 @@ def year(date: NDArrayDD, /) -> NDArrayI:
     ...
 
 
-@beartype
 def year(date: Union[datetime64, NDArrayDD], /) -> Union[int, NDArrayI]:
     """Convert a date/array of dates into a year/array of years."""
     years = 1970 + date.astype(datetime64Y).astype(int)
