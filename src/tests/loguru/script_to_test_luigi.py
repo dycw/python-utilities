@@ -23,7 +23,7 @@ class Example(Task):
     messages = cast(int, IntParameter())
 
     @override
-    def output(self) -> PathTarget:  # type: ignore[reportIncompatibleMethodOverride]
+    def output(self) -> PathTarget:  # type: ignore
         return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
 
     @override
@@ -46,7 +46,9 @@ def main(*, tasks: int, messages: int) -> None:
     """Run the test script."""
     setup_loguru(levels={"luigi": LogLevel.DEBUG}, files="test_luigi")
     classes = [type(f"Example{i}", (Example,), {}) for i in range(tasks)]
-    instances = [cast(Example, cast(Any, cls)(messages=messages)) for cls in classes]
+    instances = [
+        cast(Example, cast(Any, cls)(messages=messages)) for cls in classes
+    ]
     _ = build(instances, local_scheduler=True, workers=CPU_COUNT)
 
 

@@ -41,7 +41,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestDictsOfIndexes:
@@ -129,7 +129,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestIntDataArrays:
@@ -166,7 +166,7 @@ class TestIntDataArrays:
         assert array.dtype == int
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestMergeIntoDictOfIndexes:
@@ -186,7 +186,9 @@ class TestMergeIntoDictOfIndexes:
         indexes2: dict[str, Index[Any]],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
-        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
+        expected = (set() if indexes1 is None else set(indexes1)) | set(
+            indexes2
+        )
         assert set(indexes_) == expected
 
 
@@ -227,4 +229,4 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore

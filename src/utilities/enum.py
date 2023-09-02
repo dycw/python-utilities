@@ -7,7 +7,7 @@ from typing_extensions import override
 from utilities.sys import PYTHON_AT_LEAST_3_11
 
 if PYTHON_AT_LEAST_3_11:  # pragma: version-le-310
-    from enum import StrEnum as _StrEnum  # type: ignore[]
+    from enum import StrEnum as _StrEnum  # type: ignore
 else:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
@@ -28,7 +28,9 @@ StrEnum = _StrEnum
 _E = TypeVar("_E", bound=Enum)
 
 
-def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
+def parse_enum(
+    enum: type[_E], member: str, /, *, case_sensitive: bool = True
+) -> _E:
     """Parse a string into the enum."""
     enum_ = cast(Iterable[Any], enum)
     if case_sensitive:

@@ -119,11 +119,12 @@ class DataArrayOnDisk(NDArrayWithIndexes):
 
     @property
     @override
-    def indexes(  # type: ignore[reportIncompatibleMethodOverride]
-        self,
-    ) -> dict[str, Index[Any]]:
+    def indexes(self) -> dict[str, Index[Any]]:  # type: ignore
         """The indexes of the underlying array."""
-        return {ensure_str(dim): Index(index) for dim, index in super().indexes.items()}
+        return {
+            ensure_str(dim): Index(index)
+            for dim, index in super().indexes.items()
+        }
 
     @override
     def isel(

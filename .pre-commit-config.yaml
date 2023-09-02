@@ -30,9 +30,8 @@ repos:
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
-      - id: black
-        args: [--line-length=80, --skip-magic-trailing-comma]
       - id: black-jupyter
+        args: [--line-length=80, --skip-magic-trailing-comma]
   # linters
   # - repo: https://github.com/andreoliwa/nitpick
   #   rev: v0.34.0

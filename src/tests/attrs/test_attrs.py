@@ -21,7 +21,7 @@ class TestAttrsBase:
 
         match = "module = tests.attrs.test_attrs, class = Example, field = x"
         with raises(FieldTypeError, match=match):
-            _ = Example(None)  # type: ignore[]
+            _ = Example(None)  # type: ignore
 
     def test_no_fields(self) -> None:
         @define

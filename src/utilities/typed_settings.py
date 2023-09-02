@@ -21,7 +21,7 @@ from typed_settings.cli_utils import (
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
 from typed_settings.loaders import Loader
-from typed_settings.types import AUTO, _Auto  # type: ignore[reportPrivateUsage]
+from typed_settings.types import AUTO, _Auto  # type: ignore
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
