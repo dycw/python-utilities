@@ -224,7 +224,7 @@ exclude = [
 addopts = [
   "-rsxX",
   "--color=auto",
-  "--cov=utilities",
+  # "--cov=utilities",
   "--cov-config=pyproject.toml",
   "--cov-report=html",
   "--strict-markers",

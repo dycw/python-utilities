@@ -7,7 +7,7 @@ from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
 from typing import Any
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 
 class Timer:
@@ -18,7 +18,7 @@ class Timer:
         self._start = default_timer()
         self._end: float | None = None
 
-    def __enter__(self: Timer) -> Timer:
+    def __enter__(self) -> Self:
         self._start = default_timer()
         return self
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, data, dates, floats, integers
@@ -228,7 +228,7 @@ class TestChecks:
         ],
     )
     def test_is_at_least(
-        self, x: float, y: float, equal_nan: bool, expected: bool
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
@@ -265,7 +265,7 @@ class TestChecks:
         ],
     )
     def test_is_at_most(
-        self, x: float, y: float, equal_nan: bool, expected: bool
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
@@ -299,7 +299,13 @@ class TestChecks:
         ],
     )
     def test_is_between(
-        self, x: float, low: float, high: float, equal_nan: bool, expected: bool
+        self,
+        *,
+        x: float,
+        low: float,
+        high: float,
+        equal_nan: bool,
+        expected: bool,
     ) -> None:
         assert is_between(x, low, high, equal_nan=equal_nan).item() is expected
 
@@ -351,7 +357,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_integral(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_integral(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_integral(x).item() is expected
 
     def test_is_finite_and_integral_or_nan(self) -> None:
@@ -368,7 +374,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_finite_or_nan(self, x: float, expected: bool) -> None:
+    def test_is_finite_or_nan(self, *, x: float, expected: bool) -> None:
         assert is_finite_or_nan(x).item() is expected
 
     @mark.parametrize(
@@ -388,7 +394,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_negative(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_negative(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_negative(x).item() is expected
 
     def test_is_finite_and_negative_or_nan(self) -> None:
@@ -411,7 +417,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_negative(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_negative(
+        self, *, x: float, expected: bool
+    ) -> None:
         assert is_finite_and_non_negative(x).item() is expected
 
     def test_is_finite_and_non_negative_or_nan(self) -> None:
@@ -434,7 +442,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_positive(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_positive(
+        self, *, x: float, expected: bool
+    ) -> None:
         assert is_finite_and_non_positive(x).item() is expected
 
     def test_is_finite_and_non_positive_or_nan(self) -> None:
@@ -457,7 +467,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_zero(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_zero(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_non_zero(x).item() is expected
 
     def test_is_finite_and_non_zero_or_nan(self) -> None:
@@ -480,7 +490,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_positive(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_positive(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_positive(x).item() is expected
 
     def test_is_finite_and_positive_or_nan(self) -> None:
@@ -505,7 +515,7 @@ class TestChecks:
         ],
     )
     def test_is_greater_than(
-        self, x: float, y: float, equal_nan: bool, expected: bool
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
@@ -546,7 +556,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_integral(self, x: float, expected: bool) -> None:
+    def test_is_integral(self, *, x: float, expected: bool) -> None:
         assert is_integral(x).item() is expected
 
     def test_is_integral_or_nan(self) -> None:
@@ -571,7 +581,7 @@ class TestChecks:
         ],
     )
     def test_is_less_than(
-        self, x: float, y: float, equal_nan: bool, expected: bool
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
     ) -> None:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
@@ -606,7 +616,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_negative(self, x: float, expected: bool) -> None:
+    def test_is_negative(self, *, x: float, expected: bool) -> None:
         assert is_negative(x).item() is expected
 
     def test_is_negative_or_nan(self) -> None:
@@ -629,7 +639,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_non_negative(self, x: float, expected: bool) -> None:
+    def test_is_non_negative(self, *, x: float, expected: bool) -> None:
         assert is_non_negative(x).item() is expected
 
     def test_is_non_negative_or_nan(self) -> None:
@@ -652,7 +662,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_non_positive(self, x: float, expected: bool) -> None:
+    def test_is_non_positive(self, *, x: float, expected: bool) -> None:
         assert is_non_positive(x).item() is expected
 
     def test_is_non_positive_or_nan(self) -> None:
@@ -675,7 +685,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_non_zero(self, x: float, expected: bool) -> None:
+    def test_is_non_zero(self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x).item() is expected
 
     def test_is_non_zero_or_nan(self) -> None:
@@ -698,7 +708,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_positive(self, x: float, expected: bool) -> None:
+    def test_is_positive(self, *, x: float, expected: bool) -> None:
         assert is_positive(x).item() is expected
 
     def test_is_positive_or_nan(self) -> None:
@@ -721,7 +731,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_zero(self, x: float, expected: bool) -> None:
+    def test_is_zero(self, *, x: float, expected: bool) -> None:
         assert is_zero(x).item() is expected
 
     @mark.parametrize(
@@ -742,7 +752,7 @@ class TestChecks:
         ],
     )
     def test_is_zero_or_finite_and_non_micro(
-        self, x: float, expected: bool
+        self, *, x: float, expected: bool
     ) -> None:
         assert is_zero_or_finite_and_non_micro(x).item() is expected
 
@@ -769,7 +779,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_zero_or_non_micro(self, x: float, expected: bool) -> None:
+    def test_is_zero_or_non_micro(self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x).item() is expected
 
     def test_is_zero_or_non_micro_or_nan(self) -> None:
@@ -828,7 +838,8 @@ class TestDatetime64ToDate:
 
 class TestDatetime64ToInt:
     def test_example(self) -> None:
-        assert datetime64_to_int(datetime64("2000-01-01", "D")) == 10957
+        expected = 10957
+        assert datetime64_to_int(datetime64("2000-01-01", "D")) == expected
 
     @given(datetime=datetime64s())
     def test_main(self, datetime: datetime64) -> None:
@@ -1173,7 +1184,7 @@ class TestHasDtype:
             ),
         ],
     )
-    def test_main(self, x: Any, dtype: Any, expected: bool) -> None:
+    def test_main(self, *, x: Any, dtype: Any, expected: bool) -> None:
         assert has_dtype(x, dtype) is expected
 
 
@@ -1216,7 +1227,9 @@ class TestIsNonSingular:
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_main(self, array: NDArrayF2, dtype: Any, expected: bool) -> None:
+    def test_main(
+        self, *, array: NDArrayF2, dtype: Any, expected: bool
+    ) -> None:
         assert is_non_singular(array.astype(dtype)) is expected
 
     def test_overflow(self) -> None:
@@ -1235,7 +1248,7 @@ class TestIsPositiveSemiDefinite:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_positive_semidefinite(array.astype(dtype)) is expected
 
@@ -1255,7 +1268,7 @@ class TestIsSymmetric:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_symmetric(array.astype(dtype)) is expected
 
@@ -1507,7 +1520,7 @@ class TestShiftBool:
     )
     @mark.parametrize("fill_value", [param(True), param(False)])
     def test_main(
-        self, n: int, expected_v: list[bool | None], fill_value: bool
+        self, *, n: int, expected_v: list[bool | None], fill_value: bool
     ) -> None:
         arr = array([True, False, True], dtype=bool)
         result = shift_bool(arr, n=n, fill_value=fill_value)

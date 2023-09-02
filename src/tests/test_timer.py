@@ -34,7 +34,7 @@ class TestTimer:
         "dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))]
     )
     def test_comparison(
-        self, op: Callable[[Any, Any], bool], dur: Any, expected: bool
+        self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:
         with Timer() as timer:
             pass
@@ -56,7 +56,7 @@ class TestTimer:
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
-            pass
+            sleep(0.01)
         as_str = func(timer)
         assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
 

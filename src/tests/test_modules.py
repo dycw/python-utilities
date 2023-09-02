@@ -31,7 +31,7 @@ class TestYieldModules:
         ],
     )
     def test_main(
-        self, module: ModuleType, recursive: bool, expected: int
+        self, *, module: ModuleType, recursive: bool, expected: int
     ) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 
@@ -51,7 +51,7 @@ class TestYieldModuleContents:
     @mark.parametrize(
         ("type_", "predicate", "expected"),
         [
-            param(None, None, 17),
+            param(None, None, 18),
             param(int, None, 3),
             param(float, None, 3),
             param((int, float), None, 6),
@@ -64,6 +64,7 @@ class TestYieldModuleContents:
     )
     def test_main(
         self,
+        *,
         module: ModuleType,
         type_: type[Any] | tuple[type[Any], ...] | None,
         recursive: bool,
@@ -103,6 +104,7 @@ class TestYieldModuleSubclasses:
     )
     def test_main(
         self,
+        *,
         module: ModuleType,
         type_: type[Any],
         recursive: bool,
