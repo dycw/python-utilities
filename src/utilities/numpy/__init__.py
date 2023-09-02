@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import reduce

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress

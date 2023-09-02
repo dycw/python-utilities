@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce

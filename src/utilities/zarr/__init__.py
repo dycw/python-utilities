@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
