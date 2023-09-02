@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
 
-from beartype import beartype
 from holoviews import Curve
 from pytest import mark
 
@@ -9,14 +10,12 @@ from utilities.platform import SYSTEM, System
 
 
 class TestApplyOpts:
-    @beartype
     def test_main(self) -> None:
         curve = Curve([])
         _ = apply_opts(curve)
 
 
 class TestRelabelPlot:
-    @beartype
     def test_main(self) -> None:
         curve = Curve([])
         assert not curve.label
@@ -26,7 +25,6 @@ class TestRelabelPlot:
 
 class TestSavePlot:
     @mark.skipif(SYSTEM is not System.linux, reason="Linux only")
-    @beartype
     def test_main(self, tmp_path: Path) -> None:
         curve = Curve([])
         save_plot(curve, tmp_path.joinpath("plot.png"))

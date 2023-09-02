@@ -1,13 +1,22 @@
-from collections.abc import Hashable
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    floats,
+    integers,
+    none,
+)
 from pandas import Index
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import assume_does_not_raise, hashables
+from utilities.hypothesis import assume_does_not_raise, text_ascii
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.xarray import (
     _merge_into_dict_of_indexes,
@@ -20,9 +29,12 @@ from utilities.hypothesis.xarray import (
 
 
 class TestBoolDataArrays:
-    @given(data=data(), indexes=dicts_of_indexes(), name=hashables())
+    @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self, data: DataObject, indexes: dict[Hashable, Index], name: Hashable
+        self,
+        data: DataObject,
+        indexes: Mapping[str, Index[Any]],
+        name: str | None,
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -30,7 +42,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestDictsOfIndexes:
@@ -45,9 +57,9 @@ class TestDictsOfIndexes:
         self,
         data: DataObject,
         min_dims: int,
-        max_dims: Optional[int],
+        max_dims: int | None,
         min_side: int,
-        max_side: Optional[int],
+        max_side: int | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             indexes = data.draw(
@@ -81,21 +93,22 @@ class TestFloatDataArrays:
         allow_neg_inf=booleans(),
         integral=booleans(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
+        *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
-        min_value: Optional[float],
-        max_value: Optional[float],
+        indexes: Mapping[str, Index[Any]],
+        min_value: float | None,
+        max_value: float | None,
         allow_nan: bool,
         allow_inf: bool,
         allow_pos_inf: bool,
         allow_neg_inf: bool,
         integral: bool,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -117,7 +130,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestIntDataArrays:
@@ -127,16 +140,17 @@ class TestIntDataArrays:
         min_value=int64s() | none(),
         max_value=int64s() | none(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
+        *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
-        min_value: Optional[int],
-        max_value: Optional[int],
+        indexes: Mapping[str, Index[Any]],
+        min_value: int | None,
+        max_value: int | None,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -153,7 +167,7 @@ class TestIntDataArrays:
         assert array.dtype == int
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore
 
 
 class TestMergeIntoDictOfIndexes:
@@ -162,16 +176,20 @@ class TestMergeIntoDictOfIndexes:
         _ = data.draw(_merge_into_dict_of_indexes())
 
     @given(
-        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
+        data=data(),
+        indexes1=dicts_of_indexes() | none(),
+        indexes2=dicts_of_indexes(),
     )
     def test_non_empty(
         self,
         data: DataObject,
-        indexes1: Optional[dict[Hashable, Index]],
-        indexes2: dict[str, Index],
+        indexes1: Mapping[str, Index[Any]] | None,
+        indexes2: Mapping[str, Index[Any]],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
-        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
+        expected = (set() if indexes1 is None else set(indexes1)) | set(
+            indexes2
+        )
         assert set(indexes_) == expected
 
 
@@ -183,17 +201,18 @@ class TestStrDataArrays:
         max_size=integers(0, 100) | none(),
         allow_none=booleans(),
         unique=booleans(),
-        name=hashables(),
+        name=text_ascii() | none(),
     )
     def test_main(
         self,
+        *,
         data: DataObject,
-        indexes: dict[Hashable, Index],
+        indexes: Mapping[str, Index[Any]],
         min_size: int,
-        max_size: Optional[int],
+        max_size: int | None,
         allow_none: bool,
         unique: bool,
-        name: Hashable,
+        name: str | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
@@ -211,4 +230,4 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values()):
-            assert_index_equal(arr, exp, check_names=False)
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore

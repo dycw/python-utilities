@@ -8,7 +8,7 @@ airium==0.2.5
     # via dycw-utilities (pyproject.toml)
 annotated-types==0.5.0
     # via pydantic
-anyio==3.7.1
+anyio==4.0.0
     # via
     #   httpcore
     #   starlette
@@ -30,8 +30,6 @@ beartype==0.15.0
     # via dycw-utilities (pyproject.toml)
 bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
-black==23.7.0
-    # via dycw-utilities (pyproject.toml)
 bleach==6.0.0
     # via panel
 bokeh==3.2.2
@@ -40,7 +38,7 @@ bottleneck==1.3.7
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-build==0.10.0
+build==1.0.0
     # via pip-tools
 cattrs==23.1.2
     # via typed-settings
@@ -56,7 +54,6 @@ charset-normalizer==3.2.0
     # via requests
 click==8.1.7
     # via
-    #   black
     #   dycw-utilities (pyproject.toml)
     #   hatch
     #   pip-tools
@@ -100,13 +97,13 @@ exceptiongroup==1.1.3
     #   trio-websocket
 execnet==2.0.2
     # via pytest-xdist
-fastapi==0.101.1
+fastapi==0.103.0
     # via dycw-utilities (pyproject.toml)
 fasteners==0.18
     # via zarr
-fastparquet==2023.7.0
+fastparquet==2023.8.0
     # via dycw-utilities (pyproject.toml)
-filelock==3.12.2
+filelock==3.12.3
     # via virtualenv
 fonttools==4.42.1
     # via fpdf2
@@ -132,7 +129,7 @@ httpx==0.24.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.82.6
+hypothesis==6.83.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -184,8 +181,6 @@ more-itertools==10.1.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
-mypy-extensions==1.0.0
-    # via black
 mysqlclient==2.2.0 ; sys_platform == "linux"
     # via dycw-utilities (pyproject.toml)
 nox==2023.4.22
@@ -219,7 +214,6 @@ outcome==1.2.0
     # via trio
 packaging==23.1
     # via
-    #   black
     #   bokeh
     #   build
     #   coverage-conditional-plugin
@@ -231,7 +225,7 @@ packaging==23.1
     #   pytest
     #   pytest-rerunfailures
     #   xarray
-pandas==2.0.3
+pandas==2.1.0
     # via
     #   bokeh
     #   dycw-utilities (pyproject.toml)
@@ -239,7 +233,7 @@ pandas==2.0.3
     #   holoviews
     #   panel
     #   xarray
-panel==1.2.1
+panel==1.2.2
     # via holoviews
 param==1.13.0
     # via
@@ -250,9 +244,7 @@ param==1.13.0
 passlib==1.7.4
     # via pypiserver
 pathspec==0.11.2
-    # via
-    #   black
-    #   hatchling
+    # via hatchling
 pexpect==4.8.0
     # via hatch
 pillow==10.0.0
@@ -263,10 +255,9 @@ pip-tools==7.3.0
     # via dycw-utilities (pyproject.toml)
 platformdirs==3.10.0
     # via
-    #   black
     #   hatch
     #   virtualenv
-pluggy==1.2.0
+pluggy==1.3.0
     # via
     #   hatchling
     #   pytest
@@ -284,9 +275,9 @@ pycparser==2.21
     # via cffi
 pyct==0.5.0
     # via colorcet
-pydantic==2.2.1
+pydantic==2.3.0
     # via fastapi
-pydantic-core==2.6.1
+pydantic-core==2.6.3
     # via pydantic
 pygments==2.16.1
     # via rich
@@ -344,8 +335,6 @@ requests==2.31.0
     # via panel
 rich==13.5.2
     # via hatch
-ruff==0.0.285
-    # via dycw-utilities (pyproject.toml)
 scipy==1.11.2
     # via
     #   cvxpy
@@ -356,7 +345,7 @@ scipy==1.11.2
     #   scs
 scs==3.2.3
     # via cvxpy
-selenium==4.11.2
+selenium==4.12.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.1
     # via dycw-utilities (pyproject.toml)
@@ -428,7 +417,7 @@ urllib3[socks]==2.0.4
     #   selenium
 userpath==1.9.0
     # via hatch
-virtualenv==20.24.3
+virtualenv==20.24.4
     # via
     #   hatch
     #   nox

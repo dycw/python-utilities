@@ -1,26 +1,28 @@
-from typing import Optional
+from __future__ import annotations
 
-from attrs import define
+from dataclasses import dataclass
+
 from hypothesis import given
+from hypothesis.strategies import none
 from xarray import DataArray
 
-from utilities.attrs.xarray import rename_data_arrays
-from utilities.hypothesis import hashables
+from utilities.dataclasses.xarray import rename_data_arrays
+from utilities.hypothesis import text_ascii
 
 
 class TestRenameDataArrays:
-    @given(name_array=hashables(), name_other=hashables())
-    def test_main(self, name_array: Optional[str], name_other: Optional[str]) -> None:
-        @define
+    @given(name_array=text_ascii() | none(), name_other=text_ascii() | none())
+    def test_main(self, name_array: str | None, name_other: str | None) -> None:
+        @dataclass
         class Other:
-            name: Optional[str]
+            name: str | None
 
-        @define
+        @dataclass
         class Example:
             array: DataArray
             other: Other
 
-            def __attrs_post_init__(self) -> None:
+            def __post_init__(self) -> None:
                 rename_data_arrays(self)
 
         array = DataArray(name=name_array)

@@ -1,17 +1,9 @@
-#### black ####################################################################
-[tool.black]
-skip-magic-trailing-comma = true
-target-version = ["py39"]
-
 #### coverage #################################################################
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
 parallel = true
-omit = [
-  "src/utilities/_numbagg/*.py",
-  "src/utilities/clean_dir/__main__.py",
-]
+omit = ["src/utilities/_numbagg/*.py", "src/utilities/clean_dir/__main__.py"]
 plugins = ["coverage_conditional_plugin"]
 
 [tool.coverage.report]
@@ -30,9 +22,8 @@ directory = ".coverage/html"
 os-ne-windows = 'sys_platform != "windows"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-linux = 'sys_platform != "linux"'
-version-le-310 = "sys_version_info <= (3, 10)"
-version-ne-310 = "sys_version_info != (3, 10)"
 version-ge-311 = "sys_version_info >= (3, 11)"
+
 
 #### hatch ####################################################################
 [build-system]
@@ -48,6 +39,7 @@ packages = ["src/utilities"]
 [tool.hatch.version]
 path = "src/utilities/__init__.py"
 
+
 #### nitpick ##################################################################
 [tool.nitpick]
 style = [
@@ -56,6 +48,7 @@ style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
 ]
 
+
 #### project ##################################################################
 [project]
 name = "dycw-utilities"
@@ -63,70 +56,68 @@ dynamic = ["version"]
 readme = "README.md"
 requires-python = ">= 3.9"
 authors = [{ name = "Derek Wan", email = "d.wan@icloud.com" }]
-dependencies = ["beartype >= 0.15.0", "typing-extensions >= 4.7.0"]
+dependencies = ["typing-extensions >= 4.7.1"]
 
 [project.optional-dependencies]
 airium = ["airium >= 0.2.5"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 23.1.0"]
+beartype = ["beartype >= 0.15.0"]
 bidict = ["bidict >= 0.22.1"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.3"]
-cvxpy = ["cvxpy >= 1.3.1; sys_platform == 'linux'"]
-fastapi = ["fastapi >= 0.101.1"]
+cvxpy = ["cvxpy >= 1.3.1; sys_platform == 'darwin'"]
+fastapi = ["fastapi >= 0.103.0"]
 fastparquet = [
-  "fastparquet >= 2023.7.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "fastparquet >= 2023.8.0",
+  "atomicwrites >= 1.4.1",   # atomicwrites
 ]
 fpdf2 = [
   "fpdf2 >= 2.7.5",
-  "atomicwrites >= 1.4.1",  # holoviews
-  "holoviews >= 1.17.1",    # holoviews
-  "selenium >= 4.9.0",      # holoviews
+  "atomicwrites >= 1.4.1", # holoviews
+  "holoviews >= 1.17.1",   # holoviews
+  "selenium >= 4.12.0",    # holoviews
 ]
 hatch = ["hatch >= 1.7.0"]
 holoviews = [
   "holoviews >= 1.17.1",
-  "selenium >= 4.9.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "selenium >= 4.12.0",
+  "atomicwrites >= 1.4.1", # atomicwrites
 ]
-hypothesis = ["hypothesis >= 6.82.6"]
+hypothesis = ["hypothesis >= 6.83.0"]
 loguru = ["loguru >= 0.7.0"]
 luigi = ["luigi >= 3.3.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 10.1.0"]
-numpy = [
-  "numba >= 0.57.1",
-  "numpy >= 1.24.4",
-]
-pandas = ["pandas >= 2.0.3"]
+numpy = ["numba >= 0.57.1", "numpy >= 1.24.4"]
+pandas = ["pandas >= 2.1.0"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.5"]
 pyinstrument = [
   "pyinstrument >= 4.5.1",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "atomicwrites >= 1.4.1", # atomicwrites
 ]
 pypi = [
   "pypiserver[passlib] >= 1.5.2",
-  "loguru >= 0.7.0",                  # loguru
-  "typed-settings[click] >= 23.0.0",  # typed-settings
+  "loguru >= 0.7.0",                 # loguru
+  "typed-settings[click] >= 23.0.0", # typed-settings
 ]
 pytest = [
   "pytest >= 7.4.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "atomicwrites >= 1.4.1", # atomicwrites
 ]
 pytest-check = ["pytest-check >= 2.2.1"]
 scipy = ["scipy >= 1.11.2"]
 scripts = [
-  "loguru >= 0.7.0",                  # loguru
-  "typed-settings[click] >= 23.0.0",  # typed-settings
+  "loguru >= 0.7.0",                 # loguru
+  "typed-settings[click] >= 23.0.0", # typed-settings
 ]
 semver = ["semver >= 3.0.0"]
 sqlalchemy = [
   "sqlalchemy >= 2.0.20",
   "timeout-decorator >= 0.5.0",
-  "bidict >= 0.22.1",          # bidict
-  "more-itertools >= 10.1.0",  # more-itertools
+  "bidict >= 0.22.1",           # bidict
+  "more-itertools >= 10.1.0",   # more-itertools
 ]
 tqdm = ["tqdm >= 4.66.1"]
 typed-settings = ["typed-settings[click] >= 23.0.0"]
@@ -137,7 +128,7 @@ xarray = [
 ]
 zarr = [
   "zarr >= 2.16.1",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "atomicwrites >= 1.4.1", # atomicwrites
 ]
 # groups
 test = [
@@ -147,10 +138,10 @@ test = [
   "pytest-randomly >= 3.15.0",
   "pytest-rerunfailures >= 12.0",
   "pytest-xdist >= 3.3.1",
-  "hypothesis >= 6.82.6",          # hypothesis
-  "pytest >= 7.4.0",               # pytest
-  "pytest-check >= 2.2.1",         # pytest-check
-  "atomicwrites >= 1.4.1",         # pytest
+  "hypothesis >= 6.83.0",         # hypothesis
+  "pytest >= 7.4.0",              # pytest
+  "pytest-check >= 2.2.1",        # pytest-check
+  "atomicwrites >= 1.4.1",        # pytest
 ]
 # dev
 dev = [
@@ -158,24 +149,25 @@ dev = [
   "airium >= 0.2.5",                          # airium
   "atomicwrites >= 1.4.1",                    # atomicwrites
   "attrs >= 23.1.0",                          # attrs
+  "beartype >= 0.15.0",                       # beartype
   "bidict >= 0.22.1",                         # bidict
   "bottleneck >= 1.3.7",                      # xarray
   "click >= 8.1.7",                           # click
   "cryptography >= 41.0.3",                   # cryptography
-  "cvxpy >= 1.3.1; sys_platform == 'linux'",  # cvxpy
-  "fastapi >= 0.101.1",                       # fastapi
-  "fastparquet >= 2023.7.0",                  # fastparquet
+  "cvxpy >= 1.3.1; sys_platform == 'darwin'", # cvxpy
+  "fastapi >= 0.103.0",                       # fastapi
+  "fastparquet >= 2023.8.0",                  # fastparquet
   "fpdf2 >= 2.7.5",                           # fpdf2
   "hatch >= 1.7.0",                           # hatch
   "holoviews >= 1.17.1",                      # holoviews
-  "hypothesis >= 6.82.6",                     # hypothesis
+  "hypothesis >= 6.83.0",                     # hypothesis
   "loguru >= 0.7.0",                          # loguru
   "luigi >= 3.3.0",                           # luigi
   "memory-profiler >= 0.61.0",                # memory-profiler
   "more-itertools >= 10.1.0",                 # more-itertools
   "numba >= 0.57.1",                          # xarray
   "numpy >= 1.24.4",                          # numpy
-  "pandas >= 2.0.3",                          # pandas
+  "pandas >= 2.1.0",                          # pandas
   "pqdm >= 0.2.0",                            # pqdm
   "psutil >= 5.9.5",                          # psutil
   "pyinstrument >= 4.5.1",                    # pyinstrument
@@ -183,7 +175,7 @@ dev = [
   "pytest >= 7.4.0",                          # pytest
   "pytest-check >= 2.2.1",                    # pytest-check
   "scipy >= 1.11.2",                          # scipy
-  "selenium >= 4.9.0",                        # holoviews
+  "selenium >= 4.12.0",                       # holoviews
   "semver >= 3.0.0",                          # semver
   "sqlalchemy >= 2.0.20",                     # sqlalchemy
   "timeout-decorator >= 0.5.0",               # sqlalchemy
@@ -192,25 +184,23 @@ dev = [
   "xarray >= 2023.8.0",                       # xarray
   "zarr >= 2.16.1",                           # zarr
   # test
-  "exceptiongroup >= 1.1.3",       # test
-  "pytest-cov >= 4.1.0",           # test
-  "pytest-instafail >= 0.5.0",     # test
-  "pytest-randomly >= 3.15.0",     # test
-  "pytest-rerunfailures >= 12.0",  # test
-  "pytest-xdist >= 3.3.1",         # test
+  "exceptiongroup >= 1.1.3",      # test
+  "pytest-cov >= 4.1.0",          # test
+  "pytest-instafail >= 0.5.0",    # test
+  "pytest-randomly >= 3.15.0",    # test
+  "pytest-rerunfailures >= 12.0", # test
+  "pytest-xdist >= 3.3.1",        # test
   # dev
-  "black",
   "coverage-conditional-plugin",
   "cx_oracle",
   "freezegun",
   "hatch",
   "hypothesis-sqlalchemy",
-  "mysqlclient; sys_platform == 'linux'",
+  "mysqlclient; sys_platform == 'darwin'",
   "nox",
   "pip-tools",
-  "psycopg2-binary; sys_platform == 'linux'",
-  "pyodbc; sys_platform == 'linux'",
-  "ruff",
+  "psycopg2-binary; sys_platform == 'darwin'",
+  "pyodbc; sys_platform == 'darwin'",
 ]
 
 [project.scripts]
@@ -219,29 +209,17 @@ monitor-memory = "utilities.monitor_memory:main"
 start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
+
 #### pyright ##################################################################
 [tool.pyright]
-include = ["src"]
 exclude = [
-  "**/__pycache__", ".direnv", ".git", ".venv", "src/utilities/_numbagg",
+  "**/__pycache__",
+  ".direnv",
+  ".git",
+  ".nox",
+  "src/utilities/_numbagg",
 ]
-pythonVersion = "3.9"
-executionEnvironments = [{ root = "src" }]
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportIncompatibleMethodOverride = false
-reportMissingTypeArgument = false
-reportPrivateUsage = false
-reportPrivateImportUsage = false
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUntypedBaseClass = false
-reportMissingSuperCall = "error"
-reportPropertyTypeMismatch = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
-reportUnusedCallResult = "error"
+
 
 #### pytest ###################################################################
 [tool.pytest.ini_options]
@@ -257,7 +235,7 @@ addopts = [
 filterwarnings = [
   "error",
   "ignore::DeprecationWarning",
-  "ignore::beartype.roar.BeartypeDecorHintPep585DeprecationWarning",
+  "ignore::FutureWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:unclosed file <.*>:ResourceWarning",
 ]
@@ -265,42 +243,10 @@ minversion = "7.0"
 testpaths = ["src/tests"]
 xfail_strict = true
 
+
 #### ruff #####################################################################
-[tool.ruff]
-ignore = [
-  "ANN101", # flake8-annotations, missing-type-self
-  "ANN102", # flake8-annotations, missing-type-cls
-  "ANN401", # flake8-annotations, dynamically-typed-expression
-  "B008",  # flake8-bugbear, function-call-argument-default
-  "COM812",  # flake8-commas, trailing-comma-missing
-  "D", # pydocstyle
-  "FA100", # flake8-future-annotations, future-rewritable-type-annotation
-  "PD", # pandas-vet
-  "PLR0913", # refactor, too-many-arguments
-  "PT012", # flake8-pytest-style, raises-with-multiple-statements
-  "PT013", # flake8-pytest-style, incorrect-pytest-import
-  "PYI041", # flake8-pyi, redundant-numeric-union
-  "PYI055", # flake8-pyi, unnecessary-type-union
-  "TCH001", # flake8-type-checking, typing-only-first-party-import
-  "TCH002", # flake8-type-checking, typing-only-third-party-import
-  "TCH003", # flake8-type-checking, typing-only-standard-library-import
-  "TRY200", # tryceratops, reraise-no-cause
-  "TRY301", # tryceratops, raise-within-try
-
-]
-select = ["ALL"]
-src = ["src", "tests"]
-target-version = "py39"
-
-[tool.ruff.flake8-tidy-imports]
-ban-relative-imports = "all"
+[tool.ruff.isort]
+known-first-party = ["utilities"]
 
 [tool.ruff.per-file-ignores]
-"src/tests/**/*.py" = [
-  "FBT001", # flake8-boolean-trap, boolean-positional-arg-in-function-definition
-  "FBT003", # flake8-boolean-trap, boolean-positional-value-in-function-call
-  "PLR2004", # refactor, magic-value-comparison
-  "S101", # flake8-bandit, assert-used
-
-]
 "src/utilities/_numbagg/*.py" = ["ALL"]

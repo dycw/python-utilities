@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from typing import Any
 
-from beartype import beartype
+from typing_extensions import override
 
 
 class _Meta(type):
@@ -8,7 +10,7 @@ class _Meta(type):
 
     instance: Any = None
 
-    @beartype
+    @override
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         if cls.instance is None:
             cls.instance = super().__call__(*args, **kwargs)
@@ -21,11 +23,11 @@ _REPR = "<sentinel>"
 class Sentinel(metaclass=_Meta):
     """Base class for the sentinel object."""
 
-    @beartype
+    @override
     def __repr__(self) -> str:
         return _REPR
 
-    @beartype
+    @override
     def __str__(self) -> str:
         return repr(self)
 

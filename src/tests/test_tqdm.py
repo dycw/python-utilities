@@ -1,4 +1,6 @@
-from typing import Any, Optional, Union
+from __future__ import annotations
+
+from typing import Any
 
 from pytest import mark, param
 from tqdm import tqdm as _tqdm
@@ -20,10 +22,7 @@ class TestGetTotal:
         ],
     )
     def test_main(
-        self,
-        total: Optional[Union[int, float]],
-        iterable: Any,
-        expected: Optional[Union[int, float]],
+        self, total: float | None, iterable: Any, expected: float | None
     ) -> None:
         assert _get_total(total, iterable) == expected
 

@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import datetime as dt
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import numpy as np
-from beartype import beartype
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes, arrays
@@ -28,7 +29,12 @@ from numpy import (
 )
 from numpy.typing import NDArray
 
-from utilities.hypothesis import floats_extra, lift_draw, lists_fixed_length, text_ascii
+from utilities.hypothesis import (
+    floats_extra,
+    lift_draw,
+    lists_fixed_length,
+    text_ascii,
+)
 from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
 from utilities.math.typing import IntNonNeg
 from utilities.numpy import (
@@ -59,26 +65,30 @@ from utilities.numpy.typing import (
 
 
 @composite
-@beartype
 def bool_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayB:
     """Strategy for generating arrays of booleans."""
     draw = lift_draw(_draw)
     strategy = cast(
         SearchStrategy[NDArrayB],
-        arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique)),
+        arrays(
+            bool,
+            draw(shape),
+            elements=booleans(),
+            fill=fill,
+            unique=draw(unique),
+        ),
     )
     return draw(strategy)
 
 
 @composite
-@beartype
 def concatenated_arrays(
     _draw: Any,
     strategy: SearchStrategy[NDArray[Any]],
@@ -107,9 +117,8 @@ def concatenated_arrays(
 
 
 @composite
-@beartype
 def datetime64_dtypes(
-    _draw: Any, /, *, kind: MaybeSearchStrategy[Optional[Datetime64Kind]] = None
+    _draw: Any, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
 ) -> Any:
     """Strategy for generating datetime64 dtypes."""
     draw = lift_draw(_draw)
@@ -117,7 +126,6 @@ def datetime64_dtypes(
     return datetime64_unit_to_dtype(unit)
 
 
-@beartype
 def datetime64_kinds() -> SearchStrategy[Datetime64Kind]:
     """Strategy for generating datetime64 kinds."""
     kinds: list[Datetime64Kind] = ["date", "time"]
@@ -125,9 +133,8 @@ def datetime64_kinds() -> SearchStrategy[Datetime64Kind]:
 
 
 @composite
-@beartype
 def datetime64_units(
-    _draw: Any, /, *, kind: MaybeSearchStrategy[Optional[Datetime64Kind]] = None
+    _draw: Any, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
 ) -> Datetime64Unit:
     """Strategy for generating datetime64 units."""
     draw = lift_draw(_draw)
@@ -148,23 +155,24 @@ def datetime64_units(
     ]
     kind_ = draw(kind)
     if kind_ is not None:
-        units = [unit for unit in units if datetime64_unit_to_kind(unit) == kind_]
+        units = [
+            unit for unit in units if datetime64_unit_to_kind(unit) == kind_
+        ]
     return draw(sampled_from(units))
 
 
 @composite
-@beartype
 def datetime64_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    unit: MaybeSearchStrategy[Datetime64Unit | None] = None,
+    min_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
+    max_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayD:
     """Strategy for generating arrays of datetime64s."""
@@ -180,20 +188,25 @@ def datetime64_arrays(
         valid_datetimes=valid_datetimes,
     )
     return draw(
-        arrays(dtype, draw(shape), elements=elements, fill=fill, unique=draw(unique))
+        arrays(
+            dtype,
+            draw(shape),
+            elements=elements,
+            fill=fill,
+            unique=draw(unique),
+        )
     )
 
 
 @composite
-@beartype
 def datetime64_indexes(
     _draw: Any,
     /,
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
-    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    unit: MaybeSearchStrategy[Datetime64Unit | None] = None,
+    min_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
+    max_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
     unique: MaybeSearchStrategy[bool] = True,
@@ -216,12 +229,11 @@ def datetime64_indexes(
     return np.sort(array) if sort else array
 
 
-@beartype
 def datetime64D_indexes(  # noqa: N802
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    min_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
+    max_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
     valid_dates: MaybeSearchStrategy[bool] = True,
     unique: MaybeSearchStrategy[bool] = True,
     sort: MaybeSearchStrategy[bool] = True,
@@ -239,14 +251,13 @@ def datetime64D_indexes(  # noqa: N802
 
 
 @composite
-@beartype
 def datetime64s(
     _draw: Any,
     /,
     *,
-    unit: MaybeSearchStrategy[Optional[Datetime64Unit]] = None,
-    min_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
-    max_value: MaybeSearchStrategy[Optional[Union[datetime64, int, dt.date]]] = None,
+    unit: MaybeSearchStrategy[Datetime64Unit | None] = None,
+    min_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
+    max_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
     valid_dates: MaybeSearchStrategy[bool] = False,
     valid_datetimes: MaybeSearchStrategy[bool] = False,
 ) -> datetime64:
@@ -256,7 +267,9 @@ def datetime64s(
     min_value_, max_value_ = (
         _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
     )
-    valid_dates_, valid_datetimes_ = (draw(vd) for vd in (valid_dates, valid_datetimes))
+    valid_dates_, valid_datetimes_ = (
+        draw(vd) for vd in (valid_dates, valid_datetimes)
+    )
     if valid_dates_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
             unit=cast(Optional[Datetime64Unit], unit_),
@@ -276,10 +289,9 @@ def datetime64s(
     return datetime64(i, unit_)
 
 
-@beartype
 def _datetime64s_convert(
-    value: Optional[Union[int, datetime64, dt.date]], /
-) -> Optional[int]:
+    value: int | datetime64 | dt.date | None, /
+) -> int | None:
     """Convert a min/max value supplied into `datetime64s`."""
     if (value is None) or isinstance(value, int):
         return value
@@ -290,13 +302,12 @@ def _datetime64s_convert(
     return _datetime64s_convert(date_to_datetime64(value))
 
 
-@beartype
 def _datetime64s_check_valid_dates(
     *,
-    unit: Optional[Datetime64Unit] = None,
-    min_value: Optional[int] = None,
-    max_value: Optional[int] = None,
-) -> tuple[Datetime64Unit, Optional[int], Optional[int]]:
+    unit: Datetime64Unit | None = None,
+    min_value: int | None = None,
+    max_value: int | None = None,
+) -> tuple[Datetime64Unit, int | None, int | None]:
     """Check/clip the bounds to generate valid `dt.date`s."""
     if (unit is not None) and (unit != "D"):
         msg = f"{unit=}"
@@ -312,13 +323,12 @@ def _datetime64s_check_valid_dates(
     return "D", min_value, max_value
 
 
-@beartype
 def _datetime64s_check_valid_datetimes(
     *,
-    unit: Optional[Datetime64Unit] = None,
-    min_value: Optional[int] = None,
-    max_value: Optional[int] = None,
-) -> tuple[Datetime64Unit, Optional[int], Optional[int]]:
+    unit: Datetime64Unit | None = None,
+    min_value: int | None = None,
+    max_value: int | None = None,
+) -> tuple[Datetime64Unit, int | None, int | None]:
     """Check/clip the bounds to generate valid `dt.datetime`s."""
     if (unit is not None) and (unit != "us"):
         msg = f"{unit=}"
@@ -334,15 +344,14 @@ def _datetime64s_check_valid_datetimes(
     return "us", min_value, max_value
 
 
-@beartype
 def datetime64us_indexes(
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
     min_value: MaybeSearchStrategy[
-        Optional[Union[datetime64, int, dt.datetime]]
+        datetime64 | int | dt.datetime | None
     ] = None,
     max_value: MaybeSearchStrategy[
-        Optional[Union[datetime64, int, dt.datetime]]
+        datetime64 | int | dt.datetime | None
     ] = None,
     valid_datetimes: MaybeSearchStrategy[bool] = True,
     unique: MaybeSearchStrategy[bool] = True,
@@ -361,20 +370,19 @@ def datetime64us_indexes(
 
 
 @composite
-@beartype
 def float_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[Optional[float]] = None,
-    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    min_value: MaybeSearchStrategy[float | None] = None,
+    max_value: MaybeSearchStrategy[float | None] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
     allow_inf: MaybeSearchStrategy[bool] = False,
     allow_pos_inf: MaybeSearchStrategy[bool] = False,
     allow_neg_inf: MaybeSearchStrategy[bool] = False,
     integral: MaybeSearchStrategy[bool] = False,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayF:
     """Strategy for generating arrays of floats."""
@@ -390,21 +398,26 @@ def float_arrays(
     )
     strategy = cast(
         SearchStrategy[NDArrayF],
-        arrays(float, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
+        arrays(
+            float,
+            draw(shape),
+            elements=elements,
+            fill=fill,
+            unique=draw(unique),
+        ),
     )
     return draw(strategy)
 
 
 @composite
-@beartype
 def int_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
-    fill: Optional[SearchStrategy[Any]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayI:
     """Strategy for generating arrays of ints."""
@@ -416,42 +429,41 @@ def int_arrays(
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy = cast(
         SearchStrategy[NDArrayI],
-        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
+        arrays(
+            int, draw(shape), elements=elements, fill=fill, unique=draw(unique)
+        ),
     )
     return draw(strategy)
 
 
-@beartype
 def int32s(
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[int]:
     """Strategy for generating int32s."""
     return _fixed_width_ints(int32, min_value=min_value, max_value=max_value)
 
 
-@beartype
 def int64s(
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[int]:
     """Strategy for generating int64s."""
     return _fixed_width_ints(int64, min_value=min_value, max_value=max_value)
 
 
 @composite
-@beartype
 def str_arrays(
     _draw: Any,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     allow_none: MaybeSearchStrategy[bool] = False,
-    fill: Optional[SearchStrategy[Any]] = None,
+    fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayO:
     """Strategy for generating arrays of strings."""
@@ -461,45 +473,50 @@ def str_arrays(
         elements |= none()
     strategy = cast(
         SearchStrategy[NDArrayO],
-        arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
+        arrays(
+            object,
+            draw(shape),
+            elements=elements,
+            fill=fill,
+            unique=draw(unique),
+        ),
     )
     return draw(strategy)
 
 
-@beartype
 def uint32s(
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[int]:
     """Strategy for generating uint32s."""
     return _fixed_width_ints(uint32, min_value=min_value, max_value=max_value)
 
 
-@beartype
 def uint64s(
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[int]:
     """Strategy for generating uint64s."""
     return _fixed_width_ints(uint64, min_value=min_value, max_value=max_value)
 
 
 @composite
-@beartype
 def _fixed_width_ints(
     _draw: Any,
     dtype: Any,
     /,
     *,
-    min_value: MaybeSearchStrategy[Optional[int]] = None,
-    max_value: MaybeSearchStrategy[Optional[int]] = None,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
 ) -> int:
     """Strategy for generating int64s."""
     draw = lift_draw(_draw)
     min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
     info = iinfo(dtype)
     min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
-    max_value_use = info.max if max_value_ is None else min(info.max, max_value_)
+    max_value_use = (
+        info.max if max_value_ is None else min(info.max, max_value_)
+    )
     return draw(integers(min_value_, max_value_use))

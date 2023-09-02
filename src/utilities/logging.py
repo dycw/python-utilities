@@ -1,12 +1,11 @@
+from __future__ import annotations
+
 from enum import Enum, unique
 from logging import basicConfig
-
-from beartype import beartype
 
 from utilities.platform.datetime import maybe_sub_pct_y
 
 
-@beartype
 def basic_config() -> None:
     """Do the basic config."""
     basicConfig(

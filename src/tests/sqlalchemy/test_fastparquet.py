@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, none
@@ -24,7 +25,7 @@ class TestSelectToParquet:
         stream=integers(1, 10) | none(),
     )
     def test_streamed_dataframe(
-        self, data: DataObject, engine: Engine, root: Path, stream: Optional[int]
+        self, data: DataObject, engine: Engine, root: Path, stream: int | None
     ) -> None:
         class Example(declarative_base()):  # does not work with a core table
             __tablename__ = "example"
@@ -34,6 +35,8 @@ class TestSelectToParquet:
         ensure_table_created(Example, engine)
         insert_items([(rows, Example)], engine)
         sel = select(Example.Id)
-        select_to_parquet(sel, engine, path := root.joinpath("df.parq"), stream=stream)
+        select_to_parquet(
+            sel, engine, path := root.joinpath("df.parq"), stream=stream
+        )
         dtypes = get_dtypes(path)
         assert dtypes == {"Id": Int64}

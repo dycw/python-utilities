@@ -1,12 +1,11 @@
-from re import sub
+from __future__ import annotations
 
-from beartype import beartype
+from re import sub
 
 from utilities.platform import SYSTEM, System
 from utilities.typing import never
 
 
-@beartype
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
     if SYSTEM is System.windows:  # pragma: os-ne-windows

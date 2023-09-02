@@ -1,8 +1,9 @@
-import numba
-
-import numpy as np
+from __future__ import annotations
 
 from functools import cached_property
+
+import numba
+import numpy as np
 
 
 def _nd_func_maker(cls, arg, **kwargs):
@@ -76,7 +77,9 @@ class NumbaNDMoving:
 
         for sig in signature:
             if not isinstance(sig, tuple):
-                raise TypeError(f"signatures for ndmoving must be tuples: {signature}")
+                raise TypeError(
+                    f"signatures for ndmoving must be tuples: {signature}"
+                )
         self.signature = signature
 
     @property

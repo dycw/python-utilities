@@ -6,7 +6,6 @@ from pathlib import Path
 from subprocess import check_call
 from typing import Any, cast
 
-from beartype import beartype
 from click import command, echo
 from click.testing import CliRunner
 from hypothesis import given
@@ -49,7 +48,6 @@ app_names = text_ascii(min_size=1).map(str.lower)
 
 
 class TestGetRepoRootConfig:
-    @beartype
     def test_exists(self, monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.chdir(tmp_path)
         _ = check_call(["git", "init"])  # noqa: S603, S607
@@ -57,17 +55,14 @@ class TestGetRepoRootConfig:
         expected = tmp_path.joinpath("config.toml")
         assert get_repo_root_config(cwd=tmp_path) == expected
 
-    @beartype
     def test_does_not_exist(self, tmp_path: Path) -> None:
         assert get_repo_root_config(cwd=tmp_path) is None
 
 
 class TestGetLoaders:
-    @beartype
     def test_success(self) -> None:
         _ = _get_loaders()
 
-    @beartype
     def test_error(self) -> None:
         with raises(AppNameContainsUnderscoreError):
             _ = _get_loaders(appname="app_name")
@@ -79,13 +74,14 @@ class TestLoadSettings:
         ("cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine),
         ],
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -106,15 +102,18 @@ class TestLoadSettings:
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
-        settings_loaded = load_settings(Settings, appname=appname, config_files=[file])
+        settings_loaded = load_settings(
+            Settings, appname=appname, config_files=[file]
+        )
         try:
             assert settings_loaded.value == value
         except AssertionError:
             assert settings_loaded.value.url == value.url
 
     @given(appname=app_names)
-    @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
-    @beartype
+    @mark.parametrize(
+        "cls", [param(dt.date), param(dt.time), param(dt.timedelta)]
+    )
     def test_errors(self, appname: str, cls: Any) -> None:
         @settings(frozen=True)
         class Settings:
@@ -130,13 +129,14 @@ class TestClickOptions:
         ("cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine),
         ],
     )
-    @beartype
     def test_main(
         self,
         data: DataObject,
@@ -156,7 +156,6 @@ class TestClickOptions:
 
         @command()
         @click_options(Config, appname=appname)
-        @beartype
         def cli1(config: Config, /) -> None:
             echo(f"value = {serialize(config.value)}")
 
@@ -174,7 +173,6 @@ class TestClickOptions:
 
         @command()
         @click_options(Config, appname=appname, config_files=[file])
-        @beartype
         def cli2(config: Config, /) -> None:
             echo(f"value = {serialize(config.value)}")
 
@@ -187,7 +185,6 @@ class TestClickOptions:
         assert result.stdout == f"value = {val_str}\n"
 
     @given(data=data())
-    @beartype
     def test_enum(self, data: DataObject) -> None:
         class Truth(enum.Enum):
             true = auto()
@@ -201,7 +198,6 @@ class TestClickOptions:
 
         @command()
         @click_options(Config)
-        @beartype
         def cli(config: Config, /) -> None:
             echo(f"truth = {config.value.name}")
 

@@ -1,6 +1,7 @@
-from typing import Any, Optional
+from __future__ import annotations
 
-from beartype import beartype
+from typing import Any
+
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import composite, integers
@@ -11,13 +12,12 @@ from utilities.hypothesis.typing import MaybeSearchStrategy
 
 
 @composite
-@beartype
 def versions(  # noqa: PLR0912
     _draw: Any,
     /,
     *,
-    min_version: MaybeSearchStrategy[Optional[Version]] = None,
-    max_version: MaybeSearchStrategy[Optional[Version]] = None,
+    min_version: MaybeSearchStrategy[Version | None] = None,
+    max_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Version:
     """Strategy for generating `Version`s."""
     draw = lift_draw(_draw)

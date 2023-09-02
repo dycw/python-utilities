@@ -1,7 +1,7 @@
-from re import search
-from typing import NoReturn, Union
+from __future__ import annotations
 
-from beartype import beartype
+from re import search
+from typing import NoReturn
 
 from utilities.text import ensure_str
 
@@ -10,9 +10,8 @@ class DirectoryExistsError(Exception):
     """Raised when a directory already exists."""
 
 
-@beartype
 def redirect_error(
-    old: Exception, pattern: str, new: Union[Exception, type[Exception]], /
+    old: Exception, pattern: str, new: Exception | type[Exception], /
 ) -> NoReturn:
     """Redirect an error if a matching string is found."""
     args = old.args

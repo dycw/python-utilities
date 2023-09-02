@@ -1,10 +1,12 @@
-from collections.abc import Hashable, Iterator, Mapping
-from contextlib import contextmanager
-from typing import Any, Optional, Union, cast
+from __future__ import annotations
 
-from beartype import beartype
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from typing import Any, cast
+
 from numpy import empty, ndarray
 from pandas import Index
+from typing_extensions import override
 from xarray import DataArray
 from xarray.core.types import ErrorOptionsWithWarn
 from zarr import Array, suppress
@@ -21,23 +23,23 @@ from utilities.zarr import (
 )
 
 
-@beartype
 def save_data_array_to_disk(
     array: DataArray,
     path: PathLike,
     /,
     *,
     overwrite: bool = False,
-    chunks: Union[bool, int, tuple[Optional[int], ...]] = True,
+    chunks: bool | int | tuple[int | None, ...] = True,
 ) -> None:
     """Save a `DataArray` to disk."""
+    name_use = None if (name := array.name) is None else ensure_str(name)
     with yield_data_array_on_disk(
         cast(Mapping[str, Any], array.coords),
         path,
         overwrite=overwrite,
         dtype=array.dtype,
         chunks=chunks,
-        name=array.name,
+        name=name_use,
     ) as z_array:
         if (values := array.to_numpy()).shape == ():
             z_array[:] = values.item()
@@ -46,7 +48,6 @@ def save_data_array_to_disk(
 
 
 @contextmanager
-@beartype
 def yield_data_array_on_disk(
     coords: Mapping[str, Any],
     path: PathLike,
@@ -55,11 +56,11 @@ def yield_data_array_on_disk(
     overwrite: bool = False,
     dtype: Any = float,
     fill_value: Any = sentinel,
-    chunks: Union[bool, int, tuple[Optional[int], ...]] = True,
-    name: Optional[Hashable] = None,
+    chunks: bool | int | tuple[int | None, ...] = True,
+    name: str | None = None,
 ) -> Iterator[Array]:
     """Save a `DataArray`, yielding a view into its values."""
-    indexes: dict[Hashable, NDArray1] = {}
+    indexes: dict[str, NDArray1] = {}
     for coord, value in coords.items():
         with suppress(NotOneDimensionalArrayError):
             indexes[coord] = _to_ndarray1(value)
@@ -79,7 +80,6 @@ def yield_data_array_on_disk(
         yield array
 
 
-@beartype
 def _to_ndarray1(x: Any, /) -> NDArray1:
     """Convert a coordinate into a 1-dimensional array."""
     if isinstance(x, ndarray):
@@ -104,33 +104,33 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     """A `DataArray` stored on disk."""
 
     @property
-    @beartype
-    def coords(self) -> dict[Hashable, Any]:
+    def coords(self) -> dict[str, Any]:
         """The coordinates of the underlying array."""
         return {coord: self._get_coord(coord) for coord in self.attrs["coords"]}
 
     @property
-    @beartype
     def da(self) -> DataArray:
         """Alias for `data_array`."""
         return self.data_array
 
     @property
-    @beartype
     def data_array(self) -> DataArray:
         """The underlying `DataArray`."""
         return DataArray(self.ndarray, self.coords, self.dims, self.name)
 
     @property
-    @beartype
-    def indexes(self) -> dict[str, Index]:
+    @override
+    def indexes(self) -> dict[str, Index[Any]]:  # type: ignore
         """The indexes of the underlying array."""
-        return {ensure_str(dim): Index(index) for dim, index in super().indexes.items()}
+        return {
+            ensure_str(dim): Index(index)
+            for dim, index in super().indexes.items()
+        }
 
-    @beartype
+    @override
     def isel(
         self,
-        indexers: Optional[Mapping[Hashable, IselIndexer]] = None,
+        indexers: Mapping[str, IselIndexer] | None = None,
         /,
         *,
         drop: bool = False,
@@ -149,39 +149,43 @@ class DataArrayOnDisk(NDArrayWithIndexes):
         )
 
     @property
-    @beartype
-    def name(self) -> Hashable:
+    def name(self) -> str | None:
         """The name of the underlying array."""
         return self.attrs["name"]
 
-    @beartype
+    @override
     def sel(
         self,
-        indexers: Optional[Mapping[Hashable, Any]] = None,
+        indexers: Mapping[str, Any] | None = None,
         /,
         *,
-        method: Optional[str] = None,
+        method: str | None = None,
         tolerance: Any = None,
         drop: bool = False,
         **indexer_kwargs: Any,
     ) -> DataArray:
         """Select orthogonally using index values."""
         empty = self._empty.sel(
-            indexers, method=method, tolerance=tolerance, drop=drop, **indexer_kwargs
+            indexers,
+            method=method,
+            tolerance=tolerance,
+            drop=drop,
+            **indexer_kwargs,
         )
         return DataArray(
-            super().sel(indexers, **indexer_kwargs), empty.coords, empty.dims, self.name
+            super().sel(indexers, **indexer_kwargs),
+            empty.coords,
+            empty.dims,
+            self.name,
         )
 
     @property
-    @beartype
     def _empty(self, /) -> DataArray:
         """An empty DataArray, for slicing."""
         return DataArray(
             empty(self.shape, dtype=bool), self.coords, self.dims, self.name
         )
 
-    @beartype
     def _get_coord(self, coord: str, /) -> Any:
         """Get a coordinate by name."""
         try:

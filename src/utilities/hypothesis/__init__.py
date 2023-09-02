@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator
@@ -7,9 +9,8 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from string import ascii_letters, printable
-from typing import Any, Optional, Protocol, TypedDict, TypeVar, cast, overload
+from typing import Any, Protocol, TypedDict, TypeVar, cast, overload
 
-from beartype import beartype
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -36,9 +37,8 @@ from utilities.text import ensure_str
 
 
 @contextmanager
-@beartype
 def assume_does_not_raise(
-    *exceptions: type[Exception], match: Optional[str] = None
+    *exceptions: type[Exception], match: str | None = None
 ) -> Iterator[None]:
     """Assume a set of exceptions are not raised.
 
@@ -58,7 +58,6 @@ def assume_does_not_raise(
 
 
 @composite
-@beartype
 def datetimes_utc(
     _draw: Any,
     /,
@@ -78,13 +77,12 @@ def datetimes_utc(
 
 
 @composite
-@beartype
 def floats_extra(
     _draw: Any,
     /,
     *,
-    min_value: MaybeSearchStrategy[Optional[float]] = None,
-    max_value: MaybeSearchStrategy[Optional[float]] = None,
+    min_value: MaybeSearchStrategy[float | None] = None,
+    max_value: MaybeSearchStrategy[float | None] = None,
     allow_nan: MaybeSearchStrategy[bool] = False,
     allow_inf: MaybeSearchStrategy[bool] = False,
     allow_pos_inf: MaybeSearchStrategy[bool] = False,
@@ -121,7 +119,6 @@ def floats_extra(
     return element
 
 
-@beartype
 def hashables() -> SearchStrategy[Hashable]:
     """Strategy for generating hashable elements."""
     return booleans() | integers() | none() | text_ascii()
@@ -146,7 +143,6 @@ class _MaybeDrawFn(Protocol):
 def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
     """Lift the `draw` function to handle non-`SearchStrategy` types."""
 
-    @beartype
     def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
         return draw(obj) if isinstance(obj, SearchStrategy) else obj
 
@@ -157,7 +153,6 @@ _TLFL = TypeVar("_TLFL")
 
 
 @composite
-@beartype
 def lists_fixed_length(
     _draw: Any,
     strategy: SearchStrategy[_TLFL],
@@ -182,7 +177,6 @@ _MAX_EXAMPLES: str = "MAX_EXAMPLES"
 _NO_SHRINK: str = "NO_SHRINK"
 
 
-@beartype
 def setup_hypothesis_profiles(
     *,
     max_examples: str = _MAX_EXAMPLES,
@@ -191,7 +185,6 @@ def setup_hypothesis_profiles(
 ) -> None:
     """Set up the hypothesis profiles."""
 
-    @beartype
     def yield_phases() -> Iterator[Phase]:
         yield Phase.explicit
         yield Phase.reuse
@@ -234,13 +227,12 @@ def setup_hypothesis_profiles(
 
 
 @composite
-@beartype
 def slices(
     _draw: Any,
     iter_len: int,
     /,
     *,
-    slice_len: MaybeSearchStrategy[Optional[int]] = None,
+    slice_len: MaybeSearchStrategy[int | None] = None,
 ) -> slice:
     """Strategy for generating continuous slices from an iterable."""
     draw = lift_draw(_draw)
@@ -255,7 +247,6 @@ def slices(
 
 
 @composite
-@beartype
 def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
     dir_ = TEMP_DIR.joinpath("hypothesis")
@@ -265,7 +256,6 @@ def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
 
 
 @composite
-@beartype
 def temp_paths(_draw: Any, /) -> Path:
     """Search strategy for paths to temporary directories."""
     temp_dir = _draw(temp_dirs())
@@ -278,11 +268,10 @@ def temp_paths(_draw: Any, /) -> Path:
     return SubPath(root)
 
 
-@beartype
 def text_ascii(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
@@ -294,11 +283,10 @@ def text_ascii(
     )
 
 
-@beartype
 def text_clean(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
@@ -310,11 +298,10 @@ def text_clean(
     )
 
 
-@beartype
 def text_printable(
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
@@ -333,11 +320,13 @@ def _draw_text(
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[Optional[int]] = None,
+    max_size: MaybeSearchStrategy[int | None] = None,
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> str:
     draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    drawn = draw(
+        text(alphabet, min_size=draw(min_size), max_size=draw(max_size))
+    )
     if draw(disallow_na):
         _ = assume(drawn != "NA")
     return drawn

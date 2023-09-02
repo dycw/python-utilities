@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import tzinfo
 
 from utilities.zoneinfo import HONG_KONG

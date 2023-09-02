@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from click import argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given

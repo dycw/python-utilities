@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from collections.abc import Callable
-from typing import Annotated, Any, Optional, Union, cast
+from typing import Annotated, Any, Union, cast
 
 import numpy as np
-from beartype import beartype
 from beartype.vale import Is, IsAttr, IsEqual
 from numpy import (
     bool_,
@@ -191,71 +192,70 @@ NDArrayO3 = Annotated[NDArrayO, NDim3]
 # checks
 
 
-@beartype
 def is_at_least(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y."""
     return (x >= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
-@beartype
 def is_at_least_or_nan(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y or x == nan."""
-    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
+        x
+    )
 
 
-@beartype
 def is_at_most(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y."""
     return (x <= y) | _is_close(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
 
-@beartype
 def is_at_most_or_nan(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y or x == nan."""
-    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
+        x
+    )
 
 
-@beartype
 def is_between(
     x: Any,
     low: Any,
     high: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
     low_equal_nan: bool = False,
     high_equal_nan: bool = False,
@@ -263,18 +263,19 @@ def is_between(
     """Check if low <= x <= high."""
     return is_at_least(
         x, low, rtol=rtol, atol=atol, equal_nan=equal_nan or low_equal_nan
-    ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
+    ) & is_at_most(
+        x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan
+    )
 
 
-@beartype
 def is_between_or_nan(
     x: Any,
     low: Any,
     high: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
     low_equal_nan: bool = False,
     high_equal_nan: bool = False,
@@ -292,116 +293,102 @@ def is_between_or_nan(
     ) | isnan(x)
 
 
-@beartype
 def is_finite_and_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf and x == int(x)."""
     return isfinite(x) & is_integral(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf and x == int(x), or x == nan."""
     return is_finite_and_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < 0."""
     return isfinite(x) & is_negative(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < 0 or x == nan."""
     return is_finite_and_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 <= x < inf."""
     return isfinite(x) & is_non_negative(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 <= x < inf or x == nan."""
     return is_finite_and_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x <= 0."""
     return isfinite(x) & is_non_positive(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x <= 0 or x == nan."""
     return is_finite_and_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if -inf < x < inf, x != 0."""
     return isfinite(x) & is_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0 or x == nan."""
     return is_finite_and_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_and_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 < x < inf."""
     return isfinite(x) & is_positive(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_finite_and_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if 0 < x < inf or x == nan."""
     return is_finite_and_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_finite_or_nan(x: Any, /) -> Any:
     """Check if -inf < x < inf or x == nan."""
     return isfinite(x) | isnan(x)
 
 
-@beartype
 def is_greater_than(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y."""
@@ -410,44 +397,42 @@ def is_greater_than(
     )
 
 
-@beartype
 def is_greater_than_or_nan(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y or x == nan."""
-    return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_greater_than(
+        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
+    ) | isnan(x)
 
 
-@beartype
 def is_integral(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == int(x)."""
     return _is_close(x, rint(x), rtol=rtol, atol=atol)
 
 
-@beartype
 def is_integral_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == int(x) or x == nan."""
     return is_integral(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_less_than(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y."""
@@ -456,158 +441,142 @@ def is_less_than(
     )
 
 
-@beartype
 def is_less_than_or_nan(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y or x == nan."""
-    return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
+    return is_less_than(
+        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
+    ) | isnan(x)
 
 
-@beartype
 def is_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x < 0."""
     return is_less_than(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x < 0 or x == nan."""
     return is_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_negative(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x >= 0."""
     return is_at_least(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_negative_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x >= 0 or x == nan."""
     return is_non_negative(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x <= 0."""
     return is_at_most(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x <=0 or x == nan."""
     return is_non_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_non_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0."""
     return ~_is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_non_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x != 0 or x == nan."""
     return is_non_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_positive(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0."""
     return is_greater_than(x, 0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_positive_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0."""
     return _is_close(x, 0.0, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_finite_and_non_micro(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0)."""
     zero = 0.0
     return (x == zero) | is_finite_and_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_finite_and_non_micro_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0, or -inf < x < inf and ~isclose(x, 0), or x == nan."""
     return is_zero_or_finite_and_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x > 0 or x == nan."""
     return is_zero(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def is_zero_or_non_micro(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0 or ~isclose(x, 0)."""
     zero = 0.0
     return (x == zero) | is_non_zero(x, rtol=rtol, atol=atol)
 
 
-@beartype
 def is_zero_or_non_micro_or_nan(
-    x: Any, /, *, rtol: Optional[float] = None, atol: Optional[float] = None
+    x: Any, /, *, rtol: float | None = None, atol: float | None = None
 ) -> Any:
     """Check if x == 0 or ~isclose(x, 0) or x == nan."""
     return is_zero_or_non_micro(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-@beartype
 def _is_close(
     x: Any,
     y: Any,
     /,
     *,
-    rtol: Optional[float] = None,
-    atol: Optional[float] = None,
+    rtol: float | None = None,
+    atol: float | None = None,
     equal_nan: bool = False,
 ) -> Any:
     """Check if x == y."""
@@ -623,13 +592,11 @@ def _is_close(
 # lifted checks
 
 
-@beartype
 def _lift(check: Callable[..., Any], /) -> Any:
     """Lift a check to work on a subset of a float array."""
     rng = default_rng()
 
-    @beartype
-    def predicate(array: Union[NDArrayI, NDArrayF], /) -> bool:
+    def predicate(array: NDArrayI | NDArrayF, /) -> bool:
         if (size := array.size) == 0:
             return True
         if size == 1:
@@ -670,7 +637,9 @@ _is_positive = _lift(is_positive)
 _is_positive_or_nan = _lift(is_positive_or_nan)
 _is_zero = _lift(is_zero)
 _is_zero_or_finite_and_non_micro = _lift(is_zero_or_finite_and_non_micro)
-_is_zero_or_finite_and_non_micro_or_nan = _lift(is_zero_or_finite_and_non_micro_or_nan)
+_is_zero_or_finite_and_non_micro_or_nan = _lift(
+    is_zero_or_finite_and_non_micro_or_nan
+)
 _is_zero_or_nan = _lift(is_zero_or_nan)
 _is_zero_or_non_micro = _lift(is_zero_or_non_micro)
 _is_zero_or_non_micro_or_nan = _lift(is_zero_or_non_micro_or_nan)
@@ -714,7 +683,9 @@ NDArrayFPos = Annotated[NDArrayF, _is_positive]
 NDArrayFPosNan = Annotated[NDArrayF, _is_positive_or_nan]
 NDArrayFZr = Annotated[NDArrayF, _is_zero]
 NDArrayFZrFinNonMic = Annotated[NDArrayF, _is_zero_or_finite_and_non_micro]
-NDArrayFZrFinNonMicNan = Annotated[NDArrayF, _is_zero_or_finite_and_non_micro_or_nan]
+NDArrayFZrFinNonMicNan = Annotated[
+    NDArrayF, _is_zero_or_finite_and_non_micro_or_nan
+]
 NDArrayFZrNan = Annotated[NDArrayF, _is_zero_or_nan]
 NDArrayFZrNonMic = Annotated[NDArrayF, _is_zero_or_non_micro]
 NDArrayFZrNonMicNan = Annotated[NDArrayF, _is_zero_or_non_micro_or_nan]
@@ -755,11 +726,17 @@ NDArrayF0FinIntNan = Annotated[NDArrayF, NDim0 & _is_finite_and_integral_or_nan]
 NDArrayF0FinNeg = Annotated[NDArrayF, NDim0 & _is_finite_and_negative]
 NDArrayF0FinNegNan = Annotated[NDArrayF, NDim0 & _is_finite_and_negative_or_nan]
 NDArrayF0FinNonNeg = Annotated[NDArrayF, NDim0 & _is_finite_and_non_negative]
-NDArrayF0FinNonNegNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_negative_or_nan]
+NDArrayF0FinNonNegNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF0FinNonPos = Annotated[NDArrayF, NDim0 & _is_finite_and_non_positive]
-NDArrayF0FinNonPosNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_positive_or_nan]
+NDArrayF0FinNonPosNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF0FinNonZr = Annotated[NDArrayF, NDim0 & _is_finite_and_non_zero]
-NDArrayF0FinNonZrNan = Annotated[NDArrayF, NDim0 & _is_finite_and_non_zero_or_nan]
+NDArrayF0FinNonZrNan = Annotated[
+    NDArrayF, NDim0 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF0FinPos = Annotated[NDArrayF, NDim0 & _is_finite_and_positive]
 NDArrayF0FinPosNan = Annotated[NDArrayF, NDim0 & _is_finite_and_positive_or_nan]
 NDArrayF0FinNan = Annotated[NDArrayF, NDim0 & _is_finite_or_nan]
@@ -776,7 +753,9 @@ NDArrayF0NonZrNan = Annotated[NDArrayF, NDim0 & _is_non_zero_or_nan]
 NDArrayF0Pos = Annotated[NDArrayF, NDim0 & _is_positive]
 NDArrayF0PosNan = Annotated[NDArrayF, NDim0 & _is_positive_or_nan]
 NDArrayF0Zr = Annotated[NDArrayF, NDim0 & _is_zero]
-NDArrayF0ZrFinNonMic = Annotated[NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro]
+NDArrayF0ZrFinNonMic = Annotated[
+    NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF0ZrFinNonMicNan = Annotated[
     NDArrayF, NDim0 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -790,11 +769,17 @@ NDArrayF1FinIntNan = Annotated[NDArrayF, NDim1 & _is_finite_and_integral_or_nan]
 NDArrayF1FinNeg = Annotated[NDArrayF, NDim1 & _is_finite_and_negative]
 NDArrayF1FinNegNan = Annotated[NDArrayF, NDim1 & _is_finite_and_negative_or_nan]
 NDArrayF1FinNonNeg = Annotated[NDArrayF, NDim1 & _is_finite_and_non_negative]
-NDArrayF1FinNonNegNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_negative_or_nan]
+NDArrayF1FinNonNegNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF1FinNonPos = Annotated[NDArrayF, NDim1 & _is_finite_and_non_positive]
-NDArrayF1FinNonPosNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_positive_or_nan]
+NDArrayF1FinNonPosNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF1FinNonZr = Annotated[NDArrayF, NDim1 & _is_finite_and_non_zero]
-NDArrayF1FinNonZrNan = Annotated[NDArrayF, NDim1 & _is_finite_and_non_zero_or_nan]
+NDArrayF1FinNonZrNan = Annotated[
+    NDArrayF, NDim1 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF1FinPos = Annotated[NDArrayF, NDim1 & _is_finite_and_positive]
 NDArrayF1FinPosNan = Annotated[NDArrayF, NDim1 & _is_finite_and_positive_or_nan]
 NDArrayF1FinNan = Annotated[NDArrayF, NDim1 & _is_finite_or_nan]
@@ -811,7 +796,9 @@ NDArrayF1NonZrNan = Annotated[NDArrayF, NDim1 & _is_non_zero_or_nan]
 NDArrayF1Pos = Annotated[NDArrayF, NDim1 & _is_positive]
 NDArrayF1PosNan = Annotated[NDArrayF, NDim1 & _is_positive_or_nan]
 NDArrayF1Zr = Annotated[NDArrayF, NDim1 & _is_zero]
-NDArrayF1ZrFinNonMic = Annotated[NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro]
+NDArrayF1ZrFinNonMic = Annotated[
+    NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF1ZrFinNonMicNan = Annotated[
     NDArrayF, NDim1 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -825,11 +812,17 @@ NDArrayF2FinIntNan = Annotated[NDArrayF, NDim2 & _is_finite_and_integral_or_nan]
 NDArrayF2FinNeg = Annotated[NDArrayF, NDim2 & _is_finite_and_negative]
 NDArrayF2FinNegNan = Annotated[NDArrayF, NDim2 & _is_finite_and_negative_or_nan]
 NDArrayF2FinNonNeg = Annotated[NDArrayF, NDim2 & _is_finite_and_non_negative]
-NDArrayF2FinNonNegNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_negative_or_nan]
+NDArrayF2FinNonNegNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF2FinNonPos = Annotated[NDArrayF, NDim2 & _is_finite_and_non_positive]
-NDArrayF2FinNonPosNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_positive_or_nan]
+NDArrayF2FinNonPosNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF2FinNonZr = Annotated[NDArrayF, NDim2 & _is_finite_and_non_zero]
-NDArrayF2FinNonZrNan = Annotated[NDArrayF, NDim2 & _is_finite_and_non_zero_or_nan]
+NDArrayF2FinNonZrNan = Annotated[
+    NDArrayF, NDim2 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF2FinPos = Annotated[NDArrayF, NDim2 & _is_finite_and_positive]
 NDArrayF2FinPosNan = Annotated[NDArrayF, NDim2 & _is_finite_and_positive_or_nan]
 NDArrayF2FinNan = Annotated[NDArrayF, NDim2 & _is_finite_or_nan]
@@ -846,7 +839,9 @@ NDArrayF2NonZrNan = Annotated[NDArrayF, NDim2 & _is_non_zero_or_nan]
 NDArrayF2Pos = Annotated[NDArrayF, NDim2 & _is_positive]
 NDArrayF2PosNan = Annotated[NDArrayF, NDim2 & _is_positive_or_nan]
 NDArrayF2Zr = Annotated[NDArrayF, NDim2 & _is_zero]
-NDArrayF2ZrFinNonMic = Annotated[NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro]
+NDArrayF2ZrFinNonMic = Annotated[
+    NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF2ZrFinNonMicNan = Annotated[
     NDArrayF, NDim2 & _is_zero_or_finite_and_non_micro_or_nan
 ]
@@ -860,11 +855,17 @@ NDArrayF3FinIntNan = Annotated[NDArrayF, NDim3 & _is_finite_and_integral_or_nan]
 NDArrayF3FinNeg = Annotated[NDArrayF, NDim3 & _is_finite_and_negative]
 NDArrayF3FinNegNan = Annotated[NDArrayF, NDim3 & _is_finite_and_negative_or_nan]
 NDArrayF3FinNonNeg = Annotated[NDArrayF, NDim3 & _is_finite_and_non_negative]
-NDArrayF3FinNonNegNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_negative_or_nan]
+NDArrayF3FinNonNegNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_negative_or_nan
+]
 NDArrayF3FinNonPos = Annotated[NDArrayF, NDim3 & _is_finite_and_non_positive]
-NDArrayF3FinNonPosNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_positive_or_nan]
+NDArrayF3FinNonPosNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_positive_or_nan
+]
 NDArrayF3FinNonZr = Annotated[NDArrayF, NDim3 & _is_finite_and_non_zero]
-NDArrayF3FinNonZrNan = Annotated[NDArrayF, NDim3 & _is_finite_and_non_zero_or_nan]
+NDArrayF3FinNonZrNan = Annotated[
+    NDArrayF, NDim3 & _is_finite_and_non_zero_or_nan
+]
 NDArrayF3FinPos = Annotated[NDArrayF, NDim3 & _is_finite_and_positive]
 NDArrayF3FinPosNan = Annotated[NDArrayF, NDim3 & _is_finite_and_positive_or_nan]
 NDArrayF3FinNan = Annotated[NDArrayF, NDim3 & _is_finite_or_nan]
@@ -881,7 +882,9 @@ NDArrayF3NonZrNan = Annotated[NDArrayF, NDim3 & _is_non_zero_or_nan]
 NDArrayF3Pos = Annotated[NDArrayF, NDim3 & _is_positive]
 NDArrayF3PosNan = Annotated[NDArrayF, NDim3 & _is_positive_or_nan]
 NDArrayF3Zr = Annotated[NDArrayF, NDim3 & _is_zero]
-NDArrayF3ZrFinNonMic = Annotated[NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro]
+NDArrayF3ZrFinNonMic = Annotated[
+    NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro
+]
 NDArrayF3ZrFinNonMicNan = Annotated[
     NDArrayF, NDim3 & _is_zero_or_finite_and_non_micro_or_nan
 ]

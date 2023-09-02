@@ -1,6 +1,9 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
 from functools import partial
 from operator import neg, pow
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal
 
 from pytest import mark, param
 
@@ -21,9 +24,9 @@ class TestGetDesc:
     )
     def test_main(
         self,
-        desc: Union[Optional[str], Sentinel],
+        desc: str | None | Sentinel,
         func: Callable[..., Any],
-        expected: dict[str, str],
+        expected: Mapping[str, str],
     ) -> None:
         assert _get_desc(desc, func) == expected
 
@@ -32,7 +35,9 @@ class TestGetDesc:
             def __call__(self) -> None:
                 return
 
-        assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}
+        assert _get_desc(sentinel, Example()) == {
+            "desc": get_class_name(Example)
+        }
 
 
 class TestPMap:
@@ -75,7 +80,10 @@ class TestPStarMap:
         self, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pstarmap(
-            pow, [(2, 5), (3, 2), (10, 3)], parallelism=parallelism, n_jobs=n_jobs
+            pow,
+            [(2, 5), (3, 2), (10, 3)],
+            parallelism=parallelism,
+            n_jobs=n_jobs,
         )
         expected = [32, 9, 1000]
         assert result == expected

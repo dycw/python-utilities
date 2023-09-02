@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import numpy as np
 from numba import float32, float64
+
 from utilities._numbagg.decorators import ndmovingexp
 
 
-@ndmovingexp([(float32[:], float32, float32[:]), (float64[:], float64, float64[:])])
+@ndmovingexp(
+    [(float32[:], float32, float32[:]), (float64[:], float64, float64[:])]
+)
 def move_exp_nanmean(a, alpha, out):
     # Inspired by pandas:
     # https://github.com/pandas-dev/pandas/blob/1.2.x/pandas/_libs/window/aggregations.pyx#L1559.
@@ -31,9 +36,9 @@ def move_exp_nanmean(a, alpha, out):
                 if is_observation:
                     # avoid numerical errors on constant series
                     if weighted_avg != cur:
-                        weighted_avg = ((old_wt * weighted_avg) + (new_wt * cur)) / (
-                            old_wt + new_wt
-                        )
+                        weighted_avg = (
+                            (old_wt * weighted_avg) + (new_wt * cur)
+                        ) / (old_wt + new_wt)
                     old_wt += new_wt
         elif is_observation:
             # The first non-nan value.
@@ -42,7 +47,9 @@ def move_exp_nanmean(a, alpha, out):
         out[i] = weighted_avg
 
 
-@ndmovingexp([(float32[:], float32, float32[:]), (float64[:], float64, float64[:])])
+@ndmovingexp(
+    [(float32[:], float32, float32[:]), (float64[:], float64, float64[:])]
+)
 def move_exp_nansum(a, alpha, out):
     """
     Calculates the exponentially decayed sum.

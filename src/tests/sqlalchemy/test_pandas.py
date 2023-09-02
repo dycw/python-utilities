@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Sized
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import sqlalchemy
 from hypothesis import given
@@ -68,7 +70,9 @@ from utilities.types import NoneType
 
 class TestCheckSelectForDuplicates:
     def test_error(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         sel = select(table.c.id, table.c.id)
         with raises(DuplicateColumnError):
             _check_select_for_duplicates(sel)
@@ -108,7 +112,9 @@ class TestCheckSeriesAgainstTableColumn:
     def test_allow_naive_datetimes(self) -> None:
         series = Series([], dtype=datetime64ns)
         column = Column("id", DateTime)
-        _check_series_against_table_column(series, column, allow_naive_datetimes=True)
+        _check_series_against_table_column(
+            series, column, allow_naive_datetimes=True
+        )
 
 
 class TestDataFrameColumnsToSnake:
@@ -122,7 +128,9 @@ class TestDataFrameColumnsToSnake:
 class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
     def test_main(self, data: DataObject, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
@@ -135,7 +143,9 @@ class TestInsertDataFrame:
 class TestInsertItems:
     @given(data=data(), engine=sqlite_engines())
     def test_lists_of_tuples(self, data: DataObject, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         insert_items([(rows, table)], engine)
@@ -144,8 +154,12 @@ class TestInsertItems:
         assert res == len(rows)
 
     @given(data=data(), engine=sqlite_engines())
-    def test_dataframe_with_table(self, data: DataObject, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+    def test_dataframe_with_table(
+        self, data: DataObject, engine: Engine
+    ) -> None:
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
@@ -173,7 +187,9 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines())
     def test_type_error(self, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         items = [(None, table)]
         with raises(TypeError, match="Invalid type: first="):
             insert_items(items, engine)
@@ -182,12 +198,20 @@ class TestInsertItems:
 class TestParseSeriesAgainstTable:
     @mark.parametrize(
         ("series_name", "table_column_name", "snake"),
-        [param("id", "id", False), param("id", "Id", True), param("Id", "id", True)],
+        [
+            param("id", "id", False),
+            param("id", "Id", True),
+            param("Id", "id", True),
+        ],
     )
-    def test_main(self, series_name: str, table_column_name: str, snake: bool) -> None:
+    def test_main(
+        self, *, series_name: str, table_column_name: str, snake: bool
+    ) -> None:
         series = Series([], dtype=int, name=series_name)
         table = Table(
-            "example", MetaData(), Column(table_column_name, Integer, primary_key=True)
+            "example",
+            MetaData(),
+            Column(table_column_name, Integer, primary_key=True),
         )
         key, _ = _parse_series_against_table(series, table, snake=snake)
         assert key == table_column_name
@@ -199,18 +223,22 @@ class TestParseSeriesAgainstTable:
             param(False, SeriesNameNotInTableError),
         ],
     )
-    def test_error(self, snake: bool, error: type[Exception]) -> None:
+    def test_error(self, *, snake: bool, error: type[Exception]) -> None:
         series = Series([], dtype=int, name="name")
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         with raises(error):
             _ = _parse_series_against_table(series, table, snake=snake)
 
 
 class TestRowsToDataFrame:
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(("col_name", "snake"), [param("id", False), param("Id", True)])
+    @mark.parametrize(
+        ("col_name", "snake"), [param("id", False), param("Id", True)]
+    )
     def test_main(
-        self, data: DataObject, col_name: str, engine: Engine, snake: bool
+        self, *, data: DataObject, col_name: str, engine: Engine, snake: bool
     ) -> None:
         table = Table(
             "example", MetaData(), Column(col_name, Integer, primary_key=True)
@@ -227,11 +255,15 @@ class TestRowsToDataFrame:
 
 
 class TestSelectToDataFrame:
-    @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none())
+    @given(
+        data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none()
+    )
     def test_main(
-        self, data: DataObject, engine: Engine, stream: Optional[int]
+        self, data: DataObject, engine: Engine, stream: int | None
     ) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
@@ -250,7 +282,9 @@ class TestSelectToDataFrame:
 class TestStreamDataFrames:
     @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
     def test_main(self, data: DataObject, engine: Engine, stream: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
@@ -260,7 +294,9 @@ class TestStreamDataFrames:
 
     @given(engine=sqlite_engines())
     def test_non_positive_stream(self, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        table = Table(
+            "example", MetaData(), Column("id", Integer, primary_key=True)
+        )
         with raises(NonPositiveStreamError):
             _ = list(_stream_dataframes(select(table), engine, 0))
 
@@ -291,7 +327,10 @@ class TestYieldDataFrameRowsAsDicts:
             param(booleans() | none(), boolean, Boolean, (bool, NoneType)),
             param(dates_pd(), datetime64ns, Date, dt.date),
             param(
-                dates_pd() | just(NaT) | none(), datetime64ns, Date, (dt.date, NoneType)
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                Date,
+                (dt.date, NoneType),
             ),
             param(datetimes_pd(), datetime64nsutc, DateTime, dt.datetime),
             param(
@@ -334,7 +373,11 @@ class TestYieldInsertionElements:
             param(booleans(), bool, bool),
             param(booleans() | none(), boolean, (bool, NoneType)),
             param(dates_pd(), datetime64ns, dt.date),
-            param(dates_pd() | just(NaT) | none(), datetime64ns, (dt.date, NoneType)),
+            param(
+                dates_pd() | just(NaT) | none(),
+                datetime64ns,
+                (dt.date, NoneType),
+            ),
             param(datetimes_pd(), datetime64nsutc, dt.datetime),
             param(
                 datetimes_pd() | just(NaT) | none(),
@@ -353,7 +396,7 @@ class TestYieldInsertionElements:
         data: DataObject,
         elements: SearchStrategy[Any],
         dtype: Any,
-        expected: Union[type, tuple[type, ...]],
+        expected: type | tuple[type, ...],
     ) -> None:
         values = data.draw(lists(elements, max_size=10))
         series = Series(values, dtype=dtype)
@@ -362,7 +405,9 @@ class TestYieldInsertionElements:
 
     @given(date=dates_pd())
     def test_dates_with_time_components_error(self, date: dt.date) -> None:
-        series = Series([dt.datetime.combine(date, dt.time(12))], dtype=datetime64ns)
+        series = Series(
+            [dt.datetime.combine(date, dt.time(12))], dtype=datetime64ns
+        )
         with raises(DatesWithTimeComponentsError):
             _ = list(_yield_insertion_elements(series))
 

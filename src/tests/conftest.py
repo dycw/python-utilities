@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from os import getenv
 from typing import TypedDict, cast
 
@@ -11,7 +13,8 @@ class Kwargs(TypedDict, total=False):
 
 
 kwargs = cast(
-    Kwargs, {"deadline": None, "print_blob": True, "report_multiple_bugs": False}
+    Kwargs,
+    {"deadline": None, "print_blob": True, "report_multiple_bugs": False},
 )
 settings.register_profile("default", max_examples=100, **kwargs)
 settings.register_profile("dev", max_examples=10, **kwargs)

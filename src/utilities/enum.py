@@ -1,20 +1,20 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
-from beartype import beartype
+from typing_extensions import override
 
-from utilities.sys import PYTHON_AT_LEAST_3_11
-
-if PYTHON_AT_LEAST_3_11:  # pragma: version-le-310
-    from enum import StrEnum as _StrEnum  # type:ignore[]  # pragma: version-ne-310
-else:  # pragma: version-ge-311
+try:
+    from enum import StrEnum as _StrEnum  # type: ignore
+except ImportError:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
         """An enum whose elements are themselves strings."""
 
         @staticmethod
-        @beartype
+        @override
         def _generate_next_value_(
             name: str, start: Any, count: int, last_values: Any
         ) -> str:
@@ -28,8 +28,9 @@ StrEnum = _StrEnum
 _E = TypeVar("_E", bound=Enum)
 
 
-@beartype
-def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
+def parse_enum(
+    enum: type[_E], member: str, /, *, case_sensitive: bool = True
+) -> _E:
     """Parse a string into the enum."""
     enum_ = cast(Iterable[Any], enum)
     if case_sensitive:
@@ -54,9 +55,8 @@ class MultipleMatchingMembersError(Exception):
     """Raised when an iterable contains multiple elements."""
 
 
-@beartype
 def ensure_enum(
-    enum: type[_E], member: Union[_E, str], /, *, case_sensitive: bool = True
+    enum: type[_E], member: _E | str, /, *, case_sensitive: bool = True
 ) -> _E:
     """Ensure the object is a member of the enum."""
     if isinstance(member, Enum):

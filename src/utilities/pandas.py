@@ -1,37 +1,44 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from typing import Any, Literal, NoReturn, Optional, Union, cast
+from typing import Any, Literal, NoReturn, cast
 
-from beartype import beartype
 from numpy import where
-from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp
+from pandas import (
+    NA,
+    DataFrame,
+    DatetimeTZDtype,
+    Index,
+    NaT,
+    RangeIndex,
+    Series,
+    Timestamp,
+)
 from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.numpy import has_dtype
 from utilities.numpy.typing import NDArray1, datetime64ns
-from utilities.pandas.typing import (
-    Int64,
-    boolean,
-    category,
-    datetime64nshk,
-    datetime64nsutc,
-    string,
-)
+from utilities.zoneinfo import HONG_KONG
 
-_ = (Int64, boolean, category, string, datetime64nsutc, datetime64nshk)
+Int64 = "Int64"
+boolean = "boolean"
+category = "category"
+string = "string"
+datetime64nsutc = DatetimeTZDtype(tz=UTC)
+datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
 
 
-@beartype
 def check_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: Optional[Sequence[Hashable]] = None,
-    dtypes: Optional[Mapping[Hashable, Any]] = None,
+    columns: Sequence[Hashable] | None = None,
+    dtypes: Mapping[Hashable, Any] | None = None,
 ) -> None:
     """Check if the properties of a DataFrame."""
     check_range_index(df.index)
@@ -58,17 +65,16 @@ class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-@beartype
-def check_range_index(obj: Union[Index, Series, DataFrame], /) -> None:
+def check_range_index(obj: Index[Any] | Series[Any] | DataFrame, /) -> None:
     """Check if a RangeIndex is the default one."""
     if isinstance(obj, Index):
         if not isinstance(obj, RangeIndex):
             msg = f"Invalid type: {obj=}"
             raise TypeError(msg)
-        if obj.start != 0:
+        if cast(int, obj.start) != 0:
             msg = f"{obj=}"
             raise RangeIndexStartError(msg)
-        if obj.step != 1:
+        if cast(int, obj.step) != 1:
             msg = f"{obj=}"
             raise RangeIndexStepError(msg)
         if obj.name is not None:
@@ -109,7 +115,6 @@ class DataFrameRangeIndexError(ValueError):
     """Raised when DataFrame does not have a standard RangeIndex."""
 
 
-@beartype
 def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
     """Redirect to the `EmptyPandasConcatError`."""
     redirect_error(error, "No objects to concatenate", EmptyPandasConcatError)
@@ -119,22 +124,19 @@ class EmptyPandasConcatError(ValueError):
     """Raised when there are no objects to concatenate."""
 
 
-@beartype
-def series_max(*series: Series) -> Series:
+def series_max(*series: Series[Any]) -> Series[Any]:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
 
 
-@beartype
-def series_min(*series: Series) -> Series:
+def series_min(*series: Series[Any]) -> Series[Any]:
     """Compute the minimum of a set of Series."""
     return reduce(partial(_series_minmax, kind="upper"), series)
 
 
-@beartype
 def _series_minmax(
-    x: Series, y: Series, /, *, kind: Literal["lower", "upper"]
-) -> Series:
+    x: Series[Any], y: Series[Any], /, *, kind: Literal["lower", "upper"]
+) -> Series[Any]:
     """Compute the minimum/maximum of a pair of Series."""
     assert_index_equal(x.index, y.index)
     if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
@@ -145,7 +147,7 @@ def _series_minmax(
         i = first.notna() & second.isna()
         out.loc[i] = first.loc[i]
     i = x.notna() & y.notna()
-    out.loc[i] = x.loc[i].clip(**{kind: y.loc[i]})
+    out.loc[i] = x.loc[i].clip(**{kind: cast(Any, y.loc[i])})
     out.loc[x.isna() & y.isna()] = NA
     return out
 
@@ -154,14 +156,14 @@ class DifferentDTypeError(ValueError):
     """Raised when two series have different dtypes."""
 
 
-@beartype
 def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
     """Convert a timestamp to a date."""
     return timestamp_to_datetime(timestamp, warn=warn).date()
 
 
-@beartype
-def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetime:
+def timestamp_to_datetime(
+    timestamp: Any, /, *, warn: bool = True
+) -> dt.datetime:
     """Convert a timestamp to a datetime."""
     if timestamp is NaT:
         msg = f"{timestamp=}"
@@ -176,8 +178,9 @@ class TimestampIsNaTError(ValueError):
     """Raised when a NaT is received."""
 
 
-@beartype
-def _timestamp_minmax_to_date(timestamp: Timestamp, method_name: str, /) -> dt.date:
+def _timestamp_minmax_to_date(
+    timestamp: Timestamp, method_name: str, /
+) -> dt.date:
     """Get the maximum Timestamp as a date."""
     method = getattr(timestamp, method_name)
     rounded = cast(Timestamp, method("D"))
@@ -188,7 +191,6 @@ TIMESTAMP_MIN_AS_DATE = _timestamp_minmax_to_date(Timestamp.min, "ceil")
 TIMESTAMP_MAX_AS_DATE = _timestamp_minmax_to_date(Timestamp.max, "floor")
 
 
-@beartype
 def _timestamp_minmax_to_datetime(
     timestamp: Timestamp, method_name: str, /
 ) -> dt.datetime:
@@ -199,11 +201,12 @@ def _timestamp_minmax_to_datetime(
 
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
-TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor")
+TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
+    Timestamp.max, "floor"
+)
 
 
-@beartype
-def to_numpy(series: Series, /) -> NDArray1:
+def to_numpy(series: Series[Any], /) -> NDArray1:
     """Convert a series into a 1-dimensional `ndarray`."""
     if has_dtype(series, (bool, datetime64ns, int, float)):
         return series.to_numpy()

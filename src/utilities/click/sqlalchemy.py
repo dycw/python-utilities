@@ -1,8 +1,10 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import sqlalchemy
-from beartype import beartype
 from click import Context, Parameter, ParamType
+from typing_extensions import override
 
 from utilities.sqlalchemy import ParseEngineError, ensure_engine
 
@@ -12,9 +14,9 @@ class Engine(ParamType):
 
     name = "engine"
 
-    @beartype
+    @override
     def convert(
-        self, value: Any, param: Optional[Parameter], ctx: Optional[Context]
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> sqlalchemy.Engine:
         """Convert a value into the `Engine` type."""
         try:

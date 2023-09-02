@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from utilities.math.typing import (
     is_at_least,
     is_at_least_or_nan,

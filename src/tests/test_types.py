@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark, param, raises
 
-from utilities.types import NoneType, Number, ensure_class, issubclass_except_bool_int
+from utilities.types import (
+    NoneType,
+    Number,
+    ensure_class,
+    issubclass_except_bool_int,
+)
 
 
 class TestEnsureClass:
@@ -18,7 +25,11 @@ class TestEnsureClass:
 class TestIsSubclassExceptBoolInt:
     @mark.parametrize(
         ("x", "y", "expected"),
-        [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
+        [
+            param(bool, bool, True),
+            param(bool, int, False),
+            param(int, int, True),
+        ],
     )
     def test_main(self, x: type[Any], y: type[Any], expected: bool) -> None:
         assert issubclass_except_bool_int(x, y) is expected

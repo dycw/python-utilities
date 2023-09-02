@@ -1,13 +1,12 @@
+from __future__ import annotations
+
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 
-from beartype import beartype
-
 from utilities.pathlib import PathLike
 
 
-@beartype
 def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
@@ -20,7 +19,6 @@ def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
     return output.strip("\n")
 
 
-@beartype
 def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
@@ -33,7 +31,6 @@ def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
     return Path(output.strip("\n")).stem
 
 
-@beartype
 def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
     """Get the repo root."""
     try:
@@ -46,7 +43,9 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
-        if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
+        if search(
+            "fatal: not a git repository", error.stderr, flags=IGNORECASE
+        ):
             raise InvalidRepoError(cwd) from None
         raise  # pragma: no cover
     else:

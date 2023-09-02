@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from threading import get_native_id
 from time import sleep
 from typing import Any, cast
@@ -7,6 +9,7 @@ from loguru import logger
 from luigi import IntParameter, Task
 from numpy import arange, array
 from numpy.random import default_rng, random
+from typing_extensions import override
 
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
@@ -22,9 +25,11 @@ class Example(Task):
 
     messages = cast(int, IntParameter())
 
-    def output(self) -> PathTarget:
+    @override
+    def output(self) -> PathTarget:  # type: ignore
         return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
 
+    @override
     def run(self) -> None:
         rng = default_rng(get_native_id())
         levels = [level.name for level in LogLevel]
@@ -44,7 +49,9 @@ def main(*, tasks: int, messages: int) -> None:
     """Run the test script."""
     setup_loguru(levels={"luigi": LogLevel.DEBUG}, files="test_luigi")
     classes = [type(f"Example{i}", (Example,), {}) for i in range(tasks)]
-    instances = [cast(Example, cast(Any, cls)(messages=messages)) for cls in classes]
+    instances = [
+        cast(Example, cast(Any, cls)(messages=messages)) for cls in classes
+    ]
     _ = build(instances, local_scheduler=True, workers=CPU_COUNT)
 
 

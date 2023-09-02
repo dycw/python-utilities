@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Hashable
 from typing import Any, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import DataObject, booleans, data, dates, integers
-from pandas import Index, Timestamp
+from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
 from utilities.hypothesis import datetimes_utc, hashables
@@ -51,7 +53,9 @@ class TestDatetimesPd:
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
+        datetime = data.draw(
+            datetimes_pd(min_value=min_value, max_value=max_value)
+        )
         _ = Timestamp(datetime)
         assert min_value <= datetime <= max_value
 
@@ -65,11 +69,22 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_generic(
-        self, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(
             indexes(
-                elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
+                elements=int64s(),
+                dtype=int,
+                n=n,
+                unique=unique,
+                name=name,
+                sort=sort,
             )
         )
         assert len(index) == n
@@ -77,7 +92,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, cast(Index, index.sort_values()))
+            assert_index_equal(index, index.sort_values())
 
     @given(
         data=data(),
@@ -87,7 +102,13 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_int(
-        self, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == int
@@ -96,7 +117,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, cast(Index, index.sort_values()))
+            assert_index_equal(index, index.sort_values())
 
     @given(
         data=data(),
@@ -106,7 +127,13 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_str(
-        self, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(str_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == string
@@ -115,7 +142,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, cast(Index, index.sort_values()))
+            assert_index_equal(index, index.sort_values())
 
 
 class TestTimestamps:
@@ -127,6 +154,7 @@ class TestTimestamps:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_value: dt.datetime,
         max_value: dt.datetime,

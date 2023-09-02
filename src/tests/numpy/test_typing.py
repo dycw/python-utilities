@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 
-from beartype import beartype
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, example, given, settings
@@ -332,7 +333,6 @@ class TestHints:
             param(object, NDArrayO),
         ],
     )
-    @beartype
     def test_dtype(self, dtype: Any, hint: Any) -> None:
         arr = empty(0, dtype=dtype)
         die_if_unbearable(arr, hint)
@@ -346,7 +346,6 @@ class TestHints:
             param(3, NDArray3),
         ],
     )
-    @beartype
     def test_ndim(self, ndim: int, hint: Any) -> None:
         arr = empty(zeros(ndim, dtype=int), dtype=float)
         die_if_unbearable(arr, hint)
@@ -432,7 +431,6 @@ class TestHints:
             param(object, 3, NDArrayO3),
         ],
     )
-    @beartype
     def test_compound(self, dtype: Any, ndim: int, hint: Any) -> None:
         arr = empty(zeros(ndim, dtype=int), dtype=dtype)
         die_if_unbearable(arr, hint)
@@ -476,7 +474,6 @@ class TestHints:
         ],
     )
     @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
-    @beartype
     def test_int_checks(self, arr: NDArrayI, dtype: Any, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(arr.astype(dtype), hint)
@@ -651,7 +648,6 @@ class TestHints:
         ],
     )
     @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
-    @beartype
     def test_float_checks(self, arr: NDArrayF, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(arr, hint)

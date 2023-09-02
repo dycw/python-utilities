@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
-from typing import Optional, Union
-
-from beartype import beartype
 
 from utilities.re import extract_groups
 
@@ -13,7 +12,6 @@ TODAY = dt.datetime.now(tz=UTC).date()
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 
 
-@beartype
 def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     """Add a number of a weekdays to a given date.
 
@@ -35,7 +33,6 @@ class IsWeekendError(ValueError):
     """Raised when 0 days is added to a weekend."""
 
 
-@beartype
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: tzinfo = UTC
 ) -> dt.datetime:
@@ -43,42 +40,36 @@ def date_to_datetime(
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
 
 
-@beartype
-def ensure_date(date: Union[dt.date, str], /) -> dt.date:
+def ensure_date(date: dt.date | str, /) -> dt.date:
     """Ensure the object is a date."""
     return date if isinstance(date, dt.date) else parse_date(date)
 
 
-@beartype
-def ensure_datetime(datetime: Union[dt.datetime, str], /) -> dt.datetime:
+def ensure_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
     return parse_datetime(datetime)
 
 
-@beartype
-def ensure_time(time: Union[dt.time, str], /) -> dt.time:
+def ensure_time(time: dt.time | str, /) -> dt.time:
     """Ensure the object is a time."""
     return time if isinstance(time, dt.time) else parse_time(time)
 
 
-@beartype
-def ensure_timedelta(timedelta: Union[dt.timedelta, str], /) -> dt.timedelta:
+def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
     if isinstance(timedelta, dt.timedelta):
         return timedelta
     return parse_timedelta(timedelta)
 
 
-@beartype
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     friday = 5
     return date.isoweekday() <= friday
 
 
-@beartype
 def local_timezone() -> tzinfo:
     """Get the local timezone."""
     tz = dt.datetime.now().astimezone().tzinfo
@@ -92,7 +83,6 @@ class LocalTimeZoneError(ValueError):
     """Raised when the local timezone cannot be found."""
 
 
-@beartype
 def parse_date(date: str, /) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
@@ -106,7 +96,6 @@ class ParseDateError(ValueError):
     """Raised when a `dt.date` cannot be parsed."""
 
 
-@beartype
 def parse_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a datetime."""
     with suppress(ValueError):
@@ -119,10 +108,12 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
         "%Y%m%dT%H%M%S.%f",
     ]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=dt.timezone.utc)
+            return dt.datetime.strptime(datetime, fmt).replace(
+                tzinfo=dt.timezone.utc
+            )
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
+            return dt.datetime.strptime(datetime, fmt)
     raise ParseDateTimeError(datetime)
 
 
@@ -130,7 +121,6 @@ class ParseDateTimeError(ValueError):
     """Raised when a `dt.datetime` cannot be parsed."""
 
 
-@beartype
 def parse_time(time: str, /) -> dt.time:
     """Parse a string into a time."""
     with suppress(ValueError):
@@ -145,7 +135,6 @@ class ParseTimeError(ValueError):
     """Raised when a `dt.time` cannot be parsed."""
 
 
-@beartype
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
     try:
@@ -164,15 +153,16 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
             microseconds=as_dt.microsecond,
         )
     try:
-        days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
+        days, tail = extract_groups(
+            r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta
+        )
     except ValueError:
         raise TimedeltaError(timedelta) from None
     else:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-@beartype
-def _parse_timedelta(timedelta: str, fmt: str, /) -> Optional[dt.datetime]:
+def _parse_timedelta(timedelta: str, fmt: str, /) -> dt.datetime | None:
     try:
         return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
     except ValueError:
@@ -183,19 +173,16 @@ class TimedeltaError(ValueError):
     """Raised when a `dt.timedelta` cannot be parsed."""
 
 
-@beartype
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, is_next=True)
 
 
-@beartype
 def round_to_prev_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the previous weekday."""
     return _round_to_weekday(date, is_next=False)
 
 
-@beartype
 def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
     """Round a date to the previous weekday."""
     n = 1 if is_next else -1
@@ -204,7 +191,6 @@ def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
     return date
 
 
-@beartype
 def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
     if isinstance(date, dt.datetime):
@@ -212,19 +198,16 @@ def serialize_date(date: dt.date, /) -> str:
     return date.isoformat()
 
 
-@beartype
 def serialize_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a datetime."""
     return datetime.isoformat()
 
 
-@beartype
 def serialize_time(time: dt.time, /) -> str:
     """Serialize a time."""
     return time.isoformat()
 
 
-@beartype
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
     if (days := timedelta.days) == 0:
@@ -233,12 +216,11 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     return f"d{days},{tail}"
 
 
-@beartype
 def yield_weekdays(
     *,
-    start: Optional[dt.date] = None,
-    end: Optional[dt.date] = None,
-    days: Optional[int] = None,
+    start: dt.date | None = None,
+    end: dt.date | None = None,
+    days: int | None = None,
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
     if (start is not None) and (end is not None) and (days is None):

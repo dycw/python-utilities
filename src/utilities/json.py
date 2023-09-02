@@ -1,12 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 from json import dumps
 from pathlib import Path
-from typing import Any, Optional, Union
-
-from beartype import beartype
+from typing import Any
 
 
-@beartype
 def serialize(
     x: Any,
     /,
@@ -15,8 +14,8 @@ def serialize(
     ensure_ascii: bool = True,
     check_circular: bool = True,
     allow_nan: bool = True,
-    indent: Optional[Union[int, str]] = None,
-    separators: Optional[tuple[str, str]] = None,
+    indent: int | str | None = None,
+    separators: tuple[str, str] | None = None,
     sort_keys: bool = False,
     **kwargs: Any,
 ) -> str:
@@ -35,7 +34,6 @@ def serialize(
     )
 
 
-@beartype
 def _default(x: Any, /) -> str:
     """Extension for the JSON serializer."""
     if isinstance(x, dt.date):

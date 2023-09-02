@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from string import ascii_letters
 from zipfile import ZipFile

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+
 from pytest import mark, param, raises
 
 from utilities.re import (
@@ -36,7 +40,9 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_success(self, pattern: str, text: str, expected: list[str]) -> None:
+    def test_success(
+        self, pattern: str, text: str, expected: Sequence[str]
+    ) -> None:
         assert extract_groups(pattern, text) == expected
 
     def test_no_groups(self) -> None:
