@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from re import search
 from time import sleep
@@ -37,7 +37,7 @@ class TestSetupLoguru:
         logger.info("test")
 
     @given(enable=lists(text_ascii(min_size=1)))
-    def test_enable(self, enable: list[str]) -> None:
+    def test_enable(self, enable: Sequence[str]) -> None:
         setup_loguru(enable=enable)
         logger.info("test")
 

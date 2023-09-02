@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from hypothesis import assume, given
@@ -1000,7 +1001,10 @@ class TestDiscretize:
         ],
     )
     def test_bins_of_floats(
-        self, arr_v: list[float], bins: list[float], expected_v: list[float]
+        self,
+        arr_v: Sequence[float],
+        bins: Sequence[float],
+        expected_v: Sequence[float],
     ) -> None:
         arr = array(arr_v, dtype=float)
         result = discretize(arr, bins)
@@ -1070,7 +1074,10 @@ class TestFFillNonNanSlices:
         ],
     )
     def test_main(
-        self, limit: int | None, axis: int, expected_v: list[list[float]]
+        self,
+        limit: int | None,
+        axis: int,
+        expected_v: Sequence[Sequence[float]],
     ) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
@@ -1087,7 +1094,7 @@ class TestFFillNonNanSlices:
         ],
     )
     def test_initial_all_nan(
-        self, axis: int, expected_v: list[list[float]]
+        self, axis: int, expected_v: Sequence[Sequence[float]]
     ) -> None:
         arr = array([4 * [nan], [nan, 0.1, nan, nan], 4 * [nan]], dtype=float)
         result = ffill_non_nan_slices(arr, axis=axis)
@@ -1303,7 +1310,7 @@ class TestPctChange:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_1d(
-        self, n: int, expected_v: list[float], dtype: type[Any]
+        self, n: int, expected_v: Sequence[float], dtype: type[Any]
     ) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
@@ -1387,7 +1394,9 @@ class TestPctChange:
             ),
         ],
     )
-    def test_2d(self, axis: int, n: int, expected_v: list[list[float]]) -> None:
+    def test_2d(
+        self, axis: int, n: int, expected_v: Sequence[Sequence[float]]
+    ) -> None:
         arr = arange(10, 22, dtype=float).reshape((3, 4))
         result = pct_change(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
@@ -1420,7 +1429,7 @@ class TestShift:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_1d(
-        self, n: int, expected_v: list[float], dtype: type[Any]
+        self, n: int, expected_v: Sequence[float], dtype: type[Any]
     ) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
@@ -1496,7 +1505,9 @@ class TestShift:
             ),
         ],
     )
-    def test_2d(self, axis: int, n: int, expected_v: list[list[float]]) -> None:
+    def test_2d(
+        self, axis: int, n: int, expected_v: Sequence[Sequence[float]]
+    ) -> None:
         arr = arange(12, dtype=float).reshape((3, 4))
         result = shift(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
@@ -1520,7 +1531,7 @@ class TestShiftBool:
     )
     @mark.parametrize("fill_value", [param(True), param(False)])
     def test_main(
-        self, *, n: int, expected_v: list[bool | None], fill_value: bool
+        self, *, n: int, expected_v: Sequence[bool | None], fill_value: bool
     ) -> None:
         arr = array([True, False, True], dtype=bool)
         result = shift_bool(arr, n=n, fill_value=fill_value)

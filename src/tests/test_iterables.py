@@ -45,5 +45,5 @@ class TestIsIterableNotStr:
             param("", False),
         ],
     )
-    def test_main(self, x: Any, expected: bool) -> None:
+    def test_main(self, *, x: Any, expected: bool) -> None:
         assert is_iterable_not_str(x) is expected

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import typing
 from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
@@ -59,7 +60,6 @@ from sqlalchemy import (
     LargeBinary,
     MetaData,
     Numeric,
-    Sequence,
     SmallInteger,
     String,
     Table,
@@ -306,7 +306,7 @@ class TestCheckColumnTypesEqual:
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_boolean_create_constraint(
-        self, create_constraints: list[bool]
+        self, create_constraints: typing.Sequence[bool]
     ) -> None:
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (Boolean(create_constraint=cs) for cs in create_constraints)
@@ -317,7 +317,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_boolean_name(self, names: list[str | None]) -> None:
+    def test_boolean_name(self, names: typing.Sequence[str | None]) -> None:
         name_x, name_y = names
         x, y = (Boolean(name=n) for n in names)
         if name_x == name_y:
@@ -330,7 +330,7 @@ class TestCheckColumnTypesEqual:
         _check_column_types_equal(Boolean, BOOLEAN)
 
     @given(timezones=lists_fixed_length(booleans(), 2))
-    def test_datetime_timezone(self, timezones: list[bool]) -> None:
+    def test_datetime_timezone(self, timezones: typing.Sequence[bool]) -> None:
         timezone_x, timezone_y = timezones
         x, y = (DateTime(timezone=tz) for tz in timezones)
         if timezone_x is timezone_y:
@@ -363,7 +363,7 @@ class TestCheckColumnTypesEqual:
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_enum_create_constraint(
-        self, create_constraints: list[bool]
+        self, create_constraints: typing.Sequence[bool]
     ) -> None:
         class MyEnum(enum.Enum):
             member = auto()
@@ -380,7 +380,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
-    def test_enum_native_enum(self, native_enums: list[bool]) -> None:
+    def test_enum_native_enum(
+        self, native_enums: typing.Sequence[bool]
+    ) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -393,7 +395,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
-    def test_enum_length(self, lengths: list[int]) -> None:
+    def test_enum_length(self, lengths: typing.Sequence[int]) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -406,7 +408,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
-    def test_enum_inherit_schema(self, inherit_schemas: list[bool]) -> None:
+    def test_enum_inherit_schema(
+        self, inherit_schemas: typing.Sequence[bool]
+    ) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -426,7 +430,9 @@ class TestCheckColumnTypesEqual:
         precisions=lists_fixed_length(integers(0, 10) | none(), 2),
     )
     def test_float_precision(
-        self, cls: type[Float[Any] | Numeric[Any]], precisions: list[int | None]
+        self,
+        cls: type[Float[Any] | Numeric[Any]],
+        precisions: typing.Sequence[int | None],
     ) -> None:
         precision_x, precision_y = precisions
         x, y = (cls(precision=p) for p in precisions)
@@ -441,7 +447,9 @@ class TestCheckColumnTypesEqual:
         asdecimals=lists_fixed_length(booleans(), 2),
     )
     def test_float_asdecimal(
-        self, cls: type[Float[Any] | Numeric[Any]], asdecimals: list[bool]
+        self,
+        cls: type[Float[Any] | Numeric[Any]],
+        asdecimals: typing.Sequence[bool],
     ) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (cls(asdecimal=cast(Any, a)) for a in asdecimals)
@@ -458,7 +466,7 @@ class TestCheckColumnTypesEqual:
     def test_float_dec_ret_scale(
         self,
         cls: type[Float[Any] | Numeric[Any]],
-        dec_ret_scales: list[int | None],
+        dec_ret_scales: typing.Sequence[int | None],
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (cls(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -469,7 +477,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(natives=lists_fixed_length(booleans(), 2))
-    def test_interval_native(self, natives: list[bool]) -> None:
+    def test_interval_native(self, natives: typing.Sequence[bool]) -> None:
         native_x, native_y = natives
         x, y = (Interval(native=n) for n in natives)
         if native_x is native_y:
@@ -480,7 +488,7 @@ class TestCheckColumnTypesEqual:
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_interval_second_precision(
-        self, second_precisions: list[int | None]
+        self, second_precisions: typing.Sequence[int | None]
     ) -> None:
         second_precision_x, second_precision_y = second_precisions
         x, y = (Interval(second_precision=sp) for sp in second_precisions)
@@ -492,7 +500,7 @@ class TestCheckColumnTypesEqual:
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_interval_day_precision(
-        self, day_precisions: list[int | None]
+        self, day_precisions: typing.Sequence[int | None]
     ) -> None:
         day_precision_x, day_precision_y = day_precisions
         x, y = (Interval(day_precision=dp) for dp in day_precisions)
@@ -503,7 +511,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_large_binary_length(self, lengths: list[int | None]) -> None:
+    def test_large_binary_length(
+        self, lengths: typing.Sequence[int | None]
+    ) -> None:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
@@ -513,7 +523,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_numeric_scale(self, scales: list[int | None]) -> None:
+    def test_numeric_scale(self, scales: typing.Sequence[int | None]) -> None:
         scale_x, scale_y = scales
         x, y = (Numeric(scale=s) for s in scales)
         if scale_x == scale_y:
@@ -529,7 +539,7 @@ class TestCheckColumnTypesEqual:
     def test_string_length(
         self,
         cls: type[String | Unicode | UnicodeText],
-        lengths: list[int | None],
+        lengths: typing.Sequence[int | None],
     ) -> None:
         length_x, length_y = lengths
         x, y = (cls(length=l_) for l_ in lengths)
@@ -540,7 +550,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_string_collation(self, collations: list[str | None]) -> None:
+    def test_string_collation(
+        self, collations: typing.Sequence[str | None]
+    ) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
@@ -550,7 +562,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(as_uuids=lists_fixed_length(booleans(), 2))
-    def test_uuid_as_uuid(self, as_uuids: list[bool]) -> None:
+    def test_uuid_as_uuid(self, as_uuids: typing.Sequence[bool]) -> None:
         as_uuid_x, as_uuid_y = as_uuids
         x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
         if as_uuid_x is as_uuid_y:
@@ -560,7 +572,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
-    def test_uuid_native_uuid(self, native_uuids: list[bool]) -> None:
+    def test_uuid_native_uuid(
+        self, native_uuids: typing.Sequence[bool]
+    ) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
@@ -734,7 +748,7 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: list[Mapping[str, int | None]], engine: Engine
+        self, values: typing.Sequence[Mapping[str, int | None]], engine: Engine
     ) -> None:
         table = Table(
             "example",
@@ -1044,7 +1058,7 @@ class TestParseEngine:
 class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
     def test_main(self, engine: Engine) -> None:
-        seq = Sequence("example")
+        seq = sqlalchemy.Sequence("example")
         with raises(NotImplementedError), engine.begin() as conn:
             _ = conn.scalar(seq)
 

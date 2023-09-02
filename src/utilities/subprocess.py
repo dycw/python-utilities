@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from functools import partial
 from itertools import chain, repeat, starmap
 from pathlib import Path
@@ -49,7 +49,9 @@ class MultipleActivateError(ValueError):
     """Raised when multiple `activate` scripts can be found."""
 
 
-def run_accept_address_in_use(args: list[str], /, *, exist_ok: bool) -> None:
+def run_accept_address_in_use(
+    args: Sequence[str], /, *, exist_ok: bool
+) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
         _ = check_output(args, stderr=PIPE, text=True)  # noqa: S603

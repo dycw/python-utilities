@@ -70,7 +70,7 @@ def read_parquet(
     *,
     head: IntNonNeg | None = None,
     row_group: IntNonNeg | None = None,
-    columns: list[str] | None = None,
+    columns: list[str] | None = None,  # list, not Sequence
     filters: Filters | None = None,
 ) -> DataFrame:
     ...
@@ -82,7 +82,7 @@ def read_parquet(
     *,
     head: IntNonNeg | None = None,
     row_group: IntNonNeg | None = None,
-    columns: str | list[str] | None = None,
+    columns: str | list[str] | None = None,  # list, not Sequence
     filters: Filters | None = None,
 ) -> Series[Any] | DataFrame:
     """Read a Parquet file into a Series/DataFrame."""

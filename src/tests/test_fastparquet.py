@@ -56,8 +56,10 @@ class TestCountRows:
 
 class TestGetColumns:
     @given(columns=lists(text_ascii(), unique=True), root=temp_paths())
-    def test_main(self, columns: list[str], root: Path) -> None:
-        df = DataFrame(nan, index=RangeIndex(1), columns=columns, dtype=float)
+    def test_main(self, columns: Sequence[str], root: Path) -> None:
+        df = DataFrame(
+            nan, index=RangeIndex(1), columns=list(columns), dtype=float
+        )
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_columns(path)
         assert result == columns
