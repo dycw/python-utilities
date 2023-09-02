@@ -7,16 +7,7 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import new_class
-from typing import (
-    Any,
-    Literal,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from typing import Any, Literal, TypeVar, Union, cast, get_args, get_origin
 
 from attrs import asdict, fields
 from luigi import (

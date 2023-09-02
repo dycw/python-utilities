@@ -14,10 +14,11 @@ from utilities.timer import Timer
 
 class TestTimer:
     def test_context_manager(self) -> None:
+        duration = 1e-3
         with Timer() as timer:
             assert isinstance(timer, Timer)
-            sleep(1e-3)
-        assert timer >= 1e-3
+            sleep(duration)
+        assert timer >= duration
 
     @mark.parametrize(
         ("op", "expected"),
@@ -56,16 +57,17 @@ class TestTimer:
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
-            sleep(0.01)
+            sleep(0.001)
         as_str = func(timer)
         assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
 
     def test_running(self) -> None:
+        duration = 1e-3
         timer = Timer()
-        sleep(1e-3)
-        assert timer >= 1e-3
-        sleep(1e-3)
-        assert timer >= 2e-3
+        sleep(duration)
+        assert timer >= duration
+        sleep(duration)
+        assert timer >= 2 * duration
 
     def test_timedelta(self) -> None:
         timer = Timer()

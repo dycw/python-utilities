@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from json import dumps
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 
 def serialize(

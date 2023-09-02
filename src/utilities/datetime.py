@@ -4,7 +4,6 @@ import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
-from typing import Optional, Union
 
 from utilities.re import extract_groups
 

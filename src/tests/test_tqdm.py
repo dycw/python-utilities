@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any
 
 from pytest import mark, param
 from tqdm import tqdm as _tqdm

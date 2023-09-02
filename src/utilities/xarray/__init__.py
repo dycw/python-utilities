@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 from utilities._numbagg import move_exp_nanmean, move_exp_nansum
 from utilities.xarray.typing import DataArrayF, DataArrayI

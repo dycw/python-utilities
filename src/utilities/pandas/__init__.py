@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from typing import Any, Literal, NoReturn, Optional, Union, cast
+from typing import Any, Literal, NoReturn, cast
 
 from numpy import where
 from pandas import NA, DataFrame, Index, NaT, RangeIndex, Series, Timestamp

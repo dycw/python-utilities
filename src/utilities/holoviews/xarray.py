@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from holoviews import Curve
 from holoviews.plotting import bokeh
 

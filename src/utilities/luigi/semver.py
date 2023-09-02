@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from luigi import Parameter
 from semver import Version
 

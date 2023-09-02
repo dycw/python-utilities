@@ -5,7 +5,7 @@ from contextlib import suppress
 from importlib import import_module
 from pkgutil import walk_packages
 from types import ModuleType
-from typing import Any, Optional, Union
+from typing import Any
 
 
 def yield_modules(
@@ -35,7 +35,7 @@ def yield_module_contents(
     /,
     *,
     recursive: bool = False,
-    type: type[Any] | tuple[type[Any], ...] | None = None,
+    type: type[Any] | tuple[type[Any], ...] | None = None,  # noqa: A002
     predicate: Callable[[Any], bool] | None = None,
 ) -> Iterator[Any]:
     """Yield all the module contents under a package.

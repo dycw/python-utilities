@@ -6,7 +6,7 @@ from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
 from operator import ge, itemgetter, le
-from typing import Any, Literal, NoReturn, Optional, Union, cast
+from typing import Any, Literal, NoReturn, cast
 
 import sqlalchemy
 import timeout_decorator

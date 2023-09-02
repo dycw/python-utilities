@@ -9,7 +9,7 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from sys import _getframe, stdout
-from typing import Any, Optional, TypedDict, Union, cast
+from typing import Any, TypedDict, cast
 
 from loguru import logger
 

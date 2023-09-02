@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Sized
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import sqlalchemy
 from hypothesis import given
@@ -205,7 +205,7 @@ class TestParseSeriesAgainstTable:
         ],
     )
     def test_main(
-        self, series_name: str, table_column_name: str, snake: bool
+        self, *, series_name: str, table_column_name: str, snake: bool
     ) -> None:
         series = Series([], dtype=int, name=series_name)
         table = Table(
@@ -223,7 +223,7 @@ class TestParseSeriesAgainstTable:
             param(False, SeriesNameNotInTableError),
         ],
     )
-    def test_error(self, snake: bool, error: type[Exception]) -> None:
+    def test_error(self, *, snake: bool, error: type[Exception]) -> None:
         series = Series([], dtype=int, name="name")
         table = Table(
             "example", MetaData(), Column("id", Integer, primary_key=True)
@@ -238,7 +238,7 @@ class TestRowsToDataFrame:
         ("col_name", "snake"), [param("id", False), param("Id", True)]
     )
     def test_main(
-        self, data: DataObject, col_name: str, engine: Engine, snake: bool
+        self, *, data: DataObject, col_name: str, engine: Engine, snake: bool
     ) -> None:
         table = Table(
             "example", MetaData(), Column(col_name, Integer, primary_key=True)

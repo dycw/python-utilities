@@ -4,6 +4,7 @@ from typing import Any
 
 import sqlalchemy
 from click import Context, Parameter, ParamType
+from typing_extensions import override
 
 from utilities.sqlalchemy import ParseEngineError, ensure_engine
 
@@ -13,6 +14,7 @@ class Engine(ParamType):
 
     name = "engine"
 
+    @override
     def convert(
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> sqlalchemy.Engine:

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional, Union
-
 from fastparquet import write
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql import Select

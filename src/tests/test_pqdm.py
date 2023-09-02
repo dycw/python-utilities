@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 from operator import neg, pow
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal
 
 from pytest import mark, param
 

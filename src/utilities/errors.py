@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from re import search
-from typing import NoReturn, Union
+from typing import NoReturn
 
 from utilities.text import ensure_str
 

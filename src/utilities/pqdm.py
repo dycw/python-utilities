@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial
 from io import StringIO, TextIOWrapper
 from multiprocessing import cpu_count
-from typing import Any, Literal, Optional, TypeVar, Union, cast
+from typing import Any, Literal, TypeVar, cast
 
 from pqdm import processes
 

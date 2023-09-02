@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import isclose, isfinite, isnan
-from typing import Annotated, Optional, Union
+from typing import Annotated
 
 # checks
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable, Iterator
 from decimal import Decimal
-from typing import Any, Optional, Union, overload
+from typing import Any, overload
 
 from pandas import DataFrame, Series
 from sqlalchemy import Column, insert

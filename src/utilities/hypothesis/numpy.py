@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import numpy as np
 from hypothesis import assume

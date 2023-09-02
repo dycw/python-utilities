@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Union, cast, overload
+from typing import Any, Literal, cast, overload
 
 import cvxpy
 import numpy as np
