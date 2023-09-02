@@ -23,7 +23,6 @@ from luigi import (
 from pytest import mark, param, raises
 from sqlalchemy import Engine
 from typed_settings import settings
-
 from utilities.datetime import TODAY
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import (

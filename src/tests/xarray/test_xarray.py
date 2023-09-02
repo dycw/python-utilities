@@ -5,12 +5,11 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, integers, sampled_from
 from pandas import Index
 from pytest import mark
-from xarray import DataArray
-
 from utilities.hypothesis import assume_does_not_raise, text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import float_data_arrays
 from utilities.xarray import ewma, exp_moving_sum
+from xarray import DataArray
 
 
 class TestBottleNeckInstalled:

@@ -4,7 +4,6 @@ from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan
 from numpy.testing import assert_allclose, assert_equal
 from pytest import mark, param
-
 from utilities.hypothesis.numpy import float_arrays
 from utilities.numpy import is_between_or_nan
 from utilities.numpy.typing import NDArrayF1

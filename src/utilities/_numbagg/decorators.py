@@ -1,8 +1,7 @@
-import numba
-
-import numpy as np
-
 from functools import cached_property
+
+import numba
+import numpy as np
 
 
 def _nd_func_maker(cls, arg, **kwargs):

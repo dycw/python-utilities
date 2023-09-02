@@ -6,7 +6,6 @@ from hypothesis_sqlalchemy.sample import table_records_lists
 from luigi import Task
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, insert, select
 from sqlalchemy.orm import declarative_base
-
 from utilities.hypothesis.luigi import namespace_mixins
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.luigi.sqlalchemy import DatabaseTarget, EngineParameter, TableParameter

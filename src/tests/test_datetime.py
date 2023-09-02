@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     times,
 )
 from pytest import mark, param, raises
-
 from utilities.datetime import (
     EPOCH_UTC,
     UTC,

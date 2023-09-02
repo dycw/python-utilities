@@ -4,6 +4,7 @@ from tempfile import gettempdir as _gettempdir
 from typing import Optional
 
 from beartype import beartype
+from typing_extensions import override
 
 from utilities.pathlib import PathLike
 
@@ -24,6 +25,7 @@ class TemporaryDirectory(_TemporaryDirectory):
         super().__init__(suffix=suffix, prefix=prefix, dir=dir)
         self.name = Path(self.name)
 
+    @override
     @beartype
     def __enter__(self) -> Path:
         return super().__enter__()

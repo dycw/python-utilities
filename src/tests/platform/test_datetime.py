@@ -2,7 +2,6 @@ from re import search
 
 from beartype import beartype
 from hypothesis import given
-
 from utilities.hypothesis import text_clean
 from utilities.platform import SYSTEM, System
 from utilities.platform.datetime import maybe_sub_pct_y

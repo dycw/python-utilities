@@ -3,8 +3,6 @@ from typing import Any
 from beartype.door import die_if_unbearable
 from numpy import empty, zeros
 from pytest import mark, param
-from xarray import DataArray
-
 from utilities.numpy import datetime64ns
 from utilities.xarray.typing import (
     DataArray0,
@@ -37,6 +35,7 @@ from utilities.xarray.typing import (
     DataArrayO2,
     DataArrayO3,
 )
+from xarray import DataArray
 
 
 class TestHints:

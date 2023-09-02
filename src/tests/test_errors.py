@@ -1,7 +1,6 @@
 from typing import NoReturn
 
 from pytest import raises
-
 from utilities.errors import NoUniqueArgError, redirect_error
 
 

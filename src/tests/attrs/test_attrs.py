@@ -5,7 +5,6 @@ from attrs import define, fields
 from beartype import beartype
 from beartype.door import die_if_unbearable
 from pytest import mark, raises
-
 from utilities.attrs import AttrsBase, DictMixin, FieldTypeError, make_dict_field
 from utilities.timer import Timer
 

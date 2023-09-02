@@ -2,7 +2,6 @@ from pathlib import Path
 from smtplib import SMTPServerDisconnected
 
 from pytest import raises
-
 from utilities.airium import yield_airium
 from utilities.email import InvalidContentsError, send_email
 from utilities.pytest import is_pytest

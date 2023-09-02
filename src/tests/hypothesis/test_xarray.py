@@ -13,8 +13,6 @@ from hypothesis.strategies import (
 )
 from pandas import Index
 from pandas.testing import assert_index_equal
-from typing_extensions import Self
-
 from utilities.hypothesis import assume_does_not_raise, hashables
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.xarray import (
@@ -196,7 +194,7 @@ class TestStrDataArrays:
         name=hashables(),
     )
     def test_main(
-        self: Self,
+        self,
         data: DataObject,
         indexes: dict[Hashable, Index],
         min_size: int,

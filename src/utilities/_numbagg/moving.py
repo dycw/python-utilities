@@ -1,5 +1,6 @@
 import numpy as np
 from numba import float32, float64
+
 from utilities._numbagg.decorators import ndmovingexp
 
 

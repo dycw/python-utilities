@@ -4,7 +4,6 @@ from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
-
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pypi_server import _check_password_file, _get_args, main
 

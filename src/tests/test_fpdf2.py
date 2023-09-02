@@ -2,7 +2,6 @@ from beartype import beartype
 from holoviews import Curve
 from hypothesis import given
 from pytest import mark
-
 from utilities.fpdf2 import yield_pdf
 from utilities.hypothesis import text_ascii
 from utilities.platform import SYSTEM, System

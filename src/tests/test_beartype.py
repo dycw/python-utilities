@@ -6,7 +6,6 @@ from beartype.roar import BeartypeAbbyHintViolation
 from numpy import empty, zeros
 from numpy.typing import NDArray
 from pytest import mark, param, raises
-
 from utilities.beartype import IterableStrs, NDim0, NDim1, NDim2, NDim3
 
 

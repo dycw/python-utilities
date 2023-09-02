@@ -3,7 +3,6 @@ from time import sleep
 from typing import Any
 
 from pytest import MonkeyPatch, mark, param
-
 from utilities.pytest import is_pytest
 from utilities.text import strip_and_dedent
 

@@ -26,7 +26,6 @@ from pytest import MonkeyPatch, mark, param, raises
 from sqlalchemy import Engine
 from typed_settings import settings
 from typed_settings.exceptions import InvalidValueError
-
 from utilities.datetime import (
     UTC,
     serialize_date,

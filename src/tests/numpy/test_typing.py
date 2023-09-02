@@ -7,7 +7,6 @@ from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, example, given, settings
 from numpy import array, empty, nan, zeros
 from pytest import mark, param
-
 from utilities.hypothesis.numpy import float_arrays, int_arrays
 from utilities.numpy.typing import (
     NDArray0,

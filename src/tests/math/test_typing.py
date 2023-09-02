@@ -6,7 +6,6 @@ from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import floats, integers
 from pytest import mark, param
-
 from utilities.math.typing import (
     FloatFin,
     FloatFinInt,

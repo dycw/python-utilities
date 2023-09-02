@@ -1,5 +1,4 @@
 from pytest import mark, param, raises
-
 from utilities.re import (
     MultipleCaptureGroupsError,
     MultipleMatchesError,

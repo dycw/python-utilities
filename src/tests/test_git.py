@@ -2,7 +2,6 @@ from pathlib import Path
 from re import search
 
 from pytest import raises
-
 from utilities.git import (
     InvalidRepoError,
     get_branch_name,

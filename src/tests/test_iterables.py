@@ -4,7 +4,6 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, lists, sampled_from, sets
 from pytest import mark, param, raises
-
 from utilities.iterables import (
     IterableContainsDuplicatesError,
     check_duplicates,

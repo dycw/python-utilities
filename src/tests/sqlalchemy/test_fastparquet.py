@@ -6,7 +6,6 @@ from hypothesis.strategies import DataObject, data, integers, none
 from hypothesis_sqlalchemy.sample import table_records_lists
 from sqlalchemy import Column, Engine, Integer, select
 from sqlalchemy.orm import declarative_base
-
 from utilities.fastparquet import get_dtypes
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis.sqlalchemy import sqlite_engines

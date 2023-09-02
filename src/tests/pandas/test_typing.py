@@ -3,7 +3,6 @@ from typing import Any
 from beartype.door import die_if_unbearable
 from pandas import Index, Series
 from pytest import mark, param
-
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
     Int64,

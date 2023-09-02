@@ -6,14 +6,14 @@ from types import ModuleType
 from typing import Any, Optional, Union
 
 from pytest import mark, param
-
-from tests.modules import package_with, package_without, standalone
 from utilities.class_name import get_class_name
 from utilities.modules import (
     yield_module_contents,
     yield_module_subclasses,
     yield_modules,
 )
+
+from tests.modules import package_with, package_without, standalone
 
 
 class TestYieldModules:

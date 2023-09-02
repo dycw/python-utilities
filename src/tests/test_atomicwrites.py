@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Union
 
 from pytest import mark, param, raises
-
 from utilities.atomicwrites import writer
 from utilities.errors import DirectoryExistsError
 

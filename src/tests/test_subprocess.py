@@ -4,7 +4,6 @@ from subprocess import CalledProcessError, check_call
 
 from beartype import beartype
 from pytest import raises
-
 from utilities.subprocess import (
     MultipleActivateError,
     NoActivateError,

@@ -3,7 +3,6 @@ from pathlib import Path
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import integers
-
 from utilities.hypothesis import text_ascii
 from utilities.luigi.server import _get_args, main
 

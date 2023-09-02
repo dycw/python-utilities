@@ -3,7 +3,6 @@ from pathlib import Path
 from beartype import beartype
 from holoviews import Curve
 from pytest import mark
-
 from utilities.holoviews import apply_opts, relabel_plot, save_plot
 from utilities.platform import SYSTEM, System
 

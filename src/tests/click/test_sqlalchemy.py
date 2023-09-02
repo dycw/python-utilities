@@ -3,7 +3,6 @@ from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
 from sqlalchemy import Engine
-
 from utilities.click.sqlalchemy import Engine as ClickEngine
 from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import serialize_engine

@@ -3,7 +3,6 @@ from typing import Any
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark, param, raises
-
 from utilities.types import NoneType, Number, ensure_class, issubclass_except_bool_int
 
 

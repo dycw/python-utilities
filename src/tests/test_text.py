@@ -1,5 +1,4 @@
 from pytest import mark, param, raises
-
 from utilities.text import ensure_str, snake_case, strip_and_dedent
 
 

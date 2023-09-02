@@ -3,7 +3,6 @@ from operator import neg, pow
 from typing import Any, Callable, Literal, Optional, Union
 
 from pytest import mark, param
-
 from utilities.class_name import get_class_name
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
