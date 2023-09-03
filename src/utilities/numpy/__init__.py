@@ -34,14 +34,73 @@ from numpy import (
     where,
 )
 from numpy.linalg import det, eig
-from numpy.typing import NDArray
 
 from utilities._numbagg import move_exp_nanmean, move_exp_nansum
 from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.math.typing import FloatFinPos
+from utilities.numpy.checks import (
+    _is_close,
+    is_at_least,
+    is_at_least_or_nan,
+    is_at_most,
+    is_at_most_or_nan,
+    is_between,
+    is_between_or_nan,
+    is_finite_and_integral,
+    is_finite_and_integral_or_nan,
+    is_finite_and_negative,
+    is_finite_and_negative_or_nan,
+    is_finite_and_non_negative,
+    is_finite_and_non_negative_or_nan,
+    is_finite_and_non_positive,
+    is_finite_and_non_positive_or_nan,
+    is_finite_and_non_zero,
+    is_finite_and_non_zero_or_nan,
+    is_finite_and_positive,
+    is_finite_and_positive_or_nan,
+    is_finite_or_nan,
+    is_greater_than,
+    is_greater_than_or_nan,
+    is_integral,
+    is_integral_or_nan,
+    is_less_than,
+    is_less_than_or_nan,
+    is_negative,
+    is_negative_or_nan,
+    is_non_negative,
+    is_non_negative_or_nan,
+    is_non_positive,
+    is_non_positive_or_nan,
+    is_non_zero,
+    is_non_zero_or_nan,
+    is_positive,
+    is_positive_or_nan,
+    is_zero,
+    is_zero_or_finite_and_non_micro,
+    is_zero_or_finite_and_non_micro_or_nan,
+    is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
+)
+from utilities.numpy.dtypes import (
+    datetime64as,
+    datetime64D,
+    datetime64fs,
+    datetime64h,
+    datetime64M,
+    datetime64m,
+    datetime64ms,
+    datetime64ns,
+    datetime64ps,
+    datetime64s,
+    datetime64us,
+    datetime64W,
+    datetime64Y,
+)
 from utilities.numpy.typing import (
+    NDArrayA,
     NDArrayB,
     NDArrayB1,
     NDArrayDD,
@@ -50,104 +109,65 @@ from utilities.numpy.typing import (
     NDArrayF2,
     NDArrayI,
     NDArrayI2,
-    _is_close,
-    datetime64D,
-    datetime64ms,
-    datetime64ns,
-    datetime64us,
-    datetime64Y,
-    is_at_least,
-    is_at_least_or_nan,
-    is_at_most,
-    is_at_most_or_nan,
-    is_between,
-    is_between_or_nan,
-    is_finite_and_integral,
-    is_finite_and_integral_or_nan,
-    is_finite_and_negative,
-    is_finite_and_negative_or_nan,
-    is_finite_and_non_negative,
-    is_finite_and_non_negative_or_nan,
-    is_finite_and_non_positive,
-    is_finite_and_non_positive_or_nan,
-    is_finite_and_non_zero,
-    is_finite_and_non_zero_or_nan,
-    is_finite_and_positive,
-    is_finite_and_positive_or_nan,
-    is_finite_or_nan,
-    is_greater_than,
-    is_greater_than_or_nan,
-    is_integral,
-    is_integral_or_nan,
-    is_less_than,
-    is_less_than_or_nan,
-    is_negative,
-    is_negative_or_nan,
-    is_non_negative,
-    is_non_negative_or_nan,
-    is_non_positive,
-    is_non_positive_or_nan,
-    is_non_zero,
-    is_non_zero_or_nan,
-    is_positive,
-    is_positive_or_nan,
-    is_zero,
-    is_zero_or_finite_and_non_micro,
-    is_zero_or_finite_and_non_micro_or_nan,
-    is_zero_or_nan,
-    is_zero_or_non_micro,
-    is_zero_or_non_micro_or_nan,
 )
 from utilities.re import extract_group
 
-_ = (
-    datetime64D,
+_ = [
     datetime64Y,
+    datetime64M,
+    datetime64W,
+    datetime64D,
+    datetime64h,
+    datetime64m,
+    datetime64s,
+    datetime64ms,
+    datetime64us,
     datetime64ns,
-    is_at_least,
+    datetime64ps,
+    datetime64fs,
+    datetime64as,
     is_at_least_or_nan,
-    is_at_most,
+    is_at_least,
     is_at_most_or_nan,
-    is_between,
+    is_at_most,
     is_between_or_nan,
-    is_finite_and_integral,
+    is_between,
     is_finite_and_integral_or_nan,
-    is_finite_and_negative,
+    is_finite_and_integral,
     is_finite_and_negative_or_nan,
-    is_finite_and_non_negative,
+    is_finite_and_negative,
     is_finite_and_non_negative_or_nan,
-    is_finite_and_non_positive,
+    is_finite_and_non_negative,
     is_finite_and_non_positive_or_nan,
-    is_finite_and_non_zero,
+    is_finite_and_non_positive,
     is_finite_and_non_zero_or_nan,
-    is_finite_and_positive,
+    is_finite_and_non_zero,
     is_finite_and_positive_or_nan,
+    is_finite_and_positive,
     is_finite_or_nan,
-    is_greater_than,
     is_greater_than_or_nan,
-    is_integral,
+    is_greater_than,
     is_integral_or_nan,
-    is_less_than,
+    is_integral,
     is_less_than_or_nan,
-    is_negative,
+    is_less_than,
     is_negative_or_nan,
-    is_non_negative,
+    is_negative,
     is_non_negative_or_nan,
-    is_non_positive,
+    is_non_negative,
     is_non_positive_or_nan,
-    is_non_zero,
+    is_non_positive,
     is_non_zero_or_nan,
-    is_positive,
+    is_non_zero,
     is_positive_or_nan,
-    is_zero,
-    is_zero_or_finite_and_non_micro,
+    is_positive,
     is_zero_or_finite_and_non_micro_or_nan,
+    is_zero_or_finite_and_non_micro,
     is_zero_or_nan,
-    is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
-)
-
-
+    is_zero_or_non_micro,
+    is_zero,
+]
 Datetime64Unit = Literal[
     "Y", "M", "W", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"
 ]
@@ -423,7 +443,7 @@ def has_dtype(x: Any, dtype: Any, /) -> bool:
     return x.dtype == dtype
 
 
-def is_empty(shape_or_array: int | tuple[int, ...] | NDArray[Any], /) -> bool:
+def is_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
     """Check if an ndarray is empty."""
     if isinstance(shape_or_array, int):
         return shape_or_array == 0
@@ -432,9 +452,7 @@ def is_empty(shape_or_array: int | tuple[int, ...] | NDArray[Any], /) -> bool:
     return is_empty(shape_or_array.shape)
 
 
-def is_non_empty(
-    shape_or_array: int | tuple[int, ...] | NDArray[Any], /
-) -> bool:
+def is_non_empty(shape_or_array: int | tuple[int, ...] | NDArrayA, /) -> bool:
     """Check if an ndarray is non-empty."""
     if isinstance(shape_or_array, int):
         return shape_or_array >= 1
