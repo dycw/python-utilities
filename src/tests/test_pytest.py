@@ -187,7 +187,7 @@ class TestThrottle:
         contents = f"""
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=0.5)
+            @throttle(root={root_str!r}, duration=1.0)
             def test_main():
                 assert True
             """
@@ -199,6 +199,6 @@ class TestThrottle:
         result = testdir.runpytest()
         result.assert_outcomes(skipped=1)
 
-        sleep(0.5)
+        sleep(1.0)
         result = testdir.runpytest()
         result.assert_outcomes(passed=1)
