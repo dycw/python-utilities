@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from hypothesis import assume, given
 from hypothesis.extra.pandas import range_indexes
@@ -54,6 +54,9 @@ from utilities.pandas import (
     timestamp_to_datetime,
     to_numpy,
 )
+
+if TYPE_CHECKING:
+    from utilities.pandas.typing import SeriesA
 
 
 class TestCheckDataFrame:
@@ -205,7 +208,7 @@ class TestSeriesMinMax:
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
     def test_different_index(
-        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+        self, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
@@ -214,7 +217,7 @@ class TestSeriesMinMax:
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
     def test_different_dtype(
-        self, func: Callable[[Series[Any], Series[Any]], Series[Any]]
+        self, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore

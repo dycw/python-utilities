@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from numpy import empty, ndarray
 from pandas import Index
@@ -21,6 +21,9 @@ from utilities.zarr import (
     NDArrayWithIndexes,
     yield_group_and_array,
 )
+
+if TYPE_CHECKING:
+    from utilities.pandas.typing import IndexA
 
 
 def save_data_array_to_disk(
@@ -120,7 +123,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
 
     @property
     @override
-    def indexes(self) -> dict[str, Index[Any]]:  # type: ignore
+    def indexes(self) -> dict[str, IndexA]:  # type: ignore
         """The indexes of the underlying array."""
         return {
             ensure_str(dim): Index(index)

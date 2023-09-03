@@ -3,9 +3,9 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterable, Iterator
 from decimal import Decimal
-from typing import Any, overload
+from typing import TYPE_CHECKING, Any, overload
 
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from sqlalchemy import Column, insert
 from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import DuplicateColumnError
@@ -35,6 +35,9 @@ from utilities.sqlalchemy import (
     yield_connection,
 )
 from utilities.text import ensure_str, snake_case
+
+if TYPE_CHECKING:
+    from utilities.pandas.typing import SeriesA
 
 
 def insert_dataframe(
@@ -124,7 +127,7 @@ def _yield_dataframe_rows_as_dicts(
 
 
 def _parse_series_against_table(
-    series: Series[Any],
+    series: SeriesA,
     table_or_model: Any,
     /,
     *,
@@ -170,7 +173,7 @@ class SeriesNameNotInTableError(ValueError):
 
 
 def _check_series_against_table_column(
-    series: Series[Any],
+    series: SeriesA,
     table_column: Column[Any],
     /,
     *,
@@ -209,7 +212,7 @@ class SeriesAgainstTableColumnError(TypeError):
     """Raised when a series has incompatible dtype with a table column."""
 
 
-def _yield_insertion_elements(series: Series[Any], /) -> Iterator[Any]:
+def _yield_insertion_elements(series: SeriesA, /) -> Iterator[Any]:
     """Yield the elements for insertion."""
     if has_dtype(series, (bool, boolean)):
         cast = bool

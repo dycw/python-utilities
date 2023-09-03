@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -11,7 +11,6 @@ from hypothesis.strategies import (
     integers,
     sampled_from,
 )
-from pandas import Index
 from pytest import mark
 from xarray import DataArray
 
@@ -19,6 +18,9 @@ from utilities.hypothesis import assume_does_not_raise, text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import float_data_arrays
 from utilities.xarray import ewma, exp_moving_sum
+
+if TYPE_CHECKING:
+    from utilities.pandas.typing import IndexA
 
 
 class TestBottleNeckInstalled:
@@ -36,7 +38,7 @@ class TestEwma:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
+        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))
@@ -53,7 +55,7 @@ class TestExpMovingSum:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, Index[Any]], halflife: int
+        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))

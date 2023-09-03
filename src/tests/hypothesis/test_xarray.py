@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
@@ -13,7 +13,6 @@ from hypothesis.strategies import (
     integers,
     none,
 )
-from pandas import Index
 from pandas.testing import assert_index_equal
 
 from utilities.hypothesis import assume_does_not_raise, text_ascii
@@ -27,14 +26,14 @@ from utilities.hypothesis.xarray import (
     str_data_arrays,
 )
 
+if TYPE_CHECKING:
+    from utilities.pandas.typing import IndexA
+
 
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self,
-        data: DataObject,
-        indexes: Mapping[str, Index[Any]],
-        name: str | None,
+        self, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -99,7 +98,7 @@ class TestFloatDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: Mapping[str, Index[Any]],
+        indexes: Mapping[str, IndexA],
         min_value: float | None,
         max_value: float | None,
         allow_nan: bool,
@@ -146,7 +145,7 @@ class TestIntDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: Mapping[str, Index[Any]],
+        indexes: Mapping[str, IndexA],
         min_value: int | None,
         max_value: int | None,
         unique: bool,
@@ -183,8 +182,8 @@ class TestMergeIntoDictOfIndexes:
     def test_non_empty(
         self,
         data: DataObject,
-        indexes1: Mapping[str, Index[Any]] | None,
-        indexes2: Mapping[str, Index[Any]],
+        indexes1: Mapping[str, IndexA] | None,
+        indexes2: Mapping[str, IndexA],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
         expected = (set() if indexes1 is None else set(indexes1)) | set(
@@ -207,7 +206,7 @@ class TestStrDataArrays:
         self,
         *,
         data: DataObject,
-        indexes: Mapping[str, Index[Any]],
+        indexes: Mapping[str, IndexA],
         min_size: int,
         max_size: int | None,
         allow_none: bool,

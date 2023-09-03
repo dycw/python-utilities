@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import SearchStrategy, composite
-from pandas import Index
 from xarray import DataArray
 
 from utilities.hypothesis import lift_draw, lists_fixed_length, text_ascii
@@ -24,6 +23,9 @@ from utilities.xarray.typing import (
     DataArrayO,
 )
 
+if TYPE_CHECKING:
+    from utilities.pandas.typing import IndexA, IndexI
+
 
 @composite
 def dicts_of_indexes(
@@ -34,7 +36,7 @@ def dicts_of_indexes(
     max_dims: int | None = None,
     min_side: int = 1,
     max_side: int | None = None,
-) -> dict[str, Index[int]]:
+) -> dict[str, IndexI]:
     """Strategy for generating dictionaries of indexes."""
     draw = lift_draw(_draw)
     shape = draw(
@@ -54,13 +56,13 @@ def dicts_of_indexes(
 @composite
 def bool_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
 ) -> DataArrayB:
     """Strategy for generating data arrays of booleans."""
     draw = lift_draw(_draw)
@@ -75,7 +77,7 @@ def bool_data_arrays(
 @composite
 def float_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
@@ -88,7 +90,7 @@ def float_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
 ) -> DataArrayF:
     """Strategy for generating data arrays of floats."""
     draw = lift_draw(_draw)
@@ -116,7 +118,7 @@ def float_data_arrays(
 @composite
 def int_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
     min_value: MaybeSearchStrategy[int | None] = None,
@@ -124,7 +126,7 @@ def int_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
 ) -> DataArrayI:
     """Strategy for generating data arrays of ints."""
     draw = lift_draw(_draw)
@@ -147,7 +149,7 @@ def int_data_arrays(
 @composite
 def str_data_arrays(
     _draw: Any,
-    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
@@ -156,7 +158,7 @@ def str_data_arrays(
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
     name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
 ) -> DataArrayO:
     """Strategy for generating data arrays of strings."""
     draw = lift_draw(_draw)
@@ -180,15 +182,15 @@ def str_data_arrays(
 @composite
 def _merge_into_dict_of_indexes(
     _draw: Any,
-    indexes: MaybeSearchStrategy[Mapping[str, Index[Any]]] | None = None,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
-    **indexes_kwargs: MaybeSearchStrategy[Index[Any]],
-) -> dict[str, Index[Any]]:
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
+) -> dict[str, IndexA]:
     """Merge positional & kwargs of indexes into a dictionary."""
     draw = lift_draw(_draw)
     if (indexes is None) and (len(indexes_kwargs) == 0):
         return draw(dicts_of_indexes())
-    indexes_out: dict[str, Index[Any]] = {}
+    indexes_out: dict[str, IndexA] = {}
     if indexes is not None:
         indexes_out |= dict(draw(indexes))
     indexes_out |= {k: draw(v) for k, v in indexes_kwargs.items()}

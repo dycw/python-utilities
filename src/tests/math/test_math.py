@@ -66,7 +66,7 @@ class TestChecks:
             param(0.0, nan, False),
         ],
     )
-    def test_is_at_least(self, x: float, y: float, expected: bool) -> None:
+    def test_is_at_least(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -100,7 +100,7 @@ class TestChecks:
             param(0.0, nan, False),
         ],
     )
-    def test_is_at_most(self, x: float, y: float, expected: bool) -> None:
+    def test_is_at_most(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -133,7 +133,7 @@ class TestChecks:
         ],
     )
     def test_is_between(
-        self, x: float, low: float, high: float, expected: bool
+        self, *, x: float, low: float, high: float, expected: bool
     ) -> None:
         assert is_between(x, low, high, abs_tol=1e-8) is expected
 
@@ -185,7 +185,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_integral(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_integral(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_integral(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_integral_or_nan(self) -> None:
@@ -208,7 +208,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_negative(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_negative(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_negative(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_negative_or_nan(self) -> None:
@@ -231,7 +231,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_negative(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_negative(
+        self, *, x: float, expected: bool
+    ) -> None:
         assert is_finite_and_non_negative(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_non_negative_or_nan(self) -> None:
@@ -254,7 +256,9 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_positive(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_positive(
+        self, *, x: float, expected: bool
+    ) -> None:
         assert is_finite_and_non_positive(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_non_positive_or_nan(self) -> None:
@@ -277,7 +281,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_non_zero(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_non_zero(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_non_zero(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_non_zero_or_nan(self) -> None:
@@ -300,7 +304,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_finite_and_positive(self, x: float, expected: bool) -> None:
+    def test_is_finite_and_positive(self, *, x: float, expected: bool) -> None:
         assert is_finite_and_positive(x, abs_tol=1e-8) is expected
 
     def test_is_finite_and_positive_or_nan(self) -> None:
@@ -317,7 +321,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_finite_or_nan(self, x: float, expected: bool) -> None:
+    def test_is_finite_or_nan(self, *, x: float, expected: bool) -> None:
         assert is_finite_or_nan(x) is expected
 
     @mark.parametrize(
@@ -337,7 +341,9 @@ class TestChecks:
             param(0.0, nan, False),
         ],
     )
-    def test_is_greater_than(self, x: float, y: float, expected: bool) -> None:
+    def test_is_greater_than(
+        self, *, x: float, y: float, expected: bool
+    ) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -377,7 +383,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_integral(self, x: float, expected: bool) -> None:
+    def test_is_integral(self, *, x: float, expected: bool) -> None:
         assert is_integral(x, abs_tol=1e-8) is expected
 
     def test_is_integral_or_nan(self) -> None:
@@ -400,7 +406,7 @@ class TestChecks:
             param(0.0, nan, False),
         ],
     )
-    def test_is_less_than(self, x: float, y: float, expected: bool) -> None:
+    def test_is_less_than(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -434,7 +440,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_negative(self, x: float, expected: bool) -> None:
+    def test_is_negative(self, *, x: float, expected: bool) -> None:
         assert is_negative(x, abs_tol=1e-8) is expected
 
     def test_is_negative_or_nan(self) -> None:
@@ -457,7 +463,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_non_negative(self, x: float, expected: bool) -> None:
+    def test_is_non_negative(self, *, x: float, expected: bool) -> None:
         assert is_non_negative(x, abs_tol=1e-8) is expected
 
     def test_is_non_negative_or_nan(self) -> None:
@@ -480,7 +486,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_non_positive(self, x: float, expected: bool) -> None:
+    def test_is_non_positive(self, *, x: float, expected: bool) -> None:
         assert is_non_positive(x, abs_tol=1e-8) is expected
 
     def test_is_non_positive_or_nan(self) -> None:
@@ -503,7 +509,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_non_zero(self, x: float, expected: bool) -> None:
+    def test_is_non_zero(self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x, abs_tol=1e-8) is expected
 
     def test_is_non_zero_or_nan(self) -> None:
@@ -526,7 +532,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_positive(self, x: float, expected: bool) -> None:
+    def test_is_positive(self, *, x: float, expected: bool) -> None:
         assert is_positive(x, abs_tol=1e-8) is expected
 
     def test_is_positive_or_nan(self) -> None:
@@ -549,7 +555,7 @@ class TestChecks:
             param(nan, False),
         ],
     )
-    def test_is_zero(self, x: float, expected: bool) -> None:
+    def test_is_zero(self, *, x: float, expected: bool) -> None:
         assert is_zero(x, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -570,7 +576,7 @@ class TestChecks:
         ],
     )
     def test_is_zero_or_finite_and_non_micro(
-        self, x: float, expected: bool
+        self, *, x: float, expected: bool
     ) -> None:
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
 
@@ -597,7 +603,7 @@ class TestChecks:
             param(nan, True),
         ],
     )
-    def test_is_zero_or_non_micro(self, x: float, expected: bool) -> None:
+    def test_is_zero_or_non_micro(self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
 
     def test_is_zero_or_non_micro_or_nan(self) -> None:

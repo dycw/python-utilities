@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from typing import Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
 from numpy import where
 from pandas import (
@@ -24,6 +24,10 @@ from utilities.errors import redirect_error
 from utilities.numpy import has_dtype
 from utilities.numpy.typing import NDArray1, datetime64ns
 from utilities.zoneinfo import HONG_KONG
+
+if TYPE_CHECKING:
+    from utilities.pandas.typing import IndexA, SeriesA
+
 
 Int64 = "Int64"
 boolean = "boolean"
@@ -65,7 +69,7 @@ class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-def check_range_index(obj: Index[Any] | Series[Any] | DataFrame, /) -> None:
+def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
     """Check if a RangeIndex is the default one."""
     if isinstance(obj, Index):
         if not isinstance(obj, RangeIndex):
@@ -124,19 +128,19 @@ class EmptyPandasConcatError(ValueError):
     """Raised when there are no objects to concatenate."""
 
 
-def series_max(*series: Series[Any]) -> Series[Any]:
+def series_max(*series: SeriesA) -> SeriesA:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
 
 
-def series_min(*series: Series[Any]) -> Series[Any]:
+def series_min(*series: SeriesA) -> SeriesA:
     """Compute the minimum of a set of Series."""
     return reduce(partial(_series_minmax, kind="upper"), series)
 
 
 def _series_minmax(
-    x: Series[Any], y: Series[Any], /, *, kind: Literal["lower", "upper"]
-) -> Series[Any]:
+    x: SeriesA, y: SeriesA, /, *, kind: Literal["lower", "upper"]
+) -> SeriesA:
     """Compute the minimum/maximum of a pair of Series."""
     assert_index_equal(x.index, y.index)
     if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
@@ -206,7 +210,7 @@ TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
 )
 
 
-def to_numpy(series: Series[Any], /) -> NDArray1:
+def to_numpy(series: SeriesA, /) -> NDArray1:
     """Convert a series into a 1-dimensional `ndarray`."""
     if has_dtype(series, (bool, datetime64ns, int, float)):
         return series.to_numpy()
