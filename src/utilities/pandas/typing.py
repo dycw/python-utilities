@@ -1,9 +1,9 @@
-from __future__ import annotations
+from __future__ import annotations  # pragma: no cover
 
-import datetime as dt
-from typing import TYPE_CHECKING, Any
+import datetime as dt  # pragma: no cover
+from typing import TYPE_CHECKING, Any  # pragma: no cover
 
-from pandas import (
+from pandas import (  # pragma: no cover
     BooleanDtype,
     CategoricalDtype,
     DatetimeTZDtype,
@@ -12,10 +12,9 @@ from pandas import (
     Series,
     StringDtype,
 )
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias  # pragma: no cover
 
 if TYPE_CHECKING:  # pragma: no cover
-    # index
     IndexA: TypeAlias = Index[Any]
     IndexB: TypeAlias = Index[bool]
     IndexBn: TypeAlias = Index[BooleanDtype]
@@ -28,7 +27,6 @@ if TYPE_CHECKING:  # pragma: no cover
     IndexI64: TypeAlias = Index[Int64Dtype]
     IndexS: TypeAlias = Index[StringDtype]
 
-    # series
     SeriesA: TypeAlias = Series[Any]
     SeriesB: TypeAlias = Series[bool]
     SeriesBn: TypeAlias = Series[BooleanDtype]
