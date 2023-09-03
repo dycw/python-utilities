@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Hashable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
@@ -13,7 +13,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
 )
-from pandas import Index, StringDtype, Timedelta, Timestamp
+from pandas import Timedelta, Timestamp
 
 from utilities.datetime import UTC
 from utilities.hypothesis import lift_draw, text_ascii
@@ -26,6 +26,9 @@ from utilities.pandas import (
     TIMESTAMP_MIN_AS_DATETIME,
     string,
 )
+
+if TYPE_CHECKING:  # pragma: no cover
+    from utilities.pandas.typing import IndexA, IndexI, IndexS
 
 
 @composite
@@ -74,7 +77,7 @@ def indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> Index[Any]:
+) -> IndexA:
     """Strategy for generating Indexes."""
     draw = lift_draw(_draw)
     n_ = draw(n)
@@ -99,7 +102,7 @@ def int_indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[Index[int]]:
+) -> SearchStrategy[IndexI]:
     """Strategy for generating integer Indexes."""
     return indexes(
         elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
@@ -117,7 +120,7 @@ def str_indexes(
     unique: MaybeSearchStrategy[bool] = True,
     name: MaybeSearchStrategy[Hashable] = None,
     sort: MaybeSearchStrategy[bool] = False,
-) -> Index[StringDtype]:
+) -> IndexS:
     """Strategy for generating string Indexes."""
     draw = lift_draw(_draw)
     elements = text_ascii(min_size=min_size, max_size=max_size)

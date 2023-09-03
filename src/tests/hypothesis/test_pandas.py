@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Hashable
 from typing import Any, cast
 
-from hypothesis import assume, given
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import DataObject, booleans, data, dates, integers
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
@@ -49,6 +49,7 @@ class TestDatetimesPd:
         min_value=datetimes_utc(min_value=TIMESTAMP_MIN_AS_DATETIME),
         max_value=datetimes_utc(max_value=TIMESTAMP_MAX_AS_DATETIME),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
