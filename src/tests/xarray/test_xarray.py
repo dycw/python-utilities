@@ -19,7 +19,7 @@ from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import float_data_arrays
 from utilities.xarray import ewma, exp_moving_sum
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA
 
 

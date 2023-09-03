@@ -26,7 +26,7 @@ from utilities.hypothesis.xarray import (
     str_data_arrays,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA
 
 

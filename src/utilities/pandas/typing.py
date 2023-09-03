@@ -14,7 +14,7 @@ from pandas import (
 )
 from typing_extensions import TypeAlias
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     # index
     IndexA: TypeAlias = Index[Any]
     IndexB: TypeAlias = Index[bool]

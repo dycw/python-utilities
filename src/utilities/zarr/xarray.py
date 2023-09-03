@@ -22,7 +22,7 @@ from utilities.zarr import (
     yield_group_and_array,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA
 
 

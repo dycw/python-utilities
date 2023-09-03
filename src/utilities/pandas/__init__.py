@@ -25,7 +25,7 @@ from utilities.numpy import has_dtype
 from utilities.numpy.typing import NDArray1, datetime64ns
 from utilities.zoneinfo import HONG_KONG
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA, SeriesA
 
 

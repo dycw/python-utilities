@@ -55,7 +55,7 @@ from utilities.pandas import (
     to_numpy,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import SeriesA
 
 

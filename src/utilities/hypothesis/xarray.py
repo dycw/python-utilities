@@ -23,7 +23,7 @@ from utilities.xarray.typing import (
     DataArrayO,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA, IndexI
 
 

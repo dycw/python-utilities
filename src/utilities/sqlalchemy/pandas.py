@@ -36,7 +36,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.text import ensure_str, snake_case
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import SeriesA
 
 
