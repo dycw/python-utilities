@@ -1,8 +1,5 @@
 name: pull-request
 
-env:
-  HYPOTHESIS_PROFILE: ci
-
 on:
   pull_request:
     branches:
