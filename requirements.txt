@@ -4,5 +4,5 @@
 #
 #    pip-compile --allow-unsafe pyproject.toml
 #
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via dycw-utilities (pyproject.toml)
