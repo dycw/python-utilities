@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 
+# remove 'darwin' (single quotes), compile, set as ci/macos
+gsed -i "s/sys_platform == 'darwin'/sys_platform == 'linux'/g" pyproject.toml
 pre-commit run pip-compile --all-files
 cp requirements-dev.txt ci/macos-latest.txt
-gsed -i "s/sys_platform == 'linux'/sys_platform == 'darwin'/g" pyproject.toml
+git checkout -- pyproject.toml requirements-dev.txt
+
+# compile, set as ci/ubuntu, change "darwin" to "linux" (double quotes)
 pre-commit run pip-compile --all-files
 cp requirements-dev.txt ci/ubuntu-latest.txt
 gsed -i 's/sys_platform == "darwin"/sys_platform == "linux"/g' ci/ubuntu-latest.txt
 git checkout -- pyproject.toml requirements-dev.txt
+
+# compile
+pre-commit run pip-compile --all-files
