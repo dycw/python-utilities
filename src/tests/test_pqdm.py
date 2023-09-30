@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
+from collections.abc import Mapping
 from functools import partial
-from operator import neg, pow
-from typing import Any, Literal
+from operator import neg
+from operator import pow
+from typing import Any
+from typing import Literal
 
-from pytest import mark, param
+from pytest import mark
+from pytest import param
 
 from utilities.class_name import get_class_name
-from utilities.pqdm import _get_desc, pmap, pstarmap
-from utilities.sentinel import Sentinel, sentinel
+from utilities.pqdm import _get_desc
+from utilities.pqdm import pmap
+from utilities.pqdm import pstarmap
+from utilities.sentinel import Sentinel
+from utilities.sentinel import sentinel
 
 
 class TestGetDesc:

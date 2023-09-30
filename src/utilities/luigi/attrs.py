@@ -6,35 +6,38 @@ from contextlib import suppress
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from types import UnionType, new_class
-from typing import Any, Literal, TypeVar, cast, get_args, get_origin
+from types import UnionType
+from types import new_class
+from typing import Any
+from typing import Literal
+from typing import TypeVar
+from typing import cast
+from typing import get_args
+from typing import get_origin
 
-from attrs import asdict, fields
-from luigi import (
-    BoolParameter,
-    FloatParameter,
-    IntParameter,
-    ListParameter,
-    OptionalBoolParameter,
-    OptionalFloatParameter,
-    OptionalIntParameter,
-    OptionalListParameter,
-    OptionalPathParameter,
-    OptionalStrParameter,
-    Parameter,
-    PathParameter,
-)
+from attrs import asdict
+from attrs import fields
+from luigi import BoolParameter
+from luigi import FloatParameter
+from luigi import IntParameter
+from luigi import ListParameter
+from luigi import OptionalBoolParameter
+from luigi import OptionalFloatParameter
+from luigi import OptionalIntParameter
+from luigi import OptionalListParameter
+from luigi import OptionalPathParameter
+from luigi import OptionalStrParameter
+from luigi import Parameter
+from luigi import PathParameter
 
 from utilities.class_name import get_class_name
-from utilities.luigi import (
-    DateHourParameter,
-    DateMinuteParameter,
-    DateParameter,
-    DateSecondParameter,
-    EnumParameter,
-    TimeParameter,
-    WeekdayParameter,
-)
+from utilities.luigi import DateHourParameter
+from utilities.luigi import DateMinuteParameter
+from utilities.luigi import DateParameter
+from utilities.luigi import DateSecondParameter
+from utilities.luigi import EnumParameter
+from utilities.luigi import TimeParameter
+from utilities.luigi import WeekdayParameter
 from utilities.types import NoneType
 from utilities.typing import never
 

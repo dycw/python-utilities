@@ -4,10 +4,12 @@ from typing import Any
 
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import composite, integers
+from hypothesis.strategies import composite
+from hypothesis.strategies import integers
 from semver import Version
 
-from utilities.hypothesis import lift_draw, lists_fixed_length
+from utilities.hypothesis import lift_draw
+from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis.typing import MaybeSearchStrategy
 
 

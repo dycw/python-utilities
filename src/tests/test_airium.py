@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
 from utilities.airium import yield_airium
 from utilities.text import strip_and_dedent

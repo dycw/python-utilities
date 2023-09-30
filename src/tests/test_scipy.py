@@ -3,10 +3,16 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from hypothesis import given
-from hypothesis.strategies import floats, integers
-from numpy import array, isfinite, isnan, nan
-from numpy.testing import assert_allclose, assert_equal
-from pytest import mark, param
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from numpy import array
+from numpy import isfinite
+from numpy import isnan
+from numpy import nan
+from numpy.testing import assert_allclose
+from numpy.testing import assert_equal
+from pytest import mark
+from pytest import param
 
 from utilities.hypothesis.numpy import float_arrays
 from utilities.numpy import is_between_or_nan

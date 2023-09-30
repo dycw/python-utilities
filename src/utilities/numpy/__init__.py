@@ -1,115 +1,114 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Any, Literal, NoReturn, cast, overload
+from typing import Any
+from typing import Literal
+from typing import NoReturn
+from typing import cast
+from typing import overload
 
 import numpy as np
 from bottleneck import push
-from numpy import (
-    array,
-    datetime64,
-    digitize,
-    dtype,
-    errstate,
-    exp,
-    flatnonzero,
-    flip,
-    full_like,
-    inf,
-    isclose,
-    isfinite,
-    isinf,
-    isnan,
-    linspace,
-    log,
-    nan,
-    nanquantile,
-    ndarray,
-    prod,
-    rint,
-    roll,
-    where,
-)
-from numpy.linalg import det, eig
+from numpy import array
+from numpy import datetime64
+from numpy import digitize
+from numpy import dtype
+from numpy import errstate
+from numpy import exp
+from numpy import flatnonzero
+from numpy import flip
+from numpy import full_like
+from numpy import inf
+from numpy import isclose
+from numpy import isfinite
+from numpy import isinf
+from numpy import isnan
+from numpy import linspace
+from numpy import log
+from numpy import nan
+from numpy import nanquantile
+from numpy import ndarray
+from numpy import prod
+from numpy import rint
+from numpy import roll
+from numpy import where
+from numpy.linalg import det
+from numpy.linalg import eig
 
-from utilities._numbagg import move_exp_nanmean, move_exp_nansum
+from utilities._numbagg import move_exp_nanmean
+from utilities._numbagg import move_exp_nansum
 from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.math.typing import FloatFinPos
-from utilities.numpy.checks import (
-    _is_close,
-    is_at_least,
-    is_at_least_or_nan,
-    is_at_most,
-    is_at_most_or_nan,
-    is_between,
-    is_between_or_nan,
-    is_finite_and_integral,
-    is_finite_and_integral_or_nan,
-    is_finite_and_negative,
-    is_finite_and_negative_or_nan,
-    is_finite_and_non_negative,
-    is_finite_and_non_negative_or_nan,
-    is_finite_and_non_positive,
-    is_finite_and_non_positive_or_nan,
-    is_finite_and_non_zero,
-    is_finite_and_non_zero_or_nan,
-    is_finite_and_positive,
-    is_finite_and_positive_or_nan,
-    is_finite_or_nan,
-    is_greater_than,
-    is_greater_than_or_nan,
-    is_integral,
-    is_integral_or_nan,
-    is_less_than,
-    is_less_than_or_nan,
-    is_negative,
-    is_negative_or_nan,
-    is_non_negative,
-    is_non_negative_or_nan,
-    is_non_positive,
-    is_non_positive_or_nan,
-    is_non_zero,
-    is_non_zero_or_nan,
-    is_positive,
-    is_positive_or_nan,
-    is_zero,
-    is_zero_or_finite_and_non_micro,
-    is_zero_or_finite_and_non_micro_or_nan,
-    is_zero_or_nan,
-    is_zero_or_non_micro,
-    is_zero_or_non_micro_or_nan,
-)
-from utilities.numpy.dtypes import (
-    datetime64as,
-    datetime64D,
-    datetime64fs,
-    datetime64h,
-    datetime64M,
-    datetime64m,
-    datetime64ms,
-    datetime64ns,
-    datetime64ps,
-    datetime64s,
-    datetime64us,
-    datetime64W,
-    datetime64Y,
-)
-from utilities.numpy.typing import (
-    NDArrayA,
-    NDArrayB,
-    NDArrayB1,
-    NDArrayDD,
-    NDArrayF,
-    NDArrayF1,
-    NDArrayF2,
-    NDArrayI,
-    NDArrayI2,
-)
+from utilities.numpy.checks import _is_close
+from utilities.numpy.checks import is_at_least
+from utilities.numpy.checks import is_at_least_or_nan
+from utilities.numpy.checks import is_at_most
+from utilities.numpy.checks import is_at_most_or_nan
+from utilities.numpy.checks import is_between
+from utilities.numpy.checks import is_between_or_nan
+from utilities.numpy.checks import is_finite_and_integral
+from utilities.numpy.checks import is_finite_and_integral_or_nan
+from utilities.numpy.checks import is_finite_and_negative
+from utilities.numpy.checks import is_finite_and_negative_or_nan
+from utilities.numpy.checks import is_finite_and_non_negative
+from utilities.numpy.checks import is_finite_and_non_negative_or_nan
+from utilities.numpy.checks import is_finite_and_non_positive
+from utilities.numpy.checks import is_finite_and_non_positive_or_nan
+from utilities.numpy.checks import is_finite_and_non_zero
+from utilities.numpy.checks import is_finite_and_non_zero_or_nan
+from utilities.numpy.checks import is_finite_and_positive
+from utilities.numpy.checks import is_finite_and_positive_or_nan
+from utilities.numpy.checks import is_finite_or_nan
+from utilities.numpy.checks import is_greater_than
+from utilities.numpy.checks import is_greater_than_or_nan
+from utilities.numpy.checks import is_integral
+from utilities.numpy.checks import is_integral_or_nan
+from utilities.numpy.checks import is_less_than
+from utilities.numpy.checks import is_less_than_or_nan
+from utilities.numpy.checks import is_negative
+from utilities.numpy.checks import is_negative_or_nan
+from utilities.numpy.checks import is_non_negative
+from utilities.numpy.checks import is_non_negative_or_nan
+from utilities.numpy.checks import is_non_positive
+from utilities.numpy.checks import is_non_positive_or_nan
+from utilities.numpy.checks import is_non_zero
+from utilities.numpy.checks import is_non_zero_or_nan
+from utilities.numpy.checks import is_positive
+from utilities.numpy.checks import is_positive_or_nan
+from utilities.numpy.checks import is_zero
+from utilities.numpy.checks import is_zero_or_finite_and_non_micro
+from utilities.numpy.checks import is_zero_or_finite_and_non_micro_or_nan
+from utilities.numpy.checks import is_zero_or_nan
+from utilities.numpy.checks import is_zero_or_non_micro
+from utilities.numpy.checks import is_zero_or_non_micro_or_nan
+from utilities.numpy.dtypes import datetime64as
+from utilities.numpy.dtypes import datetime64D
+from utilities.numpy.dtypes import datetime64fs
+from utilities.numpy.dtypes import datetime64h
+from utilities.numpy.dtypes import datetime64M
+from utilities.numpy.dtypes import datetime64m
+from utilities.numpy.dtypes import datetime64ms
+from utilities.numpy.dtypes import datetime64ns
+from utilities.numpy.dtypes import datetime64ps
+from utilities.numpy.dtypes import datetime64s
+from utilities.numpy.dtypes import datetime64us
+from utilities.numpy.dtypes import datetime64W
+from utilities.numpy.dtypes import datetime64Y
+from utilities.numpy.typing import NDArrayA
+from utilities.numpy.typing import NDArrayB
+from utilities.numpy.typing import NDArrayB1
+from utilities.numpy.typing import NDArrayDD
+from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayF1
+from utilities.numpy.typing import NDArrayF2
+from utilities.numpy.typing import NDArrayI
+from utilities.numpy.typing import NDArrayI2
 from utilities.re import extract_group
 
 _ = [

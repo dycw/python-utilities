@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
+from numpy import apply_along_axis
+from numpy import clip
+from numpy import full_like
+from numpy import isnan
+from numpy import nan
+from numpy import zeros_like
 from scipy.stats import norm
 
 from utilities.math.typing import FloatFinNonNeg
 from utilities.numpy import is_zero
-from utilities.numpy.typing import NDArrayF, NDArrayF1
+from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayF1
 
 
 def ppf(

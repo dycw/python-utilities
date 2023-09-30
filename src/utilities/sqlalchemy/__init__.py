@@ -1,62 +1,74 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Callable, Iterable, Iterator, Mapping
-from contextlib import contextmanager, suppress
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
+from contextlib import contextmanager
+from contextlib import suppress
 from functools import reduce
 from math import isclose
-from operator import ge, itemgetter, le
-from typing import Any, Literal, NoReturn, cast
+from operator import ge
+from operator import itemgetter
+from operator import le
+from typing import Any
+from typing import Literal
+from typing import NoReturn
+from typing import cast
 
 import sqlalchemy
 import timeout_decorator
 from beartype import beartype
 from more_itertools import chunked
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    Float,
-    Interval,
-    LargeBinary,
-    MetaData,
-    Numeric,
-    Select,
-    String,
-    Table,
-    Unicode,
-    UnicodeText,
-    Uuid,
-    and_,
-    case,
-    quoted_name,
-    text,
-)
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Enum
+from sqlalchemy import Float
+from sqlalchemy import Interval
+from sqlalchemy import LargeBinary
+from sqlalchemy import MetaData
+from sqlalchemy import Numeric
+from sqlalchemy import Select
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import Unicode
+from sqlalchemy import UnicodeText
+from sqlalchemy import Uuid
+from sqlalchemy import and_
+from sqlalchemy import case
 from sqlalchemy import create_engine as _create_engine
+from sqlalchemy import quoted_name
+from sqlalchemy import text
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL, Connection, Engine
-from sqlalchemy.exc import (
-    ArgumentError,
-    DatabaseError,
-    NoSuchTableError,
-    OperationalError,
-)
-from sqlalchemy.orm import InstrumentedAttribute, declared_attr
-from sqlalchemy.pool import NullPool, Pool
+from sqlalchemy.engine import URL
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import ArgumentError
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import InstrumentedAttribute
+from sqlalchemy.orm import declared_attr
+from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
 from utilities.bidict import snake_case_mappings
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
-from utilities.math.typing import FloatFinNonNeg, FloatNonNeg, IntNonNeg
+from utilities.math.typing import FloatFinNonNeg
+from utilities.math.typing import FloatNonNeg
+from utilities.math.typing import IntNonNeg
 from utilities.more_itertools import one
-from utilities.text import ensure_str, snake_case
+from utilities.text import ensure_str
+from utilities.text import snake_case
 from utilities.typing import never
 
 

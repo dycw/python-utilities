@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
-from contextlib import contextmanager, suppress
-from os import cpu_count, environ, getenv
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Mapping
+from contextlib import contextmanager
+from contextlib import suppress
+from os import cpu_count
+from os import environ
+from os import getenv
 
 
 def _get_cpu_count() -> int:

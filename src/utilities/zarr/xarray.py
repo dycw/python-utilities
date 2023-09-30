@@ -1,26 +1,29 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import cast
 
-from numpy import empty, ndarray
+from numpy import empty
+from numpy import ndarray
 from pandas import Index
 from typing_extensions import override
 from xarray import DataArray
 from xarray.core.types import ErrorOptionsWithWarn
-from zarr import Array, suppress
+from zarr import Array
+from zarr import suppress
 
 from utilities.numpy.typing import NDArray1
 from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-from utilities.zarr import (
-    InvalidDimensionError,
-    IselIndexer,
-    NDArrayWithIndexes,
-    yield_group_and_array,
-)
+from utilities.zarr import InvalidDimensionError
+from utilities.zarr import IselIndexer
+from utilities.zarr import NDArrayWithIndexes
+from utilities.zarr import yield_group_and_array
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA

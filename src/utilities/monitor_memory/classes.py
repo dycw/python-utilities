@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from typed_settings import option, settings
+from typed_settings import option
+from typed_settings import settings
 
-from utilities.platform import SYSTEM, System
+from utilities.platform import SYSTEM
+from utilities.platform import System
 from utilities.typing import never
 
 

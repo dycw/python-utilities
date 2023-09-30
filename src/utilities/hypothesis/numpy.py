@@ -1,67 +1,60 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
 import numpy as np
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.numpy import array_shapes, arrays
-from hypothesis.strategies import (
-    SearchStrategy,
-    booleans,
-    composite,
-    integers,
-    none,
-    nothing,
-    sampled_from,
-)
-from numpy import (
-    concatenate,
-    datetime64,
-    expand_dims,
-    iinfo,
-    int32,
-    int64,
-    uint32,
-    uint64,
-    zeros,
-)
+from hypothesis.extra.numpy import array_shapes
+from hypothesis.extra.numpy import arrays
+from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import booleans
+from hypothesis.strategies import composite
+from hypothesis.strategies import integers
+from hypothesis.strategies import none
+from hypothesis.strategies import nothing
+from hypothesis.strategies import sampled_from
+from numpy import concatenate
+from numpy import datetime64
+from numpy import expand_dims
+from numpy import iinfo
+from numpy import int32
+from numpy import int64
+from numpy import uint32
+from numpy import uint64
+from numpy import zeros
 from numpy.typing import NDArray
 
-from utilities.hypothesis import (
-    floats_extra,
-    lift_draw,
-    lists_fixed_length,
-    text_ascii,
-)
-from utilities.hypothesis.typing import MaybeSearchStrategy, Shape
+from utilities.hypothesis import floats_extra
+from utilities.hypothesis import lift_draw
+from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import text_ascii
+from utilities.hypothesis.typing import MaybeSearchStrategy
+from utilities.hypothesis.typing import Shape
 from utilities.math.typing import IntNonNeg
-from utilities.numpy import (
-    DATE_MAX_AS_INT,
-    DATE_MIN_AS_INT,
-    DATETIME_MAX_AS_INT,
-    DATETIME_MIN_AS_INT,
-    Datetime64Kind,
-    Datetime64Unit,
-    EmptyNumpyConcatenateError,
-    date_to_datetime64,
-    datetime64_to_int,
-    datetime64_unit_to_dtype,
-    datetime64_unit_to_kind,
-    datetime_to_datetime64,
-    redirect_to_empty_numpy_concatenate_error,
-)
-from utilities.numpy.typing import (
-    NDArrayB,
-    NDArrayD,
-    NDArrayD1,
-    NDArrayDD1,
-    NDArrayDus1,
-    NDArrayF,
-    NDArrayI,
-    NDArrayO,
-)
+from utilities.numpy import DATE_MAX_AS_INT
+from utilities.numpy import DATE_MIN_AS_INT
+from utilities.numpy import DATETIME_MAX_AS_INT
+from utilities.numpy import DATETIME_MIN_AS_INT
+from utilities.numpy import Datetime64Kind
+from utilities.numpy import Datetime64Unit
+from utilities.numpy import EmptyNumpyConcatenateError
+from utilities.numpy import date_to_datetime64
+from utilities.numpy import datetime64_to_int
+from utilities.numpy import datetime64_unit_to_dtype
+from utilities.numpy import datetime64_unit_to_kind
+from utilities.numpy import datetime_to_datetime64
+from utilities.numpy import redirect_to_empty_numpy_concatenate_error
+from utilities.numpy.typing import NDArrayB
+from utilities.numpy.typing import NDArrayD
+from utilities.numpy.typing import NDArrayD1
+from utilities.numpy.typing import NDArrayDD1
+from utilities.numpy.typing import NDArrayDus1
+from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayI
+from utilities.numpy.typing import NDArrayO
 
 
 @composite

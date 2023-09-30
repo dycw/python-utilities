@@ -1,21 +1,17 @@
 from __future__ import annotations  # pragma: no cover
 
 import datetime as dt  # pragma: no cover
-from typing import (  # pragma: no cover
-    TYPE_CHECKING,
-    Any,
-    TypeAlias,  # pragma: no cover
-)
+from typing import TYPE_CHECKING  # pragma: no cover
+from typing import Any  # pragma: no cover
+from typing import TypeAlias  # pragma: no cover  # pragma: no cover
 
-from pandas import (  # pragma: no cover
-    BooleanDtype,
-    CategoricalDtype,
-    DatetimeTZDtype,
-    Index,
-    Int64Dtype,
-    Series,
-    StringDtype,
-)
+from pandas import BooleanDtype  # pragma: no cover
+from pandas import CategoricalDtype  # pragma: no cover
+from pandas import DatetimeTZDtype  # pragma: no cover
+from pandas import Index  # pragma: no cover
+from pandas import Int64Dtype  # pragma: no cover
+from pandas import Series  # pragma: no cover
+from pandas import StringDtype  # pragma: no cover
 
 if TYPE_CHECKING:  # pragma: no cover
     IndexA: TypeAlias = Index[Any]

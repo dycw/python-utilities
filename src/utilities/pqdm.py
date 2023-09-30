@@ -1,18 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from io import StringIO, TextIOWrapper
+from io import StringIO
+from io import TextIOWrapper
 from multiprocessing import cpu_count
-from typing import Any, Literal, TypeVar, cast
+from typing import Any
+from typing import Literal
+from typing import TypeVar
+from typing import cast
 
 from pqdm import processes
 
 from utilities.class_name import get_class_name
-from utilities.sentinel import Sentinel, sentinel
+from utilities.sentinel import Sentinel
+from utilities.sentinel import sentinel
 from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
-from utilities.tqdm import _get_total, tqdm
+from utilities.tqdm import _get_total
+from utilities.tqdm import tqdm
 
 
 @dataclass(frozen=True)

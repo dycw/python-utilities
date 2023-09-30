@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
+from collections.abc import Iterable
 from os import environ
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,8 @@ try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark, skip
+    from pytest import mark
+    from pytest import skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function

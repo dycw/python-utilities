@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from enum import Enum, unique
+from enum import Enum
+from enum import unique
 from platform import system
 
 from utilities.beartype import IterableStrs

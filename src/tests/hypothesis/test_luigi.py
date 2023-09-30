@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
 from luigi import Task
 
 from utilities.hypothesis.luigi import namespace_mixins

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import ExitStack, contextmanager
-from typing import Literal, TypedDict, cast
-from warnings import catch_warnings, filterwarnings
+from contextlib import ExitStack
+from contextlib import contextmanager
+from typing import Literal
+from typing import TypedDict
+from typing import cast
+from warnings import catch_warnings
+from warnings import filterwarnings
 
 
 @contextmanager

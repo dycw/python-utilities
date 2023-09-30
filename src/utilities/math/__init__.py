@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from math import isclose, isfinite, isnan
+from math import isclose
+from math import isfinite
+from math import isnan
 
 
 def is_at_least(

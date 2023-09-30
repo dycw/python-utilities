@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
+from collections.abc import Iterator
 from contextlib import suppress
 from importlib import import_module
 from pkgutil import walk_packages

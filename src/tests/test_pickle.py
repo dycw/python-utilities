@@ -5,10 +5,15 @@ from typing import Any
 
 import pandas as pd
 from hypothesis import given
-from hypothesis.strategies import booleans, floats, integers, none, text
+from hypothesis.strategies import booleans
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import none
+from hypothesis.strategies import text
 
 from utilities.hypothesis import temp_paths
-from utilities.pickle import read_pickle, write_pickle
+from utilities.pickle import read_pickle
+from utilities.pickle import write_pickle
 
 
 class TestReadAndWritePickle:

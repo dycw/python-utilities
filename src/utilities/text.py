@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from re import search, sub
+from re import search
+from re import sub
 from textwrap import dedent
 from typing import Any
 

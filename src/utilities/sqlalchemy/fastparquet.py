@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 from fastparquet import write
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import Select
 
 from utilities.atomicwrites import writer
-from utilities.fastparquet import Compression, write_parquet
+from utilities.fastparquet import Compression
+from utilities.fastparquet import write_parquet
 from utilities.pathlib import PathLike
 from utilities.sqlalchemy import yield_connection
 from utilities.sqlalchemy.pandas import select_to_dataframe

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from pytest import mark, param
+from pytest import mark
+from pytest import param
 
-from utilities.sentinel import _REPR, Sentinel, sentinel
+from utilities.sentinel import _REPR
+from utilities.sentinel import Sentinel
+from utilities.sentinel import sentinel
 
 
 class TestSentinel:

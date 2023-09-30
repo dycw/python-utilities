@@ -2,33 +2,34 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Hashable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+from typing import Any
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
-from hypothesis.strategies import (
-    SearchStrategy,
-    composite,
-    dates,
-    datetimes,
-    integers,
-)
-from pandas import Timedelta, Timestamp
+from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import composite
+from hypothesis.strategies import dates
+from hypothesis.strategies import datetimes
+from hypothesis.strategies import integers
+from pandas import Timedelta
+from pandas import Timestamp
 
 from utilities.datetime import UTC
-from utilities.hypothesis import lift_draw, text_ascii
+from utilities.hypothesis import lift_draw
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.numpy import int64s
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.pandas import (
-    TIMESTAMP_MAX_AS_DATE,
-    TIMESTAMP_MAX_AS_DATETIME,
-    TIMESTAMP_MIN_AS_DATE,
-    TIMESTAMP_MIN_AS_DATETIME,
-    string,
-)
+from utilities.pandas import TIMESTAMP_MAX_AS_DATE
+from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
+from utilities.pandas import TIMESTAMP_MIN_AS_DATE
+from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
+from utilities.pandas import string
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA, IndexI, IndexS
+    from utilities.pandas.typing import IndexA
+    from utilities.pandas.typing import IndexI
+    from utilities.pandas.typing import IndexS
 
 
 @composite

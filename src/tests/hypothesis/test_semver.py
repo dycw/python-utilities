@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from hypothesis import assume, given
+from hypothesis import assume
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject, data
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
 from pytest import raises
 from semver import Version
 

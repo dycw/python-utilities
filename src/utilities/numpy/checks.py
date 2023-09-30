@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-from numpy import isfinite, isnan, rint
+from numpy import isfinite
+from numpy import isnan
+from numpy import rint
 
 
 def is_at_least(

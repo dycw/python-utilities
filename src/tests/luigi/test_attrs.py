@@ -1,53 +1,51 @@
 import datetime as dt
-from enum import Enum, auto
+from enum import Enum
+from enum import auto
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 from hypothesis import given
 from hypothesis.strategies import integers
-from luigi import (
-    BoolParameter,
-    FloatParameter,
-    IntParameter,
-    ListParameter,
-    OptionalBoolParameter,
-    OptionalFloatParameter,
-    OptionalIntParameter,
-    OptionalListParameter,
-    OptionalPathParameter,
-    OptionalStrParameter,
-    Parameter,
-    PathParameter,
-    Task,
-)
-from pytest import mark, param, raises
+from luigi import BoolParameter
+from luigi import FloatParameter
+from luigi import IntParameter
+from luigi import ListParameter
+from luigi import OptionalBoolParameter
+from luigi import OptionalFloatParameter
+from luigi import OptionalIntParameter
+from luigi import OptionalListParameter
+from luigi import OptionalPathParameter
+from luigi import OptionalStrParameter
+from luigi import Parameter
+from luigi import PathParameter
+from luigi import Task
+from pytest import mark
+from pytest import param
+from pytest import raises
 from sqlalchemy import Engine
 from typed_settings import settings
 
 from utilities.datetime import TODAY
 from utilities.hypothesis.luigi import namespace_mixins
-from utilities.luigi import (
-    DateHourParameter,
-    DateMinuteParameter,
-    DateParameter,
-    DateSecondParameter,
-    EnumParameter,
-    TimeParameter,
-    WeekdayParameter,
-)
-from utilities.luigi.attrs import (
-    AmbiguousDateError,
-    AmbiguousDatetimeError,
-    InvalidAnnotationAndKeywordsError,
-    InvalidAnnotationError,
-    _map_annotation,
-    _map_date_annotation,
-    _map_datetime_annotation,
-    _map_iterable_annotation,
-    _map_keywords,
-    _map_union_annotation,
-    build_params_mixin,
-)
+from utilities.luigi import DateHourParameter
+from utilities.luigi import DateMinuteParameter
+from utilities.luigi import DateParameter
+from utilities.luigi import DateSecondParameter
+from utilities.luigi import EnumParameter
+from utilities.luigi import TimeParameter
+from utilities.luigi import WeekdayParameter
+from utilities.luigi.attrs import AmbiguousDateError
+from utilities.luigi.attrs import AmbiguousDatetimeError
+from utilities.luigi.attrs import InvalidAnnotationAndKeywordsError
+from utilities.luigi.attrs import InvalidAnnotationError
+from utilities.luigi.attrs import _map_annotation
+from utilities.luigi.attrs import _map_date_annotation
+from utilities.luigi.attrs import _map_datetime_annotation
+from utilities.luigi.attrs import _map_iterable_annotation
+from utilities.luigi.attrs import _map_keywords
+from utilities.luigi.attrs import _map_union_annotation
+from utilities.luigi.attrs import build_params_mixin
 from utilities.luigi.sqlalchemy import EngineParameter
 from utilities.sentinel import Sentinel
 

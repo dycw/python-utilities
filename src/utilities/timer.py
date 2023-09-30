@@ -3,11 +3,17 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable
 from numbers import Number
-from operator import eq, ge, gt, le, lt, ne
+from operator import eq
+from operator import ge
+from operator import gt
+from operator import le
+from operator import lt
+from operator import ne
 from timeit import default_timer
 from typing import Any
 
-from typing_extensions import Self, override
+from typing_extensions import Self
+from typing_extensions import override
 
 
 class Timer:

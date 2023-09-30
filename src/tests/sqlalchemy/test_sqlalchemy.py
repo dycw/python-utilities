@@ -5,141 +5,145 @@ import typing
 from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any
+from typing import TypedDict
+from typing import cast
 
 import sqlalchemy
-from hypothesis import assume, given
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    fixed_dictionaries,
-    integers,
-    lists,
-    none,
-    permutations,
-    sampled_from,
-    sets,
-)
+from hypothesis import assume
+from hypothesis import given
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import fixed_dictionaries
+from hypothesis.strategies import integers
+from hypothesis.strategies import lists
+from hypothesis.strategies import none
+from hypothesis.strategies import permutations
+from hypothesis.strategies import sampled_from
+from hypothesis.strategies import sets
 from hypothesis_sqlalchemy.sample import table_records_lists
-from pytest import mark, param, raises
-from sqlalchemy import (
-    BIGINT,
-    BINARY,
-    BOOLEAN,
-    CHAR,
-    CLOB,
-    DATE,
-    DATETIME,
-    DECIMAL,
-    DOUBLE,
-    DOUBLE_PRECISION,
-    FLOAT,
-    INT,
-    INTEGER,
-    NCHAR,
-    NUMERIC,
-    NVARCHAR,
-    REAL,
-    SMALLINT,
-    TEXT,
-    TIME,
-    TIMESTAMP,
-    UUID,
-    VARBINARY,
-    VARCHAR,
-    BigInteger,
-    Boolean,
-    Column,
-    Date,
-    DateTime,
-    Double,
-    Float,
-    Integer,
-    Interval,
-    LargeBinary,
-    MetaData,
-    Numeric,
-    SmallInteger,
-    String,
-    Table,
-    Text,
-    Time,
-    Unicode,
-    UnicodeText,
-    Uuid,
-    func,
-    insert,
-    select,
-)
+from pytest import mark
+from pytest import param
+from pytest import raises
+from sqlalchemy import BIGINT
+from sqlalchemy import BINARY
+from sqlalchemy import BOOLEAN
+from sqlalchemy import CHAR
+from sqlalchemy import CLOB
+from sqlalchemy import DATE
+from sqlalchemy import DATETIME
+from sqlalchemy import DECIMAL
+from sqlalchemy import DOUBLE
+from sqlalchemy import DOUBLE_PRECISION
+from sqlalchemy import FLOAT
+from sqlalchemy import INT
+from sqlalchemy import INTEGER
+from sqlalchemy import NCHAR
+from sqlalchemy import NUMERIC
+from sqlalchemy import NVARCHAR
+from sqlalchemy import REAL
+from sqlalchemy import SMALLINT
+from sqlalchemy import TEXT
+from sqlalchemy import TIME
+from sqlalchemy import TIMESTAMP
+from sqlalchemy import UUID
+from sqlalchemy import VARBINARY
+from sqlalchemy import VARCHAR
+from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
+from sqlalchemy import Column
+from sqlalchemy import Date
+from sqlalchemy import DateTime
+from sqlalchemy import Double
+from sqlalchemy import Float
+from sqlalchemy import Integer
+from sqlalchemy import Interval
+from sqlalchemy import LargeBinary
+from sqlalchemy import MetaData
+from sqlalchemy import Numeric
+from sqlalchemy import SmallInteger
+from sqlalchemy import String
+from sqlalchemy import Table
+from sqlalchemy import Text
+from sqlalchemy import Time
+from sqlalchemy import Unicode
+from sqlalchemy import UnicodeText
+from sqlalchemy import Uuid
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy import func
+from sqlalchemy import insert
+from sqlalchemy import select
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import DatabaseError
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis import lists_fixed_length, temp_paths, text_ascii
+from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import temp_paths
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.platform import SYSTEM, System
-from utilities.sqlalchemy import (
-    EngineError,
-    IncorrectNumberOfTablesError,
-    ParseEngineError,
-    TableAlreadyExistsError,
-    TablenameMixin,
-    UnequalBooleanColumnCreateConstraintError,
-    UnequalBooleanColumnNameError,
-    UnequalColumnTypesError,
-    UnequalDateTimeColumnTimezoneError,
-    UnequalEnumColumnCreateConstraintError,
-    UnequalEnumColumnInheritSchemaError,
-    UnequalEnumColumnLengthError,
-    UnequalEnumColumnNativeEnumError,
-    UnequalEnumColumnTypesError,
-    UnequalFloatColumnAsDecimalError,
-    UnequalFloatColumnDecimalReturnScaleError,
-    UnequalFloatColumnPrecisionsError,
-    UnequalIntervalColumnDayPrecisionError,
-    UnequalIntervalColumnNativeError,
-    UnequalIntervalColumnSecondPrecisionError,
-    UnequalLargeBinaryColumnLengthError,
-    UnequalNullableStatusError,
-    UnequalNumberOfColumnsError,
-    UnequalNumericScaleError,
-    UnequalPrimaryKeyStatusError,
-    UnequalSetOfColumnsError,
-    UnequalStringCollationError,
-    UnequalStringLengthError,
-    UnequalTableOrColumnNamesError,
-    UnequalTableOrColumnSnakeCaseNamesError,
-    UnequalUUIDAsUUIDError,
-    UnequalUUIDNativeUUIDError,
-    _check_column_collections_equal,
-    _check_column_types_equal,
-    _check_columns_equal,
-    _check_table_or_column_names_equal,
-    _reflect_table,
-    check_engine,
-    check_table_against_reflection,
-    check_tables_equal,
-    columnwise_max,
-    columnwise_min,
-    create_engine,
-    ensure_engine,
-    ensure_table_created,
-    ensure_table_dropped,
-    get_column_names,
-    get_columns,
-    get_dialect,
-    get_table,
-    get_table_name,
-    model_to_dict,
-    parse_engine,
-    redirect_to_no_such_table_error,
-    redirect_to_table_already_exists_error,
-    serialize_engine,
-    yield_connection,
-    yield_in_clause_rows,
-)
+from utilities.platform import SYSTEM
+from utilities.platform import System
+from utilities.sqlalchemy import EngineError
+from utilities.sqlalchemy import IncorrectNumberOfTablesError
+from utilities.sqlalchemy import ParseEngineError
+from utilities.sqlalchemy import TableAlreadyExistsError
+from utilities.sqlalchemy import TablenameMixin
+from utilities.sqlalchemy import UnequalBooleanColumnCreateConstraintError
+from utilities.sqlalchemy import UnequalBooleanColumnNameError
+from utilities.sqlalchemy import UnequalColumnTypesError
+from utilities.sqlalchemy import UnequalDateTimeColumnTimezoneError
+from utilities.sqlalchemy import UnequalEnumColumnCreateConstraintError
+from utilities.sqlalchemy import UnequalEnumColumnInheritSchemaError
+from utilities.sqlalchemy import UnequalEnumColumnLengthError
+from utilities.sqlalchemy import UnequalEnumColumnNativeEnumError
+from utilities.sqlalchemy import UnequalEnumColumnTypesError
+from utilities.sqlalchemy import UnequalFloatColumnAsDecimalError
+from utilities.sqlalchemy import UnequalFloatColumnDecimalReturnScaleError
+from utilities.sqlalchemy import UnequalFloatColumnPrecisionsError
+from utilities.sqlalchemy import UnequalIntervalColumnDayPrecisionError
+from utilities.sqlalchemy import UnequalIntervalColumnNativeError
+from utilities.sqlalchemy import UnequalIntervalColumnSecondPrecisionError
+from utilities.sqlalchemy import UnequalLargeBinaryColumnLengthError
+from utilities.sqlalchemy import UnequalNullableStatusError
+from utilities.sqlalchemy import UnequalNumberOfColumnsError
+from utilities.sqlalchemy import UnequalNumericScaleError
+from utilities.sqlalchemy import UnequalPrimaryKeyStatusError
+from utilities.sqlalchemy import UnequalSetOfColumnsError
+from utilities.sqlalchemy import UnequalStringCollationError
+from utilities.sqlalchemy import UnequalStringLengthError
+from utilities.sqlalchemy import UnequalTableOrColumnNamesError
+from utilities.sqlalchemy import UnequalTableOrColumnSnakeCaseNamesError
+from utilities.sqlalchemy import UnequalUUIDAsUUIDError
+from utilities.sqlalchemy import UnequalUUIDNativeUUIDError
+from utilities.sqlalchemy import _check_column_collections_equal
+from utilities.sqlalchemy import _check_column_types_equal
+from utilities.sqlalchemy import _check_columns_equal
+from utilities.sqlalchemy import _check_table_or_column_names_equal
+from utilities.sqlalchemy import _reflect_table
+from utilities.sqlalchemy import check_engine
+from utilities.sqlalchemy import check_table_against_reflection
+from utilities.sqlalchemy import check_tables_equal
+from utilities.sqlalchemy import columnwise_max
+from utilities.sqlalchemy import columnwise_min
+from utilities.sqlalchemy import create_engine
+from utilities.sqlalchemy import ensure_engine
+from utilities.sqlalchemy import ensure_table_created
+from utilities.sqlalchemy import ensure_table_dropped
+from utilities.sqlalchemy import get_column_names
+from utilities.sqlalchemy import get_columns
+from utilities.sqlalchemy import get_dialect
+from utilities.sqlalchemy import get_table
+from utilities.sqlalchemy import get_table_name
+from utilities.sqlalchemy import model_to_dict
+from utilities.sqlalchemy import parse_engine
+from utilities.sqlalchemy import redirect_to_no_such_table_error
+from utilities.sqlalchemy import redirect_to_table_already_exists_error
+from utilities.sqlalchemy import serialize_engine
+from utilities.sqlalchemy import yield_connection
+from utilities.sqlalchemy import yield_in_clause_rows
 
 
 class TestCheckColumnsEqual:

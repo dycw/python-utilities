@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from logging import getLogger
 
-from utilities.logging import LogLevel, basic_config
+from utilities.logging import LogLevel
+from utilities.logging import basic_config
 
 
 class TestBasicConfig:

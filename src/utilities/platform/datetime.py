@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from re import sub
 
-from utilities.platform import SYSTEM, System
+from utilities.platform import SYSTEM
+from utilities.platform import System
 from utilities.typing import never
 
 

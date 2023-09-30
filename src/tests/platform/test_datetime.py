@@ -6,7 +6,8 @@ from hypothesis import given
 from pytest import mark
 
 from utilities.hypothesis import text_clean
-from utilities.platform import SYSTEM, System
+from utilities.platform import SYSTEM
+from utilities.platform import System
 from utilities.platform.datetime import maybe_sub_pct_y
 
 

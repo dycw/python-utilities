@@ -5,13 +5,11 @@ from hypothesis import given
 from hypothesis.strategies import text
 from pytest import raises
 
-from utilities.cryptography import (
-    _ENV_VAR,
-    FernetKeyMissingError,
-    _get_fernet,
-    decrypt,
-    encrypt,
-)
+from utilities.cryptography import _ENV_VAR
+from utilities.cryptography import FernetKeyMissingError
+from utilities.cryptography import _get_fernet
+from utilities.cryptography import decrypt
+from utilities.cryptography import encrypt
 from utilities.os import temp_environ
 
 

@@ -6,7 +6,8 @@ from pytest import mark
 
 from utilities.fpdf2 import yield_pdf
 from utilities.hypothesis import text_ascii
-from utilities.platform import SYSTEM, System
+from utilities.platform import SYSTEM
+from utilities.platform import System
 
 
 class TestYieldPDF:
