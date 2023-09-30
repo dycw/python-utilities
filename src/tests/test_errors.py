@@ -19,7 +19,7 @@ class TestRedirectError:
     def _raises_custom(self, pattern: str, /) -> NoReturn:
         try:
             msg = "generic error"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY301
         except ValueError as error:
             redirect_error(error, pattern, self._CustomError)
 
@@ -29,6 +29,6 @@ class TestRedirectError:
     def test_generic_with_no_unique_arg(self) -> None:
         with raises(NoUniqueArgError):
             try:
-                raise ValueError(0, 1)
+                raise ValueError(0, 1)  # noqa: TRY301
             except ValueError as error:
                 redirect_error(error, "error", RuntimeError)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import partial
 from operator import neg, pow
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pytest import mark, param
 

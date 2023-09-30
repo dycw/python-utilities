@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any, Union, cast
+from typing import Annotated, Any, cast
 
 from beartype.vale import Is, IsAttr, IsEqual
 from numpy import bool_, float64, int64, isfinite, log, object_, unravel_index
@@ -108,21 +108,21 @@ NDArrayDns = NDArray[cast(Any, datetime64ns)]
 NDArrayDps = NDArray[cast(Any, datetime64ps)]
 NDArrayDfs = NDArray[cast(Any, datetime64fs)]
 NDArrayDas = NDArray[cast(Any, datetime64as)]
-NDArrayD = Union[
-    NDArrayDY,
-    NDArrayDM,
-    NDArrayDW,
-    NDArrayDD,
-    NDArrayDh,
-    NDArrayDm,
-    NDArrayDs,
-    NDArrayDms,
-    NDArrayDus,
-    NDArrayDns,
-    NDArrayDps,
-    NDArrayDfs,
-    NDArrayDas,
-]
+NDArrayD = (
+    NDArrayDY
+    | NDArrayDM
+    | NDArrayDW
+    | NDArrayDD
+    | NDArrayDh
+    | NDArrayDm
+    | NDArrayDs
+    | NDArrayDms
+    | NDArrayDus
+    | NDArrayDns
+    | NDArrayDps
+    | NDArrayDfs
+    | NDArrayDas
+)
 NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]

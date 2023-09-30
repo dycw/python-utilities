@@ -50,7 +50,7 @@ def dicts_of_indexes(
     ndims = len(shape)
     dims = draw(lists_fixed_length(text_ascii(), ndims, unique=True))
     indexes = (draw(int_indexes(n=length)) for length in shape)
-    return dict(zip(dims, indexes))
+    return dict(zip(dims, indexes, strict=True))
 
 
 @composite

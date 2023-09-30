@@ -155,7 +155,7 @@ def _make_structure_hook(
     """Make the structure hook for a given type."""
 
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
-        if not isinstance(value, (cls, str)):
+        if not isinstance(value, cls | str):
             msg = f"Invalid type: {value=}"
             raise TypeError(msg)
         return func(value)
@@ -182,7 +182,11 @@ def _make_click_handler() -> ClickHandler:
     else:
         cases.append((Engine, ClickEngine, serialize_engine))
     extra_types = dict(
-        zip(map(itemgetter(0), cases), starmap(_make_type_handler_func, cases))
+        zip(
+            map(itemgetter(0), cases),
+            starmap(_make_type_handler_func, cases),
+            strict=True,
+        )
     )
     return ClickHandler(extra_types=extra_types)
 

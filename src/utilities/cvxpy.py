@@ -31,7 +31,7 @@ def abs_(  # pragma: has-cvxpy
     x: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the absolute value."""
-    if isinstance(x, (float, ndarray)):
+    if isinstance(x, float | ndarray):
         return np.abs(x)
     return cvxpy.abs(x)
 
@@ -85,7 +85,7 @@ def add(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the sum of two quantities."""
-    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
         return np.add(x, y)
     return cast(Any, x) + cast(Any, y)
 
@@ -139,7 +139,7 @@ def divide(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the quotient of two quantities."""
-    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
         return np.divide(x, y)
     return cast(Any, x) / cast(Any, y)
 
@@ -193,7 +193,7 @@ def multiply(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the product of two quantities."""
-    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
         return np.multiply(x, y)
     return cvxpy.multiply(x, y)
 
@@ -215,7 +215,7 @@ def neg(x: Expression, /) -> Expression:
 
 def neg(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the negative parts of a quantity."""
-    if isinstance(x, (float, ndarray)):
+    if isinstance(x, float | ndarray):
         result = -minimum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.neg(x)
@@ -255,7 +255,7 @@ def pos(x: Expression, /) -> Expression:
 
 def pos(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the positive parts of a quantity."""
-    if isinstance(x, (float, ndarray)):
+    if isinstance(x, float | ndarray):
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.pos(x)
@@ -295,7 +295,7 @@ def power(
     x: float | NDArrayF | Expression, p: float | NDArrayF, /
 ) -> float | NDArrayF | Expression:
     """Compute the power of a quantity."""
-    if isinstance(x, (float, ndarray)):
+    if isinstance(x, float | ndarray):
         return np.power(x, p)
     return cvxpy.power(x, p)
 
@@ -373,7 +373,7 @@ def sqrt(x: Expression, /) -> Expression:
 
 def sqrt(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the square root of a quantity."""
-    if isinstance(x, (float, ndarray)):
+    if isinstance(x, float | ndarray):
         return np.sqrt(x)
     return cvxpy.sqrt(x)
 
@@ -427,7 +427,7 @@ def subtract(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the difference of two quantities."""
-    if isinstance(x, (float, ndarray)) and isinstance(y, (float, ndarray)):
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
         return np.subtract(x, y)
     return cast(Any, x) - cast(Any, y)
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Any
 
-Number = Union[int, float]
+Number = int | float
 NoneType = type(None)
 
 

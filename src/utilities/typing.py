@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import NoReturn, Union
+from typing import NoReturn
 
-Number = Union[float, int]
+Number = float | int
 
 
 def never(x: NoReturn, /) -> NoReturn:

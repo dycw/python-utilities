@@ -113,7 +113,7 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
             )
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt)
+            return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
     raise ParseDateTimeError(datetime)
 
 

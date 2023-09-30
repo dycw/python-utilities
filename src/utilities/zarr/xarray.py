@@ -90,7 +90,7 @@ def _to_ndarray1(x: Any, /) -> NDArray1:
             return x
         msg = f"{x=}"
         raise NotOneDimensionalArrayError(msg)
-    if isinstance(x, (DataArray, Index)):
+    if isinstance(x, DataArray | Index):
         if x.ndim == 1:
             return x.to_numpy()
         msg = f"{x=}"

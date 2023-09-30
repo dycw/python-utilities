@@ -12,7 +12,7 @@ def ruff(session: Session) -> None:
     _ = session.run("ruff", "--fix", ".")
 
 
-@session(python=["3.9", "3.10", "3.11"])
+@session(python=["3.10", "3.11"])
 def tests(session: Session, /) -> None:
     """Run the tests."""
     session.install("--upgrade", "pip-tools")

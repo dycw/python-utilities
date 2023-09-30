@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
-from typing_extensions import TypeAlias
 from xarray import DataArray
 
 from utilities.beartype import NDim0, NDim1, NDim2, NDim3

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Callable, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import assume, given
 from hypothesis.extra.pandas import range_indexes
@@ -220,7 +221,7 @@ class TestSeriesMinMax:
         self, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
         x = Series(data=nan, dtype=float)
-        y = Series(data=NA, dtype=Int64)  # type: ignore
+        y = Series(data=NA, dtype=Int64)
         with raises(DifferentDTypeError):
             _ = func(x, y)
 

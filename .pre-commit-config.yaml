@@ -4,11 +4,16 @@ repos:
     rev: v0.0.291
     hooks:
       - id: ruff
-        args: [--fix, --select=I]
+        args: [--fix]
   - repo: https://github.com/dycw/pre-commit-hooks
     rev: 0.8.26
     hooks:
       - id: run-hatch-version
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.10.0
+    hooks:
+      - id: pretty-format-toml
+        args: [--autofix, --trailing-commas]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -30,13 +35,13 @@ repos:
   - repo: https://github.com/psf/black
     rev: 23.9.1
     hooks:
+      - id: black
       - id: black-jupyter
-        args: [--line-length=80, --skip-magic-trailing-comma]
   # linters
-  # - repo: https://github.com/andreoliwa/nitpick
-  #   rev: v0.34.0
-  #   hooks:
-  #     - id: nitpick-check
+  - repo: https://github.com/andreoliwa/nitpick
+    rev: v0.34.0
+    hooks:
+      - id: nitpick-check
   - repo: https://github.com/pycqa/flake8
     rev: "6.1.0"
     hooks:
@@ -51,6 +56,13 @@ repos:
     rev: v0.9.0.5
     hooks:
       - id: shellcheck
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: pyright
+        language: system
+        types: [python]
   # compile
   - repo: https://github.com/jazzband/pip-tools
     rev: 7.3.0

@@ -1,7 +1,7 @@
 import datetime as dt
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from hypothesis import given
 from hypothesis.strategies import integers
@@ -98,10 +98,10 @@ class TestMapAnnotation:
             param(frozenset[bool], ListParameter),
             param(list[bool], ListParameter),
             param(set[bool], ListParameter),
-            param(Optional[bool], OptionalBoolParameter),
-            param(Optional[frozenset[bool]], OptionalListParameter),
-            param(Optional[list[bool]], OptionalListParameter),
-            param(Optional[set[bool]], OptionalListParameter),
+            param(bool | None, OptionalBoolParameter),
+            param(frozenset[bool] | None, OptionalListParameter),
+            param(list[bool] | None, OptionalListParameter),
+            param(set[bool] | None, OptionalListParameter),
         ],
     )
     def test_main(self, ann: Any, expected: type[Parameter]) -> None:
@@ -183,7 +183,7 @@ class TestMapIterableAnnotation:
     def test_main(self, ann: Any) -> None:
         assert _map_iterable_annotation(ann) is ListParameter
 
-    @mark.parametrize("ann", [param(None), param(bool), param(Optional[bool])])
+    @mark.parametrize("ann", [param(None), param(bool), param(bool | None)])
     def test_invalid(self, ann: Any) -> None:
         with raises(InvalidAnnotationError):
             _ = _map_iterable_annotation(ann)
@@ -230,12 +230,12 @@ class TestMapUnionAnnotation:
     @mark.parametrize(
         ("ann", "expected"),
         [
-            param(Optional[bool], OptionalBoolParameter),
-            param(Optional[float], OptionalFloatParameter),
-            param(Optional[Path], OptionalPathParameter),
-            param(Optional[int], OptionalIntParameter),
-            param(Optional[str], OptionalStrParameter),
-            param(Optional[list[bool]], OptionalListParameter),
+            param(bool | None, OptionalBoolParameter),
+            param(float | None, OptionalFloatParameter),
+            param(Path | None, OptionalPathParameter),
+            param(int | None, OptionalIntParameter),
+            param(str | None, OptionalStrParameter),
+            param(list[bool] | None, OptionalListParameter),
         ],
     )
     def test_main(self, ann: Any, expected: type[Parameter]) -> None:
@@ -244,12 +244,7 @@ class TestMapUnionAnnotation:
         assert isinstance(param, expected)
 
     @mark.parametrize(
-        "ann",
-        [
-            param(list[bool]),
-            param(Optional[Sentinel]),
-            param(Union[int, float]),
-        ],
+        "ann", [param(list[bool]), param(Sentinel | None), param(int | float)]
     )
     def test_invalid(self, ann: Any) -> None:
         with raises(InvalidAnnotationError):
@@ -260,4 +255,4 @@ class TestMapUnionAnnotation:
             member = auto()
 
         with raises(InvalidAnnotationError):
-            _ = _map_union_annotation(Optional[Example])
+            _ = _map_union_annotation(Example | None)

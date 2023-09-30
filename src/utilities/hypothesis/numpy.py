@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import numpy as np
 from hypothesis import assume
@@ -272,13 +272,13 @@ def datetime64s(
     )
     if valid_dates_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
-            unit=cast(Optional[Datetime64Unit], unit_),
+            unit=cast(Datetime64Unit | None, unit_),
             min_value=min_value_,
             max_value=max_value_,
         )
     if valid_datetimes_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_datetimes(
-            unit=cast(Optional[Datetime64Unit], unit_),
+            unit=cast(Datetime64Unit | None, unit_),
             min_value=min_value_,
             max_value=max_value_,
         )

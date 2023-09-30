@@ -90,7 +90,7 @@ def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
     def yield_lines() -> Iterator[str]:
         keys = chain([key], repeat(buffer * " "))
         value_lines = str(value).splitlines()
-        for k, v in zip(keys, value_lines):
+        for k, v in zip(keys, value_lines, strict=False):
             yield template.format(k, v)
 
     return "\n".join(yield_lines())
