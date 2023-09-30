@@ -4,20 +4,20 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    dictionaries,
-    integers,
-    sampled_from,
-)
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import integers
+from hypothesis.strategies import sampled_from
 from pytest import mark
 from xarray import DataArray
 
-from utilities.hypothesis import assume_does_not_raise, text_ascii
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import float_data_arrays
-from utilities.xarray import ewma, exp_moving_sum
+from utilities.xarray import ewma
+from utilities.xarray import exp_moving_sum
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA

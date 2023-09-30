@@ -5,7 +5,9 @@ from os import getenv
 from hypothesis import given
 
 from utilities.hypothesis import text_ascii
-from utilities.os import CPU_COUNT, _get_cpu_count, temp_environ
+from utilities.os import CPU_COUNT
+from utilities.os import _get_cpu_count
+from utilities.os import temp_environ
 
 text = text_ascii(min_size=1, max_size=10)
 

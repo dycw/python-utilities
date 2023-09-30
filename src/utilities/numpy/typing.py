@@ -1,62 +1,71 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Any, cast
+from typing import Annotated
+from typing import Any
+from typing import cast
 
-from beartype.vale import Is, IsAttr, IsEqual
-from numpy import bool_, float64, int64, isfinite, log, object_, unravel_index
+from beartype.vale import Is
+from beartype.vale import IsAttr
+from beartype.vale import IsEqual
+from numpy import bool_
+from numpy import float64
+from numpy import int64
+from numpy import isfinite
+from numpy import log
+from numpy import object_
+from numpy import unravel_index
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
-from utilities.beartype import NDim0, NDim1, NDim2, NDim3
-from utilities.numpy.checks import (
-    is_finite_and_integral,
-    is_finite_and_integral_or_nan,
-    is_finite_and_negative,
-    is_finite_and_negative_or_nan,
-    is_finite_and_non_negative,
-    is_finite_and_non_negative_or_nan,
-    is_finite_and_non_positive,
-    is_finite_and_non_positive_or_nan,
-    is_finite_and_non_zero,
-    is_finite_and_non_zero_or_nan,
-    is_finite_and_positive,
-    is_finite_and_positive_or_nan,
-    is_finite_or_nan,
-    is_integral,
-    is_integral_or_nan,
-    is_negative,
-    is_negative_or_nan,
-    is_non_negative,
-    is_non_negative_or_nan,
-    is_non_positive,
-    is_non_positive_or_nan,
-    is_non_zero,
-    is_non_zero_or_nan,
-    is_positive,
-    is_positive_or_nan,
-    is_zero,
-    is_zero_or_finite_and_non_micro,
-    is_zero_or_finite_and_non_micro_or_nan,
-    is_zero_or_nan,
-    is_zero_or_non_micro,
-    is_zero_or_non_micro_or_nan,
-)
-from utilities.numpy.dtypes import (
-    datetime64as,
-    datetime64D,
-    datetime64fs,
-    datetime64h,
-    datetime64M,
-    datetime64m,
-    datetime64ms,
-    datetime64ns,
-    datetime64ps,
-    datetime64s,
-    datetime64us,
-    datetime64W,
-    datetime64Y,
-)
+from utilities.beartype import NDim0
+from utilities.beartype import NDim1
+from utilities.beartype import NDim2
+from utilities.beartype import NDim3
+from utilities.numpy.checks import is_finite_and_integral
+from utilities.numpy.checks import is_finite_and_integral_or_nan
+from utilities.numpy.checks import is_finite_and_negative
+from utilities.numpy.checks import is_finite_and_negative_or_nan
+from utilities.numpy.checks import is_finite_and_non_negative
+from utilities.numpy.checks import is_finite_and_non_negative_or_nan
+from utilities.numpy.checks import is_finite_and_non_positive
+from utilities.numpy.checks import is_finite_and_non_positive_or_nan
+from utilities.numpy.checks import is_finite_and_non_zero
+from utilities.numpy.checks import is_finite_and_non_zero_or_nan
+from utilities.numpy.checks import is_finite_and_positive
+from utilities.numpy.checks import is_finite_and_positive_or_nan
+from utilities.numpy.checks import is_finite_or_nan
+from utilities.numpy.checks import is_integral
+from utilities.numpy.checks import is_integral_or_nan
+from utilities.numpy.checks import is_negative
+from utilities.numpy.checks import is_negative_or_nan
+from utilities.numpy.checks import is_non_negative
+from utilities.numpy.checks import is_non_negative_or_nan
+from utilities.numpy.checks import is_non_positive
+from utilities.numpy.checks import is_non_positive_or_nan
+from utilities.numpy.checks import is_non_zero
+from utilities.numpy.checks import is_non_zero_or_nan
+from utilities.numpy.checks import is_positive
+from utilities.numpy.checks import is_positive_or_nan
+from utilities.numpy.checks import is_zero
+from utilities.numpy.checks import is_zero_or_finite_and_non_micro
+from utilities.numpy.checks import is_zero_or_finite_and_non_micro_or_nan
+from utilities.numpy.checks import is_zero_or_nan
+from utilities.numpy.checks import is_zero_or_non_micro
+from utilities.numpy.checks import is_zero_or_non_micro_or_nan
+from utilities.numpy.dtypes import datetime64as
+from utilities.numpy.dtypes import datetime64D
+from utilities.numpy.dtypes import datetime64fs
+from utilities.numpy.dtypes import datetime64h
+from utilities.numpy.dtypes import datetime64M
+from utilities.numpy.dtypes import datetime64m
+from utilities.numpy.dtypes import datetime64ms
+from utilities.numpy.dtypes import datetime64ns
+from utilities.numpy.dtypes import datetime64ps
+from utilities.numpy.dtypes import datetime64s
+from utilities.numpy.dtypes import datetime64us
+from utilities.numpy.dtypes import datetime64W
+from utilities.numpy.dtypes import datetime64Y
 
 # dtype checkers
 DTypeB = IsAttr["dtype", IsEqual[bool]]

@@ -4,14 +4,14 @@ from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
-from utilities.types import (
-    NoneType,
-    Number,
-    ensure_class,
-    issubclass_except_bool_int,
-)
+from utilities.types import NoneType
+from utilities.types import Number
+from utilities.types import ensure_class
+from utilities.types import issubclass_except_bool_int
 
 
 class TestEnsureClass:

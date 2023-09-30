@@ -1,15 +1,24 @@
 from __future__ import annotations
 
-from typing import Any, Literal, cast, overload
+from typing import Any
+from typing import Literal
+from typing import cast
+from typing import overload
 
 import cvxpy
 import numpy as np
 import numpy.linalg
-from cvxpy import Expression, Problem
-from numpy import maximum, minimum, ndarray, where
+from cvxpy import Expression
+from cvxpy import Problem
+from numpy import maximum
+from numpy import minimum
+from numpy import ndarray
+from numpy import where
 
 from utilities.numpy import is_zero
-from utilities.numpy.typing import NDArrayF, NDArrayF1, NDArrayF2
+from utilities.numpy.typing import NDArrayF
+from utilities.numpy.typing import NDArrayF1
+from utilities.numpy.typing import NDArrayF2
 
 
 @overload

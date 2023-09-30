@@ -1,51 +1,51 @@
 from __future__ import annotations
 
-from numpy import inf, nan
-from pytest import mark, param
+from numpy import inf
+from numpy import nan
+from pytest import mark
+from pytest import param
 
-from utilities.math import (
-    is_at_least,
-    is_at_least_or_nan,
-    is_at_most,
-    is_at_most_or_nan,
-    is_between,
-    is_between_or_nan,
-    is_finite_and_integral,
-    is_finite_and_integral_or_nan,
-    is_finite_and_negative,
-    is_finite_and_negative_or_nan,
-    is_finite_and_non_negative,
-    is_finite_and_non_negative_or_nan,
-    is_finite_and_non_positive,
-    is_finite_and_non_positive_or_nan,
-    is_finite_and_non_zero,
-    is_finite_and_non_zero_or_nan,
-    is_finite_and_positive,
-    is_finite_and_positive_or_nan,
-    is_finite_or_nan,
-    is_greater_than,
-    is_greater_than_or_nan,
-    is_integral,
-    is_integral_or_nan,
-    is_less_than,
-    is_less_than_or_nan,
-    is_negative,
-    is_negative_or_nan,
-    is_non_negative,
-    is_non_negative_or_nan,
-    is_non_positive,
-    is_non_positive_or_nan,
-    is_non_zero,
-    is_non_zero_or_nan,
-    is_positive,
-    is_positive_or_nan,
-    is_zero,
-    is_zero_or_finite_and_non_micro,
-    is_zero_or_finite_and_non_micro_or_nan,
-    is_zero_or_nan,
-    is_zero_or_non_micro,
-    is_zero_or_non_micro_or_nan,
-)
+from utilities.math import is_at_least
+from utilities.math import is_at_least_or_nan
+from utilities.math import is_at_most
+from utilities.math import is_at_most_or_nan
+from utilities.math import is_between
+from utilities.math import is_between_or_nan
+from utilities.math import is_finite_and_integral
+from utilities.math import is_finite_and_integral_or_nan
+from utilities.math import is_finite_and_negative
+from utilities.math import is_finite_and_negative_or_nan
+from utilities.math import is_finite_and_non_negative
+from utilities.math import is_finite_and_non_negative_or_nan
+from utilities.math import is_finite_and_non_positive
+from utilities.math import is_finite_and_non_positive_or_nan
+from utilities.math import is_finite_and_non_zero
+from utilities.math import is_finite_and_non_zero_or_nan
+from utilities.math import is_finite_and_positive
+from utilities.math import is_finite_and_positive_or_nan
+from utilities.math import is_finite_or_nan
+from utilities.math import is_greater_than
+from utilities.math import is_greater_than_or_nan
+from utilities.math import is_integral
+from utilities.math import is_integral_or_nan
+from utilities.math import is_less_than
+from utilities.math import is_less_than_or_nan
+from utilities.math import is_negative
+from utilities.math import is_negative_or_nan
+from utilities.math import is_non_negative
+from utilities.math import is_non_negative_or_nan
+from utilities.math import is_non_positive
+from utilities.math import is_non_positive_or_nan
+from utilities.math import is_non_zero
+from utilities.math import is_non_zero_or_nan
+from utilities.math import is_positive
+from utilities.math import is_positive_or_nan
+from utilities.math import is_zero
+from utilities.math import is_zero_or_finite_and_non_micro
+from utilities.math import is_zero_or_finite_and_non_micro_or_nan
+from utilities.math import is_zero_or_nan
+from utilities.math import is_zero_or_non_micro
+from utilities.math import is_zero_or_non_micro_or_nan
 
 
 class TestChecks:

@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
-from utilities.re import (
-    MultipleCaptureGroupsError,
-    MultipleMatchesError,
-    NoCaptureGroupsError,
-    NoMatchesError,
-    extract_group,
-    extract_groups,
-)
+from utilities.re import MultipleCaptureGroupsError
+from utilities.re import MultipleMatchesError
+from utilities.re import NoCaptureGroupsError
+from utilities.re import NoMatchesError
+from utilities.re import extract_group
+from utilities.re import extract_groups
 
 
 class TestExtractGroup:

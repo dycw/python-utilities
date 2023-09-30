@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import gzip
-from pickle import dump, load
+from pickle import dump
+from pickle import load
 from typing import Any
 
 from utilities.atomicwrites import writer

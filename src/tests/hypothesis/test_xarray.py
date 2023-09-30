@@ -5,26 +5,23 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    floats,
-    integers,
-    none,
-)
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import none
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import assume_does_not_raise, text_ascii
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.numpy import int64s
-from utilities.hypothesis.xarray import (
-    _merge_into_dict_of_indexes,
-    bool_data_arrays,
-    dicts_of_indexes,
-    float_data_arrays,
-    int_data_arrays,
-    str_data_arrays,
-)
+from utilities.hypothesis.xarray import _merge_into_dict_of_indexes
+from utilities.hypothesis.xarray import bool_data_arrays
+from utilities.hypothesis.xarray import dicts_of_indexes
+from utilities.hypothesis.xarray import float_data_arrays
+from utilities.hypothesis.xarray import int_data_arrays
+from utilities.hypothesis.xarray import str_data_arrays
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA

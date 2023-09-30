@@ -5,8 +5,11 @@ from pathlib import Path
 from holoviews import Curve
 from pytest import mark
 
-from utilities.holoviews import apply_opts, relabel_plot, save_plot
-from utilities.platform import SYSTEM, System
+from utilities.holoviews import apply_opts
+from utilities.holoviews import relabel_plot
+from utilities.holoviews import save_plot
+from utilities.platform import SYSTEM
+from utilities.platform import System
 
 
 class TestApplyOpts:

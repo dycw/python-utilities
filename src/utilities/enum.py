@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any, TypeVar, cast
+from typing import Any
+from typing import TypeVar
+from typing import cast
 
 from typing_extensions import override
 

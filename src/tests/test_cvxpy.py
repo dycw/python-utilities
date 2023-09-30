@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import Any, cast
+from typing import Any
+from typing import cast
 
 import numpy as np
 from numpy import array
 from numpy.testing import assert_equal
-from pytest import mark, param, raises, skip
+from pytest import mark
+from pytest import param
+from pytest import raises
+from pytest import skip
 
 from utilities.numpy.typing import NDArrayF
 
@@ -16,25 +20,27 @@ except ModuleNotFoundError:
     skip(reason="`cvxpy` missing", allow_module_level=True)
 
 
-from cvxpy import Expression, Maximize, Minimize, Problem, Variable
+from cvxpy import Expression
+from cvxpy import Maximize
+from cvxpy import Minimize
+from cvxpy import Problem
+from cvxpy import Variable
 
-from utilities.cvxpy import (
-    InfeasibleProblemError,
-    UnboundedProblemError,
-    abs_,
-    add,
-    divide,
-    multiply,
-    neg,
-    norm,
-    pos,
-    power,
-    quad_form,
-    solve,
-    sqrt,
-    subtract,
-    sum_,
-)
+from utilities.cvxpy import InfeasibleProblemError
+from utilities.cvxpy import UnboundedProblemError
+from utilities.cvxpy import abs_
+from utilities.cvxpy import add
+from utilities.cvxpy import divide
+from utilities.cvxpy import multiply
+from utilities.cvxpy import neg
+from utilities.cvxpy import norm
+from utilities.cvxpy import pos
+from utilities.cvxpy import power
+from utilities.cvxpy import quad_form
+from utilities.cvxpy import solve
+from utilities.cvxpy import sqrt
+from utilities.cvxpy import subtract
+from utilities.cvxpy import sum_
 
 
 @cache

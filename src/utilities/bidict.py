@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from bidict import ValueDuplicationError, bidict
+from bidict import ValueDuplicationError
+from bidict import bidict
 
 from utilities.beartype import IterableStrs
 from utilities.iterables import check_duplicates

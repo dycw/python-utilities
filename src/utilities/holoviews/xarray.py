@@ -5,9 +5,12 @@ from holoviews.plotting import bokeh
 
 from utilities.holoviews import apply_opts
 from utilities.numpy import has_dtype
-from utilities.text import NotAStringError, ensure_str
+from utilities.text import NotAStringError
+from utilities.text import ensure_str
 from utilities.xarray import ewma
-from utilities.xarray.typing import DataArrayB1, DataArrayF1, DataArrayI1
+from utilities.xarray.typing import DataArrayB1
+from utilities.xarray.typing import DataArrayF1
+from utilities.xarray.typing import DataArrayI1
 
 _ = bokeh
 

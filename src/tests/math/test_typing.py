@@ -5,50 +5,52 @@ from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
-from hypothesis import Phase, given, settings
-from hypothesis.strategies import floats, integers
-from pytest import mark, param
+from hypothesis import Phase
+from hypothesis import given
+from hypothesis import settings
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from pytest import mark
+from pytest import param
 
-from utilities.math.typing import (
-    FloatFin,
-    FloatFinInt,
-    FloatFinIntNan,
-    FloatFinNan,
-    FloatFinNeg,
-    FloatFinNegNan,
-    FloatFinNonNeg,
-    FloatFinNonNegNan,
-    FloatFinNonPos,
-    FloatFinNonPosNan,
-    FloatFinNonZr,
-    FloatFinNonZrNan,
-    FloatFinPos,
-    FloatFinPosNan,
-    FloatInt,
-    FloatIntNan,
-    FloatNeg,
-    FloatNegNan,
-    FloatNonNeg,
-    FloatNonNegNan,
-    FloatNonPos,
-    FloatNonPosNan,
-    FloatNonZr,
-    FloatNonZrNan,
-    FloatPos,
-    FloatPosNan,
-    FloatZr,
-    FloatZrFinNonMic,
-    FloatZrFinNonMicNan,
-    FloatZrNan,
-    FloatZrNonMic,
-    FloatZrNonMicNan,
-    IntNeg,
-    IntNonNeg,
-    IntNonPos,
-    IntNonZr,
-    IntPos,
-    IntZr,
-)
+from utilities.math.typing import FloatFin
+from utilities.math.typing import FloatFinInt
+from utilities.math.typing import FloatFinIntNan
+from utilities.math.typing import FloatFinNan
+from utilities.math.typing import FloatFinNeg
+from utilities.math.typing import FloatFinNegNan
+from utilities.math.typing import FloatFinNonNeg
+from utilities.math.typing import FloatFinNonNegNan
+from utilities.math.typing import FloatFinNonPos
+from utilities.math.typing import FloatFinNonPosNan
+from utilities.math.typing import FloatFinNonZr
+from utilities.math.typing import FloatFinNonZrNan
+from utilities.math.typing import FloatFinPos
+from utilities.math.typing import FloatFinPosNan
+from utilities.math.typing import FloatInt
+from utilities.math.typing import FloatIntNan
+from utilities.math.typing import FloatNeg
+from utilities.math.typing import FloatNegNan
+from utilities.math.typing import FloatNonNeg
+from utilities.math.typing import FloatNonNegNan
+from utilities.math.typing import FloatNonPos
+from utilities.math.typing import FloatNonPosNan
+from utilities.math.typing import FloatNonZr
+from utilities.math.typing import FloatNonZrNan
+from utilities.math.typing import FloatPos
+from utilities.math.typing import FloatPosNan
+from utilities.math.typing import FloatZr
+from utilities.math.typing import FloatZrFinNonMic
+from utilities.math.typing import FloatZrFinNonMicNan
+from utilities.math.typing import FloatZrNan
+from utilities.math.typing import FloatZrNonMic
+from utilities.math.typing import FloatZrNonMicNan
+from utilities.math.typing import IntNeg
+from utilities.math.typing import IntNonNeg
+from utilities.math.typing import IntNonPos
+from utilities.math.typing import IntNonZr
+from utilities.math.typing import IntPos
+from utilities.math.typing import IntZr
 
 
 class TestHints:

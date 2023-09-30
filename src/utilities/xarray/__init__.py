@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping
-from typing import Any, cast
+from collections.abc import Hashable
+from collections.abc import Mapping
+from typing import Any
+from typing import cast
 
-from utilities._numbagg import move_exp_nanmean, move_exp_nansum
-from utilities.xarray.typing import DataArrayF, DataArrayI
+from utilities._numbagg import move_exp_nanmean
+from utilities._numbagg import move_exp_nansum
+from utilities.xarray.typing import DataArrayF
+from utilities.xarray.typing import DataArrayI
 
 
 def ewma(

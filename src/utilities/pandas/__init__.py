@@ -1,32 +1,39 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Hashable, Mapping, Sequence
-from functools import partial, reduce
+from collections.abc import Hashable
+from collections.abc import Mapping
+from collections.abc import Sequence
+from functools import partial
+from functools import reduce
 from itertools import permutations
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Literal
+from typing import NoReturn
+from typing import cast
 
 from numpy import where
-from pandas import (
-    NA,
-    DataFrame,
-    DatetimeTZDtype,
-    Index,
-    NaT,
-    RangeIndex,
-    Series,
-    Timestamp,
-)
+from pandas import NA
+from pandas import DataFrame
+from pandas import DatetimeTZDtype
+from pandas import Index
+from pandas import NaT
+from pandas import RangeIndex
+from pandas import Series
+from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.numpy import has_dtype
-from utilities.numpy.typing import NDArray1, datetime64ns
+from utilities.numpy.typing import NDArray1
+from utilities.numpy.typing import datetime64ns
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA, SeriesA
+    from utilities.pandas.typing import IndexA
+    from utilities.pandas.typing import SeriesA
 
 
 Int64 = "Int64"

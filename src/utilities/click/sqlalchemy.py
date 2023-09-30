@@ -3,10 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 import sqlalchemy
-from click import Context, Parameter, ParamType
+from click import Context
+from click import Parameter
+from click import ParamType
 from typing_extensions import override
 
-from utilities.sqlalchemy import ParseEngineError, ensure_engine
+from utilities.sqlalchemy import ParseEngineError
+from utilities.sqlalchemy import ensure_engine
 
 
 class Engine(ParamType):

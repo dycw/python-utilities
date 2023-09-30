@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from nox import Session, session
+from nox import Session
+from nox import session
 
 
 @session

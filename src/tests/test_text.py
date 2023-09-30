@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 
-from utilities.text import ensure_str, snake_case, strip_and_dedent
+from utilities.text import ensure_str
+from utilities.text import snake_case
+from utilities.text import strip_and_dedent
 
 
 class TestEnsureStr:

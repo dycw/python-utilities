@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytest import mark, param
+from pytest import mark
+from pytest import param
 
 from utilities.hashlib import md5_hash
 

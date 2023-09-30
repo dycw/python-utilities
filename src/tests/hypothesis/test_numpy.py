@@ -1,73 +1,68 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 import numpy as np
-from hypothesis import assume, given
+from hypothesis import assume
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    dates,
-    floats,
-    integers,
-    just,
-    none,
-)
-from numpy import (
-    datetime64,
-    iinfo,
-    inf,
-    int32,
-    int64,
-    isfinite,
-    isinf,
-    isnan,
-    isnat,
-    ravel,
-    rint,
-    uint32,
-    uint64,
-    zeros,
-)
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import booleans
+from hypothesis.strategies import data
+from hypothesis.strategies import dates
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from hypothesis.strategies import just
+from hypothesis.strategies import none
+from numpy import datetime64
+from numpy import iinfo
+from numpy import inf
+from numpy import int32
+from numpy import int64
+from numpy import isfinite
+from numpy import isinf
+from numpy import isnan
+from numpy import isnat
+from numpy import ravel
+from numpy import rint
+from numpy import uint32
+from numpy import uint64
+from numpy import zeros
 from numpy.testing import assert_equal
 from pytest import raises
 
-from utilities.hypothesis import assume_does_not_raise, datetimes_utc
-from utilities.hypothesis.numpy import (
-    bool_arrays,
-    concatenated_arrays,
-    datetime64_arrays,
-    datetime64_dtypes,
-    datetime64_indexes,
-    datetime64_kinds,
-    datetime64_units,
-    datetime64D_indexes,
-    datetime64s,
-    datetime64us_indexes,
-    float_arrays,
-    int32s,
-    int64s,
-    int_arrays,
-    str_arrays,
-    uint32s,
-    uint64s,
-)
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import datetimes_utc
+from utilities.hypothesis.numpy import bool_arrays
+from utilities.hypothesis.numpy import concatenated_arrays
+from utilities.hypothesis.numpy import datetime64_arrays
+from utilities.hypothesis.numpy import datetime64_dtypes
+from utilities.hypothesis.numpy import datetime64_indexes
+from utilities.hypothesis.numpy import datetime64_kinds
+from utilities.hypothesis.numpy import datetime64_units
+from utilities.hypothesis.numpy import datetime64D_indexes
+from utilities.hypothesis.numpy import datetime64s
+from utilities.hypothesis.numpy import datetime64us_indexes
+from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import int32s
+from utilities.hypothesis.numpy import int64s
+from utilities.hypothesis.numpy import int_arrays
+from utilities.hypothesis.numpy import str_arrays
+from utilities.hypothesis.numpy import uint32s
+from utilities.hypothesis.numpy import uint64s
 from utilities.hypothesis.typing import Shape
-from utilities.numpy import (
-    Datetime64Kind,
-    Datetime64Unit,
-    datetime64_dtype_to_unit,
-    datetime64_to_date,
-    datetime64_to_datetime,
-    datetime64_to_int,
-    datetime64_unit_to_kind,
-    datetime64D,
-    datetime64us,
-)
+from utilities.numpy import Datetime64Kind
+from utilities.numpy import Datetime64Unit
+from utilities.numpy import datetime64_dtype_to_unit
+from utilities.numpy import datetime64_to_date
+from utilities.numpy import datetime64_to_datetime
+from utilities.numpy import datetime64_to_int
+from utilities.numpy import datetime64_unit_to_kind
+from utilities.numpy import datetime64D
+from utilities.numpy import datetime64us
 
 
 class TestBoolArrays:

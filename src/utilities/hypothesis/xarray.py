@@ -1,30 +1,31 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
+from typing import Any
 
 from hypothesis.extra.numpy import array_shapes
-from hypothesis.strategies import SearchStrategy, composite
+from hypothesis.strategies import SearchStrategy
+from hypothesis.strategies import composite
 from xarray import DataArray
 
-from utilities.hypothesis import lift_draw, lists_fixed_length, text_ascii
-from utilities.hypothesis.numpy import (
-    bool_arrays,
-    float_arrays,
-    int_arrays,
-    str_arrays,
-)
+from utilities.hypothesis import lift_draw
+from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import text_ascii
+from utilities.hypothesis.numpy import bool_arrays
+from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import int_arrays
+from utilities.hypothesis.numpy import str_arrays
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.xarray.typing import (
-    DataArrayB,
-    DataArrayF,
-    DataArrayI,
-    DataArrayO,
-)
+from utilities.xarray.typing import DataArrayB
+from utilities.xarray.typing import DataArrayF
+from utilities.xarray.typing import DataArrayI
+from utilities.xarray.typing import DataArrayO
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA, IndexI
+    from utilities.pandas.typing import IndexA
+    from utilities.pandas.typing import IndexI
 
 
 @composite

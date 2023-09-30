@@ -1,35 +1,43 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    dictionaries,
-    floats,
-    integers,
-)
-from numpy import arange, array, isclose, nan, sort, zeros
+from hypothesis.strategies import DataObject
+from hypothesis.strategies import data
+from hypothesis.strategies import dictionaries
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
+from numpy import arange
+from numpy import array
+from numpy import isclose
+from numpy import nan
+from numpy import sort
+from numpy import zeros
 from numpy.testing import assert_equal
-from pytest import mark, param, raises
+from pytest import mark
+from pytest import param
+from pytest import raises
 from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import temp_paths, text_ascii
-from utilities.hypothesis.numpy import float_arrays, int_arrays
-from utilities.numpy import datetime64D, datetime64ns
-from utilities.numpy.typing import NDArrayI1, NDArrayO1
-from utilities.zarr import (
-    InvalidIndexValueError,
-    NDArrayWithIndexes,
-    ffill_non_nan_slices,
-    yield_array_with_indexes,
-)
+from utilities.hypothesis import temp_paths
+from utilities.hypothesis import text_ascii
+from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis.numpy import int_arrays
+from utilities.numpy import datetime64D
+from utilities.numpy import datetime64ns
+from utilities.numpy.typing import NDArrayI1
+from utilities.numpy.typing import NDArrayO1
+from utilities.zarr import InvalidIndexValueError
+from utilities.zarr import NDArrayWithIndexes
+from utilities.zarr import ffill_non_nan_slices
+from utilities.zarr import yield_array_with_indexes
 
 indexes1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 

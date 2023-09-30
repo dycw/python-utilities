@@ -1,11 +1,19 @@
 from __future__ import annotations
 
-from typing import Annotated, TypeAlias
+from typing import Annotated
+from typing import TypeAlias
 
 from xarray import DataArray
 
-from utilities.beartype import NDim0, NDim1, NDim2, NDim3
-from utilities.numpy.typing import DTypeB, DTypeDns, DTypeF, DTypeI, DTypeO
+from utilities.beartype import NDim0
+from utilities.beartype import NDim1
+from utilities.beartype import NDim2
+from utilities.beartype import NDim3
+from utilities.numpy.typing import DTypeB
+from utilities.numpy.typing import DTypeDns
+from utilities.numpy.typing import DTypeF
+from utilities.numpy.typing import DTypeI
+from utilities.numpy.typing import DTypeO
 
 # dtype annotated;
 DataArrayB: TypeAlias = Annotated[DataArray, DTypeB]

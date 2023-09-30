@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import floats, integers
+from hypothesis.strategies import floats
+from hypothesis.strategies import integers
 from pytest import raises
 
-from utilities.holoviews.xarray import (
-    ArrayNameIsEmptyStringError,
-    ArrayNameNotAStringError,
-    plot_curve,
-)
-from utilities.hypothesis import assume_does_not_raise, text_ascii
+from utilities.holoviews.xarray import ArrayNameIsEmptyStringError
+from utilities.holoviews.xarray import ArrayNameNotAStringError
+from utilities.holoviews.xarray import plot_curve
+from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.xarray import bool_data_arrays, float_data_arrays
-from utilities.xarray.typing import DataArrayB1, DataArrayF1
+from utilities.hypothesis.xarray import bool_data_arrays
+from utilities.hypothesis.xarray import float_data_arrays
+from utilities.xarray.typing import DataArrayB1
+from utilities.xarray.typing import DataArrayF1
 
 
 class TestPlotCurve:

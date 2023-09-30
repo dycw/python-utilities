@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from functools import partial
 from getpass import getuser
 from itertools import islice
@@ -13,7 +14,8 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.clean_dir.classes import Config, Item
+from utilities.clean_dir.classes import Config
+from utilities.clean_dir.classes import Item
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike

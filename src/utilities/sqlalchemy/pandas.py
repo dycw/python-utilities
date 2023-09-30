@@ -1,40 +1,44 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
+from collections.abc import Iterator
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import overload
 
 from pandas import DataFrame
-from sqlalchemy import Column, insert
-from sqlalchemy.engine import Connection, Engine, Row
+from sqlalchemy import Column
+from sqlalchemy import insert
+from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Row
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnElement, Select
+from sqlalchemy.sql import ColumnElement
+from sqlalchemy.sql import Select
 
 from utilities.bidict import snake_case_mappings
-from utilities.iterables import (
-    IterableContainsDuplicatesError,
-    check_duplicates,
-)
-from utilities.more_itertools import EmptyIterableError, one
-from utilities.numpy import datetime64ns, has_dtype
-from utilities.pandas import (
-    Int64,
-    boolean,
-    datetime64nsutc,
-    string,
-    timestamp_to_date,
-    timestamp_to_datetime,
-)
-from utilities.sqlalchemy import (
-    get_column_names,
-    get_columns,
-    get_dialect,
-    get_table,
-    model_to_dict,
-    yield_connection,
-)
-from utilities.text import ensure_str, snake_case
+from utilities.iterables import IterableContainsDuplicatesError
+from utilities.iterables import check_duplicates
+from utilities.more_itertools import EmptyIterableError
+from utilities.more_itertools import one
+from utilities.numpy import datetime64ns
+from utilities.numpy import has_dtype
+from utilities.pandas import Int64
+from utilities.pandas import boolean
+from utilities.pandas import datetime64nsutc
+from utilities.pandas import string
+from utilities.pandas import timestamp_to_date
+from utilities.pandas import timestamp_to_datetime
+from utilities.sqlalchemy import get_column_names
+from utilities.sqlalchemy import get_columns
+from utilities.sqlalchemy import get_dialect
+from utilities.sqlalchemy import get_table
+from utilities.sqlalchemy import model_to_dict
+from utilities.sqlalchemy import yield_connection
+from utilities.text import ensure_str
+from utilities.text import snake_case
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import SeriesA

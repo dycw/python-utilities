@@ -4,7 +4,8 @@ from typing import NoReturn
 
 from pytest import raises
 
-from utilities.errors import NoUniqueArgError, redirect_error
+from utilities.errors import NoUniqueArgError
+from utilities.errors import redirect_error
 
 
 class TestRedirectError:
