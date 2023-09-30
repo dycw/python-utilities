@@ -6,8 +6,8 @@ from contextlib import suppress
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from types import new_class
-from typing import Any, Literal, TypeVar, Union, cast, get_args, get_origin
+from types import UnionType, new_class
+from typing import Any, Literal, TypeVar, cast, get_args, get_origin
 
 from attrs import asdict, fields
 from luigi import (
@@ -163,7 +163,7 @@ def _map_union_annotation(
 ) -> type[Parameter] | Callable[..., Parameter]:
     """Map a union annotation to a parameter class."""
     msg = f"{ann=}"
-    if get_origin(ann) is not Union:
+    if get_origin(ann) is not UnionType:
         raise InvalidAnnotationError(msg)
     args = [arg for arg in get_args(ann) if arg is not NoneType]
     try:

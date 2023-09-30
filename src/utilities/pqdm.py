@@ -70,7 +70,7 @@ def pmap(
     """Parallel map, powered by `pqdm`."""
     return pstarmap(
         func,
-        zip(*iterables),
+        zip(*iterables, strict=True),
         parallelism=parallelism,
         n_jobs=n_jobs,
         bounded=bounded,

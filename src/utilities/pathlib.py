@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
 
 from utilities.re import extract_group
 
-PathLike = Union[Path, str]
+PathLike = Path | str
 
 
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:

@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Union, cast
+from typing import Any, Literal, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray
@@ -113,7 +113,7 @@ class NoIndexesError(ValueError):
     """Raised when there are no indexes."""
 
 
-IselIndexer = Union[int, slice, Sequence[int], NDArrayB1, NDArrayI1]
+IselIndexer = int | slice | Sequence[int] | NDArrayB1 | NDArrayI1
 
 
 def _codec(dtype: Any, /) -> dict[str, Any]:
@@ -265,7 +265,7 @@ class NDArrayWithIndexes:
             indexer = indexers[dim]
         except KeyError:
             return slice(None)
-        if isinstance(indexer, (int, ndarray, slice)):
+        if isinstance(indexer, int | ndarray | slice):
             return indexer
         return array(indexer, dtype=int)
 

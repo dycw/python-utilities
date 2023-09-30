@@ -45,7 +45,7 @@ class _Defaults:
 _DEFAULTS = _Defaults()
 
 
-class tqdm(_tqdm):  # noqa: N801 # type: ignore
+class tqdm(_tqdm):  # noqa: N801
     """Sub-class of `tqdm` which is disabled during pytest."""
 
     def __init__(

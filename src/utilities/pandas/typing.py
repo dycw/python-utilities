@@ -1,7 +1,11 @@
 from __future__ import annotations  # pragma: no cover
 
 import datetime as dt  # pragma: no cover
-from typing import TYPE_CHECKING, Any  # pragma: no cover
+from typing import (  # pragma: no cover
+    TYPE_CHECKING,
+    Any,
+    TypeAlias,  # pragma: no cover
+)
 
 from pandas import (  # pragma: no cover
     BooleanDtype,
@@ -12,7 +16,6 @@ from pandas import (  # pragma: no cover
     Series,
     StringDtype,
 )
-from typing_extensions import TypeAlias  # pragma: no cover
 
 if TYPE_CHECKING:  # pragma: no cover
     IndexA: TypeAlias = Index[Any]

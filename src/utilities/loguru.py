@@ -150,7 +150,7 @@ def _add_sink(
         rotation: str | int | dt.time | dt.timedelta | None
         retention: str | int | dt.timedelta | None
 
-    if isinstance(sink, (Path, str)):
+    if isinstance(sink, Path | str):
         kwargs = cast(Kwargs, {"rotation": rotation, "retention": retention})
     else:
         kwargs = cast(Kwargs, {})

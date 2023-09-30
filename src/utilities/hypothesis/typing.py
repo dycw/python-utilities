@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TypeVar, Union
+from typing import TypeVar
 
 from hypothesis.strategies import SearchStrategy
 
 _T = TypeVar("_T")
-MaybeSearchStrategy = Union[_T, SearchStrategy[_T]]
+MaybeSearchStrategy = _T | SearchStrategy[_T]
 
 
-Shape = Union[int, tuple[int, ...]]
+Shape = int | tuple[int, ...]

@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Any, Literal, NoReturn, Union, cast, overload
+from typing import Any, Literal, NoReturn, cast, overload
 
 import numpy as np
 from bottleneck import push
@@ -659,7 +659,7 @@ def pct_change(
         with errstate(all="ignore"):
             ratio = (filled / shifted) if n >= 0 else (shifted / filled)
         return where(isfinite(array), ratio - 1.0, nan)
-    flipped = cast(Union[NDArrayF, NDArrayI], flip(array, axis=axis))
+    flipped = cast(NDArrayF | NDArrayI, flip(array, axis=axis))
     result = pct_change(flipped, limit=limit, n=-n, axis=axis)
     return flip(result, axis=axis)
 

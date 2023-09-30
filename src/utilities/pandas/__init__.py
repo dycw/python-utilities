@@ -75,10 +75,10 @@ def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
         if not isinstance(obj, RangeIndex):
             msg = f"Invalid type: {obj=}"
             raise TypeError(msg)
-        if cast(int, obj.start) != 0:
+        if obj.start != 0:
             msg = f"{obj=}"
             raise RangeIndexStartError(msg)
-        if cast(int, obj.step) != 1:
+        if obj.step != 1:
             msg = f"{obj=}"
             raise RangeIndexStepError(msg)
         if obj.name is not None:

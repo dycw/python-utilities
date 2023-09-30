@@ -64,7 +64,7 @@ class Timer:
         return dt.timedelta(seconds=float(self))
 
     def _compare(self, other: Any, op: Callable[[Any, Any], bool], /) -> bool:
-        if isinstance(other, (Number, Timer)):
+        if isinstance(other, Number | Timer):
             return op(float(self), other)
         if isinstance(other, dt.timedelta):
             return op(self.timedelta, other)

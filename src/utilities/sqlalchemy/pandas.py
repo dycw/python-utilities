@@ -122,8 +122,8 @@ def _yield_dataframe_rows_as_dicts(
         for _, sr in df.items()
     ]
     keys = [key for key, _ in parsed]
-    for row in zip(*(it for _, it in parsed)):
-        yield dict(zip(keys, row))
+    for row in zip(*(it for _, it in parsed), strict=True):
+        yield dict(zip(keys, row, strict=True))
 
 
 def _parse_series_against_table(
@@ -152,7 +152,9 @@ def _parse_series_against_table(
     try:
         column = one(
             col
-            for name, col in zip(column_names, get_columns(table_or_model))
+            for name, col in zip(
+                column_names, get_columns(table_or_model), strict=True
+            )
             if name == target_name
         )
     except EmptyIterableError:
@@ -182,10 +184,7 @@ def _check_series_against_table_column(
     """Check if a series can be inserted into a column."""
     py_type = table_column.type.python_type
     if not (
-        (
-            has_dtype(series, (bool, boolean))
-            and issubclass(py_type, (bool, int))
-        )
+        (has_dtype(series, (bool, boolean)) and issubclass(py_type, bool | int))
         or (has_dtype(series, float) and issubclass(py_type, float))
         or (
             has_dtype(series, datetime64ns)
@@ -231,7 +230,10 @@ def _yield_insertion_elements(series: SeriesA, /) -> Iterator[Any]:
     else:
         msg = f"Invalid dtype: {series=}"
         raise TypeError(msg)
-    return (None if n else cast(v) for n, v in zip(series.isna(), series))
+    return (
+        None if n else cast(v)
+        for n, v in zip(series.isna(), series, strict=True)
+    )
 
 
 class DatesWithTimeComponentsError(ValueError):

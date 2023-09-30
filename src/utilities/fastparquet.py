@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Literal, cast, overload
 
 from fastparquet import ParquetFile, write
 from pandas import DataFrame, Series
@@ -16,10 +16,10 @@ from utilities.pathlib import PathLike
 from utilities.text import ensure_str
 
 _Compression = Literal["gzip", ",snappy", "brotli", "lz4", "zstandard"]
-Compression = Union[_Compression, Mapping[str, Optional[_Compression]]]
+Compression = _Compression | Mapping[str, _Compression | None]
 _Op = Literal["==", "=", ">", ">=", "<", "<=", "!=", "in", "not in"]
 _Filter = tuple[str, _Op, Any]
-Filters = Union[Sequence[_Filter], Sequence[Sequence[_Filter]]]
+Filters = Sequence[_Filter] | Sequence[Sequence[_Filter]]
 _PARQUET_DTYPES = {bool, cast(str, datetime64ns), float, Int64, string}
 
 
