@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from click import command
 from click import echo
 from click.testing import CliRunner
@@ -14,6 +12,7 @@ from pytest import param
 from utilities.click.luigi import local_scheduler_option_default_central
 from utilities.click.luigi import local_scheduler_option_default_local
 from utilities.click.luigi import workers_option
+from utilities.typing import SequenceStrs
 
 
 class TestLocalSchedulerOption:
@@ -21,9 +20,7 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], True), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_local(
-        self, *, args: Sequence[str], expected: bool
-    ) -> None:
+    def test_default_local(self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
         @local_scheduler_option_default_local
         def cli(*, local_scheduler: bool) -> None:
@@ -38,7 +35,7 @@ class TestLocalSchedulerOption:
         [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
     def test_default_central(
-        self, *, args: Sequence[str], expected: bool
+        self, *, args: SequenceStrs, expected: bool
     ) -> None:
         @command()
         @local_scheduler_option_default_central

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Set as AbstractSet
 from math import inf
 from math import isfinite
 from math import isinf
@@ -47,6 +48,7 @@ from utilities.hypothesis import text_printable
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.tempfile import TemporaryDirectory
+from utilities.typing import IterableStrs
 
 
 class TestAssumeDoesNotRaise:
@@ -248,7 +250,7 @@ class TestTempDirs:
         temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10)
     )
     def test_writing_files(
-        self, temp_dir: TemporaryDirectory, contents: set[str]
+        self, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:
         _test_writing_to_temp_path(temp_dir.name, contents)
 
@@ -262,7 +264,9 @@ class TestTempPaths:
         temp_path=temp_paths(),
         contents=sets(text_ascii(min_size=1), max_size=10),
     )
-    def test_writing_files(self, temp_path: Path, contents: set[str]) -> None:
+    def test_writing_files(
+        self, temp_path: Path, contents: AbstractSet[str]
+    ) -> None:
         _test_writing_to_temp_path(temp_path, contents)
 
 
@@ -271,12 +275,12 @@ def _test_temp_path(path: Path, /) -> None:
     assert len(set(path.iterdir())) == 0
 
 
-def _test_writing_to_temp_path(path: Path, contents: set[str], /) -> None:
+def _test_writing_to_temp_path(path: Path, contents: IterableStrs, /) -> None:
     assert len(set(path.iterdir())) == 0
-    contents = set(maybe_yield_lower_case(contents))
-    for content in contents:
+    as_set = set(maybe_yield_lower_case(contents))
+    for content in as_set:
         path.joinpath(content).touch()
-    assert len(set(path.iterdir())) == len(contents)
+    assert len(set(path.iterdir())) == len(as_set)
 
 
 class TestTextAscii:

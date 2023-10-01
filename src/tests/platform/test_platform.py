@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Set as AbstractSet
+
 from hypothesis import given
 from hypothesis.strategies import sets
 
@@ -13,7 +15,7 @@ from utilities.typing import never
 
 class TestMaybeYieldLowerCase:
     @given(text=sets(text_ascii()))
-    def test_main(self, text: set[str]) -> None:
+    def test_main(self, text: AbstractSet[str]) -> None:
         result = set(maybe_yield_lower_case(text))
         if SYSTEM is System.windows:  # noqa: SIM114 # pragma: os-ne-windows
             assert all(text == text.lower() for text in result)

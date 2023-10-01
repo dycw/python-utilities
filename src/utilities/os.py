@@ -30,7 +30,9 @@ def temp_environ(
     env: Mapping[str, str | None] | None = None, **env_kwargs: str | None
 ) -> Iterator[None]:
     """Context manager with temporary environment variable set."""
-    all_env: dict[str, str | None] = ({} if env is None else env) | env_kwargs
+    all_env: dict[str, str | None] = (
+        {} if env is None else dict(env)
+    ) | env_kwargs
     prev = list(zip(all_env, map(getenv, all_env), strict=True))
     _apply_environment(all_env.items())
     try:

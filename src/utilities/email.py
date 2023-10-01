@@ -9,9 +9,9 @@ from pathlib import Path
 from smtplib import SMTP
 from typing import Any
 
-from utilities.beartype import IterableStrs
 from utilities.pathlib import PathLike
 from utilities.pytest import is_pytest
+from utilities.typing import IterableStrs
 
 
 def send_email(
