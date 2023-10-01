@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from pytest import mark
 from pytest import param
 from pytest import raises
@@ -12,6 +10,7 @@ from utilities.re import NoCaptureGroupsError
 from utilities.re import NoMatchesError
 from utilities.re import extract_group
 from utilities.re import extract_groups
+from utilities.typing import IterableStrs
 
 
 class TestExtractGroup:
@@ -41,7 +40,7 @@ class TestExtractGroups:
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
     def test_success(
-        self, pattern: str, text: str, expected: Sequence[str]
+        self, pattern: str, text: str, expected: IterableStrs
     ) -> None:
         assert extract_groups(pattern, text) == expected
 

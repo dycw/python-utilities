@@ -22,11 +22,11 @@ from typing import cast
 from loguru import logger
 from typing_extensions import override
 
-from utilities.beartype import IterableStrs
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 from utilities.re import NoMatchesError
 from utilities.re import extract_group
+from utilities.typing import IterableStrs
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"

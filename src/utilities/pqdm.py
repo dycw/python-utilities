@@ -20,6 +20,7 @@ from utilities.sentinel import Sentinel
 from utilities.sentinel import sentinel
 from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
 from utilities.tqdm import _get_total
+from utilities.tqdm import _LockArgs
 from utilities.tqdm import tqdm
 
 
@@ -68,7 +69,7 @@ def pmap(
     postfix: Mapping[str, Any] | None = _TQDM_DEFAULTS.postfix,
     unit_divisor: float | None = _TQDM_DEFAULTS.unit_divisor,
     write_bytes: bool | None = _TQDM_DEFAULTS.write_bytes,
-    lock_args: tuple[Any, ...] | None = _TQDM_DEFAULTS.lock_args,
+    lock_args: _LockArgs = _TQDM_DEFAULTS.lock_args,
     nrows: int | None = _TQDM_DEFAULTS.nrows,
     colour: str | None = _TQDM_DEFAULTS.colour,
     delay: float | None = _TQDM_DEFAULTS.delay,

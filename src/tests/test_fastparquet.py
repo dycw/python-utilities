@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -23,6 +24,7 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import lists
 from hypothesis.strategies import none
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies import sets
 from hypothesis.strategies import tuples
 from numpy import float32
 from numpy import nan
@@ -68,14 +70,13 @@ class TestCountRows:
 
 
 class TestGetColumns:
-    @given(columns=lists(text_ascii(), unique=True), root=temp_paths())
-    def test_main(self, columns: Sequence[str], root: Path) -> None:
-        df = DataFrame(
-            nan, index=RangeIndex(1), columns=list(columns), dtype=float
-        )
+    @given(columns=sets(text_ascii()), root=temp_paths())
+    def test_main(self, columns: AbstractSet[str], root: Path) -> None:
+        as_list = list(columns)
+        df = DataFrame(nan, index=RangeIndex(1), columns=as_list, dtype=float)
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_columns(path)
-        assert result == columns
+        assert result == as_list
 
 
 class TestGetDtypes:

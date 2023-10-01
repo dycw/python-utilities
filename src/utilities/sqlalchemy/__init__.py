@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections.abc
 from collections.abc import Callable
 from collections.abc import Iterable
 from collections.abc import Iterator
@@ -17,7 +16,6 @@ from typing import Literal
 from typing import NoReturn
 from typing import cast
 
-import sqlalchemy
 import timeout_decorator
 from beartype import beartype
 from more_itertools import chunked
@@ -31,6 +29,7 @@ from sqlalchemy import LargeBinary
 from sqlalchemy import MetaData
 from sqlalchemy import Numeric
 from sqlalchemy import Select
+from sqlalchemy import Sequence
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Unicode
@@ -69,6 +68,7 @@ from utilities.math.typing import IntNonNeg
 from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.text import snake_case
+from utilities.typing import IterableStrs
 from utilities.typing import never
 
 
@@ -546,10 +546,14 @@ def create_engine(
     host: str | None = None,
     port: int | None = None,
     database: str | None = None,
-    query: Mapping[str, collections.abc.Sequence[str] | str] | None = None,
+    query: Mapping[str, IterableStrs | str] | None = None,
     poolclass: type[Pool] | None = NullPool,
 ) -> Engine:
     """Create a SQLAlchemy engine."""
+    if query is None:
+        kwargs = {}
+    else:
+        kwargs = {"query": {k: _map_value(v) for k, v in query.items()}}
     url = URL.create(
         drivername,
         username=username,
@@ -557,9 +561,13 @@ def create_engine(
         host=host,
         port=port,
         database=database,
-        **({} if query is None else {"query": query}),
+        **kwargs,
     )
     return _create_engine(url, poolclass=poolclass)
+
+
+def _map_value(x: IterableStrs | str, /) -> list[str] | str:
+    return x if isinstance(x, str) else list(x)
 
 
 def ensure_engine(engine: Engine | str, /) -> Engine:
@@ -673,7 +681,7 @@ def next_from_sequence(
     """Get the next element from a sequence."""
 
     def inner() -> int:  # pragma: no cover
-        seq = sqlalchemy.Sequence(name)
+        seq = Sequence(name)
         try:
             with yield_connection(engine_or_conn) as conn:
                 return conn.scalar(seq)

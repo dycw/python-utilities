@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from collections.abc import Mapping
-from collections.abc import Sequence
 from functools import partial
 from itertools import chain
 from itertools import repeat
@@ -20,6 +19,7 @@ from loguru import logger
 
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
+from utilities.typing import IterableStrs
 
 
 def get_shell_output(
@@ -57,12 +57,10 @@ class MultipleActivateError(ValueError):
     """Raised when multiple `activate` scripts can be found."""
 
 
-def run_accept_address_in_use(
-    args: Sequence[str], /, *, exist_ok: bool
-) -> None:
+def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
-        _ = check_output(args, stderr=PIPE, text=True)  # noqa: S603
+        _ = check_output(list(args), stderr=PIPE, text=True)  # noqa: S603
     except CalledProcessError as error:  # pragma: no cover
         pattern = _address_already_in_use_pattern()
         if exist_ok and search(pattern, error.stderr, flags=MULTILINE):

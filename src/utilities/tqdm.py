@@ -12,6 +12,8 @@ from tqdm import tqdm as _tqdm
 
 from utilities.pytest import is_pytest
 
+_LockArgs = tuple[bool | None, float | None] | tuple[bool | None] | None
+
 
 @dataclass(frozen=True)
 class _Defaults:
@@ -38,7 +40,7 @@ class _Defaults:
     postfix: Mapping[str, Any] | None = None
     unit_divisor: float | None = 1000.0
     write_bytes: bool | None = None
-    lock_args: tuple[Any, ...] | None = None
+    lock_args: _LockArgs = None
     nrows: int | None = None
     colour: str | None = None
     delay: float | None = 0.0
@@ -73,7 +75,7 @@ class tqdm(_tqdm):  # noqa: N801
         postfix: Mapping[str, Any] | None = _DEFAULTS.postfix,
         unit_divisor: float | None = _DEFAULTS.unit_divisor,
         write_bytes: bool | None = _DEFAULTS.write_bytes,
-        lock_args: tuple[Any, ...] | None = _DEFAULTS.lock_args,
+        lock_args: _LockArgs = _DEFAULTS.lock_args,
         nrows: int | None = _DEFAULTS.nrows,
         colour: str | None = _DEFAULTS.colour,
         delay: float | None = _DEFAULTS.delay,

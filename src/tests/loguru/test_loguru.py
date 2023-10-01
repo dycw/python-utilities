@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from re import search
 from time import sleep
@@ -9,9 +9,9 @@ from time import sleep
 from hypothesis import given
 from hypothesis import settings
 from hypothesis.strategies import dictionaries
-from hypothesis.strategies import lists
 from hypothesis.strategies import none
 from hypothesis.strategies import sampled_from
+from hypothesis.strategies import sets
 from loguru import logger
 
 from utilities.hypothesis import temp_paths
@@ -40,8 +40,8 @@ class TestSetupLoguru:
         setup_loguru(levels={module: LogLevel.INFO})
         logger.info("test")
 
-    @given(enable=lists(text_ascii(min_size=1)))
-    def test_enable(self, enable: Sequence[str]) -> None:
+    @given(enable=sets(text_ascii(min_size=1)))
+    def test_enable(self, enable: AbstractSet[str]) -> None:
         setup_loguru(enable=enable)
         logger.info("test")
 

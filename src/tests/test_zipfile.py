@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from string import ascii_letters
 from zipfile import ZipFile
@@ -18,7 +19,7 @@ class TestYieldZipFileContents:
         temp_path=temp_paths(),
         contents=sets(sampled_from(ascii_letters), min_size=1, max_size=10),
     )
-    def test_main(self, temp_path: Path, contents: set[str]) -> None:
+    def test_main(self, temp_path: Path, contents: AbstractSet[str]) -> None:
         contents = set(maybe_yield_lower_case(contents))
         assert temp_path.exists()
         assert not list(temp_path.iterdir())

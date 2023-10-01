@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from pathlib import Path
 from time import sleep
 from typing import Any
@@ -11,6 +10,7 @@ from pytest import param
 
 from utilities.pytest import is_pytest
 from utilities.text import strip_and_dedent
+from utilities.typing import IterableStrs
 
 
 class TestPytestOptions:
@@ -58,10 +58,10 @@ class TestPytestOptions:
     def test_configured_one_mark_and_option(
         self,
         testdir: Any,
-        case: Sequence[str],
+        case: IterableStrs,
         passed: int,
         skipped: int,
-        matches: Sequence[str],
+        matches: IterableStrs,
     ) -> None:
         testdir.makeconftest(
             """
@@ -123,10 +123,10 @@ class TestPytestOptions:
     def test_configured_two_marks_and_options(
         self,
         testdir: Any,
-        case: Sequence[str],
+        case: IterableStrs,
         passed: int,
         skipped: int,
-        matches: Sequence[str],
+        matches: IterableStrs,
     ) -> None:
         testdir.makeconftest(
             """

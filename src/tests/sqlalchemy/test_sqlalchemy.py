@@ -810,6 +810,15 @@ class TestCreateEngine:
         engine = create_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
 
+    @given(temp_path=temp_paths())
+    def test_query(self, temp_path: Path) -> None:
+        engine = create_engine(
+            "sqlite",
+            database=temp_path.name,
+            query={"arg1": "value1", "arg2": ["value2"]},
+        )
+        assert isinstance(engine, Engine)
+
 
 class TestEnsureEngine:
     @given(data=data(), engine=sqlite_engines())

@@ -8,10 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from utilities.atomicwrites import writer
-from utilities.beartype import IterableStrs
 from utilities.datetime import UTC
 from utilities.pathlib import PathLike
 from utilities.tempfile import TEMP_DIR
+from utilities.typing import IterableStrs
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config

@@ -5,7 +5,7 @@ from enum import Enum
 from enum import unique
 from platform import system
 
-from utilities.beartype import IterableStrs
+from utilities.typing import IterableStrs
 from utilities.typing import never
 
 
