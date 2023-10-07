@@ -6,7 +6,7 @@
 #
 airium==0.2.6
     # via dycw-utilities (pyproject.toml)
-annotated-types==0.5.0
+annotated-types==0.6.0
     # via pydantic
 anyio==3.7.1
     # via
@@ -31,7 +31,7 @@ beartype==0.16.2
     # via dycw-utilities (pyproject.toml)
 bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
-bleach==6.0.0
+bleach==6.1.0
     # via panel
 bokeh==3.2.2
     # via panel
@@ -66,7 +66,7 @@ colorlog==6.7.0
     # via nox
 contourpy==1.1.1
     # via bokeh
-coverage[toml]==7.3.1
+coverage[toml]==7.3.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -90,8 +90,6 @@ ecos==2.0.12
     # via cvxpy
 editables==0.5
     # via hatchling
-entrypoints==0.4
-    # via numcodecs
 exceptiongroup==1.1.3
     # via dycw-utilities (pyproject.toml)
 execnet==2.0.2
@@ -104,7 +102,7 @@ fastparquet==2023.8.0
     # via dycw-utilities (pyproject.toml)
 filelock==3.12.4
     # via virtualenv
-fonttools==4.43.0
+fonttools==4.43.1
     # via fpdf2
 fpdf2==2.7.5
     # via dycw-utilities (pyproject.toml)
@@ -128,7 +126,7 @@ httpx==0.25.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.87.1
+hypothesis==6.87.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -159,9 +157,9 @@ lockfile==0.12.2
     # via python-daemon
 loguru==0.7.2
     # via dycw-utilities (pyproject.toml)
-luigi==3.3.0
+luigi==3.4.0
     # via dycw-utilities (pyproject.toml)
-markdown==3.4.4
+markdown==3.5
     # via panel
 markdown-it-py==3.0.0
     # via
@@ -186,7 +184,7 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.58.0
     # via dycw-utilities (pyproject.toml)
-numcodecs==0.11.0
+numcodecs==0.12.0
     # via zarr
 numpy==1.25.2
     # via
@@ -211,7 +209,7 @@ osqp==0.6.3
     # via cvxpy
 outcome==1.2.0
     # via trio
-packaging==23.1
+packaging==23.2
     # via
     #   bokeh
     #   build
@@ -252,7 +250,7 @@ pillow==10.0.1
     #   fpdf2
 pip-tools==7.3.0
     # via dycw-utilities (pyproject.toml)
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   hatch
     #   virtualenv
@@ -266,7 +264,7 @@ psutil==5.9.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   memory-profiler
-psycopg2-binary==2.9.8 ; sys_platform == "darwin"
+psycopg2-binary==2.9.9 ; sys_platform == "darwin"
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
@@ -286,7 +284,7 @@ pyodbc==4.0.39 ; sys_platform == "darwin"
     # via dycw-utilities (pyproject.toml)
 pyperclip==1.8.2
     # via hatch
-pypiserver[passlib]==1.5.2
+pypiserver[passlib]==2.0.1
     # via dycw-utilities (pyproject.toml)
 pyproject-hooks==1.0.0
     # via build
@@ -410,7 +408,7 @@ tzdata==2023.3
     # via pandas
 uc-micro-py==1.0.2
     # via linkify-it-py
-urllib3[socks]==2.0.5
+urllib3[socks]==2.0.6
     # via
     #   requests
     #   selenium
@@ -428,7 +426,7 @@ wsproto==1.2.0
     # via trio-websocket
 xarray==2023.9.0
     # via dycw-utilities (pyproject.toml)
-xyzservices==2023.7.0
+xyzservices==2023.10.0
     # via
     #   bokeh
     #   panel
