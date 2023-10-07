@@ -39,9 +39,9 @@ dev = [
   "fpdf2 >= 2.7.5",  # fpdf2
   "hatch >= 1.7.0",  # hatch
   "holoviews >= 1.17.1",  # holoviews
-  "hypothesis >= 6.87.0",  # hypothesis
+  "hypothesis >= 6.87.3",  # hypothesis
   "loguru >= 0.7.2",  # loguru
-  "luigi >= 3.3.0",  # luigi
+  "luigi >= 3.4.0",  # luigi
   "memory-profiler >= 0.61.0",  # memory-profiler
   "more-itertools >= 10.1.0",  # more-itertools
   "numba >= 0.58.0",  # xarray
@@ -50,7 +50,7 @@ dev = [
   "pqdm >= 0.2.0",  # pqdm
   "psutil >= 5.9.5",  # psutil
   "pyinstrument >= 4.5.3",  # pyinstrument
-  "pypiserver[passlib] >= 1.5.2",  # pypi
+  "pypiserver[passlib] >= 2.0.1",  # pypi
   "pytest >= 7.4.0",  # pytest
   "pytest-check >= 2.2.2",  # pytest-check
   "scipy >= 1.11.3",  # scipy
@@ -98,9 +98,9 @@ holoviews = [
   "selenium >= 4.12.0",
   "atomicwrites >= 1.4.1",  # atomicwrites
 ]
-hypothesis = ["hypothesis >= 6.87.0"]
+hypothesis = ["hypothesis >= 6.87.3"]
 loguru = ["loguru >= 0.7.2"]
-luigi = ["luigi >= 3.3.0"]
+luigi = ["luigi >= 3.4.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 10.1.0"]
 numpy = ["numba >= 0.58.0", "numpy >= 1.25.2"]
@@ -112,7 +112,7 @@ pyinstrument = [
   "atomicwrites >= 1.4.1",  # atomicwrites
 ]
 pypi = [
-  "pypiserver[passlib] >= 1.5.2",
+  "pypiserver[passlib] >= 2.0.1",
   "loguru >= 0.7.2",  # loguru
   "typed-settings[click] >= 23.0.0",  # typed-settings
 ]
@@ -140,7 +140,7 @@ test = [
   "pytest-randomly >= 3.15.0",
   "pytest-rerunfailures >= 12.0",
   "pytest-xdist >= 3.3.1",
-  "hypothesis >= 6.87.0",  # hypothesis
+  "hypothesis >= 6.87.3",  # hypothesis
   "pytest >= 7.4.0",  # pytest
   "pytest-check >= 2.2.2",  # pytest-check
   "atomicwrites >= 1.4.1",  # pytest
