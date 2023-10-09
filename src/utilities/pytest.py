@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable
 from collections.abc import Iterable
+from functools import wraps
 from os import environ
 from pathlib import Path
 from typing import Any
@@ -89,6 +90,7 @@ def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
 
+        @wraps(func)
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]
