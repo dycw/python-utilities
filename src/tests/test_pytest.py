@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from inspect import signature
 from pathlib import Path
 from time import sleep
 from typing import Any
@@ -9,6 +10,7 @@ from pytest import mark
 from pytest import param
 
 from utilities.pytest import is_pytest
+from utilities.pytest import throttle
 from utilities.text import strip_and_dedent
 from utilities.typing import IterableStrs
 
@@ -204,3 +206,13 @@ class TestThrottle:
         sleep(1.0)
         result = testdir.runpytest()
         result.assert_outcomes(passed=1)
+
+    def test_signature(self) -> None:
+        @throttle()
+        def func(*, fix: bool) -> None:
+            assert fix
+
+        def other(*, fix: bool) -> None:
+            assert fix
+
+        assert signature(func) == signature(other)
