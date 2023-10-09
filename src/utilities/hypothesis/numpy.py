@@ -265,14 +265,13 @@ def datetime64s(
     min_value_, max_value_ = (
         _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
     )
-    valid_dates_, valid_datetimes_ = (draw(vd) for vd in (valid_dates, valid_datetimes))
-    if valid_dates_:
+    if draw(valid_dates):
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
             unit=cast(Datetime64Unit | None, unit_),
             min_value=min_value_,
             max_value=max_value_,
         )
-    if valid_datetimes_:
+    if draw(valid_datetimes):
         unit_, min_value_, max_value_ = _datetime64s_check_valid_datetimes(
             unit=cast(Datetime64Unit | None, unit_),
             min_value=min_value_,
@@ -419,7 +418,13 @@ def int_arrays(
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy = cast(
         SearchStrategy[NDArrayI],
-        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
+        arrays(
+            int64,
+            draw(shape),
+            elements=elements,
+            fill=fill,
+            unique=draw(unique),
+        ),
     )
     return draw(strategy)
 
@@ -503,6 +508,6 @@ def _fixed_width_ints(
     draw = lift_draw(_draw)
     min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
     info = iinfo(dtype)
-    min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
-    max_value_use = info.max if max_value_ is None else min(info.max, max_value_)
-    return draw(integers(min_value_, max_value_use))
+    min_value_ = info.min if min_value_ is None else max(info.min, min_value_)
+    max_value = info.max if max_value_ is None else min(info.max, max_value_)
+    return draw(integers(min_value_, max_value))

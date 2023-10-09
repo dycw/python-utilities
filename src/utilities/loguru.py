@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import logging
 from collections.abc import Iterator, Mapping
-from contextlib import suppress
 from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
 from pathlib import Path
@@ -16,6 +15,7 @@ from typing_extensions import override
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
+from utilities.platform import SYSTEM, System
 from utilities.re import NoMatchesError, extract_group
 from utilities.typing import IterableStrs
 
@@ -96,11 +96,23 @@ def _augment_levels(
     if levels is not None:
         out |= levels
     if env_var_prefix is not None:
+        env_var_prefix_use = (
+            env_var_prefix.upper() if SYSTEM is System.windows else env_var_prefix
+        )
         for key, value in environ.items():
-            with suppress(NoMatchesError):
-                suffix = extract_group(rf"^{env_var_prefix}_(\w+)", key)
+            key_use = key.upper() if SYSTEM is System.windows else key
+            try:
+                suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
+            except NoMatchesError:
+                pass
+            else:
                 module = suffix.replace("__", ".").lower()
-                out[module] = LogLevel[value.upper()]
+                value_use = (
+                    extract_group(r"^LogLevel\.([A-Z]+)$", value)
+                    if SYSTEM is System.windows
+                    else value
+                )
+                out[module] = LogLevel[value_use]
     return out
 
 

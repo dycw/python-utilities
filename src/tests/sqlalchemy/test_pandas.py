@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     none,
 )
 from hypothesis_sqlalchemy.sample import table_records_lists
+from numpy import int64
 from pandas import DataFrame, NaT, Series
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -318,7 +319,7 @@ class TestYieldDataFrameRowsAsDicts:
                 (dt.datetime, NoneType),
             ),
             param(floats(), float, Float, (float, NoneType)),
-            param(int64s(), int, Integer, int),
+            param(int64s(), int64, Integer, int),
             param(int64s() | none(), Int64, Integer, (int, NoneType)),
             param(text_ascii(), string, String, str),
             param(text_ascii() | none(), string, String, (str, NoneType)),
@@ -363,7 +364,7 @@ class TestYieldInsertionElements:
                 (dt.datetime, NoneType),
             ),
             param(floats(), float, (float, NoneType)),
-            param(int64s(), int, int),
+            param(int64s(), int64, int),
             param(int64s() | none(), Int64, (int, NoneType)),
             param(text_ascii(), string, str),
             param(text_ascii() | none(), string, (str, NoneType)),

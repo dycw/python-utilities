@@ -121,7 +121,7 @@ def _dtype_annotation(dtype: Any, /) -> Any:
 DTypeB = _dtype_annotation(bool)
 DTypeDns = _dtype_annotation(datetime64ns)
 DTypeF = _dtype_annotation(float)
-DTypeI = _dtype_annotation(int)
+DTypeI = _dtype_annotation(int64)
 DTypeO = _dtype_annotation(object)
 
 
@@ -286,8 +286,8 @@ def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     return datetime64(datetime, "us")
 
 
-DATETIME_MIN_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.min)
-DATETIME_MAX_AS_DATETIMETIME64 = datetime_to_datetime64(dt.datetime.max)
+DATETIME_MIN_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.min)
+DATETIME_MAX_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.max)
 
 
 def datetime64_to_date(datetime: datetime64, /) -> dt.date:
@@ -307,13 +307,13 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
 def datetime64_to_int(datetime: datetime64, /) -> int:
     """Convert a `numpy.datetime64` to an `int`."""
 
-    return datetime.astype(int).item()
+    return datetime.astype(int64).item()
 
 
 DATE_MIN_AS_INT = datetime64_to_int(DATE_MIN_AS_DATETIME64)
 DATE_MAX_AS_INT = datetime64_to_int(DATE_MAX_AS_DATETIME64)
-DATETIME_MIN_AS_INT = datetime64_to_int(DATETIME_MIN_AS_DATETIMETIME64)
-DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIMETIME64)
+DATETIME_MIN_AS_INT = datetime64_to_int(DATETIME_MIN_AS_DATETIME64)
+DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIME64)
 
 
 def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:

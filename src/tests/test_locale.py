@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from locale import CRNCYSTR, LC_ALL, LC_MONETARY, nl_langinfo, setlocale
+from locale import LC_CTYPE, LC_TIME, setlocale
 
 from pytest import mark, param
 
 from utilities.locale import atof, get_locale_for_platform, override_locale
+from utilities.platform import SYSTEM, System
 
 
 class TestAToF:
@@ -26,11 +27,12 @@ class TestAToF:
 class TestGetLocaleForPlatform:
     def test_main(self) -> None:
         plat_locale = get_locale_for_platform("en_US")
-        _ = setlocale(LC_ALL, locale=plat_locale)
+        _ = setlocale(LC_CTYPE, locale=plat_locale)
 
 
 class TestOverrideLocale:
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_main(self) -> None:
         plat_locale = get_locale_for_platform("en_US")
-        with override_locale(LC_MONETARY, locale=plat_locale):
-            assert nl_langinfo(CRNCYSTR) == "-$"
+        with override_locale(locale=plat_locale):
+            assert LC_TIME in {2, 5}

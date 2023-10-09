@@ -17,9 +17,15 @@ class TemporaryDirectory:
         suffix: str | None = None,
         prefix: str | None = None,
         dir: PathLike | None = None,  # noqa: A002
+        ignore_cleanup_errors: bool = False,
     ) -> None:
         super().__init__()
-        self._temp_dir = _TemporaryDirectory(suffix=suffix, prefix=prefix, dir=dir)
+        self._temp_dir = _TemporaryDirectory(
+            suffix=suffix,
+            prefix=prefix,
+            dir=dir,
+            ignore_cleanup_errors=ignore_cleanup_errors,
+        )
         self.path = Path(self._temp_dir.name)
 
     def __enter__(self) -> Path:

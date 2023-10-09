@@ -15,7 +15,7 @@ class TestYieldPDF:
         with yield_pdf() as pdf:
             pdf.add_fixed_width_text(text)
 
-    @mark.skipif(SYSTEM is not System.linux, reason="Linux only")
+    @mark.skipif(condition=SYSTEM is not System.linux, reason="Linux only")
     def test_add_plot(self) -> None:
         curve = Curve([])
         with yield_pdf() as pdf:

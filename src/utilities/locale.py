@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
-from locale import LC_NUMERIC, getlocale, setlocale
+from locale import LC_CTYPE, LC_NUMERIC, getlocale, setlocale
 from locale import atof as _atof
 
 from utilities.platform import SYSTEM, System
@@ -12,7 +12,7 @@ from utilities.typing import never
 def get_locale_for_platform(locale: str, /) -> str:
     """Get the platform-dependent locale."""
     if SYSTEM is System.windows:  # pragma: os-ne-windows
-        raise NotImplementedError
+        return locale
     if SYSTEM is System.mac_os:  # pragma: os-ne-macos
         return locale
     if SYSTEM is System.linux:  # pragma: os-ne-linux
@@ -22,7 +22,7 @@ def get_locale_for_platform(locale: str, /) -> str:
 
 @contextmanager
 def override_locale(
-    category: int, /, *, locale: str | Iterable[str | None] | None = None
+    *, category: int = LC_CTYPE, locale: str | Iterable[str | None] | None = None
 ) -> Iterator[None]:
     prev = getlocale(category)
     _ = setlocale(category, locale=locale)
@@ -37,5 +37,5 @@ def atof(
     locale: str | Iterable[str | None] | None = None,
     func: Callable[[str], float] = float,
 ) -> float:
-    with override_locale(LC_NUMERIC, locale=locale):
+    with override_locale(category=LC_NUMERIC, locale=locale):
         return _atof(text, func=func)

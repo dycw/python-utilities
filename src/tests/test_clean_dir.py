@@ -7,16 +7,19 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from hypothesis import given
 from hypothesis.strategies import integers
+from pytest import mark
 
 from utilities.clean_dir import main
 from utilities.clean_dir.classes import Config
 from utilities.datetime import TODAY
 from utilities.hypothesis import temp_paths
+from utilities.platform import SYSTEM, System
 
 
 class TestCleanDir:
     timedelta = dt.timedelta(days=Config().days + 1)
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_file(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
@@ -25,6 +28,7 @@ class TestCleanDir:
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_dir_to_remove(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("dir").mkdir()
         runner = CliRunner()
@@ -32,6 +36,7 @@ class TestCleanDir:
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_dir_to_retain(self, *, tmp_path: Path) -> None:
         dir_ = tmp_path.joinpath("dir")
         dir_.mkdir()
@@ -41,6 +46,7 @@ class TestCleanDir:
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_symlink(self, *, tmp_path: Path) -> None:
         file = tmp_path.joinpath("file")
         file.touch()
@@ -51,6 +57,7 @@ class TestCleanDir:
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     @given(root=temp_paths(), chunk_size=integers(1, 10))
     def test_chunk_size(self, *, root: Path, chunk_size: int) -> None:
         root.joinpath("file").touch()
@@ -60,6 +67,7 @@ class TestCleanDir:
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_dry_run(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()

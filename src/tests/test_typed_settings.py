@@ -34,6 +34,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
+from utilities.platform import SYSTEM, System
 from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import (
     AppNameContainsUnderscoreError,
@@ -76,7 +77,15 @@ class TestLoadSettings:
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(Engine, sqlite_engines(), serialize_engine),
+            param(
+                Engine,
+                sqlite_engines(),
+                serialize_engine,
+                marks=mark.skipif(
+                    condition=SYSTEM is System.windows,
+                    reason="non-Windows only; writing \\ to file",
+                ),
+            ),
         ],
     )
     def test_main(
@@ -125,7 +134,15 @@ class TestClickOptions:
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(Engine, sqlite_engines(), serialize_engine),
+            param(
+                Engine,
+                sqlite_engines(),
+                serialize_engine,
+                marks=mark.skipif(
+                    condition=SYSTEM is System.windows,
+                    reason="non-Windows only; writing \\ to file",
+                ),
+            ),
         ],
     )
     def test_main(

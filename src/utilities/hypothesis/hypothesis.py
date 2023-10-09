@@ -31,6 +31,7 @@ from hypothesis.strategies import (
 )
 
 from utilities.datetime import UTC
+from utilities.platform import SYSTEM, System
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
@@ -256,7 +257,9 @@ def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     dir_ = TEMP_DIR.joinpath("hypothesis")
     dir_.mkdir(exist_ok=True)
     uuid = _draw(uuids())
-    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir_)
+    return TemporaryDirectory(
+        prefix=f"{uuid}__", dir=dir_, ignore_cleanup_errors=SYSTEM is System.windows
+    )
 
 
 @composite

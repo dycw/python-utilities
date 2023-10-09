@@ -120,7 +120,12 @@ scripts = ["loguru >= 0.7.2", "typed-settings[click] >= 23.0.0"]
 selenium = ["selenium >= 4.14.0"]
 semver = ["semver >= 3.0.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.22"]
-sqlalchemy-dbs = ["cx_oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
+sqlalchemy-dbs = [
+  "cx-oracle",
+  "mysqlclient",
+  "psycopg2-binary",
+  "pyodbc",
+]
 test = [
   "atomicwrites >= 1.4.1",
   "coverage-conditional-plugin >= 0.9.0",
