@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import composite
 from hypothesis.strategies import integers
 from semver import Version
@@ -15,7 +14,7 @@ from utilities.hypothesis.typing import MaybeSearchStrategy
 
 @composite
 def versions(  # noqa: PLR0912
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_version: MaybeSearchStrategy[Version | None] = None,

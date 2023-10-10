@@ -75,7 +75,7 @@ def assume_does_not_raise(
 
 @composite
 def datetimes_utc(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
@@ -94,7 +94,7 @@ def datetimes_utc(
 
 @composite
 def floats_extra(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[float | None] = None,
@@ -170,7 +170,7 @@ _TLFL = TypeVar("_TLFL")
 
 @composite
 def lists_fixed_length(
-    _draw: Any,
+    _draw: DrawFn,
     strategy: SearchStrategy[_TLFL],
     size: MaybeSearchStrategy[int],
     /,
@@ -244,7 +244,7 @@ def setup_hypothesis_profiles(
 
 @composite
 def slices(
-    _draw: Any,
+    _draw: DrawFn,
     iter_len: int,
     /,
     *,
@@ -263,7 +263,7 @@ def slices(
 
 
 @composite
-def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
+def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
     dir_ = TEMP_DIR.joinpath("hypothesis")
     dir_.mkdir(exist_ok=True)
@@ -272,7 +272,7 @@ def temp_dirs(_draw: Any, /) -> TemporaryDirectory:
 
 
 @composite
-def temp_paths(_draw: Any, /) -> Path:
+def temp_paths(_draw: DrawFn, /) -> Path:
     """Search strategy for paths to temporary directories."""
     temp_dir = _draw(temp_dirs())
     root = temp_dir.name

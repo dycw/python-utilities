@@ -7,6 +7,7 @@ from typing import Any
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import composite
 from hypothesis.strategies import dates
@@ -34,7 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @composite
 def dates_pd(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.date] = TIMESTAMP_MIN_AS_DATE,
@@ -47,7 +48,7 @@ def dates_pd(
 
 @composite
 def datetimes_pd(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,
@@ -69,7 +70,7 @@ _INDEX_LENGTHS = integers(0, 10)
 
 @composite
 def indexes(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     elements: SearchStrategy[Any] | None = None,
@@ -112,7 +113,7 @@ def int_indexes(
 
 @composite
 def str_indexes(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_size: MaybeSearchStrategy[int] = 0,
@@ -140,7 +141,7 @@ def str_indexes(
 
 @composite
 def timestamps(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = TIMESTAMP_MIN_AS_DATETIME,

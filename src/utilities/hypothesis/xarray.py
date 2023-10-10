@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from hypothesis.extra.numpy import array_shapes
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import composite
 from xarray import DataArray
@@ -30,7 +31,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @composite
 def dicts_of_indexes(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     min_dims: int = 1,
@@ -56,7 +57,7 @@ def dicts_of_indexes(
 
 @composite
 def bool_data_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
@@ -77,7 +78,7 @@ def bool_data_arrays(
 
 @composite
 def float_data_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
@@ -118,7 +119,7 @@ def float_data_arrays(
 
 @composite
 def int_data_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
@@ -149,7 +150,7 @@ def int_data_arrays(
 
 @composite
 def str_data_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     *,
@@ -182,7 +183,7 @@ def str_data_arrays(
 
 @composite
 def _merge_into_dict_of_indexes(
-    _draw: Any,
+    _draw: DrawFn,
     indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
     /,
     **indexes_kwargs: MaybeSearchStrategy[IndexA],

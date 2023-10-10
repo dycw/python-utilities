@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
-
 from hypothesis.strategies import composite
 
+from utilities.hypothesis import DrawFn
 from utilities.hypothesis import lift_draw
 from utilities.hypothesis import temp_paths
 
 
 @composite
-def namespace_mixins(_draw: Any, /) -> type:
+def namespace_mixins(_draw: DrawFn, /) -> type:
     """Strategy for generating task namespace mixins."""
     draw = lift_draw(_draw)
     path = draw(temp_paths())
