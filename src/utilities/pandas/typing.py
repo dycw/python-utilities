@@ -3,7 +3,7 @@ from __future__ import annotations  # pragma: no cover
 import datetime as dt  # pragma: no cover
 from typing import TYPE_CHECKING  # pragma: no cover
 from typing import Any  # pragma: no cover
-from typing import TypeAlias  # pragma: no cover  # pragma: no cover
+from typing import TypeAlias  # pragma: no cover
 
 from pandas import BooleanDtype  # pragma: no cover
 from pandas import CategoricalDtype  # pragma: no cover
