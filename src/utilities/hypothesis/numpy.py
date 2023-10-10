@@ -33,7 +33,7 @@ from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.hypothesis.typing import Shape
-from utilities.math.typing import IntNonNeg
+from utilities.math import IntNonNeg
 from utilities.numpy import DATE_MAX_AS_INT
 from utilities.numpy import DATE_MIN_AS_INT
 from utilities.numpy import DATETIME_MAX_AS_INT
