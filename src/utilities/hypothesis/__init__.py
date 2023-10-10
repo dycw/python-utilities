@@ -17,6 +17,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters
 from string import printable
+from subprocess import run
 from typing import Any
 from typing import Protocol
 from typing import TypedDict
@@ -47,6 +48,7 @@ from hypothesis.strategies import uuids
 
 from utilities.datetime import UTC
 from utilities.hypothesis.typing import MaybeSearchStrategy
+from utilities.pathlib import temp_cwd
 from utilities.tempfile import TEMP_DIR
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import ensure_str
@@ -133,6 +135,38 @@ def floats_extra(
         element = draw(sampled_from(candidates))
         return float(element)
     return element
+
+
+@composite
+def git_repos(
+    _draw: DrawFn, /, *, branch: MaybeSearchStrategy[str | None] = None
+) -> TemporaryDirectory:
+    draw = lift_draw(_draw)
+    temp_dir = draw(temp_dirs())
+    path = temp_dir.path
+    with temp_cwd(path):
+        _ = run(["git", "init"], check=True)  # noqa: S603, S607
+        _ = run(
+            ["git", "config", "user.name", "User"],  # noqa: S603, S607
+            check=True,
+        )
+        _ = run(
+            ["git", "config", "user.email", "a@z.com"],  # noqa: S603, S607
+            check=True,
+        )
+        file = path.joinpath("file")
+        file.touch()
+        file_str = file.as_posix()
+        _ = run(["git", "add", file_str], check=True)  # noqa: S603, S607
+        _ = run(["git", "commit", "-m", "add"], check=True)  # noqa: S603, S607
+        _ = run(["git", "rm", file_str], check=True)  # noqa: S603, S607
+        _ = run(["git", "commit", "-m", "rm"], check=True)  # noqa: S603, S607
+        if (branch := draw(branch)) is not None:
+            _ = run(
+                ["git", "checkout", "-b", branch],  # noqa: S603, S607
+                check=True,
+            )
+    return temp_dir
 
 
 def hashables() -> SearchStrategy[Hashable]:

@@ -9,15 +9,14 @@ from subprocess import check_output
 
 from utilities.pathlib import PathLike
 
+_GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+
 
 def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S603, S607
-        stderr=PIPE,
-        cwd=root,
-        text=True,
+        _GET_BRANCH_NAME, stderr=PIPE, cwd=root, text=True  # noqa: S603
     )
     return output.strip("\n")
 
