@@ -44,7 +44,7 @@ from utilities._numbagg import move_exp_nansum
 from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
-from utilities.math.typing import FloatFinPos
+from utilities.math import FloatFinPos
 from utilities.numpy.checks import _is_close
 from utilities.numpy.checks import is_at_least
 from utilities.numpy.checks import is_at_least_or_nan

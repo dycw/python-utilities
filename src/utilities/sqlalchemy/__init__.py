@@ -62,9 +62,9 @@ from typing_extensions import assert_never
 from utilities.bidict import snake_case_mappings
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
-from utilities.math.typing import FloatFinNonNeg
-from utilities.math.typing import FloatNonNeg
-from utilities.math.typing import IntNonNeg
+from utilities.math import FloatFinNonNeg
+from utilities.math import FloatNonNeg
+from utilities.math import IntNonNeg
 from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.text import snake_case
