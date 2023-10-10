@@ -9,6 +9,7 @@ from hypothesis import assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.extra.numpy import arrays
+from hypothesis.strategies import DrawFn
 from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import booleans
 from hypothesis.strategies import composite
@@ -59,7 +60,7 @@ from utilities.numpy.typing import NDArrayO
 
 @composite
 def bool_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -83,7 +84,7 @@ def bool_arrays(
 
 @composite
 def concatenated_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     strategy: SearchStrategy[NDArray[Any]],
     size: MaybeSearchStrategy[IntNonNeg],
     fallback: Shape,
@@ -111,7 +112,7 @@ def concatenated_arrays(
 
 @composite
 def datetime64_dtypes(
-    _draw: Any, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
+    _draw: DrawFn, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
 ) -> Any:
     """Strategy for generating datetime64 dtypes."""
     draw = lift_draw(_draw)
@@ -127,7 +128,7 @@ def datetime64_kinds() -> SearchStrategy[Datetime64Kind]:
 
 @composite
 def datetime64_units(
-    _draw: Any, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
+    _draw: DrawFn, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
 ) -> Datetime64Unit:
     """Strategy for generating datetime64 units."""
     draw = lift_draw(_draw)
@@ -156,7 +157,7 @@ def datetime64_units(
 
 @composite
 def datetime64_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -193,7 +194,7 @@ def datetime64_arrays(
 
 @composite
 def datetime64_indexes(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
@@ -245,7 +246,7 @@ def datetime64D_indexes(  # noqa: N802
 
 @composite
 def datetime64s(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     unit: MaybeSearchStrategy[Datetime64Unit | None] = None,
@@ -364,7 +365,7 @@ def datetime64us_indexes(
 
 @composite
 def float_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -404,7 +405,7 @@ def float_arrays(
 
 @composite
 def int_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -449,7 +450,7 @@ def int64s(
 
 @composite
 def str_arrays(
-    _draw: Any,
+    _draw: DrawFn,
     /,
     *,
     shape: MaybeSearchStrategy[Shape] = array_shapes(),
@@ -497,7 +498,7 @@ def uint64s(
 
 @composite
 def _fixed_width_ints(
-    _draw: Any,
+    _draw: DrawFn,
     dtype: Any,
     /,
     *,
