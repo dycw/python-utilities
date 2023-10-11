@@ -3,15 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
-from typing import Any
-
-from typing_extensions import override
+from types import TracebackType
 
 from utilities.pathlib import PathLike
 
 
-class TemporaryDirectory(_TemporaryDirectory[Any]):
-    """Sub-class of TemporaryDirectory whose name attribute is a Path."""
+class TemporaryDirectory:
+    """Wrapper around `TemporaryDirectory` with a `Path` attribute."""
 
     def __init__(
         self,
@@ -20,12 +18,22 @@ class TemporaryDirectory(_TemporaryDirectory[Any]):
         prefix: str | None = None,
         dir: PathLike | None = None,  # noqa: A002
     ) -> None:
-        super().__init__(suffix=suffix, prefix=prefix, dir=dir)
-        self.name = Path(self.name)
+        super().__init__()
+        self._temp_dir = _TemporaryDirectory(
+            suffix=suffix, prefix=prefix, dir=dir
+        )
+        self.path = Path(self._temp_dir.name)
 
-    @override
     def __enter__(self) -> Path:
-        return super().__enter__()
+        return Path(self._temp_dir.__enter__())
+
+    def __exit__(
+        self,
+        exc: type[BaseException] | None,
+        val: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self._temp_dir.__exit__(exc, val, tb)
 
 
 def gettempdir() -> Path:
