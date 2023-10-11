@@ -18,12 +18,12 @@ class TestTempDir:
 
 
 class TestTemporaryDirectory:
-    def test_name(self) -> None:
+    def test_path(self) -> None:
         temp_dir = TemporaryDirectory()
-        name = temp_dir.name
-        assert isinstance(name, Path)
-        assert name.is_dir()
-        assert set(name.iterdir()) == set()
+        path = temp_dir.path
+        assert isinstance(path, Path)
+        assert path.is_dir()
+        assert set(path.iterdir()) == set()
 
     def test_as_context_manager(self) -> None:
         with TemporaryDirectory() as temp:

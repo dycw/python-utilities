@@ -243,16 +243,16 @@ class TestSetupHypothesisProfiles:
 
 class TestTempDirs:
     @given(temp_dir=temp_dirs())
-    def test_main(self, temp_dir: TemporaryDirectory) -> None:
-        _test_temp_path(temp_dir.name)
+    def test_main(self, *, temp_dir: TemporaryDirectory) -> None:
+        _test_temp_path(temp_dir.path)
 
     @given(
         temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10)
     )
     def test_writing_files(
-        self, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
+        self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:
-        _test_writing_to_temp_path(temp_dir.name, contents)
+        _test_writing_to_temp_path(temp_dir.path, contents)
 
 
 class TestTempPaths:
@@ -265,7 +265,7 @@ class TestTempPaths:
         contents=sets(text_ascii(min_size=1), max_size=10),
     )
     def test_writing_files(
-        self, temp_path: Path, contents: AbstractSet[str]
+        self, *, temp_path: Path, contents: AbstractSet[str]
     ) -> None:
         _test_writing_to_temp_path(temp_path, contents)
 

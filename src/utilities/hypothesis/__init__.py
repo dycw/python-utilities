@@ -275,7 +275,7 @@ def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
 def temp_paths(_draw: DrawFn, /) -> Path:
     """Search strategy for paths to temporary directories."""
     temp_dir = _draw(temp_dirs())
-    root = temp_dir.name
+    root = temp_dir.path
     cls = type(root)
 
     class SubPath(cls):
