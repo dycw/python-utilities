@@ -17,7 +17,6 @@ from typing import NoReturn
 from typing import cast
 
 import timeout_decorator
-from beartype import beartype
 from more_itertools import chunked
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -75,8 +74,7 @@ from utilities.typing import never
 class TablenameMixin:
     """Mix-in for an auto-generated tablename."""
 
-    @declared_attr
-    @cast(Any, beartype)
+    @cast(Any, declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
         return get_class_name(cls, snake=True)
 
