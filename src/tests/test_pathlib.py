@@ -10,6 +10,7 @@ from pytest import raises
 
 from utilities.pathlib import PathLike
 from utilities.pathlib import ensure_suffix
+from utilities.pathlib import temp_cwd
 
 
 class TestEnsureSuffix:
@@ -27,16 +28,24 @@ class TestEnsureSuffix:
             param("hello.txt.1.2.jpg", "hello.txt.1.2.jpg.txt"),
         ],
     )
-    def test_main(self, path: Path, expected: Path) -> None:
+    def test_main(self, *, path: Path, expected: Path) -> None:
         result = ensure_suffix(path, ".txt")
         assert result == Path(expected)
 
 
 class TestPathLike:
     @mark.parametrize("path", [param(Path.home()), param("~")])
-    def test_main(self, path: PathLike) -> None:
+    def test_main(self, *, path: PathLike) -> None:
         die_if_unbearable(path, PathLike)
 
     def test_error(self) -> None:
         with raises(BeartypeAbbyHintViolation):
             die_if_unbearable(None, PathLike)
+
+
+class TestTempCWD:
+    def test_main(self, *, tmp_path: Path) -> None:
+        assert Path.cwd() != tmp_path
+        with temp_cwd(tmp_path):
+            assert Path.cwd() == tmp_path
+        assert Path.cwd() != tmp_path
