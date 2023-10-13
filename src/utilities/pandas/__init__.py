@@ -26,9 +26,9 @@ from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
+from utilities.numpy import NDArray1
+from utilities.numpy import datetime64ns
 from utilities.numpy import has_dtype
-from utilities.numpy.typing import NDArray1
-from utilities.numpy.typing import datetime64ns
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover

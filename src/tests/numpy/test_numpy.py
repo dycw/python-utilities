@@ -10,7 +10,6 @@ from hypothesis import given
 from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
 from hypothesis.strategies import dates
-from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from numpy import arange
 from numpy import array
@@ -26,7 +25,6 @@ from numpy import ndarray
 from numpy import ones
 from numpy import zeros
 from numpy import zeros_like
-from numpy.testing import assert_allclose
 from numpy.testing import assert_equal
 from pandas import DatetimeTZDtype
 from pandas import Series
@@ -35,64 +33,98 @@ from pytest import param
 from pytest import raises
 
 from utilities.datetime import UTC
-from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import datetimes_utc
 from utilities.hypothesis.numpy import datetime64_dtypes
 from utilities.hypothesis.numpy import datetime64_units
 from utilities.hypothesis.numpy import datetime64s
 from utilities.hypothesis.numpy import float_arrays
-from utilities.numpy import DateOverflowError
-from utilities.numpy import Datetime64Kind
-from utilities.numpy import Datetime64Unit
-from utilities.numpy import EmptyNumpyConcatenateError
-from utilities.numpy import InfElementsError
-from utilities.numpy import InvalidDTypeError
-from utilities.numpy import LossOfNanosecondsError
-from utilities.numpy import MultipleTrueElementsError
-from utilities.numpy import NanElementsError
-from utilities.numpy import NonIntegralElementsError
-from utilities.numpy import NoTrueElementsError
-from utilities.numpy import ZeroPercentageChangeSpanError
-from utilities.numpy import ZeroShiftError
-from utilities.numpy import array_indexer
-from utilities.numpy import as_int
-from utilities.numpy import date_to_datetime64
-from utilities.numpy import datetime64_dtype_to_unit
-from utilities.numpy import datetime64_to_date
-from utilities.numpy import datetime64_to_datetime
-from utilities.numpy import datetime64_to_int
-from utilities.numpy import datetime64_unit_to_dtype
-from utilities.numpy import datetime64_unit_to_kind
-from utilities.numpy import datetime64D
-from utilities.numpy import datetime64ns
-from utilities.numpy import datetime64us
-from utilities.numpy import datetime64Y
-from utilities.numpy import datetime_to_datetime64
-from utilities.numpy import discretize
-from utilities.numpy import ewma
-from utilities.numpy import exp_moving_sum
-from utilities.numpy import ffill
-from utilities.numpy import ffill_non_nan_slices
-from utilities.numpy import fillna
-from utilities.numpy import flatn0
-from utilities.numpy import get_fill_value
-from utilities.numpy import has_dtype
-from utilities.numpy import is_empty
-from utilities.numpy import is_non_empty
-from utilities.numpy import is_non_singular
-from utilities.numpy import is_positive_semidefinite
-from utilities.numpy import is_symmetric
-from utilities.numpy import maximum
-from utilities.numpy import minimum
-from utilities.numpy import pct_change
-from utilities.numpy import redirect_to_empty_numpy_concatenate_error
-from utilities.numpy import shift
-from utilities.numpy import shift_bool
-from utilities.numpy import year
-from utilities.numpy.typing import NDArrayF
-from utilities.numpy.typing import NDArrayF1
-from utilities.numpy.typing import NDArrayF2
-from utilities.numpy.typing import NDArrayI2
+from utilities.numpy.numpy import DateOverflowError
+from utilities.numpy.numpy import Datetime64Kind
+from utilities.numpy.numpy import Datetime64Unit
+from utilities.numpy.numpy import EmptyNumpyConcatenateError
+from utilities.numpy.numpy import InfElementsError
+from utilities.numpy.numpy import InvalidDTypeError
+from utilities.numpy.numpy import LossOfNanosecondsError
+from utilities.numpy.numpy import MultipleTrueElementsError
+from utilities.numpy.numpy import NanElementsError
+from utilities.numpy.numpy import NDArrayF1
+from utilities.numpy.numpy import NDArrayF2
+from utilities.numpy.numpy import NDArrayI2
+from utilities.numpy.numpy import NonIntegralElementsError
+from utilities.numpy.numpy import NoTrueElementsError
+from utilities.numpy.numpy import ZeroShiftError
+from utilities.numpy.numpy import array_indexer
+from utilities.numpy.numpy import as_int
+from utilities.numpy.numpy import date_to_datetime64
+from utilities.numpy.numpy import datetime64_dtype_to_unit
+from utilities.numpy.numpy import datetime64_to_date
+from utilities.numpy.numpy import datetime64_to_datetime
+from utilities.numpy.numpy import datetime64_to_int
+from utilities.numpy.numpy import datetime64_unit_to_dtype
+from utilities.numpy.numpy import datetime64_unit_to_kind
+from utilities.numpy.numpy import datetime64D
+from utilities.numpy.numpy import datetime64ns
+from utilities.numpy.numpy import datetime64us
+from utilities.numpy.numpy import datetime64Y
+from utilities.numpy.numpy import datetime_to_datetime64
+from utilities.numpy.numpy import discretize
+from utilities.numpy.numpy import ffill_non_nan_slices
+from utilities.numpy.numpy import fillna
+from utilities.numpy.numpy import flatn0
+from utilities.numpy.numpy import get_fill_value
+from utilities.numpy.numpy import has_dtype
+from utilities.numpy.numpy import is_at_least
+from utilities.numpy.numpy import is_at_least_or_nan
+from utilities.numpy.numpy import is_at_most
+from utilities.numpy.numpy import is_at_most_or_nan
+from utilities.numpy.numpy import is_between
+from utilities.numpy.numpy import is_between_or_nan
+from utilities.numpy.numpy import is_empty
+from utilities.numpy.numpy import is_finite_and_integral
+from utilities.numpy.numpy import is_finite_and_integral_or_nan
+from utilities.numpy.numpy import is_finite_and_negative
+from utilities.numpy.numpy import is_finite_and_negative_or_nan
+from utilities.numpy.numpy import is_finite_and_non_negative
+from utilities.numpy.numpy import is_finite_and_non_negative_or_nan
+from utilities.numpy.numpy import is_finite_and_non_positive
+from utilities.numpy.numpy import is_finite_and_non_positive_or_nan
+from utilities.numpy.numpy import is_finite_and_non_zero
+from utilities.numpy.numpy import is_finite_and_non_zero_or_nan
+from utilities.numpy.numpy import is_finite_and_positive
+from utilities.numpy.numpy import is_finite_and_positive_or_nan
+from utilities.numpy.numpy import is_finite_or_nan
+from utilities.numpy.numpy import is_greater_than
+from utilities.numpy.numpy import is_greater_than_or_nan
+from utilities.numpy.numpy import is_integral
+from utilities.numpy.numpy import is_integral_or_nan
+from utilities.numpy.numpy import is_less_than
+from utilities.numpy.numpy import is_less_than_or_nan
+from utilities.numpy.numpy import is_negative
+from utilities.numpy.numpy import is_negative_or_nan
+from utilities.numpy.numpy import is_non_empty
+from utilities.numpy.numpy import is_non_negative
+from utilities.numpy.numpy import is_non_negative_or_nan
+from utilities.numpy.numpy import is_non_positive
+from utilities.numpy.numpy import is_non_positive_or_nan
+from utilities.numpy.numpy import is_non_singular
+from utilities.numpy.numpy import is_non_zero
+from utilities.numpy.numpy import is_non_zero_or_nan
+from utilities.numpy.numpy import is_positive
+from utilities.numpy.numpy import is_positive_or_nan
+from utilities.numpy.numpy import is_positive_semidefinite
+from utilities.numpy.numpy import is_symmetric
+from utilities.numpy.numpy import is_zero
+from utilities.numpy.numpy import is_zero_or_finite_and_non_micro
+from utilities.numpy.numpy import is_zero_or_finite_and_non_micro_or_nan
+from utilities.numpy.numpy import is_zero_or_nan
+from utilities.numpy.numpy import is_zero_or_non_micro
+from utilities.numpy.numpy import is_zero_or_non_micro_or_nan
+from utilities.numpy.numpy import maximum
+from utilities.numpy.numpy import minimum
+from utilities.numpy.numpy import redirect_to_empty_numpy_concatenate_error
+from utilities.numpy.numpy import shift
+from utilities.numpy.numpy import shift_bool
+from utilities.numpy.numpy import year
 
 
 class TestArrayIndexer:
@@ -401,37 +433,6 @@ class TestDiscretize:
         assert_equal(result, expected)
 
 
-class TestEwma:
-    @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(
-        self, data: DataObject, array: NDArrayF, halflife: float
-    ) -> None:
-        axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
-        with assume_does_not_raise(RuntimeWarning):
-            _ = ewma(array, halflife, axis=axis)
-
-
-class TestExpMovingSum:
-    @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(
-        self, data: DataObject, array: NDArrayF, halflife: float
-    ) -> None:
-        axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
-        with assume_does_not_raise(RuntimeWarning):
-            _ = exp_moving_sum(array, halflife, axis=axis)
-
-
-class TestFFill:
-    @mark.parametrize(
-        ("limit", "expected_v"), [param(None, 0.2), param(1, nan)]
-    )
-    def test_main(self, limit: int | None, expected_v: float) -> None:
-        arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
-        result = ffill(arr, limit=limit)
-        expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3], dtype=float)
-        assert_equal(result, expected)
-
-
 class TestFFillNonNanSlices:
     @mark.parametrize(
         ("limit", "axis", "expected_v"),
@@ -584,6 +585,137 @@ class TestHasDtype:
         assert has_dtype(x, dtype) is expected
 
 
+class TestIsAtLeast:
+    @mark.parametrize(
+        ("x", "y", "equal_nan", "expected"),
+        [
+            param(0.0, -inf, False, True),
+            param(0.0, -1.0, False, True),
+            param(0.0, -1e-6, False, True),
+            param(0.0, -1e-7, False, True),
+            param(0.0, -1e-8, False, True),
+            param(0.0, 0.0, False, True),
+            param(0.0, 1e-8, False, True),
+            param(0.0, 1e-7, False, False),
+            param(0.0, 1e-6, False, False),
+            param(0.0, 1.0, False, False),
+            param(0.0, inf, False, False),
+            param(0.0, nan, False, False),
+            param(nan, nan, True, True),
+        ],
+    )
+    def test_main(
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
+        assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
+
+    @mark.parametrize(
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    def test_nan(self, y: float) -> None:
+        assert is_at_least_or_nan(nan, y)
+
+
+class TestIsAtMost:
+    @mark.parametrize(
+        ("x", "y", "equal_nan", "expected"),
+        [
+            param(0.0, -inf, False, False),
+            param(0.0, -1.0, False, False),
+            param(0.0, -1e-6, False, False),
+            param(0.0, -1e-7, False, False),
+            param(0.0, -1e-8, False, True),
+            param(0.0, 0.0, False, True),
+            param(0.0, 1e-8, False, True),
+            param(0.0, 1e-7, False, True),
+            param(0.0, 1e-6, False, True),
+            param(0.0, 1.0, False, True),
+            param(0.0, inf, False, True),
+            param(0.0, nan, False, False),
+            param(nan, nan, True, True),
+        ],
+    )
+    def test_main(
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
+        assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
+
+    @mark.parametrize(
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    def test_nan(self, y: float) -> None:
+        assert is_at_most_or_nan(nan, y)
+
+
+class TestIsBetween:
+    @mark.parametrize(
+        ("x", "low", "high", "equal_nan", "expected"),
+        [
+            param(0.0, -1.0, -1.0, False, False),
+            param(0.0, -1.0, 0.0, False, True),
+            param(0.0, -1.0, 1.0, False, True),
+            param(0.0, 0.0, -1.0, False, False),
+            param(0.0, 0.0, 0.0, False, True),
+            param(0.0, 0.0, 1.0, False, True),
+            param(0.0, 1.0, -1.0, False, False),
+            param(0.0, 1.0, 0.0, False, False),
+            param(0.0, 1.0, 1.0, False, False),
+            param(nan, -1.0, 1.0, False, False),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        x: float,
+        low: float,
+        high: float,
+        equal_nan: bool,
+        expected: bool,
+    ) -> None:
+        assert is_between(x, low, high, equal_nan=equal_nan).item() is expected
+
+    @mark.parametrize(
+        "low",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    @mark.parametrize(
+        "high",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    def test_nan(self, low: float, high: float) -> None:
+        assert is_between_or_nan(nan, low, high)
+
+
 class TestIsEmptyAndIsNotEmpty:
     @mark.parametrize(
         ("shape", "expected"),
@@ -618,6 +750,362 @@ class TestIsEmptyAndIsNotEmpty:
         assert is_non_empty(shape_or_array) is (expected == "non-empty")
 
 
+class TestIsFiniteAndIntegral:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-2.0, True),
+            param(-1.5, False),
+            param(-1.0, True),
+            param(-0.5, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(0.5, False),
+            param(1.0, True),
+            param(1.5, False),
+            param(2.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_integral(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_integral_or_nan(nan)
+
+
+class TestIsFiniteOrNan:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(0.0, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, True),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_or_nan(x).item() is expected
+
+
+class TestIsFiniteAndNegative:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_negative(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_negative_or_nan(nan)
+
+
+class TestIsFiniteAndNonNegative:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_non_negative(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_non_negative_or_nan(nan)
+
+
+class TestIsFiniteAndNonPositive:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_non_positive(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_non_positive_or_nan(nan)
+
+
+class TestIsFiniteAndNonZero:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_non_zero(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_non_zero_or_nan(nan)
+
+
+class TestIsFiniteAndPositive:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_finite_and_positive(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_finite_and_positive_or_nan(nan)
+
+
+class TestIsGreaterThan:
+    @mark.parametrize(
+        ("x", "y", "equal_nan", "expected"),
+        [
+            param(0.0, -inf, False, True),
+            param(0.0, -1.0, False, True),
+            param(0.0, -1e-6, False, True),
+            param(0.0, -1e-7, False, True),
+            param(0.0, -1e-8, False, False),
+            param(0.0, 0.0, False, False),
+            param(0.0, 1e-8, False, False),
+            param(0.0, 1e-7, False, False),
+            param(0.0, 1e-6, False, False),
+            param(0.0, 1.0, False, False),
+            param(0.0, inf, False, False),
+            param(0.0, nan, False, False),
+            param(nan, nan, True, True),
+        ],
+    )
+    def test_main(
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
+        assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
+
+    @mark.parametrize(
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    def test_nan(self, y: float) -> None:
+        assert is_greater_than_or_nan(nan, y)
+
+
+class TestIsIntegral:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, True),
+            param(-2.0, True),
+            param(-1.5, False),
+            param(-1.0, True),
+            param(-0.5, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(0.5, False),
+            param(1.0, True),
+            param(1.5, False),
+            param(2.0, True),
+            param(inf, True),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_integral(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_integral_or_nan(nan)
+
+
+class TestIsLessThan:
+    @mark.parametrize(
+        ("x", "y", "equal_nan", "expected"),
+        [
+            param(0.0, -inf, False, False),
+            param(0.0, -1.0, False, False),
+            param(0.0, -1e-6, False, False),
+            param(0.0, -1e-7, False, False),
+            param(0.0, -1e-8, False, False),
+            param(0.0, 0.0, False, False),
+            param(0.0, 1e-8, False, False),
+            param(0.0, 1e-7, False, True),
+            param(0.0, 1e-6, False, True),
+            param(0.0, 1.0, False, True),
+            param(0.0, inf, False, True),
+            param(0.0, nan, False, False),
+            param(nan, nan, True, True),
+        ],
+    )
+    def test_main(
+        self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
+        assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
+
+    @mark.parametrize(
+        "y",
+        [
+            param(-inf),
+            param(-1.0),
+            param(0.0),
+            param(1.0),
+            param(inf),
+            param(nan),
+        ],
+    )
+    def test_nan(self, y: float) -> None:
+        assert is_less_than_or_nan(nan, y)
+
+
+class TestIsNegative:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, True),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_negative(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_negative_or_nan(nan)
+
+
+class TestIsNonNegative:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, True),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_non_negative(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_non_negative_or_nan(nan)
+
+
+class TestIsNonPositive:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, True),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_non_positive(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_non_positive_or_nan(nan)
+
+
 class TestIsNonSingular:
     @mark.parametrize(
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
@@ -631,6 +1119,56 @@ class TestIsNonSingular:
     def test_overflow(self) -> None:
         arr = array([[0.0, 0.0], [5e-323, 0.0]], dtype=float)
         assert not is_non_singular(arr)
+
+
+class TestIsNonZero:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, True),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, True),
+            param(nan, True),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_non_zero(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_non_zero_or_nan(nan)
+
+
+class TestIsPositive:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, False),
+            param(0.0, False),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, True),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_positive(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_positive_or_nan(nan)
 
 
 class TestIsPositiveSemiDefinite:
@@ -669,6 +1207,81 @@ class TestIsSymmetric:
         assert is_symmetric(array.astype(dtype)) is expected
 
 
+class TestIsZero:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, False),
+            param(-1e-6, False),
+            param(-1e-7, False),
+            param(-1e-8, True),
+            param(0.0, True),
+            param(1e-8, True),
+            param(1e-7, False),
+            param(1e-6, False),
+            param(1.0, False),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_zero(x).item() is expected
+
+    def test_is_zero_or_nan(self) -> None:
+        assert is_zero_or_nan(nan)
+
+
+class TestIsZeroOrFiniteAndMicro:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, True),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_zero_or_finite_and_non_micro(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_zero_or_finite_and_non_micro_or_nan(nan)
+
+
+class TestIsZeroOrNonMicro:
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, True),
+            param(-1.0, True),
+            param(-1e-6, True),
+            param(-1e-7, True),
+            param(-1e-8, False),
+            param(0.0, True),
+            param(1e-8, False),
+            param(1e-7, True),
+            param(1e-6, True),
+            param(1.0, True),
+            param(inf, True),
+            param(nan, True),
+        ],
+    )
+    def test_main(self, *, x: float, expected: bool) -> None:
+        assert is_zero_or_non_micro(x).item() is expected
+
+    def test_nan(self) -> None:
+        assert is_zero_or_non_micro_or_nan(nan)
+
+
 class TestMaximumMinimum:
     def test_maximum_floats(self) -> None:
         result = maximum(1.0, 2.0)
@@ -685,116 +1298,6 @@ class TestMaximumMinimum:
     def test_minimum_arrays(self) -> None:
         result = minimum(array([1.0], dtype=float), array([2.0], dtype=float))
         assert isinstance(result, ndarray)
-
-
-class TestPctChange:
-    @mark.parametrize(
-        ("n", "expected_v"),
-        [
-            param(1, [nan, 0.1, 0.090909]),
-            param(2, [nan, nan, 0.2]),
-            param(-1, [-0.090909, -0.083333, nan]),
-            param(-2, [-0.166667, nan, nan]),
-        ],
-    )
-    @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(
-        self, n: int, expected_v: Sequence[float], dtype: type[Any]
-    ) -> None:
-        arr = arange(10, 13, dtype=dtype)
-        result = pct_change(arr, n=n)
-        expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, atol=1e-4, equal_nan=True)
-
-    @mark.parametrize(
-        ("axis", "n", "expected_v"),
-        [
-            param(
-                0,
-                1,
-                [
-                    4 * [nan],
-                    [0.4, 0.363636, 0.333333, 0.307692],
-                    [0.285714, 0.266667, 0.25, 0.235294],
-                ],
-                id="axis=0, n=1",
-            ),
-            param(
-                0,
-                2,
-                [4 * [nan], 4 * [nan], [0.8, 0.727272, 0.666667, 0.615385]],
-                id="axis=0, n=2",
-            ),
-            param(
-                0,
-                -1,
-                [
-                    [-0.285714, -0.266667, -0.25, -0.235294],
-                    [-0.222222, -0.210526, -0.2, -0.190476],
-                    4 * [nan],
-                ],
-                id="axis=0, n=-1",
-            ),
-            param(
-                0,
-                -2,
-                [[-0.444444, -0.421053, -0.4, -0.380952], 4 * [nan], 4 * [nan]],
-                id="axis=0, n=-2",
-            ),
-            param(
-                1,
-                1,
-                [
-                    [nan, 0.1, 0.090909, 0.083333],
-                    [nan, 0.071429, 0.066667, 0.0625],
-                    [nan, 0.055556, 0.052632, 0.05],
-                ],
-                id="axis=1, n=1",
-            ),
-            param(
-                1,
-                2,
-                [
-                    [nan, nan, 0.2, 0.181818],
-                    [nan, nan, 0.1428527, 0.133333],
-                    [nan, nan, 0.111111, 0.105263],
-                ],
-                id="axis=1, n=1",
-            ),
-            param(
-                1,
-                -1,
-                [
-                    [-0.090909, -0.083333, -0.076923, nan],
-                    [-0.066667, -0.0625, -0.058824, nan],
-                    [-0.052632, -0.05, -0.047619, nan],
-                ],
-                id="axis=1, n=-1",
-            ),
-            param(
-                1,
-                -2,
-                [
-                    [-0.166667, -0.153846, nan, nan],
-                    [-0.125, -0.117647, nan, nan],
-                    [-0.1, -0.095238, nan, nan],
-                ],
-                id="axis=1, n=-2",
-            ),
-        ],
-    )
-    def test_2d(
-        self, axis: int, n: int, expected_v: Sequence[Sequence[float]]
-    ) -> None:
-        arr = arange(10, 22, dtype=float).reshape((3, 4))
-        result = pct_change(arr, axis=axis, n=n)
-        expected = array(expected_v, dtype=float)
-        assert_allclose(result, expected, atol=1e-4, equal_nan=True)
-
-    def test_error(self) -> None:
-        arr = array([], dtype=float)
-        with raises(ZeroPercentageChangeSpanError):
-            _ = pct_change(arr, n=0)
 
 
 class TestRedirectToEmptyNumpyConcatenateError:

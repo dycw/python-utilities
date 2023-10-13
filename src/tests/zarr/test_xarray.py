@@ -30,7 +30,7 @@ from utilities.hypothesis import text_ascii
 from utilities.hypothesis.numpy import float_arrays
 from utilities.hypothesis.numpy import int_arrays
 from utilities.hypothesis.pandas import int_indexes
-from utilities.numpy.typing import NDArrayI1
+from utilities.numpy import NDArrayI1
 from utilities.warnings import suppress_warnings
 from utilities.xarray.typing import DataArray1
 from utilities.zarr.xarray import DataArrayOnDisk
