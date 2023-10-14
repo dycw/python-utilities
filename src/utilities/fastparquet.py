@@ -17,8 +17,8 @@ from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.math import IntNonNeg
-from utilities.numpy.numpy import datetime64ns
-from utilities.numpy.numpy import has_dtype
+from utilities.numpy import datetime64ns
+from utilities.numpy import has_dtype
 from utilities.pandas import Int64
 from utilities.pandas import check_range_index
 from utilities.pandas import string
