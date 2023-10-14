@@ -10,8 +10,8 @@ from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
 from sqlalchemy import Engine
 
-from utilities.click.sqlalchemy import Engine as ClickEngine
-from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.click import Engine as ClickEngine
+from utilities.hypothesis import sqlite_engines
 from utilities.sqlalchemy import serialize_engine
 
 

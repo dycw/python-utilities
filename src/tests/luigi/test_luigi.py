@@ -45,12 +45,12 @@ from utilities.luigi import ExternalTask
 from utilities.luigi import PathTarget
 from utilities.luigi import TimeParameter
 from utilities.luigi import WeekdayParameter
-from utilities.luigi import _yield_task_classes
 from utilities.luigi import build
 from utilities.luigi import clone
 from utilities.luigi import get_dependencies_downstream
 from utilities.luigi import get_dependencies_upstream
 from utilities.luigi import get_task_classes
+from utilities.luigi.luigi import _yield_task_classes
 
 
 class TestAwaitTask:

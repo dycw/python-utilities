@@ -9,9 +9,9 @@ from hypothesis.strategies import none
 from pytest import mark
 from pytest import param
 
-from utilities.click.luigi import local_scheduler_option_default_central
-from utilities.click.luigi import local_scheduler_option_default_local
-from utilities.click.luigi import workers_option
+from utilities.click import local_scheduler_option_default_central
+from utilities.click import local_scheduler_option_default_local
+from utilities.click import workers_option
 from utilities.typing import SequenceStrs
 
 

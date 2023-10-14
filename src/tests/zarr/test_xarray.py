@@ -33,11 +33,11 @@ from utilities.hypothesis import text_ascii
 from utilities.numpy import NDArrayI1
 from utilities.warnings import suppress_warnings
 from utilities.xarray import DataArray1
-from utilities.zarr.xarray import DataArrayOnDisk
-from utilities.zarr.xarray import NotOneDimensionalArrayError
+from utilities.zarr import DataArrayOnDisk
+from utilities.zarr import NotOneDimensionalArrayError
+from utilities.zarr import save_data_array_to_disk
+from utilities.zarr import yield_data_array_on_disk
 from utilities.zarr.xarray import _to_ndarray1
-from utilities.zarr.xarray import save_data_array_to_disk
-from utilities.zarr.xarray import yield_data_array_on_disk
 
 
 class TestDataArrayOnDisk:

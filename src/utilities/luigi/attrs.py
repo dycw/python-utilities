@@ -31,15 +31,16 @@ from luigi import Parameter
 from luigi import PathParameter
 
 from utilities.class_name import get_class_name
-from utilities.luigi import DateHourParameter
-from utilities.luigi import DateMinuteParameter
-from utilities.luigi import DateParameter
-from utilities.luigi import DateSecondParameter
-from utilities.luigi import EnumParameter
-from utilities.luigi import TimeParameter
-from utilities.luigi import WeekdayParameter
 from utilities.types import NoneType
 from utilities.typing import never
+
+from .luigi import DateHourParameter  # noqa: TID252
+from .luigi import DateMinuteParameter  # noqa: TID252
+from .luigi import DateParameter  # noqa: TID252
+from .luigi import DateSecondParameter  # noqa: TID252
+from .luigi import EnumParameter  # noqa: TID252
+from .luigi import TimeParameter  # noqa: TID252
+from .luigi import WeekdayParameter  # noqa: TID252
 
 _T = TypeVar("_T")
 

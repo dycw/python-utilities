@@ -8,7 +8,7 @@ from hypothesis.strategies import sets
 from utilities.hypothesis import text_ascii
 from utilities.platform import SYSTEM
 from utilities.platform import System
-from utilities.platform import _get_system
+from utilities.platform import get_system
 from utilities.platform import maybe_yield_lower_case
 from utilities.typing import never
 
@@ -29,7 +29,7 @@ class TestMaybeYieldLowerCase:
 
 class TestSystem:
     def test_function(self) -> None:
-        assert isinstance(_get_system(), System)
+        assert isinstance(get_system(), System)
 
     def test_constant(self) -> None:
         assert isinstance(SYSTEM, System)

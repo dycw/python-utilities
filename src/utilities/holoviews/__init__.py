@@ -1,28 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import TypeVar
-from typing import cast
+from .holoviews import apply_opts
+from .holoviews import relabel_plot
+from .holoviews import save_plot
 
-from holoviews import save
-
-from utilities.atomicwrites import writer
-from utilities.pathlib import PathLike
-
-_T = TypeVar("_T")
+__all__ = ["apply_opts", "relabel_plot", "save_plot"]
 
 
-def apply_opts(plot: _T, /, **opts: Any) -> _T:
-    """Apply a set of options to a plot."""
-    return cast(Any, plot).opts(**opts)
-
-
-def relabel_plot(plot: _T, label: str, /) -> _T:
-    """Re-label a plot."""
-    return cast(Any, plot).relabel(label)
-
-
-def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
-    """Atomically save a plot to disk."""
-    with writer(path, overwrite=overwrite) as temp:  # pragma: os-ne-linux
-        save(plot, temp, backend="bokeh")
+try:
+    from .xarray import ArrayNameIsEmptyStringError
+    from .xarray import ArrayNameNotAStringError
+    from .xarray import plot_curve
+except ModuleNotFoundError:  # pragma: no cover
+    pass
+else:
+    __all__ += [
+        "ArrayNameIsEmptyStringError",
+        "ArrayNameNotAStringError",
+        "plot_curve",
+    ]

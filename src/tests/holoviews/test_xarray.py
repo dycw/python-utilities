@@ -5,9 +5,9 @@ from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from pytest import raises
 
-from utilities.holoviews.xarray import ArrayNameIsEmptyStringError
-from utilities.holoviews.xarray import ArrayNameNotAStringError
-from utilities.holoviews.xarray import plot_curve
+from utilities.holoviews import ArrayNameIsEmptyStringError
+from utilities.holoviews import ArrayNameNotAStringError
+from utilities.holoviews import plot_curve
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import bool_data_arrays
 from utilities.hypothesis import float_data_arrays
