@@ -18,7 +18,6 @@ requires-python = ">= 3.10"
 airium = ["airium >= 0.2.6"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 beartype = ["beartype >= 0.16.2"]
-bidict = ["bidict >= 0.22.1"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.4"]
 cvxpy = ["cvxpy >= 1.4.1; sys_platform == 'darwin'"]
@@ -27,7 +26,6 @@ dev = [
   "airium >= 0.2.6",  # airium
   "atomicwrites >= 1.4.1",  # atomicwrites
   "beartype >= 0.16.2",  # beartype
-  "bidict >= 0.22.1",  # bidict
   "bottleneck >= 1.3.7",  # xarray
   "click >= 8.1.7",  # click
   "cryptography >= 41.0.4",  # cryptography
@@ -128,7 +126,6 @@ semver = ["semver >= 3.0.2"]
 sqlalchemy = [
   "sqlalchemy >= 2.0.22",
   "timeout-decorator >= 0.5.0",
-  "bidict >= 0.22.1",  # bidict
   "more-itertools >= 10.1.0",  # more-itertools
 ]
 test = [
@@ -353,5 +350,8 @@ known-first-party = ["utilities"]
   "FBT003",  # flake8-boolean-trap, boolean-positional-value-in-function-call
   "PLR2004",  # refactor, magic-value-comparison
   "S101",  # flake8-bandit, assert-used
+]
+"src/utilities/**/__init__.py" = [
+  "TID252",  # flake8-tidy-imports, relative-imports
 ]
 "src/utilities/_numbagg/*.py" = ["ALL"]

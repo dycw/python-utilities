@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import none
 from xarray import DataArray
 
-from utilities.dataclasses.xarray import rename_data_arrays
+from utilities.dataclasses import rename_data_arrays
 from utilities.hypothesis import text_ascii
 
 

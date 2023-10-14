@@ -118,11 +118,6 @@ from utilities.sqlalchemy import UnequalTableOrColumnNamesError
 from utilities.sqlalchemy import UnequalTableOrColumnSnakeCaseNamesError
 from utilities.sqlalchemy import UnequalUUIDAsUUIDError
 from utilities.sqlalchemy import UnequalUUIDNativeUUIDError
-from utilities.sqlalchemy import _check_column_collections_equal
-from utilities.sqlalchemy import _check_column_types_equal
-from utilities.sqlalchemy import _check_columns_equal
-from utilities.sqlalchemy import _check_table_or_column_names_equal
-from utilities.sqlalchemy import _reflect_table
 from utilities.sqlalchemy import check_engine
 from utilities.sqlalchemy import check_table_against_reflection
 from utilities.sqlalchemy import check_tables_equal
@@ -144,6 +139,11 @@ from utilities.sqlalchemy import redirect_to_table_already_exists_error
 from utilities.sqlalchemy import serialize_engine
 from utilities.sqlalchemy import yield_connection
 from utilities.sqlalchemy import yield_in_clause_rows
+from utilities.sqlalchemy.sqlalchemy import _check_column_collections_equal
+from utilities.sqlalchemy.sqlalchemy import _check_column_types_equal
+from utilities.sqlalchemy.sqlalchemy import _check_columns_equal
+from utilities.sqlalchemy.sqlalchemy import _check_table_or_column_names_equal
+from utilities.sqlalchemy.sqlalchemy import _reflect_table
 
 
 class TestCheckColumnsEqual:

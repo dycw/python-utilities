@@ -25,8 +25,8 @@ from utilities.xarray import DataArrayI
 from utilities.xarray import DataArrayO
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
-    from utilities.pandas.typing import IndexI
+    from utilities.pandas import IndexA
+    from utilities.pandas import IndexI
 
 
 @composite

@@ -8,9 +8,9 @@ from hypothesis.strategies import integers
 
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis.numpy import float_arrays
-from utilities.numpy.numbagg import ewma
-from utilities.numpy.numbagg import exp_moving_sum
-from utilities.numpy.numpy import NDArrayF
+from utilities.numpy import NDArrayF
+from utilities.numpy import ewma
+from utilities.numpy import exp_moving_sum
 
 
 class TestEwma:

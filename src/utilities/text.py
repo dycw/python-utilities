@@ -5,6 +5,10 @@ from re import sub
 from textwrap import dedent
 from typing import Any
 
+from utilities.iterables import IterableContainsDuplicatesError
+from utilities.iterables import check_duplicates
+from utilities.typing import IterableStrs
+
 
 def ensure_str(x: Any, /) -> str:
     """Ensure an object is a string."""
@@ -28,6 +32,27 @@ def snake_case(text: str, /) -> str:
     text = sub(r"([a-z\d])([A-Z])", r"\1_\2", text)
     text = text.replace("-", "_")
     return text.lower()
+
+
+def snake_case_mappings(
+    text: IterableStrs, /, *, inverse: bool = False
+) -> dict[str, str]:
+    """Map a set of text into their snake cases."""
+    as_list = list(text)
+    check_duplicates(as_list)
+    snaked = list(map(snake_case, as_list))
+    try:
+        check_duplicates(snaked)
+    except IterableContainsDuplicatesError:
+        msg = f"{text=}"
+        raise SnakeCaseContainsDuplicatesError(msg) from None
+    if inverse:
+        return {v: k for k, v in snake_case_mappings(as_list).items()}
+    return dict(zip(as_list, snaked, strict=True))
+
+
+class SnakeCaseContainsDuplicatesError(ValueError):
+    """Raised when the snake case values contain duplicates."""
 
 
 def strip_and_dedent(text: str, /) -> str:

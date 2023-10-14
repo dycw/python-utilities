@@ -20,8 +20,8 @@ from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.pandas import Int64
 from utilities.sqlalchemy import ensure_table_created
 from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy.fastparquet import select_to_parquet
-from utilities.sqlalchemy.pandas import insert_items
+from utilities.sqlalchemy import insert_items
+from utilities.sqlalchemy import select_to_parquet
 
 
 class TestSelectToParquet:

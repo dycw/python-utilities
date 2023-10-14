@@ -60,7 +60,7 @@ from utilities.pandas import timestamp_to_datetime
 from utilities.pandas import to_numpy
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import SeriesA
+    from utilities.pandas import SeriesA
 
 
 class TestCheckDataFrame:

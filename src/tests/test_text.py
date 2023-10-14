@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from hypothesis import given
 from pytest import mark
 from pytest import param
 from pytest import raises
 
+from utilities.hypothesis import text_ascii
+from utilities.text import SnakeCaseContainsDuplicatesError
 from utilities.text import ensure_str
 from utilities.text import snake_case
+from utilities.text import snake_case_mappings
 from utilities.text import strip_and_dedent
 
 
@@ -50,6 +54,25 @@ class TestSnakeCase:
     def test_main(self, text: str, expected: str) -> None:
         result = snake_case(text)
         assert result == expected
+
+
+class TestSnakeCaseMappings:
+    @given(text=text_ascii())
+    def test_success(self, text: str) -> None:
+        result = snake_case_mappings([text])
+        expected = {text: snake_case(text)}
+        assert result == expected
+
+    @given(text=text_ascii())
+    def test_inverse(self, text: str) -> None:
+        result = snake_case_mappings([text], inverse=True)
+        expected = {snake_case(text): text}
+        assert result == expected
+
+    @given(text=text_ascii(min_size=1))
+    def test_error(self, text: str) -> None:
+        with raises(SnakeCaseContainsDuplicatesError):
+            _ = snake_case_mappings([text.lower(), text.upper()])
 
 
 class TestStripAndDedent:

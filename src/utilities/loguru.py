@@ -41,7 +41,7 @@ def setup_loguru(
     enable: IterableStrs | None = None,
     console: LogLevel = LogLevel.INFO,
     files: PathLike | None = None,
-    files_root: Path = Path.cwd(),
+    files_root: PathLike = Path.cwd(),
     files_env_var: str | None = _FILES_ENV_VAR,
     rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
     retention: str | int | dt.timedelta | None = _RETENTION,
@@ -60,7 +60,7 @@ def setup_loguru(
     _add_sink(stdout, console, all_levels, live=True)
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
-        full_files_path = files_root.joinpath(files_path)
+        full_files_path = Path(files_root, files_path)
         _add_file_sink(
             full_files_path, "log", LogLevel.DEBUG, all_levels, live=False
         )

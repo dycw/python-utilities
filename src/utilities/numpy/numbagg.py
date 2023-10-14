@@ -9,7 +9,8 @@ from numpy import log
 from utilities._numbagg import move_exp_nanmean
 from utilities._numbagg import move_exp_nansum
 from utilities.math import FloatFinPos
-from utilities.numpy.numpy import NDArrayF
+
+from .numpy import NDArrayF  # noqa: TID252
 
 
 def ewma(

@@ -9,9 +9,9 @@ from numpy import isfinite
 from numpy import nan
 from numpy import where
 
-from utilities.numpy.numpy import NDArrayF
-from utilities.numpy.numpy import NDArrayI
-from utilities.numpy.numpy import shift
+from .numpy import NDArrayF  # noqa: TID252
+from .numpy import NDArrayI  # noqa: TID252
+from .numpy import shift  # noqa: TID252
 
 
 def ffill(

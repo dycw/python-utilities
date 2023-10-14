@@ -24,7 +24,7 @@ from utilities.hypothesis.xarray import int_data_arrays
 from utilities.hypothesis.xarray import str_data_arrays
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
+    from utilities.pandas import IndexA
 
 
 class TestBoolDataArrays:

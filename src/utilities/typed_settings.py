@@ -145,7 +145,7 @@ def _make_converter() -> BaseConverter | Converter:
     try:
         from sqlalchemy import Engine
 
-        from utilities.sqlalchemy import ensure_engine
+        from utilities.sqlalchemy.sqlalchemy import ensure_engine
     except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
@@ -183,7 +183,7 @@ def _make_click_handler() -> ClickHandler:
         from sqlalchemy import Engine
 
         from utilities.click.sqlalchemy import Engine as ClickEngine
-        from utilities.sqlalchemy import serialize_engine
+        from utilities.sqlalchemy.sqlalchemy import serialize_engine
     except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
