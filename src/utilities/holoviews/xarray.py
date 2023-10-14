@@ -7,10 +7,9 @@ from utilities.holoviews import apply_opts
 from utilities.numpy import has_dtype
 from utilities.text import NotAStringError
 from utilities.text import ensure_str
-from utilities.xarray import ewma
-from utilities.xarray.typing import DataArrayB1
-from utilities.xarray.typing import DataArrayF1
-from utilities.xarray.typing import DataArrayI1
+from utilities.xarray import DataArrayB1
+from utilities.xarray import DataArrayF1
+from utilities.xarray import DataArrayI1
 
 _ = bokeh
 
@@ -40,6 +39,8 @@ def plot_curve(
     if label is None:
         label = vdim
     if smooth is not None:
+        from utilities.xarray import ewma
+
         array = ewma(array, {kdim: smooth})
         label = f"{label} (MA{smooth})"
     curve = Curve(array, kdims=[kdim], vdims=[vdim], label=label)

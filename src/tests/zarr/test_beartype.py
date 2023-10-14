@@ -32,7 +32,7 @@ from utilities.hypothesis.numpy import int_arrays
 from utilities.hypothesis.pandas import int_indexes
 from utilities.numpy import NDArrayI1
 from utilities.warnings import suppress_warnings
-from utilities.xarray.typing import DataArray1
+from utilities.xarray import DataArray1
 from utilities.zarr.xarray import DataArrayOnDisk
 from utilities.zarr.xarray import NotOneDimensionalArrayError
 from utilities.zarr.xarray import _to_ndarray1

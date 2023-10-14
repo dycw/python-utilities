@@ -19,10 +19,10 @@ from utilities.hypothesis.numpy import int_arrays
 from utilities.hypothesis.numpy import str_arrays
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.xarray.typing import DataArrayB
-from utilities.xarray.typing import DataArrayF
-from utilities.xarray.typing import DataArrayI
-from utilities.xarray.typing import DataArrayO
+from utilities.xarray import DataArrayB
+from utilities.xarray import DataArrayF
+from utilities.xarray import DataArrayI
+from utilities.xarray import DataArrayO
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas.typing import IndexA
