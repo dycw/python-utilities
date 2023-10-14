@@ -13,8 +13,8 @@ from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import bool_data_arrays
 from utilities.hypothesis.xarray import float_data_arrays
-from utilities.xarray.typing import DataArrayB1
-from utilities.xarray.typing import DataArrayF1
+from utilities.xarray.xarray import DataArrayB1
+from utilities.xarray.xarray import DataArrayF1
 
 
 class TestPlotCurve:

@@ -1,73 +1,103 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import Any
 
-from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import integers
-from hypothesis.strategies import sampled_from
+from beartype.door import die_if_unbearable
+from numpy import empty
+from numpy import zeros
 from pytest import mark
+from pytest import param
 from xarray import DataArray
 
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.xarray import float_data_arrays
-from utilities.xarray import ewma
-from utilities.xarray import exp_moving_sum
+from utilities.numpy import datetime64ns
+from utilities.xarray.xarray import DataArray0
+from utilities.xarray.xarray import DataArray1
+from utilities.xarray.xarray import DataArray2
+from utilities.xarray.xarray import DataArray3
+from utilities.xarray.xarray import DataArrayB
+from utilities.xarray.xarray import DataArrayB0
+from utilities.xarray.xarray import DataArrayB1
+from utilities.xarray.xarray import DataArrayB2
+from utilities.xarray.xarray import DataArrayB3
+from utilities.xarray.xarray import DataArrayDns
+from utilities.xarray.xarray import DataArrayDns0
+from utilities.xarray.xarray import DataArrayDns1
+from utilities.xarray.xarray import DataArrayDns2
+from utilities.xarray.xarray import DataArrayDns3
+from utilities.xarray.xarray import DataArrayF
+from utilities.xarray.xarray import DataArrayF0
+from utilities.xarray.xarray import DataArrayF1
+from utilities.xarray.xarray import DataArrayF2
+from utilities.xarray.xarray import DataArrayF3
+from utilities.xarray.xarray import DataArrayI
+from utilities.xarray.xarray import DataArrayI0
+from utilities.xarray.xarray import DataArrayI1
+from utilities.xarray.xarray import DataArrayI2
+from utilities.xarray.xarray import DataArrayI3
+from utilities.xarray.xarray import DataArrayO
+from utilities.xarray.xarray import DataArrayO0
+from utilities.xarray.xarray import DataArrayO1
+from utilities.xarray.xarray import DataArrayO2
+from utilities.xarray.xarray import DataArrayO3
 
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
 
-
-class TestBottleNeckInstalled:
-    def test_main(self) -> None:
-        array = DataArray([], {"dim": []}, ["dim"])
-        _ = array.ffill(dim="dim")
-
-
-class TestEwma:
-    @given(
-        data=data(),
-        indexes=dictionaries(
-            text_ascii(), int_indexes(), min_size=1, max_size=3
-        ),
-        halflife=integers(1, 10),
+class TestHints:
+    @mark.parametrize(
+        ("dtype", "hint"),
+        [
+            param(bool, DataArrayB),
+            param(datetime64ns, DataArrayDns),
+            param(float, DataArrayF),
+            param(int, DataArrayI),
+            param(object, DataArrayO),
+        ],
     )
-    def test_main(
-        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
-    ) -> None:
-        array = data.draw(float_data_arrays(indexes))
-        dim = data.draw(sampled_from(list(indexes)))
-        with assume_does_not_raise(RuntimeWarning):
-            _ = ewma(array, {dim: halflife})
+    def test_dtype(self, dtype: Any, hint: Any) -> None:
+        arr = DataArray(empty(0, dtype=dtype))
+        die_if_unbearable(arr, hint)
 
-
-class TestExpMovingSum:
-    @given(
-        data=data(),
-        indexes=dictionaries(
-            text_ascii(), int_indexes(), min_size=1, max_size=3
-        ),
-        halflife=integers(1, 10),
+    @mark.parametrize(
+        ("ndim", "hint"),
+        [
+            param(0, DataArray0),
+            param(1, DataArray1),
+            param(2, DataArray2),
+            param(3, DataArray3),
+        ],
     )
-    def test_main(
-        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
-    ) -> None:
-        array = data.draw(float_data_arrays(indexes))
-        dim = data.draw(sampled_from(list(indexes)))
-        with assume_does_not_raise(RuntimeWarning):
-            _ = exp_moving_sum(array, {dim: halflife})
+    def test_ndim(self, ndim: int, hint: Any) -> None:
+        arr = DataArray(empty(zeros(ndim, dtype=int), dtype=float))
+        die_if_unbearable(arr, hint)
 
-
-class TestNumbaggInstalled:
-    @mark.xfail(
-        reason="RuntimeError: Cannot install on Python version 3.11.4; "
-        "only versions >=3.7,<3.11 are supported."
+    @mark.parametrize(
+        ("dtype", "ndim", "hint"),
+        [
+            # ndim 0
+            param(bool, 0, DataArrayB0),
+            param(datetime64ns, 0, DataArrayDns0),
+            param(float, 0, DataArrayF0),
+            param(int, 0, DataArrayI0),
+            param(object, 0, DataArrayO0),
+            # ndim 1
+            param(bool, 1, DataArrayB1),
+            param(datetime64ns, 1, DataArrayDns1),
+            param(float, 1, DataArrayF1),
+            param(int, 1, DataArrayI1),
+            param(object, 1, DataArrayO1),
+            # ndim 2
+            param(bool, 2, DataArrayB2),
+            param(datetime64ns, 2, DataArrayDns2),
+            param(float, 2, DataArrayF2),
+            param(int, 2, DataArrayI2),
+            param(object, 2, DataArrayO2),
+            # ndim 3
+            param(bool, 3, DataArrayB3),
+            param(datetime64ns, 3, DataArrayDns3),
+            param(float, 3, DataArrayF3),
+            param(int, 3, DataArrayI3),
+            param(object, 3, DataArrayO3),
+        ],
     )
-    def test_main(self) -> None:
-        array = DataArray([], {"dim": []}, ["dim"])
-        _ = array.rolling_exp(dim=1.0).sum()
+    def test_compound(self, dtype: Any, ndim: int, hint: Any) -> None:
+        arr = DataArray(empty(zeros(ndim, dtype=int), dtype=dtype))
+        die_if_unbearable(arr, hint)
