@@ -4,8 +4,12 @@ import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
+from re import sub
 
+from utilities.platform import SYSTEM
+from utilities.platform import System
 from utilities.re import extract_groups
+from utilities.typing import never
 
 UTC = dt.timezone.utc
 TODAY = dt.datetime.now(tz=UTC).date()
@@ -81,6 +85,17 @@ def local_timezone() -> tzinfo:
 
 class LocalTimeZoneError(ValueError):
     """Raised when the local timezone cannot be found."""
+
+
+def maybe_sub_pct_y(text: str, /) -> str:
+    """Substitute the `%Y' token with '%4Y' if necessary."""
+    if SYSTEM is System.windows:  # pragma: os-ne-windows
+        return text
+    if SYSTEM is System.mac_os:  # pragma: os-ne-macos
+        return text
+    if SYSTEM is System.linux:  # pragma: os-ne-linux
+        return sub("%Y", "%4Y", text)
+    return never(SYSTEM)  # pragma: no cover
 
 
 def parse_date(date: str, /) -> dt.date:
