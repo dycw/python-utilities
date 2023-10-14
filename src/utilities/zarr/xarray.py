@@ -16,7 +16,7 @@ from xarray.core.types import ErrorOptionsWithWarn
 from zarr import Array
 from zarr import suppress
 
-from utilities.numpy.typing import NDArray1
+from utilities.numpy import NDArray1
 from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str

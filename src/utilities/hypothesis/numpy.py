@@ -42,20 +42,20 @@ from utilities.numpy import DATETIME_MIN_AS_INT
 from utilities.numpy import Datetime64Kind
 from utilities.numpy import Datetime64Unit
 from utilities.numpy import EmptyNumpyConcatenateError
+from utilities.numpy import NDArrayB
+from utilities.numpy import NDArrayD
+from utilities.numpy import NDArrayD1
+from utilities.numpy import NDArrayDD1
+from utilities.numpy import NDArrayDus1
+from utilities.numpy import NDArrayF
+from utilities.numpy import NDArrayI
+from utilities.numpy import NDArrayO
 from utilities.numpy import date_to_datetime64
 from utilities.numpy import datetime64_to_int
 from utilities.numpy import datetime64_unit_to_dtype
 from utilities.numpy import datetime64_unit_to_kind
 from utilities.numpy import datetime_to_datetime64
 from utilities.numpy import redirect_to_empty_numpy_concatenate_error
-from utilities.numpy.typing import NDArrayB
-from utilities.numpy.typing import NDArrayD
-from utilities.numpy.typing import NDArrayD1
-from utilities.numpy.typing import NDArrayDD1
-from utilities.numpy.typing import NDArrayDus1
-from utilities.numpy.typing import NDArrayF
-from utilities.numpy.typing import NDArrayI
-from utilities.numpy.typing import NDArrayO
 
 
 @composite

@@ -15,10 +15,10 @@ from numpy import minimum
 from numpy import ndarray
 from numpy import where
 
+from utilities.numpy import NDArrayF
+from utilities.numpy import NDArrayF1
+from utilities.numpy import NDArrayF2
 from utilities.numpy import is_zero
-from utilities.numpy.typing import NDArrayF
-from utilities.numpy.typing import NDArrayF1
-from utilities.numpy.typing import NDArrayF2
 
 
 @overload

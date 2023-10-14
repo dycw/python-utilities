@@ -9,9 +9,9 @@ from numpy import zeros_like
 from scipy.stats import norm
 
 from utilities.math import FloatFinNonNeg
+from utilities.numpy import NDArrayF
+from utilities.numpy import NDArrayF1
 from utilities.numpy import is_zero
-from utilities.numpy.typing import NDArrayF
-from utilities.numpy.typing import NDArrayF1
 
 
 def ppf(

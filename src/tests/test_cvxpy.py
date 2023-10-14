@@ -12,7 +12,7 @@ from pytest import param
 from pytest import raises
 from pytest import skip
 
-from utilities.numpy.typing import NDArrayF
+from utilities.numpy import NDArrayF
 
 try:
     import cvxpy

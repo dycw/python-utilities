@@ -30,10 +30,10 @@ from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.numpy import float_arrays
 from utilities.hypothesis.numpy import int_arrays
+from utilities.numpy import NDArrayI1
+from utilities.numpy import NDArrayO1
 from utilities.numpy import datetime64D
 from utilities.numpy import datetime64ns
-from utilities.numpy.typing import NDArrayI1
-from utilities.numpy.typing import NDArrayO1
 from utilities.zarr import InvalidIndexValueError
 from utilities.zarr import NDArrayWithIndexes
 from utilities.zarr import ffill_non_nan_slices

@@ -65,6 +65,7 @@ dev = [
   "pytest-cov >= 4.1.0",  # test
   "pytest-instafail >= 0.5.0",  # test
   "pytest-randomly >= 3.15.0",  # test
+  "pytest-rerunfailures >= 12.0",  # test
   "pytest-xdist >= 3.3.1",  # test
   # dev
   "coverage-conditional-plugin",
@@ -140,6 +141,10 @@ test = [
   "pytest-instafail >= 0.5.0",
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
+  "hypothesis >= 6.87.4",  # hypothesis
+  "pytest >= 7.4.0",  # pytest
+  "pytest-check >= 2.2.2",  # pytest-check
+  "atomicwrites >= 1.4.1",  # pytest
 ]
 tqdm = ["tqdm >= 4.66.1"]
 typed-settings = ["typed-settings[click] >= 23.0.0"]

@@ -31,8 +31,10 @@ from utilities.datetime import ensure_date
 from utilities.datetime import ensure_datetime
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy import MultipleTrueElementsError
+from utilities.numpy import NDArray1
+from utilities.numpy import NDArrayB1
+from utilities.numpy import NDArrayI1
 from utilities.numpy import NoTrueElementsError
-from utilities.numpy import _ffill_non_nan_slices_helper
 from utilities.numpy import array_indexer
 from utilities.numpy import datetime64D
 from utilities.numpy import datetime64ns
@@ -40,9 +42,7 @@ from utilities.numpy import datetime64Y
 from utilities.numpy import flatn0
 from utilities.numpy import get_fill_value
 from utilities.numpy import has_dtype
-from utilities.numpy.typing import NDArray1
-from utilities.numpy.typing import NDArrayB1
-from utilities.numpy.typing import NDArrayI1
+from utilities.numpy.numpy import _ffill_non_nan_slices_helper
 from utilities.pathlib import PathLike
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel
