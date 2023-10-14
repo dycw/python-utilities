@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from hypothesis.strategies import composite
 
-from utilities.hypothesis import DrawFn
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import temp_paths
+from .hypothesis import DrawFn  # noqa: TID252
+from .hypothesis import lift_draw  # noqa: TID252
+from .hypothesis import temp_paths  # noqa: TID252
 
 
 @composite

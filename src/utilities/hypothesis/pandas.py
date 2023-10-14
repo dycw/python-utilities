@@ -17,15 +17,16 @@ from pandas import Timedelta
 from pandas import Timestamp
 
 from utilities.datetime import UTC
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis.numpy import int64s
-from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.pandas import TIMESTAMP_MAX_AS_DATE
 from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
 from utilities.pandas import TIMESTAMP_MIN_AS_DATE
 from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 from utilities.pandas import string
+
+from .hypothesis import MaybeSearchStrategy  # noqa: TID252
+from .hypothesis import lift_draw  # noqa: TID252
+from .hypothesis import text_ascii  # noqa: TID252
+from .numpy import int64s  # noqa: TID252
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA

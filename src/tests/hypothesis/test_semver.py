@@ -9,7 +9,7 @@ from pytest import raises
 from semver import Version
 
 from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis.semver import versions
+from utilities.hypothesis import versions
 
 
 class TestVersions:

@@ -17,15 +17,15 @@ from hypothesis.strategies import integers
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
+from utilities.hypothesis import dates_pd
+from utilities.hypothesis import datetimes_pd
 from utilities.hypothesis import datetimes_utc
 from utilities.hypothesis import hashables
-from utilities.hypothesis.numpy import int64s
-from utilities.hypothesis.pandas import dates_pd
-from utilities.hypothesis.pandas import datetimes_pd
-from utilities.hypothesis.pandas import indexes
-from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.pandas import str_indexes
-from utilities.hypothesis.pandas import timestamps
+from utilities.hypothesis import indexes
+from utilities.hypothesis import int64s
+from utilities.hypothesis import int_indexes
+from utilities.hypothesis import str_indexes
+from utilities.hypothesis import timestamps
 from utilities.pandas import TIMESTAMP_MAX_AS_DATE
 from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
 from utilities.pandas import TIMESTAMP_MIN_AS_DATE

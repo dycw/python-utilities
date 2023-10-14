@@ -10,23 +10,45 @@ from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import composite
 from xarray import DataArray
 
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis.numpy import bool_arrays
-from utilities.hypothesis.numpy import float_arrays
-from utilities.hypothesis.numpy import int_arrays
-from utilities.hypothesis.numpy import str_arrays
-from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.typing import MaybeSearchStrategy
 from utilities.xarray import DataArrayB
 from utilities.xarray import DataArrayF
 from utilities.xarray import DataArrayI
 from utilities.xarray import DataArrayO
 
+from .hypothesis import MaybeSearchStrategy  # noqa: TID252
+from .hypothesis import lift_draw  # noqa: TID252
+from .hypothesis import lists_fixed_length  # noqa: TID252
+from .hypothesis import text_ascii  # noqa: TID252
+from .numpy import bool_arrays  # noqa: TID252
+from .numpy import float_arrays  # noqa: TID252
+from .numpy import int_arrays  # noqa: TID252
+from .numpy import str_arrays  # noqa: TID252
+from .pandas import int_indexes  # noqa: TID252
+
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA
     from utilities.pandas import IndexI
+
+
+@composite
+def bool_data_arrays(
+    _draw: DrawFn,
+    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
+    /,
+    *,
+    fill: SearchStrategy[Any] | None = None,
+    unique: MaybeSearchStrategy[bool] = False,
+    name: MaybeSearchStrategy[str | None] = None,
+    **indexes_kwargs: MaybeSearchStrategy[IndexA],
+) -> DataArrayB:
+    """Strategy for generating data arrays of booleans."""
+    draw = lift_draw(_draw)
+    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
+    shape = tuple(map(len, indexes_.values()))
+    values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
+    return DataArray(
+        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
+    )
 
 
 @composite
@@ -53,27 +75,6 @@ def dicts_of_indexes(
     dims = draw(lists_fixed_length(text_ascii(), ndims, unique=True))
     indexes = (draw(int_indexes(n=length)) for length in shape)
     return dict(zip(dims, indexes, strict=True))
-
-
-@composite
-def bool_data_arrays(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    *,
-    fill: SearchStrategy[Any] | None = None,
-    unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> DataArrayB:
-    """Strategy for generating data arrays of booleans."""
-    draw = lift_draw(_draw)
-    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
-    shape = tuple(map(len, indexes_.values()))
-    values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
-    return DataArray(
-        data=values, coords=indexes_, dims=list(indexes_), name=draw(name)
-    )
 
 
 @composite

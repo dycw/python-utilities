@@ -81,9 +81,9 @@ from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import lists_fixed_length
+from utilities.hypothesis import sqlite_engines
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.platform import SYSTEM
 from utilities.platform import System
 from utilities.sqlalchemy import EngineError

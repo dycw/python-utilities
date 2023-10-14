@@ -8,8 +8,9 @@ from hypothesis.strategies import composite
 from sqlalchemy import Engine
 from sqlalchemy import MetaData
 
-from utilities.hypothesis import temp_paths
 from utilities.sqlalchemy import create_engine
+
+from .hypothesis import temp_paths  # noqa: TID252
 
 
 @composite

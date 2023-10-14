@@ -7,9 +7,9 @@ from hypothesis.strategies import composite
 from hypothesis.strategies import integers
 from semver import Version
 
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis.typing import MaybeSearchStrategy
+from .hypothesis import MaybeSearchStrategy  # noqa: TID252
+from .hypothesis import lift_draw  # noqa: TID252
+from .hypothesis import lists_fixed_length  # noqa: TID252
 
 
 @composite

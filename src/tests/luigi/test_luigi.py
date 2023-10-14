@@ -31,8 +31,8 @@ from utilities.datetime import serialize_date
 from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
 from utilities.hypothesis import datetimes_utc
+from utilities.hypothesis import namespace_mixins
 from utilities.hypothesis import temp_paths
-from utilities.hypothesis.luigi import namespace_mixins
 from utilities.luigi import AwaitTask
 from utilities.luigi import AwaitTime
 from utilities.luigi import DateHourParameter

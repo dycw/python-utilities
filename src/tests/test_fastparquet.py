@@ -49,10 +49,10 @@ from utilities.fastparquet import get_dtypes
 from utilities.fastparquet import get_num_row_groups
 from utilities.fastparquet import read_parquet
 from utilities.fastparquet import write_parquet
+from utilities.hypothesis import dates_pd
 from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.pandas import dates_pd
 from utilities.numpy import datetime64ns
 from utilities.pandas import DataFrameRangeIndexError
 from utilities.pandas import Int64

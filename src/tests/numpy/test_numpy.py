@@ -33,11 +33,11 @@ from pytest import param
 from pytest import raises
 
 from utilities.datetime import UTC
+from utilities.hypothesis import datetime64_dtypes
+from utilities.hypothesis import datetime64_units
+from utilities.hypothesis import datetime64s
 from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis.numpy import datetime64_dtypes
-from utilities.hypothesis.numpy import datetime64_units
-from utilities.hypothesis.numpy import datetime64s
-from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis import float_arrays
 from utilities.numpy import DateOverflowError
 from utilities.numpy import Datetime64Kind
 from utilities.numpy import Datetime64Unit
