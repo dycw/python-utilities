@@ -5,6 +5,7 @@ from collections.abc import Callable
 from operator import eq
 from operator import gt
 from operator import lt
+from re import search
 from typing import Any
 
 from hypothesis import HealthCheck
@@ -41,6 +42,7 @@ from utilities.datetime import ensure_time
 from utilities.datetime import ensure_timedelta
 from utilities.datetime import is_weekday
 from utilities.datetime import local_timezone
+from utilities.datetime import maybe_sub_pct_y
 from utilities.datetime import parse_date
 from utilities.datetime import parse_datetime
 from utilities.datetime import parse_time
@@ -53,7 +55,9 @@ from utilities.datetime import serialize_time
 from utilities.datetime import serialize_timedelta
 from utilities.datetime import yield_weekdays
 from utilities.hypothesis import assume_does_not_raise
-from utilities.platform.datetime import maybe_sub_pct_y
+from utilities.hypothesis import text_clean
+from utilities.platform import SYSTEM
+from utilities.platform import System
 
 
 class TestAddWeekdays:
@@ -142,6 +146,14 @@ class TestLocalTimeZone:
         result = tz.tzname(now)
         expected = {"HKT", "JST", "UTC"}
         assert result in expected
+
+
+class TestMaybeMaybeSubPctY:
+    @given(text=text_clean())
+    @mark.skipif(SYSTEM is not System.linux, reason="Linux only")
+    def test_main(self, text: str) -> None:
+        result = maybe_sub_pct_y(text)
+        assert not search("%Y", result)
 
 
 class TestParseDate:

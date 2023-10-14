@@ -4,7 +4,7 @@ from enum import Enum
 from enum import unique
 from logging import basicConfig
 
-from utilities.platform.datetime import maybe_sub_pct_y
+from utilities.datetime import maybe_sub_pct_y
 
 
 def basic_config() -> None:
