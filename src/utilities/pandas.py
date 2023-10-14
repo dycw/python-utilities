@@ -11,16 +11,21 @@ from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
 from typing import NoReturn
+from typing import TypeAlias
 from typing import cast
 
 from numpy import where
 from pandas import NA
+from pandas import BooleanDtype
+from pandas import CategoricalDtype
 from pandas import DataFrame
 from pandas import DatetimeTZDtype
 from pandas import Index
+from pandas import Int64Dtype
 from pandas import NaT
 from pandas import RangeIndex
 from pandas import Series
+from pandas import StringDtype
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
@@ -32,8 +37,29 @@ from utilities.numpy import has_dtype
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
-    from utilities.pandas.typing import SeriesA
+    IndexA: TypeAlias = Index[Any]
+    IndexB: TypeAlias = Index[bool]
+    IndexBn: TypeAlias = Index[BooleanDtype]
+    IndexC: TypeAlias = Index[CategoricalDtype]
+    IndexD: TypeAlias = Index[dt.datetime]
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]
+    IndexF: TypeAlias = Index[float]
+    IndexI: TypeAlias = Index[int]
+    IndexI64: TypeAlias = Index[Int64Dtype]
+    IndexS: TypeAlias = Index[StringDtype]
+
+    SeriesA: TypeAlias = Series[Any]
+    SeriesB: TypeAlias = Series[bool]
+    SeriesBn: TypeAlias = Series[BooleanDtype]
+    SeriesC: TypeAlias = Series[CategoricalDtype]
+    SeriesD: TypeAlias = Series[dt.datetime]
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]
+    SeriesF: TypeAlias = Series[float]
+    SeriesI: TypeAlias = Series[int]
+    SeriesI64: TypeAlias = Series[Int64Dtype]
+    SeriesS: TypeAlias = Series[StringDtype]
 
 
 Int64 = "Int64"
