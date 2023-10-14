@@ -11,9 +11,12 @@ from utilities.numpy.numpy import DATETIME_MIN_AS_INT
 from utilities.numpy.numpy import DateOverflowError
 from utilities.numpy.numpy import Datetime64Kind
 from utilities.numpy.numpy import Datetime64Unit
+from utilities.numpy.numpy import DTypeB
+from utilities.numpy.numpy import DTypeDns
+from utilities.numpy.numpy import DTypeF
+from utilities.numpy.numpy import DTypeI
+from utilities.numpy.numpy import DTypeO
 from utilities.numpy.numpy import EmptyNumpyConcatenateError
-from utilities.numpy.numpy import HasNDim
-from utilities.numpy.numpy import HasPredicate
 from utilities.numpy.numpy import InfElementsError
 from utilities.numpy.numpy import InvalidDTypeError
 from utilities.numpy.numpy import IsFinite
@@ -461,14 +464,17 @@ __all__ = [
     "datetime64W",
     "datetime64Y",
     "discretize",
+    "DTypeB",
+    "DTypeDns",
+    "DTypeF",
+    "DTypeI",
+    "DTypeO",
     "EmptyNumpyConcatenateError",
     "ffill_non_nan_slices",
     "fillna",
     "flatn0",
     "get_fill_value",
     "has_dtype",
-    "HasNDim",
-    "HasPredicate",
     "InfElementsError",
     "InvalidDTypeError",
     "is_at_least_or_nan",

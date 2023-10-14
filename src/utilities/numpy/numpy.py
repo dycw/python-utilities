@@ -30,6 +30,7 @@ from numpy import isfinite
 from numpy import isinf
 from numpy import isnan
 from numpy import linspace
+from numpy import log
 from numpy import nan
 from numpy import nanquantile
 from numpy import ndarray
@@ -37,9 +38,11 @@ from numpy import object_
 from numpy import prod
 from numpy import rint
 from numpy import roll
+from numpy import unravel_index
 from numpy import where
 from numpy.linalg import det
 from numpy.linalg import eig
+from numpy.random import default_rng
 from numpy.typing import NDArray
 
 from utilities.datetime import EPOCH_UTC
@@ -106,17 +109,49 @@ NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
 
 
+# annotations - dtypes
+class _HasDType:
+    def __init__(self, dtype: Any, /) -> None:
+        super().__init__()  # pragma: no cover
+        self.ndim = dtype  # pragma: no cover
+
+
+def _dtype_annotation(dtype: Any, /) -> Any:
+    try:
+        from beartype.vale import IsAttr
+        from beartype.vale import IsEqual
+    except ModuleNotFoundError:  # pragma: no cover
+        return _HasDType(dtype)
+    return IsAttr["dtype", IsEqual[dtype]]
+
+
+DTypeB = _dtype_annotation(bool)
+DTypeDns = _dtype_annotation(datetime64ns)
+DTypeF = _dtype_annotation(float)
+DTypeI = _dtype_annotation(int)
+DTypeO = _dtype_annotation(object)
+
+
 # annotations - ndims
-class HasNDim:
+class _HasNDim:
     def __init__(self, ndim: int, /) -> None:
-        super().__init__()
-        self.ndim = ndim
+        super().__init__()  # pragma: no cover
+        self.ndim = ndim  # pragma: no cover
 
 
-NDim0 = HasNDim(0)
-NDim1 = HasNDim(1)
-NDim2 = HasNDim(2)
-NDim3 = HasNDim(3)
+def _ndim_annotation(ndim: int, /) -> Any:
+    try:
+        from beartype.vale import IsAttr
+        from beartype.vale import IsEqual
+    except ModuleNotFoundError:  # pragma: no cover
+        return _HasNDim(ndim)
+    return IsAttr["ndim", IsEqual[ndim]]
+
+
+NDim0 = _ndim_annotation(0)
+NDim1 = _ndim_annotation(1)
+NDim2 = _ndim_annotation(2)
+NDim3 = _ndim_annotation(3)
 NDArray0 = Annotated[NDArrayA, NDim0]
 NDArray1 = Annotated[NDArrayA, NDim1]
 NDArray2 = Annotated[NDArrayA, NDim2]
@@ -1097,46 +1132,73 @@ def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
 # annotations - predicates
 
 
-class HasPredicate:
+class _HasPredicate:
     def __init__(self, predicate: Callable[..., Any], /) -> None:
-        super().__init__()
-        self.predicate = predicate
+        super().__init__()  # pragma: no cover
+        self.predicate = predicate  # pragma: no cover
 
 
-IsFinite = HasPredicate(isfinite)
-IsFiniteAndIntegral = HasPredicate(is_finite_and_integral)
-IsFiniteAndIntegralOrNan = HasPredicate(is_finite_and_integral_or_nan)
-IsFiniteAndNegative = HasPredicate(is_finite_and_negative)
-IsFiniteAndNegativeOrNan = HasPredicate(is_finite_and_negative_or_nan)
-IsFiniteAndNonNegative = HasPredicate(is_finite_and_non_negative)
-IsFiniteAndNonNegativeOrNan = HasPredicate(is_finite_and_non_negative_or_nan)
-IsFiniteAndNonPositive = HasPredicate(is_finite_and_non_positive)
-IsFiniteAndNonPositiveOrNan = HasPredicate(is_finite_and_non_positive_or_nan)
-IsFiniteAndNonZero = HasPredicate(is_finite_and_non_zero)
-IsFiniteAndNonZeroOrNan = HasPredicate(is_finite_and_non_zero_or_nan)
-IsFiniteAndPositive = HasPredicate(is_finite_and_positive)
-IsFiniteAndPositiveOrNan = HasPredicate(is_finite_and_positive_or_nan)
-IsFiniteOrNan = HasPredicate(is_finite_or_nan)
-IsIntegral = HasPredicate(is_integral)
-IsIntegralOrNan = HasPredicate(is_integral_or_nan)
-IsNegative = HasPredicate(is_negative)
-IsNegativeOrNan = HasPredicate(is_negative_or_nan)
-IsNonNegative = HasPredicate(is_non_negative)
-IsNonNegativeOrNan = HasPredicate(is_non_negative_or_nan)
-IsNonPositive = HasPredicate(is_non_positive)
-IsNonPositiveOrNan = HasPredicate(is_non_positive_or_nan)
-IsNonZero = HasPredicate(is_non_zero)
-IsNonZeroOrNan = HasPredicate(is_non_zero_or_nan)
-IsPositive = HasPredicate(is_positive)
-IsPositiveOrNan = HasPredicate(is_positive_or_nan)
-IsZero = HasPredicate(is_zero)
-IsZeroOrFiniteAndNonMicro = HasPredicate(is_zero_or_finite_and_non_micro)
-IsZeroOrFiniteAndNonMicroOrNan = HasPredicate(
+def _predicate_annotation(predicate: Callable[..., Any], /) -> Any:
+    """Apply the predicate to a subset of a float array."""
+    try:
+        from beartype.vale import Is
+    except ModuleNotFoundError:  # pragma: no cover
+        return _HasPredicate(predicate)
+    rng = default_rng()
+
+    def inner(array: NDArrayI | NDArrayF, /) -> bool:
+        if (size := array.size) == 0:
+            return True
+        if size == 1:
+            return predicate(array).item()
+        num_samples = round(log(size))
+        indices = rng.integers(0, size, size=num_samples)
+        sample = array[unravel_index(indices, array.shape)]
+        return predicate(sample).all().item()
+
+    return Is[cast(Any, inner)]
+
+
+IsFinite = _predicate_annotation(isfinite)
+IsFiniteAndIntegral = _predicate_annotation(is_finite_and_integral)
+IsFiniteAndIntegralOrNan = _predicate_annotation(is_finite_and_integral_or_nan)
+IsFiniteAndNegative = _predicate_annotation(is_finite_and_negative)
+IsFiniteAndNegativeOrNan = _predicate_annotation(is_finite_and_negative_or_nan)
+IsFiniteAndNonNegative = _predicate_annotation(is_finite_and_non_negative)
+IsFiniteAndNonNegativeOrNan = _predicate_annotation(
+    is_finite_and_non_negative_or_nan
+)
+IsFiniteAndNonPositive = _predicate_annotation(is_finite_and_non_positive)
+IsFiniteAndNonPositiveOrNan = _predicate_annotation(
+    is_finite_and_non_positive_or_nan
+)
+IsFiniteAndNonZero = _predicate_annotation(is_finite_and_non_zero)
+IsFiniteAndNonZeroOrNan = _predicate_annotation(is_finite_and_non_zero_or_nan)
+IsFiniteAndPositive = _predicate_annotation(is_finite_and_positive)
+IsFiniteAndPositiveOrNan = _predicate_annotation(is_finite_and_positive_or_nan)
+IsFiniteOrNan = _predicate_annotation(is_finite_or_nan)
+IsIntegral = _predicate_annotation(is_integral)
+IsIntegralOrNan = _predicate_annotation(is_integral_or_nan)
+IsNegative = _predicate_annotation(is_negative)
+IsNegativeOrNan = _predicate_annotation(is_negative_or_nan)
+IsNonNegative = _predicate_annotation(is_non_negative)
+IsNonNegativeOrNan = _predicate_annotation(is_non_negative_or_nan)
+IsNonPositive = _predicate_annotation(is_non_positive)
+IsNonPositiveOrNan = _predicate_annotation(is_non_positive_or_nan)
+IsNonZero = _predicate_annotation(is_non_zero)
+IsNonZeroOrNan = _predicate_annotation(is_non_zero_or_nan)
+IsPositive = _predicate_annotation(is_positive)
+IsPositiveOrNan = _predicate_annotation(is_positive_or_nan)
+IsZero = _predicate_annotation(is_zero)
+IsZeroOrFiniteAndNonMicro = _predicate_annotation(
+    is_zero_or_finite_and_non_micro
+)
+IsZeroOrFiniteAndNonMicroOrNan = _predicate_annotation(
     is_zero_or_finite_and_non_micro_or_nan
 )
-IsZeroOrNan = HasPredicate(is_zero_or_nan)
-IsZeroOrNonMicro = HasPredicate(is_zero_or_non_micro)
-IsZeroOrNonMicroOrNan = HasPredicate(is_zero_or_non_micro_or_nan)
+IsZeroOrNan = _predicate_annotation(is_zero_or_nan)
+IsZeroOrNonMicro = _predicate_annotation(is_zero_or_non_micro)
+IsZeroOrNonMicroOrNan = _predicate_annotation(is_zero_or_non_micro_or_nan)
 
 
 # annotations - int & predicates

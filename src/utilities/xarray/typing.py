@@ -1,32 +1,21 @@
 from __future__ import annotations
 
 from typing import Annotated
-from typing import Any
 from typing import TypeAlias
 
 from xarray import DataArray
 
+from utilities.numpy import DTypeB
+from utilities.numpy import DTypeDns
+from utilities.numpy import DTypeF
+from utilities.numpy import DTypeI
+from utilities.numpy import DTypeO
 from utilities.numpy import NDim0
 from utilities.numpy import NDim1
 from utilities.numpy import NDim2
 from utilities.numpy import NDim3
-from utilities.numpy import datetime64ns
 
-
-# annotations - dtypes
-class HasDType:
-    def __init__(self, dtype: Any, /) -> None:
-        super().__init__()
-        self.ndim = dtype
-
-
-DTypeB = HasDType(bool)
-DTypeDns = HasDType(datetime64ns)
-DTypeF = HasDType(float)
-DTypeI = HasDType(int)
-DTypeO = HasDType(object)
-
-
+# annotations - dtype
 DataArrayB: TypeAlias = Annotated[DataArray, DTypeB]
 DataArrayDns: TypeAlias = Annotated[DataArray, DTypeDns]
 DataArrayF: TypeAlias = Annotated[DataArray, DTypeF]
