@@ -9,7 +9,6 @@ from hypothesis.strategies import data
 from hypothesis.strategies import dictionaries
 from hypothesis.strategies import integers
 from hypothesis.strategies import sampled_from
-from pytest import mark
 from xarray import DataArray
 
 from utilities.hypothesis import assume_does_not_raise
@@ -58,10 +57,6 @@ class TestExpMovingSum:
 
 
 class TestNumbaggInstalled:
-    @mark.xfail(
-        reason="RuntimeError: Cannot install on Python version 3.11.4; "
-        "only versions >=3.7,<3.11 are supported."
-    )
     def test_main(self) -> None:
         array = DataArray([], {"dim": []}, ["dim"])
         _ = array.rolling_exp(dim=1.0).sum()

@@ -17,7 +17,7 @@ requires-python = ">= 3.10"
 [project.optional-dependencies]
 airium = ["airium >= 0.2.6"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
-beartype = ["beartype >= 0.16.2"]
+beartype = ["beartype >= 0.16.3"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.4"]
 cvxpy = ["cvxpy >= 1.4.1; sys_platform == 'darwin'"]
@@ -25,7 +25,7 @@ dev = [
   # core
   "airium >= 0.2.6",  # airium
   "atomicwrites >= 1.4.1",  # atomicwrites
-  "beartype >= 0.16.2",  # beartype
+  "beartype >= 0.16.3",  # beartype
   "bottleneck >= 1.3.7",  # xarray
   "click >= 8.1.7",  # click
   "cryptography >= 41.0.4",  # cryptography
@@ -40,7 +40,7 @@ dev = [
   "luigi >= 3.4.0",  # luigi
   "memory-profiler >= 0.61.0",  # memory-profiler
   "more-itertools >= 10.1.0",  # more-itertools
-  "numba >= 0.58.0",  # xarray
+  "numbagg >= 0.4.5",  # numpy
   "numpy >= 1.25.2",  # numpy
   "pandas >= 2.1.1",  # pandas
   "pqdm >= 0.2.0",  # pqdm
@@ -63,7 +63,6 @@ dev = [
   "pytest-cov >= 4.1.0",  # test
   "pytest-instafail >= 0.5.0",  # test
   "pytest-randomly >= 3.15.0",  # test
-  "pytest-rerunfailures >= 12.0",  # test
   "pytest-xdist >= 3.3.1",  # test
   # dev
   "coverage-conditional-plugin",
@@ -99,7 +98,7 @@ loguru = ["loguru >= 0.7.2"]
 luigi = ["luigi >= 3.4.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 10.1.0"]
-numpy = ["numba >= 0.58.0", "numpy >= 1.25.2"]
+numpy = ["numbagg >= 0.4.5", "numpy >= 1.25.2"]
 pandas = ["pandas >= 2.1.1"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.5"]
@@ -145,11 +144,7 @@ test = [
 ]
 tqdm = ["tqdm >= 4.66.1"]
 typed-settings = ["typed-settings[click] >= 23.0.0"]
-xarray = [
-  "bottleneck >= 1.3.7",
-  "xarray >= 2023.9.0",
-  "numba >= 0.58.0",  # numpy
-]
+xarray = ["bottleneck >= 1.3.7", "xarray >= 2023.9.0", "numbagg >= 0.4.5"]
 zarr = [
   "zarr >= 2.16.1",
   "atomicwrites >= 1.4.1",  # atomicwrites
@@ -191,7 +186,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = ["src/utilities/_numbagg/*.py", "src/utilities/clean_dir/__main__.py"]
+omit = ["src/utilities/clean_dir/__main__.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 
@@ -217,13 +212,7 @@ style = [
 
 # pyright
 [tool.pyright]
-exclude = [
-  "**/__pycache__",
-  ".direnv",
-  ".git",
-  ".nox",
-  "src/utilities/_numbagg",
-]
+exclude = ["**/__pycache__", ".direnv", ".git", ".nox"]
 executionEnvironments = [{root = "src"}]
 include = ["src"]
 pythonVersion = "3.10"
@@ -354,4 +343,3 @@ known-first-party = ["utilities"]
 "src/utilities/**/__init__.py" = [
   "TID252",  # flake8-tidy-imports, relative-imports
 ]
-"src/utilities/_numbagg/*.py" = ["ALL"]
