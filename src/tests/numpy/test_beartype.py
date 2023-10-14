@@ -18,8 +18,8 @@ from numpy.typing import NDArray
 from pytest import mark
 from pytest import param
 
-from utilities.hypothesis.numpy import float_arrays
-from utilities.hypothesis.numpy import int_arrays
+from utilities.hypothesis import float_arrays
+from utilities.hypothesis import int_arrays
 from utilities.numpy import NDArray0
 from utilities.numpy import NDArray1
 from utilities.numpy import NDArray2

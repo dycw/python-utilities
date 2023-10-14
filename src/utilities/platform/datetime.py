@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from re import sub
 
-from utilities.platform import SYSTEM
-from utilities.platform import System
 from utilities.typing import never
+
+from .platform import SYSTEM  # noqa: TID252
+from .platform import System  # noqa: TID252
 
 
 def maybe_sub_pct_y(text: str, /) -> str:

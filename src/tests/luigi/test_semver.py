@@ -3,8 +3,8 @@ from __future__ import annotations
 from hypothesis import given
 from semver import VersionInfo
 
-from utilities.hypothesis.semver import versions
-from utilities.luigi.semver import VersionParameter
+from utilities.hypothesis import versions
+from utilities.luigi import VersionParameter
 
 
 class TestVersionParameter:

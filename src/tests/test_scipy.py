@@ -14,7 +14,7 @@ from numpy.testing import assert_equal
 from pytest import mark
 from pytest import param
 
-from utilities.hypothesis.numpy import float_arrays
+from utilities.hypothesis import float_arrays
 from utilities.numpy import NDArrayF1
 from utilities.numpy import is_between_or_nan
 from utilities.scipy import ppf

@@ -3,13 +3,14 @@ from __future__ import annotations
 from holoviews import Curve
 from holoviews.plotting import bokeh
 
-from utilities.holoviews import apply_opts
 from utilities.numpy import has_dtype
 from utilities.text import NotAStringError
 from utilities.text import ensure_str
 from utilities.xarray import DataArrayB1
 from utilities.xarray import DataArrayF1
 from utilities.xarray import DataArrayI1
+
+from .holoviews import apply_opts  # noqa: TID252
 
 _ = bokeh
 

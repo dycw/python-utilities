@@ -5,7 +5,7 @@ from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
 from hypothesis.strategies import sampled_from
 
-from utilities.hypothesis.semver import versions
+from utilities.hypothesis import versions
 from utilities.semver import ensure_version
 
 

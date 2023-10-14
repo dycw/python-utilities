@@ -17,11 +17,11 @@ from sqlalchemy import insert
 from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis.luigi import namespace_mixins
-from utilities.hypothesis.sqlalchemy import sqlite_engines
-from utilities.luigi.sqlalchemy import DatabaseTarget
-from utilities.luigi.sqlalchemy import EngineParameter
-from utilities.luigi.sqlalchemy import TableParameter
+from utilities.hypothesis import namespace_mixins
+from utilities.hypothesis import sqlite_engines
+from utilities.luigi import DatabaseTarget
+from utilities.luigi import EngineParameter
+from utilities.luigi import TableParameter
 
 
 class TestDatabaseTarget:

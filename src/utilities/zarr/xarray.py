@@ -20,10 +20,11 @@ from utilities.numpy import NDArray1
 from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-from utilities.zarr import InvalidDimensionError
-from utilities.zarr import IselIndexer
-from utilities.zarr import NDArrayWithIndexes
-from utilities.zarr import yield_group_and_array
+
+from .zarr import InvalidDimensionError  # noqa: TID252
+from .zarr import IselIndexer  # noqa: TID252
+from .zarr import NDArrayWithIndexes  # noqa: TID252
+from .zarr import yield_group_and_array  # noqa: TID252
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA
