@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 from typing import cast
 
+from numbagg import move_exp_nanmean
+from numbagg import move_exp_nansum
 from numpy import exp
 from numpy import log
 
-from utilities._numbagg import move_exp_nanmean
-from utilities._numbagg import move_exp_nansum
 from utilities.math import FloatFinPos
 
 from .numpy import NDArrayF  # noqa: TID252

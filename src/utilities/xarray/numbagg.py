@@ -5,8 +5,8 @@ from collections.abc import Mapping
 from typing import Any
 from typing import cast
 
-from utilities._numbagg import move_exp_nanmean
-from utilities._numbagg import move_exp_nansum
+from numbagg import move_exp_nanmean
+from numbagg import move_exp_nansum
 
 from .xarray import DataArrayF  # noqa: TID252
 from .xarray import DataArrayI  # noqa: TID252
