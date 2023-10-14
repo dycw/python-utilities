@@ -28,12 +28,6 @@ from numpy import uint64
 from numpy import zeros
 from numpy.typing import NDArray
 
-from utilities.hypothesis import floats_extra
-from utilities.hypothesis import lift_draw
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis.typing import MaybeSearchStrategy
-from utilities.hypothesis.typing import Shape
 from utilities.math import IntNonNeg
 from utilities.numpy import DATE_MAX_AS_INT
 from utilities.numpy import DATE_MIN_AS_INT
@@ -56,6 +50,13 @@ from utilities.numpy import datetime64_unit_to_dtype
 from utilities.numpy import datetime64_unit_to_kind
 from utilities.numpy import datetime_to_datetime64
 from utilities.numpy import redirect_to_empty_numpy_concatenate_error
+
+from .hypothesis import MaybeSearchStrategy  # noqa: TID252
+from .hypothesis import Shape  # noqa: TID252
+from .hypothesis import floats_extra  # noqa: TID252
+from .hypothesis import lift_draw  # noqa: TID252
+from .hypothesis import lists_fixed_length  # noqa: TID252
+from .hypothesis import text_ascii  # noqa: TID252
 
 
 @composite

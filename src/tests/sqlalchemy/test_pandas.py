@@ -39,11 +39,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
 
+from utilities.hypothesis import dates_pd
+from utilities.hypothesis import datetimes_pd
+from utilities.hypothesis import int64s
+from utilities.hypothesis import sqlite_engines
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.numpy import int64s
-from utilities.hypothesis.pandas import dates_pd
-from utilities.hypothesis.pandas import datetimes_pd
-from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.numpy import datetime64ns
 from utilities.pandas import Int64
 from utilities.pandas import boolean

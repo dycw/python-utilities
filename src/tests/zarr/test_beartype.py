@@ -25,11 +25,11 @@ from xarray import DataArray
 from xarray.testing import assert_identical
 
 from utilities.class_name import get_class_name
+from utilities.hypothesis import float_arrays
+from utilities.hypothesis import int_arrays
+from utilities.hypothesis import int_indexes
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.numpy import float_arrays
-from utilities.hypothesis.numpy import int_arrays
-from utilities.hypothesis.pandas import int_indexes
 from utilities.numpy import NDArrayI1
 from utilities.warnings import suppress_warnings
 from utilities.xarray import DataArray1

@@ -34,9 +34,9 @@ from utilities.datetime import serialize_date
 from utilities.datetime import serialize_datetime
 from utilities.datetime import serialize_time
 from utilities.datetime import serialize_timedelta
+from utilities.hypothesis import sqlite_engines
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import AppNameContainsUnderscoreError
 from utilities.typed_settings import _get_loaders

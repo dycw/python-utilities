@@ -26,10 +26,10 @@ from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.class_name import get_class_name
+from utilities.hypothesis import float_arrays
+from utilities.hypothesis import int_arrays
 from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.numpy import float_arrays
-from utilities.hypothesis.numpy import int_arrays
 from utilities.numpy import NDArrayI1
 from utilities.numpy import NDArrayO1
 from utilities.numpy import datetime64D

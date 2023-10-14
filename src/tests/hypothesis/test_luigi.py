@@ -7,7 +7,7 @@ from hypothesis.strategies import DataObject
 from hypothesis.strategies import data
 from luigi import Task
 
-from utilities.hypothesis.luigi import namespace_mixins
+from utilities.hypothesis import namespace_mixins
 
 
 class TestNamespaceMixins:

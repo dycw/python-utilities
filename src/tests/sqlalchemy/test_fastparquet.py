@@ -15,8 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
 from utilities.fastparquet import get_dtypes
+from utilities.hypothesis import sqlite_engines
 from utilities.hypothesis import temp_paths
-from utilities.hypothesis.sqlalchemy import sqlite_engines
 from utilities.pandas import Int64
 from utilities.sqlalchemy import ensure_table_created
 from utilities.sqlalchemy import get_table

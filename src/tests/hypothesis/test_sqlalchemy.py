@@ -17,7 +17,7 @@ from sqlalchemy import insert
 from sqlalchemy import select
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis.sqlalchemy import sqlite_engines
+from utilities.hypothesis import sqlite_engines
 
 
 class TestSQLiteEngines:

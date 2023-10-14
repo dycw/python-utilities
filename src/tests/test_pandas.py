@@ -30,7 +30,7 @@ from pytest import raises
 from utilities.datetime import TODAY
 from utilities.datetime import UTC
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.pandas import timestamps
+from utilities.hypothesis import timestamps
 from utilities.numpy import datetime64ns
 from utilities.pandas import TIMESTAMP_MAX_AS_DATE
 from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME

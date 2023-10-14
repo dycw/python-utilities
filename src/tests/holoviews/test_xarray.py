@@ -9,12 +9,12 @@ from utilities.holoviews.xarray import ArrayNameIsEmptyStringError
 from utilities.holoviews.xarray import ArrayNameNotAStringError
 from utilities.holoviews.xarray import plot_curve
 from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import bool_data_arrays
+from utilities.hypothesis import float_data_arrays
+from utilities.hypothesis import int_indexes
 from utilities.hypothesis import text_ascii
-from utilities.hypothesis.pandas import int_indexes
-from utilities.hypothesis.xarray import bool_data_arrays
-from utilities.hypothesis.xarray import float_data_arrays
-from utilities.xarray.xarray import DataArrayB1
-from utilities.xarray.xarray import DataArrayF1
+from utilities.xarray import DataArrayB1
+from utilities.xarray import DataArrayF1
 
 
 class TestPlotCurve:

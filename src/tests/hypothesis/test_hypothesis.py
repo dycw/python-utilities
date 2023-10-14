@@ -8,8 +8,6 @@ from math import isinf
 from math import isnan
 from pathlib import Path
 from re import search
-from subprocess import PIPE
-from subprocess import check_output
 
 from hypothesis import Phase
 from hypothesis import assume
@@ -33,13 +31,9 @@ from pytest import param
 from pytest import raises
 
 from utilities.datetime import UTC
-from utilities.git import _GET_BRANCH_NAME
-from utilities.hypothesis import _MAX_EXAMPLES
-from utilities.hypothesis import _NO_SHRINK
 from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import datetimes_utc
 from utilities.hypothesis import floats_extra
-from utilities.hypothesis import git_repos
 from utilities.hypothesis import hashables
 from utilities.hypothesis import lists_fixed_length
 from utilities.hypothesis import setup_hypothesis_profiles
@@ -49,6 +43,8 @@ from utilities.hypothesis import temp_paths
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis import text_clean
 from utilities.hypothesis import text_printable
+from utilities.hypothesis.hypothesis import _MAX_EXAMPLES
+from utilities.hypothesis.hypothesis import _NO_SHRINK
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.tempfile import TemporaryDirectory
@@ -155,21 +151,6 @@ class TestFloatsExtra:
                 assert x != -inf
         if integral:
             assert (isfinite(x) and x == round(x)) or not isfinite(x)
-
-
-class TestGitRepos:
-    @given(data=data())
-    def test_fixed(self, *, data: DataObject) -> None:
-        branch = data.draw(text_ascii(min_size=1) | none())
-        repo = data.draw(git_repos(branch=branch))
-        assert isinstance(repo, TemporaryDirectory)
-        path = repo.path
-        assert set(path.iterdir()) == {path.joinpath(".git")}
-        if branch is not None:
-            output = check_output(
-                _GET_BRANCH_NAME, stderr=PIPE, cwd=path, text=True  # noqa: S603
-            )
-            assert output.strip("\n") == branch
 
 
 class TestHashables:
