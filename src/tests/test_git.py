@@ -13,14 +13,13 @@ from utilities.git import get_repo_name
 from utilities.git import get_repo_root
 from utilities.hypothesis import git_repos
 from utilities.hypothesis import text_ascii
-from utilities.tempfile import TemporaryDirectory
 
 
 class TestGetBranchName:
     @given(data=data(), branch=text_ascii(min_size=1))
     def test_main(self, *, data: DataObject, branch: str) -> None:
-        repo = data.draw(git_repos(branch=branch))
-        result = get_branch_name(cwd=repo.path)
+        path = data.draw(git_repos(branch=branch))
+        result = get_branch_name(cwd=path)
         assert result == branch
 
 
@@ -32,9 +31,8 @@ class TestGetRepoName:
 
 
 class TestGetRepoRoot:
-    @given(repo=git_repos())
-    def test_main(self, *, repo: TemporaryDirectory) -> None:
-        path = repo.path
+    @given(path=git_repos())
+    def test_main(self, *, path: Path) -> None:
         result = get_repo_root(cwd=path)
         assert result == path.resolve()
 

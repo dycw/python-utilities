@@ -4,13 +4,17 @@ from pathlib import Path
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
+from hypothesis import given
+from hypothesis.strategies import booleans
 from pytest import mark
 from pytest import param
 from pytest import raises
 
+from utilities.hypothesis.hypothesis import temp_paths
 from utilities.pathlib import PathLike
 from utilities.pathlib import ensure_suffix
 from utilities.pathlib import temp_cwd
+from utilities.pathlib import walk
 
 
 class TestEnsureSuffix:
@@ -41,6 +45,35 @@ class TestPathLike:
     def test_error(self) -> None:
         with raises(BeartypeAbbyHintViolation):
             die_if_unbearable(None, PathLike)
+
+
+class TestWalk:
+    @given(
+        root=temp_paths(),
+        topdown=booleans(),
+        onerror=booleans(),
+        followlinks=booleans(),
+    )
+    def test_main(
+        self, *, root: Path, topdown: bool, onerror: bool, followlinks: bool
+    ) -> None:
+        def on_error(error: OSError, /) -> None:
+            assert error.args != ()
+
+        for dirpath, dirnames, filenames in walk(
+            root,
+            topdown=topdown,
+            onerror=on_error if onerror else None,
+            followlinks=followlinks,
+        ):
+            assert isinstance(dirpath, Path)
+            assert isinstance(dirnames, list)
+            for dirname in dirnames:
+                assert isinstance(dirname, Path)
+                assert dirname.is_dir()
+            for filename in filenames:
+                assert isinstance(filename, Path)
+                assert filename.is_file()
 
 
 class TestTempCWD:

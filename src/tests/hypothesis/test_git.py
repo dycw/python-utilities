@@ -11,16 +11,13 @@ from hypothesis.strategies import none
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import git_repos
 from utilities.hypothesis import text_ascii
-from utilities.tempfile import TemporaryDirectory
 
 
 class TestGitRepos:
     @given(data=data())
     def test_fixed(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
-        repo = data.draw(git_repos(branch=branch))
-        assert isinstance(repo, TemporaryDirectory)
-        path = repo.path
+        path = data.draw(git_repos(branch=branch))
         assert set(path.iterdir()) == {path.joinpath(".git")}
         if branch is not None:
             output = check_output(
