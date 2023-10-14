@@ -11,8 +11,9 @@ from utilities.atomicwrites import writer
 from utilities.fastparquet import Compression
 from utilities.fastparquet import write_parquet
 from utilities.pathlib import PathLike
-from utilities.sqlalchemy import yield_connection
-from utilities.sqlalchemy.pandas import select_to_dataframe
+
+from .pandas import select_to_dataframe  # noqa: TID252
+from .sqlalchemy import yield_connection  # noqa: TID252
 
 
 def select_to_parquet(

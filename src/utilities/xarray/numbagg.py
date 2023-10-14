@@ -7,8 +7,9 @@ from typing import cast
 
 from utilities._numbagg import move_exp_nanmean
 from utilities._numbagg import move_exp_nansum
-from utilities.xarray.xarray import DataArrayF
-from utilities.xarray.xarray import DataArrayI
+
+from .xarray import DataArrayF  # noqa: TID252
+from .xarray import DataArrayI  # noqa: TID252
 
 
 def ewma(

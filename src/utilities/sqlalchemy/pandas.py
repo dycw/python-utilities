@@ -18,7 +18,6 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement
 from sqlalchemy.sql import Select
 
-from utilities.bidict import snake_case_mappings
 from utilities.iterables import IterableContainsDuplicatesError
 from utilities.iterables import check_duplicates
 from utilities.more_itertools import EmptyIterableError
@@ -31,17 +30,19 @@ from utilities.pandas import datetime64nsutc
 from utilities.pandas import string
 from utilities.pandas import timestamp_to_date
 from utilities.pandas import timestamp_to_datetime
-from utilities.sqlalchemy import get_column_names
-from utilities.sqlalchemy import get_columns
-from utilities.sqlalchemy import get_dialect
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import model_to_dict
-from utilities.sqlalchemy import yield_connection
 from utilities.text import ensure_str
 from utilities.text import snake_case
+from utilities.text import snake_case_mappings
+
+from .sqlalchemy import get_column_names  # noqa: TID252
+from .sqlalchemy import get_columns  # noqa: TID252
+from .sqlalchemy import get_dialect  # noqa: TID252
+from .sqlalchemy import get_table  # noqa: TID252
+from .sqlalchemy import model_to_dict  # noqa: TID252
+from .sqlalchemy import yield_connection  # noqa: TID252
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import SeriesA
+    from utilities.pandas import SeriesA
 
 
 def insert_dataframe(

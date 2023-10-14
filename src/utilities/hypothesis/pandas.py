@@ -28,9 +28,9 @@ from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 from utilities.pandas import string
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
-    from utilities.pandas.typing import IndexI
-    from utilities.pandas.typing import IndexS
+    from utilities.pandas import IndexA
+    from utilities.pandas import IndexI
+    from utilities.pandas import IndexS
 
 
 @composite
@@ -155,7 +155,7 @@ def timestamps(
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)
+        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
         timestamp += timedelta
         _ = assume(min_value <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value)

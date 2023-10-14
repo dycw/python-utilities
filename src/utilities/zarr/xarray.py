@@ -26,7 +26,7 @@ from utilities.zarr import NDArrayWithIndexes
 from utilities.zarr import yield_group_and_array
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
+    from utilities.pandas import IndexA
 
 
 def save_data_array_to_disk(

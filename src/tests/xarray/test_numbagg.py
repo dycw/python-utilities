@@ -16,11 +16,11 @@ from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import text_ascii
 from utilities.hypothesis.pandas import int_indexes
 from utilities.hypothesis.xarray import float_data_arrays
-from utilities.xarray.numbagg import ewma
-from utilities.xarray.numbagg import exp_moving_sum
+from utilities.xarray import ewma
+from utilities.xarray import exp_moving_sum
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas.typing import IndexA
+    from utilities.pandas import IndexA
 
 
 class TestEwma:

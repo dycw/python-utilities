@@ -12,9 +12,9 @@ from pytest import mark
 from pytest import param
 from pytest import raises
 
-from utilities.numpy.bottleneck import ZeroPercentageChangeSpanError
-from utilities.numpy.bottleneck import ffill
-from utilities.numpy.bottleneck import pct_change
+from utilities.numpy import ZeroPercentageChangeSpanError
+from utilities.numpy import ffill
+from utilities.numpy import pct_change
 
 
 class TestFFill:
