@@ -9,6 +9,7 @@ from hypothesis.strategies import integers
 from utilities.hypothesis import text_ascii
 from utilities.luigi.server import _get_args
 from utilities.luigi.server import main
+from utilities.pathlib import temp_cwd
 
 
 class TestLuigiServer:
@@ -19,14 +20,15 @@ class TestLuigiServer:
         port=integers(),
     )
     def test_get_args(
-        self, pid_file: Path, log_dir: str, state_path: str, port: int
+        self, *, pid_file: Path, log_dir: str, state_path: str, port: int
     ) -> None:
         _ = _get_args(
             pid_file=pid_file, log_dir=log_dir, state_path=state_path, port=port
         )
 
-    def test_dry_run(self) -> None:
+    def test_dry_run(self, *, tmp_path: Path) -> None:
         runner = CliRunner()
         args = ["--dry-run"]
-        result = runner.invoke(main, args)
+        with temp_cwd(tmp_path):
+            result = runner.invoke(main, args)
         assert result.exit_code == 0
