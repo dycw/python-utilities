@@ -17,7 +17,9 @@ requires-python = ">= 3.10"
 [project.optional-dependencies]
 airium = ["airium >= 0.2.6"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
+attrs = ["attrs >= 23.1.0"]
 beartype = ["beartype >= 0.16.3"]
+bottleneck = ["bottleneck >= 1.3.7"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.4"]
 cvxpy = ["cvxpy >= 1.4.1; sys_platform == 'darwin'"]
@@ -77,44 +79,37 @@ dev = [
   "pyodbc; sys_platform == 'darwin'",
 ]
 fastapi = ["fastapi >= 0.103.0"]
-fastparquet = [
-  "fastparquet >= 2023.8.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
-]
+fastparquet = ["fastparquet >= 2023.8.0", "atomicwrites >= 1.4.1"]
 fpdf2 = [
   "fpdf2 >= 2.7.6",
-  "atomicwrites >= 1.4.1",  # holoviews
-  "holoviews >= 1.17.1",  # holoviews
-  "selenium >= 4.14.0",  # holoviews
+  "atomicwrites >= 1.4.1",
+  "holoviews >= 1.17.1",
+  "selenium >= 4.14.0",
 ]
 hatch = ["hatch >= 1.7.0"]
 holoviews = [
   "holoviews >= 1.17.1",
   "selenium >= 4.14.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
+  "atomicwrites >= 1.4.1",
 ]
 hypothesis = ["hypothesis >= 6.87.4"]
 loguru = ["loguru >= 0.7.2"]
 luigi = ["luigi >= 3.4.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 more-itertools = ["more-itertools >= 10.1.0"]
-numpy = ["numbagg >= 0.4.5", "numpy >= 1.25.2"]
+numbagg = ["numbagg >= 0.4.5"]
+numpy = ["numpy >= 1.25.2"]
+numpy-all = ["numbagg >= 0.4.5", "numpy >= 1.25.2"]
 pandas = ["pandas >= 2.1.1"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.5"]
-pyinstrument = [
-  "pyinstrument >= 4.6.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
-]
+pyinstrument = ["pyinstrument >= 4.6.0", "atomicwrites >= 1.4.1"]
 pypi = [
   "pypiserver[passlib] >= 2.0.1",
   "loguru >= 0.7.2",  # loguru
   "typed-settings[click] >= 23.0.0",  # typed-settings
 ]
-pytest = [
-  "pytest >= 7.4.0",
-  "atomicwrites >= 1.4.1",  # atomicwrites
-]
+pytest = ["pytest >= 7.4.0"]
 pytest-check = ["pytest-check >= 2.2.2"]
 scipy = ["scipy >= 1.11.3"]
 scripts = [
@@ -122,33 +117,26 @@ scripts = [
   "typed-settings[click] >= 23.0.0",  # typed-settings
 ]
 semver = ["semver >= 3.0.2"]
-sqlalchemy = [
-  "sqlalchemy >= 2.0.22",
-  "timeout-decorator >= 0.5.0",
-  "more-itertools >= 10.1.0",  # more-itertools
-]
+sqlalchemy = ["sqlalchemy >= 2.0.22"]
 test = [
+  "atomicwrites >= 1.4.1",
   "coverage-conditional-plugin >= 0.9.0",
   "exceptiongroup >= 1.1.3",
+  "freezegun >= 1.2.2",
   "hypothesis >= 6.87.4",
+  "hypothesis-sqlalchemy >= 1.1.0",
   "pytest >= 7.4.0",
   "pytest-check >= 2.2.2",
   "pytest-cov >= 4.1.0",
   "pytest-instafail >= 0.5.0",
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
-  "hypothesis >= 6.87.4",  # hypothesis
-  "pytest >= 7.4.0",  # pytest
-  "pytest-check >= 2.2.2",  # pytest-check
-  "atomicwrites >= 1.4.1",  # pytest
 ]
 tqdm = ["tqdm >= 4.66.1"]
 typed-settings = ["typed-settings[click] >= 23.0.0"]
-xarray = ["bottleneck >= 1.3.7", "xarray >= 2023.9.0", "numbagg >= 0.4.5"]
-zarr = [
-  "zarr >= 2.16.1",
-  "atomicwrites >= 1.4.1",  # atomicwrites
-]
+xarray = ["xarray >= 2023.9.0"]
+xarray-all = ["bottleneck >= 1.3.7", "xarray >= 2023.9.0", "numbagg >= 0.4.5"]
+zarr = ["zarr >= 2.16.1", "atomicwrites >= 1.4.1"]
 
 [project.scripts]
 clean-dir = "utilities.clean_dir:main"

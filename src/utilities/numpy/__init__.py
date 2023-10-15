@@ -871,7 +871,7 @@ else:
 try:
     from .numbagg import ewma
     from .numbagg import exp_moving_sum
-except ModuleNotFoundError:  # pragma: no cover
+except (ImportError, ModuleNotFoundError):  # pragma: no cover
     pass
 else:
     __all__ += ["ewma", "exp_moving_sum"]

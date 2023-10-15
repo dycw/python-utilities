@@ -18,10 +18,10 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement
 from sqlalchemy.sql import Select
 
-from utilities.iterables import IterableContainsDuplicatesError
-from utilities.iterables import check_duplicates
-from utilities.more_itertools import EmptyIterableError
-from utilities.more_itertools import one
+from utilities.itertools import EmptyIterableError
+from utilities.itertools import IterableContainsDuplicatesError
+from utilities.itertools import check_duplicates
+from utilities.itertools import one
 from utilities.numpy import datetime64ns
 from utilities.numpy import has_dtype
 from utilities.pandas import Int64
