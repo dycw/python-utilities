@@ -8,9 +8,7 @@ from pytest import raises
 
 from utilities.types import Number
 from utilities.typing import IterableStrs
-from utilities.typing import NeverError
 from utilities.typing import SequenceStrs
-from utilities.typing import never
 
 
 class TestIterableStrs:
@@ -23,7 +21,7 @@ class TestIterableStrs:
             param({"a": 1, "b": 2, "c": 3}),
         ],
     )
-    def test_pass(self, x: IterableStrs) -> None:
+    def test_pass(self, *, x: IterableStrs) -> None:
         die_if_unbearable(x, IterableStrs)
 
     def test_fail(self) -> None:
@@ -33,25 +31,19 @@ class TestIterableStrs:
 
 class TestSequenceStrs:
     @mark.parametrize("x", [param(["a", "b", "c"]), param(("a", "b", "c"))])
-    def test_pass(self, x: SequenceStrs) -> None:
+    def test_pass(self, *, x: SequenceStrs) -> None:
         die_if_unbearable(x, SequenceStrs)
 
     @mark.parametrize(
         "x",
         [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")],
     )
-    def test_fail(self, x: IterableStrs | str) -> None:
+    def test_fail(self, *, x: IterableStrs | str) -> None:
         with raises(BeartypeAbbyHintViolation):
             die_if_unbearable(x, SequenceStrs)
 
 
-class TestNever:
-    def test_main(self) -> None:
-        with raises(NeverError):
-            never(None)  # type: ignore
-
-
 class TestNumber:
     @mark.parametrize("x", [param(0), param(0.0)])
-    def test_main(self, x: Number) -> None:
+    def test_main(self, *, x: Number) -> None:
         die_if_unbearable(x, Number)

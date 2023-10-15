@@ -15,8 +15,6 @@ from subprocess import CalledProcessError
 from subprocess import check_output
 from typing import Any
 
-from loguru import logger
-
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 from utilities.typing import IterableStrs
@@ -63,10 +61,17 @@ def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:
         _ = check_output(list(args), stderr=PIPE, text=True)  # noqa: S603
     except CalledProcessError as error:  # pragma: no cover
         pattern = _address_already_in_use_pattern()
-        if exist_ok and search(pattern, error.stderr, flags=MULTILINE):
-            logger.info("Address already in use")
+        try:
+            from loguru import logger
+        except ModuleNotFoundError:
+            info = exception = print
         else:
-            logger.exception("Address already in use")
+            info = logger.info
+            exception = logger.exception
+        if exist_ok and search(pattern, error.stderr, flags=MULTILINE):
+            info("Address already in use")
+        else:
+            exception("Address already in use")
             raise
 
 

@@ -2,14 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark
 from pytest import param
-from pytest import raises
 
 from utilities.types import NoneType
-from utilities.types import Number
 from utilities.types import ensure_class
 from utilities.types import issubclass_except_bool_int
 
@@ -18,7 +14,7 @@ class TestEnsureClass:
     @mark.parametrize(
         ("x", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
     )
-    def test_main(self, x: Any, expected: type[Any]) -> None:
+    def test_main(self, *, x: Any, expected: type[Any]) -> None:
         assert ensure_class(x) is expected
 
 
@@ -31,7 +27,7 @@ class TestIsSubclassExceptBoolInt:
             param(int, int, True),
         ],
     )
-    def test_main(self, x: type[Any], y: type[Any], expected: bool) -> None:
+    def test_main(self, *, x: type[Any], y: type[Any], expected: bool) -> None:
         assert issubclass_except_bool_int(x, y) is expected
 
     def test_subclass_of_int(self) -> None:
@@ -44,13 +40,3 @@ class TestIsSubclassExceptBoolInt:
 class TestNoneType:
     def test_main(self) -> None:
         assert isinstance(None, NoneType)
-
-
-class TestNumber:
-    @mark.parametrize("x", [param(0), param(0.0)])
-    def test_success(self, x: Number) -> None:
-        die_if_unbearable(x, Number)
-
-    def test_error(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
-            die_if_unbearable("0", Number)

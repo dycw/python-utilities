@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Set as AbstractSet
+from itertools import pairwise
 from math import inf
 from math import isfinite
 from math import isinf
@@ -25,7 +26,6 @@ from hypothesis.strategies import integers
 from hypothesis.strategies import just
 from hypothesis.strategies import none
 from hypothesis.strategies import sets
-from more_itertools import pairwise
 from pytest import mark
 from pytest import param
 from pytest import raises

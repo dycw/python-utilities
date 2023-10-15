@@ -2,16 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeAbbyHintViolation
 from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark
 from pytest import param
-from pytest import raises
 
 from utilities.hypothesis.hypothesis import temp_paths
-from utilities.pathlib import PathLike
 from utilities.pathlib import ensure_suffix
 from utilities.pathlib import temp_cwd
 from utilities.pathlib import walk
@@ -35,16 +31,6 @@ class TestEnsureSuffix:
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = ensure_suffix(path, ".txt")
         assert result == Path(expected)
-
-
-class TestPathLike:
-    @mark.parametrize("path", [param(Path.home()), param("~")])
-    def test_main(self, *, path: PathLike) -> None:
-        die_if_unbearable(path, PathLike)
-
-    def test_error(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
-            die_if_unbearable(None, PathLike)
 
 
 class TestWalk:

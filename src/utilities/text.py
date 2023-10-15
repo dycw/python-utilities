@@ -5,8 +5,8 @@ from re import sub
 from textwrap import dedent
 from typing import Any
 
-from utilities.iterables import IterableContainsDuplicatesError
-from utilities.iterables import check_duplicates
+from utilities.itertools import IterableContainsDuplicatesError
+from utilities.itertools import check_duplicates
 from utilities.typing import IterableStrs
 
 

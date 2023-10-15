@@ -141,7 +141,7 @@ def _map_annotation(  # noqa: PLR0911, PLR0912
     try:
         from sqlalchemy import Engine
 
-        from utilities.luigi.sqlalchemy import EngineParameter
+        from utilities.luigi import EngineParameter
     except ModuleNotFoundError:  # pragma: no cover
         pass
     else:

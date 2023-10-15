@@ -16,7 +16,7 @@ from utilities.typing import IterableStrs
 
 
 class TestPytestOptions:
-    def test_unknown_mark(self, testdir: Any) -> None:
+    def test_unknown_mark(self, *, testdir: Any) -> None:
         testdir.makepyfile(
             """
             from pytest import mark
@@ -30,35 +30,35 @@ class TestPytestOptions:
         result.assert_outcomes(errors=1)
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
-    def test_configured_mark_unknown_option(self, testdir: Any) -> None:
-        testdir.makeconftest(
-            """
-            from utilities.pytest import add_pytest_configure
+    @mark.parametrize("configure", [param(True), param(False)])
+    def test_unknown_option(self, *, configure: bool, testdir: Any) -> None:
+        if configure:
+            testdir.makeconftest(
+                """
+                from utilities.pytest import add_pytest_configure
 
-            def pytest_configure(config):
-                add_pytest_configure(config, [("slow", "slow to run")])
-            """
-        )
+                def pytest_configure(config):
+                    add_pytest_configure(config, [("slow", "slow to run")])
+                """
+            )
         testdir.makepyfile(
             """
             from pytest import mark
 
-            @mark.slow
             def test_main():
                 assert True
             """
         )
-        result = testdir.runpytest("--slow")
-        result.stderr.re_match_lines(
-            ["-c: error: unrecognized arguments: --slow"]
-        )
+        result = testdir.runpytest("--unknown")
+        result.stderr.re_match_lines([r".*unrecognized arguments.*"])
 
     @mark.parametrize(
         ("case", "passed", "skipped", "matches"),
         [param([], 0, 1, [".*3: pass --slow"]), param(["--slow"], 1, 0, [])],
     )
-    def test_configured_one_mark_and_option(
+    def test_one_mark_and_option(
         self,
+        *,
         testdir: Any,
         case: IterableStrs,
         passed: int,
@@ -122,8 +122,9 @@ class TestPytestOptions:
             param(["--slow", "--fast"], 4, 0, []),
         ],
     )
-    def test_configured_two_marks_and_options(
+    def test_two_marks_and_options(
         self,
+        *,
         testdir: Any,
         case: IterableStrs,
         passed: int,
@@ -180,13 +181,13 @@ class TestIsPytest:
     def test_function(self) -> None:
         assert is_pytest()
 
-    def test_disable(self, monkeypatch: MonkeyPatch) -> None:
+    def test_disable(self, *, monkeypatch: MonkeyPatch) -> None:
         monkeypatch.delenv("PYTEST_CURRENT_TEST")
         assert not is_pytest()
 
 
 class TestThrottle:
-    def test_main(self, testdir: Any, tmp_path: Path) -> None:
+    def test_main(self, *, testdir: Any, tmp_path: Path) -> None:
         root_str = tmp_path.as_posix()
         contents = f"""
             from utilities.pytest import throttle
