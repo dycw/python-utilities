@@ -4,27 +4,18 @@ from functools import cache
 from typing import Any
 from typing import cast
 
+import cvxpy
 import numpy as np
-from numpy import array
-from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
-from pytest import skip
-
-from utilities.numpy import NDArrayF
-
-try:
-    import cvxpy
-except ModuleNotFoundError:
-    skip(reason="`cvxpy` missing", allow_module_level=True)
-
-
 from cvxpy import Expression
 from cvxpy import Maximize
 from cvxpy import Minimize
 from cvxpy import Problem
 from cvxpy import Variable
+from numpy import array
+from numpy.testing import assert_equal
+from pytest import mark
+from pytest import param
+from pytest import raises
 
 from utilities.cvxpy import InfeasibleProblemError
 from utilities.cvxpy import UnboundedProblemError
@@ -41,6 +32,7 @@ from utilities.cvxpy import solve
 from utilities.cvxpy import sqrt
 from utilities.cvxpy import subtract
 from utilities.cvxpy import sum_
+from utilities.numpy import NDArrayF
 
 
 @cache

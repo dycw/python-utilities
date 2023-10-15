@@ -1,6 +1,6 @@
 #
-
 # build-system
+
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
@@ -20,7 +20,7 @@ atomicwrites = ["atomicwrites >= 1.4.1"]
 beartype = ["beartype >= 0.16.3"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.4"]
-cvxpy = ["cvxpy >= 1.4.1; sys_platform == 'darwin'"]
+cvxpy = ["cvxpy >= 1.4.1"]
 dev = [
   # core
   "airium >= 0.2.6",  # airium
@@ -29,7 +29,7 @@ dev = [
   "bottleneck >= 1.3.7",  # xarray
   "click >= 8.1.7",  # click
   "cryptography >= 41.0.4",  # cryptography
-  "cvxpy >= 1.4.1; sys_platform == 'darwin'",  # cvxpy
+  "cvxpy >= 1.4.1",  # cvxpy
   "fastapi >= 0.103.0",  # fastapi
   "fastparquet >= 2023.8.0",  # fastparquet
   "fpdf2 >= 2.7.6",  # fpdf2
@@ -164,9 +164,6 @@ target-version = ["py310"]
 
 # coverage
 [tool.coverage]
-
-[tool.coverage.coverage_conditional_plugin.omit]
-'not is_installed("cvxpy")' = "src/utilities/cvxpy.py"
 
 [tool.coverage.coverage_conditional_plugin.rules]
 os-ne-linux = 'sys_platform != "linux"'
