@@ -29,7 +29,7 @@ from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
 from utilities.datetime import ensure_date
 from utilities.datetime import ensure_datetime
-from utilities.iterables import is_iterable_not_str
+from utilities.itertools import is_iterable_not_str
 from utilities.numpy import MultipleTrueElementsError
 from utilities.numpy import NDArray1
 from utilities.numpy import NDArrayB1

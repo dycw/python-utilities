@@ -16,7 +16,6 @@ from typing import Literal
 from typing import NoReturn
 from typing import cast
 
-from more_itertools import chunked
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -58,9 +57,10 @@ from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
+from utilities.itertools import chunked
+from utilities.itertools import one
 from utilities.math import FloatNonNeg
 from utilities.math import IntNonNeg
-from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.text import snake_case
 from utilities.text import snake_case_mappings
@@ -769,6 +769,6 @@ def yield_in_clause_rows(
     else:
         chunk_size_use = chunk_size
     with yield_connection(engine_or_conn) as conn:
-        for values_i in chunked(values, chunk_size_use):
+        for values_i in chunked(values, n=chunk_size_use):
             sel_i = sel.where(column.in_(values_i))
             yield from conn.execute(sel_i).all()

@@ -50,7 +50,7 @@ repos:
         args:
           [
             --select=FI18,
-            "--per-file-ignores=src/tests/luigi/test_attrs.py:FI18,src/tests/test_typed_settings.py:FI18",
+            "--per-file-ignores=src/tests/test_typed_settings.py:FI18,src/tests/luigi/test_typed_settings.py:FI18",
           ]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6

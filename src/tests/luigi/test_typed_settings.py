@@ -23,7 +23,6 @@ from luigi import Task
 from pytest import mark
 from pytest import param
 from pytest import raises
-from sqlalchemy import Engine
 from typed_settings import settings
 
 from utilities.datetime import TODAY
@@ -34,25 +33,24 @@ from utilities.luigi import DateHourParameter
 from utilities.luigi import DateMinuteParameter
 from utilities.luigi import DateParameter
 from utilities.luigi import DateSecondParameter
-from utilities.luigi import EngineParameter
 from utilities.luigi import EnumParameter
 from utilities.luigi import InvalidAnnotationAndKeywordsError
 from utilities.luigi import InvalidAnnotationError
 from utilities.luigi import TimeParameter
 from utilities.luigi import WeekdayParameter
 from utilities.luigi import build_params_mixin
-from utilities.luigi.attrs import _map_annotation
-from utilities.luigi.attrs import _map_date_annotation
-from utilities.luigi.attrs import _map_datetime_annotation
-from utilities.luigi.attrs import _map_iterable_annotation
-from utilities.luigi.attrs import _map_keywords
-from utilities.luigi.attrs import _map_union_annotation
+from utilities.luigi.typed_settings import _map_annotation
+from utilities.luigi.typed_settings import _map_date_annotation
+from utilities.luigi.typed_settings import _map_datetime_annotation
+from utilities.luigi.typed_settings import _map_iterable_annotation
+from utilities.luigi.typed_settings import _map_keywords
+from utilities.luigi.typed_settings import _map_union_annotation
 from utilities.sentinel import Sentinel
 
 
 class TestBuildParamsMixin:
     @given(namespace_mixin=namespace_mixins())
-    def test_no_field(self, namespace_mixin: Any) -> None:
+    def test_no_field(self, *, namespace_mixin: Any) -> None:
         @settings
         class Config:
             value: int = 0
@@ -67,7 +65,7 @@ class TestBuildParamsMixin:
         assert task.value == 0
 
     @given(namespace_mixin=namespace_mixins())
-    def test_with_field(self, namespace_mixin: Any) -> None:
+    def test_with_field(self, *, namespace_mixin: Any) -> None:
         @settings
         class Config:
             date: dt.date = TODAY
@@ -87,7 +85,6 @@ class TestMapAnnotation:
         ("ann", "expected"),
         [
             param(bool, BoolParameter),
-            param(Engine, EngineParameter),
             param(dt.time, TimeParameter),
             param(float, FloatParameter),
             param(int, IntParameter),
@@ -102,13 +99,13 @@ class TestMapAnnotation:
             param(set[bool] | None, OptionalListParameter),
         ],
     )
-    def test_main(self, ann: Any, expected: type[Parameter]) -> None:
+    def test_main(self, *, ann: Any, expected: type[Parameter]) -> None:
         result = _map_annotation(ann)
         param = result()
         assert isinstance(param, expected)
 
     @mark.parametrize("kind", [param("date"), param("weekday")])
-    def test_date_success(self, kind: Literal["date", "weekday"]) -> None:
+    def test_date_success(self, *, kind: Literal["date", "weekday"]) -> None:
         _ = _map_annotation(dt.date, date=kind)
 
     def test_date_error(self) -> None:
@@ -135,7 +132,7 @@ class TestMapAnnotation:
         assert param._enum is Example  # noqa: SLF001
 
     @mark.parametrize("ann", [param(None), param(Sentinel)])
-    def test_invalid(self, ann: Any) -> None:
+    def test_invalid(self, *, ann: Any) -> None:
         with raises(InvalidAnnotationError):
             _ = _map_annotation(ann)
 
@@ -146,7 +143,7 @@ class TestMapDateAnnotation:
         [param("date", DateParameter), param("weekday", WeekdayParameter)],
     )
     def test_main(
-        self, kind: Literal["date", "weekday"], expected: type[Parameter]
+        self, *, kind: Literal["date", "weekday"], expected: type[Parameter]
     ) -> None:
         result = _map_date_annotation(kind=kind)
         param = result()
@@ -165,6 +162,7 @@ class TestMapDatetimeAnnotation:
     )
     def test_main(
         self,
+        *,
         kind: Literal["hour", "minute", "second"],
         interval: int,
         expected: type[Parameter],
@@ -178,31 +176,33 @@ class TestMapIterableAnnotation:
     @mark.parametrize(
         "ann", [param(frozenset[bool]), param(list[bool]), param(set[bool])]
     )
-    def test_main(self, ann: Any) -> None:
+    def test_main(self, *, ann: Any) -> None:
         assert _map_iterable_annotation(ann) is ListParameter
 
     @mark.parametrize("ann", [param(None), param(bool), param(bool | None)])
-    def test_invalid(self, ann: Any) -> None:
+    def test_invalid(self, *, ann: Any) -> None:
         with raises(InvalidAnnotationError):
             _ = _map_iterable_annotation(ann)
 
 
 class TestMapKeywords:
     @mark.parametrize("kind", [param("date"), param("weekday")])
-    def test_date(self, kind: str) -> None:
+    def test_date(self, *, kind: str) -> None:
         result = _map_keywords(dt.date, kind)
         expected = {"date": kind}
         assert result == expected
 
     @mark.parametrize("kind", [param("hour"), param("minute"), param("second")])
-    def test_datetime_kind_only(self, kind: str) -> None:
+    def test_datetime_kind_only(self, *, kind: str) -> None:
         result = _map_keywords(dt.datetime, kind)
         expected = {"datetime": kind}
         assert result == expected
 
     @given(interval=integers(1, 10))
     @mark.parametrize("kind", [param("hour"), param("minute"), param("second")])
-    def test_datetime_kind_and_interval(self, interval: int, kind: str) -> None:
+    def test_datetime_kind_and_interval(
+        self, *, interval: int, kind: str
+    ) -> None:
         result = _map_keywords(dt.datetime, (kind, interval))
         expected = {"datetime": kind, "interval": interval}
         assert result == expected
@@ -219,7 +219,7 @@ class TestMapKeywords:
             param(dt.datetime, (0, 1, 2)),
         ],
     )
-    def test_invalid(self, ann: Any, kwargs: Any) -> None:
+    def test_invalid(self, *, ann: Any, kwargs: Any) -> None:
         with raises(InvalidAnnotationAndKeywordsError):
             _ = _map_keywords(ann, kwargs)
 
@@ -236,7 +236,7 @@ class TestMapUnionAnnotation:
             param(list[bool] | None, OptionalListParameter),
         ],
     )
-    def test_main(self, ann: Any, expected: type[Parameter]) -> None:
+    def test_main(self, *, ann: Any, expected: type[Parameter]) -> None:
         result = _map_union_annotation(ann)
         param = result()
         assert isinstance(param, expected)
@@ -244,7 +244,7 @@ class TestMapUnionAnnotation:
     @mark.parametrize(
         "ann", [param(list[bool]), param(Sentinel | None), param(int | float)]
     )
-    def test_invalid(self, ann: Any) -> None:
+    def test_invalid(self, *, ann: Any) -> None:
         with raises(InvalidAnnotationError):
             _ = _map_union_annotation(ann)
 

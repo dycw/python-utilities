@@ -47,7 +47,7 @@ from numpy.typing import NDArray
 
 from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
-from utilities.iterables import is_iterable_not_str
+from utilities.itertools import is_iterable_not_str
 from utilities.re import extract_group
 
 # types

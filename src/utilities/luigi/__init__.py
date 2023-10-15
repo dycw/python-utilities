@@ -40,11 +40,11 @@ __all__ = [
 
 
 try:
-    from .attrs import AmbiguousDateError
-    from .attrs import AmbiguousDatetimeError
-    from .attrs import InvalidAnnotationAndKeywordsError
-    from .attrs import InvalidAnnotationError
-    from .attrs import build_params_mixin
+    from .typed_settings import AmbiguousDateError
+    from .typed_settings import AmbiguousDatetimeError
+    from .typed_settings import InvalidAnnotationAndKeywordsError
+    from .typed_settings import InvalidAnnotationError
+    from .typed_settings import build_params_mixin
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:

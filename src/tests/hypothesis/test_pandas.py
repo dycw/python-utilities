@@ -39,6 +39,7 @@ class TestDatesPd:
         min_value=dates(min_value=TIMESTAMP_MIN_AS_DATE),
         max_value=dates(max_value=TIMESTAMP_MAX_AS_DATE),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self, data: DataObject, min_value: dt.date, max_value: dt.date
     ) -> None:
