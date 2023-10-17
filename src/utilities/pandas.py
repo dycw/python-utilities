@@ -76,6 +76,8 @@ def check_dataframe(
     *,
     columns: Sequence[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
+    length: int | None = None,
+    unique: Hashable | Sequence[Hashable] | None = None,
 ) -> None:
     """Check if the properties of a DataFrame."""
     check_range_index(df.index)
@@ -88,6 +90,12 @@ def check_dataframe(
     if (dtypes is not None) and (dict(df.dtypes) != dict(dtypes)):
         msg = f"{df=}, {dtypes=}"
         raise DataFrameDTypesError(msg)
+    if (length is not None) and (len(df) != length):
+        msg = f"{df=}, {length=}"
+        raise DataFrameLengthError(msg)
+    if (unique is not None) and df.duplicated(subset=unique).any():
+        msg = f"{df=}, {unique=}"
+        raise DataFrameUniqueError(msg)
 
 
 class DataFrameColumnsNameError(ValueError):
@@ -100,6 +108,14 @@ class DataFrameColumnsError(ValueError):
 
 class DataFrameDTypesError(ValueError):
     """Raised when a DataFrame has the incorrect dtypes."""
+
+
+class DataFrameLengthError(ValueError):
+    """Raised when a DataFrame has the incorrect length."""
+
+
+class DataFrameUniqueError(ValueError):
+    """Raised when a DataFrame has non-unique values."""
 
 
 def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:

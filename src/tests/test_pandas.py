@@ -39,7 +39,9 @@ from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
 from utilities.pandas import DataFrameColumnsError
 from utilities.pandas import DataFrameColumnsNameError
 from utilities.pandas import DataFrameDTypesError
+from utilities.pandas import DataFrameLengthError
 from utilities.pandas import DataFrameRangeIndexError
+from utilities.pandas import DataFrameUniqueError
 from utilities.pandas import DifferentDTypeError
 from utilities.pandas import EmptyPandasConcatError
 from utilities.pandas import Int64
@@ -92,6 +94,24 @@ class TestCheckDataFrame:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         with raises(DataFrameDTypesError):
             check_dataframe(df, dtypes={"value": int})
+
+    def test_length_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        check_dataframe(df, length=1)
+
+    def test_length_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        with raises(DataFrameLengthError):
+            check_dataframe(df, length=2)
+
+    def test_unique_pass(self) -> None:
+        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
+        check_dataframe(df, unique=["value"])
+
+    def test_unique_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        with raises(DataFrameUniqueError):
+            check_dataframe(df, unique=["value"])
 
 
 class TestCheckRangeIndex:
