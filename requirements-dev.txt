@@ -126,7 +126,7 @@ httpx==0.25.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.87.4
+hypothesis==6.88.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis-sqlalchemy
@@ -247,7 +247,7 @@ pathspec==0.11.2
     # via hatchling
 pexpect==4.8.0
     # via hatch
-pillow==10.0.1
+pillow==10.1.0
     # via
     #   bokeh
     #   fpdf2
@@ -394,7 +394,7 @@ trio==0.22.2
     #   trio-websocket
 trio-websocket==0.11.1
     # via selenium
-trove-classifiers==2023.9.19
+trove-classifiers==2023.10.17
     # via hatchling
 typed-settings[click]==23.0.1
     # via dycw-utilities (pyproject.toml)
@@ -439,7 +439,7 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.2.1
+pip==23.3
     # via
     #   pip-tools
     #   pypiserver
