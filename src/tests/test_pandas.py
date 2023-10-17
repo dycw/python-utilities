@@ -41,6 +41,7 @@ from utilities.pandas import DataFrameColumnsNameError
 from utilities.pandas import DataFrameDTypesError
 from utilities.pandas import DataFrameLengthError
 from utilities.pandas import DataFrameRangeIndexError
+from utilities.pandas import DataFrameSortedError
 from utilities.pandas import DataFrameUniqueError
 from utilities.pandas import DifferentDTypeError
 from utilities.pandas import EmptyPandasConcatError
@@ -103,6 +104,15 @@ class TestCheckDataFrame:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         with raises(DataFrameLengthError):
             check_dataframe(df, length=2)
+
+    def test_sorted_pass(self) -> None:
+        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
+        check_dataframe(df, sorted=["value"])
+
+    def test_sorted_error(self) -> None:
+        df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
+        with raises(DataFrameSortedError):
+            check_dataframe(df, sorted=["value"])
 
     def test_unique_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])

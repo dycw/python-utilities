@@ -27,6 +27,7 @@ from pandas import RangeIndex
 from pandas import Series
 from pandas import StringDtype
 from pandas import Timestamp
+from pandas.testing import assert_frame_equal
 from pandas.testing import assert_index_equal
 
 from utilities.datetime import UTC
@@ -77,6 +78,7 @@ def check_dataframe(
     columns: Sequence[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
     length: int | None = None,
+    sorted: Hashable | Sequence[Hashable] | None = None,  # noqa: A002
     unique: Hashable | Sequence[Hashable] | None = None,
 ) -> None:
     """Check if the properties of a DataFrame."""
@@ -93,6 +95,13 @@ def check_dataframe(
     if (length is not None) and (len(df) != length):
         msg = f"{df=}, {length=}"
         raise DataFrameLengthError(msg)
+    if sorted:
+        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
+        try:
+            assert_frame_equal(df, df_sorted)
+        except AssertionError:
+            msg = f"{df=}, {sorted=}"
+            raise DataFrameSortedError(msg) from None
     if (unique is not None) and df.duplicated(subset=unique).any():
         msg = f"{df=}, {unique=}"
         raise DataFrameUniqueError(msg)
@@ -112,6 +121,10 @@ class DataFrameDTypesError(ValueError):
 
 class DataFrameLengthError(ValueError):
     """Raised when a DataFrame has the incorrect length."""
+
+
+class DataFrameSortedError(ValueError):
+    """Raised when a DataFrame has non-sorted values."""
 
 
 class DataFrameUniqueError(ValueError):
