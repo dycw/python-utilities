@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable
 from collections.abc import Iterable
+from contextlib import suppress
 from functools import wraps
 from os import environ
 from pathlib import Path
@@ -10,8 +11,10 @@ from typing import Any
 
 from utilities.atomicwrites import writer
 from utilities.datetime import UTC
+from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
-from utilities.tempfile import TEMP_DIR
+from utilities.re import NoMatchesError
+from utilities.re import extract_group
 from utilities.typing import IterableStrs
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
@@ -84,8 +87,14 @@ def is_pytest() -> bool:
     return "PYTEST_CURRENT_TEST" in environ
 
 
-def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
+def throttle(*, root: PathLike | None = None, duration: float = 1.0) -> Any:
     """Throttle a test."""
+
+    root_use = (
+        get_repo_root().joinpath(".pytest_cache")
+        if root is None
+        else Path(root)
+    )
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
@@ -94,7 +103,9 @@ def throttle(*, root: PathLike = TEMP_DIR, duration: float = 1.0) -> Any:
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]
-            path = Path(root, "pytest", test.replace("/", ":"))
+            with suppress(NoMatchesError):
+                test = extract_group(r"^(.+) \(.+\)$", test)
+            path = root_use.joinpath(*test.split("::"))
             if path.exists():
                 with path.open(mode="r") as fh:
                     contents = fh.read()
