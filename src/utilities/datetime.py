@@ -9,6 +9,7 @@ from re import sub
 from utilities.platform import SYSTEM
 from utilities.platform import System
 from utilities.re import extract_groups
+from utilities.types import Duration
 from utilities.typing import never
 
 UTC = dt.timezone.utc
@@ -42,6 +43,20 @@ def date_to_datetime(
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
+
+
+def duration_to_float(duration: Duration, /) -> float:
+    if isinstance(duration, int):
+        return float(duration)
+    if isinstance(duration, float):
+        return duration
+    return duration.total_seconds()
+
+
+def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
+    if isinstance(duration, int | float):
+        return dt.timedelta(seconds=duration)
+    return duration
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:

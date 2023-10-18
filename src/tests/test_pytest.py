@@ -187,7 +187,7 @@ class TestIsPytest:
 
 
 class TestThrottle:
-    def test_main(self, *, testdir: Any, tmp_path: Path) -> None:
+    def test_duration_as_float(self, *, testdir: Any, tmp_path: Path) -> None:
         root_str = tmp_path.as_posix()
         contents = f"""
             from utilities.pytest import throttle
@@ -196,6 +196,23 @@ class TestThrottle:
             def test_main():
                 assert True
             """
+        self._test_throttle(testdir, contents)
+
+    def test_duration_as_timedelta(
+        self, *, testdir: Any, tmp_path: Path
+    ) -> None:
+        root_str = tmp_path.as_posix()
+        contents = f"""
+            import datetime as dt
+            from utilities.pytest import throttle
+
+            @throttle(root={root_str!r}, duration=dt.timedelta(seconds=1.0))
+            def test_main():
+                assert True
+            """
+        self._test_throttle(testdir, contents)
+
+    def _test_throttle(self, testdir: Any, contents: str, /) -> None:
         testdir.makepyfile(strip_and_dedent(contents))
 
         result = testdir.runpytest()

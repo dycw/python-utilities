@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import datetime as dt
 from typing import Any
 
 Number = int | float
+Duration = Number | dt.timedelta
 NoneType = type(None)
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from math import isclose
 from operator import eq
 from operator import gt
 from operator import lt
@@ -17,6 +18,7 @@ from hypothesis.strategies import SearchStrategy
 from hypothesis.strategies import data
 from hypothesis.strategies import dates
 from hypothesis.strategies import datetimes
+from hypothesis.strategies import floats
 from hypothesis.strategies import integers
 from hypothesis.strategies import just
 from hypothesis.strategies import sampled_from
@@ -36,6 +38,8 @@ from utilities.datetime import ParseTimeError
 from utilities.datetime import TimedeltaError
 from utilities.datetime import add_weekdays
 from utilities.datetime import date_to_datetime
+from utilities.datetime import duration_to_float
+from utilities.datetime import duration_to_timedelta
 from utilities.datetime import ensure_date
 from utilities.datetime import ensure_datetime
 from utilities.datetime import ensure_time
@@ -58,13 +62,14 @@ from utilities.hypothesis import assume_does_not_raise
 from utilities.hypothesis import text_clean
 from utilities.platform import SYSTEM
 from utilities.platform import System
+from utilities.types import Number
 
 
 class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
     @mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
-        self, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
+        self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
         _ = assume(predicate(n, 0))
         with assume_does_not_raise(OverflowError):
@@ -73,20 +78,20 @@ class TestAddWeekdays:
         assert predicate(result, date)
 
     @given(date=dates())
-    def test_zero(self, date: dt.date) -> None:
+    def test_zero(self, *, date: dt.date) -> None:
         _ = assume(is_weekday(date))
         result = add_weekdays(date, n=0)
         assert result == date
 
     @given(date=dates())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_error(self, date: dt.date) -> None:
+    def test_error(self, *, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
         with raises(IsWeekendError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
-    def test_two(self, date: dt.date, n1: int, n2: int) -> None:
+    def test_two(self, *, date: dt.date, n1: int, n2: int) -> None:
         with assume_does_not_raise(IsWeekendError, OverflowError):
             weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
         result = weekday1 <= weekday2
@@ -96,9 +101,39 @@ class TestAddWeekdays:
 
 class TestDateToDatetime:
     @given(date=dates())
-    def test_main(self, date: dt.date) -> None:
+    def test_main(self, *, date: dt.date) -> None:
         result = date_to_datetime(date).date()
         assert result == date
+
+
+class TestDurationToFloat:
+    @given(duration=integers(0, 10) | floats(0.0, 10.0))
+    def test_number(self, *, duration: Number) -> None:
+        result = duration_to_float(duration)
+        assert result == duration
+
+    @given(duration=timedeltas())
+    def test_timedelta(self, *, duration: dt.timedelta) -> None:
+        result = duration_to_float(duration)
+        assert result == duration.total_seconds()
+
+
+class TestDurationToTimedelta:
+    @given(duration=integers(0, 10))
+    def test_int(self, *, duration: int) -> None:
+        result = duration_to_timedelta(duration)
+        assert result.total_seconds() == duration
+
+    @given(duration=floats(0.0, 10.0))
+    def test_float(self, *, duration: float) -> None:
+        duration = round(10 * duration) / 10
+        result = duration_to_timedelta(duration)
+        assert isclose(result.total_seconds(), duration)
+
+    @given(duration=timedeltas())
+    def test_timedelta(self, *, duration: dt.timedelta) -> None:
+        result = duration_to_timedelta(duration)
+        assert result == duration
 
 
 class TestEnsure:
@@ -114,6 +149,7 @@ class TestEnsure:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         strategy: SearchStrategy[Any],
         func: Callable[[Any], Any],
@@ -126,7 +162,7 @@ class TestEnsure:
 
 class TestIsWeekday:
     @given(date=dates())
-    def test_is_weekday(self, date: dt.date) -> None:
+    def test_is_weekday(self, *, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {
@@ -151,24 +187,24 @@ class TestLocalTimeZone:
 class TestMaybeMaybeSubPctY:
     @given(text=text_clean())
     @mark.skipif(SYSTEM is not System.linux, reason="Linux only")
-    def test_main(self, text: str) -> None:
+    def test_main(self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
         assert not search("%Y", result)
 
 
 class TestParseDate:
     @given(date=dates())
-    def test_str(self, date: dt.date) -> None:
+    def test_str(self, *, date: dt.date) -> None:
         result = parse_date(str(date))
         assert result == date
 
     @given(date=dates())
-    def test_isoformat(self, date: dt.date) -> None:
+    def test_isoformat(self, *, date: dt.date) -> None:
         result = parse_date(date.isoformat())
         assert result == date
 
     @given(date=dates())
-    def test_yyyymmdd(self, date: dt.date) -> None:
+    def test_yyyymmdd(self, *, date: dt.date) -> None:
         result = parse_date(date.strftime(maybe_sub_pct_y("%Y%m%d")))
         assert result == date
 
@@ -179,12 +215,12 @@ class TestParseDate:
 
 class TestParseDateTime:
     @given(datetime=datetimes(timezones=just(UTC)))
-    def test_str(self, datetime: dt.datetime) -> None:
+    def test_str(self, *, datetime: dt.datetime) -> None:
         result = parse_datetime(str(datetime))
         assert result == datetime
 
     @given(datetime=datetimes(timezones=just(UTC)))
-    def test_isoformat(self, datetime: dt.datetime) -> None:
+    def test_isoformat(self, *, datetime: dt.datetime) -> None:
         result = parse_datetime(datetime.isoformat())
         assert result == datetime
 
@@ -195,7 +231,7 @@ class TestParseDateTime:
         ),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(
-        self, datetime: dt.datetime, fmt: str
+        self, *, datetime: dt.datetime, fmt: str
     ) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -206,7 +242,9 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss_fff(
+        self, *, datetime: dt.datetime, fmt: str
+    ) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -216,7 +254,7 @@ class TestParseDateTime:
             ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
         ).map(maybe_sub_pct_y),
     )
-    def test_yyyymmdd_hhmmss(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -227,7 +265,7 @@ class TestParseDateTime:
             ["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]
         ).map(maybe_sub_pct_y),
     )
-    def test_yyyymmdd_hhmm(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -238,7 +276,7 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hh(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -247,7 +285,7 @@ class TestParseDateTime:
         datetime=datetimes(timezones=just(UTC)),
         fmt=sampled_from(["%Y%m%d", "%Y-%m-%d"]).map(maybe_sub_pct_y),
     )
-    def test_yyyymmdd(self, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
@@ -259,34 +297,34 @@ class TestParseDateTime:
 
 class TestParseTime:
     @given(time=times())
-    def test_str(self, time: dt.time) -> None:
+    def test_str(self, *, time: dt.time) -> None:
         result = parse_time(str(time))
         assert result == time
 
     @given(time=times())
-    def test_isoformat(self, time: dt.time) -> None:
+    def test_isoformat(self, *, time: dt.time) -> None:
         result = parse_time(time.isoformat())
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M%S.%f", "%H:%M:%S.%f"]))
-    def test_hhmmss_fff(self, time: dt.time, fmt: str) -> None:
+    def test_hhmmss_fff(self, *, time: dt.time, fmt: str) -> None:
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M%S", "%H:%M:%S"]))
-    def test_hhmmss(self, time: dt.time, fmt: str) -> None:
+    def test_hhmmss(self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M", "%H:%M"]))
-    def test_hhmm(self, time: dt.time, fmt: str) -> None:
+    def test_hhmm(self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(second=0, microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H", "%H"]))
-    def test_hh(self, time: dt.time, fmt: str) -> None:
+    def test_hh(self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(minute=0, second=0, microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
@@ -298,7 +336,7 @@ class TestParseTime:
 
 class TestParseTimedelta:
     @given(timedelta=timedeltas())
-    def test_main(self, timedelta: dt.timedelta) -> None:
+    def test_main(self, *, timedelta: dt.timedelta) -> None:
         result = parse_timedelta(str(timedelta))
         assert result == timedelta
 
@@ -325,6 +363,7 @@ class TestSerialize:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], Any],
@@ -335,7 +374,7 @@ class TestSerialize:
         assert result == value
 
     @given(datetime=datetimes())
-    def test_serialize_date(self, datetime: dt.datetime) -> None:
+    def test_serialize_date(self, *, datetime: dt.datetime) -> None:
         result = parse_date(serialize_date(datetime))
         assert result == datetime.date()
 
@@ -354,6 +393,7 @@ class TestRoundToWeekday:
     )
     def test_main(
         self,
+        *,
         date: dt.date,
         func: Callable[[dt.date], dt.date],
         predicate: bool,
@@ -378,7 +418,7 @@ class TestTimeZones:
 
 class TestYieldWeekdays:
     @given(start=dates(), days=integers(0, 365))
-    def test_start_and_end(self, start: dt.date, days: int) -> None:
+    def test_start_and_end(self, *, start: dt.date, days: int) -> None:
         with assume_does_not_raise(OverflowError):
             end = start + dt.timedelta(days=days)
         dates = list(yield_weekdays(start=start, end=end))
@@ -386,14 +426,14 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     @given(start=dates(), days=integers(0, 10))
-    def test_start_and_days(self, start: dt.date, days: int) -> None:
+    def test_start_and_days(self, *, start: dt.date, days: int) -> None:
         dates = list(yield_weekdays(start=start, days=days))
         assert len(dates) == days
         assert all(d >= start for d in dates)
         assert all(map(is_weekday, dates))
 
     @given(end=dates(), days=integers(0, 10))
-    def test_end_and_days(self, end: dt.date, days: int) -> None:
+    def test_end_and_days(self, *, end: dt.date, days: int) -> None:
         dates = list(yield_weekdays(end=end, days=days))
         assert len(dates) == days
         assert all(d <= end for d in dates)
