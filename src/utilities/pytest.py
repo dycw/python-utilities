@@ -11,10 +11,12 @@ from typing import Any
 
 from utilities.atomicwrites import writer
 from utilities.datetime import UTC
+from utilities.datetime import duration_to_float
 from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
 from utilities.re import NoMatchesError
 from utilities.re import extract_group
+from utilities.types import Duration
 from utilities.typing import IterableStrs
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
@@ -87,7 +89,7 @@ def is_pytest() -> bool:
     return "PYTEST_CURRENT_TEST" in environ
 
 
-def throttle(*, root: PathLike | None = None, duration: float = 1.0) -> Any:
+def throttle(*, root: PathLike | None = None, duration: Duration = 1.0) -> Any:
     """Throttle a test."""
 
     root_use = (
@@ -116,7 +118,7 @@ def throttle(*, root: PathLike | None = None, duration: float = 1.0) -> Any:
             if (
                 (skip is not None)
                 and (prev is not None)
-                and ((now - prev) < duration)
+                and ((now - prev) < duration_to_float(duration))
             ):
                 skip(reason=f"{test} throttled")
             with writer(path, overwrite=True) as temp, temp.open(
