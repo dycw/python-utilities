@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import wraps
 from re import search
 from typing import NoReturn
+from typing import TypeVar
+from typing import cast
 
 from utilities.text import ensure_str
 
@@ -27,3 +31,31 @@ def redirect_error(
 
 class NoUniqueArgError(ValueError):
     """Raised when no unique argument can be found."""
+
+
+_T = TypeVar("_T")
+_TExc = TypeVar("_TExc", bound=Exception)
+
+
+def retry(
+    func: Callable[[], _T],
+    error: type[Exception] | tuple[type[Exception], ...],
+    callback: Callable[[_TExc], None],
+    /,
+    *,
+    predicate: Callable[[_TExc], bool] | None = None,
+) -> Callable[[], _T]:
+    """Retry a function if an error is caught after the callback."""
+
+    @wraps(func)
+    def inner() -> _T:
+        try:
+            return func()
+        except error as caught:
+            caught = cast(_TExc, caught)
+            if (predicate is None) or predicate(caught):
+                callback(caught)
+                return func()
+            raise
+
+    return inner
