@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.types import Number
-from utilities.typing import IterableStrs
-from utilities.typing import SequenceStrs
+from utilities.typing import IterableStrs, SequenceStrs
 
 
 class TestIterableStrs:

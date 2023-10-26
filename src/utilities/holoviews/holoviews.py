@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import TypeVar
-from typing import cast
+from typing import Any, TypeVar, cast
 
 from holoviews import save
 

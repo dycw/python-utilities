@@ -1,62 +1,67 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.numpy import array_shapes
-from hypothesis.extra.numpy import arrays
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import booleans
-from hypothesis.strategies import composite
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
-from hypothesis.strategies import nothing
-from hypothesis.strategies import sampled_from
-from numpy import concatenate
-from numpy import datetime64
-from numpy import expand_dims
-from numpy import iinfo
-from numpy import int32
-from numpy import int64
-from numpy import uint32
-from numpy import uint64
-from numpy import zeros
+from hypothesis.extra.numpy import array_shapes, arrays
+from hypothesis.strategies import (
+    DrawFn,
+    SearchStrategy,
+    booleans,
+    composite,
+    integers,
+    none,
+    nothing,
+    sampled_from,
+)
+from numpy import (
+    concatenate,
+    datetime64,
+    expand_dims,
+    iinfo,
+    int32,
+    int64,
+    uint32,
+    uint64,
+    zeros,
+)
 from numpy.typing import NDArray
 
+from utilities.hypothesis.hypothesis import (
+    MaybeSearchStrategy,
+    Shape,
+    floats_extra,
+    lift_draw,
+    lists_fixed_length,
+    text_ascii,
+)
 from utilities.math import IntNonNeg
-from utilities.numpy import DATE_MAX_AS_INT
-from utilities.numpy import DATE_MIN_AS_INT
-from utilities.numpy import DATETIME_MAX_AS_INT
-from utilities.numpy import DATETIME_MIN_AS_INT
-from utilities.numpy import Datetime64Kind
-from utilities.numpy import Datetime64Unit
-from utilities.numpy import EmptyNumpyConcatenateError
-from utilities.numpy import NDArrayB
-from utilities.numpy import NDArrayD
-from utilities.numpy import NDArrayD1
-from utilities.numpy import NDArrayDD1
-from utilities.numpy import NDArrayDus1
-from utilities.numpy import NDArrayF
-from utilities.numpy import NDArrayI
-from utilities.numpy import NDArrayO
-from utilities.numpy import date_to_datetime64
-from utilities.numpy import datetime64_to_int
-from utilities.numpy import datetime64_unit_to_dtype
-from utilities.numpy import datetime64_unit_to_kind
-from utilities.numpy import datetime_to_datetime64
-from utilities.numpy import redirect_to_empty_numpy_concatenate_error
-
-from .hypothesis import MaybeSearchStrategy  # noqa: TID252
-from .hypothesis import Shape  # noqa: TID252
-from .hypothesis import floats_extra  # noqa: TID252
-from .hypothesis import lift_draw  # noqa: TID252
-from .hypothesis import lists_fixed_length  # noqa: TID252
-from .hypothesis import text_ascii  # noqa: TID252
+from utilities.numpy import (
+    DATE_MAX_AS_INT,
+    DATE_MIN_AS_INT,
+    DATETIME_MAX_AS_INT,
+    DATETIME_MIN_AS_INT,
+    Datetime64Kind,
+    Datetime64Unit,
+    EmptyNumpyConcatenateError,
+    NDArrayB,
+    NDArrayD,
+    NDArrayD1,
+    NDArrayDD1,
+    NDArrayDus1,
+    NDArrayF,
+    NDArrayI,
+    NDArrayO,
+    date_to_datetime64,
+    datetime64_to_int,
+    datetime64_unit_to_dtype,
+    datetime64_unit_to_kind,
+    datetime_to_datetime64,
+    redirect_to_empty_numpy_concatenate_error,
+)
 
 
 @composite
@@ -150,9 +155,7 @@ def datetime64_units(
     ]
     kind_ = draw(kind)
     if kind_ is not None:
-        units = [
-            unit for unit in units if datetime64_unit_to_kind(unit) == kind_
-        ]
+        units = [unit for unit in units if datetime64_unit_to_kind(unit) == kind_]
     return draw(sampled_from(units))
 
 
@@ -262,9 +265,7 @@ def datetime64s(
     min_value_, max_value_ = (
         _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
     )
-    valid_dates_, valid_datetimes_ = (
-        draw(vd) for vd in (valid_dates, valid_datetimes)
-    )
+    valid_dates_, valid_datetimes_ = (draw(vd) for vd in (valid_dates, valid_datetimes))
     if valid_dates_:
         unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
             unit=cast(Datetime64Unit | None, unit_),
@@ -284,9 +285,7 @@ def datetime64s(
     return datetime64(i, unit_)
 
 
-def _datetime64s_convert(
-    value: int | datetime64 | dt.date | None, /
-) -> int | None:
+def _datetime64s_convert(value: int | datetime64 | dt.date | None, /) -> int | None:
     """Convert a min/max value supplied into `datetime64s`."""
     if (value is None) or isinstance(value, int):
         return value
@@ -342,12 +341,8 @@ def _datetime64s_check_valid_datetimes(
 def datetime64us_indexes(
     *,
     n: MaybeSearchStrategy[IntNonNeg] = integers(0, 10),
-    min_value: MaybeSearchStrategy[
-        datetime64 | int | dt.datetime | None
-    ] = None,
-    max_value: MaybeSearchStrategy[
-        datetime64 | int | dt.datetime | None
-    ] = None,
+    min_value: MaybeSearchStrategy[datetime64 | int | dt.datetime | None] = None,
+    max_value: MaybeSearchStrategy[datetime64 | int | dt.datetime | None] = None,
     valid_datetimes: MaybeSearchStrategy[bool] = True,
     unique: MaybeSearchStrategy[bool] = True,
     sort: MaybeSearchStrategy[bool] = True,
@@ -424,9 +419,7 @@ def int_arrays(
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy = cast(
         SearchStrategy[NDArrayI],
-        arrays(
-            int, draw(shape), elements=elements, fill=fill, unique=draw(unique)
-        ),
+        arrays(int, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
     return draw(strategy)
 
@@ -511,7 +504,5 @@ def _fixed_width_ints(
     min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
     info = iinfo(dtype)
     min_value_ = info.min if min_value_ is None else max(min_value_, info.min)
-    max_value_use = (
-        info.max if max_value_ is None else min(info.max, max_value_)
-    )
+    max_value_use = info.max if max_value_ is None else min(info.max, max_value_)
     return draw(integers(min_value_, max_value_use))

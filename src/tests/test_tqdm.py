@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 from tqdm import tqdm as _tqdm
 
-from utilities.tqdm import _get_total
-from utilities.tqdm import tqdm
+from utilities.tqdm import _get_total, tqdm
 
 
 class TestGetTotal:

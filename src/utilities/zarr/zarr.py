@@ -1,52 +1,40 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterator
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Any
-from typing import Literal
-from typing import cast
+from typing import Any, Literal, cast
 
-from numpy import array
-from numpy import datetime64
-from numpy import isin
-from numpy import ndarray
-from numpy import prod
+from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import NDArray
 from typing_extensions import override
-from zarr import JSON
-from zarr import Array
-from zarr import Group
-from zarr import group
+from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
 from zarr.core import Attributes
 
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
+from utilities.datetime import ensure_date, ensure_datetime
 from utilities.itertools import is_iterable_not_str
-from utilities.numpy import MultipleTrueElementsError
-from utilities.numpy import NDArray1
-from utilities.numpy import NDArrayB1
-from utilities.numpy import NDArrayI1
-from utilities.numpy import NoTrueElementsError
-from utilities.numpy import array_indexer
-from utilities.numpy import datetime64D
-from utilities.numpy import datetime64ns
-from utilities.numpy import datetime64Y
-from utilities.numpy import flatn0
-from utilities.numpy import get_fill_value
-from utilities.numpy import has_dtype
+from utilities.numpy import (
+    MultipleTrueElementsError,
+    NDArray1,
+    NDArrayB1,
+    NDArrayI1,
+    NoTrueElementsError,
+    array_indexer,
+    datetime64D,
+    datetime64ns,
+    datetime64Y,
+    flatn0,
+    get_fill_value,
+    has_dtype,
+)
 from utilities.numpy.numpy import _ffill_non_nan_slices_helper
 from utilities.pathlib import PathLike
 from utilities.re import extract_group
-from utilities.sentinel import Sentinel
-from utilities.sentinel import sentinel
+from utilities.sentinel import Sentinel, sentinel
 
 
 def ffill_non_nan_slices(
@@ -192,9 +180,7 @@ class NDArrayWithIndexes:
     @property
     def indexes(self) -> dict[str, NDArray1]:
         """The indexes of the underlying array."""
-        return {
-            dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)
-        }
+        return {dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)}
 
     @property
     def is_scalar(self) -> bool:
@@ -283,9 +269,7 @@ class NDArrayWithIndexes:
             return indexer
         return array(indexer, dtype=int)
 
-    def _get_sel_indexer(
-        self, dim: str, /, *, indexers: Mapping[str, Any]
-    ) -> Any:
+    def _get_sel_indexer(self, dim: str, /, *, indexers: Mapping[str, Any]) -> Any:
         """Get the value-indexer for a given dimension."""
         try:
             indexer = indexers[dim]
@@ -295,9 +279,7 @@ class NDArrayWithIndexes:
         if has_dtype(index, (datetime64D, datetime64Y)):
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
         elif has_dtype(index, datetime64ns):
-            indexer = self._cast_date_indexer(
-                indexer, index.dtype, ensure_datetime
-            )
+            indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
         if is_iterable_not_str(indexer):
             bool_indexer = isin(index, indexer)
             if sum(bool_indexer) == len(indexer):

@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pandas import DatetimeTZDtype
-from pandas import Series
-from pytest import mark
-from pytest import param
+from pandas import DatetimeTZDtype, Series
+from pytest import mark, param
 
 from utilities.numpy import has_dtype
 

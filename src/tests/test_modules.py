@@ -2,22 +2,20 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
-from operator import le
-from operator import lt
+from operator import le, lt
 from re import search
 from types import ModuleType
 from typing import Any
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
-from tests.modules import package_with
-from tests.modules import package_without
-from tests.modules import standalone
+from tests.modules import package_with, package_without, standalone
 from utilities.class_name import get_class_name
-from utilities.modules import yield_module_contents
-from utilities.modules import yield_module_subclasses
-from utilities.modules import yield_modules
+from utilities.modules import (
+    yield_module_contents,
+    yield_module_subclasses,
+    yield_modules,
+)
 
 
 class TestYieldModules:
@@ -32,9 +30,7 @@ class TestYieldModules:
             param(package_with, True, 5),
         ],
     )
-    def test_main(
-        self, *, module: ModuleType, recursive: bool, expected: int
-    ) -> None:
+    def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 
 

@@ -1,40 +1,31 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Hashable
-from collections.abc import Mapping
-from collections.abc import Sequence
-from functools import partial
-from functools import reduce
+from collections.abc import Hashable, Mapping, Sequence
+from functools import partial, reduce
 from itertools import permutations
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import Literal
-from typing import NoReturn
-from typing import TypeAlias
-from typing import cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast
 
 from numpy import where
-from pandas import NA
-from pandas import BooleanDtype
-from pandas import CategoricalDtype
-from pandas import DataFrame
-from pandas import DatetimeTZDtype
-from pandas import Index
-from pandas import Int64Dtype
-from pandas import NaT
-from pandas import RangeIndex
-from pandas import Series
-from pandas import StringDtype
-from pandas import Timestamp
-from pandas.testing import assert_frame_equal
-from pandas.testing import assert_index_equal
+from pandas import (
+    NA,
+    BooleanDtype,
+    CategoricalDtype,
+    DataFrame,
+    DatetimeTZDtype,
+    Index,
+    Int64Dtype,
+    NaT,
+    RangeIndex,
+    Series,
+    StringDtype,
+    Timestamp,
+)
+from pandas.testing import assert_frame_equal, assert_index_equal
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
-from utilities.numpy import NDArray1
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
+from utilities.numpy import NDArray1, datetime64ns, has_dtype
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -227,9 +218,7 @@ def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
     return timestamp_to_datetime(timestamp, warn=warn).date()
 
 
-def timestamp_to_datetime(
-    timestamp: Any, /, *, warn: bool = True
-) -> dt.datetime:
+def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetime:
     """Convert a timestamp to a datetime."""
     if timestamp is NaT:
         msg = f"{timestamp=}"
@@ -244,9 +233,7 @@ class TimestampIsNaTError(ValueError):
     """Raised when a NaT is received."""
 
 
-def _timestamp_minmax_to_date(
-    timestamp: Timestamp, method_name: str, /
-) -> dt.date:
+def _timestamp_minmax_to_date(timestamp: Timestamp, method_name: str, /) -> dt.date:
     """Get the maximum Timestamp as a date."""
     method = getattr(timestamp, method_name)
     rounded = cast(Timestamp, method("D"))
@@ -267,9 +254,7 @@ def _timestamp_minmax_to_datetime(
 
 
 TIMESTAMP_MIN_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.min, "ceil")
-TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(
-    Timestamp.max, "floor"
-)
+TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor")
 
 
 def to_numpy(series: SeriesA, /) -> NDArray1:

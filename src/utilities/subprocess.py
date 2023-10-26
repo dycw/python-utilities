@@ -1,18 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from functools import partial
-from itertools import chain
-from itertools import repeat
-from itertools import starmap
+from itertools import chain, repeat, starmap
 from pathlib import Path
-from re import MULTILINE
-from re import escape
-from re import search
-from subprocess import PIPE
-from subprocess import CalledProcessError
-from subprocess import check_output
+from re import MULTILINE, escape, search
+from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any
 
 from utilities.os import temp_environ
@@ -43,7 +36,11 @@ def get_shell_output(
             raise MultipleActivateError(activates)
     with temp_environ(env):
         return check_output(
-            cmd, stderr=PIPE, shell=True, cwd=cwd, text=True  # noqa: S602
+            cmd,
+            stderr=PIPE,
+            shell=True,  # noqa: S602
+            cwd=cwd,
+            text=True,
         )
 
 

@@ -4,11 +4,8 @@ from holoviews import Curve
 from holoviews.plotting import bokeh
 
 from utilities.numpy import has_dtype
-from utilities.text import NotAStringError
-from utilities.text import ensure_str
-from utilities.xarray import DataArrayB1
-from utilities.xarray import DataArrayF1
-from utilities.xarray import DataArrayI1
+from utilities.text import NotAStringError, ensure_str
+from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1
 
 from .holoviews import apply_opts  # noqa: TID252
 
@@ -25,9 +22,7 @@ def plot_curve(
 ) -> Curve:
     """Plot a 1D array as a curve."""
     if has_dtype(array, bool):
-        return plot_curve(
-            array.astype(int), label=label, smooth=smooth, aspect=aspect
-        )
+        return plot_curve(array.astype(int), label=label, smooth=smooth, aspect=aspect)
     (kdim,) = array.dims
     try:
         vdim = ensure_str(array.name)

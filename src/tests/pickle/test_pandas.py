@@ -4,11 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import booleans
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
-from hypothesis.strategies import text
+from hypothesis.strategies import booleans, floats, integers, none, text
 from pandas import read_pickle as _read_pickle
 
 from utilities.hypothesis import temp_paths

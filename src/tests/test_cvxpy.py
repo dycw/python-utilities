@@ -1,37 +1,32 @@
 from __future__ import annotations
 
 from functools import cache
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import cvxpy
 import numpy as np
-from cvxpy import Expression
-from cvxpy import Maximize
-from cvxpy import Minimize
-from cvxpy import Problem
-from cvxpy import Variable
+from cvxpy import Expression, Maximize, Minimize, Problem, Variable
 from numpy import array
 from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.cvxpy import InfeasibleProblemError
-from utilities.cvxpy import UnboundedProblemError
-from utilities.cvxpy import abs_
-from utilities.cvxpy import add
-from utilities.cvxpy import divide
-from utilities.cvxpy import multiply
-from utilities.cvxpy import neg
-from utilities.cvxpy import norm
-from utilities.cvxpy import pos
-from utilities.cvxpy import power
-from utilities.cvxpy import quad_form
-from utilities.cvxpy import solve
-from utilities.cvxpy import sqrt
-from utilities.cvxpy import subtract
-from utilities.cvxpy import sum_
+from utilities.cvxpy import (
+    InfeasibleProblemError,
+    UnboundedProblemError,
+    abs_,
+    add,
+    divide,
+    multiply,
+    neg,
+    norm,
+    pos,
+    power,
+    quad_form,
+    solve,
+    sqrt,
+    subtract,
+    sum_,
+)
 from utilities.numpy import NDArrayF
 
 
@@ -197,9 +192,7 @@ class TestMultiply:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
-        assert_equal(
-            multiply(var1, var2).value, multiply(var1.value, var2.value)
-        )
+        assert_equal(multiply(var1, var2).value, multiply(var1.value, var2.value))
 
 
 class TestNeg:
@@ -377,9 +370,7 @@ class TestSubtract:
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
-        assert_equal(
-            subtract(var1, var2).value, subtract(var1.value, var2.value)
-        )
+        assert_equal(subtract(var1, var2).value, subtract(var1.value, var2.value))
 
 
 class TestSum:
@@ -394,9 +385,7 @@ class TestSum:
             param(array([-1.0]), -1.0),
         ],
     )
-    def test_float_and_array(
-        self, x: float | NDArrayF, expected: float
-    ) -> None:
+    def test_float_and_array(self, x: float | NDArrayF, expected: float) -> None:
         assert_equal(sum_(x), expected)
 
     def test_expression(self) -> None:

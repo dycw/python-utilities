@@ -1,55 +1,52 @@
 from __future__ import annotations
 
 import datetime as dt
-from enum import Enum
-from enum import auto
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import Any
-from typing import Literal
-from typing import cast
+from typing import Any, Literal, cast
 
 from freezegun import freeze_time
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import times
-from luigi import BoolParameter
-from luigi import Task
+from hypothesis import assume, given, settings
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    dates,
+    sampled_from,
+    times,
+)
+from luigi import BoolParameter, Task
 from luigi.notifications import smtp
 from luigi.task import Parameter
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 from typing_extensions import override
 
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis import namespace_mixins
-from utilities.hypothesis import temp_paths
-from utilities.luigi import AwaitTask
-from utilities.luigi import AwaitTime
-from utilities.luigi import DateHourParameter
-from utilities.luigi import DateMinuteParameter
-from utilities.luigi import DateParameter
-from utilities.luigi import DateSecondParameter
-from utilities.luigi import EnumParameter
-from utilities.luigi import ExternalFile
-from utilities.luigi import ExternalTask
-from utilities.luigi import PathTarget
-from utilities.luigi import TimeParameter
-from utilities.luigi import WeekdayParameter
-from utilities.luigi import build
-from utilities.luigi import clone
-from utilities.luigi import get_dependencies_downstream
-from utilities.luigi import get_dependencies_upstream
-from utilities.luigi import get_task_classes
+from utilities.datetime import (
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+)
+from utilities.hypothesis import datetimes_utc, namespace_mixins, temp_paths
+from utilities.luigi import (
+    AwaitTask,
+    AwaitTime,
+    DateHourParameter,
+    DateMinuteParameter,
+    DateParameter,
+    DateSecondParameter,
+    EnumParameter,
+    ExternalFile,
+    ExternalTask,
+    PathTarget,
+    TimeParameter,
+    WeekdayParameter,
+    build,
+    clone,
+    get_dependencies_downstream,
+    get_dependencies_upstream,
+    get_task_classes,
+)
 from utilities.luigi.luigi import _yield_task_classes
 
 
@@ -143,9 +140,7 @@ class TestDateTimeParameter:
         param_cls: type[Parameter],
     ) -> None:
         param = param_cls()
-        input_ = data.draw(
-            sampled_from([datetime, serialize_datetime(datetime)])
-        )
+        input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
 

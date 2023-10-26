@@ -1,49 +1,38 @@
 from __future__ import annotations
 
 import datetime as dt
-from abc import ABC
-from abc import abstractmethod
-from collections.abc import Iterable
-from collections.abc import Iterator
+from abc import ABC, abstractmethod
+from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from enum import Enum
 from pathlib import Path
-from typing import Any
-from typing import Generic
-from typing import Literal
-from typing import TypeVar
-from typing import cast
-from typing import overload
+from typing import Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
-from luigi import Parameter
-from luigi import PathParameter
-from luigi import Target
-from luigi import Task
-from luigi import TaskParameter
+from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.notifications import smtp
 from luigi.parameter import MissingParameterException
-from luigi.task import Register
-from luigi.task import flatten
+from luigi.task import Register, flatten
 from typing_extensions import override
 
-from utilities.datetime import EPOCH_UTC
-from utilities.datetime import UTC
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
-from utilities.datetime import ensure_time
-from utilities.datetime import parse_date
-from utilities.datetime import parse_datetime
-from utilities.datetime import parse_time
-from utilities.datetime import round_to_next_weekday
-from utilities.datetime import round_to_prev_weekday
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.enum import ensure_enum
-from utilities.enum import parse_enum
+from utilities.datetime import (
+    EPOCH_UTC,
+    UTC,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    parse_date,
+    parse_datetime,
+    parse_time,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+)
+from utilities.enum import ensure_enum, parse_enum
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 
@@ -371,18 +360,14 @@ def get_dependencies_downstream(
     task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> frozenset[Task]:
     """Get the downstream dependencies of a task."""
-    return frozenset(
-        _yield_dependencies_downstream(task, cls=cls, recursive=recursive)
-    )
+    return frozenset(_yield_dependencies_downstream(task, cls=cls, recursive=recursive))
 
 
 def _yield_dependencies_downstream(
     task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
 ) -> Iterator[Task]:
     for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
-        yield from _yield_dependencies_downstream_1(
-            task, task_cls, recursive=recursive
-        )
+        yield from _yield_dependencies_downstream_1(task, task_cls, recursive=recursive)
 
 
 def _yield_dependencies_downstream_1(
@@ -396,9 +381,7 @@ def _yield_dependencies_downstream_1(
         if task in get_dependencies_upstream(cloned, recursive=recursive):
             yield cloned
             if recursive:
-                yield from get_dependencies_downstream(
-                    cloned, recursive=recursive
-                )
+                yield from get_dependencies_downstream(cloned, recursive=recursive)
 
 
 def get_dependencies_upstream(
@@ -427,21 +410,16 @@ def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
     ...
 
 
-def get_task_classes(
-    *, cls: type[_Task] | None = None
-) -> frozenset[type[_Task]]:
+def get_task_classes(*, cls: type[_Task] | None = None) -> frozenset[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     return frozenset(_yield_task_classes(cls=cls))
 
 
-def _yield_task_classes(
-    *, cls: type[_Task] | None = None
-) -> Iterator[type[_Task]]:
+def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Task]]:
     """Yield the task classes. Optionally filter down."""
     for name in cast(Any, Register).task_names():
         task_cls = cast(Any, Register).get_task_cls(name)
         if (
-            (cls is None)
-            or ((cls is not task_cls) and issubclass(task_cls, cls))
+            (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
         ) and (task_cls is not smtp):
             yield cast(type[_Task], task_cls)

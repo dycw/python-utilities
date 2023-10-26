@@ -3,25 +3,20 @@ from __future__ import annotations
 from pathlib import Path
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
+from hypothesis.strategies import DataObject, data, integers, none
 from hypothesis_sqlalchemy.sample import table_records_lists
-from sqlalchemy import Column
-from sqlalchemy import Engine
-from sqlalchemy import Integer
-from sqlalchemy import select
+from sqlalchemy import Column, Engine, Integer, select
 from sqlalchemy.orm import declarative_base
 
 from utilities.fastparquet import get_dtypes
-from utilities.hypothesis import sqlite_engines
-from utilities.hypothesis import temp_paths
+from utilities.hypothesis import sqlite_engines, temp_paths
 from utilities.pandas import Int64
-from utilities.sqlalchemy import ensure_table_created
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import insert_items
-from utilities.sqlalchemy import select_to_parquet
+from utilities.sqlalchemy import (
+    ensure_table_created,
+    get_table,
+    insert_items,
+    select_to_parquet,
+)
 
 
 class TestSelectToParquet:
@@ -42,8 +37,6 @@ class TestSelectToParquet:
         ensure_table_created(Example, engine)
         insert_items([(rows, Example)], engine)
         sel = select(Example.Id)
-        select_to_parquet(
-            sel, engine, path := root.joinpath("df.parq"), stream=stream
-        )
+        select_to_parquet(sel, engine, path := root.joinpath("df.parq"), stream=stream)
         dtypes = get_dtypes(path)
         assert dtypes == {"Id": Int64}

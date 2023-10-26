@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import ExitStack
-from contextlib import contextmanager
-from typing import Literal
-from typing import TypedDict
-from typing import cast
-from warnings import catch_warnings
-from warnings import filterwarnings
+from contextlib import ExitStack, contextmanager
+from typing import Literal, TypedDict, cast
+from warnings import catch_warnings, filterwarnings
 
 
 @contextmanager
@@ -63,8 +59,6 @@ def _handle_warnings_1(
         category: type[Warning]
 
     with catch_warnings():
-        kwargs = cast(
-            Kwargs, {} if category is None else {"category": category}
-        )
+        kwargs = cast(Kwargs, {} if category is None else {"category": category})
         filterwarnings(action, message=message, **kwargs)
         yield

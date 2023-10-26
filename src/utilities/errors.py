@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from functools import wraps
 from re import search
-from typing import NoReturn
-from typing import TypeVar
-from typing import cast
+from typing import NoReturn, TypeVar, cast
 
 from utilities.text import ensure_str
 

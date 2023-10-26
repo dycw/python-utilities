@@ -2,27 +2,26 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import Enum as _Enum
-from typing import Any
-from typing import Generic
-from typing import TypeVar
+from typing import Any, Generic, TypeVar
 
-from click import Context
-from click import Parameter
-from click import ParamType
-from click import option
+from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
-from utilities.datetime import ParseDateError
-from utilities.datetime import ParseDateTimeError
-from utilities.datetime import ParseTimeError
-from utilities.datetime import TimedeltaError
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
-from utilities.datetime import ensure_time
-from utilities.datetime import ensure_timedelta
-from utilities.enum import MultipleMatchingMembersError
-from utilities.enum import NoMatchingMemberError
-from utilities.enum import ensure_enum
+from utilities.datetime import (
+    ParseDateError,
+    ParseDateTimeError,
+    ParseTimeError,
+    TimedeltaError,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    ensure_timedelta,
+)
+from utilities.enum import (
+    MultipleMatchingMembersError,
+    NoMatchingMemberError,
+    ensure_enum,
+)
 from utilities.logging import LogLevel
 
 
@@ -98,22 +97,16 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    def __init__(
-        self, enum: type[_E], /, *, case_sensitive: bool = True
-    ) -> None:
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
         super().__init__()
         self._enum = enum
         self._case_sensitive = case_sensitive
 
     @override
-    def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
-    ) -> _E:
+    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
         """Convert a value into the `Enum` type."""
         try:
-            return ensure_enum(
-                self._enum, value, case_sensitive=self._case_sensitive
-            )
+            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
         except (NoMatchingMemberError, MultipleMatchingMembersError):
             return self.fail(f"Unable to parse {value}", param, ctx)
 

@@ -2,35 +2,31 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Hashable
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from hypothesis import HealthCheck
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import integers
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.strategies import DataObject, booleans, data, dates, integers
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import dates_pd
-from utilities.hypothesis import datetimes_pd
-from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis import hashables
-from utilities.hypothesis import indexes
-from utilities.hypothesis import int64s
-from utilities.hypothesis import int_indexes
-from utilities.hypothesis import str_indexes
-from utilities.hypothesis import timestamps
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.pandas import string
+from utilities.hypothesis import (
+    dates_pd,
+    datetimes_pd,
+    datetimes_utc,
+    hashables,
+    indexes,
+    int64s,
+    int_indexes,
+    str_indexes,
+    timestamps,
+)
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+    string,
+)
 
 
 class TestDatesPd:
@@ -60,9 +56,7 @@ class TestDatetimesPd:
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
-        datetime = data.draw(
-            datetimes_pd(min_value=min_value, max_value=max_value)
-        )
+        datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
         _ = Timestamp(datetime)
         assert min_value <= datetime <= max_value
 

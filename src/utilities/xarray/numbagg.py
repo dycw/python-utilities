@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Hashable
-from collections.abc import Mapping
-from typing import Any
-from typing import cast
+from collections.abc import Hashable, Mapping
+from typing import Any, cast
 
-from numbagg import move_exp_nanmean
-from numbagg import move_exp_nansum
+from numbagg import move_exp_nanmean, move_exp_nansum
 
-from .xarray import DataArrayF  # noqa: TID252
-from .xarray import DataArrayI  # noqa: TID252
+from utilities.xarray.xarray import DataArrayF, DataArrayI
 
 
 def ewma(
@@ -21,9 +17,7 @@ def ewma(
     **halflife_kwargs: int,
 ) -> DataArrayF:
     """Compute the EWMA of an array."""
-    rolling_exp = array.rolling_exp(
-        halflife, window_type="halflife", **halflife_kwargs
-    )
+    rolling_exp = array.rolling_exp(halflife, window_type="halflife", **halflife_kwargs)
     return array.reduce(
         _move_exp_nanmean,
         dim=rolling_exp.dim,
@@ -47,9 +41,7 @@ def exp_moving_sum(
     **halflife_kwargs: int,
 ) -> DataArrayF:
     """Compute the exponentially-weighted moving sum of an array."""
-    rolling_exp = array.rolling_exp(
-        halflife, window_type="halflife", **halflife_kwargs
-    )
+    rolling_exp = array.rolling_exp(halflife, window_type="halflife", **halflife_kwargs)
     return array.reduce(
         _move_exp_nansum,
         dim=rolling_exp.dim,

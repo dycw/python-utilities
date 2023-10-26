@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
-from utilities.types import NoneType
-from utilities.types import ensure_class
-from utilities.types import issubclass_except_bool_int
+from utilities.types import NoneType, ensure_class, issubclass_except_bool_int
 
 
 class TestEnsureClass:

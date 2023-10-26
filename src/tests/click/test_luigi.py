@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from click import command
-from click import echo
+from click import command, echo
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
-from pytest import mark
-from pytest import param
+from hypothesis.strategies import integers, none
+from pytest import mark, param
 
-from utilities.click import local_scheduler_option_default_central
-from utilities.click import local_scheduler_option_default_local
-from utilities.click import workers_option
+from utilities.click import (
+    local_scheduler_option_default_central,
+    local_scheduler_option_default_local,
+    workers_option,
+)
 from utilities.typing import SequenceStrs
 
 
@@ -34,9 +33,7 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_central(
-        self, *, args: SequenceStrs, expected: bool
-    ) -> None:
+    def test_default_central(self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
         @local_scheduler_option_default_central
         def cli(*, local_scheduler: bool) -> None:

@@ -4,10 +4,12 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from utilities.holoviews import plot_curve
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import float_data_arrays
-from utilities.hypothesis import int_indexes
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    float_data_arrays,
+    int_indexes,
+    text_ascii,
+)
 from utilities.xarray import DataArrayF1
 
 

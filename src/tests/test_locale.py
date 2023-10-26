@@ -1,17 +1,10 @@
 from __future__ import annotations
 
-from locale import CRNCYSTR
-from locale import LC_ALL
-from locale import LC_MONETARY
-from locale import nl_langinfo
-from locale import setlocale
+from locale import CRNCYSTR, LC_ALL, LC_MONETARY, nl_langinfo, setlocale
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
-from utilities.locale import atof
-from utilities.locale import get_locale_for_platform
-from utilities.locale import override_locale
+from utilities.locale import atof, get_locale_for_platform, override_locale
 
 
 class TestAToF:

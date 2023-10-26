@@ -7,12 +7,9 @@ from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
 
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pathlib import temp_cwd
-from utilities.pypi_server import _check_password_file
-from utilities.pypi_server import _get_args
-from utilities.pypi_server import main
+from utilities.pypi_server import _check_password_file, _get_args, main
 
 
 class TestPypiServer:

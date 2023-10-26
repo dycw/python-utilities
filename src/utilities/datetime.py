@@ -6,8 +6,7 @@ from contextlib import suppress
 from datetime import tzinfo
 from re import sub
 
-from utilities.platform import SYSTEM
-from utilities.platform import System
+from utilities.platform import SYSTEM, System
 from utilities.re import extract_groups
 from utilities.types import Duration
 from utilities.typing import never
@@ -138,9 +137,7 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
         "%Y%m%dT%H%M%S.%f",
     ]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt).replace(
-                tzinfo=dt.timezone.utc
-            )
+            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=dt.timezone.utc)
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
@@ -183,9 +180,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
             microseconds=as_dt.microsecond,
         )
     try:
-        days, tail = extract_groups(
-            r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta
-        )
+        days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
     except ValueError:
         raise TimedeltaError(timedelta) from None
     else:

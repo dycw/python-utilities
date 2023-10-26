@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from functools import partial
 from getpass import getuser
 from itertools import islice
@@ -14,8 +13,7 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.clean_dir.classes import Config
-from utilities.clean_dir.classes import Item
+from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike
@@ -36,9 +34,7 @@ def main(config: Config, /) -> None:
         ):
             logger.debug("{path}", path=item.path)
     else:
-        _clean_dir(
-            paths=config.paths, days=config.days, chunk_size=config.chunk_size
-        )
+        _clean_dir(paths=config.paths, days=config.days, chunk_size=config.chunk_size)
 
 
 def _log_config(config: Config, /) -> None:

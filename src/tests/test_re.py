@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.re import MultipleCaptureGroupsError
-from utilities.re import MultipleMatchesError
-from utilities.re import NoCaptureGroupsError
-from utilities.re import NoMatchesError
-from utilities.re import extract_group
-from utilities.re import extract_groups
+from utilities.re import (
+    MultipleCaptureGroupsError,
+    MultipleMatchesError,
+    NoCaptureGroupsError,
+    NoMatchesError,
+    extract_group,
+    extract_groups,
+)
 from utilities.typing import IterableStrs
 
 
@@ -39,9 +39,7 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_success(
-        self, pattern: str, text: str, expected: IterableStrs
-    ) -> None:
+    def test_success(self, pattern: str, text: str, expected: IterableStrs) -> None:
         assert extract_groups(pattern, text) == expected
 
     def test_no_groups(self) -> None:

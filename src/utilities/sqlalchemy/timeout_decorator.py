@@ -4,17 +4,13 @@ from typing import NoReturn
 
 import timeout_decorator
 from sqlalchemy import Sequence
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DatabaseError
 
 from utilities.errors import redirect_error
-from utilities.math import FloatFinNonNeg
-from utilities.math import IntNonNeg
+from utilities.math import FloatFinNonNeg, IntNonNeg
+from utilities.sqlalchemy.sqlalchemy import get_dialect, yield_connection
 from utilities.typing import never
-
-from .sqlalchemy import get_dialect  # noqa: TID252
-from .sqlalchemy import yield_connection  # noqa: TID252
 
 
 def next_from_sequence(
@@ -64,9 +60,7 @@ def redirect_to_no_such_sequence_error(
         pattern = "ORA-02289: sequence does not exist"
     else:  # pragma: no cover
         return never(dialect)
-    return redirect_error(
-        error, pattern, NoSuchSequenceError
-    )  # pragma: no cover
+    return redirect_error(error, pattern, NoSuchSequenceError)  # pragma: no cover
 
 
 class NoSuchSequenceError(Exception):

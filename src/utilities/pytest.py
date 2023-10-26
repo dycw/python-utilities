@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from functools import wraps
 from os import environ
@@ -10,12 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from utilities.atomicwrites import writer
-from utilities.datetime import UTC
-from utilities.datetime import duration_to_float
+from utilities.datetime import UTC, duration_to_float
 from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
-from utilities.re import NoMatchesError
-from utilities.re import extract_group
+from utilities.re import NoMatchesError, extract_group
 from utilities.types import Duration
 from utilities.typing import IterableStrs
 
@@ -23,8 +20,7 @@ try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark
-    from pytest import skip
+    from pytest import mark, skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
@@ -71,9 +67,7 @@ def add_pytest_collection_modifyitems(
                 _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
-def add_pytest_configure(
-    config: Config, options: Iterable[tuple[str, str]], /
-) -> None:
+def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:
     """Add the `--slow`, etc markers to pytest.
 
     Usage:
@@ -92,11 +86,7 @@ def is_pytest() -> bool:
 def throttle(*, root: PathLike | None = None, duration: Duration = 1.0) -> Any:
     """Throttle a test."""
 
-    root_use = (
-        get_repo_root().joinpath(".pytest_cache")
-        if root is None
-        else Path(root)
-    )
+    root_use = get_repo_root().joinpath(".pytest_cache") if root is None else Path(root)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
@@ -121,9 +111,7 @@ def throttle(*, root: PathLike | None = None, duration: Duration = 1.0) -> Any:
                 and ((now - prev) < duration_to_float(duration))
             ):
                 skip(reason=f"{test} throttled")
-            with writer(path, overwrite=True) as temp, temp.open(
-                mode="w"
-            ) as fh:
+            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
                 _ = fh.write(str(now))
             return func(*args, **kwargs)
 

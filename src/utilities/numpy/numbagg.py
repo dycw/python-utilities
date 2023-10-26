@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from numbagg import move_exp_nanmean
-from numbagg import move_exp_nansum
-from numpy import exp
-from numpy import log
+from numbagg import move_exp_nanmean, move_exp_nansum
+from numpy import exp, log
 
 from utilities.math import FloatFinPos
 
 from .numpy import NDArrayF  # noqa: TID252
 
 
-def ewma(
-    array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1
-) -> NDArrayF:
+def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArrayF:
     """Compute the EWMA of an array."""
     alpha = _exp_weighted_alpha(halflife)
     return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)

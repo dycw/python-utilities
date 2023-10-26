@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum
-from enum import unique
+from enum import Enum, unique
 from logging import basicConfig
 
 from utilities.datetime import maybe_sub_pct_y

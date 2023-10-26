@@ -1,27 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from collections.abc import Mapping
-from collections.abc import Sequence
-from typing import Any
-from typing import Literal
-from typing import cast
-from typing import overload
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Literal, cast, overload
 
-from fastparquet import ParquetFile
-from fastparquet import write
-from pandas import DataFrame
-from pandas import Series
+from fastparquet import ParquetFile, write
+from pandas import DataFrame, Series
 
 from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
 from utilities.itertools import is_iterable_not_str
 from utilities.math import IntNonNeg
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
-from utilities.pandas import Int64
-from utilities.pandas import check_range_index
-from utilities.pandas import string
+from utilities.numpy import datetime64ns, has_dtype
+from utilities.pandas import Int64, check_range_index, string
 from utilities.pathlib import PathLike
 from utilities.text import ensure_str
 
@@ -35,9 +25,7 @@ _PARQUET_DTYPES = {bool, cast(str, datetime64ns), float, Int64, string}
 
 def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
     """Count the number of rows in a Parquet file."""
-    return _get_parquet_file(path).count(
-        filters=filters, **_maybe_row_filter(filters)
-    )
+    return _get_parquet_file(path).count(filters=filters, **_maybe_row_filter(filters))
 
 
 def get_columns(path: PathLike, /) -> list[str]:
@@ -118,18 +106,14 @@ def _get_parquet_file(
     except TypeError as error:
         msg = f"{path=}"
         new = FileNotFoundError(msg)
-        redirect_error(
-            error, "argument of type 'PosixPath' is not iterable", new
-        )
+        redirect_error(error, "argument of type 'PosixPath' is not iterable", new)
     if row_group is None:
         return file
     try:
         return file[row_group]
     except IndexError as error:
         msg = f"{path=}, {row_group=}"
-        redirect_error(
-            error, "list index out of range", InvalidRowGroupIndexError(msg)
-        )
+        redirect_error(error, "list index out of range", InvalidRowGroupIndexError(msg))
 
 
 class InvalidRowGroupIndexError(IndexError):

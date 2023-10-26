@@ -1,51 +1,43 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
-from numpy import arange
-from numpy import array
-from numpy import zeros
+from hypothesis.strategies import DataObject, data, dictionaries, integers, none
+from numpy import arange, array, zeros
 from numpy.testing import assert_equal
-from pandas import Index
-from pandas import RangeIndex
+from pandas import Index, RangeIndex
 from pandas.testing import assert_index_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 from xarray import DataArray
 from xarray.testing import assert_identical
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import float_arrays
-from utilities.hypothesis import int_arrays
-from utilities.hypothesis import int_indexes
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import (
+    float_arrays,
+    int_arrays,
+    int_indexes,
+    temp_paths,
+    text_ascii,
+)
 from utilities.numpy import NDArrayI1
 from utilities.warnings import suppress_warnings
 from utilities.xarray import DataArray1
-from utilities.zarr import DataArrayOnDisk
-from utilities.zarr import NotOneDimensionalArrayError
-from utilities.zarr import save_data_array_to_disk
-from utilities.zarr import yield_data_array_on_disk
+from utilities.zarr import (
+    DataArrayOnDisk,
+    NotOneDimensionalArrayError,
+    save_data_array_to_disk,
+    yield_data_array_on_disk,
+)
 from utilities.zarr.xarray import _to_ndarray1
 
 
 class TestDataArrayOnDisk:
     @given(
         data=data(),
-        coords=dictionaries(
-            text_ascii(), integers() | int_indexes(), max_size=3
-        ),
+        coords=dictionaries(text_ascii(), integers() | int_indexes(), max_size=3),
         name=text_ascii() | none(),
         root=temp_paths(),
     )
@@ -58,9 +50,7 @@ class TestDataArrayOnDisk:
     ) -> None:
         indexes = {k: v for k, v in coords.items() if isinstance(v, Index)}
         shape = tuple(map(len, indexes.values()))
-        values = data.draw(
-            float_arrays(shape=shape, allow_nan=True, allow_inf=True)
-        )
+        values = data.draw(float_arrays(shape=shape, allow_nan=True, allow_inf=True))
         dims = list(indexes)
         array = DataArray(values, coords, dims, name)
         save_data_array_to_disk(array, path := root.joinpath("array"))
@@ -74,12 +64,8 @@ class TestDataArrayOnDisk:
     @mark.parametrize(
         ("indexer", "expected"),
         [
-            param(
-                {"x": 0}, DataArray([0, 1, 2], {"x": 0, "y": arange(3)}, ["y"])
-            ),
-            param(
-                {"x": -1}, DataArray([3, 4, 5], {"x": 1, "y": arange(3)}, ["y"])
-            ),
+            param({"x": 0}, DataArray([0, 1, 2], {"x": 0, "y": arange(3)}, ["y"])),
+            param({"x": -1}, DataArray([3, 4, 5], {"x": 1, "y": arange(3)}, ["y"])),
             param(
                 {"x": slice(None, 1)},
                 DataArray([[0, 1, 2]], {"x": [0], "y": arange(3)}, ["x", "y"]),
@@ -135,9 +121,7 @@ class TestDataArrayOnDisk:
         [
             param(
                 {"x": "x0"},
-                DataArray(
-                    [0, 1, 2], {"x": "x0", "y": ["y0", "y1", "y2"]}, ["y"]
-                ),
+                DataArray([0, 1, 2], {"x": "x0", "y": ["y0", "y1", "y2"]}, ["y"]),
             ),
             param(
                 {"x": []},
@@ -163,9 +147,7 @@ class TestDataArrayOnDisk:
                     ["x", "y"],
                 ),
             ),
-            param(
-                {"x": "x0", "y": "y0"}, DataArray(0, {"x": "x0", "y": "y0"}, [])
-            ),
+            param({"x": "x0", "y": "y0"}, DataArray(0, {"x": "x0", "y": "y0"}, [])),
             param(
                 {"x": "x0", "y": []},
                 DataArray(zeros(0, dtype=int), {"x": "x0", "y": []}, ["y"]),
@@ -195,9 +177,7 @@ class TestDataArrayOnDisk:
             assert_identical(view.sel(indexer), expected)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(
-        self, func: Callable[[Any], str], tmp_path: Path
-    ) -> None:
+    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = DataArrayOnDisk(tmp_path)
         cls = get_class_name(DataArrayOnDisk)
         path = func(tmp_path.as_posix())
@@ -225,9 +205,7 @@ class TestToNDArray1:
     def test_index(self, array: NDArrayI1) -> None:
         assert_equal(_to_ndarray1(Index(array)), array)
 
-    @mark.parametrize(
-        "array", [param(None), param(zeros(())), param(zeros((1, 1)))]
-    )
+    @mark.parametrize("array", [param(None), param(zeros(())), param(zeros((1, 1)))])
     def test_error(self, array: DataArray1) -> None:
         with raises(NotOneDimensionalArrayError):
             _ = _to_ndarray1(array)

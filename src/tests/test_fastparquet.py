@@ -1,62 +1,53 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from pathlib import Path
-from typing import Any
-from typing import Literal
-from typing import cast
+from typing import Any, Literal, cast
 
 from fastparquet import write
-from hypothesis import assume
-from hypothesis import given
-from hypothesis.extra.pandas import column
-from hypothesis.extra.pandas import data_frames
-from hypothesis.extra.pandas import range_indexes
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import lists
-from hypothesis.strategies import none
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
-from hypothesis.strategies import tuples
-from numpy import float32
-from numpy import nan
-from pandas import DataFrame
-from pandas import RangeIndex
-from pandas import Series
-from pandas import concat
-from pandas.testing import assert_frame_equal
-from pandas.testing import assert_series_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis import assume, given
+from hypothesis.extra.pandas import column, data_frames, range_indexes
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    booleans,
+    data,
+    dictionaries,
+    floats,
+    integers,
+    lists,
+    none,
+    sampled_from,
+    sets,
+    tuples,
+)
+from numpy import float32, nan
+from pandas import DataFrame, RangeIndex, Series, concat
+from pandas.testing import assert_frame_equal, assert_series_equal
+from pytest import mark, param, raises
 
-from utilities.fastparquet import _PARQUET_DTYPES
-from utilities.fastparquet import EmptyDataFrameError
-from utilities.fastparquet import InvalidDTypeError
-from utilities.fastparquet import InvalidRowGroupIndexError
-from utilities.fastparquet import _get_parquet_file
-from utilities.fastparquet import count_rows
-from utilities.fastparquet import get_columns
-from utilities.fastparquet import get_dtypes
-from utilities.fastparquet import get_num_row_groups
-from utilities.fastparquet import read_parquet
-from utilities.fastparquet import write_parquet
-from utilities.hypothesis import dates_pd
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
+from utilities.fastparquet import (
+    _PARQUET_DTYPES,
+    EmptyDataFrameError,
+    InvalidDTypeError,
+    InvalidRowGroupIndexError,
+    _get_parquet_file,
+    count_rows,
+    get_columns,
+    get_dtypes,
+    get_num_row_groups,
+    read_parquet,
+    write_parquet,
+)
+from utilities.hypothesis import (
+    dates_pd,
+    lists_fixed_length,
+    temp_paths,
+    text_ascii,
+)
 from utilities.numpy import datetime64ns
-from utilities.pandas import DataFrameRangeIndexError
-from utilities.pandas import Int64
-from utilities.pandas import string
+from utilities.pandas import DataFrameRangeIndexError, Int64, string
 
 
 class TestCountRows:
@@ -87,9 +78,7 @@ class TestGetDtypes:
         root=temp_paths(),
     )
     def test_main(self, dtypes: Mapping[str, Any], root: Path) -> None:
-        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(
-            dtypes
-        )
+        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(dtypes)
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_dtypes(path)
         assert result == dtypes
@@ -98,9 +87,7 @@ class TestGetDtypes:
 class TestGetNumRowGroups:
     def test_main(self, tmp_path: Path) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        write_parquet(
-            df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1
-        )
+        write_parquet(df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1)
         result = get_num_row_groups(path)
         expected = 2
         assert result == expected
@@ -153,9 +140,7 @@ class TestReadAndWriteParquet:
     ) -> None:
         rows = data.draw(lists(elements, min_size=1))
         n = len(rows)
-        df = DataFrame(rows, index=RangeIndex(n), columns=["value"]).astype(
-            dtype
-        )
+        df = DataFrame(rows, index=RangeIndex(n), columns=["value"]).astype(dtype)
         write_parquet(df, path := root.joinpath("df.parq"))
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
@@ -171,9 +156,7 @@ class TestReadAndWriteParquet:
     def test_writing_iterable_of_dfs(
         self, value1: float, value2: float, root: Path
     ) -> None:
-        df = DataFrame(
-            [[value1], [value2]], index=RangeIndex(2), columns=["value"]
-        )
+        df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
         parts = [df.iloc[:1], df.iloc[1:].reset_index(drop=True)]
         write_parquet(parts, path := root.joinpath("df.parq"))
         result = read_parquet(path)
@@ -202,12 +185,8 @@ class TestReadAndWriteParquet:
         assert_series_equal(sr, df[column1])
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
-    def test_read_row_groups(
-        self, value1: float, value2: float, root: Path
-    ) -> None:
-        df = DataFrame(
-            [[value1], [value2]], index=RangeIndex(2), columns=["value"]
-        )
+    def test_read_row_groups(self, value1: float, value2: float, root: Path) -> None:
+        df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
         write_parquet(df, path := root.joinpath("df.parq"), row_group_offsets=1)
         result1 = read_parquet(path, row_group=0)
         expected1 = df.iloc[:1]
@@ -247,12 +226,8 @@ class TestReadAndWriteParquet:
 
 class TestWriteParquet:
     @given(value=text_ascii(), root=temp_paths())
-    def test_strings_are_stored_as_objects(
-        self, value: str, root: Path
-    ) -> None:
-        df = DataFrame(
-            value, index=RangeIndex(1), columns=["value"], dtype=string
-        )
+    def test_strings_are_stored_as_objects(self, value: str, root: Path) -> None:
+        df = DataFrame(value, index=RangeIndex(1), columns=["value"], dtype=string)
         write_parquet(df, path := root.joinpath("df.parq"))
         file = _get_parquet_file(path)
         dtypes = file.dtypes
@@ -270,24 +245,16 @@ class TestWriteParquet:
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
     def test_check_invalid_dtype(self, tmp_path: Path) -> None:
-        df = DataFrame(
-            nan, index=RangeIndex(1), columns=["value"], dtype=float32
-        )
+        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
     def test_extra_dtype(self, tmp_path: Path) -> None:
-        df = DataFrame(
-            nan, index=RangeIndex(1), columns=["value"], dtype=float32
-        )
-        write_parquet(
-            df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32}
-        )
+        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+        write_parquet(df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32})
 
     def test_extra_dtype_ignored(self, tmp_path: Path) -> None:
-        df = DataFrame(
-            nan, index=RangeIndex(1), columns=["value"], dtype=float32
-        )
+        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(
                 df,

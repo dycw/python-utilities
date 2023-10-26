@@ -3,48 +3,43 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Set as AbstractSet
 from itertools import pairwise
-from math import inf
-from math import isfinite
-from math import isinf
-from math import isnan
+from math import inf, isfinite, isinf, isnan
 from pathlib import Path
 from re import search
 
-from hypothesis import Phase
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import booleans
-from hypothesis.strategies import composite
-from hypothesis.strategies import data
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import none
-from hypothesis.strategies import sets
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis.strategies import (
+    DataObject,
+    DrawFn,
+    booleans,
+    composite,
+    data,
+    datetimes,
+    floats,
+    integers,
+    just,
+    none,
+    sets,
+)
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis import floats_extra
-from utilities.hypothesis import hashables
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import setup_hypothesis_profiles
-from utilities.hypothesis import slices
-from utilities.hypothesis import temp_dirs
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis import text_clean
-from utilities.hypothesis import text_printable
-from utilities.hypothesis.hypothesis import _MAX_EXAMPLES
-from utilities.hypothesis.hypothesis import _NO_SHRINK
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    datetimes_utc,
+    floats_extra,
+    hashables,
+    lists_fixed_length,
+    setup_hypothesis_profiles,
+    slices,
+    temp_dirs,
+    temp_paths,
+    text_ascii,
+    text_clean,
+    text_printable,
+)
+from utilities.hypothesis.hypothesis import _MAX_EXAMPLES, _NO_SHRINK
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.tempfile import TemporaryDirectory
@@ -64,9 +59,7 @@ class TestAssumeDoesNotRaise:
     def test_no_match_and_not_suppressed(self, x: bool) -> None:
         msg = "x is True"
         if x is True:
-            with raises(ValueError, match=msg), assume_does_not_raise(
-                RuntimeError
-            ):
+            with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
                 raise ValueError(msg)
 
     @given(x=booleans())
@@ -92,13 +85,9 @@ class TestDatetimesUTC:
     def test_main(
         self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
-        min_value, max_value = (
-            v.replace(tzinfo=UTC) for v in [min_value, max_value]
-        )
+        min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
         _ = assume(min_value <= max_value)
-        datetime = data.draw(
-            datetimes_utc(min_value=min_value, max_value=max_value)
-        )
+        datetime = data.draw(datetimes_utc(min_value=min_value, max_value=max_value))
         assert min_value <= datetime <= max_value
 
 
@@ -246,9 +235,7 @@ class TestTempDirs:
     def test_main(self, *, temp_dir: TemporaryDirectory) -> None:
         _test_temp_path(temp_dir.path)
 
-    @given(
-        temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10)
-    )
+    @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(
         self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:
@@ -365,9 +352,7 @@ class TestTextPrintable:
                     disallow_na=disallow_na,
                 )
             )
-        assert search(
-            r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text
-        )
+        assert search(r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text)
         assert len(text) >= min_size
         if max_size is not None:
             assert len(text) <= max_size

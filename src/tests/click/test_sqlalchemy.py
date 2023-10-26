@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from click import argument
-from click import command
-from click import echo
-from click import option
+from click import argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
+from hypothesis.strategies import DataObject, data
 from sqlalchemy import Engine
 
 from utilities.click import Engine as ClickEngine

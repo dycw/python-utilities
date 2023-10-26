@@ -6,21 +6,18 @@ from pathlib import Path
 from re import search
 from time import sleep
 
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import none
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
+from hypothesis import given, settings
+from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
 
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.logging import LogLevel
-from utilities.loguru import _FILES_ENV_VAR
-from utilities.loguru import _augment_levels
-from utilities.loguru import _get_files_path
-from utilities.loguru import setup_loguru
+from utilities.loguru import (
+    _FILES_ENV_VAR,
+    _augment_levels,
+    _get_files_path,
+    setup_loguru,
+)
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
 
@@ -152,9 +149,7 @@ class TestGetFilesPath:
         env_var_key=env_var_prefixes,
         env_var_value=text_ascii(min_size=1),
     )
-    def test_both(
-        self, files: str, env_var_key: str, env_var_value: str
-    ) -> None:
+    def test_both(self, files: str, env_var_key: str, env_var_value: str) -> None:
         with temp_environ({env_var_key: env_var_value}):
             result = _get_files_path(files=files, env_var=env_var_key)
         assert result == files

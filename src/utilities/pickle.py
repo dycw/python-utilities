@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import gzip
-from pickle import dump
-from pickle import load
+from pickle import dump, load
 from typing import Any
 
 from utilities.atomicwrites import writer
@@ -15,11 +14,7 @@ def read_pickle(path: PathLike, /) -> Any:
         return load(gz)  # noqa: S301
 
 
-def write_pickle(
-    obj: Any, path: PathLike, /, *, overwrite: bool = False
-) -> None:
+def write_pickle(obj: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Write an object to disk."""
-    with writer(path, overwrite=overwrite) as temp, gzip.open(
-        temp, mode="wb"
-    ) as gz:
+    with writer(path, overwrite=overwrite) as temp, gzip.open(temp, mode="wb") as gz:
         dump(obj, gz)

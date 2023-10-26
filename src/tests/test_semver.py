@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import sampled_from
+from hypothesis.strategies import DataObject, data, sampled_from
 
 from utilities.hypothesis import versions
 from utilities.semver import ensure_version

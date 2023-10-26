@@ -3,24 +3,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from numpy import arange
-from numpy import array
-from numpy import nan
-from numpy.testing import assert_allclose
-from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from numpy import arange, array, nan
+from numpy.testing import assert_allclose, assert_equal
+from pytest import mark, param, raises
 
-from utilities.numpy import ZeroPercentageChangeSpanError
-from utilities.numpy import ffill
-from utilities.numpy import pct_change
+from utilities.numpy import ZeroPercentageChangeSpanError, ffill, pct_change
 
 
 class TestFFill:
-    @mark.parametrize(
-        ("limit", "expected_v"), [param(None, 0.2), param(1, nan)]
-    )
+    @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
     def test_main(self, limit: int | None, expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
@@ -39,9 +30,7 @@ class TestPctChange:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(
-        self, n: int, expected_v: Sequence[float], dtype: type[Any]
-    ) -> None:
+    def test_1d(self, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
         expected = array(expected_v, dtype=float)
@@ -124,9 +113,7 @@ class TestPctChange:
             ),
         ],
     )
-    def test_2d(
-        self, axis: int, n: int, expected_v: Sequence[Sequence[float]]
-    ) -> None:
+    def test_2d(self, axis: int, n: int, expected_v: Sequence[Sequence[float]]) -> None:
         arr = arange(10, 22, dtype=float).reshape((3, 4))
         result = pct_change(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)

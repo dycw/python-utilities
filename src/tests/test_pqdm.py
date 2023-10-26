@@ -1,22 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from functools import partial
-from operator import neg
-from operator import pow
-from typing import Any
-from typing import Literal
+from operator import neg, pow
+from typing import Any, Literal
 
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
 from utilities.class_name import get_class_name
-from utilities.pqdm import _get_desc
-from utilities.pqdm import pmap
-from utilities.pqdm import pstarmap
-from utilities.sentinel import Sentinel
-from utilities.sentinel import sentinel
+from utilities.pqdm import _get_desc, pmap, pstarmap
+from utilities.sentinel import Sentinel, sentinel
 
 
 class TestGetDesc:
@@ -42,9 +35,7 @@ class TestGetDesc:
             def __call__(self) -> None:
                 return
 
-        assert _get_desc(sentinel, Example()) == {
-            "desc": get_class_name(Example)
-        }
+        assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}
 
 
 class TestPMap:

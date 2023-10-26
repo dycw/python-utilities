@@ -1,43 +1,38 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from numpy import arange
-from numpy import array
-from numpy import isclose
-from numpy import nan
-from numpy import sort
-from numpy import zeros
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dictionaries,
+    floats,
+    integers,
+)
+from numpy import arange, array, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import float_arrays
-from utilities.hypothesis import int_arrays
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
-from utilities.numpy import NDArrayI1
-from utilities.numpy import NDArrayO1
-from utilities.numpy import datetime64D
-from utilities.numpy import datetime64ns
-from utilities.zarr import InvalidIndexValueError
-from utilities.zarr import NDArrayWithIndexes
-from utilities.zarr import ffill_non_nan_slices
-from utilities.zarr import yield_array_with_indexes
+from utilities.hypothesis import (
+    float_arrays,
+    int_arrays,
+    temp_paths,
+    text_ascii,
+)
+from utilities.numpy import NDArrayI1, NDArrayO1, datetime64D, datetime64ns
+from utilities.zarr import (
+    InvalidIndexValueError,
+    NDArrayWithIndexes,
+    ffill_non_nan_slices,
+    yield_array_with_indexes,
+)
 
 indexes1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 
@@ -47,9 +42,7 @@ class TestFFillNonNanSlices:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
         )
-        z_arr = open_array(
-            tmp_path.joinpath("array"), shape=arr.shape, dtype=float
-        )
+        z_arr = open_array(tmp_path.joinpath("array"), shape=arr.shape, dtype=float)
         z_arr[:] = arr
         ffill_non_nan_slices(z_arr)
         expected = array(
@@ -146,9 +139,7 @@ class TestNDArrayWithIndexes:
         assert_equal(view.isel(indexer), expected)
 
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
-    def test_isel_error(
-        self, tmp_path: Path, indexer: Mapping[str, Any]
-    ) -> None:
+    def test_isel_error(self, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -158,9 +149,7 @@ class TestNDArrayWithIndexes:
             _ = view.isel(indexer)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(
-        self, func: Callable[[Any], str], tmp_path: Path
-    ) -> None:
+    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
         path = func(tmp_path.as_posix())
@@ -219,9 +208,7 @@ class TestNDArrayWithIndexes:
             param({"x": "2000-01-01"}, 0),
             param({"x": [dt.date(2000, 1, 1)]}, array([0])),
             param({"x": ["2000-01-01"]}, array([0])),
-            param(
-                {"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])
-            ),
+            param({"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])),
             param({"x": [dt.date(2000, 1, 1), "2000-01-02"]}, array([0, 1])),
             param({"x": ["2000-01-01", dt.date(2000, 1, 2)]}, array([0, 1])),
             param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
@@ -231,9 +218,7 @@ class TestNDArrayWithIndexes:
         self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
-            "x": array(
-                [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D
-            )
+            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
         }
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -272,9 +257,7 @@ class TestNDArrayWithIndexes:
         self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
-            "x": array(
-                [dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns
-            )
+            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)
         }
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:

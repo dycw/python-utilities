@@ -5,12 +5,9 @@ from pathlib import Path
 from time import sleep
 from typing import Any
 
-from pytest import MonkeyPatch
-from pytest import mark
-from pytest import param
+from pytest import MonkeyPatch, mark, param
 
-from utilities.pytest import is_pytest
-from utilities.pytest import throttle
+from utilities.pytest import is_pytest, throttle
 from utilities.text import strip_and_dedent
 from utilities.typing import IterableStrs
 
@@ -198,9 +195,7 @@ class TestThrottle:
             """
         self._test_throttle(testdir, contents)
 
-    def test_duration_as_timedelta(
-        self, *, testdir: Any, tmp_path: Path
-    ) -> None:
+    def test_duration_as_timedelta(self, *, testdir: Any, tmp_path: Path) -> None:
         root_str = tmp_path.as_posix()
         contents = f"""
             import datetime as dt

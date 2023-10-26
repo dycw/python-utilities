@@ -19,9 +19,7 @@ class TemporaryDirectory:
         dir: PathLike | None = None,  # noqa: A002
     ) -> None:
         super().__init__()
-        self._temp_dir = _TemporaryDirectory(
-            suffix=suffix, prefix=prefix, dir=dir
-        )
+        self._temp_dir = _TemporaryDirectory(suffix=suffix, prefix=prefix, dir=dir)
         self.path = Path(self._temp_dir.name)
 
     def __enter__(self) -> Path:

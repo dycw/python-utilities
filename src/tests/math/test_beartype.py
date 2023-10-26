@@ -5,52 +5,50 @@ from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
-from hypothesis import Phase
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from pytest import mark
-from pytest import param
+from hypothesis import Phase, given, settings
+from hypothesis.strategies import floats, integers
+from pytest import mark, param
 
-from utilities.math import FloatFin
-from utilities.math import FloatFinInt
-from utilities.math import FloatFinIntNan
-from utilities.math import FloatFinNan
-from utilities.math import FloatFinNeg
-from utilities.math import FloatFinNegNan
-from utilities.math import FloatFinNonNeg
-from utilities.math import FloatFinNonNegNan
-from utilities.math import FloatFinNonPos
-from utilities.math import FloatFinNonPosNan
-from utilities.math import FloatFinNonZr
-from utilities.math import FloatFinNonZrNan
-from utilities.math import FloatFinPos
-from utilities.math import FloatFinPosNan
-from utilities.math import FloatInt
-from utilities.math import FloatIntNan
-from utilities.math import FloatNeg
-from utilities.math import FloatNegNan
-from utilities.math import FloatNonNeg
-from utilities.math import FloatNonNegNan
-from utilities.math import FloatNonPos
-from utilities.math import FloatNonPosNan
-from utilities.math import FloatNonZr
-from utilities.math import FloatNonZrNan
-from utilities.math import FloatPos
-from utilities.math import FloatPosNan
-from utilities.math import FloatZr
-from utilities.math import FloatZrFinNonMic
-from utilities.math import FloatZrFinNonMicNan
-from utilities.math import FloatZrNan
-from utilities.math import FloatZrNonMic
-from utilities.math import FloatZrNonMicNan
-from utilities.math import IntNeg
-from utilities.math import IntNonNeg
-from utilities.math import IntNonPos
-from utilities.math import IntNonZr
-from utilities.math import IntPos
-from utilities.math import IntZr
+from utilities.math import (
+    FloatFin,
+    FloatFinInt,
+    FloatFinIntNan,
+    FloatFinNan,
+    FloatFinNeg,
+    FloatFinNegNan,
+    FloatFinNonNeg,
+    FloatFinNonNegNan,
+    FloatFinNonPos,
+    FloatFinNonPosNan,
+    FloatFinNonZr,
+    FloatFinNonZrNan,
+    FloatFinPos,
+    FloatFinPosNan,
+    FloatInt,
+    FloatIntNan,
+    FloatNeg,
+    FloatNegNan,
+    FloatNonNeg,
+    FloatNonNegNan,
+    FloatNonPos,
+    FloatNonPosNan,
+    FloatNonZr,
+    FloatNonZrNan,
+    FloatPos,
+    FloatPosNan,
+    FloatZr,
+    FloatZrFinNonMic,
+    FloatZrFinNonMicNan,
+    FloatZrNan,
+    FloatZrNonMic,
+    FloatZrNonMicNan,
+    IntNeg,
+    IntNonNeg,
+    IntNonPos,
+    IntNonZr,
+    IntPos,
+    IntZr,
+)
 
 
 class TestAnnotations:

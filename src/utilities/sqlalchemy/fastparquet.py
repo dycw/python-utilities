@@ -3,13 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 from fastparquet import write
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.sql import Select
 
 from utilities.atomicwrites import writer
-from utilities.fastparquet import Compression
-from utilities.fastparquet import write_parquet
+from utilities.fastparquet import Compression, write_parquet
 from utilities.pathlib import PathLike
 
 from .pandas import select_to_dataframe  # noqa: TID252
@@ -33,9 +31,7 @@ def select_to_parquet(
     """
     if stream is None:
         df = select_to_dataframe(sel, engine_or_conn, snake=snake)
-        return write_parquet(
-            df, path, overwrite=overwrite, compression=compression
-        )
+        return write_parquet(df, path, overwrite=overwrite, compression=compression)
     with writer(path, overwrite=overwrite) as temp, yield_connection(
         engine_or_conn
     ) as conn:

@@ -6,8 +6,7 @@ from contextlib import contextmanager
 from typing import Any
 
 from fpdf import FPDF
-from fpdf.enums import XPos
-from fpdf.enums import YPos
+from fpdf.enums import XPos, YPos
 from typing_extensions import override
 
 from utilities.datetime import local_timezone

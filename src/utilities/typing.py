@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
-from typing import Any
-from typing import NoReturn
+from typing import Any, NoReturn
 
 SequenceStrs = list[str] | tuple[str, ...]
 IterableStrs = SequenceStrs | AbstractSet[str] | Mapping[str, Any]

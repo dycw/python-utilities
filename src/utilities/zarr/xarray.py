@@ -1,30 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
-from numpy import empty
-from numpy import ndarray
+from numpy import empty, ndarray
 from pandas import Index
 from typing_extensions import override
 from xarray import DataArray
 from xarray.core.types import ErrorOptionsWithWarn
-from zarr import Array
-from zarr import suppress
+from zarr import Array, suppress
 
 from utilities.numpy import NDArray1
 from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-
-from .zarr import InvalidDimensionError  # noqa: TID252
-from .zarr import IselIndexer  # noqa: TID252
-from .zarr import NDArrayWithIndexes  # noqa: TID252
-from .zarr import yield_group_and_array  # noqa: TID252
+from utilities.zarr.zarr import (
+    InvalidDimensionError,
+    IselIndexer,
+    NDArrayWithIndexes,
+    yield_group_and_array,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA
@@ -129,10 +125,7 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     @override
     def indexes(self) -> dict[str, IndexA]:  # type: ignore
         """The indexes of the underlying array."""
-        return {
-            ensure_str(dim): Index(index)
-            for dim, index in super().indexes.items()
-        }
+        return {ensure_str(dim): Index(index) for dim, index in super().indexes.items()}
 
     @override
     def isel(
