@@ -1,71 +1,57 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Iterator
-from collections.abc import Mapping
-from contextlib import contextmanager
-from contextlib import suppress
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import contextmanager, suppress
 from functools import reduce
 from math import isclose
-from operator import ge
-from operator import itemgetter
-from operator import le
-from typing import Any
-from typing import Literal
-from typing import NoReturn
-from typing import cast
+from operator import ge, itemgetter, le
+from typing import Any, Literal, NoReturn, cast
 
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Enum
-from sqlalchemy import Float
-from sqlalchemy import Interval
-from sqlalchemy import LargeBinary
-from sqlalchemy import MetaData
-from sqlalchemy import Numeric
-from sqlalchemy import Select
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import Unicode
-from sqlalchemy import UnicodeText
-from sqlalchemy import Uuid
-from sqlalchemy import and_
-from sqlalchemy import case
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    Interval,
+    LargeBinary,
+    MetaData,
+    Numeric,
+    Select,
+    String,
+    Table,
+    Unicode,
+    UnicodeText,
+    Uuid,
+    and_,
+    case,
+    quoted_name,
+    text,
+)
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy import quoted_name
-from sqlalchemy import text
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.exc import ArgumentError
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.exc import NoSuchTableError
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import InstrumentedAttribute
-from sqlalchemy.orm import declared_attr
-from sqlalchemy.pool import NullPool
-from sqlalchemy.pool import Pool
+from sqlalchemy.engine import URL, Connection, Engine
+from sqlalchemy.exc import (
+    ArgumentError,
+    DatabaseError,
+    NoSuchTableError,
+    OperationalError,
+)
+from sqlalchemy.orm import InstrumentedAttribute, declared_attr
+from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
-from utilities.itertools import chunked
-from utilities.itertools import one
-from utilities.math import FloatNonNeg
-from utilities.math import IntNonNeg
-from utilities.text import ensure_str
-from utilities.text import snake_case
-from utilities.text import snake_case_mappings
-from utilities.typing import IterableStrs
-from utilities.typing import never
+from utilities.itertools import chunked, one
+from utilities.math import FloatNonNeg, IntNonNeg
+from utilities.text import ensure_str, snake_case, snake_case_mappings
+from utilities.typing import IterableStrs, never
 
 
 class TablenameMixin:
@@ -174,8 +160,7 @@ def _check_column_collections_equal(
         raise UnequalNumberOfColumnsError(msg)
     if snake:
         snake_to_name_x, snake_to_name_y = (
-            snake_case_mappings(i, inverse=True)
-            for i in [name_to_col_x, name_to_col_y]
+            snake_case_mappings(i, inverse=True) for i in [name_to_col_x, name_to_col_y]
         )
         key_to_col_x, key_to_col_y = (
             {key: name_to_col[snake_to_name[key]] for key in snake_to_name}
@@ -261,9 +246,7 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:
         and (x_inst.timezone is not y_inst.timezone)
     ):
         raise UnequalDateTimeColumnTimezoneError(msg)
-    if isinstance(x_inst, Float | Numeric) and isinstance(
-        y_inst, Float | Numeric
-    ):
+    if isinstance(x_inst, Float | Numeric) and isinstance(y_inst, Float | Numeric):
         _check_float_column_types_equal(x_inst, y_inst)
     if isinstance(x_inst, Interval) and isinstance(y_inst, Interval):
         _check_interval_column_types_equal(x_inst, y_inst)
@@ -519,9 +502,7 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
         )
         # try auto-label
         names = {
-            value
-            for col in [x, y]
-            if (value := getattr(col, "name", None)) is not None
+            value for col in [x, y] if (value := getattr(col, "name", None)) is not None
         }
         try:
             (name,) = names
@@ -659,9 +640,7 @@ def model_to_dict(obj: Any, /) -> dict[str, Any]:
 
     def yield_items() -> Iterator[tuple[str, Any]]:
         for key in get_column_names(cls):
-            attr = one(
-                attr for attr in dir(cls) if is_attr(attr, key) is not None
-            )
+            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
             yield key, getattr(obj, attr)
 
     return dict(yield_items())
@@ -729,9 +708,7 @@ def serialize_engine(engine: Engine, /) -> str:
 
 
 @contextmanager
-def yield_connection(
-    engine_or_conn: Engine | Connection, /
-) -> Iterator[Connection]:
+def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
     """Yield a connection."""
     if isinstance(engine_or_conn, Engine):
         with engine_or_conn.begin() as conn:

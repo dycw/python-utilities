@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from hypothesis import assume
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import composite
-from hypothesis.strategies import integers
+from hypothesis.strategies import DrawFn, composite, integers
 from semver import Version
 
-from .hypothesis import MaybeSearchStrategy  # noqa: TID252
-from .hypothesis import lift_draw  # noqa: TID252
-from .hypothesis import lists_fixed_length  # noqa: TID252
+from utilities.hypothesis.hypothesis import (
+    MaybeSearchStrategy,
+    lift_draw,
+    lists_fixed_length,
+)
 
 
 @composite

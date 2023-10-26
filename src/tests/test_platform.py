@@ -6,10 +6,12 @@ from hypothesis import given
 from hypothesis.strategies import sets
 
 from utilities.hypothesis import text_ascii
-from utilities.platform import SYSTEM
-from utilities.platform import System
-from utilities.platform import get_system
-from utilities.platform import maybe_yield_lower_case
+from utilities.platform import (
+    SYSTEM,
+    System,
+    get_system,
+    maybe_yield_lower_case,
+)
 from utilities.typing import never
 
 

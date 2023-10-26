@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from typed_settings import option
-from typed_settings import settings
+from typed_settings import option, settings
 
 from utilities.tempfile import TEMP_DIR
 
@@ -22,9 +21,7 @@ class Config:
     chunk_size: Optional[int] = option(  # noqa: UP007
         default=None, click={"param_decls": ("-cs", "--chunk-size")}
     )
-    dry_run: bool = option(
-        default=False, click={"param_decls": ("-dr", "--dry-run")}
-    )
+    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
 
 
 @dataclass(frozen=True)

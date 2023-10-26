@@ -2,81 +2,81 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Sized
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import sqlalchemy
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import lists
-from hypothesis.strategies import none
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    booleans,
+    data,
+    floats,
+    integers,
+    just,
+    lists,
+    none,
+)
 from hypothesis_sqlalchemy.sample import table_records_lists
-from pandas import DataFrame
-from pandas import NaT
-from pandas import Series
-from pytest import mark
-from pytest import param
-from pytest import raises
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import Date
-from sqlalchemy import DateTime
-from sqlalchemy import Engine
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import func
-from sqlalchemy import insert
-from sqlalchemy import select
+from pandas import DataFrame, NaT, Series
+from pytest import mark, param, raises
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Engine,
+    Float,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    func,
+    insert,
+    select,
+)
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis import dates_pd
-from utilities.hypothesis import datetimes_pd
-from utilities.hypothesis import int64s
-from utilities.hypothesis import sqlite_engines
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import (
+    dates_pd,
+    datetimes_pd,
+    int64s,
+    sqlite_engines,
+    text_ascii,
+)
 from utilities.numpy import datetime64ns
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import datetime64nsutc
-from utilities.pandas import string
-from utilities.sqlalchemy import DatesWithTimeComponentsError
-from utilities.sqlalchemy import NonPositiveStreamError
-from utilities.sqlalchemy import SeriesAgainstTableColumnError
-from utilities.sqlalchemy import SeriesNameNotInTableError
-from utilities.sqlalchemy import SeriesNameSnakeCaseNotInTableError
-from utilities.sqlalchemy import ensure_table_created
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import insert_dataframe
-from utilities.sqlalchemy import insert_items
-from utilities.sqlalchemy import select_to_dataframe
-from utilities.sqlalchemy.pandas import _check_select_for_duplicates
-from utilities.sqlalchemy.pandas import _check_series_against_table_column
-from utilities.sqlalchemy.pandas import _dataframe_columns_to_snake
-from utilities.sqlalchemy.pandas import _parse_series_against_table
-from utilities.sqlalchemy.pandas import _rows_to_dataframe
-from utilities.sqlalchemy.pandas import _stream_dataframes
-from utilities.sqlalchemy.pandas import _table_column_to_dtype
-from utilities.sqlalchemy.pandas import _yield_dataframe_rows_as_dicts
-from utilities.sqlalchemy.pandas import _yield_insertion_elements
+from utilities.pandas import Int64, boolean, datetime64nsutc, string
+from utilities.sqlalchemy import (
+    DatesWithTimeComponentsError,
+    NonPositiveStreamError,
+    SeriesAgainstTableColumnError,
+    SeriesNameNotInTableError,
+    SeriesNameSnakeCaseNotInTableError,
+    ensure_table_created,
+    get_table,
+    insert_dataframe,
+    insert_items,
+    select_to_dataframe,
+)
+from utilities.sqlalchemy.pandas import (
+    _check_select_for_duplicates,
+    _check_series_against_table_column,
+    _dataframe_columns_to_snake,
+    _parse_series_against_table,
+    _rows_to_dataframe,
+    _stream_dataframes,
+    _table_column_to_dtype,
+    _yield_dataframe_rows_as_dicts,
+    _yield_insertion_elements,
+)
 from utilities.text import snake_case
 from utilities.types import NoneType
 
 
 class TestCheckSelectForDuplicates:
     def test_error(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c.id, table.c.id)
         with raises(DuplicateColumnError):
             _check_select_for_duplicates(sel)
@@ -116,9 +116,7 @@ class TestCheckSeriesAgainstTableColumn:
     def test_allow_naive_datetimes(self) -> None:
         series = Series([], dtype=datetime64ns)
         column = Column("id", DateTime)
-        _check_series_against_table_column(
-            series, column, allow_naive_datetimes=True
-        )
+        _check_series_against_table_column(series, column, allow_naive_datetimes=True)
 
 
 class TestDataFrameColumnsToSnake:
@@ -132,9 +130,7 @@ class TestDataFrameColumnsToSnake:
 class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
     def test_main(self, data: DataObject, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
@@ -147,9 +143,7 @@ class TestInsertDataFrame:
 class TestInsertItems:
     @given(data=data(), engine=sqlite_engines())
     def test_lists_of_tuples(self, data: DataObject, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         insert_items([(rows, table)], engine)
@@ -158,12 +152,8 @@ class TestInsertItems:
         assert res == len(rows)
 
     @given(data=data(), engine=sqlite_engines())
-    def test_dataframe_with_table(
-        self, data: DataObject, engine: Engine
-    ) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+    def test_dataframe_with_table(self, data: DataObject, engine: Engine) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
@@ -181,7 +171,7 @@ class TestInsertItems:
 
         ensure_table_created(Example, engine)
         rows = data.draw(table_records_lists(get_table(Example), max_size=10))
-        items = [Example(id_=id_) for id_, in rows]
+        items = [Example(id_=id_) for (id_,) in rows]
         insert_items(items, engine)
         with engine.begin() as conn:
             res = conn.execute(
@@ -191,9 +181,7 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines())
     def test_type_error(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         items = [(None, table)]
         with raises(TypeError, match="Invalid type: first="):
             insert_items(items, engine)
@@ -229,18 +217,14 @@ class TestParseSeriesAgainstTable:
     )
     def test_error(self, *, snake: bool, error: type[Exception]) -> None:
         series = Series([], dtype=int, name="name")
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(error):
             _ = _parse_series_against_table(series, table, snake=snake)
 
 
 class TestRowsToDataFrame:
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
-        ("col_name", "snake"), [param("id", False), param("Id", True)]
-    )
+    @mark.parametrize(("col_name", "snake"), [param("id", False), param("Id", True)])
     def test_main(
         self, *, data: DataObject, col_name: str, engine: Engine, snake: bool
     ) -> None:
@@ -259,15 +243,9 @@ class TestRowsToDataFrame:
 
 
 class TestSelectToDataFrame:
-    @given(
-        data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none()
-    )
-    def test_main(
-        self, data: DataObject, engine: Engine, stream: int | None
-    ) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+    @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none())
+    def test_main(self, data: DataObject, engine: Engine, stream: int | None) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
@@ -286,9 +264,7 @@ class TestSelectToDataFrame:
 class TestStreamDataFrames:
     @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
     def test_main(self, data: DataObject, engine: Engine, stream: int) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
@@ -298,9 +274,7 @@ class TestStreamDataFrames:
 
     @given(engine=sqlite_engines())
     def test_non_positive_stream(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(NonPositiveStreamError):
             _ = list(_stream_dataframes(select(table), engine, 0))
 
@@ -409,9 +383,7 @@ class TestYieldInsertionElements:
 
     @given(date=dates_pd())
     def test_dates_with_time_components_error(self, date: dt.date) -> None:
-        series = Series(
-            [dt.datetime.combine(date, dt.time(12))], dtype=datetime64ns
-        )
+        series = Series([dt.datetime.combine(date, dt.time(12))], dtype=datetime64ns)
         with raises(DatesWithTimeComponentsError):
             _ = list(_yield_insertion_elements(series))
 

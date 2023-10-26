@@ -5,145 +5,147 @@ import typing
 from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
-from typing import Any
-from typing import TypedDict
-from typing import cast
+from typing import Any, TypedDict, cast
 
 import sqlalchemy
-from hypothesis import assume
-from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import fixed_dictionaries
-from hypothesis.strategies import integers
-from hypothesis.strategies import lists
-from hypothesis.strategies import none
-from hypothesis.strategies import permutations
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
+from hypothesis import assume, given
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    fixed_dictionaries,
+    integers,
+    lists,
+    none,
+    permutations,
+    sampled_from,
+    sets,
+)
 from hypothesis_sqlalchemy.sample import table_records_lists
-from pytest import mark
-from pytest import param
-from pytest import raises
-from sqlalchemy import BIGINT
-from sqlalchemy import BINARY
-from sqlalchemy import BOOLEAN
-from sqlalchemy import CHAR
-from sqlalchemy import CLOB
-from sqlalchemy import DATE
-from sqlalchemy import DATETIME
-from sqlalchemy import DECIMAL
-from sqlalchemy import DOUBLE
-from sqlalchemy import DOUBLE_PRECISION
-from sqlalchemy import FLOAT
-from sqlalchemy import INT
-from sqlalchemy import INTEGER
-from sqlalchemy import NCHAR
-from sqlalchemy import NUMERIC
-from sqlalchemy import NVARCHAR
-from sqlalchemy import REAL
-from sqlalchemy import SMALLINT
-from sqlalchemy import TEXT
-from sqlalchemy import TIME
-from sqlalchemy import TIMESTAMP
-from sqlalchemy import UUID
-from sqlalchemy import VARBINARY
-from sqlalchemy import VARCHAR
-from sqlalchemy import BigInteger
-from sqlalchemy import Boolean
-from sqlalchemy import Column
-from sqlalchemy import Date
-from sqlalchemy import DateTime
-from sqlalchemy import Double
-from sqlalchemy import Float
-from sqlalchemy import Integer
-from sqlalchemy import Interval
-from sqlalchemy import LargeBinary
-from sqlalchemy import MetaData
-from sqlalchemy import Numeric
-from sqlalchemy import SmallInteger
-from sqlalchemy import String
-from sqlalchemy import Table
-from sqlalchemy import Text
-from sqlalchemy import Time
-from sqlalchemy import Unicode
-from sqlalchemy import UnicodeText
-from sqlalchemy import Uuid
+from pytest import mark, param, raises
+from sqlalchemy import (
+    BIGINT,
+    BINARY,
+    BOOLEAN,
+    CHAR,
+    CLOB,
+    DATE,
+    DATETIME,
+    DECIMAL,
+    DOUBLE,
+    DOUBLE_PRECISION,
+    FLOAT,
+    INT,
+    INTEGER,
+    NCHAR,
+    NUMERIC,
+    NVARCHAR,
+    REAL,
+    SMALLINT,
+    TEXT,
+    TIME,
+    TIMESTAMP,
+    UUID,
+    VARBINARY,
+    VARCHAR,
+    BigInteger,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Double,
+    Float,
+    Integer,
+    Interval,
+    LargeBinary,
+    MetaData,
+    Numeric,
+    SmallInteger,
+    String,
+    Table,
+    Text,
+    Time,
+    Unicode,
+    UnicodeText,
+    Uuid,
+    func,
+    insert,
+    select,
+)
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy import func
-from sqlalchemy import insert
-from sqlalchemy import select
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.exc import DatabaseError
-from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import sqlite_engines
-from utilities.hypothesis import temp_paths
-from utilities.hypothesis import text_ascii
-from utilities.platform import SYSTEM
-from utilities.platform import System
-from utilities.sqlalchemy import EngineError
-from utilities.sqlalchemy import IncorrectNumberOfTablesError
-from utilities.sqlalchemy import ParseEngineError
-from utilities.sqlalchemy import TableAlreadyExistsError
-from utilities.sqlalchemy import TablenameMixin
-from utilities.sqlalchemy import UnequalBooleanColumnCreateConstraintError
-from utilities.sqlalchemy import UnequalBooleanColumnNameError
-from utilities.sqlalchemy import UnequalColumnTypesError
-from utilities.sqlalchemy import UnequalDateTimeColumnTimezoneError
-from utilities.sqlalchemy import UnequalEnumColumnCreateConstraintError
-from utilities.sqlalchemy import UnequalEnumColumnInheritSchemaError
-from utilities.sqlalchemy import UnequalEnumColumnLengthError
-from utilities.sqlalchemy import UnequalEnumColumnNativeEnumError
-from utilities.sqlalchemy import UnequalEnumColumnTypesError
-from utilities.sqlalchemy import UnequalFloatColumnAsDecimalError
-from utilities.sqlalchemy import UnequalFloatColumnDecimalReturnScaleError
-from utilities.sqlalchemy import UnequalFloatColumnPrecisionsError
-from utilities.sqlalchemy import UnequalIntervalColumnDayPrecisionError
-from utilities.sqlalchemy import UnequalIntervalColumnNativeError
-from utilities.sqlalchemy import UnequalIntervalColumnSecondPrecisionError
-from utilities.sqlalchemy import UnequalLargeBinaryColumnLengthError
-from utilities.sqlalchemy import UnequalNullableStatusError
-from utilities.sqlalchemy import UnequalNumberOfColumnsError
-from utilities.sqlalchemy import UnequalNumericScaleError
-from utilities.sqlalchemy import UnequalPrimaryKeyStatusError
-from utilities.sqlalchemy import UnequalSetOfColumnsError
-from utilities.sqlalchemy import UnequalStringCollationError
-from utilities.sqlalchemy import UnequalStringLengthError
-from utilities.sqlalchemy import UnequalTableOrColumnNamesError
-from utilities.sqlalchemy import UnequalTableOrColumnSnakeCaseNamesError
-from utilities.sqlalchemy import UnequalUUIDAsUUIDError
-from utilities.sqlalchemy import UnequalUUIDNativeUUIDError
-from utilities.sqlalchemy import check_engine
-from utilities.sqlalchemy import check_table_against_reflection
-from utilities.sqlalchemy import check_tables_equal
-from utilities.sqlalchemy import columnwise_max
-from utilities.sqlalchemy import columnwise_min
-from utilities.sqlalchemy import create_engine
-from utilities.sqlalchemy import ensure_engine
-from utilities.sqlalchemy import ensure_table_created
-from utilities.sqlalchemy import ensure_table_dropped
-from utilities.sqlalchemy import get_column_names
-from utilities.sqlalchemy import get_columns
-from utilities.sqlalchemy import get_dialect
-from utilities.sqlalchemy import get_table
-from utilities.sqlalchemy import get_table_name
-from utilities.sqlalchemy import model_to_dict
-from utilities.sqlalchemy import parse_engine
-from utilities.sqlalchemy import redirect_to_no_such_table_error
-from utilities.sqlalchemy import redirect_to_table_already_exists_error
-from utilities.sqlalchemy import serialize_engine
-from utilities.sqlalchemy import yield_connection
-from utilities.sqlalchemy import yield_in_clause_rows
-from utilities.sqlalchemy.sqlalchemy import _check_column_collections_equal
-from utilities.sqlalchemy.sqlalchemy import _check_column_types_equal
-from utilities.sqlalchemy.sqlalchemy import _check_columns_equal
-from utilities.sqlalchemy.sqlalchemy import _check_table_or_column_names_equal
-from utilities.sqlalchemy.sqlalchemy import _reflect_table
+from utilities.hypothesis import (
+    lists_fixed_length,
+    sqlite_engines,
+    temp_paths,
+    text_ascii,
+)
+from utilities.platform import SYSTEM, System
+from utilities.sqlalchemy import (
+    EngineError,
+    IncorrectNumberOfTablesError,
+    ParseEngineError,
+    TableAlreadyExistsError,
+    TablenameMixin,
+    UnequalBooleanColumnCreateConstraintError,
+    UnequalBooleanColumnNameError,
+    UnequalColumnTypesError,
+    UnequalDateTimeColumnTimezoneError,
+    UnequalEnumColumnCreateConstraintError,
+    UnequalEnumColumnInheritSchemaError,
+    UnequalEnumColumnLengthError,
+    UnequalEnumColumnNativeEnumError,
+    UnequalEnumColumnTypesError,
+    UnequalFloatColumnAsDecimalError,
+    UnequalFloatColumnDecimalReturnScaleError,
+    UnequalFloatColumnPrecisionsError,
+    UnequalIntervalColumnDayPrecisionError,
+    UnequalIntervalColumnNativeError,
+    UnequalIntervalColumnSecondPrecisionError,
+    UnequalLargeBinaryColumnLengthError,
+    UnequalNullableStatusError,
+    UnequalNumberOfColumnsError,
+    UnequalNumericScaleError,
+    UnequalPrimaryKeyStatusError,
+    UnequalSetOfColumnsError,
+    UnequalStringCollationError,
+    UnequalStringLengthError,
+    UnequalTableOrColumnNamesError,
+    UnequalTableOrColumnSnakeCaseNamesError,
+    UnequalUUIDAsUUIDError,
+    UnequalUUIDNativeUUIDError,
+    check_engine,
+    check_table_against_reflection,
+    check_tables_equal,
+    columnwise_max,
+    columnwise_min,
+    create_engine,
+    ensure_engine,
+    ensure_table_created,
+    ensure_table_dropped,
+    get_column_names,
+    get_columns,
+    get_dialect,
+    get_table,
+    get_table_name,
+    model_to_dict,
+    parse_engine,
+    redirect_to_no_such_table_error,
+    redirect_to_table_already_exists_error,
+    serialize_engine,
+    yield_connection,
+    yield_in_clause_rows,
+)
+from utilities.sqlalchemy.sqlalchemy import (
+    _check_column_collections_equal,
+    _check_column_types_equal,
+    _check_columns_equal,
+    _check_table_or_column_names_equal,
+    _reflect_table,
+)
 
 
 class TestCheckColumnsEqual:
@@ -204,9 +206,7 @@ class TestCheckColumnCollectionsEqual:
             Column("id2", Integer, primary_key=True),
             Column("id1", Integer, primary_key=True),
         )
-        _check_column_collections_equal(
-            x.columns, y.columns, allow_permutations=True
-        )
+        _check_column_collections_equal(x.columns, y.columns, allow_permutations=True)
 
     def test_snake_and_allow_permutations(self) -> None:
         x = Table(
@@ -373,8 +373,7 @@ class TestCheckColumnTypesEqual:
 
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (
-            sqlalchemy.Enum(MyEnum, create_constraint=cs)
-            for cs in create_constraints
+            sqlalchemy.Enum(MyEnum, create_constraint=cs) for cs in create_constraints
         )
         if create_constraint_x is create_constraint_y:
             _check_column_types_equal(x, y)
@@ -383,9 +382,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
-    def test_enum_native_enum(
-        self, native_enums: typing.Sequence[bool]
-    ) -> None:
+    def test_enum_native_enum(self, native_enums: typing.Sequence[bool]) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -411,17 +408,12 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
-    def test_enum_inherit_schema(
-        self, inherit_schemas: typing.Sequence[bool]
-    ) -> None:
+    def test_enum_inherit_schema(self, inherit_schemas: typing.Sequence[bool]) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
         inherit_schema_x, inherit_schema_y = inherit_schemas
-        x, y = (
-            sqlalchemy.Enum(MyEnum, inherit_schema=is_)
-            for is_ in inherit_schemas
-        )
+        x, y = (sqlalchemy.Enum(MyEnum, inherit_schema=is_) for is_ in inherit_schemas)
         if inherit_schema_x is inherit_schema_y:
             _check_column_types_equal(x, y)
         else:
@@ -514,9 +506,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_large_binary_length(
-        self, lengths: typing.Sequence[int | None]
-    ) -> None:
+    def test_large_binary_length(self, lengths: typing.Sequence[int | None]) -> None:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
@@ -553,9 +543,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_string_collation(
-        self, collations: typing.Sequence[str | None]
-    ) -> None:
+    def test_string_collation(self, collations: typing.Sequence[str | None]) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
@@ -575,9 +563,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
-    def test_uuid_native_uuid(
-        self, native_uuids: typing.Sequence[bool]
-    ) -> None:
+    def test_uuid_native_uuid(self, native_uuids: typing.Sequence[bool]) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
@@ -600,9 +586,7 @@ class TestCheckEngine:
 
     @given(engine=sqlite_engines())
     def test_num_tables(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_engine(engine, num_tables=1)
 
@@ -613,9 +597,7 @@ class TestCheckEngine:
 
     @given(engine=sqlite_engines())
     def test_num_tables_rel_tol_correct(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_engine(engine, num_tables=2, rel_tol=0.5)
 
@@ -637,32 +619,24 @@ class TestCheckEngine:
 class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
     def test_reflected(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("Id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_table_against_reflection(table, engine)
 
     @given(engine=sqlite_engines())
     def test_no_such_table(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("Id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = check_table_against_reflection(table, engine)
 
 
 class TestCheckTablesEqual:
     def test_equal(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         check_tables_equal(table, table)
 
     def test_column_collections(self) -> None:
-        x = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         y = Table(
             "example",
             MetaData(),
@@ -673,21 +647,13 @@ class TestCheckTablesEqual:
             check_tables_equal(x, y)
 
     def test_snake_table(self) -> None:
-        x = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
-        y = Table(
-            "Example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        y = Table("Example", MetaData(), Column("id", Integer, primary_key=True))
         check_tables_equal(x, y, snake_table=True)
 
     def test_snake_columns(self) -> None:
-        x = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
-        y = Table(
-            "example", MetaData(), Column("Id", Integer, primary_key=True)
-        )
+        x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        y = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         check_tables_equal(x, y, snake_columns=True)
 
     def test_orm(self) -> None:
@@ -720,9 +686,7 @@ class TestCheckTableOrColumnNamesEqual:
             with raises(expected):
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
-    @mark.parametrize(
-        ("name", "expected"), [param(None, "Id"), param("x", "x")]
-    )
+    @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
     def test_orm(self, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
@@ -824,9 +788,7 @@ class TestEnsureEngine:
     @given(data=data(), engine=sqlite_engines())
     def test_main(self, data: DataObject, engine: Engine) -> None:
         maybe_engine = data.draw(
-            sampled_from(
-                [engine, engine.url.render_as_string(hide_password=False)]
-            )
+            sampled_from([engine, engine.url.render_as_string(hide_password=False)])
         )
         result = ensure_engine(maybe_engine)
         assert result.url == engine.url
@@ -836,9 +798,7 @@ class TestEnsureTableCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
-        table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
@@ -851,9 +811,7 @@ class TestEnsureTableCreated:
 
         self._run_test(Example, engine, runs)
 
-    def _run_test(
-        self, table_or_model: Any, engine: Engine, runs: int, /
-    ) -> None:
+    def _run_test(self, table_or_model: Any, engine: Engine, runs: int, /) -> None:
         sel = get_table(table_or_model).select()
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
@@ -870,9 +828,7 @@ class TestEnsureTableDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, engine: Engine, runs: int) -> None:
-        table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
@@ -885,9 +841,7 @@ class TestEnsureTableDropped:
 
         self._run_test(Example, engine, runs)
 
-    def _run_test(
-        self, table_or_model: Any, engine: Engine, runs: int, /
-    ) -> None:
+    def _run_test(self, table_or_model: Any, engine: Engine, runs: int, /) -> None:
         table = get_table(table_or_model)
         sel = table.select()
         with engine.begin() as conn:
@@ -904,9 +858,7 @@ class TestEnsureTableDropped:
 
 class TestGetColumnNames:
     def test_core(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table)
 
     def test_orm(self) -> None:
@@ -923,9 +875,7 @@ class TestGetColumnNames:
 
 class TestGetColumns:
     def test_core(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         self._run_test(table)
 
     def test_orm(self) -> None:
@@ -954,24 +904,18 @@ class TestGetDialect:
             param(
                 "mssql+pyodbc://scott:tiger@mydsn",
                 "mssql",
-                marks=mark.skipif(
-                    SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
             ),
             param(
                 "mysql://scott:tiger@localhost/foo",
                 "mysql",
-                marks=mark.skipif(
-                    SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
             ),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param(
                 "postgresql://scott:tiger@localhost/mydatabase",
                 "postgresql",
-                marks=mark.skipif(
-                    SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
             ),
         ],
     )
@@ -981,9 +925,7 @@ class TestGetDialect:
 
 class TestGetTable:
     def test_core(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table(table)
         assert result is table
 
@@ -1000,9 +942,7 @@ class TestGetTable:
 
 class TestGetTableName:
     def test_core(self) -> None:
-        table = Table(
-            "example", MetaData(), Column("id_", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table_name(table)
         expected = "example"
         assert result == expected
@@ -1061,9 +1001,7 @@ class TestRedirectToNoSuchSequenceError:
 class TestRedirectToNoSuchTableError:
     @given(engine=sqlite_engines())
     def test_main(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
                 _ = conn.execute(select(table))
@@ -1074,9 +1012,7 @@ class TestRedirectToNoSuchTableError:
 class TestRedirectTableAlreadyExistsError:
     @given(engine=sqlite_engines())
     def test_main(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with engine.begin() as conn:
             _ = table.create(conn)
         with raises(TableAlreadyExistsError), engine.begin() as conn:
@@ -1105,18 +1041,14 @@ class TestReflectTable:
         ),
     )
     def test_reflected(self, engine: Engine, col_type: Any) -> None:
-        table = Table(
-            "example", MetaData(), Column("Id", col_type, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
         ensure_table_created(table, engine)
         reflected = _reflect_table(table, engine)
         check_tables_equal(reflected, table)
 
     @given(engine=sqlite_engines())
     def test_no_such_table(self, engine: Engine) -> None:
-        table = Table(
-            "example", MetaData(), Column("Id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = _reflect_table(table, engine)
 
@@ -1158,9 +1090,7 @@ class TestYieldInClauseRows:
     def test_main(
         self, data: DataObject, engine: Engine, chunk_size: int | None
     ) -> None:
-        table = Table(
-            "example", MetaData(), Column("id", Integer, primary_key=True)
-        )
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         rows = data.draw(table_records_lists(table, min_size=1))
         num_rows = len(rows)
         with engine.begin() as conn:

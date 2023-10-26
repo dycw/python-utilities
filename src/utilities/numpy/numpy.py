@@ -1,47 +1,41 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from functools import reduce
 from itertools import repeat
-from typing import Annotated
-from typing import Any
-from typing import Literal
-from typing import NoReturn
-from typing import cast
-from typing import overload
+from typing import Annotated, Any, Literal, NoReturn, cast, overload
 
 import numpy as np
-from numpy import array
-from numpy import bool_
-from numpy import datetime64
-from numpy import digitize
-from numpy import dtype
-from numpy import errstate
-from numpy import flatnonzero
-from numpy import float64
-from numpy import full_like
-from numpy import inf
-from numpy import int64
-from numpy import isclose
-from numpy import isfinite
-from numpy import isinf
-from numpy import isnan
-from numpy import linspace
-from numpy import log
-from numpy import nan
-from numpy import nanquantile
-from numpy import ndarray
-from numpy import object_
-from numpy import prod
-from numpy import rint
-from numpy import roll
-from numpy import unravel_index
-from numpy import where
-from numpy.linalg import det
-from numpy.linalg import eig
+from numpy import (
+    array,
+    bool_,
+    datetime64,
+    digitize,
+    dtype,
+    errstate,
+    flatnonzero,
+    float64,
+    full_like,
+    inf,
+    int64,
+    isclose,
+    isfinite,
+    isinf,
+    isnan,
+    linspace,
+    log,
+    nan,
+    nanquantile,
+    ndarray,
+    object_,
+    prod,
+    rint,
+    roll,
+    unravel_index,
+    where,
+)
+from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
 
@@ -118,8 +112,7 @@ class _HasDType:
 
 def _dtype_annotation(dtype: Any, /) -> Any:
     try:
-        from beartype.vale import IsAttr
-        from beartype.vale import IsEqual
+        from beartype.vale import IsAttr, IsEqual
     except ModuleNotFoundError:  # pragma: no cover
         return _HasDType(dtype)
     return IsAttr["dtype", IsEqual[dtype]]
@@ -141,8 +134,7 @@ class _HasNDim:
 
 def _ndim_annotation(ndim: int, /) -> Any:
     try:
-        from beartype.vale import IsAttr
-        from beartype.vale import IsEqual
+        from beartype.vale import IsAttr, IsEqual
     except ModuleNotFoundError:  # pragma: no cover
         return _HasNDim(ndim)
     return IsAttr["ndim", IsEqual[ndim]]
@@ -239,9 +231,7 @@ NDArrayO3 = Annotated[NDArrayO, NDim3]
 # functions
 
 
-def array_indexer(
-    i: int, ndim: int, /, *, axis: int = -1
-) -> tuple[int | slice, ...]:
+def array_indexer(i: int, ndim: int, /, *, axis: int = -1) -> tuple[int | slice, ...]:
     """Get the indexer which returns the `ith` slice of an array along an axis."""
     indexer: list[int | slice] = list(repeat(slice(None), times=ndim))
     indexer[axis] = i
@@ -399,8 +389,7 @@ def ffill_non_nan_slices(
 
     ndim = array.ndim
     arrays = (
-        array[array_indexer(i, ndim, axis=axis)]
-        for i in range(array.shape[axis])
+        array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
     )
     out = array.copy()
     for i, repl_i in _ffill_non_nan_slices_helper(arrays, limit=limit):
@@ -501,9 +490,7 @@ def is_at_least_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x >= y or x == nan."""
-    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
-        x
-    )
+    return is_at_least(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
 def is_at_most(
@@ -529,9 +516,7 @@ def is_at_most_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x <= y or x == nan."""
-    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(
-        x
-    )
+    return is_at_most(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
 def is_between(
@@ -549,9 +534,7 @@ def is_between(
     """Check if low <= x <= high."""
     return is_at_least(
         x, low, rtol=rtol, atol=atol, equal_nan=equal_nan or low_equal_nan
-    ) & is_at_most(
-        x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan
-    )
+    ) & is_at_most(x, high, rtol=rtol, atol=atol, equal_nan=equal_nan or high_equal_nan)
 
 
 def is_between_or_nan(
@@ -721,9 +704,7 @@ def is_greater_than_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x > y or x == nan."""
-    return is_greater_than(
-        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
-    ) | isnan(x)
+    return is_greater_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
 def is_integral(
@@ -765,9 +746,7 @@ def is_less_than_or_nan(
     equal_nan: bool = False,
 ) -> Any:
     """Check if x < y or x == nan."""
-    return is_less_than(
-        x, y, rtol=rtol, atol=atol, equal_nan=equal_nan
-    ) | isnan(x)
+    return is_less_than(x, y, rtol=rtol, atol=atol, equal_nan=equal_nan) | isnan(x)
 
 
 def is_negative(
@@ -889,9 +868,7 @@ def is_symmetric(
     )
 
 
-def is_zero(
-    x: Any, /, *, rtol: float | None = None, atol: float | None = None
-) -> Any:
+def is_zero(x: Any, /, *, rtol: float | None = None, atol: float | None = None) -> Any:
     """Check if x == 0."""
     return _is_close(x, 0.0, rtol=rtol, atol=atol)
 
@@ -1086,9 +1063,7 @@ class EmptyNumpyConcatenateError(ValueError):
     """Raised when there are no arrays to concatenate."""
 
 
-def shift(
-    array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1
-) -> NDArrayF:
+def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
     """Shift the elements of an array."""
     if n == 0:
         msg = f"{n=}"
@@ -1165,13 +1140,9 @@ IsFiniteAndIntegralOrNan = _predicate_annotation(is_finite_and_integral_or_nan)
 IsFiniteAndNegative = _predicate_annotation(is_finite_and_negative)
 IsFiniteAndNegativeOrNan = _predicate_annotation(is_finite_and_negative_or_nan)
 IsFiniteAndNonNegative = _predicate_annotation(is_finite_and_non_negative)
-IsFiniteAndNonNegativeOrNan = _predicate_annotation(
-    is_finite_and_non_negative_or_nan
-)
+IsFiniteAndNonNegativeOrNan = _predicate_annotation(is_finite_and_non_negative_or_nan)
 IsFiniteAndNonPositive = _predicate_annotation(is_finite_and_non_positive)
-IsFiniteAndNonPositiveOrNan = _predicate_annotation(
-    is_finite_and_non_positive_or_nan
-)
+IsFiniteAndNonPositiveOrNan = _predicate_annotation(is_finite_and_non_positive_or_nan)
 IsFiniteAndNonZero = _predicate_annotation(is_finite_and_non_zero)
 IsFiniteAndNonZeroOrNan = _predicate_annotation(is_finite_and_non_zero_or_nan)
 IsFiniteAndPositive = _predicate_annotation(is_finite_and_positive)
@@ -1190,9 +1161,7 @@ IsNonZeroOrNan = _predicate_annotation(is_non_zero_or_nan)
 IsPositive = _predicate_annotation(is_positive)
 IsPositiveOrNan = _predicate_annotation(is_positive_or_nan)
 IsZero = _predicate_annotation(is_zero)
-IsZeroOrFiniteAndNonMicro = _predicate_annotation(
-    is_zero_or_finite_and_non_micro
-)
+IsZeroOrFiniteAndNonMicro = _predicate_annotation(is_zero_or_finite_and_non_micro)
 IsZeroOrFiniteAndNonMicroOrNan = _predicate_annotation(
     is_zero_or_finite_and_non_micro_or_nan
 )
@@ -1304,9 +1273,7 @@ NDArrayF0Pos = Annotated[NDArrayF, NDim0, IsPositive]
 NDArrayF0PosNan = Annotated[NDArrayF, NDim0, IsPositiveOrNan]
 NDArrayF0Zr = Annotated[NDArrayF, NDim0, IsZero]
 NDArrayF0ZrFinNonMic = Annotated[NDArrayF, NDim0, IsZeroOrFiniteAndNonMicro]
-NDArrayF0ZrFinNonMicNan = Annotated[
-    NDArrayF, NDim0, IsZeroOrFiniteAndNonMicroOrNan
-]
+NDArrayF0ZrFinNonMicNan = Annotated[NDArrayF, NDim0, IsZeroOrFiniteAndNonMicroOrNan]
 NDArrayF0ZrNan = Annotated[NDArrayF, NDim0, IsZeroOrNan]
 NDArrayF0ZrNonMic = Annotated[NDArrayF, NDim0, IsZeroOrNonMicro]
 NDArrayF0ZrNonMicNan = Annotated[NDArrayF, NDim0, IsZeroOrNonMicroOrNan]
@@ -1339,9 +1306,7 @@ NDArrayF1Pos = Annotated[NDArrayF, NDim1, IsPositive]
 NDArrayF1PosNan = Annotated[NDArrayF, NDim1, IsPositiveOrNan]
 NDArrayF1Zr = Annotated[NDArrayF, NDim1, IsZero]
 NDArrayF1ZrFinNonMic = Annotated[NDArrayF, NDim1, IsZeroOrFiniteAndNonMicro]
-NDArrayF1ZrFinNonMicNan = Annotated[
-    NDArrayF, NDim1, IsZeroOrFiniteAndNonMicroOrNan
-]
+NDArrayF1ZrFinNonMicNan = Annotated[NDArrayF, NDim1, IsZeroOrFiniteAndNonMicroOrNan]
 NDArrayF1ZrNan = Annotated[NDArrayF, NDim1, IsZeroOrNan]
 NDArrayF1ZrNonMic = Annotated[NDArrayF, NDim1, IsZeroOrNonMicro]
 NDArrayF1ZrNonMicNan = Annotated[NDArrayF, NDim1, IsZeroOrNonMicroOrNan]
@@ -1374,9 +1339,7 @@ NDArrayF2Pos = Annotated[NDArrayF, NDim2, IsPositive]
 NDArrayF2PosNan = Annotated[NDArrayF, NDim2, IsPositiveOrNan]
 NDArrayF2Zr = Annotated[NDArrayF, NDim2, IsZero]
 NDArrayF2ZrFinNonMic = Annotated[NDArrayF, NDim2, IsZeroOrFiniteAndNonMicro]
-NDArrayF2ZrFinNonMicNan = Annotated[
-    NDArrayF, NDim2, IsZeroOrFiniteAndNonMicroOrNan
-]
+NDArrayF2ZrFinNonMicNan = Annotated[NDArrayF, NDim2, IsZeroOrFiniteAndNonMicroOrNan]
 NDArrayF2ZrNan = Annotated[NDArrayF, NDim2, IsZeroOrNan]
 NDArrayF2ZrNonMic = Annotated[NDArrayF, NDim2, IsZeroOrNonMicro]
 NDArrayF2ZrNonMicNan = Annotated[NDArrayF, NDim2, IsZeroOrNonMicroOrNan]
@@ -1409,9 +1372,7 @@ NDArrayF3Pos = Annotated[NDArrayF, NDim3, IsPositive]
 NDArrayF3PosNan = Annotated[NDArrayF, NDim3, IsPositiveOrNan]
 NDArrayF3Zr = Annotated[NDArrayF, NDim3, IsZero]
 NDArrayF3ZrFinNonMic = Annotated[NDArrayF, NDim3, IsZeroOrFiniteAndNonMicro]
-NDArrayF3ZrFinNonMicNan = Annotated[
-    NDArrayF, NDim3, IsZeroOrFiniteAndNonMicroOrNan
-]
+NDArrayF3ZrFinNonMicNan = Annotated[NDArrayF, NDim3, IsZeroOrFiniteAndNonMicroOrNan]
 NDArrayF3ZrNan = Annotated[NDArrayF, NDim3, IsZeroOrNan]
 NDArrayF3ZrNonMic = Annotated[NDArrayF, NDim3, IsZeroOrNonMicro]
 NDArrayF3ZrNonMicNan = Annotated[NDArrayF, NDim3, IsZeroOrNonMicroOrNan]

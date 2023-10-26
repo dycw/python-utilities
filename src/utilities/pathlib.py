@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from os import chdir
 from os import walk as _walk
@@ -33,9 +32,7 @@ def walk(
     for dirpath, dirnames, filenames in _walk(
         top, topdown=topdown, onerror=onerror, followlinks=followlinks
     ):
-        yield Path(dirpath), list(map(Path, dirnames)), list(
-            map(Path, filenames)
-        )
+        yield Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames))
 
 
 @contextmanager

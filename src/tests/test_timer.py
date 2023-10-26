@@ -2,19 +2,12 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
-from operator import eq
-from operator import ge
-from operator import gt
-from operator import le
-from operator import lt
-from operator import ne
+from operator import eq, ge, gt, le, lt, ne
 from re import search
 from time import sleep
 from typing import Any
 
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.timer import Timer
 
@@ -38,9 +31,7 @@ class TestTimer:
             param(lt, True),
         ],
     )
-    @mark.parametrize(
-        "dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))]
-    )
+    @mark.parametrize("dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))])
     def test_comparison(
         self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:

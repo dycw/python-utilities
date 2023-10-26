@@ -1,45 +1,40 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from decimal import Decimal
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import overload
+from typing import TYPE_CHECKING, Any, overload
 
 from pandas import DataFrame
-from sqlalchemy import Column
-from sqlalchemy import insert
-from sqlalchemy.engine import Connection
-from sqlalchemy.engine import Engine
-from sqlalchemy.engine import Row
+from sqlalchemy import Column, insert
+from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnElement
-from sqlalchemy.sql import Select
+from sqlalchemy.sql import ColumnElement, Select
 
-from utilities.itertools import EmptyIterableError
-from utilities.itertools import IterableContainsDuplicatesError
-from utilities.itertools import check_duplicates
-from utilities.itertools import one
-from utilities.numpy import datetime64ns
-from utilities.numpy import has_dtype
-from utilities.pandas import Int64
-from utilities.pandas import boolean
-from utilities.pandas import datetime64nsutc
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
-from utilities.text import ensure_str
-from utilities.text import snake_case
-from utilities.text import snake_case_mappings
-
-from .sqlalchemy import get_column_names  # noqa: TID252
-from .sqlalchemy import get_columns  # noqa: TID252
-from .sqlalchemy import get_dialect  # noqa: TID252
-from .sqlalchemy import get_table  # noqa: TID252
-from .sqlalchemy import model_to_dict  # noqa: TID252
-from .sqlalchemy import yield_connection  # noqa: TID252
+from utilities.itertools import (
+    EmptyIterableError,
+    IterableContainsDuplicatesError,
+    check_duplicates,
+    one,
+)
+from utilities.numpy import datetime64ns, has_dtype
+from utilities.pandas import (
+    Int64,
+    boolean,
+    datetime64nsutc,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+)
+from utilities.sqlalchemy.sqlalchemy import (
+    get_column_names,
+    get_columns,
+    get_dialect,
+    get_table,
+    model_to_dict,
+    yield_connection,
+)
+from utilities.text import ensure_str, snake_case, snake_case_mappings
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import SeriesA
@@ -157,9 +152,7 @@ def _parse_series_against_table(
     try:
         column = one(
             col
-            for name, col in zip(
-                column_names, get_columns(table_or_model), strict=True
-            )
+            for name, col in zip(column_names, get_columns(table_or_model), strict=True)
             if name == target_name
         )
     except EmptyIterableError:
@@ -196,10 +189,7 @@ def _check_series_against_table_column(
             and issubclass(py_type, dt.date)
             and not issubclass(py_type, dt.datetime)
         )
-        or (
-            has_dtype(series, datetime64nsutc)
-            and issubclass(py_type, dt.datetime)
-        )
+        or (has_dtype(series, datetime64nsutc) and issubclass(py_type, dt.datetime))
         or (
             allow_naive_datetimes
             and has_dtype(series, datetime64ns)
@@ -235,10 +225,7 @@ def _yield_insertion_elements(series: SeriesA, /) -> Iterator[Any]:
     else:
         msg = f"Invalid dtype: {series=}"
         raise TypeError(msg)
-    return (
-        None if n else cast(v)
-        for n, v in zip(series.isna(), series, strict=True)
-    )
+    return (None if n else cast(v) for n, v in zip(series.isna(), series, strict=True))
 
 
 class DatesWithTimeComponentsError(ValueError):
@@ -304,8 +291,7 @@ def _rows_to_dataframe(
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
     dtypes = {
-        col.name: _table_column_to_dtype(col)
-        for col in sel.selected_columns.values()
+        col.name: _table_column_to_dtype(col) for col in sel.selected_columns.values()
     }
     df = DataFrame(rows, columns=list(dtypes)).astype(dtypes)
     if snake:
@@ -351,9 +337,7 @@ def _stream_dataframes(
             yield from _stream_dataframes(sel, conn, stream, snake=snake)
     else:
         for rows in (
-            engine_or_conn.execution_options(yield_per=stream)
-            .execute(sel)
-            .partitions()
+            engine_or_conn.execution_options(yield_per=stream).execute(sel).partitions()
         ):
             yield _rows_to_dataframe(sel, rows, snake=snake)
 

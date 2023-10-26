@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from typing import NoReturn
 
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.errors import NoUniqueArgError
-from utilities.errors import redirect_error
-from utilities.errors import retry
+from utilities.errors import NoUniqueArgError, redirect_error, retry
 from utilities.itertools import one
 
 
@@ -71,9 +67,7 @@ class TestRetry:
                     return one(error.args) >= 3
                 return one(error.args) >= 4
 
-            retry_inc = retry(
-                increment, TooLargeError, reset, predicate=predicate
-            )
+            retry_inc = retry(increment, TooLargeError, reset, predicate=predicate)
 
         n = 0
         assert retry_inc() == 1

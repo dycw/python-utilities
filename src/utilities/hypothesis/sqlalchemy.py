@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import composite
-from sqlalchemy import Engine
-from sqlalchemy import MetaData
+from hypothesis.strategies import DrawFn, composite
+from sqlalchemy import Engine, MetaData
 
 from utilities.sqlalchemy import create_engine
 

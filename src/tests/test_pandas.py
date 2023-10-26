@@ -2,65 +2,61 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import assume
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.extra.pandas import range_indexes
 from hypothesis.strategies import integers
-from numpy import array
-from numpy import nan
+from numpy import array, nan
 from numpy.testing import assert_equal
-from pandas import NA
-from pandas import DataFrame
-from pandas import Index
-from pandas import NaT
-from pandas import RangeIndex
-from pandas import Series
-from pandas import Timestamp
-from pandas import concat
-from pandas import to_datetime
+from pandas import (
+    NA,
+    DataFrame,
+    Index,
+    NaT,
+    RangeIndex,
+    Series,
+    Timestamp,
+    concat,
+    to_datetime,
+)
 from pandas.testing import assert_series_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.datetime import TODAY
-from utilities.datetime import UTC
-from utilities.hypothesis import text_ascii
-from utilities.hypothesis import timestamps
+from utilities.datetime import TODAY, UTC
+from utilities.hypothesis import text_ascii, timestamps
 from utilities.numpy import datetime64ns
-from utilities.pandas import TIMESTAMP_MAX_AS_DATE
-from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME
-from utilities.pandas import TIMESTAMP_MIN_AS_DATE
-from utilities.pandas import TIMESTAMP_MIN_AS_DATETIME
-from utilities.pandas import DataFrameColumnsError
-from utilities.pandas import DataFrameColumnsNameError
-from utilities.pandas import DataFrameDTypesError
-from utilities.pandas import DataFrameLengthError
-from utilities.pandas import DataFrameRangeIndexError
-from utilities.pandas import DataFrameSortedError
-from utilities.pandas import DataFrameUniqueError
-from utilities.pandas import DifferentDTypeError
-from utilities.pandas import EmptyPandasConcatError
-from utilities.pandas import Int64
-from utilities.pandas import RangeIndexNameError
-from utilities.pandas import RangeIndexStartError
-from utilities.pandas import RangeIndexStepError
-from utilities.pandas import SeriesRangeIndexError
-from utilities.pandas import TimestampIsNaTError
-from utilities.pandas import boolean
-from utilities.pandas import check_dataframe
-from utilities.pandas import check_range_index
-from utilities.pandas import redirect_to_empty_pandas_concat_error
-from utilities.pandas import series_max
-from utilities.pandas import series_min
-from utilities.pandas import string
-from utilities.pandas import timestamp_to_date
-from utilities.pandas import timestamp_to_datetime
-from utilities.pandas import to_numpy
+from utilities.pandas import (
+    TIMESTAMP_MAX_AS_DATE,
+    TIMESTAMP_MAX_AS_DATETIME,
+    TIMESTAMP_MIN_AS_DATE,
+    TIMESTAMP_MIN_AS_DATETIME,
+    DataFrameColumnsError,
+    DataFrameColumnsNameError,
+    DataFrameDTypesError,
+    DataFrameLengthError,
+    DataFrameRangeIndexError,
+    DataFrameSortedError,
+    DataFrameUniqueError,
+    DifferentDTypeError,
+    EmptyPandasConcatError,
+    Int64,
+    RangeIndexNameError,
+    RangeIndexStartError,
+    RangeIndexStepError,
+    SeriesRangeIndexError,
+    TimestampIsNaTError,
+    boolean,
+    check_dataframe,
+    check_range_index,
+    redirect_to_empty_pandas_concat_error,
+    series_max,
+    series_min,
+    string,
+    timestamp_to_date,
+    timestamp_to_datetime,
+    to_numpy,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import SeriesA
@@ -72,9 +68,7 @@ class TestCheckDataFrame:
         check_dataframe(df)
 
     def test_columns_name_error(self) -> None:
-        df = DataFrame(
-            0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
-        )
+        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"], name="name"))
         with raises(DataFrameColumnsNameError):
             check_dataframe(df)
 
@@ -241,18 +235,14 @@ class TestSeriesMinMax:
         assert_series_equal(result_max, expected_max)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_index(
-        self, func: Callable[[SeriesA, SeriesA], SeriesA]
-    ) -> None:
+    def test_different_index(self, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
         with raises(AssertionError):
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_dtype(
-        self, func: Callable[[SeriesA, SeriesA], SeriesA]
-    ) -> None:
+    def test_different_dtype(self, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)
         with raises(DifferentDTypeError):
@@ -307,9 +297,7 @@ class TestTimestampToDateTime:
     @mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(
-                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
-            ),
+            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
             param(
                 to_datetime("2000-01-01 12:00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
@@ -326,9 +314,7 @@ class TestTimestampToDateTime:
     @given(timestamp=timestamps(allow_nanoseconds=True))
     def test_warn(self, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(
-            UserWarning, match="Discarding nonzero nanoseconds in conversion"
-        ):
+        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
             _ = timestamp_to_datetime(timestamp)
 
     def test_error(self) -> None:

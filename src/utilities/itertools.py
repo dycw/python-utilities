@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Hashable, Iterable, Iterator
 from functools import partial
 from itertools import islice
-from typing import Any
-from typing import TypeVar
-from typing import cast
+from typing import Any, TypeVar, cast
 
 _T = TypeVar("_T")
 
@@ -30,7 +26,8 @@ def chunked(
 ) -> Iterator[list[_T]]:
     """Break iterable into lists of length n."""
     iterator = cast(
-        Iterator[list[_T]], iter(partial(take, n, iter(iterable)), [])  # type: ignore
+        Iterator[list[_T]],
+        iter(partial(take, n, iter(iterable)), []),  # type: ignore
     )
     if strict:  # pragma: no cover
         if n is None:

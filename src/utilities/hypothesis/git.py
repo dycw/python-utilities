@@ -3,14 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from subprocess import run
 
-from hypothesis.strategies import DrawFn
-from hypothesis.strategies import composite
+from hypothesis.strategies import DrawFn, composite
 
+from utilities.hypothesis.hypothesis import (
+    MaybeSearchStrategy,
+    lift_draw,
+    temp_paths,
+)
 from utilities.pathlib import temp_cwd
-
-from .hypothesis import MaybeSearchStrategy  # noqa: TID252
-from .hypothesis import lift_draw  # noqa: TID252
-from .hypothesis import temp_paths  # noqa: TID252
 
 
 @composite

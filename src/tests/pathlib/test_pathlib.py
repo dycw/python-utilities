@@ -4,13 +4,10 @@ from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import booleans
-from pytest import mark
-from pytest import param
+from pytest import mark, param
 
 from utilities.hypothesis.hypothesis import temp_paths
-from utilities.pathlib import ensure_suffix
-from utilities.pathlib import temp_cwd
-from utilities.pathlib import walk
+from utilities.pathlib import ensure_suffix, temp_cwd, walk
 
 
 class TestEnsureSuffix:

@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from hypothesis import assume
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
+from hypothesis.strategies import DataObject, data
 from pytest import raises
 from semver import Version
 
-from utilities.hypothesis import lists_fixed_length
-from utilities.hypothesis import versions
+from utilities.hypothesis import lists_fixed_length, versions
 
 
 class TestVersions:
@@ -35,9 +32,7 @@ class TestVersions:
         version1, version2 = data.draw(lists_fixed_length(versions(), 2))
         min_version = min(version1, version2)
         max_version = max(version1, version2)
-        version = data.draw(
-            versions(min_version=min_version, max_version=max_version)
-        )
+        version = data.draw(versions(min_version=min_version, max_version=max_version))
         assert min_version <= version <= max_version
 
     @given(data=data())

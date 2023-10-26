@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from enum import Enum
-from typing import Any
-from typing import TypeVar
-from typing import cast
+from typing import Any, TypeVar, cast
 
 from typing_extensions import override
 
@@ -30,9 +28,7 @@ StrEnum = _StrEnum
 _E = TypeVar("_E", bound=Enum)
 
 
-def parse_enum(
-    enum: type[_E], member: str, /, *, case_sensitive: bool = True
-) -> _E:
+def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
     """Parse a string into the enum."""
     enum_ = cast(Iterable[Any], enum)
     if case_sensitive:

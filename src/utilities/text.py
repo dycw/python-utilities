@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from re import search
-from re import sub
+from re import search, sub
 from textwrap import dedent
 from typing import Any
 
-from utilities.itertools import IterableContainsDuplicatesError
-from utilities.itertools import check_duplicates
+from utilities.itertools import (
+    IterableContainsDuplicatesError,
+    check_duplicates,
+)
 from utilities.typing import IterableStrs
 
 

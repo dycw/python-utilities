@@ -3,20 +3,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from hypothesis import given
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from numpy import array
-from numpy import isfinite
-from numpy import isnan
-from numpy import nan
-from numpy.testing import assert_allclose
-from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
+from hypothesis.strategies import floats, integers
+from numpy import array, isfinite, isnan, nan
+from numpy.testing import assert_allclose, assert_equal
+from pytest import mark, param
 
 from utilities.hypothesis import float_arrays
-from utilities.numpy import NDArrayF1
-from utilities.numpy import is_between_or_nan
+from utilities.numpy import NDArrayF1, is_between_or_nan
 from utilities.scipy import ppf
 
 
@@ -33,9 +26,7 @@ class TestPPF:
             param([0.0, nan, 0.1], [-1.0, nan, 1.0]),
         ],
     )
-    def test_examples(
-        self, values: Sequence[float], expected: Sequence[float]
-    ) -> None:
+    def test_examples(self, values: Sequence[float], expected: Sequence[float]) -> None:
         result = ppf(array(values, dtype=float), 1.0)
         assert_allclose(result, array(expected, dtype=float))
 

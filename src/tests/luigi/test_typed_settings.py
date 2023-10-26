@@ -1,50 +1,52 @@
 import datetime as dt
-from enum import Enum
-from enum import auto
+from enum import Enum, auto
 from pathlib import Path
-from typing import Any
-from typing import Literal
+from typing import Any, Literal
 
 from hypothesis import given
 from hypothesis.strategies import integers
-from luigi import BoolParameter
-from luigi import FloatParameter
-from luigi import IntParameter
-from luigi import ListParameter
-from luigi import OptionalBoolParameter
-from luigi import OptionalFloatParameter
-from luigi import OptionalIntParameter
-from luigi import OptionalListParameter
-from luigi import OptionalPathParameter
-from luigi import OptionalStrParameter
-from luigi import Parameter
-from luigi import PathParameter
-from luigi import Task
-from pytest import mark
-from pytest import param
-from pytest import raises
+from luigi import (
+    BoolParameter,
+    FloatParameter,
+    IntParameter,
+    ListParameter,
+    OptionalBoolParameter,
+    OptionalFloatParameter,
+    OptionalIntParameter,
+    OptionalListParameter,
+    OptionalPathParameter,
+    OptionalStrParameter,
+    Parameter,
+    PathParameter,
+    Task,
+)
+from pytest import mark, param, raises
 from typed_settings import settings
 
 from utilities.datetime import TODAY
 from utilities.hypothesis import namespace_mixins
-from utilities.luigi import AmbiguousDateError
-from utilities.luigi import AmbiguousDatetimeError
-from utilities.luigi import DateHourParameter
-from utilities.luigi import DateMinuteParameter
-from utilities.luigi import DateParameter
-from utilities.luigi import DateSecondParameter
-from utilities.luigi import EnumParameter
-from utilities.luigi import InvalidAnnotationAndKeywordsError
-from utilities.luigi import InvalidAnnotationError
-from utilities.luigi import TimeParameter
-from utilities.luigi import WeekdayParameter
-from utilities.luigi import build_params_mixin
-from utilities.luigi.typed_settings import _map_annotation
-from utilities.luigi.typed_settings import _map_date_annotation
-from utilities.luigi.typed_settings import _map_datetime_annotation
-from utilities.luigi.typed_settings import _map_iterable_annotation
-from utilities.luigi.typed_settings import _map_keywords
-from utilities.luigi.typed_settings import _map_union_annotation
+from utilities.luigi import (
+    AmbiguousDateError,
+    AmbiguousDatetimeError,
+    DateHourParameter,
+    DateMinuteParameter,
+    DateParameter,
+    DateSecondParameter,
+    EnumParameter,
+    InvalidAnnotationAndKeywordsError,
+    InvalidAnnotationError,
+    TimeParameter,
+    WeekdayParameter,
+    build_params_mixin,
+)
+from utilities.luigi.typed_settings import (
+    _map_annotation,
+    _map_date_annotation,
+    _map_datetime_annotation,
+    _map_iterable_annotation,
+    _map_keywords,
+    _map_union_annotation,
+)
 from utilities.sentinel import Sentinel
 
 
@@ -113,9 +115,7 @@ class TestMapAnnotation:
             _ = _map_annotation(dt.date)
 
     @mark.parametrize("kind", [param("hour"), param("minute"), param("second")])
-    def test_datetime_success(
-        self, kind: Literal["hour", "minute", "second"]
-    ) -> None:
+    def test_datetime_success(self, kind: Literal["hour", "minute", "second"]) -> None:
         _ = _map_annotation(dt.datetime, datetime=kind)
 
     def test_datetime_error(self) -> None:
@@ -200,9 +200,7 @@ class TestMapKeywords:
 
     @given(interval=integers(1, 10))
     @mark.parametrize("kind", [param("hour"), param("minute"), param("second")])
-    def test_datetime_kind_and_interval(
-        self, *, interval: int, kind: str
-    ) -> None:
+    def test_datetime_kind_and_interval(self, *, interval: int, kind: str) -> None:
         result = _map_keywords(dt.datetime, (kind, interval))
         expected = {"datetime": kind, "interval": interval}
         assert result == expected

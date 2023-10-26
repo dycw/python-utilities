@@ -3,25 +3,14 @@ from __future__ import annotations
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import integers
+from hypothesis.strategies import DataObject, data, integers
 from hypothesis_sqlalchemy.sample import table_records_lists
 from luigi import Task
-from sqlalchemy import Column
-from sqlalchemy import Engine
-from sqlalchemy import Integer
-from sqlalchemy import MetaData
-from sqlalchemy import Table
-from sqlalchemy import insert
-from sqlalchemy import select
+from sqlalchemy import Column, Engine, Integer, MetaData, Table, insert, select
 from sqlalchemy.orm import declarative_base
 
-from utilities.hypothesis import namespace_mixins
-from utilities.hypothesis import sqlite_engines
-from utilities.luigi import DatabaseTarget
-from utilities.luigi import EngineParameter
-from utilities.luigi import TableParameter
+from utilities.hypothesis import namespace_mixins, sqlite_engines
+from utilities.luigi import DatabaseTarget, EngineParameter, TableParameter
 
 
 class TestDatabaseTarget:
@@ -37,9 +26,7 @@ class TestDatabaseTarget:
         target = DatabaseTarget(sel, engine)
         assert not target.exists()
         rows = data.draw(
-            table_records_lists(
-                table, id1=integers(0, 10), min_size=1, max_size=10
-            )
+            table_records_lists(table, id1=integers(0, 10), min_size=1, max_size=10)
         )
         with engine.begin() as conn:
             table.create(conn)

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from typed_settings import option
-from typed_settings import settings
+from typed_settings import option, settings
 
 
 @settings(frozen=True)
@@ -21,9 +20,5 @@ class Config:
         click={"param_decls": ("-sp", "--state-path")},
     )
     port: int = option(default=1456, click={"param_decls": ("-po", "--port")})
-    dry_run: bool = option(
-        default=False, click={"param_decls": ("-dr", "--dry-run")}
-    )
-    exist_ok: bool = option(
-        default=False, click={"param_decls": ("-e", "--exist-ok")}
-    )
+    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
+    exist_ok: bool = option(default=False, click={"param_decls": ("-e", "--exist-ok")})

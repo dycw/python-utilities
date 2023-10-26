@@ -1,27 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from io import StringIO
-from io import TextIOWrapper
+from io import StringIO, TextIOWrapper
 from multiprocessing import cpu_count
-from typing import Any
-from typing import Literal
-from typing import TypeVar
-from typing import cast
+from typing import Any, Literal, TypeVar, cast
 
 from pqdm import processes
 
 from utilities.class_name import get_class_name
-from utilities.sentinel import Sentinel
-from utilities.sentinel import sentinel
+from utilities.sentinel import Sentinel, sentinel
 from utilities.tqdm import _DEFAULTS as _TQDM_DEFAULTS
-from utilities.tqdm import _get_total
-from utilities.tqdm import _LockArgs
-from utilities.tqdm import tqdm
+from utilities.tqdm import _get_total, _LockArgs, tqdm
 
 
 @dataclass(frozen=True)
@@ -29,9 +20,7 @@ class _Defaults:
     parallelism: Literal["processes", "threads"] = "processes"
     n_jobs: int | None = None
     bounded: bool = False
-    exception_behaviour: Literal[
-        "ignore", "immediate", "deferred"
-    ] = "immediate"
+    exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate"
 
 
 _PQDM_DEFAULTS = _Defaults()
@@ -242,9 +231,7 @@ def _get_desc(
         try:
             desc_use = func.__name__
         except AttributeError:
-            desc_use = (
-                get_class_name(func) if isinstance(func, object) else None
-            )
+            desc_use = get_class_name(func) if isinstance(func, object) else None
     else:
         desc_use = desc
     return {} if desc_use is None else {"desc": desc_use}

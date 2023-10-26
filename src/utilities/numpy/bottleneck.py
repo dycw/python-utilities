@@ -3,20 +3,12 @@ from __future__ import annotations
 from typing import cast
 
 from bottleneck import push
-from numpy import errstate
-from numpy import flip
-from numpy import isfinite
-from numpy import nan
-from numpy import where
+from numpy import errstate, flip, isfinite, nan, where
 
-from .numpy import NDArrayF  # noqa: TID252
-from .numpy import NDArrayI  # noqa: TID252
-from .numpy import shift  # noqa: TID252
+from utilities.numpy.numpy import NDArrayF, NDArrayI, shift
 
 
-def ffill(
-    array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
-) -> NDArrayF:
+def ffill(array: NDArrayF, /, *, limit: int | None = None, axis: int = -1) -> NDArrayF:
     """Forward fill the elements in an array."""
     return push(array, n=limit, axis=axis)
 

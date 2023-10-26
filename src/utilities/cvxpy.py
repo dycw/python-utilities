@@ -1,24 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
-from typing import Literal
-from typing import cast
-from typing import overload
+from typing import Any, Literal, cast, overload
 
 import cvxpy
 import numpy as np
 import numpy.linalg
-from cvxpy import Expression
-from cvxpy import Problem
-from numpy import maximum
-from numpy import minimum
-from numpy import ndarray
-from numpy import where
+from cvxpy import Expression, Problem
+from numpy import maximum, minimum, ndarray, where
 
-from utilities.numpy import NDArrayF
-from utilities.numpy import NDArrayF1
-from utilities.numpy import NDArrayF2
-from utilities.numpy import is_zero
+from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_zero
 
 
 @overload
@@ -320,7 +310,9 @@ def quad_form(x: Expression, P: NDArrayF2, /) -> Expression:  # noqa: N803
 
 
 def quad_form(
-    x: NDArrayF1 | Expression, P: NDArrayF2, /  # noqa: N803
+    x: NDArrayF1 | Expression,
+    P: NDArrayF2,  # noqa: N803
+    /,
 ) -> float | Expression:
     """Compute the quadratic form of a vector & matrix."""
     if isinstance(x, ndarray):

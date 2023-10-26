@@ -2,127 +2,126 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Sequence
-from typing import Any
-from typing import Literal
+from typing import Any, Literal
 
-from hypothesis import assume
-from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import integers
-from numpy import arange
-from numpy import array
-from numpy import concatenate
-from numpy import datetime64
-from numpy import eye
-from numpy import full
-from numpy import inf
-from numpy import isclose
-from numpy import median
-from numpy import nan
-from numpy import ndarray
-from numpy import ones
-from numpy import zeros
-from numpy import zeros_like
+from hypothesis import assume, given
+from hypothesis.strategies import DataObject, data, dates, integers
+from numpy import (
+    arange,
+    array,
+    concatenate,
+    datetime64,
+    eye,
+    full,
+    inf,
+    isclose,
+    median,
+    nan,
+    ndarray,
+    ones,
+    zeros,
+    zeros_like,
+)
 from numpy.testing import assert_equal
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
-from utilities.hypothesis import datetime64_dtypes
-from utilities.hypothesis import datetime64_units
-from utilities.hypothesis import datetime64s
-from utilities.hypothesis import datetimes_utc
-from utilities.hypothesis import float_arrays
-from utilities.numpy import DateOverflowError
-from utilities.numpy import Datetime64Kind
-from utilities.numpy import Datetime64Unit
-from utilities.numpy import EmptyNumpyConcatenateError
-from utilities.numpy import InfElementsError
-from utilities.numpy import InvalidDTypeError
-from utilities.numpy import LossOfNanosecondsError
-from utilities.numpy import MultipleTrueElementsError
-from utilities.numpy import NanElementsError
-from utilities.numpy import NDArrayF1
-from utilities.numpy import NDArrayF2
-from utilities.numpy import NDArrayI2
-from utilities.numpy import NonIntegralElementsError
-from utilities.numpy import NoTrueElementsError
-from utilities.numpy import ZeroShiftError
-from utilities.numpy import array_indexer
-from utilities.numpy import as_int
-from utilities.numpy import date_to_datetime64
-from utilities.numpy import datetime64_dtype_to_unit
-from utilities.numpy import datetime64_to_date
-from utilities.numpy import datetime64_to_datetime
-from utilities.numpy import datetime64_to_int
-from utilities.numpy import datetime64_unit_to_dtype
-from utilities.numpy import datetime64_unit_to_kind
-from utilities.numpy import datetime64D
-from utilities.numpy import datetime64ns
-from utilities.numpy import datetime64us
-from utilities.numpy import datetime64Y
-from utilities.numpy import datetime_to_datetime64
-from utilities.numpy import discretize
-from utilities.numpy import ffill_non_nan_slices
-from utilities.numpy import fillna
-from utilities.numpy import flatn0
-from utilities.numpy import get_fill_value
-from utilities.numpy import has_dtype
-from utilities.numpy import is_at_least
-from utilities.numpy import is_at_least_or_nan
-from utilities.numpy import is_at_most
-from utilities.numpy import is_at_most_or_nan
-from utilities.numpy import is_between
-from utilities.numpy import is_between_or_nan
-from utilities.numpy import is_empty
-from utilities.numpy import is_finite_and_integral
-from utilities.numpy import is_finite_and_integral_or_nan
-from utilities.numpy import is_finite_and_negative
-from utilities.numpy import is_finite_and_negative_or_nan
-from utilities.numpy import is_finite_and_non_negative
-from utilities.numpy import is_finite_and_non_negative_or_nan
-from utilities.numpy import is_finite_and_non_positive
-from utilities.numpy import is_finite_and_non_positive_or_nan
-from utilities.numpy import is_finite_and_non_zero
-from utilities.numpy import is_finite_and_non_zero_or_nan
-from utilities.numpy import is_finite_and_positive
-from utilities.numpy import is_finite_and_positive_or_nan
-from utilities.numpy import is_finite_or_nan
-from utilities.numpy import is_greater_than
-from utilities.numpy import is_greater_than_or_nan
-from utilities.numpy import is_integral
-from utilities.numpy import is_integral_or_nan
-from utilities.numpy import is_less_than
-from utilities.numpy import is_less_than_or_nan
-from utilities.numpy import is_negative
-from utilities.numpy import is_negative_or_nan
-from utilities.numpy import is_non_empty
-from utilities.numpy import is_non_negative
-from utilities.numpy import is_non_negative_or_nan
-from utilities.numpy import is_non_positive
-from utilities.numpy import is_non_positive_or_nan
-from utilities.numpy import is_non_singular
-from utilities.numpy import is_non_zero
-from utilities.numpy import is_non_zero_or_nan
-from utilities.numpy import is_positive
-from utilities.numpy import is_positive_or_nan
-from utilities.numpy import is_positive_semidefinite
-from utilities.numpy import is_symmetric
-from utilities.numpy import is_zero
-from utilities.numpy import is_zero_or_finite_and_non_micro
-from utilities.numpy import is_zero_or_finite_and_non_micro_or_nan
-from utilities.numpy import is_zero_or_nan
-from utilities.numpy import is_zero_or_non_micro
-from utilities.numpy import is_zero_or_non_micro_or_nan
-from utilities.numpy import maximum
-from utilities.numpy import minimum
-from utilities.numpy import redirect_to_empty_numpy_concatenate_error
-from utilities.numpy import shift
-from utilities.numpy import shift_bool
-from utilities.numpy import year
+from utilities.hypothesis import (
+    datetime64_dtypes,
+    datetime64_units,
+    datetime64s,
+    datetimes_utc,
+    float_arrays,
+)
+from utilities.numpy import (
+    DateOverflowError,
+    Datetime64Kind,
+    Datetime64Unit,
+    EmptyNumpyConcatenateError,
+    InfElementsError,
+    InvalidDTypeError,
+    LossOfNanosecondsError,
+    MultipleTrueElementsError,
+    NanElementsError,
+    NDArrayF1,
+    NDArrayF2,
+    NDArrayI2,
+    NonIntegralElementsError,
+    NoTrueElementsError,
+    ZeroShiftError,
+    array_indexer,
+    as_int,
+    date_to_datetime64,
+    datetime64_dtype_to_unit,
+    datetime64_to_date,
+    datetime64_to_datetime,
+    datetime64_to_int,
+    datetime64_unit_to_dtype,
+    datetime64_unit_to_kind,
+    datetime64D,
+    datetime64ns,
+    datetime64us,
+    datetime64Y,
+    datetime_to_datetime64,
+    discretize,
+    ffill_non_nan_slices,
+    fillna,
+    flatn0,
+    get_fill_value,
+    has_dtype,
+    is_at_least,
+    is_at_least_or_nan,
+    is_at_most,
+    is_at_most_or_nan,
+    is_between,
+    is_between_or_nan,
+    is_empty,
+    is_finite_and_integral,
+    is_finite_and_integral_or_nan,
+    is_finite_and_negative,
+    is_finite_and_negative_or_nan,
+    is_finite_and_non_negative,
+    is_finite_and_non_negative_or_nan,
+    is_finite_and_non_positive,
+    is_finite_and_non_positive_or_nan,
+    is_finite_and_non_zero,
+    is_finite_and_non_zero_or_nan,
+    is_finite_and_positive,
+    is_finite_and_positive_or_nan,
+    is_finite_or_nan,
+    is_greater_than,
+    is_greater_than_or_nan,
+    is_integral,
+    is_integral_or_nan,
+    is_less_than,
+    is_less_than_or_nan,
+    is_negative,
+    is_negative_or_nan,
+    is_non_empty,
+    is_non_negative,
+    is_non_negative_or_nan,
+    is_non_positive,
+    is_non_positive_or_nan,
+    is_non_singular,
+    is_non_zero,
+    is_non_zero_or_nan,
+    is_positive,
+    is_positive_or_nan,
+    is_positive_semidefinite,
+    is_symmetric,
+    is_zero,
+    is_zero_or_finite_and_non_micro,
+    is_zero_or_finite_and_non_micro_or_nan,
+    is_zero_or_nan,
+    is_zero_or_non_micro,
+    is_zero_or_non_micro_or_nan,
+    maximum,
+    minimum,
+    redirect_to_empty_numpy_concatenate_error,
+    shift,
+    shift_bool,
+    year,
+)
 
 
 class TestArrayIndexer:
@@ -234,9 +233,7 @@ class TestDatetimeToDatetime64ns:
 
 class TestDatetime64ToDate:
     def test_example(self) -> None:
-        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(
-            2000, 1, 1
-        )
+        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
 
     @given(date=dates())
     def test_round_trip(self, *, date: dt.date) -> None:
@@ -249,9 +246,7 @@ class TestDatetime64ToDate:
             param("2000-01-01", "ns", NotImplementedError),
         ],
     )
-    def test_error(
-        self, *, datetime: str, dtype: str, error: type[Exception]
-    ) -> None:
+    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
         with raises(error):
             _ = datetime64_to_date(datetime64(datetime, dtype))
 
@@ -266,9 +261,7 @@ class TestDatetime64ToInt:
         _ = datetime64_to_int(datetime)
 
     @given(data=data(), unit=datetime64_units())
-    def test_round_trip(
-        self, *, data: DataObject, unit: Datetime64Unit
-    ) -> None:
+    def test_round_trip(self, *, data: DataObject, unit: Datetime64Unit) -> None:
         datetime = data.draw(datetime64s(unit=unit))
         result = datetime64(datetime64_to_int(datetime), unit)
         assert result == datetime
@@ -288,24 +281,18 @@ class TestDatetime64ToDatetime:
 
     @given(datetime=datetimes_utc())
     def test_round_trip(self, *, datetime: dt.datetime) -> None:
-        assert (
-            datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
-        )
+        assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
 
     @mark.parametrize(
         ("datetime", "dtype", "error"),
         [
             param("0000-12-31", "ms", DateOverflowError),
             param("10000-01-01", "ms", DateOverflowError),
-            param(
-                "1970-01-01 00:00:00.000000001", "ns", LossOfNanosecondsError
-            ),
+            param("1970-01-01 00:00:00.000000001", "ns", LossOfNanosecondsError),
             param("2000-01-01", "D", NotImplementedError),
         ],
     )
-    def test_error(
-        self, *, datetime: str, dtype: str, error: type[Exception]
-    ) -> None:
+    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
         with raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
@@ -324,9 +311,7 @@ class TestDatetime64DTypeToUnit:
 
     @given(dtype=datetime64_dtypes())
     def test_round_trip(self, *, dtype: Any) -> None:
-        assert (
-            datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
-        )
+        assert datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
 
 
 class TestDatetime64DUnitToDType:
@@ -351,16 +336,12 @@ class TestDatetime64DUnitToKind:
         ("unit", "expected"),
         [param("D", "date"), param("Y", "date"), param("ns", "time")],
     )
-    def test_example(
-        self, *, unit: Datetime64Unit, expected: Datetime64Kind
-    ) -> None:
+    def test_example(self, *, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
         assert datetime64_unit_to_kind(unit) == expected
 
 
 class TestDiscretize:
-    @given(
-        arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0)
-    )
+    @given(arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0))
     def test_1_bin(self, *, arr: NDArrayF1) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
@@ -447,9 +428,7 @@ class TestFFillNonNanSlices:
                     [0.3, nan, nan, nan],
                 ],
             ),
-            param(
-                None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]
-            ),
+            param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
             param(
                 1,
                 0,
@@ -459,9 +438,7 @@ class TestFFillNonNanSlices:
                     [0.3, nan, nan, nan],
                 ],
             ),
-            param(
-                1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]
-            ),
+            param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
         ],
     )
     def test_main(
@@ -509,9 +486,7 @@ class TestFillNa:
             param(inf, inf, inf),
         ],
     )
-    def test_main(
-        self, *, init: float, value: float, expected_v: float
-    ) -> None:
+    def test_main(self, *, init: float, value: float, expected_v: float) -> None:
         arr = array([init], dtype=float)
         result = fillna(arr, value=value)
         expected = array([expected_v], dtype=float)
@@ -562,9 +537,7 @@ class TestGetFillValue:
 
 
 class TestHasDtype:
-    @mark.parametrize(
-        ("dtype", "expected"), [param(float, True), param(int, False)]
-    )
+    @mark.parametrize(("dtype", "expected"), [param(float, True), param(int, False)])
     @mark.parametrize("is_tuple", [param(True), param(False)])
     def test_main(self, *, dtype: Any, is_tuple: bool, expected: bool) -> None:
         against = (dtype,) if is_tuple else dtype
@@ -591,9 +564,7 @@ class TestIsAtLeast:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(
-        self, *, x: float, y: float, equal_nan: bool, expected: bool
-    ) -> None:
+    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
@@ -630,9 +601,7 @@ class TestIsAtMost:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(
-        self, *, x: float, y: float, equal_nan: bool, expected: bool
-    ) -> None:
+    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
@@ -929,9 +898,7 @@ class TestIsGreaterThan:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(
-        self, *, x: float, y: float, equal_nan: bool, expected: bool
-    ) -> None:
+    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
@@ -999,9 +966,7 @@ class TestIsLessThan:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(
-        self, *, x: float, y: float, equal_nan: bool, expected: bool
-    ) -> None:
+    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
@@ -1099,9 +1064,7 @@ class TestIsNonSingular:
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_main(
-        self, *, array: NDArrayF2, dtype: Any, expected: bool
-    ) -> None:
+    def test_main(self, *, array: NDArrayF2, dtype: Any, expected: bool) -> None:
         assert is_non_singular(array.astype(dtype)) is expected
 
     def test_overflow(self) -> None:
@@ -1308,9 +1271,7 @@ class TestShift:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(
-        self, *, n: int, expected_v: Sequence[float], dtype: type[Any]
-    ) -> None:
+    def test_1d(self, *, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
         expected = array(expected_v, dtype=float)

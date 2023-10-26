@@ -1,12 +1,13 @@
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.0
+    rev: v0.1.2
     hooks:
       - id: ruff
         args: [--fix]
+      - id: ruff-format
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.8.29
+    rev: 0.8.31
     hooks:
       - id: run-hatch-version
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
@@ -32,11 +33,6 @@ repos:
         args: [--fix=lf]
       - id: no-commit-to-branch
       - id: trailing-whitespace
-  - repo: https://github.com/psf/black
-    rev: 23.9.1
-    hooks:
-      - id: black
-      - id: black-jupyter
   # linters
   - repo: https://github.com/andreoliwa/nitpick
     rev: v0.34.0

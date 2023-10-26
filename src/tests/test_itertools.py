@@ -1,29 +1,30 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from itertools import chain
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import integers
-from hypothesis.strategies import lists
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import sets
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    integers,
+    lists,
+    sampled_from,
+    sets,
+)
+from pytest import mark, param, raises
 
-from utilities.itertools import EmptyIterableError
-from utilities.itertools import IterableContainsDuplicatesError
-from utilities.itertools import MultipleElementsError
-from utilities.itertools import check_duplicates
-from utilities.itertools import chunked
-from utilities.itertools import is_iterable_not_str
-from utilities.itertools import one
-from utilities.itertools import take
+from utilities.itertools import (
+    EmptyIterableError,
+    IterableContainsDuplicatesError,
+    MultipleElementsError,
+    check_duplicates,
+    chunked,
+    is_iterable_not_str,
+    one,
+    take,
+)
 
 
 class TestCheckDuplicates:
@@ -47,9 +48,7 @@ class TestChunked:
             param([1, 2, 3, 4, 5, 6, 7, 8], [[1, 2, 3], [4, 5, 6], [7, 8]]),
         ],
     )
-    def test_main(
-        self, *, iterable: list[int], expected: list[list[int]]
-    ) -> None:
+    def test_main(self, *, iterable: list[int], expected: list[list[int]]) -> None:
         result = list(chunked(iterable, n=3))
         assert result == expected
 
@@ -86,9 +85,7 @@ class TestOne:
 
 
 class TestTake:
-    @mark.parametrize(
-        ("n", "iterable"), [param(3, range(10)), param(10, range(3))]
-    )
+    @mark.parametrize(("n", "iterable"), [param(3, range(10)), param(10, range(3))])
     def test_main(self, *, n: int, iterable: Iterable[int]) -> None:
         result = take(n, iterable)
         assert result == [0, 1, 2]

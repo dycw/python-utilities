@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from hypothesis import given
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
-from utilities.text import SnakeCaseContainsDuplicatesError
-from utilities.text import ensure_str
-from utilities.text import snake_case
-from utilities.text import snake_case_mappings
-from utilities.text import strip_and_dedent
+from utilities.text import (
+    SnakeCaseContainsDuplicatesError,
+    ensure_str,
+    snake_case,
+    snake_case_mappings,
+    strip_and_dedent,
+)
 
 
 class TestEnsureStr:

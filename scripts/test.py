@@ -3,10 +3,8 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Iterator
-from dataclasses import dataclass
-from dataclasses import field
-from enum import Enum
-from enum import auto
+from dataclasses import dataclass, field
+from enum import Enum, auto
 from functools import cache
 from itertools import chain
 from logging import info
@@ -84,9 +82,7 @@ def identify(module: str, /) -> Kind:
     }
     try:
         (kind,) = {
-            kind: modules
-            for kind, modules in mapping.items()
-            if module in modules
+            kind: modules for kind, modules in mapping.items() if module in modules
         }
     except ValueError:
         msg = f"Unable to identify the kind of {module!r}"
@@ -111,9 +107,7 @@ def get_optional_dependencies() -> set[str]:
 def module_to_dependency(module: str, /) -> str:
     dependencies = get_optional_dependencies()
     try:
-        (dep,) = {
-            dep for dep in dependencies if dep.replace("-", "_") == module
-        }
+        (dep,) = {dep for dep in dependencies if dep.replace("-", "_") == module}
     except ValueError:
         msg = f"Missing dependency for {module!r}"
         raise TypeError(msg) from None

@@ -1,22 +1,13 @@
 from __future__ import annotations
 
-from numpy import apply_along_axis
-from numpy import clip
-from numpy import full_like
-from numpy import isnan
-from numpy import nan
-from numpy import zeros_like
+from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
 from scipy.stats import norm
 
 from utilities.math import FloatFinNonNeg
-from utilities.numpy import NDArrayF
-from utilities.numpy import NDArrayF1
-from utilities.numpy import is_zero
+from utilities.numpy import NDArrayF, NDArrayF1, is_zero
 
 
-def ppf(
-    array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1
-) -> NDArrayF:
+def ppf(array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1) -> NDArrayF:
     """Apply the PPF transform to an array of data."""
     return apply_along_axis(_ppf_1d, axis, array, cutoff)
 

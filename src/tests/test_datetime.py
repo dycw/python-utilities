@@ -3,65 +3,60 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable
 from math import isclose
-from operator import eq
-from operator import gt
-from operator import lt
+from operator import eq, gt, lt
 from re import search
 from typing import Any
 
-from hypothesis import HealthCheck
-from hypothesis import assume
-from hypothesis import given
-from hypothesis import settings
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import SearchStrategy
-from hypothesis.strategies import data
-from hypothesis.strategies import dates
-from hypothesis.strategies import datetimes
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import just
-from hypothesis.strategies import sampled_from
-from hypothesis.strategies import timedeltas
-from hypothesis.strategies import times
-from pytest import mark
-from pytest import param
-from pytest import raises
+from hypothesis import HealthCheck, assume, given, settings
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    dates,
+    datetimes,
+    floats,
+    integers,
+    just,
+    sampled_from,
+    timedeltas,
+    times,
+)
+from pytest import mark, param, raises
 
-from utilities.datetime import EPOCH_UTC
-from utilities.datetime import UTC
-from utilities.datetime import CallYieldWeekdaysError
-from utilities.datetime import IsWeekendError
-from utilities.datetime import ParseDateError
-from utilities.datetime import ParseDateTimeError
-from utilities.datetime import ParseTimeError
-from utilities.datetime import TimedeltaError
-from utilities.datetime import add_weekdays
-from utilities.datetime import date_to_datetime
-from utilities.datetime import duration_to_float
-from utilities.datetime import duration_to_timedelta
-from utilities.datetime import ensure_date
-from utilities.datetime import ensure_datetime
-from utilities.datetime import ensure_time
-from utilities.datetime import ensure_timedelta
-from utilities.datetime import is_weekday
-from utilities.datetime import local_timezone
-from utilities.datetime import maybe_sub_pct_y
-from utilities.datetime import parse_date
-from utilities.datetime import parse_datetime
-from utilities.datetime import parse_time
-from utilities.datetime import parse_timedelta
-from utilities.datetime import round_to_next_weekday
-from utilities.datetime import round_to_prev_weekday
-from utilities.datetime import serialize_date
-from utilities.datetime import serialize_datetime
-from utilities.datetime import serialize_time
-from utilities.datetime import serialize_timedelta
-from utilities.datetime import yield_weekdays
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import text_clean
-from utilities.platform import SYSTEM
-from utilities.platform import System
+from utilities.datetime import (
+    EPOCH_UTC,
+    UTC,
+    CallYieldWeekdaysError,
+    IsWeekendError,
+    ParseDateError,
+    ParseDateTimeError,
+    ParseTimeError,
+    TimedeltaError,
+    add_weekdays,
+    date_to_datetime,
+    duration_to_float,
+    duration_to_timedelta,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    ensure_timedelta,
+    is_weekday,
+    local_timezone,
+    maybe_sub_pct_y,
+    parse_date,
+    parse_datetime,
+    parse_time,
+    parse_timedelta,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
+    serialize_timedelta,
+    yield_weekdays,
+)
+from utilities.hypothesis import assume_does_not_raise, text_clean
+from utilities.platform import SYSTEM, System
 from utilities.types import Number
 
 
@@ -230,9 +225,7 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff_zzzz(
-        self, *, datetime: dt.datetime, fmt: str
-    ) -> None:
+    def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -242,9 +235,7 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff(
-        self, *, datetime: dt.datetime, fmt: str
-    ) -> None:
+    def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
         result = parse_datetime(datetime.strftime(fmt))
         assert result == datetime
 
@@ -261,9 +252,9 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        fmt=sampled_from(
-            ["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]
-        ).map(maybe_sub_pct_y),
+        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
+            maybe_sub_pct_y
+        ),
     )
     def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)

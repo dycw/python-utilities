@@ -4,19 +4,22 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
-from hypothesis.strategies import dictionaries
-from hypothesis.strategies import integers
-from hypothesis.strategies import sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dictionaries,
+    integers,
+    sampled_from,
+)
 from xarray import DataArray
 
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import float_data_arrays
-from utilities.hypothesis import int_indexes
-from utilities.hypothesis import text_ascii
-from utilities.xarray import ewma
-from utilities.xarray import exp_moving_sum
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    float_data_arrays,
+    int_indexes,
+    text_ascii,
+)
+from utilities.xarray import ewma, exp_moving_sum
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA
@@ -25,9 +28,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class TestEwma:
     @given(
         data=data(),
-        indexes=dictionaries(
-            text_ascii(), int_indexes(), min_size=1, max_size=3
-        ),
+        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
         halflife=integers(1, 10),
     )
     def test_main(
@@ -42,9 +43,7 @@ class TestEwma:
 class TestExpMovingSum:
     @given(
         data=data(),
-        indexes=dictionaries(
-            text_ascii(), int_indexes(), min_size=1, max_size=3
-        ),
+        indexes=dictionaries(text_ascii(), int_indexes(), min_size=1, max_size=3),
         halflife=integers(1, 10),
     )
     def test_main(

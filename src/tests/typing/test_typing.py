@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pytest import raises
 
-from utilities.typing import NeverError
-from utilities.typing import never
+from utilities.typing import NeverError, never
 
 
 class TestNever:

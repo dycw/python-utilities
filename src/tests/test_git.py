@@ -3,16 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from hypothesis import given
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import data
+from hypothesis.strategies import DataObject, data
 from pytest import raises
 
-from utilities.git import InvalidRepoError
-from utilities.git import get_branch_name
-from utilities.git import get_repo_name
-from utilities.git import get_repo_root
-from utilities.hypothesis import git_repos
-from utilities.hypothesis import text_ascii
+from utilities.git import (
+    InvalidRepoError,
+    get_branch_name,
+    get_repo_name,
+    get_repo_root,
+)
+from utilities.hypothesis import git_repos, text_ascii
 
 
 class TestGetBranchName:

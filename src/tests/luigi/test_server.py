@@ -7,8 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import integers
 
 from utilities.hypothesis import text_ascii
-from utilities.luigi.server import _get_args
-from utilities.luigi.server import main
+from utilities.luigi.server import _get_args, main
 from utilities.pathlib import temp_cwd
 
 

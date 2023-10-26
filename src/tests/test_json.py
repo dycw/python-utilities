@@ -4,9 +4,7 @@ import datetime as dt
 from pathlib import Path
 from typing import Any
 
-from pytest import mark
-from pytest import param
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.json import serialize

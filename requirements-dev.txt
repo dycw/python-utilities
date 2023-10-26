@@ -27,11 +27,11 @@ attrs==23.1.0
     #   outcome
     #   trio
     #   typed-settings
-beartype==0.16.3
+beartype==0.16.4
     # via dycw-utilities (pyproject.toml)
 bleach==6.1.0
     # via panel
-bokeh==3.2.2
+bokeh==3.3.0
     # via panel
 bottleneck==1.3.7
     # via dycw-utilities (pyproject.toml)
@@ -49,7 +49,7 @@ certifi==2023.7.22
     #   selenium
 cffi==1.16.0
     # via cryptography
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via requests
 clarabel==0.6.0
     # via cvxpy
@@ -74,7 +74,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cramjam==2.7.0
     # via fastparquet
-cryptography==41.0.4
+cryptography==41.0.5
     # via dycw-utilities (pyproject.toml)
 cvxpy==1.4.1
     # via dycw-utilities (pyproject.toml)
@@ -94,11 +94,11 @@ exceptiongroup==1.1.3
     # via dycw-utilities (pyproject.toml)
 execnet==2.0.2
     # via pytest-xdist
-fastapi==0.103.2
+fastapi==0.104.0
     # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
-fastparquet==2023.8.0
+fastparquet==2023.10.0
     # via dycw-utilities (pyproject.toml)
 filelock==3.12.4
     # via virtualenv
@@ -108,7 +108,7 @@ fpdf2==2.7.6
     # via dycw-utilities (pyproject.toml)
 freezegun==1.2.2
     # via dycw-utilities (pyproject.toml)
-fsspec==2023.9.2
+fsspec==2023.10.0
     # via fastparquet
 h11==0.14.0
     # via
@@ -118,7 +118,7 @@ hatch==1.7.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.18.0
     # via hatch
-holoviews==1.17.1
+holoviews==1.18.0
     # via dycw-utilities (pyproject.toml)
 httpcore==0.18.0
     # via httpx
@@ -151,7 +151,7 @@ keyring==24.2.0
     # via hatch
 linkify-it-py==2.0.2
     # via panel
-llvmlite==0.41.0
+llvmlite==0.41.1
     # via numba
 lockfile==0.12.2
     # via python-daemon
@@ -182,13 +182,13 @@ mysqlclient==2.2.0 ; sys_platform == "darwin"
     # via dycw-utilities (pyproject.toml)
 nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
-numba==0.58.0
+numba==0.58.1
     # via numbagg
-numbagg==0.4.5
+numbagg==0.6.0
     # via dycw-utilities (pyproject.toml)
-numcodecs==0.12.0
+numcodecs==0.12.1
     # via zarr
-numpy==1.25.2
+numpy==1.26.1
     # via
     #   bokeh
     #   bottleneck
@@ -211,7 +211,7 @@ numpy==1.25.2
     #   zarr
 osqp==0.6.3
     # via cvxpy
-outcome==1.2.0
+outcome==1.3.0.post0
     # via trio
 packaging==23.2
     # via
@@ -233,9 +233,9 @@ pandas==2.1.1
     #   holoviews
     #   panel
     #   xarray
-panel==1.2.3
+panel==1.3.0
     # via holoviews
-param==1.13.0
+param==2.0.0
     # via
     #   holoviews
     #   panel
@@ -295,7 +295,7 @@ pyproject-hooks==1.0.0
     # via build
 pysocks==1.7.1
     # via urllib3
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-check
@@ -349,7 +349,7 @@ selenium==4.14.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-shellingham==1.5.3
+shellingham==1.5.4
     # via hatch
 six==1.16.0
     # via
@@ -394,7 +394,7 @@ trio==0.22.2
     #   trio-websocket
 trio-websocket==0.11.1
     # via selenium
-trove-classifiers==2023.10.17
+trove-classifiers==2023.10.18
     # via hatchling
 typed-settings[click]==23.0.1
     # via dycw-utilities (pyproject.toml)
@@ -411,13 +411,13 @@ tzdata==2023.3
     # via pandas
 uc-micro-py==1.0.2
     # via linkify-it-py
-urllib3[socks]==2.0.6
+urllib3[socks]==2.0.7
     # via
     #   requests
     #   selenium
 userpath==1.9.1
     # via hatch
-virtualenv==20.24.5
+virtualenv==20.24.6
     # via
     #   hatch
     #   nox
@@ -427,9 +427,9 @@ wheel==0.41.2
     # via pip-tools
 wsproto==1.2.0
     # via trio-websocket
-xarray==2023.9.0
+xarray==2023.10.1
     # via dycw-utilities (pyproject.toml)
-xyzservices==2023.10.0
+xyzservices==2023.10.1
     # via
     #   bokeh
     #   panel
@@ -439,7 +439,7 @@ zipp==3.17.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3
+pip==23.3.1
     # via
     #   pip-tools
     #   pypiserver

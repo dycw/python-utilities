@@ -5,22 +5,26 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import DataObject
-from hypothesis.strategies import booleans
-from hypothesis.strategies import data
-from hypothesis.strategies import floats
-from hypothesis.strategies import integers
-from hypothesis.strategies import none
+from hypothesis.strategies import (
+    DataObject,
+    booleans,
+    data,
+    floats,
+    integers,
+    none,
+)
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import assume_does_not_raise
-from utilities.hypothesis import bool_data_arrays
-from utilities.hypothesis import dicts_of_indexes
-from utilities.hypothesis import float_data_arrays
-from utilities.hypothesis import int64s
-from utilities.hypothesis import int_data_arrays
-from utilities.hypothesis import str_data_arrays
-from utilities.hypothesis import text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    bool_data_arrays,
+    dicts_of_indexes,
+    float_data_arrays,
+    int64s,
+    int_data_arrays,
+    str_data_arrays,
+    text_ascii,
+)
 from utilities.hypothesis.xarray import _merge_into_dict_of_indexes
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -37,9 +41,7 @@ class TestBoolDataArrays:
         assert array.dims == tuple(indexes)
         assert array.dtype == bool
         assert array.name == name
-        for arr, exp in zip(
-            array.indexes.values(), indexes.values(), strict=True
-        ):
+        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
             assert_index_equal(arr, exp, check_names=False)
 
 
@@ -127,9 +129,7 @@ class TestFloatDataArrays:
         assert array.dims == tuple(indexes)
         assert array.dtype == float
         assert array.name == name
-        for arr, exp in zip(
-            array.indexes.values(), indexes.values(), strict=True
-        ):
+        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
             assert_index_equal(arr, exp, check_names=False)
 
 
@@ -166,9 +166,7 @@ class TestIntDataArrays:
         assert array.dims == tuple(indexes)
         assert array.dtype == int
         assert array.name == name
-        for arr, exp in zip(
-            array.indexes.values(), indexes.values(), strict=True
-        ):
+        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
             assert_index_equal(arr, exp, check_names=False)
 
 
@@ -189,9 +187,7 @@ class TestMergeIntoDictOfIndexes:
         indexes2: Mapping[str, IndexA],
     ) -> None:
         indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
-        expected = (set() if indexes1 is None else set(indexes1)) | set(
-            indexes2
-        )
+        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
         assert set(indexes_) == expected
 
 
@@ -231,7 +227,5 @@ class TestStrDataArrays:
         assert array.dims == tuple(indexes)
         assert array.dtype == object
         assert array.name == name
-        for arr, exp in zip(
-            array.indexes.values(), indexes.values(), strict=True
-        ):
+        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
             assert_index_equal(arr, exp, check_names=False)

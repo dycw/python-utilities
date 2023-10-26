@@ -6,41 +6,37 @@ from contextlib import suppress
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from types import UnionType
-from types import new_class
-from typing import Any
-from typing import Literal
-from typing import TypeVar
-from typing import cast
-from typing import get_args
-from typing import get_origin
+from types import UnionType, new_class
+from typing import Any, Literal, TypeVar, cast, get_args, get_origin
 
-from attrs import asdict
-from attrs import fields
-from luigi import BoolParameter
-from luigi import FloatParameter
-from luigi import IntParameter
-from luigi import ListParameter
-from luigi import OptionalBoolParameter
-from luigi import OptionalFloatParameter
-from luigi import OptionalIntParameter
-from luigi import OptionalListParameter
-from luigi import OptionalPathParameter
-from luigi import OptionalStrParameter
-from luigi import Parameter
-from luigi import PathParameter
+from attrs import asdict, fields
+from luigi import (
+    BoolParameter,
+    FloatParameter,
+    IntParameter,
+    ListParameter,
+    OptionalBoolParameter,
+    OptionalFloatParameter,
+    OptionalIntParameter,
+    OptionalListParameter,
+    OptionalPathParameter,
+    OptionalStrParameter,
+    Parameter,
+    PathParameter,
+)
 
 from utilities.class_name import get_class_name
+from utilities.luigi.luigi import (
+    DateHourParameter,
+    DateMinuteParameter,
+    DateParameter,
+    DateSecondParameter,
+    EnumParameter,
+    TimeParameter,
+    WeekdayParameter,
+)
 from utilities.types import NoneType
 from utilities.typing import never
-
-from .luigi import DateHourParameter  # noqa: TID252
-from .luigi import DateMinuteParameter  # noqa: TID252
-from .luigi import DateParameter  # noqa: TID252
-from .luigi import DateSecondParameter  # noqa: TID252
-from .luigi import EnumParameter  # noqa: TID252
-from .luigi import TimeParameter  # noqa: TID252
-from .luigi import WeekdayParameter  # noqa: TID252
 
 _T = TypeVar("_T")
 
@@ -162,9 +158,7 @@ def _map_iterable_annotation(ann: Any, /) -> type[ListParameter]:
     raise InvalidAnnotationError(msg)
 
 
-def _map_union_annotation(
-    ann: Any, /
-) -> type[Parameter] | Callable[..., Parameter]:
+def _map_union_annotation(ann: Any, /) -> type[Parameter] | Callable[..., Parameter]:
     """Map a union annotation to a parameter class."""
     msg = f"{ann=}"
     if get_origin(ann) is not UnionType:

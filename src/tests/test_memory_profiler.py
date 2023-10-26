@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import given, settings
 from hypothesis.strategies import integers
 
 from utilities.memory_profiler import memory_profiled

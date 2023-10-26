@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from os import getenv
-from typing import TypedDict
-from typing import cast
+from typing import TypedDict, cast
 
-from hypothesis import Verbosity
-from hypothesis import settings
+from hypothesis import Verbosity, settings
 
 
 class Kwargs(TypedDict, total=False):

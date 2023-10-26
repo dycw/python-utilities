@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
-from locale import LC_NUMERIC
+from locale import LC_NUMERIC, getlocale, setlocale
 from locale import atof as _atof
-from locale import getlocale
-from locale import setlocale
 
-from utilities.platform import SYSTEM
-from utilities.platform import System
+from utilities.platform import SYSTEM, System
 from utilities.typing import never
 
 
