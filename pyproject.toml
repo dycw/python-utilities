@@ -150,12 +150,6 @@ monitor-memory = "utilities.monitor_memory:main"
 start-luigi-server = "utilities.luigi.server:main"
 start-pypi-server = "utilities.pypi_server:main"
 
-# black
-[tool.black]
-line-length = 80
-skip-magic-trailing-comma = true
-target-version = ["py310"]
-
 # coverage
 [tool.coverage]
 
