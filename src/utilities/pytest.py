@@ -60,11 +60,12 @@ def add_pytest_collection_modifyitems(
     missing = {opt for opt in options if not config.getoption(f"--{opt}")}
     for item in items:
         opts_on_item = [opt for opt in options if opt in item.keywords]
-        if len(missing & set(opts_on_item)) >= 1:
+        if (len(missing & set(opts_on_item)) >= 1) and (  # pragma: no cover
+            mark is not None
+        ):
             flags = [f"--{opt}" for opt in opts_on_item]
             joined = " ".join(flags)
-            if mark is not None:  # pragma: no cover
-                _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
+            _ = item.add_marker(mark.skip(reason=f"pass {joined}"))
 
 
 def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) -> None:

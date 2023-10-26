@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from fastparquet import ParquetFile, write
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
 from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
@@ -14,6 +14,9 @@ from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import Int64, check_range_index, string
 from utilities.pathlib import PathLike
 from utilities.text import ensure_str
+
+if TYPE_CHECKING:
+    from utilities.pandas import SeriesA  # pragma: no cover
 
 _Compression = Literal["gzip", ",snappy", "brotli", "lz4", "zstandard"]
 Compression = _Compression | Mapping[str, _Compression | None]
@@ -57,7 +60,7 @@ def read_parquet(
     row_group: IntNonNeg | None = None,
     columns: str,
     filters: Filters | None = None,
-) -> Series[Any]:
+) -> SeriesA:
     ...
 
 
@@ -82,7 +85,7 @@ def read_parquet(
     row_group: IntNonNeg | None = None,
     columns: str | list[str] | None = None,  # list, not Sequence
     filters: Filters | None = None,
-) -> Series[Any] | DataFrame:
+) -> SeriesA | DataFrame:
     """Read a Parquet file into a Series/DataFrame."""
     file = _get_parquet_file(path, row_group=row_group)
     as_df = (columns is None) or is_iterable_not_str(columns)

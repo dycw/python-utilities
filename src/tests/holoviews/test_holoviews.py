@@ -18,7 +18,7 @@ class TestApplyOpts:
 class TestRelabelPlot:
     def test_main(self) -> None:
         curve = Curve([])
-        assert not curve.label
+        assert curve.label == ""
         curve = relabel_plot(curve, "label")
         assert curve.label == "label"
 

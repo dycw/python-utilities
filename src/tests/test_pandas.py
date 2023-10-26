@@ -20,11 +20,11 @@ from pandas import (
     concat,
     to_datetime,
 )
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_index_equal, assert_series_equal
 from pytest import mark, param, raises
 
 from utilities.datetime import TODAY, UTC
-from utilities.hypothesis import text_ascii, timestamps
+from utilities.hypothesis import int_indexes, text_ascii, timestamps
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
@@ -50,8 +50,10 @@ from utilities.pandas import (
     check_dataframe,
     check_range_index,
     redirect_to_empty_pandas_concat_error,
+    rename_index,
     series_max,
     series_min,
+    sort_index,
     string,
     timestamp_to_date,
     timestamp_to_datetime,
@@ -59,7 +61,7 @@ from utilities.pandas import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import SeriesA
+    from utilities.pandas import IndexI, SeriesA
 
 
 class TestCheckDataFrame:
@@ -120,7 +122,7 @@ class TestCheckDataFrame:
 
 class TestCheckRangeIndex:
     @given(index=range_indexes())
-    def test_main(self, index: RangeIndex) -> None:
+    def test_main(self, *, index: RangeIndex) -> None:
         check_range_index(index)
 
     def test_type(self) -> None:
@@ -129,21 +131,21 @@ class TestCheckRangeIndex:
             check_range_index(index)
 
     @given(start=integers(-10, 10), stop=integers(-10, 10))
-    def test_start(self, start: int, stop: int) -> None:
+    def test_start(self, *, start: int, stop: int) -> None:
         _ = assume(start != 0)
         index = RangeIndex(start=start, stop=stop)
         with raises(RangeIndexStartError):
             check_range_index(index)
 
     @given(step=integers(-10, 10))
-    def test_step(self, step: int) -> None:
+    def test_step(self, *, step: int) -> None:
         _ = assume(step not in {0, 1})
         index = RangeIndex(step=step)
         with raises(RangeIndexStepError):
             check_range_index(index)
 
     @given(index=range_indexes(name=text_ascii()))
-    def test_name(self, index: RangeIndex) -> None:
+    def test_name(self, *, index: RangeIndex) -> None:
         with raises(RangeIndexNameError):
             check_range_index(index)
 
@@ -168,7 +170,7 @@ class TestCheckRangeIndex:
 
 class TestDTypes:
     @mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
-    def test_main(self, dtype: Any) -> None:
+    def test_main(self, *, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
 
 
@@ -179,6 +181,13 @@ class TestRedirectToEmptyPandasConcatError:
                 _ = concat([])
             except ValueError as error:
                 redirect_to_empty_pandas_concat_error(error)
+
+
+class TestRenameIndex:
+    @given(index=int_indexes(), name=text_ascii())
+    def test_rename_index(self, *, index: IndexI, name: str) -> None:
+        renamed = rename_index(index, name)
+        assert renamed.name == name
 
 
 class TestSeriesMinMax:
@@ -219,6 +228,7 @@ class TestSeriesMinMax:
     )
     def test_main(
         self,
+        *,
         x_v: Any,
         y_v: Any,
         dtype: Any,
@@ -235,18 +245,29 @@ class TestSeriesMinMax:
         assert_series_equal(result_max, expected_max)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_index(self, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
+    def test_different_index(
+        self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
+    ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
         with raises(AssertionError):
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_dtype(self, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
+    def test_different_dtype(
+        self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
+    ) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)
         with raises(DifferentDTypeError):
             _ = func(x, y)
+
+
+class TestSortIndex:
+    @given(index=int_indexes())
+    def test_sort_index(self, *, index: IndexI) -> None:
+        sorted_ = sort_index(index)
+        assert_index_equal(sorted_, cast(Any, index.sort_values()))
 
 
 class TestTimestampMinMaxAsDate:
@@ -285,7 +306,7 @@ class TestTimestampToDate:
             param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
         ],
     )
-    def test_main(self, timestamp: Any, expected: dt.date) -> None:
+    def test_main(self, *, timestamp: Any, expected: dt.date) -> None:
         assert timestamp_to_date(timestamp) == expected
 
     def test_error(self) -> None:
@@ -308,11 +329,11 @@ class TestTimestampToDateTime:
             ),
         ],
     )
-    def test_main(self, timestamp: Any, expected: dt.datetime) -> None:
+    def test_main(self, *, timestamp: Any, expected: dt.datetime) -> None:
         assert timestamp_to_datetime(timestamp) == expected
 
     @given(timestamp=timestamps(allow_nanoseconds=True))
-    def test_warn(self, timestamp: Timestamp) -> None:
+    def test_warn(self, *, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
         with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
             _ = timestamp_to_datetime(timestamp)
@@ -341,7 +362,7 @@ class TestToNumpy:
         ],
     )
     def test_main(
-        self, series_v: Any, series_d: Any, array_v: Any, array_d: Any
+        self, *, series_v: Any, series_d: Any, array_v: Any, array_d: Any
     ) -> None:
         series = Series([series_v], dtype=series_d)
         result = to_numpy(series)

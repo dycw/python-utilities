@@ -4,7 +4,7 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, TypeVar, cast
 
 from numpy import where
 from pandas import (
@@ -29,29 +29,29 @@ from utilities.numpy import NDArray1, datetime64ns, has_dtype
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    IndexA: TypeAlias = Index[Any]
-    IndexB: TypeAlias = Index[bool]
-    IndexBn: TypeAlias = Index[BooleanDtype]
-    IndexC: TypeAlias = Index[CategoricalDtype]
-    IndexD: TypeAlias = Index[dt.datetime]
-    IndexDhk: TypeAlias = Index[DatetimeTZDtype]
-    IndexDutc: TypeAlias = Index[DatetimeTZDtype]
-    IndexF: TypeAlias = Index[float]
-    IndexI: TypeAlias = Index[int]
-    IndexI64: TypeAlias = Index[Int64Dtype]
-    IndexS: TypeAlias = Index[StringDtype]
+    IndexA: TypeAlias = Index[Any]  # type: ignore
+    IndexB: TypeAlias = Index[bool]  # type: ignore
+    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore
+    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore
+    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore
+    IndexF: TypeAlias = Index[float]  # type: ignore
+    IndexI: TypeAlias = Index[int]  # type: ignore
+    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore
+    IndexS: TypeAlias = Index[StringDtype]  # type: ignore
 
-    SeriesA: TypeAlias = Series[Any]
-    SeriesB: TypeAlias = Series[bool]
-    SeriesBn: TypeAlias = Series[BooleanDtype]
-    SeriesC: TypeAlias = Series[CategoricalDtype]
-    SeriesD: TypeAlias = Series[dt.datetime]
-    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]
-    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]
-    SeriesF: TypeAlias = Series[float]
-    SeriesI: TypeAlias = Series[int]
-    SeriesI64: TypeAlias = Series[Int64Dtype]
-    SeriesS: TypeAlias = Series[StringDtype]
+    SeriesA: TypeAlias = Series[Any]  # type: ignore
+    SeriesB: TypeAlias = Series[bool]  # type: ignore
+    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore
+    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore
+    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore
+    SeriesF: TypeAlias = Series[float]  # type: ignore
+    SeriesI: TypeAlias = Series[int]  # type: ignore
+    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore
+    SeriesS: TypeAlias = Series[StringDtype]  # type: ignore
 
 
 Int64 = "Int64"
@@ -60,6 +60,9 @@ category = "category"
 string = "string"
 datetime64nsutc = DatetimeTZDtype(tz=UTC)
 datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
+
+
+_Index = TypeVar("_Index", bound=Index)
 
 
 def check_dataframe(
@@ -87,7 +90,7 @@ def check_dataframe(
         msg = f"{df=}, {length=}"
         raise DataFrameLengthError(msg)
     if sorted:
-        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
+        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)
         try:
             assert_frame_equal(df, df_sorted)
         except AssertionError:
@@ -181,6 +184,10 @@ class EmptyPandasConcatError(ValueError):
     """Raised when there are no objects to concatenate."""
 
 
+def rename_index(index: _Index, name: Hashable, /) -> _Index:
+    return cast(_Index, index.rename(name))
+
+
 def series_max(*series: SeriesA) -> SeriesA:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
@@ -211,6 +218,10 @@ def _series_minmax(
 
 class DifferentDTypeError(ValueError):
     """Raised when two series have different dtypes."""
+
+
+def sort_index(index: _Index, /) -> _Index:
+    return cast(_Index, index.sort_values())
 
 
 def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:

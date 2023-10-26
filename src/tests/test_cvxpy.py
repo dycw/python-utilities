@@ -32,7 +32,10 @@ from utilities.numpy import NDArrayF
 
 @cache
 def _get_variable(
-    objective: type[Maximize, Minimize], /, *, array: bool = False
+    objective: type[Maximize] | type[Minimize],  # noqa: PYI055
+    /,
+    *,
+    array: bool = False,
 ) -> Variable:
     if array:
         var = Variable(2)
@@ -62,12 +65,12 @@ class TestAbs:
         ],
     )
     def test_float_and_array(
-        self, x: float | NDArrayF, expected: float | NDArrayF
+        self, *, x: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(abs_(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, objective: type[Maximize | Minimize]) -> None:
+    def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(abs_(var).value, abs_(var.value))
 
@@ -84,6 +87,7 @@ class TestAdd:
     )
     def test_float_and_array(
         self,
+        *,
         x: float | NDArrayF,
         y: float | NDArrayF,
         expected: float | NDArrayF,
@@ -94,6 +98,7 @@ class TestAdd:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
         self,
+        *,
         x: float | NDArrayF | Expression,
         objective: type[Maximize | Minimize],
     ) -> None:
@@ -105,6 +110,7 @@ class TestAdd:
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
     def test_two_expressions(
         self,
+        *,
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
@@ -125,6 +131,7 @@ class TestDivide:
     )
     def test_float_and_array(
         self,
+        *,
         x: float | NDArrayF,
         y: float | NDArrayF,
         expected: float | NDArrayF,
@@ -135,6 +142,7 @@ class TestDivide:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
         self,
+        *,
         x: float | NDArrayF | Expression,
         objective: type[Maximize | Minimize],
     ) -> None:
@@ -146,6 +154,7 @@ class TestDivide:
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
     def test_two_expressions(
         self,
+        *,
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
@@ -166,6 +175,7 @@ class TestMultiply:
     )
     def test_float_and_array(
         self,
+        *,
         x: float | NDArrayF,
         y: float | NDArrayF,
         expected: float | NDArrayF,
@@ -176,6 +186,7 @@ class TestMultiply:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
         self,
+        *,
         x: float | NDArrayF | Expression,
         objective: type[Maximize | Minimize],
     ) -> None:
@@ -187,6 +198,7 @@ class TestMultiply:
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
     def test_two_expressions(
         self,
+        *,
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
@@ -208,12 +220,16 @@ class TestNeg:
         ],
     )
     def test_float_and_array(
-        self, x: float | NDArrayF, expected: float | NDArrayF
+        self, *, x: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(neg(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, objective: type[Maximize, Minimize]) -> None:
+    def test_expression(
+        self,
+        *,
+        objective: type[Maximize] | type[Minimize],  # noqa: PYI055
+    ) -> None:
         var = _get_variable(objective)
         assert_equal(neg(var).value, neg(var.value))
 
@@ -223,7 +239,7 @@ class TestNorm:
         assert_equal(norm(array([2.0, 3.0])), np.sqrt(13))
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, objective: type[Maximize, Minimize]) -> None:
+    def test_expression(self, *, objective: type[Maximize] | type[Minimize]) -> None:  # noqa: PYI055
         var = _get_variable(objective, array=True)
         assert_equal(norm(var).value, norm(var.value))
 
@@ -241,12 +257,12 @@ class TestPos:
         ],
     )
     def test_float_and_array(
-        self, x: float | NDArrayF, expected: float | NDArrayF
+        self, *, x: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(pos(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, objective: type[Maximize | Minimize]) -> None:
+    def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(pos(var).value, pos(var.value))
 
@@ -264,6 +280,7 @@ class TestPower:
     )
     def test_float_and_array(
         self,
+        *,
         x: float | NDArrayF,
         p: float | NDArrayF,
         expected: float | NDArrayF,
@@ -271,7 +288,7 @@ class TestPower:
         assert_equal(power(x, p), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_one_expression(self, objective: type[Maximize | Minimize]) -> None:
+    def test_one_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(power(var, 2.0).value, power(var.value, 2.0))
 
@@ -283,7 +300,7 @@ class TestQuadForm:
         )
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, objective: type[Maximize | Minimize]) -> None:
+    def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, array=True)
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
         assert_equal(quad_form(var, P).value, quad_form(var.value, P))
@@ -323,7 +340,7 @@ class TestSqrt:
         ],
     )
     def test_float_and_array(
-        self, x: float | NDArrayF, expected: float | NDArrayF
+        self, *, x: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(sqrt(x), expected)
 
@@ -344,6 +361,7 @@ class TestSubtract:
     )
     def test_float_and_array(
         self,
+        *,
         x: float | NDArrayF,
         y: float | NDArrayF,
         expected: float | NDArrayF,
@@ -354,6 +372,7 @@ class TestSubtract:
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
         self,
+        *,
         x: float | NDArrayF | Expression,
         objective: type[Maximize | Minimize],
     ) -> None:
@@ -365,6 +384,7 @@ class TestSubtract:
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
     def test_two_expressions(
         self,
+        *,
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
@@ -385,7 +405,7 @@ class TestSum:
             param(array([-1.0]), -1.0),
         ],
     )
-    def test_float_and_array(self, x: float | NDArrayF, expected: float) -> None:
+    def test_float_and_array(self, *, x: float | NDArrayF, expected: float) -> None:
         assert_equal(sum_(x), expected)
 
     def test_expression(self) -> None:
