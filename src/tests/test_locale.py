@@ -5,7 +5,7 @@ from locale import LC_CTYPE, LC_TIME, setlocale
 from pytest import mark, param
 
 from utilities.locale import atof, get_locale_for_platform, override_locale
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_WINDOWS
 
 
 class TestAToF:
@@ -31,7 +31,7 @@ class TestGetLocaleForPlatform:
 
 
 class TestOverrideLocale:
-    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
+    @mark.skipif(condition=IS_WINDOWS, reason="non-Windows only")
     def test_main(self) -> None:
         plat_locale = get_locale_for_platform("en_US")
         with override_locale(locale=plat_locale):

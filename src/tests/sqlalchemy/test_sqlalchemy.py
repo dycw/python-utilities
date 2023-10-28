@@ -83,7 +83,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_NOT_LINUX
 from utilities.sqlalchemy import (
     EngineError,
     IncorrectNumberOfTablesError,
@@ -289,7 +289,7 @@ class TestCheckColumnTypesEqual:
     )
 
     @given(data=data())
-    def test_equal(self, data: DataObject) -> None:
+    def test_equal(self, *, data: DataObject) -> None:
         group = data.draw(sampled_from(self.groups))
         cls = data.draw(sampled_from(group))
         elements = sampled_from([cls, cls()])
@@ -297,7 +297,7 @@ class TestCheckColumnTypesEqual:
         _check_column_types_equal(x, y)
 
     @given(data=data())
-    def test_unequal(self, data: DataObject) -> None:
+    def test_unequal(self, *, data: DataObject) -> None:
         groups = self.groups
         i, j = data.draw(lists_fixed_length(integers(0, len(groups) - 1), 2))
         _ = assume(i != j)
@@ -309,7 +309,7 @@ class TestCheckColumnTypesEqual:
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_boolean_create_constraint(
-        self, create_constraints: typing.Sequence[bool]
+        self, *, create_constraints: typing.Sequence[bool]
     ) -> None:
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (Boolean(create_constraint=cs) for cs in create_constraints)
@@ -320,7 +320,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_boolean_name(self, names: typing.Sequence[str | None]) -> None:
+    def test_boolean_name(self, *, names: typing.Sequence[str | None]) -> None:
         name_x, name_y = names
         x, y = (Boolean(name=n) for n in names)
         if name_x == name_y:
@@ -333,7 +333,7 @@ class TestCheckColumnTypesEqual:
         _check_column_types_equal(Boolean, BOOLEAN)
 
     @given(timezones=lists_fixed_length(booleans(), 2))
-    def test_datetime_timezone(self, timezones: typing.Sequence[bool]) -> None:
+    def test_datetime_timezone(self, *, timezones: typing.Sequence[bool]) -> None:
         timezone_x, timezone_y = timezones
         x, y = (DateTime(timezone=tz) for tz in timezones)
         if timezone_x is timezone_y:
@@ -354,7 +354,7 @@ class TestCheckColumnTypesEqual:
             _check_column_types_equal(x, y)
 
     @given(data=data())
-    def test_enum_one_enum_class(self, data: DataObject) -> None:
+    def test_enum_one_enum_class(self, *, data: DataObject) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -366,7 +366,7 @@ class TestCheckColumnTypesEqual:
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_enum_create_constraint(
-        self, create_constraints: typing.Sequence[bool]
+        self, *, create_constraints: typing.Sequence[bool]
     ) -> None:
         class MyEnum(enum.Enum):
             member = auto()
@@ -382,7 +382,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
-    def test_enum_native_enum(self, native_enums: typing.Sequence[bool]) -> None:
+    def test_enum_native_enum(self, *, native_enums: typing.Sequence[bool]) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -408,7 +408,9 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
-    def test_enum_inherit_schema(self, inherit_schemas: typing.Sequence[bool]) -> None:
+    def test_enum_inherit_schema(
+        self, *, inherit_schemas: typing.Sequence[bool]
+    ) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -472,7 +474,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(natives=lists_fixed_length(booleans(), 2))
-    def test_interval_native(self, natives: typing.Sequence[bool]) -> None:
+    def test_interval_native(self, *, natives: typing.Sequence[bool]) -> None:
         native_x, native_y = natives
         x, y = (Interval(native=n) for n in natives)
         if native_x is native_y:
@@ -483,7 +485,7 @@ class TestCheckColumnTypesEqual:
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_interval_second_precision(
-        self, second_precisions: typing.Sequence[int | None]
+        self, *, second_precisions: typing.Sequence[int | None]
     ) -> None:
         second_precision_x, second_precision_y = second_precisions
         x, y = (Interval(second_precision=sp) for sp in second_precisions)
@@ -495,7 +497,7 @@ class TestCheckColumnTypesEqual:
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_interval_day_precision(
-        self, day_precisions: typing.Sequence[int | None]
+        self, *, day_precisions: typing.Sequence[int | None]
     ) -> None:
         day_precision_x, day_precision_y = day_precisions
         x, y = (Interval(day_precision=dp) for dp in day_precisions)
@@ -506,7 +508,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_large_binary_length(self, lengths: typing.Sequence[int | None]) -> None:
+    def test_large_binary_length(self, *, lengths: typing.Sequence[int | None]) -> None:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
@@ -516,7 +518,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_numeric_scale(self, scales: typing.Sequence[int | None]) -> None:
+    def test_numeric_scale(self, *, scales: typing.Sequence[int | None]) -> None:
         scale_x, scale_y = scales
         x, y = (Numeric(scale=s) for s in scales)
         if scale_x == scale_y:
@@ -543,7 +545,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_string_collation(self, collations: typing.Sequence[str | None]) -> None:
+    def test_string_collation(self, *, collations: typing.Sequence[str | None]) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
@@ -553,7 +555,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(as_uuids=lists_fixed_length(booleans(), 2))
-    def test_uuid_as_uuid(self, as_uuids: typing.Sequence[bool]) -> None:
+    def test_uuid_as_uuid(self, *, as_uuids: typing.Sequence[bool]) -> None:
         as_uuid_x, as_uuid_y = as_uuids
         x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
         if as_uuid_x is as_uuid_y:
@@ -563,7 +565,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
-    def test_uuid_native_uuid(self, native_uuids: typing.Sequence[bool]) -> None:
+    def test_uuid_native_uuid(self, *, native_uuids: typing.Sequence[bool]) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
@@ -575,56 +577,56 @@ class TestCheckColumnTypesEqual:
 
 class TestCheckEngine:
     @given(engine=sqlite_engines())
-    def test_success(self, engine: Engine) -> None:
+    def test_success(self, *, engine: Engine) -> None:
         check_engine(engine)
 
     @given(root=temp_paths())
-    def test_engine_error(self, root: Path) -> None:
+    def test_engine_error(self, *, root: Path) -> None:
         engine = create_engine("sqlite", database=str(root))
         with raises(EngineError):
             check_engine(engine)
 
     @given(engine=sqlite_engines())
-    def test_num_tables(self, engine: Engine) -> None:
+    def test_num_tables(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_error(self, engine: Engine) -> None:
+    def test_num_tables_error(self, *, engine: Engine) -> None:
         with raises(IncorrectNumberOfTablesError):
             check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_rel_tol_correct(self, engine: Engine) -> None:
+    def test_num_tables_rel_tol_correct(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_engine(engine, num_tables=2, rel_tol=0.5)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_rel_tol_error(self, engine: Engine) -> None:
+    def test_num_tables_rel_tol_error(self, *, engine: Engine) -> None:
         with raises(IncorrectNumberOfTablesError):
             check_engine(engine, num_tables=1, rel_tol=0.5)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_abs_tol_correct(self, engine: Engine) -> None:
+    def test_num_tables_abs_tol_correct(self, *, engine: Engine) -> None:
         check_engine(engine, num_tables=1, abs_tol=1)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_abs_tol_error(self, engine: Engine) -> None:
+    def test_num_tables_abs_tol_error(self, *, engine: Engine) -> None:
         with raises(IncorrectNumberOfTablesError):
             check_engine(engine, num_tables=2, abs_tol=1)
 
 
 class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
-    def test_reflected(self, engine: Engine) -> None:
+    def test_reflected(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         check_table_against_reflection(table, engine)
 
     @given(engine=sqlite_engines())
-    def test_no_such_table(self, engine: Engine) -> None:
+    def test_no_such_table(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = check_table_against_reflection(table, engine)
@@ -687,7 +689,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
-    def test_orm(self, name: str | None, expected: str) -> None:
+    def test_orm(self, *, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
 
@@ -715,7 +717,10 @@ class TestColumnwiseMinMax:
         engine=sqlite_engines(),
     )
     def test_main(
-        self, values: typing.Sequence[Mapping[str, int | None]], engine: Engine
+        self,
+        *,
+        values: typing.Sequence[Mapping[str, int | None]],
+        engine: Engine,
     ) -> None:
         table = Table(
             "example",
@@ -754,7 +759,7 @@ class TestColumnwiseMinMax:
                 assert max_xy == max(x, y)
 
     @given(engine=sqlite_engines())
-    def test_label(self, engine: Engine) -> None:
+    def test_label(self, *, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -770,12 +775,12 @@ class TestColumnwiseMinMax:
 
 class TestCreateEngine:
     @given(temp_path=temp_paths())
-    def test_main(self, temp_path: Path) -> None:
+    def test_main(self, *, temp_path: Path) -> None:
         engine = create_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
 
     @given(temp_path=temp_paths())
-    def test_query(self, temp_path: Path) -> None:
+    def test_query(self, *, temp_path: Path) -> None:
         engine = create_engine(
             "sqlite",
             database=temp_path.name,
@@ -786,7 +791,7 @@ class TestCreateEngine:
 
 class TestEnsureEngine:
     @given(data=data(), engine=sqlite_engines())
-    def test_main(self, data: DataObject, engine: Engine) -> None:
+    def test_main(self, *, data: DataObject, engine: Engine) -> None:
         maybe_engine = data.draw(
             sampled_from([engine, engine.url.render_as_string(hide_password=False)])
         )
@@ -797,13 +802,13 @@ class TestEnsureEngine:
 class TestEnsureTableCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_core(self, engine: Engine, runs: int) -> None:
+    def test_core(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_orm(self, engine: Engine, runs: int) -> None:
+    def test_orm(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -827,13 +832,13 @@ class TestEnsureTableCreated:
 class TestEnsureTableDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_core(self, engine: Engine, runs: int) -> None:
+    def test_core(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_orm(self, engine: Engine, runs: int) -> None:
+    def test_orm(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -895,7 +900,7 @@ class TestGetColumns:
 
 class TestGetDialect:
     @given(engine=sqlite_engines())
-    def test_sqlite(self, engine: Engine) -> None:
+    def test_sqlite(self, *, engine: Engine) -> None:
         assert get_dialect(engine) == "sqlite"
 
     @mark.parametrize(
@@ -904,28 +909,22 @@ class TestGetDialect:
             param(
                 "mssql+pyodbc://scott:tiger@mydsn",
                 "mssql",
-                marks=mark.skipif(
-                    condition=SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
             ),
             param(
                 "mysql://scott:tiger@localhost/foo",
                 "mysql",
-                marks=mark.skipif(
-                    condition=SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
             ),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param(
                 "postgresql://scott:tiger@localhost/mydatabase",
                 "postgresql",
-                marks=mark.skipif(
-                    condition=SYSTEM is not System.linux, reason="Linux only"
-                ),
+                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
             ),
         ],
     )
-    def test_non_sqlite(self, url: str, expected: str) -> None:
+    def test_non_sqlite(self, *, url: str, expected: str) -> None:
         assert get_dialect(_create_engine(url)) == expected
 
 
@@ -966,7 +965,7 @@ class TestGetTableName:
 
 class TestModelToDict:
     @given(id_=integers())
-    def test_main(self, id_: int) -> None:
+    def test_main(self, *, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
             id_ = Column(Integer, primary_key=True)
@@ -975,7 +974,7 @@ class TestModelToDict:
         assert model_to_dict(example) == {"id_": id_}
 
     @given(id_=integers())
-    def test_explicitly_named_column(self, id_: int) -> None:
+    def test_explicitly_named_column(self, *, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
             ID = Column(Integer, primary_key=True, name="id")
@@ -986,7 +985,7 @@ class TestModelToDict:
 
 class TestParseEngine:
     @given(engine=sqlite_engines())
-    def test_str(self, engine: Engine) -> None:
+    def test_str(self, *, engine: Engine) -> None:
         url = engine.url
         result = parse_engine(url.render_as_string(hide_password=False))
         assert result.url == url
@@ -998,7 +997,7 @@ class TestParseEngine:
 
 class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
-    def test_main(self, engine: Engine) -> None:
+    def test_main(self, *, engine: Engine) -> None:
         seq = sqlalchemy.Sequence("example")
         with raises(NotImplementedError), engine.begin() as conn:
             _ = conn.scalar(seq)
@@ -1006,7 +1005,7 @@ class TestRedirectToNoSuchSequenceError:
 
 class TestRedirectToNoSuchTableError:
     @given(engine=sqlite_engines())
-    def test_main(self, engine: Engine) -> None:
+    def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
@@ -1017,7 +1016,7 @@ class TestRedirectToNoSuchTableError:
 
 class TestRedirectTableAlreadyExistsError:
     @given(engine=sqlite_engines())
-    def test_main(self, engine: Engine) -> None:
+    def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with engine.begin() as conn:
             _ = table.create(conn)
@@ -1046,14 +1045,14 @@ class TestReflectTable:
             ]
         ),
     )
-    def test_reflected(self, engine: Engine, col_type: Any) -> None:
+    def test_reflected(self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
         ensure_table_created(table, engine)
         reflected = _reflect_table(table, engine)
         check_tables_equal(reflected, table)
 
     @given(engine=sqlite_engines())
-    def test_no_such_table(self, engine: Engine) -> None:
+    def test_no_such_table(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = _reflect_table(table, engine)
@@ -1061,7 +1060,7 @@ class TestReflectTable:
 
 class TestSerializeEngine:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         engine = data.draw(sqlite_engines())
         result = parse_engine(serialize_engine(engine))
         assert result.url == engine.url
@@ -1077,12 +1076,12 @@ class TestTablenameMixin:
 
 class TestYieldConnection:
     @given(engine=sqlite_engines())
-    def test_engine(self, engine: Engine) -> None:
+    def test_engine(self, *, engine: Engine) -> None:
         with yield_connection(engine) as conn:
             assert isinstance(conn, Connection)
 
     @given(engine=sqlite_engines())
-    def test_connection(self, engine: Engine) -> None:
+    def test_connection(self, *, engine: Engine) -> None:
         with engine.begin() as conn1, yield_connection(conn1) as conn2:
             assert isinstance(conn2, Connection)
 
@@ -1094,7 +1093,7 @@ class TestYieldInClauseRows:
         chunk_size=integers(1, 10) | none(),
     )
     def test_main(
-        self, data: DataObject, engine: Engine, chunk_size: int | None
+        self, *, data: DataObject, engine: Engine, chunk_size: int | None
     ) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         rows = data.draw(table_records_lists(table, min_size=1))

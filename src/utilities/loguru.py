@@ -15,7 +15,7 @@ from typing_extensions import override
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_WINDOWS
 from utilities.re import NoMatchesError, extract_group
 from utilities.typing import IterableStrs
 
@@ -96,11 +96,9 @@ def _augment_levels(
     if levels is not None:
         out |= levels
     if env_var_prefix is not None:
-        env_var_prefix_use = (
-            env_var_prefix.upper() if SYSTEM is System.windows else env_var_prefix
-        )
+        env_var_prefix_use = env_var_prefix.upper() if IS_WINDOWS else env_var_prefix
         for key, value in environ.items():
-            key_use = key.upper() if SYSTEM is System.windows else key
+            key_use = key.upper() if IS_WINDOWS else key
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
             except NoMatchesError:
@@ -109,7 +107,7 @@ def _augment_levels(
                 module = suffix.replace("__", ".").lower()
                 value_use = (
                     extract_group(r"^LogLevel\.([A-Z]+)$", value)
-                    if SYSTEM is System.windows
+                    if IS_WINDOWS
                     else value
                 )
                 out[module] = LogLevel[value_use]

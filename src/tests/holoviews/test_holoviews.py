@@ -6,7 +6,7 @@ from holoviews import Curve
 from pytest import mark
 
 from utilities.holoviews import apply_opts, relabel_plot, save_plot
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_NOT_LINUX
 
 
 class TestApplyOpts:
@@ -24,7 +24,7 @@ class TestRelabelPlot:
 
 
 class TestSavePlot:
-    @mark.skipif(condition=SYSTEM is not System.linux, reason="Linux only")
+    @mark.skipif(condition=IS_NOT_LINUX, reason="Linux only")
     def test_main(self, *, tmp_path: Path) -> None:
         curve = Curve([])
         save_plot(curve, tmp_path.joinpath("plot.png"))

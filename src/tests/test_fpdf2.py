@@ -6,23 +6,23 @@ from pytest import mark
 
 from utilities.fpdf2 import yield_pdf
 from utilities.hypothesis import text_ascii
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_NOT_LINUX
 
 
 class TestYieldPDF:
     @given(text=text_ascii(min_size=1))
-    def test_add_fixed_width_text(self, text: str) -> None:
+    def test_add_fixed_width_text(self, *, text: str) -> None:
         with yield_pdf() as pdf:
             pdf.add_fixed_width_text(text)
 
-    @mark.skipif(condition=SYSTEM is not System.linux, reason="Linux only")
+    @mark.skipif(condition=IS_NOT_LINUX, reason="Linux only")
     def test_add_plot(self) -> None:
         curve = Curve([])
         with yield_pdf() as pdf:
             pdf.add_plot(curve)
 
     @given(header=text_ascii(min_size=1))
-    def test_header(self, header: str) -> None:
+    def test_header(self, *, header: str) -> None:
         with yield_pdf(header=header) as pdf:
             pdf.header()
 

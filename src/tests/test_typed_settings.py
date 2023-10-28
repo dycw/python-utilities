@@ -34,7 +34,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_WINDOWS
 from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import (
     AppNameContainsUnderscoreError,
@@ -48,14 +48,14 @@ app_names = text_ascii(min_size=1).map(str.lower)
 
 
 class TestGetRepoRootConfig:
-    def test_exists(self, monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    def test_exists(self, *, monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.chdir(tmp_path)
         _ = check_call(["git", "init"])  # noqa: S603, S607
         Path("config.toml").touch()
         expected = tmp_path.joinpath("config.toml")
         assert get_repo_root_config(cwd=tmp_path) == expected
 
-    def test_does_not_exist(self, tmp_path: Path) -> None:
+    def test_does_not_exist(self, *, tmp_path: Path) -> None:
         assert get_repo_root_config(cwd=tmp_path) is None
 
 
@@ -82,7 +82,7 @@ class TestLoadSettings:
                 sqlite_engines(),
                 serialize_engine,
                 marks=mark.skipif(
-                    condition=SYSTEM is System.windows,
+                    condition=IS_WINDOWS,
                     reason="non-Windows only; writing \\ to file",
                 ),
             ),
@@ -116,7 +116,7 @@ class TestLoadSettings:
 
     @given(appname=app_names)
     @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
-    def test_errors(self, appname: str, cls: Any) -> None:
+    def test_errors(self, *, appname: str, cls: Any) -> None:
         @settings(frozen=True)
         class Settings:
             value: cls = cast(Any, None)
@@ -139,7 +139,7 @@ class TestClickOptions:
                 sqlite_engines(),
                 serialize_engine,
                 marks=mark.skipif(
-                    condition=SYSTEM is System.windows,
+                    condition=IS_WINDOWS,
                     reason="non-Windows only; writing \\ to file",
                 ),
             ),
@@ -193,7 +193,7 @@ class TestClickOptions:
         assert result.stdout == f"value = {val_str}\n"
 
     @given(data=data())
-    def test_enum(self, data: DataObject) -> None:
+    def test_enum(self, *, data: DataObject) -> None:
         class Truth(enum.Enum):
             true = auto()
             false = auto()
