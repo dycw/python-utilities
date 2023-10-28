@@ -20,7 +20,7 @@ class TestCleanDir:
     def test_file(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
-        args = ["--path", tmp_path.as_posix()]
+        args = ["--path", str(tmp_path)]
         with freeze_time(TODAY + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
@@ -28,7 +28,7 @@ class TestCleanDir:
     def test_dir_to_remove(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("dir").mkdir()
         runner = CliRunner()
-        args = ["--path", tmp_path.as_posix()]
+        args = ["--path", str(tmp_path)]
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -37,7 +37,7 @@ class TestCleanDir:
         dir_.mkdir()
         dir_.joinpath("file").touch()
         runner = CliRunner()
-        args = ["--path", tmp_path.as_posix()]
+        args = ["--path", str(tmp_path)]
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -46,7 +46,7 @@ class TestCleanDir:
         file.touch()
         tmp_path.joinpath("second").symlink_to(file)
         runner = CliRunner()
-        args = ["--path", tmp_path.as_posix()]
+        args = ["--path", str(tmp_path)]
         with freeze_time(TODAY + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
@@ -55,7 +55,7 @@ class TestCleanDir:
     def test_chunk_size(self, *, root: Path, chunk_size: int) -> None:
         root.joinpath("file").touch()
         runner = CliRunner()
-        args = ["--path", root.as_posix(), "--chunk-size", str(chunk_size)]
+        args = ["--path", str(root), "--chunk-size", str(chunk_size)]
         with freeze_time(TODAY + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
@@ -63,7 +63,7 @@ class TestCleanDir:
     def test_dry_run(self, *, tmp_path: Path) -> None:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
-        args = ["--path", tmp_path.as_posix(), "--dry-run"]
+        args = ["--path", str(tmp_path), "--dry-run"]
         with freeze_time(TODAY + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0

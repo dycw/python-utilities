@@ -185,7 +185,7 @@ class TestIsPytest:
 
 class TestThrottle:
     def test_duration_as_float(self, *, testdir: Any, tmp_path: Path) -> None:
-        root_str = tmp_path.as_posix()
+        root_str = str(tmp_path)
         contents = f"""
             from utilities.pytest import throttle
 
@@ -196,7 +196,7 @@ class TestThrottle:
         self._test_throttle(testdir, contents)
 
     def test_duration_as_timedelta(self, *, testdir: Any, tmp_path: Path) -> None:
-        root_str = tmp_path.as_posix()
+        root_str = str(tmp_path)
         contents = f"""
             import datetime as dt
             from utilities.pytest import throttle

@@ -25,7 +25,7 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
         except KeyboardInterrupt:
             rmtree(temp_dir)
         else:
-            src, dest = temp_path.as_posix(), path.as_posix()
+            src, dest = str(temp_path), str(path)
             if temp_path.is_file():
                 if overwrite:
                     return replace_atomic(src, dest)

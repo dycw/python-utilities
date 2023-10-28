@@ -55,8 +55,8 @@ def _get_args(
         "run",
         f"--port={port}",
         "--authenticate=download,list,update",
-        f"--passwords={path_password.as_posix()}",
-        path_packages.as_posix(),
+        f"--passwords={path_password}",
+        str(path_packages),
     ]
     logger.info("cmd = {cmd!r}", cmd=" ".join(args))
     return args

@@ -38,7 +38,7 @@ indexes1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 
 
 class TestFFillNonNanSlices:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
         )
@@ -58,7 +58,7 @@ class TestNDArrayWithIndexes:
         root=temp_paths(),
     )
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, NDArrayI1], root: Path
+        self, *, data: DataObject, indexes: Mapping[str, NDArrayI1], root: Path
     ) -> None:
         shape = tuple(map(len, indexes.values()))
         arrays = float_arrays(shape=shape, allow_nan=True, allow_inf=True)
@@ -90,7 +90,7 @@ class TestNDArrayWithIndexes:
         assert view.sizes == dict(zip(indexes, shape, strict=True))
 
     @given(root=temp_paths())
-    def test_dtype(self, root: Path) -> None:
+    def test_dtype(self, *, root: Path) -> None:
         path = root.joinpath("array")
         with yield_array_with_indexes({}, path, dtype=int):
             pass
@@ -103,7 +103,7 @@ class TestNDArrayWithIndexes:
         fill_value=floats(allow_infinity=True, allow_nan=True),
     )
     def test_fill_value(
-        self, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
+        self, *, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
     ) -> None:
         path = root.joinpath("array")
         with yield_array_with_indexes(indexes, path, fill_value=fill_value):
@@ -129,7 +129,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_isel(
-        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
@@ -139,7 +139,7 @@ class TestNDArrayWithIndexes:
         assert_equal(view.isel(indexer), expected)
 
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
-    def test_isel_error(self, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
+    def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = tmp_path.joinpath("array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -149,11 +149,10 @@ class TestNDArrayWithIndexes:
             _ = view.isel(indexer)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
+    def test_repr_and_str(self, *, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
-        path = func(tmp_path.as_posix())
-        assert func(view) == f"{cls}({path})"
+        assert func(view) == f"{cls}({tmp_path})"
 
     @mark.parametrize(
         ("indexer", "expected"),
@@ -169,7 +168,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel(
-        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": array(["x0", "x1"]), "y": array(["y0", "y1", "y2"])}
         path = tmp_path.joinpath("array")
@@ -187,7 +186,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_error(
-        self, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
+        self, *, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
     ) -> None:
         indexes = {"x": index}
         path = tmp_path.joinpath("array")
@@ -197,7 +196,7 @@ class TestNDArrayWithIndexes:
         with raises(InvalidIndexValueError):
             _ = view.sel(indexer)
 
-    def test_missing(self, tmp_path: Path) -> None:
+    def test_missing(self, *, tmp_path: Path) -> None:
         with raises(FileNotFoundError):
             _ = NDArrayWithIndexes(tmp_path.joinpath("array"))
 
@@ -215,7 +214,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_date(
-        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
@@ -254,7 +253,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_datetime(
-        self, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)

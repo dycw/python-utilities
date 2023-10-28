@@ -580,7 +580,7 @@ class TestCheckEngine:
 
     @given(root=temp_paths())
     def test_engine_error(self, root: Path) -> None:
-        engine = create_engine("sqlite", database=root.as_posix())
+        engine = create_engine("sqlite", database=str(root))
         with raises(EngineError):
             check_engine(engine)
 

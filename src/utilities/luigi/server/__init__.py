@@ -47,9 +47,9 @@ def _get_args(
     pid_file, log_dir, state_path = map(Path, [pid_file, log_dir, state_path])
     args = [
         "luigid",
-        f"--pidfile={pid_file.as_posix()}",
-        f"--logdir={log_dir.as_posix()}",
-        f"--state-path={state_path.as_posix()}",
+        f"--pidfile={pid_file}",
+        f"--logdir={log_dir}",
+        f"--state-path={state_path}",
         f"--port={port}",
     ]
     logger.info("cmd = {cmd!r}", cmd=" ".join(args))

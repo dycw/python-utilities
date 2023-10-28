@@ -31,7 +31,7 @@ def git_repos(
         )
         file = path.joinpath("file")
         file.touch()
-        file_str = file.as_posix()
+        file_str = str(file)
         _ = run(["git", "add", file_str], check=True)  # noqa: S603, S607
         _ = run(["git", "commit", "-m", "add"], check=True)  # noqa: S603, S607
         _ = run(["git", "rm", file_str], check=True)  # noqa: S603, S607
