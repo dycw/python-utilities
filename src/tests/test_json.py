@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.json import serialize
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_NOT_WINDOWS, IS_WINDOWS
 
 
 class TestSerialize:
@@ -23,16 +23,12 @@ class TestSerialize:
             param(
                 Path("a", "b", "c"),
                 '"a/b/c"',
-                marks=mark.skipif(
-                    condition=SYSTEM is System.windows, reason="non-Windows only"
-                ),
+                marks=mark.skipif(condition=IS_WINDOWS, reason="non-Windows only"),
             ),
             param(
                 Path("a", "b", "c"),
                 '"a\\\\b\\\\c"',
-                marks=mark.skipif(
-                    condition=SYSTEM is not System.windows, reason="Windows only"
-                ),
+                marks=mark.skipif(condition=IS_NOT_WINDOWS, reason="Windows only"),
             ),
             param({1, 2, 3}, '"set([1, 2, 3])"'),
             param({"a", "b", "c"}, '"set([\\"a\\", \\"b\\", \\"c\\"])"'),
@@ -43,7 +39,7 @@ class TestSerialize:
             ),
         ],
     )
-    def test_main(self, x: Any, expected: str) -> None:
+    def test_main(self, *, x: Any, expected: str) -> None:
         assert serialize(x) == expected
 
     def test_error(self) -> None:

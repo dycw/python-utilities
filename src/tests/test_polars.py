@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from polars import DataFrame, Float64, Int64
+from polars import DataFrame, Float64
 from pytest import raises
 
 from utilities.polars import (
@@ -20,22 +20,22 @@ class TestCheckDataFrame:
         check_dataframe(df)
 
     def test_columns_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        check_dataframe(df, columns=["value"])
+        df = DataFrame()
+        check_dataframe(df, columns=[])
 
     def test_columns_error(self) -> None:
-        df = DataFrame({"value": [0.0]})
+        df = DataFrame()
         with raises(DataFrameColumnsError):
-            check_dataframe(df, columns=["other"])
+            check_dataframe(df, columns=["value"])
 
     def test_dtypes_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        check_dataframe(df, dtypes=[Float64])
+        df = DataFrame()
+        check_dataframe(df, dtypes=[])
 
     def test_dtypes_error(self) -> None:
-        df = DataFrame({"value": [0.0]})
+        df = DataFrame()
         with raises(DataFrameDTypesError):
-            check_dataframe(df, dtypes=[Int64])
+            check_dataframe(df, dtypes=[Float64])
 
     def test_height_pass(self) -> None:
         df = DataFrame()
@@ -53,7 +53,7 @@ class TestCheckDataFrame:
     def test_schema_error(self) -> None:
         df = DataFrame()
         with raises(DataFrameSchemaError):
-            check_dataframe(df, schema={"other": Float64})
+            check_dataframe(df, schema={"value": Float64})
 
     def test_shape_pass(self) -> None:
         df = DataFrame()

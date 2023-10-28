@@ -12,7 +12,7 @@ class System(str, Enum):
     """An enumeration of the systems."""
 
     windows = "windows"
-    mac_os = "mac"
+    mac = "mac"
     linux = "linux"
 
 
@@ -21,7 +21,7 @@ def get_system() -> System:
     if (sys := system()) == "Windows":  # pragma: os-ne-windows
         return System.windows
     if sys == "Darwin":  # pragma: os-ne-macos
-        return System.mac_os
+        return System.mac
     if sys == "Linux":  # pragma: os-ne-linux
         return System.linux
     raise UnableToDetermineSystemError  # pragma: no cover
@@ -32,13 +32,19 @@ class UnableToDetermineSystemError(ValueError):
 
 
 SYSTEM = get_system()
+IS_WINDOWS = SYSTEM is System.windows
+IS_MAC = SYSTEM is System.mac
+IS_LINUX = SYSTEM is System.linux
+IS_NOT_WINDOWS = not IS_WINDOWS
+IS_NOT_MAC = not IS_MAC
+IS_NOT_LINUX = not IS_LINUX
 
 
 def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     if SYSTEM is System.windows:  # noqa: SIM114 # pragma: os-ne-windows
         yield from (t.lower() for t in text)
-    elif SYSTEM is System.mac_os:  # pragma: os-ne-macos
+    elif SYSTEM is System.mac:  # pragma: os-ne-macos
         yield from (t.lower() for t in text)
     elif SYSTEM is System.linux:  # pragma: os-ne-linux
         yield from text

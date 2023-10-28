@@ -75,7 +75,7 @@ def _get_memory_usage() -> Item:
     virtual_kwargs: dict[str, Any] = {}
     if SYSTEM is System.windows:  # pragma: os-ne-windows
         pass
-    elif SYSTEM is System.mac_os:  # pragma: os-ne-macos
+    elif SYSTEM is System.mac:  # pragma: os-ne-macos
         virtual_kwargs["virtual_active"] = virtual.active
         virtual_kwargs["virtual_inactive"] = virtual.inactive
         virtual_kwargs["virtual_wired"] = virtual.wired

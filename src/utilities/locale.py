@@ -13,7 +13,7 @@ def get_locale_for_platform(locale: str, /) -> str:
     """Get the platform-dependent locale."""
     if SYSTEM is System.windows:  # pragma: os-ne-windows
         return locale
-    if SYSTEM is System.mac_os:  # pragma: os-ne-macos
+    if SYSTEM is System.mac:  # pragma: os-ne-macos
         return locale
     if SYSTEM is System.linux:  # pragma: os-ne-linux
         return f"{locale}.utf8"

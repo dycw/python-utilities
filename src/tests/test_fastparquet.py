@@ -48,12 +48,12 @@ from utilities.hypothesis import (
 )
 from utilities.numpy import datetime64ns
 from utilities.pandas import DataFrameRangeIndexError, Int64, string
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_WINDOWS
 
 
 class TestCountRows:
     @given(rows=lists(booleans(), min_size=1), root=temp_paths())
-    def test_main(self, rows: Sequence[bool], root: Path) -> None:
+    def test_main(self, *, rows: Sequence[bool], root: Path) -> None:
         n = len(rows)
         df = DataFrame(rows, index=RangeIndex(n), columns=["value"])
         write_parquet(df, path := root.joinpath("df.parq"))
@@ -63,7 +63,7 @@ class TestCountRows:
 
 class TestGetColumns:
     @given(columns=sets(text_ascii()), root=temp_paths())
-    def test_main(self, columns: AbstractSet[str], root: Path) -> None:
+    def test_main(self, *, columns: AbstractSet[str], root: Path) -> None:
         as_list = list(columns)
         df = DataFrame(nan, index=RangeIndex(1), columns=as_list, dtype=float)
         write_parquet(df, path := root.joinpath("df.parq"))
@@ -78,7 +78,7 @@ class TestGetDtypes:
         ),
         root=temp_paths(),
     )
-    def test_main(self, dtypes: Mapping[str, Any], root: Path) -> None:
+    def test_main(self, *, dtypes: Mapping[str, Any], root: Path) -> None:
         df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(dtypes)
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_dtypes(path)
@@ -86,7 +86,7 @@ class TestGetDtypes:
 
 
 class TestGetNumRowGroups:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         write_parquet(df, path := tmp_path.joinpath("df.parq"), row_group_offsets=1)
         result = get_num_row_groups(path)
@@ -95,13 +95,13 @@ class TestGetNumRowGroups:
 
 
 class TestGetParquetFile:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file")
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         write(path, df)
         _ = _get_parquet_file(path)
 
-    def test_get_row_group(self, tmp_path: Path) -> None:
+    def test_get_row_group(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file")
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         write(path, df, row_group_offsets=1)
@@ -116,10 +116,7 @@ class TestGetParquetFile:
             param(True),
             param(
                 False,
-                marks=mark.skipif(
-                    condition=SYSTEM is System.windows,
-                    reason="non-Windows only",
-                ),
+                marks=mark.skipif(condition=IS_WINDOWS, reason="non-Windows only"),
             ),
         ],
     )
@@ -167,7 +164,7 @@ class TestReadAndWriteParquet:
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
     def test_writing_iterable_of_dfs(
-        self, value1: float, value2: float, root: Path
+        self, *, value1: float, value2: float, root: Path
     ) -> None:
         df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
         parts = [df.iloc[:1], df.iloc[1:].reset_index(drop=True)]
@@ -182,7 +179,7 @@ class TestReadAndWriteParquet:
         root=temp_paths(),
     )
     def test_series_from_dataframe_with_two_string_columns(
-        self, data: DataObject, column1: str, column2: str, root: Path
+        self, *, data: DataObject, column1: str, column2: str, root: Path
     ) -> None:
         _ = assume(column1 != column2)
         elements = text_ascii() | none()
@@ -198,7 +195,7 @@ class TestReadAndWriteParquet:
         assert_series_equal(sr, df[column1])
 
     @given(value1=floats(), value2=floats(), root=temp_paths())
-    def test_read_row_groups(self, value1: float, value2: float, root: Path) -> None:
+    def test_read_row_groups(self, *, value1: float, value2: float, root: Path) -> None:
         df = DataFrame([[value1], [value2]], index=RangeIndex(2), columns=["value"])
         write_parquet(df, path := root.joinpath("df.parq"), row_group_offsets=1)
         result1 = read_parquet(path, row_group=0)
@@ -217,7 +214,12 @@ class TestReadAndWriteParquet:
         row_group_offsets=integers(1, 10),
     )
     def test_iterable_of_dfs_with_strings(
-        self, data: DataObject, root: Path, num_dfs: int, row_group_offsets: int
+        self,
+        *,
+        data: DataObject,
+        root: Path,
+        num_dfs: int,
+        row_group_offsets: int,
     ) -> None:
         def as_str(df: DataFrame, /) -> DataFrame:
             return df.astype(cast(Literal["string"], string))
@@ -239,7 +241,7 @@ class TestReadAndWriteParquet:
 
 class TestWriteParquet:
     @given(value=text_ascii(), root=temp_paths())
-    def test_strings_are_stored_as_objects(self, value: str, root: Path) -> None:
+    def test_strings_are_stored_as_objects(self, *, value: str, root: Path) -> None:
         df = DataFrame(value, index=RangeIndex(1), columns=["value"], dtype=string)
         write_parquet(df, path := root.joinpath("df.parq"))
         file = _get_parquet_file(path)
@@ -247,26 +249,26 @@ class TestWriteParquet:
         expected = {"value": object}
         assert dtypes == expected
 
-    def test_empty_dataframe_error(self, tmp_path: Path) -> None:
+    def test_empty_dataframe_error(self, *, tmp_path: Path) -> None:
         df = DataFrame()
         with raises(EmptyDataFrameError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
-    def test_check_range_index(self, tmp_path: Path) -> None:
+    def test_check_range_index(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=[0], columns=["value"])
         with raises(DataFrameRangeIndexError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
-    def test_check_invalid_dtype(self, tmp_path: Path) -> None:
+    def test_check_invalid_dtype(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(df, tmp_path.joinpath("df.parq"))
 
-    def test_extra_dtype(self, tmp_path: Path) -> None:
+    def test_extra_dtype(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         write_parquet(df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32})
 
-    def test_extra_dtype_ignored(self, tmp_path: Path) -> None:
+    def test_extra_dtype_ignored(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(

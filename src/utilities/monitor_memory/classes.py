@@ -93,7 +93,7 @@ class ItemLinux:
 
 if SYSTEM is System.windows:  # pragma: os-ne-windows
     Item = ItemWindows
-elif SYSTEM is System.mac_os:  # pragma: os-ne-macos
+elif SYSTEM is System.mac:  # pragma: os-ne-macos
     Item = ItemMacOS
 elif SYSTEM is System.linux:  # pragma: os-ne-linux
     Item = ItemLinux

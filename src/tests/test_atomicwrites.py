@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 
 from utilities.atomicwrites import writer
 from utilities.errors import DirectoryExistsError
-from utilities.platform import SYSTEM, System
+from utilities.platform import IS_WINDOWS
 
 
 class TestWriter:
@@ -32,10 +32,11 @@ class TestWriter:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
-        if SYSTEM is System.windows:
-            match = "Cannot create a file when that file already exists"
-        else:
-            match = escape(str(path))
+        match = (
+            "Cannot create a file when that file already exists"
+            if IS_WINDOWS
+            else escape(str(path))
+        )
         with raises(FileExistsError, match=match), writer(path) as temp2, temp2.open(
             mode="w"
         ) as fh2:
