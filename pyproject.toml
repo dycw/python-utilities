@@ -46,6 +46,7 @@ dev = [
   "numbagg >= 0.6.0",
   "numpy >= 1.26.1",
   "pandas >= 2.1.2",
+  "polars >= 0.19.11",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
   "pyinstrument >= 4.6.0",
@@ -103,6 +104,7 @@ numbagg = ["numbagg >= 0.6.0"]
 numpy = ["numpy >= 1.26.1"]
 numpy-all = ["numbagg >= 0.6.0", "numpy >= 1.26.1"]
 pandas = ["pandas >= 2.1.2"]
+polars = ["polars >= 0.19.11"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
 pyinstrument = ["pyinstrument >= 4.6.0", "atomicwrites >= 1.4.1"]
@@ -118,12 +120,7 @@ scripts = ["loguru >= 0.7.2", "typed-settings[click] >= 23.0.0"]
 selenium = ["selenium >= 4.14.0"]
 semver = ["semver >= 3.0.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.22"]
-sqlalchemy-dbs = [
-  "cx_oracle",
-  "mysqlclient",
-  "psycopg2-binary",
-  "pyodbc",
-]
+sqlalchemy-dbs = ["cx_oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
 test = [
   "atomicwrites >= 1.4.1",
   "coverage-conditional-plugin >= 0.9.0",
