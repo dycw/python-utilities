@@ -39,7 +39,7 @@ def _default(x: Any, /) -> str:
     if isinstance(x, dt.date):
         return x.isoformat()
     if isinstance(x, Path):
-        return x.as_posix()
+        return str(x)
     if isinstance(x, set):
         inner = serialize(sorted(x))
         return f"set({inner})"

@@ -17,5 +17,5 @@ def tests(session: Session, /) -> None:
     """Run the tests."""
     session.install("--upgrade", "pip-tools")
     requirements = set(Path(__file__).parent.glob("requirements*.txt"))
-    _ = session.run("pip-sync", *(r.as_posix() for r in requirements))
+    _ = session.run("pip-sync", *(map(str, requirements)))
     _ = session.run("pytest", "--cov-report=term-missing:skip-covered", "-n=auto")

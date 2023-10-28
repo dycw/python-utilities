@@ -256,7 +256,7 @@ def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     dir_ = TEMP_DIR.joinpath("hypothesis")
     dir_.mkdir(exist_ok=True)
     uuid = _draw(uuids())
-    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir_.as_posix())
+    return TemporaryDirectory(prefix=f"{uuid}__", dir=dir_)
 
 
 @composite

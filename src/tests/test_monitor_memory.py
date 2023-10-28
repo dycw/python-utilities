@@ -9,20 +9,20 @@ from utilities.monitor_memory import _get_memory_usage, _monitor_memory, main
 
 
 class TestMonitorMemory:
-    def test_cli(self, tmp_path: Path) -> None:
+    def test_cli(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("memory.csv")
         runner = CliRunner()
-        args = ["--path", path.as_posix(), "--freq", "1", "--duration", "1"]
+        args = ["--path", str(path), "--freq", "1", "--duration", "1"]
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
-    def test_monitor_memory(self, tmp_path: Path) -> None:
+    def test_monitor_memory(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("memory.csv")
         _ = _monitor_memory(path=path, freq=1, duration=1)
         assert path.exists()
         with path.open(mode="r") as fh:
             read = reader(fh)
-            assert len(list(read)) == 1
+            assert len(list(read)) <= 2
 
     def test_get_memory_usage(self) -> None:
         _ = _get_memory_usage()

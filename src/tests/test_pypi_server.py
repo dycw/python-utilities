@@ -41,6 +41,6 @@ class TestPypiServer:
             path = Path("password")
             path.touch()
             runner = CliRunner()
-            args = ["--path-password", path.as_posix(), "--dry-run"]
+            args = ["--path-password", str(path), "--dry-run"]
             result = runner.invoke(main, args)
         assert result.exit_code == 0

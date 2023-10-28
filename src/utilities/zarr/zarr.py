@@ -143,14 +143,12 @@ class NDArrayWithIndexes:
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self)
-        path = self._path.as_posix()
-        return f"{cls}({path!r})"
+        return f"{cls}({self._path})"
 
     @override
     def __str__(self) -> str:
         cls = get_class_name(self)
-        path = self._path.as_posix()
-        return f"{cls}({path})"
+        return f"{cls}({self._path})"
 
     @property
     def array(self) -> Array:

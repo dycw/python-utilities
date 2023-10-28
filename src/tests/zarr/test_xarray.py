@@ -180,8 +180,7 @@ class TestDataArrayOnDisk:
     def test_repr_and_str(self, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = DataArrayOnDisk(tmp_path)
         cls = get_class_name(DataArrayOnDisk)
-        path = func(tmp_path.as_posix())
-        assert func(view) == f"{cls}({path})"
+        assert func(view) == f"{cls}({tmp_path})"
 
 
 class TestYieldDataArrayOnDisk:

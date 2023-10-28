@@ -17,7 +17,7 @@ from sys import stdlib_module_names
 from tomli import loads
 
 SRC = Path("src")
-sys.path.insert(0, SRC.resolve().as_posix())
+sys.path.insert(0, str(SRC.resolve()))
 
 from utilities.logging import basic_config  # noqa: E402
 from utilities.tempfile import TemporaryDirectory  # noqa: E402
@@ -147,7 +147,7 @@ def test_unit(unit: Unit, /) -> None:
             "pip-compile",
             "--allow-unsafe",
             "--extra=test",
-            f"--output-file={requirements.as_posix()}",
+            f"--output-file={requirements}",
             "--quiet",
             "--upgrade",
         ]

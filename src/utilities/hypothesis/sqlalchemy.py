@@ -17,7 +17,7 @@ def sqlite_engines(
     """Strategy for generating SQLite engines."""
     temp_path = _draw(temp_paths())
     path = temp_path.joinpath("db.sqlite")
-    engine = create_engine("sqlite", database=path.as_posix())
+    engine = create_engine("sqlite", database=str(path))
     if metadata is not None:
         metadata.create_all(engine)
     if base is not None:

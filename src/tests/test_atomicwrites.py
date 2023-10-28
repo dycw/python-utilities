@@ -18,7 +18,7 @@ class TestWriter:
         ],
     )
     def test_file_writing(
-        self, tmp_path: Path, is_binary: bool, contents: str | bytes
+        self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
     ) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp, temp.open(mode="wb" if is_binary else "w") as fh1:
@@ -26,16 +26,16 @@ class TestWriter:
         with path.open(mode="rb" if is_binary else "r") as fh2:
             assert fh2.read() == contents
 
-    def test_file_exists_error(self, tmp_path: Path) -> None:
+    def test_file_exists_error(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
-        with raises(FileExistsError, match=path.as_posix()), writer(
+        with raises(FileExistsError, match=str(path)), writer(
             path
         ) as temp2, temp2.open(mode="w") as fh2:
             _ = fh2.write("new contents")
 
-    def test_file_overwrite(self, tmp_path: Path) -> None:
+    def test_file_overwrite(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
@@ -44,7 +44,7 @@ class TestWriter:
         with path.open() as fh3:
             assert fh3.read() == "new contents"
 
-    def test_dir_writing(self, tmp_path: Path) -> None:
+    def test_dir_writing(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
         with writer(path) as temp:
             temp.mkdir()
@@ -52,14 +52,14 @@ class TestWriter:
                 temp.joinpath(f"file{i}").touch()
         assert len(list(path.iterdir())) == 2
 
-    def test_dir_exists_error(self, tmp_path: Path) -> None:
+    def test_dir_exists_error(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError, match=path.as_posix()), writer(path) as temp2:
+        with raises(DirectoryExistsError, match=str(path)), writer(path) as temp2:
             temp2.mkdir()
 
-    def test_dir_overwrite(self, tmp_path: Path) -> None:
+    def test_dir_overwrite(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
         with writer(path) as temp1:
             temp1.mkdir()
@@ -72,7 +72,9 @@ class TestWriter:
         assert len(list(path.iterdir())) == 3
 
     @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
-    def test_error_during_write(self, tmp_path: Path, error: type[Exception]) -> None:
+    def test_error_during_write(
+        self, *, tmp_path: Path, error: type[Exception]
+    ) -> None:
         path = tmp_path.joinpath("file.txt")
 
         def raise_error() -> None:
