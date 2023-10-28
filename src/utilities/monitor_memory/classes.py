@@ -28,7 +28,25 @@ class Config:
     )
 
 
-@dataclass
+@dataclass(frozen=True)
+class ItemWindows:
+    """A set of memory statistics."""
+
+    datetime: dt.datetime
+    virtual_total: int
+    virtual_available: int
+    virtual_percent: float
+    virtual_used: int
+    virtual_free: int
+    swap_total: int
+    swap_used: int
+    swap_free: int
+    swap_percent: float
+    swap_sin: int
+    swap_sout: int
+
+
+@dataclass(frozen=True)
 class ItemMacOS:
     """A set of memory statistics."""
 
@@ -49,7 +67,7 @@ class ItemMacOS:
     swap_sout: int
 
 
-@dataclass
+@dataclass(frozen=True)
 class ItemLinux:
     """A set of memory statistics."""
 
@@ -74,8 +92,7 @@ class ItemLinux:
 
 
 if SYSTEM is System.windows:  # pragma: os-ne-windows
-    msg = f"{SYSTEM=}"
-    raise NotImplementedError(msg)
+    Item = ItemWindows
 elif SYSTEM is System.mac_os:  # pragma: os-ne-macos
     Item = ItemMacOS
 elif SYSTEM is System.linux:  # pragma: os-ne-linux

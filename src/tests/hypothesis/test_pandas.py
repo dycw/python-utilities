@@ -6,6 +6,7 @@ from typing import Any, cast
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import DataObject, booleans, data, dates, integers
+from numpy import int64
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
@@ -38,7 +39,7 @@ class TestDatesPd:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self, data: DataObject, min_value: dt.date, max_value: dt.date
+        self, *, data: DataObject, min_value: dt.date, max_value: dt.date
     ) -> None:
         _ = assume(min_value <= max_value)
         date = data.draw(dates_pd(min_value=min_value, max_value=max_value))
@@ -54,7 +55,7 @@ class TestDatetimesPd:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
         datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
@@ -82,7 +83,7 @@ class TestIndexes:
         index = data.draw(
             indexes(
                 elements=int64s(),
-                dtype=int,
+                dtype=int64,
                 n=n,
                 unique=unique,
                 name=name,
@@ -113,7 +114,7 @@ class TestIndexes:
         sort: bool,
     ) -> None:
         index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
-        assert index.dtype == int
+        assert index.dtype == int64
         assert len(index) == n
         if unique:
             assert not index.duplicated().any()

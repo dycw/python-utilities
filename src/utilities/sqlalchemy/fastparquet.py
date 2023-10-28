@@ -35,8 +35,7 @@ def select_to_parquet(
     with writer(path, overwrite=overwrite) as temp, yield_connection(
         engine_or_conn
     ) as conn:
-        temp_str = temp.as_posix()
         dfs = select_to_dataframe(sel, conn, snake=snake, stream=stream)
         for i, df in enumerate(dfs):
-            write(temp_str, df, compression=compression, append=i >= 1)
+            write(str(temp), df, compression=compression, append=i >= 1)
     return None

@@ -5,6 +5,7 @@ from collections.abc import Iterable, Iterator
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, overload
 
+from numpy import int64
 from pandas import DataFrame
 from sqlalchemy import Column, insert
 from sqlalchemy.engine import Connection, Engine, Row
@@ -195,7 +196,7 @@ def _check_series_against_table_column(
             and has_dtype(series, datetime64ns)
             and issubclass(py_type, dt.datetime)
         )
-        or (has_dtype(series, (int, Int64)) and (py_type, int))
+        or (has_dtype(series, (int, int64, Int64)) and (py_type, int))
         or (has_dtype(series, string) and (py_type, str))
     ):
         msg = f"{series=}, {table_column=}"
@@ -218,7 +219,7 @@ def _yield_insertion_elements(series: SeriesA, /) -> Iterator[Any]:
         cast = timestamp_to_datetime
     elif has_dtype(series, float):
         cast = float
-    elif has_dtype(series, (int, Int64)):
+    elif has_dtype(series, (int, int64, Int64)):
         cast = int
     elif has_dtype(series, string):
         cast = str

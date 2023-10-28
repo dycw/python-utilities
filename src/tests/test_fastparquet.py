@@ -48,6 +48,7 @@ from utilities.hypothesis import (
 )
 from utilities.numpy import datetime64ns
 from utilities.pandas import DataFrameRangeIndexError, Int64, string
+from utilities.platform import SYSTEM, System
 
 
 class TestCountRows:
@@ -111,7 +112,16 @@ class TestGetParquetFile:
 
     @mark.parametrize(
         "as_str",
-        [param(True), param(False)],
+        [
+            param(True),
+            param(
+                False,
+                marks=mark.skipif(
+                    condition=SYSTEM is System.windows,
+                    reason="non-Windows only",
+                ),
+            ),
+        ],
     )
     def test_error(self, *, tmp_path: Path, as_str: bool) -> None:
         path = tmp_path.joinpath("file")

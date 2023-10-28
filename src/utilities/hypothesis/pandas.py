@@ -14,6 +14,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
 )
+from numpy import int64
 from pandas import Timedelta, Timestamp
 
 from utilities.datetime import UTC
@@ -107,7 +108,7 @@ def int_indexes(
 ) -> SearchStrategy[IndexI]:
     """Strategy for generating integer Indexes."""
     return indexes(
-        elements=int64s(), dtype=int, n=n, unique=unique, name=name, sort=sort
+        elements=int64s(), dtype=int64, n=n, unique=unique, name=name, sort=sort
     )
 
 

@@ -107,9 +107,11 @@ def _get_parquet_file(
     try:
         file = ParquetFile(path, verify=True)
     except TypeError as error:
-        msg = f"{path=}"
-        new = FileNotFoundError(msg)
-        redirect_error(error, "argument of type 'PosixPath' is not iterable", new)
+        msg = f"{path=}"  # pragma: os-ne-windows
+        new = FileNotFoundError(msg)  # pragma: os-ne-windows
+        redirect_error(  # pragma: os-ne-windows
+            error, "argument of type 'PosixPath' is not iterable", new
+        )
     if row_group is None:
         return file
     try:

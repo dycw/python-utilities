@@ -73,7 +73,7 @@ from utilities.numpy import (
 
 class TestBoolArrays:
     @given(data=data(), shape=array_shapes())
-    def test_main(self, data: DataObject, shape: Shape) -> None:
+    def test_main(self, *, data: DataObject, shape: Shape) -> None:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
@@ -81,13 +81,13 @@ class TestBoolArrays:
 
 class TestConcatenatedArrays:
     @given(data=data(), m=integers(0, 10), n=integers(0, 10))
-    def test_1d(self, data: DataObject, m: int, n: int) -> None:
+    def test_1d(self, *, data: DataObject, m: int, n: int) -> None:
         arrays = just(zeros(n, dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, n))
         assert array.shape == (m, n)
 
     @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
-    def test_2d(self, data: DataObject, m: int, n: int, p: int) -> None:
+    def test_2d(self, *, data: DataObject, m: int, n: int, p: int) -> None:
         arrays = just(zeros((n, p), dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, (n, p)))
         assert array.shape == (m, n, p)
@@ -104,6 +104,7 @@ class TestDatetime64Arrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         shape: Shape,
         unit: Datetime64Unit | None,
@@ -142,6 +143,7 @@ class TestDatetime64DIndexes:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         n: int,
         valid_dates: bool,
@@ -163,7 +165,7 @@ class TestDatetime64DIndexes:
 
 class TestDatetime64DTypes:
     @given(dtype=datetime64_dtypes())
-    def test_main(self, dtype: Any) -> None:
+    def test_main(self, *, dtype: Any) -> None:
         _ = dtype
 
 
@@ -179,6 +181,7 @@ class TestDatetime64Indexes:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         n: int,
         unit: Datetime64Unit | None,
@@ -213,13 +216,13 @@ class TestDatetime64Indexes:
 
 class TestDatetime64Kinds:
     @given(kind=datetime64_kinds())
-    def test_main(self, kind: Datetime64Kind) -> None:
+    def test_main(self, *, kind: Datetime64Kind) -> None:
         _ = kind
 
 
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
-    def test_main(self, data: DataObject, kind: Datetime64Kind | None) -> None:
+    def test_main(self, *, data: DataObject, kind: Datetime64Kind | None) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
             assert datetime64_unit_to_kind(unit) == kind
@@ -235,6 +238,7 @@ class TestDatetime64usIndexes:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         n: int,
         valid_datetimes: bool,
@@ -258,7 +262,7 @@ class TestDatetime64usIndexes:
 
 class TestDatetime64s:
     @given(data=data(), unit=datetime64_units())
-    def test_main(self, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_main(self, *, data: DataObject, unit: Datetime64Unit) -> None:
         min_value = data.draw(datetime64s(unit=unit) | int64s() | none())
         max_value = data.draw(datetime64s(unit=unit) | int64s() | none())
         with assume_does_not_raise(InvalidArgument):
@@ -286,6 +290,7 @@ class TestDatetime64s:
     )
     def test_valid_dates(
         self,
+        *,
         data: DataObject,
         min_value: datetime64 | dt.date | None,
         max_value: datetime64 | dt.date | None,
@@ -314,7 +319,7 @@ class TestDatetime64s:
                 assert date <= max_value
 
     @given(data=data(), unit=datetime64_units())
-    def test_valid_dates_error(self, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_valid_dates_error(self, *, data: DataObject, unit: Datetime64Unit) -> None:
         _ = assume(unit != "D")
         with raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_dates=True))
@@ -327,6 +332,7 @@ class TestDatetime64s:
     )
     def test_valid_datetimes(
         self,
+        *,
         data: DataObject,
         min_value: datetime64 | dt.datetime | None,
         max_value: datetime64 | dt.datetime | None,
@@ -356,7 +362,7 @@ class TestDatetime64s:
 
     @given(data=data(), unit=datetime64_units())
     def test_valid_datetimes_error(
-        self, data: DataObject, unit: Datetime64Unit
+        self, *, data: DataObject, unit: Datetime64Unit
     ) -> None:
         _ = assume(unit != "us")
         with raises(InvalidArgument):
@@ -378,6 +384,7 @@ class TestFloatArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         shape: Shape,
         min_value: float | None,
@@ -435,6 +442,7 @@ class TestIntArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         shape: Shape,
         min_value: int | None,
@@ -450,7 +458,7 @@ class TestIntArrays:
                     unique=unique,
                 )
             )
-        assert array.dtype == int
+        assert array.dtype == int64
         assert array.shape == shape
         if unique:
             flat = ravel(array)
@@ -460,7 +468,7 @@ class TestIntArrays:
 class TestInt32s:
     @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
     def test_main(
-        self, data: DataObject, min_value: int | None, max_value: int | None
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
@@ -475,7 +483,7 @@ class TestInt32s:
 class TestInt64s:
     @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
     def test_main(
-        self, data: DataObject, min_value: int | None, max_value: int | None
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
@@ -498,6 +506,7 @@ class TestStrArrays:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         shape: Shape,
         min_size: int,
@@ -532,7 +541,7 @@ class TestStrArrays:
 class TestUInt32s:
     @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
     def test_main(
-        self, data: DataObject, min_value: int | None, max_value: int | None
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint32s(min_value=min_value, max_value=max_value))
@@ -547,7 +556,7 @@ class TestUInt32s:
 class TestUInt64s:
     @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
     def test_main(
-        self, data: DataObject, min_value: int | None, max_value: int | None
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint64s(min_value=min_value, max_value=max_value))

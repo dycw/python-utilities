@@ -24,7 +24,7 @@ class TestRelabelPlot:
 
 
 class TestSavePlot:
-    @mark.skipif(SYSTEM is not System.linux, reason="Linux only")
+    @mark.skipif(condition=SYSTEM is not System.linux, reason="Linux only")
     def test_main(self, *, tmp_path: Path) -> None:
         curve = Curve([])
         save_plot(curve, tmp_path.joinpath("plot.png"))

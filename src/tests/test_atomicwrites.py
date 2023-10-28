@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from contextlib import suppress
 from pathlib import Path
+from re import escape
 
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import writer
 from utilities.errors import DirectoryExistsError
+from utilities.platform import SYSTEM, System
 
 
 class TestWriter:
@@ -30,9 +32,13 @@ class TestWriter:
         path = tmp_path.joinpath("file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
-        with raises(FileExistsError, match=str(path)), writer(
-            path
-        ) as temp2, temp2.open(mode="w") as fh2:
+        if SYSTEM is System.windows:
+            match = "Cannot create a file when that file already exists"
+        else:
+            match = escape(str(path))
+        with raises(FileExistsError, match=match), writer(path) as temp2, temp2.open(
+            mode="w"
+        ) as fh2:
             _ = fh2.write("new contents")
 
     def test_file_overwrite(self, *, tmp_path: Path) -> None:
@@ -56,7 +62,9 @@ class TestWriter:
         path = tmp_path.joinpath("dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError, match=str(path)), writer(path) as temp2:
+        with raises(DirectoryExistsError, match=escape(str(path))), writer(
+            path
+        ) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:

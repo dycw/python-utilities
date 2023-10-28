@@ -904,18 +904,24 @@ class TestGetDialect:
             param(
                 "mssql+pyodbc://scott:tiger@mydsn",
                 "mssql",
-                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+                marks=mark.skipif(
+                    condition=SYSTEM is not System.linux, reason="Linux only"
+                ),
             ),
             param(
                 "mysql://scott:tiger@localhost/foo",
                 "mysql",
-                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+                marks=mark.skipif(
+                    condition=SYSTEM is not System.linux, reason="Linux only"
+                ),
             ),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param(
                 "postgresql://scott:tiger@localhost/mydatabase",
                 "postgresql",
-                marks=mark.skipif(SYSTEM is not System.linux, reason="Linux only"),
+                marks=mark.skipif(
+                    condition=SYSTEM is not System.linux, reason="Linux only"
+                ),
             ),
         ],
     )

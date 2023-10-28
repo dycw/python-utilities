@@ -185,7 +185,7 @@ class TestRedirectToEmptyPandasConcatError:
 
 class TestRenameIndex:
     @given(index=int_indexes(), name=text_ascii())
-    def test_rename_index(self, *, index: IndexI, name: str) -> None:
+    def test_main(self, *, index: IndexI, name: str) -> None:
         renamed = rename_index(index, name)
         assert renamed.name == name
 
@@ -265,7 +265,7 @@ class TestSeriesMinMax:
 
 class TestSortIndex:
     @given(index=int_indexes())
-    def test_sort_index(self, *, index: IndexI) -> None:
+    def test_main(self, *, index: IndexI) -> None:
         sorted_ = sort_index(index)
         assert_index_equal(sorted_, cast(Any, index.sort_values()))
 

@@ -4,8 +4,9 @@ from pathlib import Path
 from re import search
 from subprocess import CalledProcessError, check_call
 
-from pytest import raises
+from pytest import mark, raises
 
+from utilities.platform import SYSTEM, System
 from utilities.subprocess import (
     MultipleActivateError,
     NoActivateError,
@@ -17,23 +18,25 @@ from utilities.text import strip_and_dedent
 
 
 class TestGetShellOutput:
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_main(self) -> None:
         output = get_shell_output("ls")
         assert any(line == "pyproject.toml" for line in output.splitlines())
 
-    def test_activate(self, tmp_path: Path) -> None:
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
+    def test_activate(self, *, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         activate = venv.joinpath("activate")
         activate.parent.mkdir(parents=True)
         activate.touch()
         _ = get_shell_output("ls", cwd=venv, activate=venv)
 
-    def test_no_activate(self, tmp_path: Path) -> None:
+    def test_no_activate(self, *, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         with raises(NoActivateError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
-    def test_multiple_activates(self, tmp_path: Path) -> None:
+    def test_multiple_activates(self, *, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         for i in range(2):
             activate = venv.joinpath(str(i), "activate")
@@ -51,6 +54,7 @@ class TestAddressAlreadyInUsePattern:
 
 
 class TestTabulateCalledProcessError:
+    @mark.skipif(condition=SYSTEM is System.windows, reason="non-Windows only")
     def test_main(self) -> None:
         def which() -> None:
             _ = check_call(["which"], text=True)  # noqa: S603, S607

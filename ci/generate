@@ -6,6 +6,7 @@ pre-commit run pip-compile --all-files
 cp requirements-dev.txt ci/macos-latest.txt
 git checkout -- pyproject.toml requirements-dev.txt
 
-# ubuntu
+# windows/ubuntu
 pre-commit run pip-compile --all-files
+cp requirements-dev.txt ci/windows-latest.txt
 cp requirements-dev.txt ci/ubuntu-latest.txt

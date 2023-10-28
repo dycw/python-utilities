@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     integers,
     none,
 )
+from numpy import int64
 from pandas.testing import assert_index_equal
 
 from utilities.hypothesis import (
@@ -34,7 +35,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
+        self, *, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -55,6 +56,7 @@ class TestDictsOfIndexes:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_dims: int,
         max_dims: int | None,
@@ -164,7 +166,7 @@ class TestIntDataArrays:
             )
         assert set(array.coords) == set(indexes)
         assert array.dims == tuple(indexes)
-        assert array.dtype == int
+        assert array.dtype == int64
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
             assert_index_equal(arr, exp, check_names=False)
@@ -172,7 +174,7 @@ class TestIntDataArrays:
 
 class TestMergeIntoDictOfIndexes:
     @given(data=data())
-    def test_empty(self, data: DataObject) -> None:
+    def test_empty(self, *, data: DataObject) -> None:
         _ = data.draw(_merge_into_dict_of_indexes())
 
     @given(
@@ -182,6 +184,7 @@ class TestMergeIntoDictOfIndexes:
     )
     def test_non_empty(
         self,
+        *,
         data: DataObject,
         indexes1: Mapping[str, IndexA] | None,
         indexes2: Mapping[str, IndexA],

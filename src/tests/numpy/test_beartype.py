@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, example, given, settings
-from numpy import array, empty, nan, zeros
+from numpy import array, empty, int64, nan, zeros
 from numpy.typing import NDArray
 from pytest import mark, param
 
@@ -320,7 +320,7 @@ class TestNDims:
         ("ndim", "hint"),
         [param(0, NDim0), param(1, NDim1), param(2, NDim2), param(3, NDim3)],
     )
-    def test_main(self, ndim: int, hint: Any) -> None:
+    def test_main(self, *, ndim: int, hint: Any) -> None:
         arr = empty(zeros(ndim, dtype=int), dtype=float)
         die_if_unbearable(arr, Annotated[NDArray[Any], hint])
 
@@ -344,11 +344,11 @@ class TestHints:
             param(datetime64fs, NDArrayDfs),
             param(datetime64as, NDArrayDas),
             param(float, NDArrayF),
-            param(int, NDArrayI),
+            param(int64, NDArrayI),
             param(object, NDArrayO),
         ],
     )
-    def test_dtype(self, dtype: Any, hint: Any) -> None:
+    def test_dtype(self, *, dtype: Any, hint: Any) -> None:
         arr = empty(0, dtype=dtype)
         die_if_unbearable(arr, hint)
 
@@ -361,7 +361,7 @@ class TestHints:
             param(3, NDArray3),
         ],
     )
-    def test_ndim(self, ndim: int, hint: Any) -> None:
+    def test_ndim(self, *, ndim: int, hint: Any) -> None:
         arr = empty(zeros(ndim, dtype=int), dtype=float)
         die_if_unbearable(arr, hint)
 
@@ -385,7 +385,7 @@ class TestHints:
             param(datetime64fs, 0, NDArrayDfs0),
             param(datetime64as, 0, NDArrayDas0),
             param(float, 0, NDArrayF0),
-            param(int, 0, NDArrayI0),
+            param(int64, 0, NDArrayI0),
             param(object, 0, NDArrayO0),
             # ndim 1
             param(bool, 1, NDArrayB1),
@@ -404,7 +404,7 @@ class TestHints:
             param(datetime64fs, 1, NDArrayDfs1),
             param(datetime64as, 1, NDArrayDas1),
             param(float, 1, NDArrayF1),
-            param(int, 1, NDArrayI1),
+            param(int64, 1, NDArrayI1),
             param(object, 1, NDArrayO1),
             # ndim 2
             param(bool, 2, NDArrayB2),
@@ -423,7 +423,7 @@ class TestHints:
             param(datetime64fs, 2, NDArrayDfs2),
             param(datetime64as, 2, NDArrayDas2),
             param(float, 2, NDArrayF2),
-            param(int, 2, NDArrayI2),
+            param(int64, 2, NDArrayI2),
             param(object, 2, NDArrayO2),
             # ndim 3
             param(bool, 3, NDArrayB3),
@@ -442,12 +442,12 @@ class TestHints:
             param(datetime64fs, 3, NDArrayDfs3),
             param(datetime64as, 3, NDArrayDas3),
             param(float, 3, NDArrayF3),
-            param(int, 3, NDArrayI3),
+            param(int64, 3, NDArrayI3),
             param(object, 3, NDArrayO3),
         ],
     )
-    def test_compound(self, dtype: Any, ndim: int, hint: Any) -> None:
-        arr = empty(zeros(ndim, dtype=int), dtype=dtype)
+    def test_compound(self, *, dtype: Any, ndim: int, hint: Any) -> None:
+        arr = empty(zeros(ndim, dtype=int64), dtype=dtype)
         die_if_unbearable(arr, hint)
 
     @given(arr=int_arrays())
@@ -489,7 +489,7 @@ class TestHints:
         ],
     )
     @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
-    def test_int_checks(self, arr: NDArrayI, dtype: Any, hint: Any) -> None:
+    def test_int_checks(self, *, arr: NDArrayI, dtype: Any, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(arr.astype(dtype), hint)
 
@@ -663,6 +663,6 @@ class TestHints:
         ],
     )
     @settings(max_examples=1, phases={Phase.explicit, Phase.generate})
-    def test_float_checks(self, arr: NDArrayF, hint: Any) -> None:
+    def test_float_checks(self, *, arr: NDArrayF, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(arr, hint)

@@ -72,18 +72,20 @@ def _yield_writer(
 
 def _get_memory_usage() -> Item:
     virtual = cast(Any, virtual_memory())
+    virtual_kwargs: dict[str, Any] = {}
     if SYSTEM is System.windows:  # pragma: os-ne-windows
-        msg = f"{SYSTEM=}"
-        raise NotImplementedError(msg)
-    if SYSTEM is System.mac_os:  # pragma: os-ne-macos
-        kwargs = {"virtual_wired": virtual.wired}
+        pass
+    elif SYSTEM is System.mac_os:  # pragma: os-ne-macos
+        virtual_kwargs["virtual_active"] = virtual.active
+        virtual_kwargs["virtual_inactive"] = virtual.inactive
+        virtual_kwargs["virtual_wired"] = virtual.wired
     elif SYSTEM is System.linux:  # pragma: os-ne-linux
-        kwargs = {
-            "virtual_buffers": virtual.buffers,
-            "virtual_cached": virtual.cached,
-            "virtual_shared": virtual.shared,
-            "virtual_slab": virtual.slab,
-        }
+        virtual_kwargs["virtual_active"] = virtual.active
+        virtual_kwargs["virtual_inactive"] = virtual.inactive
+        virtual_kwargs["virtual_buffers"] = virtual.buffers
+        virtual_kwargs["virtual_cached"] = virtual.cached
+        virtual_kwargs["virtual_shared"] = virtual.shared
+        virtual_kwargs["virtual_slab"] = virtual.slab
     else:  # pragma: no cover
         never(SYSTEM)
     swap = swap_memory()
@@ -94,9 +96,7 @@ def _get_memory_usage() -> Item:
         virtual_percent=virtual.percent,
         virtual_used=virtual.used,
         virtual_free=virtual.free,
-        virtual_active=virtual.active,
-        virtual_inactive=virtual.inactive,
-        **kwargs,
+        **virtual_kwargs,
         swap_total=swap.total,
         swap_used=swap.used,
         swap_free=swap.free,
