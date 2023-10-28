@@ -9,7 +9,7 @@ from utilities.numpy import NDArrayF, NDArrayF1, is_zero
 
 def ppf(array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1) -> NDArrayF:
     """Apply the PPF transform to an array of data."""
-    return apply_along_axis(_ppf_1d, axis, array, cutoff)
+    return apply_along_axis(_ppf_1d, axis, array, cutoff)  # type: ignore
 
 
 def _ppf_1d(array: NDArrayF1, cutoff: FloatFinNonNeg, /) -> NDArrayF1:

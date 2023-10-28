@@ -24,6 +24,8 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    rename_index,
+    sort_index,
     string,
 )
 
@@ -90,9 +92,9 @@ def indexes(
             unique=draw(unique),
         )
     )
-    index = index.rename(draw(name))
+    index = rename_index(index, draw(name))
     if draw(sort):
-        return index.sort_values()
+        return sort_index(index)
     return index
 
 
@@ -153,7 +155,7 @@ def timestamps(
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
+        timedelta = Timedelta(nanoseconds=nanoseconds)
         timestamp += timedelta
         _ = assume(min_value <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value)

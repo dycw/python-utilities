@@ -25,6 +25,7 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    sort_index,
     string,
 )
 
@@ -93,7 +94,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, index.sort_values())
+            assert_index_equal(index, sort_index(index))
 
     @given(
         data=data(),
@@ -118,7 +119,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, index.sort_values())
+            assert_index_equal(index, sort_index(index))
 
     @given(
         data=data(),
@@ -143,7 +144,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, index.sort_values())
+            assert_index_equal(index, sort_index(index))
 
 
 class TestTimestamps:

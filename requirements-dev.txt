@@ -78,7 +78,7 @@ cryptography==41.0.5
     # via dycw-utilities (pyproject.toml)
 cvxpy==1.4.1
     # via dycw-utilities (pyproject.toml)
-cx-oracle==8.3.0 ; sys_platform == "darwin"
+cx-oracle==8.3.0
     # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
     # via fpdf2
@@ -98,9 +98,9 @@ fastapi==0.104.0
     # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
-fastparquet==2023.10.0
+fastparquet==2023.10.1
     # via dycw-utilities (pyproject.toml)
-filelock==3.12.4
+filelock==3.13.0
     # via virtualenv
 fonttools==4.43.1
     # via fpdf2
@@ -178,7 +178,7 @@ more-itertools==10.1.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
-mysqlclient==2.2.0 ; sys_platform == "darwin"
+mysqlclient==2.2.0
     # via dycw-utilities (pyproject.toml)
 nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
@@ -225,7 +225,7 @@ packaging==23.2
     #   nox
     #   pytest
     #   xarray
-pandas==2.1.1
+pandas==2.1.2
     # via
     #   bokeh
     #   dycw-utilities (pyproject.toml)
@@ -267,7 +267,7 @@ psutil==5.9.6
     # via
     #   dycw-utilities (pyproject.toml)
     #   memory-profiler
-psycopg2-binary==2.9.9 ; sys_platform == "darwin"
+psycopg2-binary==2.9.9
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
@@ -285,7 +285,7 @@ pygments==2.16.1
     # via rich
 pyinstrument==4.6.0
     # via dycw-utilities (pyproject.toml)
-pyodbc==5.0.1 ; sys_platform == "darwin"
+pyodbc==5.0.1
     # via dycw-utilities (pyproject.toml)
 pyperclip==1.8.2
     # via hatch
