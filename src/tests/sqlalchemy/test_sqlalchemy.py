@@ -124,8 +124,8 @@ from utilities.sqlalchemy import (
     columnwise_min,
     create_engine,
     ensure_engine,
-    ensure_table_created,
-    ensure_table_dropped,
+    ensure_tables_created,
+    ensure_tables_dropped,
     get_column_names,
     get_columns,
     get_dialect,
@@ -145,6 +145,7 @@ from utilities.sqlalchemy.sqlalchemy import (
     _check_columns_equal,
     _check_table_or_column_names_equal,
     _reflect_table,
+    yield_tables,
 )
 
 
@@ -589,7 +590,7 @@ class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_num_tables(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
@@ -600,7 +601,7 @@ class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_num_tables_rel_tol_correct(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         check_engine(engine, num_tables=2, rel_tol=0.5)
 
     @given(engine=sqlite_engines())
@@ -622,7 +623,7 @@ class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
     def test_reflected(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         check_table_against_reflection(table, engine)
 
     @given(engine=sqlite_engines())
@@ -729,7 +730,7 @@ class TestColumnwiseMinMax:
             Column("x", Integer),
             Column("y", Integer),
         )
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         with engine.begin() as conn:
             _ = conn.execute(table.insert(), values)
             res = conn.execute(table.select()).all()
@@ -766,7 +767,7 @@ class TestColumnwiseMinMax:
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
 
         sel = select(columnwise_min(table.c.x, table.c.x))
         with engine.begin() as conn:
@@ -799,7 +800,7 @@ class TestEnsureEngine:
         assert result.url == engine.url
 
 
-class TestEnsureTableCreated:
+class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, *, engine: Engine, runs: int) -> None:
@@ -824,12 +825,12 @@ class TestEnsureTableCreated:
             except DatabaseError as error:
                 redirect_to_no_such_table_error(engine, error)
         for _ in range(runs):
-            ensure_table_created(table_or_model, engine)
+            ensure_tables_created(table_or_model, engine)
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
 
-class TestEnsureTableDropped:
+class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_core(self, *, engine: Engine, runs: int) -> None:
@@ -853,7 +854,7 @@ class TestEnsureTableDropped:
             table.create(conn)
             _ = conn.execute(sel).all()
         for _ in range(runs):
-            ensure_table_dropped(table_or_model, engine)
+            ensure_tables_dropped(table_or_model, engine)
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
                 _ = conn.execute(sel).all()
@@ -1047,7 +1048,7 @@ class TestReflectTable:
     )
     def test_reflected(self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         reflected = _reflect_table(table, engine)
         check_tables_equal(reflected, table)
 
@@ -1117,3 +1118,15 @@ class TestYieldInClauseRows:
             )
         )
         assert len(result) == len(values)
+
+
+class TestYieldTables:
+    def test_single(self) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        result = list(yield_tables(table))
+        assert result == [table]
+
+    def test_multiple(self) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        result = list(yield_tables([table, table]))
+        assert result == [table, table]

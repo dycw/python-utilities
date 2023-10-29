@@ -12,7 +12,7 @@ from utilities.fastparquet import get_dtypes
 from utilities.hypothesis import sqlite_engines, temp_paths
 from utilities.pandas import Int64
 from utilities.sqlalchemy import (
-    ensure_table_created,
+    ensure_tables_created,
     get_table,
     insert_items,
     select_to_parquet,
@@ -34,7 +34,7 @@ class TestSelectToParquet:
             Id = Column(Integer, primary_key=True)
 
         rows = data.draw(table_records_lists(get_table(Example), min_size=1))
-        ensure_table_created(Example, engine)
+        ensure_tables_created(Example, engine)
         insert_items([(rows, Example)], engine)
         sel = select(Example.Id)
         select_to_parquet(sel, engine, path := root.joinpath("df.parq"), stream=stream)
