@@ -29,7 +29,7 @@ _CONFIG = Config()
 @command()
 @click_options(Config, appname="monitormemory")
 def main(config: Config, /) -> None:
-    """CLI for the `clean_dir` script."""
+    """CLI for the `monitor_memory` script."""
     setup_loguru()
     _log_config(config)
     _monitor_memory(path=config.path, freq=config.freq, duration=config.duration)
