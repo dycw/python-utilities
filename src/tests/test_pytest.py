@@ -8,7 +8,6 @@ from typing import Any
 from pytest import MonkeyPatch, mark, param
 
 from utilities.pytest import is_pytest, throttle
-from utilities.text import strip_and_dedent
 from utilities.typing import IterableStrs
 
 
@@ -184,41 +183,56 @@ class TestIsPytest:
 
 
 class TestThrottle:
-    def test_duration_as_float(self, *, testdir: Any, tmp_path: Path) -> None:
+    @mark.parametrize("as_float", [param(True), param(False)])
+    @mark.parametrize("on_pass", [param(True), param(False)])
+    def test_basic(
+        self, *, testdir: Any, tmp_path: Path, as_float: bool, on_pass: bool
+    ) -> None:
         root_str = str(tmp_path)
-        contents = f"""
-            from utilities.pytest import throttle
-
-            @throttle(root={root_str!r}, duration=1.0)
-            def test_main():
-                assert True
-            """
-        self._test_throttle(testdir, contents)
-
-    def test_duration_as_timedelta(self, *, testdir: Any, tmp_path: Path) -> None:
-        root_str = str(tmp_path)
+        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
         contents = f"""
             import datetime as dt
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=dt.timedelta(seconds=1.0))
+            @throttle(root={root_str!r}, duration={duration}, on_pass={on_pass})
             def test_main():
                 assert True
             """
-        self._test_throttle(testdir, contents)
-
-    def _test_throttle(self, testdir: Any, contents: str, /) -> None:
-        testdir.makepyfile(strip_and_dedent(contents))
-
-        result = testdir.runpytest()
-        result.assert_outcomes(passed=1)
-
-        result = testdir.runpytest()
-        result.assert_outcomes(skipped=1)
-
+        testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
         sleep(1.0)
-        result = testdir.runpytest()
-        result.assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    def test_on_pass(self, *, testdir: Any, tmp_path: Path) -> None:
+        testdir.makeconftest(
+            """
+            from pytest import fixture
+
+            def pytest_addoption(parser):
+                parser.addoption("--pass", action="store_true")
+
+            @fixture
+            def is_pass(request):
+                return request.config.getoption("--pass")
+            """
+        )
+        root_str = str(tmp_path)
+        contents = f"""
+            from utilities.pytest import throttle
+
+            @throttle(root={root_str!r}, duration=1.0, on_pass=True)
+            def test_main(is_pass):
+                assert is_pass
+            """
+        testdir.makepyfile(contents)
+        for _ in range(2):
+            testdir.runpytest().assert_outcomes(failed=1)
+        testdir.runpytest("--pass").assert_outcomes(passed=1)
+        testdir.runpytest("--pass").assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(failed=1)
+        testdir.runpytest("--pass").assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
         @throttle()
