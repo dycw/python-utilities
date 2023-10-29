@@ -554,27 +554,27 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
     return parse_engine(engine)
 
 
-def ensure_table_created(
-    table_or_model: Any, engine_or_connection: Engine | Connection, /
+def ensure_tables_created(
+    tables_or_models: Any, engine_or_connection: Engine | Connection, /
 ) -> None:
-    """Ensure a table is created."""
-    table = get_table(table_or_model)
+    """Ensure a table/set of tables is/are created."""
     try:
         with yield_connection(engine_or_connection) as conn:
-            table.create(conn)
+            for table in yield_tables(tables_or_models):
+                table.create(conn)
     except DatabaseError as error:
         with suppress(TableAlreadyExistsError):
             redirect_to_table_already_exists_error(engine_or_connection, error)
 
 
-def ensure_table_dropped(
-    table_or_model: Any, engine_or_conn: Engine | Connection, /
+def ensure_tables_dropped(
+    tables_or_models: Any, engine_or_conn: Engine | Connection, /
 ) -> None:
-    """Ensure a table is dropped."""
-    table = get_table(table_or_model)
+    """Ensure a table/set of tables is/are dropped."""
     try:
         with yield_connection(engine_or_conn) as conn:
-            table.drop(conn)
+            for table in yield_tables(tables_or_models):
+                table.drop(conn)
     except DatabaseError as error:
         with suppress(NoSuchTableError):
             redirect_to_no_such_table_error(engine_or_conn, error)
@@ -616,14 +616,14 @@ class UnsupportedDialectError(TypeError):
 
 
 def get_table(table_or_model: Any, /) -> Table:
-    """Get the table from a ORM model."""
+    """Get the table if it is a table, else from an ORM model."""
     if isinstance(table_or_model, Table):
         return table_or_model
     return table_or_model.__table__
 
 
 def get_table_name(table_or_model: Any, /) -> str:
-    """Get the table name from a ORM model."""
+    """Get the table name if it is a table, else from an ORM model."""
     return get_table(table_or_model).name
 
 
@@ -749,3 +749,14 @@ def yield_in_clause_rows(
         for values_i in chunked(values, n=chunk_size_use):
             sel_i = sel.where(column.in_(values_i))
             yield from conn.execute(sel_i).all()
+
+
+def yield_tables(tables_or_models: Any, /) -> Iterator[Table]:
+    """Yield the tables if they are tables, else from the ORM models."""
+
+    try:
+        it = iter(tables_or_models)
+    except TypeError:
+        yield get_table(tables_or_models)
+    else:
+        yield from map(get_table, it)

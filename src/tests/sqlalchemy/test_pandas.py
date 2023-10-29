@@ -54,7 +54,7 @@ from utilities.sqlalchemy import (
     SeriesAgainstTableColumnError,
     SeriesNameNotInTableError,
     SeriesNameSnakeCaseNotInTableError,
-    ensure_table_created,
+    ensure_tables_created,
     get_table,
     insert_dataframe,
     insert_items,
@@ -132,7 +132,7 @@ class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
     def test_main(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
         insert_dataframe(df, table, engine)
@@ -145,7 +145,7 @@ class TestInsertItems:
     @given(data=data(), engine=sqlite_engines())
     def test_lists_of_tuples(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         insert_items([(rows, table)], engine)
         with engine.begin() as conn:
@@ -155,7 +155,7 @@ class TestInsertItems:
     @given(data=data(), engine=sqlite_engines())
     def test_dataframe_with_table(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
         df = DataFrame(rows, columns=["id"]).astype(int)
         insert_items([(df, table)], engine)
@@ -170,7 +170,7 @@ class TestInsertItems:
 
             id_ = Column(Integer, primary_key=True)
 
-        ensure_table_created(Example, engine)
+        ensure_tables_created(Example, engine)
         rows = data.draw(table_records_lists(get_table(Example), max_size=10))
         items = [Example(id_=id_) for (id_,) in rows]
         insert_items(items, engine)
@@ -232,7 +232,7 @@ class TestRowsToDataFrame:
         table = Table(
             "example", MetaData(), Column(col_name, Integer, primary_key=True)
         )
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         values = data.draw(table_records_lists(table, min_size=1, max_size=10))
         with engine.begin() as conn:
             _ = conn.execute(insert(table).values(values))
@@ -249,7 +249,7 @@ class TestSelectToDataFrame:
         self, *, data: DataObject, engine: Engine, stream: int | None
     ) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
         result = select_to_dataframe(select(table), engine, stream=stream)
@@ -268,7 +268,7 @@ class TestStreamDataFrames:
     @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
     def test_main(self, *, data: DataObject, engine: Engine, stream: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_table_created(table, engine)
+        ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
         insert_items([(rows, table)], engine)
         for df in _stream_dataframes(select(table), engine, stream):
