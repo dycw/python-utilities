@@ -84,8 +84,10 @@ def is_pytest() -> bool:
     return "PYTEST_CURRENT_TEST" in environ
 
 
-def throttle(*, root: PathLike | None = None, duration: Duration = 1.0) -> Any:
-    """Throttle a test."""
+def throttle(
+    *, root: PathLike | None = None, duration: Duration = 1.0, on_pass: bool = False
+) -> Any:
+    """Throttle a test. On run by default, by pass otherwise."""
 
     root_use = get_repo_root().joinpath(".pytest_cache") if root is None else Path(root)
 
@@ -112,10 +114,18 @@ def throttle(*, root: PathLike | None = None, duration: Duration = 1.0) -> Any:
                 and ((now - prev) < duration_to_float(duration))
             ):
                 skip(reason=f"{test} throttled")
-            with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
-                _ = fh.write(str(now))
+            if on_pass:
+                out = func(*args, **kwargs)
+                _throttle_write(path, now)
+                return out
+            _throttle_write(path, now)
             return func(*args, **kwargs)
 
         return wrapped
 
     return wrapper
+
+
+def _throttle_write(path: Path, now: float, /) -> None:
+    with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
+        _ = fh.write(str(now))
