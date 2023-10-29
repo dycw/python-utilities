@@ -99,7 +99,7 @@ class TestCheckSeriesAgainstTableColumn:
             param(string, String),
         ],
     )
-    def test_success(self, dtype: Any, column_type: Any) -> None:
+    def test_success(self, *, dtype: Any, column_type: Any) -> None:
         series = Series([], dtype=dtype)
         column = Column("id", column_type)
         _check_series_against_table_column(series, column)
@@ -108,7 +108,7 @@ class TestCheckSeriesAgainstTableColumn:
         ("dtype", "column_type"),
         [param(object, Integer), param(datetime64ns, DateTime)],
     )
-    def test_error(self, dtype: Any, column_type: Any) -> None:
+    def test_error(self, *, dtype: Any, column_type: Any) -> None:
         series = Series([], dtype=dtype)
         column = Column("id", column_type)
         with raises(SeriesAgainstTableColumnError):
@@ -122,7 +122,7 @@ class TestCheckSeriesAgainstTableColumn:
 
 class TestDataFrameColumnsToSnake:
     @given(col_name=text_ascii())
-    def test_main(self, col_name: str) -> None:
+    def test_main(self, *, col_name: str) -> None:
         df = DataFrame(columns=[col_name])
         snake = _dataframe_columns_to_snake(df)
         assert snake.columns.tolist() == [snake_case(col_name)]
@@ -130,7 +130,7 @@ class TestDataFrameColumnsToSnake:
 
 class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
-    def test_main(self, data: DataObject, engine: Engine) -> None:
+    def test_main(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
@@ -143,7 +143,7 @@ class TestInsertDataFrame:
 
 class TestInsertItems:
     @given(data=data(), engine=sqlite_engines())
-    def test_lists_of_tuples(self, data: DataObject, engine: Engine) -> None:
+    def test_lists_of_tuples(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
@@ -153,7 +153,7 @@ class TestInsertItems:
         assert res == len(rows)
 
     @given(data=data(), engine=sqlite_engines())
-    def test_dataframe_with_table(self, data: DataObject, engine: Engine) -> None:
+    def test_dataframe_with_table(self, *, data: DataObject, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
@@ -164,7 +164,7 @@ class TestInsertItems:
         assert res == len(rows)
 
     @given(data=data(), engine=sqlite_engines())
-    def test_model(self, data: DataObject, engine: Engine) -> None:
+    def test_model(self, *, data: DataObject, engine: Engine) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -181,7 +181,7 @@ class TestInsertItems:
         assert res == len(rows)
 
     @given(engine=sqlite_engines())
-    def test_type_error(self, engine: Engine) -> None:
+    def test_type_error(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         items = [(None, table)]
         with raises(TypeError, match="Invalid type: first="):
@@ -245,7 +245,9 @@ class TestRowsToDataFrame:
 
 class TestSelectToDataFrame:
     @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none())
-    def test_main(self, data: DataObject, engine: Engine, stream: int | None) -> None:
+    def test_main(
+        self, *, data: DataObject, engine: Engine, stream: int | None
+    ) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
@@ -264,7 +266,7 @@ class TestSelectToDataFrame:
 
 class TestStreamDataFrames:
     @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
-    def test_main(self, data: DataObject, engine: Engine, stream: int) -> None:
+    def test_main(self, *, data: DataObject, engine: Engine, stream: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_table_created(table, engine)
         rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
@@ -274,7 +276,7 @@ class TestStreamDataFrames:
             assert dict(df.dtypes) == {"id": Int64}
 
     @given(engine=sqlite_engines())
-    def test_non_positive_stream(self, engine: Engine) -> None:
+    def test_non_positive_stream(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(NonPositiveStreamError):
             _ = list(_stream_dataframes(select(table), engine, 0))
@@ -293,7 +295,7 @@ class TestTableColumnToDtype:
             param(Column(sqlalchemy.DECIMAL), float),
         ],
     )
-    def test_main(self, column: Any, expected: Any) -> None:
+    def test_main(self, *, column: Any, expected: Any) -> None:
         assert _table_column_to_dtype(column) == expected
 
 
@@ -383,7 +385,7 @@ class TestYieldInsertionElements:
             assert isinstance(el, expected)
 
     @given(date=dates_pd())
-    def test_dates_with_time_components_error(self, date: dt.date) -> None:
+    def test_dates_with_time_components_error(self, *, date: dt.date) -> None:
         series = Series([dt.datetime.combine(date, dt.time(12))], dtype=datetime64ns)
         with raises(DatesWithTimeComponentsError):
             _ = list(_yield_insertion_elements(series))

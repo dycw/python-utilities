@@ -27,7 +27,7 @@ class TestSelectToParquet:
         stream=integers(1, 10) | none(),
     )
     def test_streamed_dataframe(
-        self, data: DataObject, engine: Engine, root: Path, stream: int | None
+        self, *, data: DataObject, engine: Engine, root: Path, stream: int | None
     ) -> None:
         class Example(declarative_base()):  # does not work with a core table
             __tablename__ = "example"

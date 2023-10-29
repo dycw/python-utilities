@@ -395,7 +395,7 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
-    def test_enum_length(self, lengths: typing.Sequence[int]) -> None:
+    def test_enum_length(self, *, lengths: typing.Sequence[int]) -> None:
         class MyEnum(enum.Enum):
             member = auto()
 
@@ -1014,7 +1014,7 @@ class TestRedirectToNoSuchTableError:
                 redirect_to_no_such_table_error(engine, error)
 
 
-class TestRedirectTableAlreadyExistsError:
+class TestRedirectToTableAlreadyExistsError:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
