@@ -31,6 +31,7 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    DataFrameColumnsDuplicatedError,
     DataFrameColumnsError,
     DataFrameColumnsNameError,
     DataFrameDTypesError,
@@ -74,6 +75,11 @@ class TestCheckDataFrame:
         with raises(DataFrameColumnsNameError):
             check_dataframe(df)
 
+    def test_columns_duplicated_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value", "value"]))
+        with raises(DataFrameColumnsDuplicatedError):
+            check_dataframe(df)
+
     def test_columns_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         check_dataframe(df, columns=["value"])
@@ -103,21 +109,21 @@ class TestCheckDataFrame:
 
     def test_sorted_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
-        check_dataframe(df, sorted=["value"])
+        check_dataframe(df, sorted="value")
 
     def test_sorted_error(self) -> None:
         df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
         with raises(DataFrameSortedError):
-            check_dataframe(df, sorted=["value"])
+            check_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
-        check_dataframe(df, unique=["value"])
+        check_dataframe(df, unique="value")
 
     def test_unique_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         with raises(DataFrameUniqueError):
-            check_dataframe(df, unique=["value"])
+            check_dataframe(df, unique="value")
 
 
 class TestCheckRangeIndex:
