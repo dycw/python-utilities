@@ -1,4 +1,5 @@
 import datetime as dt
+from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal
@@ -21,7 +22,6 @@ from luigi import (
     Task,
 )
 from pytest import mark, param, raises
-from typed_settings import settings
 
 from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import namespace_mixins
@@ -53,7 +53,7 @@ from utilities.sentinel import Sentinel
 class TestBuildParamsMixin:
     @given(namespace_mixin=namespace_mixins())
     def test_no_field(self, *, namespace_mixin: Any) -> None:
-        @settings
+        @dataclass(frozen=True)
         class Config:
             value: int = 0
 
@@ -68,7 +68,7 @@ class TestBuildParamsMixin:
 
     @given(namespace_mixin=namespace_mixins())
     def test_with_field(self, *, namespace_mixin: Any) -> None:
-        @settings
+        @dataclass(frozen=True)
         class Config:
             date: dt.date = TODAY_UTC
 

@@ -1,10 +1,12 @@
 import datetime as dt
 import enum
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import auto
+from operator import attrgetter, eq
 from pathlib import Path
 from subprocess import check_call
-from typing import Any, cast
+from typing import Any, TypeVar
 
 from click import command, echo
 from click.testing import CliRunner
@@ -22,9 +24,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from pytest import MonkeyPatch, mark, param, raises
-from sqlalchemy import Engine
-from typed_settings import settings
-from typed_settings.exceptions import InvalidValueError
+from typed_settings.exceptions import InvalidSettingsError
 
 from utilities.datetime import (
     UTC,
@@ -33,9 +33,7 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
-from utilities.pytest import skipif_windows
-from utilities.sqlalchemy import serialize_engine
+from utilities.hypothesis import temp_paths, text_ascii
 from utilities.typed_settings import (
     AppNameContainsUnderscoreError,
     _get_loaders,
@@ -68,108 +66,134 @@ class TestGetLoaders:
             _ = _get_loaders(appname="app_name")
 
 
+_T = TypeVar("_T")
+
+
 class TestLoadSettings:
-    @given(data=data(), appname=app_names, root=temp_paths())
+    @given(data=data(), root=temp_paths(), appname=app_names)
     @mark.parametrize(
-        ("cls", "strategy", "serialize"),
+        ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(
-                Engine,
-                sqlite_engines(),
-                serialize_engine,
-                marks=skipif_windows,  # writing \\
-            ),
         ],
     )
     def test_main(
         self,
+        *,
         data: DataObject,
-        appname: str,
         root: Path,
-        cls: Any,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
+        appname: str,
+        test_cls: type[_T],
+        strategy: SearchStrategy[_T],
+        serialize: Callable[[_T], str],
     ) -> None:
         default, value = data.draw(tuples(strategy, strategy))
+        self.run_test(test_cls, default, root, appname, serialize, value, eq)
 
-        @settings(frozen=True)
+    @staticmethod
+    def run_test(
+        test_cls: type[_T],
+        default: _T,
+        root: Path,
+        appname: str,
+        serialize: Callable[[_T], str],
+        value: _T,
+        equal: Callable[[_T, _T], bool],
+        /,
+    ) -> None:
+        @dataclass(frozen=True)
         class Settings:
-            value: cls = default
+            value: test_cls = default
 
         settings_default = load_settings(Settings)
         assert settings_default.value == default
+        _ = hash(settings_default)
         file = root.joinpath("file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
         settings_loaded = load_settings(Settings, appname=appname, config_files=[file])
-        try:
-            assert settings_loaded.value == value
-        except AssertionError:
-            assert settings_loaded.value.url == value.url
+        assert equal(settings_loaded.value, value)
 
     @given(appname=app_names)
     @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
     def test_errors(self, *, appname: str, cls: Any) -> None:
-        @settings(frozen=True)
+        @dataclass(frozen=True)
         class Settings:
-            value: cls = cast(Any, None)
+            value: cls = None
 
-        with raises(InvalidValueError):
+        with raises(InvalidSettingsError):
             _ = load_settings(Settings, appname=appname)
 
 
 class TestClickOptions:
     @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
-        ("cls", "strategy", "serialize"),
+        ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(
-                Engine,
-                sqlite_engines(),
-                serialize_engine,
-                marks=skipif_windows,  # writing \\
-            ),
         ],
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         appname: str,
         root: Path,
-        cls: Any,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], str],
+        test_cls: type[_T],
+        strategy: SearchStrategy[_T],
+        serialize: Callable[[_T], str],
     ) -> None:
-        default, val, cfg = data.draw(tuples(strategy, strategy, strategy))
-        val_str, cfg_str = map(serialize, [val, cfg])
-        runner = CliRunner()
+        default, value, cfg = data.draw(tuples(strategy, strategy, strategy))
+        self.run_test(test_cls, default, appname, serialize, root, value, cfg)
 
-        @settings(frozen=True)
+    @given(data=data(), appname=app_names, root=temp_paths())
+    def test_enum(self, *, data: DataObject, appname: str, root: Path) -> None:
+        class Truth(enum.Enum):
+            true = auto()
+            false = auto()
+
+        strategy = sampled_from(Truth)
+        default, value, cfg = data.draw(tuples(strategy, strategy, strategy))
+        self.run_test(Truth, default, appname, attrgetter("name"), root, value, cfg)
+
+    @staticmethod
+    def run_test(
+        test_cls: type[_T],
+        default: _T,
+        appname: str,
+        serialize: Callable[[_T], str],
+        root: Path,
+        value: _T,
+        cfg: _T,
+        /,
+    ) -> None:
+        @dataclass(frozen=True)
         class Config:
-            value: cls = default
+            value: test_cls = default
 
         @command()
         @click_options(Config, appname=appname)
         def cli1(config: Config, /) -> None:
             echo(f"value = {serialize(config.value)}")
 
+        runner = CliRunner()
         result = runner.invoke(cli1)
         assert result.exit_code == 0
         assert result.stdout == f"value = {serialize(default)}\n"
 
+        val_str = serialize(value)
         result = runner.invoke(cli1, f'--value="{val_str}"')
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
 
         file = root.joinpath("file.toml")
+        cfg_str = serialize(cfg)
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
 
@@ -185,29 +209,3 @@ class TestClickOptions:
         result = runner.invoke(cli1, f'--value="{val_str}"')
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
-
-    @given(data=data())
-    def test_enum(self, *, data: DataObject) -> None:
-        class Truth(enum.Enum):
-            true = auto()
-            false = auto()
-
-        default = data.draw(sampled_from(Truth))
-
-        @settings(frozen=True)
-        class Config:
-            value: Truth = default
-
-        @command()
-        @click_options(Config)
-        def cli(config: Config, /) -> None:
-            echo(f"truth = {config.value.name}")
-
-        result = CliRunner().invoke(cli)
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {default.name}\n"
-
-        arg = data.draw(sampled_from(Truth))
-        result = CliRunner().invoke(cli, ["--value", arg.name])
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {arg.name}\n"

@@ -46,7 +46,7 @@ repos:
         args:
           [
             --select=FI18,
-            "--per-file-ignores=src/tests/test_typed_settings.py:FI18,src/tests/luigi/test_typed_settings.py:FI18",
+            "--per-file-ignores=src/tests/typed_settings/test_typed_settings.py:FI18,src/tests/typed_settings/test_sqlalchemy.py:FI18,src/tests/luigi/test_typed_settings.py:FI18",
           ]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6

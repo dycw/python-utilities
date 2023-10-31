@@ -9,9 +9,8 @@ from pathlib import Path
 from re import search
 from typing import Any, TypeVar, cast
 
-from cattrs import BaseConverter, Converter
 from click import ParamType
-from typed_settings import default_converter, default_loaders
+from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
 from typed_settings.cli_utils import (
     Default,
@@ -22,6 +21,7 @@ from typed_settings.cli_utils import (
 )
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
+from typed_settings.converters import TSConverter
 from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
 
@@ -29,7 +29,6 @@ from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
 from utilities.datetime import (
     ensure_date,
-    ensure_datetime,
     ensure_time,
     ensure_timedelta,
     serialize_date,
@@ -76,7 +75,7 @@ def load_settings(
         config_files_var=config_files_var,
         env_prefix=env_prefix,
     )
-    converter = _make_converter()
+    converter = ExtendedTSConverter()
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
 
@@ -90,7 +89,7 @@ def click_options(
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Generate click options with the extended converter."""
     loaders = _get_loaders(appname=appname, config_files=config_files)
-    converter = _make_converter()
+    converter = ExtendedTSConverter()
     type_args_maker = TypeArgsMaker(cast(TypeHandler, _make_click_handler()))
     return _click_options(
         cls,
@@ -109,7 +108,6 @@ def _get_loaders(
     config_files_var: None | str | _Auto = AUTO,
     env_prefix: None | str | _Auto = AUTO,
 ) -> list[Loader]:
-    # cannot  as Loader is a protocol
     if search("_", appname):
         msg = f"{appname=}"
         raise AppNameContainsUnderscoreError(msg)
@@ -126,27 +124,29 @@ class AppNameContainsUnderscoreError(ValueError):
     """Raised when the appname contains a space."""
 
 
-def _make_converter() -> BaseConverter | Converter:
-    """Extend the default converter."""
-    converter = default_converter()
-    cases: list[tuple[type[Any], Callable[..., Any]]] = [
-        (dt.datetime, ensure_datetime),
-        (dt.date, ensure_date),
-        (dt.time, ensure_time),
-        (dt.timedelta, ensure_timedelta),
-    ]
-    try:
-        from sqlalchemy import Engine
+class ExtendedTSConverter(TSConverter):
+    def __init__(
+        self,
+        *,
+        resolve_paths: bool = True,
+        strlist_sep: str | Callable[[str], list] | None = ":",
+    ) -> None:
+        super().__init__(resolve_paths=resolve_paths, strlist_sep=strlist_sep)
+        cases: list[tuple[type[Any], Callable[..., Any]]] = [
+            (dt.date, ensure_date),
+            (dt.time, ensure_time),
+            (dt.timedelta, ensure_timedelta),
+        ]
+        try:
+            from sqlalchemy import Engine
 
-        from utilities.sqlalchemy.sqlalchemy import ensure_engine
-    except ModuleNotFoundError:  # pragma: no cover
-        pass
-    else:
-        cases.append((Engine, ensure_engine))
-    for cls, func in cases:
-        hook = _make_structure_hook(cls, func)
-        converter.register_structure_hook(cls, hook)
-    return converter
+            from utilities.sqlalchemy.sqlalchemy import ensure_engine
+        except ModuleNotFoundError:  # pragma: no cover
+            pass
+        else:
+            cases.append((Engine, ensure_engine))
+        extras = {cls: _make_structure_hook(cls, func) for cls, func in cases}
+        self.scalar_converters |= extras
 
 
 def _make_structure_hook(
@@ -156,7 +156,7 @@ def _make_structure_hook(
 
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
         if not isinstance(value, cls | str):
-            msg = f"Invalid type: {value=}"
+            msg = f"Could not convert value to {cls.__name__}: {value}"
             raise TypeError(msg)
         return func(value)
 
@@ -175,8 +175,8 @@ def _make_click_handler() -> ClickHandler:
     try:
         from sqlalchemy import Engine
 
-        from utilities.click.sqlalchemy import Engine as ClickEngine
-        from utilities.sqlalchemy.sqlalchemy import serialize_engine
+        from utilities.click import Engine as ClickEngine
+        from utilities.sqlalchemy import serialize_engine
     except ModuleNotFoundError:  # pragma: no cover
         pass
     else:

@@ -3,13 +3,13 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable
 from contextlib import suppress
+from dataclasses import asdict, fields
 from enum import Enum
 from functools import partial
 from pathlib import Path
 from types import UnionType, new_class
 from typing import Any, Literal, TypeVar, cast, get_args, get_origin
 
-from attrs import asdict, fields
 from luigi import (
     BoolParameter,
     FloatParameter,

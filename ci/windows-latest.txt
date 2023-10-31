@@ -23,14 +23,12 @@ atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 attrs==23.1.0
     # via
-    #   cattrs
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   jsonschema
     #   outcome
     #   referencing
     #   trio
-    #   typed-settings
 beartype==0.16.4
     # via dycw-utilities (pyproject.toml)
 bleach==6.1.0
@@ -47,8 +45,6 @@ build==1.0.3
     # via pip-tools
 cachetools==5.3.2
     # via streamlit
-cattrs==23.1.2
-    # via typed-settings
 certifi==2023.7.22
     # via
     #   httpcore
@@ -67,7 +63,6 @@ click==8.1.7
     #   hatch
     #   pip-tools
     #   streamlit
-    #   typed-settings
     #   userpath
 colorcet==3.0.1
     # via holoviews
@@ -460,7 +455,7 @@ trio-websocket==0.11.1
     # via selenium
 trove-classifiers==2023.10.18
     # via hatchling
-typed-settings[click]==23.0.1
+typed-settings==23.1.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.8.0
     # via
