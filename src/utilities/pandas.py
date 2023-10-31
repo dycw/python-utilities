@@ -80,6 +80,9 @@ def check_dataframe(
     if df.columns.name is not None:
         msg = f"{df=}"
         raise DataFrameColumnsNameError(msg)
+    if df.columns.duplicated().any():
+        msg = f"{df=}"
+        raise DataFrameColumnsDuplicatedError(msg)
     if (columns is not None) and (list(df.columns) != columns):
         msg = f"{df=}, {columns=}"
         raise DataFrameColumnsError(msg)
@@ -89,7 +92,7 @@ def check_dataframe(
     if (length is not None) and (len(df) != length):
         msg = f"{df=}, {length=}"
         raise DataFrameLengthError(msg)
-    if sorted:
+    if sorted is not None:
         df_sorted = df.sort_values(by=sorted).reset_index(drop=True)
         try:
             assert_frame_equal(df, df_sorted)
@@ -102,7 +105,11 @@ def check_dataframe(
 
 
 class DataFrameColumnsNameError(ValueError):
-    """Raised when a DataFrame's columns index's name is not None."""
+    """Raised when a DataFrame's columns' index name is not None."""
+
+
+class DataFrameColumnsDuplicatedError(ValueError):
+    """Raised when a DataFrame's columns has duplicated values."""
 
 
 class DataFrameColumnsError(ValueError):

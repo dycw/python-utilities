@@ -9,6 +9,8 @@ from utilities.polars import (
     DataFrameHeightError,
     DataFrameSchemaError,
     DataFrameShapeError,
+    DataFrameSortedError,
+    DataFrameUniqueError,
     DataFrameWidthError,
     check_dataframe,
 )
@@ -63,6 +65,24 @@ class TestCheckDataFrame:
         df = DataFrame()
         with raises(DataFrameShapeError):
             check_dataframe(df, shape=(1, 1))
+
+    def test_sorted_pass(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        check_dataframe(df, sorted="value")
+
+    def test_sorted_error(self) -> None:
+        df = DataFrame({"value": [1.0, 0.0]})
+        with raises(DataFrameSortedError):
+            check_dataframe(df, sorted="value")
+
+    def test_unique_pass(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        check_dataframe(df, unique="value")
+
+    def test_unique_error(self) -> None:
+        df = DataFrame({"value": [0.0, 0.0]})
+        with raises(DataFrameUniqueError):
+            check_dataframe(df, unique="value")
 
     def test_width_pass(self) -> None:
         df = DataFrame()
