@@ -26,12 +26,12 @@ from pytest import mark, param, raises
 from utilities.datetime import (
     EPOCH_UTC,
     UTC,
-    CallYieldWeekdaysError,
     IsWeekendError,
     ParseDateError,
     ParseDateTimeError,
+    ParseTimedeltaError,
     ParseTimeError,
-    TimedeltaError,
+    YieldWeekdaysError,
     add_weekdays,
     date_to_datetime,
     duration_to_float,
@@ -330,7 +330,7 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(TimedeltaError):
+        with raises(ParseTimedeltaError):
             _ = parse_timedelta("error")
 
 
@@ -429,5 +429,5 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with raises(CallYieldWeekdaysError):
+        with raises(YieldWeekdaysError):
             _ = list(yield_weekdays())

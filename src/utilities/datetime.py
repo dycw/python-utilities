@@ -182,7 +182,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
     except ValueError:
-        raise TimedeltaError(timedelta) from None
+        raise ParseTimedeltaError(timedelta) from None
     else:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
@@ -194,7 +194,7 @@ def _parse_timedelta(timedelta: str, fmt: str, /) -> dt.datetime | None:
         return None
 
 
-class TimedeltaError(ValueError):
+class ParseTimedeltaError(ValueError):
     """Raised when a `dt.timedelta` cannot be parsed."""
 
 
@@ -265,8 +265,8 @@ def yield_weekdays(
             date = round_to_prev_weekday(date - dt.timedelta(days=1))
     else:
         msg = f"{start=}, {end=}, {days=}"
-        raise CallYieldWeekdaysError(msg)
+        raise YieldWeekdaysError(msg)
 
 
-class CallYieldWeekdaysError(ValueError):
+class YieldWeekdaysError(ValueError):
     """Raised when an invalid call to `yield_weekdays` is made."""
