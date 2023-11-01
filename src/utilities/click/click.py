@@ -10,8 +10,8 @@ from typing_extensions import override
 from utilities.datetime import (
     ParseDateError,
     ParseDateTimeError,
+    ParseTimedeltaError,
     ParseTimeError,
-    TimedeltaError,
     ensure_date,
     ensure_datetime,
     ensure_time,
@@ -85,7 +85,7 @@ class Timedelta(ParamType):
         """Convert a value into the `Timedelta` type."""
         try:
             return ensure_timedelta(value)
-        except TimedeltaError:
+        except ParseTimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
