@@ -11,7 +11,7 @@ from pytest import mark
 
 from utilities.clean_dir import main
 from utilities.clean_dir.classes import Config
-from utilities.datetime import TODAY
+from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import temp_paths
 from utilities.platform import IS_WINDOWS
 
@@ -24,7 +24,7 @@ class TestCleanDir:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", str(tmp_path)]
-        with freeze_time(TODAY + self.timedelta):
+        with freeze_time(TODAY_UTC + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -53,7 +53,7 @@ class TestCleanDir:
         tmp_path.joinpath("second").symlink_to(file)
         runner = CliRunner()
         args = ["--path", str(tmp_path)]
-        with freeze_time(TODAY + self.timedelta):
+        with freeze_time(TODAY_UTC + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -63,7 +63,7 @@ class TestCleanDir:
         root.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", str(root), "--chunk-size", str(chunk_size)]
-        with freeze_time(TODAY + self.timedelta):
+        with freeze_time(TODAY_UTC + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0
 
@@ -72,6 +72,6 @@ class TestCleanDir:
         tmp_path.joinpath("file").touch()
         runner = CliRunner()
         args = ["--path", str(tmp_path), "--dry-run"]
-        with freeze_time(TODAY + self.timedelta):
+        with freeze_time(TODAY_UTC + self.timedelta):
             result = runner.invoke(main, args)
         assert result.exit_code == 0

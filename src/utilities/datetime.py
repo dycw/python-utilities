@@ -10,9 +10,11 @@ from utilities.platform import SYSTEM, System
 from utilities.re import extract_groups
 from utilities.types import Duration
 from utilities.typing import never
+from utilities.zoneinfo import HONG_KONG, TOKYO
 
 UTC = dt.timezone.utc
-TODAY = dt.datetime.now(tz=UTC).date()
+NOW_UTC, NOW_HKG, NOW_TKY = (dt.datetime.now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+TODAY_UTC, TODAY_HKG, TODAY_TKY = (now.date() for now in [NOW_UTC, NOW_HKG, NOW_TKY])
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 
 

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from datetime import tzinfo
 
-from utilities.zoneinfo import HONG_KONG
+from pytest import mark, param
+
+from utilities.zoneinfo import HONG_KONG, TOKYO
 
 
 class TestTimeZones:
-    def test_main(self) -> None:
-        assert isinstance(HONG_KONG, tzinfo)
+    @mark.parametrize("timezone", [param(HONG_KONG), param(TOKYO)])
+    def test_main(self, *, timezone: tzinfo) -> None:
+        assert isinstance(timezone, tzinfo)

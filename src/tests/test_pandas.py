@@ -23,7 +23,7 @@ from pandas import (
 from pandas.testing import assert_index_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.datetime import TODAY, UTC
+from utilities.datetime import TODAY_UTC, UTC
 from utilities.hypothesis import int_indexes, text_ascii, timestamps
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
@@ -358,7 +358,7 @@ class TestToNumpy:
             param(True, boolean, True, object),
             param(False, boolean, False, object),
             param(NA, boolean, None, object),
-            param(TODAY, datetime64ns, TODAY, datetime64ns),
+            param(TODAY_UTC, datetime64ns, TODAY_UTC, datetime64ns),
             param(0, int, 0, int),
             param(0, Int64, 0, object),
             param(NA, Int64, None, object),
