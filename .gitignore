@@ -162,4 +162,5 @@ cython_debug/
 # extra
 .direnv/
 .ruff_cache/
+.streamlit/secrets.toml
 Untitled.ipynb

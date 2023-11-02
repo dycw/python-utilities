@@ -23,7 +23,7 @@ from luigi import (
 from pytest import mark, param, raises
 from typed_settings import settings
 
-from utilities.datetime import TODAY
+from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import namespace_mixins
 from utilities.luigi import (
     AmbiguousDateError,
@@ -70,7 +70,7 @@ class TestBuildParamsMixin:
     def test_with_field(self, *, namespace_mixin: Any) -> None:
         @settings
         class Config:
-            date: dt.date = TODAY
+            date: dt.date = TODAY_UTC
 
         config = Config()
         Params = build_params_mixin(config, date="date")  # noqa: N806
@@ -79,7 +79,7 @@ class TestBuildParamsMixin:
             pass
 
         task = Example()
-        assert task.date == TODAY
+        assert task.date == TODAY_UTC
 
 
 class TestMapAnnotation:

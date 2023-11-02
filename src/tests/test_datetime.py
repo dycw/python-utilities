@@ -25,6 +25,12 @@ from pytest import mark, param, raises
 
 from utilities.datetime import (
     EPOCH_UTC,
+    NOW_HKG,
+    NOW_TKY,
+    NOW_UTC,
+    TODAY_HKG,
+    TODAY_TKY,
+    TODAY_UTC,
     UTC,
     IsWeekendError,
     ParseDateError,
@@ -183,6 +189,12 @@ class TestMaybeSubPctY:
     def test_main(self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
         assert not search("%Y", result)
+
+
+class TestNow:
+    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TKY)])
+    def test_main(self, *, now: dt.datetime) -> None:
+        assert isinstance(now, dt.date)
 
 
 class TestParseDate:
@@ -403,6 +415,12 @@ class TestTimes:
 class TestTimeZones:
     def test_main(self) -> None:
         assert isinstance(UTC, dt.tzinfo)
+
+
+class TestToday:
+    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HKG), param(TODAY_TKY)])
+    def test_main(self, *, today: dt.date) -> None:
+        assert isinstance(today, dt.date)
 
 
 class TestYieldWeekdays:
