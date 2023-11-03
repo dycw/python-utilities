@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from polars import DataFrame, Float64
+from polars import DataFrame, Float64, Utf8
 from pytest import raises
 
 from utilities.polars import (
@@ -12,7 +12,9 @@ from utilities.polars import (
     DataFrameSortedError,
     DataFrameUniqueError,
     DataFrameWidthError,
+    EmptyDataFrameError,
     check_dataframe,
+    set_first_row_as_columns,
 )
 
 
@@ -92,3 +94,22 @@ class TestCheckDataFrame:
         df = DataFrame()
         with raises(DataFrameWidthError):
             check_dataframe(df, width=1)
+
+
+class TestSetFirstRowAsColumns:
+    def test_empty(self) -> None:
+        df = DataFrame()
+        with raises(EmptyDataFrameError):
+            _ = set_first_row_as_columns(df)
+
+    def test_one_row(self) -> None:
+        df = DataFrame(["value"])
+        check_dataframe(df, height=1, schema={"column_0": Utf8})
+        result = set_first_row_as_columns(df)
+        check_dataframe(result, height=0, schema={"value": Utf8})
+
+    def test_multiple_rows(self) -> None:
+        df = DataFrame(["foo", "bar", "baz"])
+        check_dataframe(df, height=3, schema={"column_0": Utf8})
+        result = set_first_row_as_columns(df)
+        check_dataframe(result, height=2, schema={"foo": Utf8})

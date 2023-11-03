@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from polars import DataFrame
+from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, PolarsDataType, SchemaDict
 
@@ -90,3 +91,19 @@ class DataFrameUniqueError(ValueError):
 
 class DataFrameWidthError(ValueError):
     """Raised when a DataFrame has the incorrect width."""
+
+
+def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
+    """Set the first row of a DataFrame as its columns."""
+
+    try:
+        row = df.row(0)
+    except OutOfBoundsError:
+        msg = f"{df=}"
+        raise EmptyDataFrameError(msg) from None
+    mapping = dict(zip(df.columns, row, strict=True))
+    return df[1:].rename(mapping)
+
+
+class EmptyDataFrameError(ValueError):
+    """Raised when a DataFrame is empty."""
