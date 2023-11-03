@@ -68,7 +68,7 @@ colorcet==3.0.1
     # via holoviews
 colorlog==6.7.0
     # via nox
-contourpy==1.1.1
+contourpy==1.2.0
     # via bokeh
 coverage[toml]==7.3.2
     # via
@@ -135,10 +135,6 @@ httpx==0.25.1
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.88.1
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   hypothesis-sqlalchemy
-hypothesis-sqlalchemy==1.1.0
     # via dycw-utilities (pyproject.toml)
 idna==3.4
     # via
@@ -377,7 +373,7 @@ rich==13.6.0
     # via
     #   hatch
     #   streamlit
-rpds-py==0.10.6
+rpds-py==0.12.0
     # via
     #   jsonschema
     #   referencing
@@ -392,7 +388,7 @@ scipy==1.11.3
     #   scs
 scs==3.2.3
     # via cvxpy
-selenium==4.15.1
+selenium==4.15.2
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
@@ -414,9 +410,7 @@ sortedcontainers==2.4.0
     #   hypothesis
     #   trio
 sqlalchemy==2.0.23
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   hypothesis-sqlalchemy
+    # via dycw-utilities (pyproject.toml)
 starlette==0.27.0
     # via fastapi
 streamlit==1.28.1
@@ -445,7 +439,7 @@ tqdm==4.66.1
     #   dycw-utilities (pyproject.toml)
     #   panel
     #   pqdm
-trio==0.23.0
+trio==0.23.1
     # via
     #   selenium
     #   trio-websocket

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 from numpy import int64
 from pandas import DataFrame
-from sqlalchemy import Column, insert
+from sqlalchemy import Column, Table
 from sqlalchemy.engine import Connection, Engine, Row
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql import ColumnElement, Select
@@ -31,9 +31,7 @@ from utilities.pandas import (
 from utilities.sqlalchemy.sqlalchemy import (
     get_column_names,
     get_columns,
-    get_dialect,
-    get_table,
-    model_to_dict,
+    insert_items,
     yield_connection,
 )
 from utilities.text import ensure_str, snake_case, snake_case_mappings
@@ -44,7 +42,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 def insert_dataframe(
     df: DataFrame,
-    table_or_model: Any,
+    table_or_mapped_class: Table | type[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -52,62 +50,18 @@ def insert_dataframe(
     allow_naive_datetimes: bool = False,
 ) -> None:
     """Insert a DataFrame into a database."""
-    return insert_items(
-        [(df, table_or_model)],
-        engine_or_conn,
+    rows = _yield_dataframe_rows_as_dicts(
+        df,
+        table_or_mapped_class,
         snake=snake,
         allow_naive_datetimes=allow_naive_datetimes,
     )
-
-
-def insert_items(
-    items: Iterable[Any],
-    engine_or_conn: Engine | Connection,
-    /,
-    *,
-    snake: bool = False,
-    allow_naive_datetimes: bool = False,
-) -> None:
-    """Insert a set of items into a database.
-
-    These can be either a:
-     - ([tuple], table) pair, or
-     - (DataFrame, table) pair, or
-     - Model instance.
-    """
-    dialect = get_dialect(engine_or_conn)
-    with yield_connection(engine_or_conn) as conn:
-        for item in items:
-            if isinstance(item, tuple):
-                first, table_or_model = item
-                if isinstance(first, list):
-                    values = first
-                elif isinstance(first, DataFrame):
-                    values = list(
-                        _yield_dataframe_rows_as_dicts(
-                            first,
-                            table_or_model,
-                            snake=snake,
-                            allow_naive_datetimes=allow_naive_datetimes,
-                        )
-                    )
-                else:
-                    msg = f"Invalid type: {first=}"
-                    raise TypeError(msg)
-            else:
-                table_or_model = item
-                values = [model_to_dict(item)]
-            ins = insert(get_table(table_or_model))
-            if len(values) >= 1:
-                if dialect == "oracle":  # pragma: no cover
-                    _ = conn.execute(ins, values)
-                else:
-                    _ = conn.execute(ins.values(values))
+    return insert_items(engine_or_conn, (list(rows), table_or_mapped_class))
 
 
 def _yield_dataframe_rows_as_dicts(
     df: DataFrame,
-    table_or_model: Any,
+    table_or_mapped_class: Table | type[Any],
     /,
     *,
     snake: bool = False,
@@ -117,7 +71,7 @@ def _yield_dataframe_rows_as_dicts(
     parsed = [
         _parse_series_against_table(
             sr,
-            table_or_model,
+            table_or_mapped_class,
             snake=snake,
             allow_naive_datetimes=allow_naive_datetimes,
         )
@@ -130,7 +84,7 @@ def _yield_dataframe_rows_as_dicts(
 
 def _parse_series_against_table(
     series: SeriesA,
-    table_or_model: Any,
+    table_or_mapped_class: Table | type[Any],
     /,
     *,
     snake: bool = False,
@@ -144,21 +98,23 @@ def _parse_series_against_table(
     """
     series_name = ensure_str(series.name)
     if snake:
-        column_names = map(snake_case, get_column_names(table_or_model))
+        column_names = map(snake_case, get_column_names(table_or_mapped_class))
         target_name = snake_case(series_name)
         error = SeriesNameSnakeCaseNotInTableError
     else:
-        column_names = get_column_names(table_or_model)
+        column_names = get_column_names(table_or_mapped_class)
         target_name = snake_case(series_name)
         error = SeriesNameNotInTableError
     try:
         column = one(
             col
-            for name, col in zip(column_names, get_columns(table_or_model), strict=True)
+            for name, col in zip(
+                column_names, get_columns(table_or_mapped_class), strict=True
+            )
             if name == target_name
         )
     except EmptyIterableError:
-        msg = f"Unable to map {series_name!r} to {table_or_model}"
+        msg = f"Unable to map {series_name!r} to {table_or_mapped_class}"
         raise error(msg) from None
     _check_series_against_table_column(
         series, column, allow_naive_datetimes=allow_naive_datetimes

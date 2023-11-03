@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass
 from functools import reduce
+from itertools import chain
 from math import isclose
 from operator import ge, itemgetter, le
 from typing import Any, Literal, NoReturn, cast
@@ -25,6 +28,7 @@ from sqlalchemy import (
     Uuid,
     and_,
     case,
+    insert,
     quoted_name,
     text,
 )
@@ -42,13 +46,15 @@ from sqlalchemy.exc import (
     OperationalError,
 )
 from sqlalchemy.orm import InstrumentedAttribute, declared_attr
+from sqlalchemy.orm.exc import UnmappedClassError
+from sqlalchemy.orm.util import class_mapper
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
-from utilities.itertools import chunked, one
+from utilities.itertools import chunked, is_iterable_not_str, one
 from utilities.math import FloatNonNeg, IntNonNeg
 from utilities.text import ensure_str, snake_case, snake_case_mappings
 from utilities.typing import IterableStrs, never
@@ -63,7 +69,7 @@ class TablenameMixin:
 
 
 def check_table_against_reflection(
-    table_or_model: Any,
+    table_or_mapped_class: Table | type[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -74,10 +80,10 @@ def check_table_against_reflection(
     primary_key: bool = True,
 ) -> None:
     """Check that a table equals its reflection."""
-    reflected = _reflect_table(table_or_model, engine_or_conn, schema=schema)
+    reflected = _reflect_table(table_or_mapped_class, engine_or_conn, schema=schema)
     check_tables_equal(
         reflected,
-        table_or_model,
+        table_or_mapped_class,
         snake_table=snake_table,
         allow_permutations_columns=allow_permutations_columns,
         snake_columns=snake_columns,
@@ -86,14 +92,14 @@ def check_table_against_reflection(
 
 
 def _reflect_table(
-    table_or_model: Any,
+    table_or_mapped_class: Table | type[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
     schema: str | None = None,
 ) -> Table:
     """Reflect a table from a database."""
-    name = get_table_name(table_or_model)
+    name = get_table_name(table_or_mapped_class)
     metadata = MetaData(schema=schema)
     with yield_connection(engine_or_conn) as conn:
         return Table(name, metadata, autoload_with=conn)
@@ -555,39 +561,43 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    tables_or_models: Any, engine_or_connection: Engine | Connection, /
+    engine_or_connection: Engine | Connection,
+    /,
+    *tables_or_mapped_classes: Table | type[Any],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     try:
         with yield_connection(engine_or_connection) as conn:
-            for table in yield_tables(tables_or_models):
-                table.create(conn)
+            for table_or_mapped_class in tables_or_mapped_classes:
+                get_table(table_or_mapped_class).create(conn)
     except DatabaseError as error:
         with suppress(TableAlreadyExistsError):
             redirect_to_table_already_exists_error(engine_or_connection, error)
 
 
 def ensure_tables_dropped(
-    tables_or_models: Any, engine_or_conn: Engine | Connection, /
+    engine_or_conn: Engine | Connection,
+    /,
+    *tables_or_mapped_classes: Table | type[Any],
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     try:
         with yield_connection(engine_or_conn) as conn:
-            for table in yield_tables(tables_or_models):
-                table.drop(conn)
+            for table_or_mapped_class in tables_or_mapped_classes:
+                get_table(table_or_mapped_class).drop(conn)
     except DatabaseError as error:
         with suppress(NoSuchTableError):
             redirect_to_no_such_table_error(engine_or_conn, error)
 
 
-def get_column_names(table_or_model: Any, /) -> list[str]:
+def get_column_names(table_or_mapped_class: Table | type[Any], /) -> list[str]:
     """Get the column names from a table or model."""
-    return [col.name for col in get_columns(table_or_model)]
+    return [col.name for col in get_columns(table_or_mapped_class)]
 
 
-def get_columns(table_or_model: Any, /) -> list[Column[Any]]:
+def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]]:
     """Get the columns from a table or model."""
-    return list(get_table(table_or_model).columns)
+    return list(get_table(table_or_mapped_class).columns)
 
 
 Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
@@ -615,19 +625,148 @@ class UnsupportedDialectError(TypeError):
     """Raised when a dialect is unsupported."""
 
 
-def get_table(table_or_model: Any, /) -> Table:
-    """Get the table if it is a table, else from an ORM model."""
-    if isinstance(table_or_model, Table):
-        return table_or_model
-    return table_or_model.__table__
+def get_table(table_or_mapped_class: Table | type[Any], /) -> Table:
+    """Get the table from a Table or mapped class."""
+    if isinstance(table_or_mapped_class, Table):
+        return table_or_mapped_class
+    if is_mapped_class(table_or_mapped_class):
+        return cast(Any, table_or_mapped_class).__table__
+    msg = f"{table_or_mapped_class=}"
+    raise NotATableOrAMappedClassError(msg)
 
 
-def get_table_name(table_or_model: Any, /) -> str:
-    """Get the table name if it is a table, else from an ORM model."""
-    return get_table(table_or_model).name
+class NotATableOrAMappedClassError(TypeError):
+    """Raised when an object is neither a Table nor a mapped class."""
 
 
-def model_to_dict(obj: Any, /) -> dict[str, Any]:
+def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
+    """Get the table name from a Table or mapped class."""
+    return get_table(table_or_mapped_class).name
+
+
+@dataclass
+class _InsertionItem:
+    values: tuple[Any, ...] | dict[str, Any]
+    table: Table
+
+
+def insert_items(
+    engine_or_conn: Engine | Connection,
+    *items: Any,
+) -> None:
+    """Insert a set of items into a database.
+
+    These can be either a:
+     - tuple[Any, ...], table
+     - dict[str, Any], table
+     - [tuple[Any ,...]], table
+     - [dict[str, Any], table
+     - Model
+    """
+
+    to_insert: dict[Table, list[Any]] = defaultdict(list)
+    for item in chain(*map(_insert_items_collect, items)):
+        to_insert[item.table].append(item.values)
+    dialect = get_dialect(engine_or_conn)
+    with yield_connection(engine_or_conn) as conn:
+        for table, values in to_insert.items():
+            ins = insert(table)
+            if dialect == "oracle":  # pragma: no cover
+                _ = conn.execute(ins, values)
+            else:
+                _ = conn.execute(ins.values(values))
+
+
+def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
+    """Collect the insertion items."""
+    if isinstance(item, tuple):
+        try:
+            data, table_or_mapped_class = item
+        except ValueError:
+            msg = f"{item=}"
+            raise TupleNotAPairError(msg) from None
+        if not is_table_or_mapped_class(table_or_mapped_class):
+            msg = f"{table_or_mapped_class=}"
+            raise SecondArgumentNotATableOrMappedClassError(msg)
+        if _insert_items_collect_valid(data):
+            yield _InsertionItem(values=data, table=get_table(table_or_mapped_class))
+        elif is_iterable_not_str(data):
+            data_as_iter = cast(Iterable[Any], data)
+            yield from _insert_items_collect_iterable(
+                data_as_iter, table_or_mapped_class
+            )
+        else:
+            msg = f"{data=}"
+            raise FirstArgumentInvalidError(msg)
+    elif is_iterable_not_str(item):
+        for i in item:
+            yield from _insert_items_collect(i)
+    elif is_mapped_class(cls := type(item)):
+        yield _InsertionItem(values=mapped_class_to_dict(item), table=get_table(cls))
+    else:
+        msg = f"{item=}"
+        raise InvalidItemError(msg)
+
+
+def _insert_items_collect_iterable(
+    obj: Iterable[Any], table_or_mapped_class: Table | type[Any], /
+) -> Iterator[_InsertionItem]:
+    table = get_table(table_or_mapped_class)
+    for datum in obj:
+        if _insert_items_collect_valid(datum):
+            yield _InsertionItem(values=datum, table=table)
+        else:
+            msg = f"{datum=}"
+            raise InvalidItemInIterableError(msg)
+
+
+def _insert_items_collect_valid(obj: Any, /) -> bool:
+    return isinstance(obj, tuple) or (
+        isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
+    )
+
+
+class TupleNotAPairError(ValueError):
+    """Raised when the tuple is not a pair."""
+
+
+class SecondArgumentNotATableOrMappedClassError(ValueError):
+    """Raised when the second argument is not a table or mapped class."""
+
+
+class FirstArgumentListItemInvalidError(ValueError):
+    """Raised when the first argument contains an invalid item."""
+
+
+class FirstArgumentInvalidError(ValueError):
+    """Raised when ths first argument is invalid."""
+
+
+class InvalidItemError(ValueError):
+    """Raised when the item is invalid."""
+
+
+class InvalidItemInIterableError(ValueError):
+    """Raised when the item in the iterable is invalid."""
+
+
+def is_mapped_class(obj: type[Any], /) -> bool:
+    """Check if an object is a mapped class."""
+
+    try:
+        _ = class_mapper(obj)
+    except (ArgumentError, UnmappedClassError):
+        return False
+    return True
+
+
+def is_table_or_mapped_class(obj: Table | type[Any], /) -> bool:
+    """Check if an object is a Table or a mapped class."""
+
+    return isinstance(obj, Table) or is_mapped_class(obj)
+
+
+def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
     """Construct a dictionary of elements for insertion."""
     cls = type(obj)
 
@@ -749,14 +888,3 @@ def yield_in_clause_rows(
         for values_i in chunked(values, n=chunk_size_use):
             sel_i = sel.where(column.in_(values_i))
             yield from conn.execute(sel_i).all()
-
-
-def yield_tables(tables_or_models: Any, /) -> Iterator[Table]:
-    """Yield the tables if they are tables, else from the ORM models."""
-
-    try:
-        it = iter(tables_or_models)
-    except TypeError:
-        yield get_table(tables_or_models)
-    else:
-        yield from map(get_table, it)
