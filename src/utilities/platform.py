@@ -31,6 +31,10 @@ class UnableToDetermineSystemError(ValueError):
     """Raised when unable to determine the system."""
 
 
+class UnsupportedSystemError(RuntimeWarning):
+    """Raised when the system is unsupported."""
+
+
 SYSTEM = get_system()
 IS_WINDOWS = SYSTEM is System.windows
 IS_MAC = SYSTEM is System.mac

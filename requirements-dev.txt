@@ -498,6 +498,8 @@ wsproto==1.2.0
     # via trio-websocket
 xarray==2023.10.1
     # via dycw-utilities (pyproject.toml)
+xlrd==2.0.1
+    # via dycw-utilities (pyproject.toml)
 xyzservices==2023.10.1
     # via
     #   bokeh
