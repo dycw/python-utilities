@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from locale import LC_CTYPE, LC_NUMERIC, getlocale, setlocale
 from locale import atof as _atof
+from locale import atoi as _atoi
 
 from utilities.platform import SYSTEM, System
 from utilities.typing import never
@@ -39,3 +40,13 @@ def atof(
 ) -> float:
     with override_locale(category=LC_NUMERIC, locale=locale):
         return _atof(text, func=func)
+
+
+def atoi(
+    text: str,
+    /,
+    *,
+    locale: str | Iterable[str | None] | None = None,
+) -> float:
+    with override_locale(category=LC_NUMERIC, locale=locale):
+        return _atoi(text)
