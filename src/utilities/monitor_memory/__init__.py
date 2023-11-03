@@ -15,7 +15,7 @@ from click import command
 from loguru import logger
 from psutil import swap_memory, virtual_memory
 
-from utilities.datetime import UTC
+from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
 from utilities.monitor_memory.classes import Config, Item
 from utilities.platform import SYSTEM, System
@@ -90,7 +90,7 @@ def _get_memory_usage() -> Item:
         never(SYSTEM)
     swap = swap_memory()
     return Item(
-        datetime=dt.datetime.now(tz=UTC),
+        datetime=get_now(tz=UTC),
         virtual_total=virtual.total,
         virtual_available=virtual.available,
         virtual_percent=virtual.percent,

@@ -14,7 +14,7 @@ from loguru import logger
 from typed_settings import find
 
 from utilities.clean_dir.classes import Config, Item
-from utilities.datetime import UTC
+from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike
 from utilities.typed_settings import click_options
@@ -108,7 +108,7 @@ def _is_empty(path: Path, /) -> bool:
 
 
 def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
-    age = dt.datetime.now(tz=UTC) - dt.datetime.fromtimestamp(  # pragma: os-ne-windows
+    age = get_now(tz=UTC) - dt.datetime.fromtimestamp(  # pragma: os-ne-windows
         path.stat().st_mtime, tz=UTC
     )
     return age >= dt.timedelta(days=days)  # pragma: os-ne-windows

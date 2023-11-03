@@ -23,6 +23,7 @@ from utilities.datetime import (
     ensure_date,
     ensure_datetime,
     ensure_time,
+    get_now,
     parse_date,
     parse_datetime,
     parse_time,
@@ -256,7 +257,7 @@ class AwaitTime(ExternalTask):
 
     @override
     def exists(self) -> bool:
-        return dt.datetime.now(tz=UTC) >= self.datetime
+        return get_now(tz=UTC) >= self.datetime
 
 
 class ExternalFile(ExternalTask):

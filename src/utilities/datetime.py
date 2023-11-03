@@ -13,8 +13,6 @@ from utilities.typing import never
 from utilities.zoneinfo import HONG_KONG, TOKYO
 
 UTC = dt.timezone.utc
-NOW_UTC, NOW_HKG, NOW_TKY = (dt.datetime.now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
-TODAY_UTC, TODAY_HKG, TODAY_TKY = (now.date() for now in [NOW_UTC, NOW_HKG, NOW_TKY])
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 
 
@@ -84,6 +82,20 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     return parse_timedelta(timedelta)
 
 
+def get_now(*, tz: tzinfo | None = UTC) -> dt.datetime:
+    return dt.datetime.now(tz=tz)
+
+
+NOW_UTC, NOW_HKG, NOW_TKY = (get_now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+
+
+def get_today(*, tz: tzinfo | None = UTC) -> dt.date:
+    return get_now(tz=tz).date()
+
+
+TODAY_UTC, TODAY_HKG, TODAY_TKY = (get_today(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+
+
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     friday = 5
@@ -92,7 +104,7 @@ def is_weekday(date: dt.date, /) -> bool:
 
 def local_timezone() -> tzinfo:
     """Get the local timezone."""
-    tz = dt.datetime.now().astimezone().tzinfo
+    tz = get_now(tz=None).astimezone().tzinfo
     if tz is None:  # pragma: no cover
         msg = f"{tz=}"
         raise LocalTimeZoneError(msg)
