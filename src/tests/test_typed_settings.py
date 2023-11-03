@@ -34,7 +34,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
-from utilities.platform import IS_WINDOWS
+from utilities.pytest import skipif_windows
 from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import (
     AppNameContainsUnderscoreError,
@@ -81,10 +81,7 @@ class TestLoadSettings:
                 Engine,
                 sqlite_engines(),
                 serialize_engine,
-                marks=mark.skipif(
-                    condition=IS_WINDOWS,
-                    reason="non-Windows only; writing \\ to file",
-                ),
+                marks=skipif_windows,  # writing \\
             ),
         ],
     )
@@ -138,10 +135,7 @@ class TestClickOptions:
                 Engine,
                 sqlite_engines(),
                 serialize_engine,
-                marks=mark.skipif(
-                    condition=IS_WINDOWS,
-                    reason="non-Windows only; writing \\ to file",
-                ),
+                marks=skipif_windows,  # writing \\
             ),
         ],
     )
