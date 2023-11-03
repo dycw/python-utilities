@@ -208,9 +208,19 @@ class TestParseDate:
         result = parse_date(date.isoformat())
         assert result == date
 
-    @given(date=dates())
-    def test_yyyymmdd(self, *, date: dt.date) -> None:
-        result = parse_date(date.strftime(maybe_sub_pct_y("%Y%m%d")))
+    @given(
+        date=dates(),
+        fmt=sampled_from(
+            [
+                "%Y%m%d",
+                "%Y %m %d",
+                "%d%b%Y",
+                "%d %b %Y",
+            ]
+        ).map(maybe_sub_pct_y),
+    )
+    def test_various_formats(self, *, date: dt.date, fmt: str) -> None:
+        result = parse_date(date.strftime(fmt))
         assert result == date
 
     def test_error(self) -> None:
