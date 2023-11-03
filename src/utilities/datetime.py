@@ -114,12 +114,18 @@ def maybe_sub_pct_y(text: str, /) -> str:
     return never(SYSTEM)  # pragma: no cover
 
 
-def parse_date(date: str, /) -> dt.date:
+def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
-    with suppress(ValueError):  # pragma: version-ge-311
-        return dt.datetime.strptime(date, "%Y%m%d").replace(tzinfo=UTC).date()
+    for fmt in [
+        "%Y%m%d",
+        "%Y %m %d",
+        "%d%b%Y",
+        "%d %b %Y",
+    ]:
+        with suppress(ValueError):  # pragma: version-ge-311
+            return dt.datetime.strptime(date, fmt).replace(tzinfo=tzinfo).date()
     raise ParseDateError(date)
 
 
@@ -127,7 +133,7 @@ class ParseDateError(ValueError):
     """Raised when a `dt.date` cannot be parsed."""
 
 
-def parse_datetime(datetime: str, /) -> dt.datetime:
+def parse_datetime(datetime: str, /, *, tzinfo: tzinfo = UTC) -> dt.datetime:
     """Parse a string into a datetime."""
     with suppress(ValueError):
         return dt.datetime.fromisoformat(datetime).replace(tzinfo=UTC)
@@ -139,7 +145,7 @@ def parse_datetime(datetime: str, /) -> dt.datetime:
         "%Y%m%dT%H%M%S.%f",
     ]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=dt.timezone.utc)
+            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=tzinfo)
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
