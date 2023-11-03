@@ -8,7 +8,7 @@ from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.json import serialize
-from utilities.platform import IS_NOT_WINDOWS, IS_WINDOWS
+from utilities.pytest import skipif_not_windows, skipif_windows
 
 
 class TestSerialize:
@@ -20,16 +20,8 @@ class TestSerialize:
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
                 '"2000-01-01T12:00:00+00:00"',
             ),
-            param(
-                Path("a", "b", "c"),
-                '"a/b/c"',
-                marks=mark.skipif(condition=IS_WINDOWS, reason="non-Windows only"),
-            ),
-            param(
-                Path("a", "b", "c"),
-                '"a\\\\b\\\\c"',
-                marks=mark.skipif(condition=IS_NOT_WINDOWS, reason="Windows only"),
-            ),
+            param(Path("a", "b", "c"), '"a/b/c"', marks=skipif_windows),
+            param(Path("a", "b", "c"), '"a\\\\b\\\\c"', marks=skipif_not_windows),
             param({1, 2, 3}, '"set([1, 2, 3])"'),
             param({"a", "b", "c"}, '"set([\\"a\\", \\"b\\", \\"c\\"])"'),
             param(frozenset([1, 2, 3]), '"frozenset([1, 2, 3])"'),

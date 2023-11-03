@@ -48,7 +48,7 @@ from utilities.hypothesis import (
 )
 from utilities.numpy import datetime64ns
 from utilities.pandas import DataFrameRangeIndexError, Int64, string
-from utilities.platform import IS_WINDOWS
+from utilities.pytest import skipif_windows
 
 
 class TestCountRows:
@@ -112,13 +112,7 @@ class TestGetParquetFile:
 
     @mark.parametrize(
         "as_str",
-        [
-            param(True),
-            param(
-                False,
-                marks=mark.skipif(condition=IS_WINDOWS, reason="non-Windows only"),
-            ),
-        ],
+        [param(True), param(False, marks=skipif_windows)],
     )
     def test_error(self, *, tmp_path: Path, as_str: bool) -> None:
         path = tmp_path.joinpath("file")

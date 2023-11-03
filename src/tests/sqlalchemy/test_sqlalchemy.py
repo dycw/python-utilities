@@ -83,7 +83,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
-from utilities.platform import IS_NOT_LINUX
+from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import (
     EngineError,
     IncorrectNumberOfTablesError,
@@ -907,21 +907,13 @@ class TestGetDialect:
     @mark.parametrize(
         ("url", "expected"),
         [
-            param(
-                "mssql+pyodbc://scott:tiger@mydsn",
-                "mssql",
-                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
-            ),
-            param(
-                "mysql://scott:tiger@localhost/foo",
-                "mysql",
-                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
-            ),
+            param("mssql+pyodbc://scott:tiger@mydsn", "mssql", marks=skipif_not_linux),
+            param("mysql://scott:tiger@localhost/foo", "mysql", marks=skipif_not_linux),
             param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
             param(
                 "postgresql://scott:tiger@localhost/mydatabase",
                 "postgresql",
-                marks=mark.skipif(condition=IS_NOT_LINUX, reason="Linux only"),
+                marks=skipif_not_linux,
             ),
         ],
     )

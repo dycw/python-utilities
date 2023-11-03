@@ -4,9 +4,9 @@ from pathlib import Path
 from re import search
 from subprocess import CalledProcessError, check_call
 
-from pytest import mark, raises
+from pytest import raises
 
-from utilities.platform import IS_WINDOWS
+from utilities.pytest import skipif_windows
 from utilities.subprocess import (
     MultipleActivateError,
     NoActivateError,
@@ -18,12 +18,12 @@ from utilities.text import strip_and_dedent
 
 
 class TestGetShellOutput:
-    @mark.skipif(condition=IS_WINDOWS, reason="non-Windows only")
+    @skipif_windows
     def test_main(self) -> None:
         output = get_shell_output("ls")
         assert any(line == "pyproject.toml" for line in output.splitlines())
 
-    @mark.skipif(condition=IS_WINDOWS, reason="non-Windows only")
+    @skipif_windows
     def test_activate(self, *, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
         activate = venv.joinpath("activate")
@@ -54,7 +54,7 @@ class TestAddressAlreadyInUsePattern:
 
 
 class TestTabulateCalledProcessError:
-    @mark.skipif(condition=IS_WINDOWS, reason="non-Windows only")
+    @skipif_windows
     def test_main(self) -> None:
         def which() -> None:
             _ = check_call(["which"], text=True)  # noqa: S603, S607

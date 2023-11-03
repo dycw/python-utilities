@@ -11,6 +11,14 @@ from utilities.atomicwrites import writer
 from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
+from utilities.platform import (
+    IS_LINUX,
+    IS_MAC,
+    IS_NOT_LINUX,
+    IS_NOT_MAC,
+    IS_NOT_WINDOWS,
+    IS_WINDOWS,
+)
 from utilities.re import NoMatchesError, extract_group
 from utilities.types import Duration
 from utilities.typing import IterableStrs
@@ -25,7 +33,20 @@ except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Function
     from typing import Any as Parser
 
-    mark = skip = None
+    mark = (
+        skip
+    ) = (
+        skipif_windows
+    ) = (
+        skipif_mac
+    ) = skipif_linux = skipif_not_windows = skipif_not_mac = skipif_linux = None
+else:
+    skipif_windows = mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
+    skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
+    skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
+    skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
+    skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
+    skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
 def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
