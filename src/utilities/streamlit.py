@@ -26,7 +26,7 @@ def ensure_logged_in(
 ) -> None:
     """Ensure the user is logged in."""
 
-    if (not skip) and _check_password(before_form=before_form, after_form=after_form):
+    if not (skip or _check_password(before_form=before_form, after_form=after_form)):
         stop()
 
 
