@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from datetime import tzinfo
 from math import isclose
 from operator import eq, gt, lt
 from re import search
@@ -20,6 +21,7 @@ from hypothesis.strategies import (
     sampled_from,
     timedeltas,
     times,
+    timezones,
 )
 from pytest import mark, param, raises
 
@@ -46,6 +48,8 @@ from utilities.datetime import (
     ensure_datetime,
     ensure_time,
     ensure_timedelta,
+    get_now,
+    get_today,
     is_weekday,
     local_timezone,
     maybe_sub_pct_y,
@@ -178,7 +182,7 @@ class TestIsWeekday:
 class TestLocalTimeZone:
     def test_main(self) -> None:
         tz = local_timezone()
-        now = dt.datetime.now(tz=UTC)
+        now = get_now(tz=UTC)
         result = tz.tzname(now)
         expected = {"Coordinated Universal Time", "HKT", "JST", "UTC"}
         assert result in expected
@@ -191,10 +195,27 @@ class TestMaybeSubPctY:
         assert not search("%Y", result)
 
 
-class TestNow:
+class TestGetNow:
+    @given(tz=timezones())
+    def test_function(self, *, tz: tzinfo) -> None:
+        now = get_now(tz=tz)
+        assert isinstance(now, dt.datetime)
+        assert now.tzinfo is tz
+
     @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TKY)])
-    def test_main(self, *, now: dt.datetime) -> None:
+    def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
+
+
+class TestGetToday:
+    @given(tz=timezones())
+    def test_function(self, *, tz: tzinfo) -> None:
+        today = get_today(tz=tz)
+        assert isinstance(today, dt.date)
+
+    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HKG), param(TODAY_TKY)])
+    def test_main(self, *, today: dt.date) -> None:
+        assert isinstance(today, dt.date)
 
 
 class TestParseDate:
@@ -425,12 +446,6 @@ class TestTimes:
 class TestTimeZones:
     def test_main(self) -> None:
         assert isinstance(UTC, dt.tzinfo)
-
-
-class TestToday:
-    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HKG), param(TODAY_TKY)])
-    def test_main(self, *, today: dt.date) -> None:
-        assert isinstance(today, dt.date)
 
 
 class TestYieldWeekdays:

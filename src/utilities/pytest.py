@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable, Iterable
 from contextlib import suppress
 from functools import wraps
@@ -9,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from utilities.atomicwrites import writer
-from utilities.datetime import UTC, duration_to_float
+from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.git import get_repo_root
 from utilities.pathlib import PathLike
 from utilities.re import NoMatchesError, extract_group
@@ -107,7 +106,7 @@ def throttle(
                 prev = float(contents)
             else:
                 prev = None
-            now = dt.datetime.now(tz=UTC).timestamp()
+            now = get_now(tz=UTC).timestamp()
             if (
                 (skip is not None)
                 and (prev is not None)
