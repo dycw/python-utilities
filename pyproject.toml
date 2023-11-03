@@ -63,6 +63,7 @@ dev = [
   "tqdm >= 4.66.1",
   "typed-settings[click] >= 23.0.1, < 23.1.0",
   "xarray >= 2023.10.1",
+  "xlrd >= 2.0.1",
   "zarr >= 2.16.1",
   # dev
   "nox",
@@ -148,6 +149,7 @@ tqdm = ["tqdm >= 4.66.1"]
 typed-settings = ["typed-settings[click] >= 23.0.1, < 23.1.0"]
 xarray = ["xarray >= 2023.10.1"]
 xarray-all = ["xarray >= 2023.10.1", "bottleneck >= 1.3.7", "numbagg >= 0.6.0"]
+xlrd = ["xlrd >= 2.0.1"]
 zarr = ["zarr >= 2.16.1", "atomicwrites >= 1.4.1"]
 
 [project.scripts]
@@ -161,6 +163,9 @@ start-pypi-server = "utilities.pypi_server:main"
 [tool.coverage]
 
 [tool.coverage.coverage_conditional_plugin.rules]
+os-eq-linux = 'sys_platform == "linux"'
+os-eq-macos = 'sys_platform == "darwin"'
+os-eq-windows = 'sys_platform == "windows"'
 os-ne-linux = 'sys_platform != "linux"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-windows = 'sys_platform != "windows"'
