@@ -47,6 +47,7 @@ from utilities.pandas import (
     RangeIndexStepError,
     SeriesRangeIndexError,
     TimestampIsNaTError,
+    astype,
     boolean,
     check_dataframe,
     check_range_index,
@@ -63,6 +64,14 @@ from utilities.pandas import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexI, SeriesA
+
+
+class TestAsType:
+    def test_main(self) -> None:
+        df = DataFrame(0, index=RangeIndex(1), columns=["value"], dtype=int)
+        check_dataframe(df, dtypes={"value": int})
+        result = astype(df, float)
+        check_dataframe(result, dtypes={"value": float})
 
 
 class TestCheckDataFrame:
@@ -264,7 +273,7 @@ class TestSeriesMinMax:
         self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
         x = Series(data=nan, dtype=float)
-        y = Series(data=NA, dtype=Int64)
+        y = Series(data=NA, dtype=Int64)  # type: ignore
         with raises(DifferentDTypeError):
             _ = func(x, y)
 

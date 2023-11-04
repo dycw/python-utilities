@@ -11,7 +11,7 @@ from utilities.errors import redirect_error
 from utilities.itertools import is_iterable_not_str
 from utilities.math import IntNonNeg
 from utilities.numpy import datetime64ns, has_dtype
-from utilities.pandas import Int64, check_range_index, string
+from utilities.pandas import Int64, astype, check_range_index, string
 from utilities.pathlib import PathLike
 from utilities.text import ensure_str
 
@@ -96,7 +96,7 @@ def read_parquet(
     else:
         df = file.head(head, columns=columns_use, filters=filters, **kwargs)
     dtypes = {k: string for k, v in df.items() if has_dtype(v, object)}
-    df = df.astype(dtypes).reset_index(drop=True)
+    df = astype(df, dtypes).reset_index(drop=True)
     return df if as_df else df[columns]
 
 

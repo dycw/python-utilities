@@ -43,7 +43,7 @@ _T = TypeVar("_T")
 
 def build_params_mixin(obj: _T, /, **kwargs: Any) -> type[_T]:
     """Build a mixin of parameters for use in a `Task`."""
-    mapping = asdict(obj)
+    mapping = asdict(obj)  # type: ignore
 
     def exec_body(namespace: dict[str, Any], /) -> None:
         for field in fields(type(obj)):

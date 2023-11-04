@@ -21,6 +21,7 @@ from utilities.itertools import (
 from utilities.numpy import datetime64ns, has_dtype
 from utilities.pandas import (
     Int64,
+    astype,
     boolean,
     datetime64nsutc,
     string,
@@ -294,7 +295,8 @@ def _rows_to_dataframe(
     dtypes = {
         col.name: _table_column_to_dtype(col) for col in sel.selected_columns.values()
     }
-    df = DataFrame(rows, columns=list(dtypes)).astype(dtypes)
+    df = DataFrame(rows, columns=list(dtypes))
+    df = astype(df, dtypes)
     if snake:
         return _dataframe_columns_to_snake(df)
     return df
