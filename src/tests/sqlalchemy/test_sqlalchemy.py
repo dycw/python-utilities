@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import typing
 from enum import auto
+from operator import eq
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
@@ -48,6 +49,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Connection,
     Date,
     DateTime,
     Double,
@@ -69,8 +71,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.engine import Connection
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.exc import DatabaseError, DuplicateColumnError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import (
@@ -90,6 +91,9 @@ from utilities.sqlalchemy import (
     NotATableOrAMappedClassError,
     ParseEngineError,
     SecondArgumentNotATableOrMappedClassError,
+    SeriesAndTableColumnIncompatibleError,
+    SeriesMatchesAgainstMultipleColumnsError,
+    SeriesMatchesAgainstNoColumnError,
     TableAlreadyExistsError,
     TablenameMixin,
     TupleNotAPairError,
@@ -120,7 +124,9 @@ from utilities.sqlalchemy import (
     UnequalTableOrColumnSnakeCaseNamesError,
     UnequalUUIDAsUUIDError,
     UnequalUUIDNativeUUIDError,
+    check_dataframe_schema_against_table,
     check_engine,
+    check_selectable_for_duplicate_columns,
     check_table_against_reflection,
     check_tables_equal,
     columnwise_max,
@@ -149,10 +155,12 @@ from utilities.sqlalchemy.sqlalchemy import (
     _check_column_collections_equal,
     _check_column_types_equal,
     _check_columns_equal,
+    _check_series_against_against_table,
     _check_table_or_column_names_equal,
     _insert_items_collect,
     _insert_items_collect_iterable,
     _InsertionItem,
+    _match_series_name_to_table_column,
     _reflect_table,
 )
 
@@ -584,6 +592,61 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
 
+class TestCheckDataFrameSchemaAgainstTable:
+    def test_default(self) -> None:
+        df_schema = {"a": int, "b": float}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+        )
+        result = check_dataframe_schema_against_table(df_schema, table, eq)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+    def test_snake(self) -> None:
+        df_schema = {"a": int, "b": float}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+            Column("A", Integer),
+            Column("B", Float),
+        )
+        result = check_dataframe_schema_against_table(df_schema, table, eq, snake=True)
+        expected = {"a": "A", "b": "B"}
+        assert result == expected
+
+    def test_df_has_extra_columns(self) -> None:
+        df_schema = {"a": int, "b": float, "c": str}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+        )
+        result = check_dataframe_schema_against_table(df_schema, table, eq)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+    def test_table_has_extra_columns(self) -> None:
+        df_schema = {"a": int, "b": float}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+            Column("c", String),
+        )
+        result = check_dataframe_schema_against_table(df_schema, table, eq)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+
 class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_success(self, *, engine: Engine) -> None:
@@ -642,6 +705,26 @@ class TestCheckTableAgainstReflection:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = check_table_against_reflection(table, engine)
+
+
+class TestCheckSelectableForDuplicates:
+    def test_error(self) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        sel = select(table.c.id, table.c.id)
+        with raises(DuplicateColumnError):
+            check_selectable_for_duplicate_columns(sel)
+
+
+class TestCheckSeriesAgainstAgainstTable:
+    def test_success(self) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        result = _check_series_against_against_table("b", float, table_schema, eq)
+        assert result == "b"
+
+    def test_fail(self) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        with raises(SeriesAndTableColumnIncompatibleError):
+            _ = _check_series_against_against_table("b", int, table_schema, eq)
 
 
 class TestCheckTablesEqual:
@@ -1115,26 +1198,6 @@ class TestInsertItemsCollectIterable:
             _ = list(_insert_items_collect_iterable([None], table))
 
 
-class TestMappedClassToDict:
-    @given(id_=integers())
-    def test_main(self, *, id_: int) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
-            id_ = Column(Integer, primary_key=True)
-
-        example = Example(id_=id_)
-        assert mapped_class_to_dict(example) == {"id_": id_}
-
-    @given(id_=integers())
-    def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
-            ID = Column(Integer, primary_key=True, name="id")
-
-        example = Example(ID=id_)
-        assert mapped_class_to_dict(example) == {"id": id_}
-
-
 class TestIsMappedClass:
     def test_mapped_class(self) -> None:
         class Example(declarative_base()):
@@ -1163,6 +1226,50 @@ class TestIsTableOrMappedClass:
 
     def test_other(self) -> None:
         assert not is_table_or_mapped_class(int)
+
+
+class TestMappedClassToDict:
+    @given(id_=integers())
+    def test_main(self, *, id_: int) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+            id_ = Column(Integer, primary_key=True)
+
+        example = Example(id_=id_)
+        assert mapped_class_to_dict(example) == {"id_": id_}
+
+    @given(id_=integers())
+    def test_explicitly_named_column(self, *, id_: int) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+            ID = Column(Integer, primary_key=True, name="id")
+
+        example = Example(ID=id_)
+        assert mapped_class_to_dict(example) == {"id": id_}
+
+
+class TestMatchSeriesNameToTableColumn:
+    def test_match_default(self) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        result = _match_series_name_to_table_column("b", table_schema)
+        assert result == ("b", float)
+
+    @mark.parametrize("sr_name", [param("b"), param("B")])
+    def test_match_snake(self, *, sr_name: str) -> None:
+        table_schema = {"A": int, "B": float, "C": str}
+        result = _match_series_name_to_table_column(sr_name, table_schema, snake=True)
+        assert result == ("B", float)
+
+    @mark.parametrize("snake", [param(True), param(False)])
+    def test_series_matches_against_no_column_error(self, *, snake: bool) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        with raises(SeriesMatchesAgainstNoColumnError):
+            _ = _match_series_name_to_table_column("value", table_schema, snake=snake)
+
+    def test_series_matches_against_multiple_columns_error(self) -> None:
+        table_schema = {"a": int, "b": float, "B": float, "c": str}
+        with raises(SeriesMatchesAgainstMultipleColumnsError):
+            _ = _match_series_name_to_table_column("b", table_schema, snake=True)
 
 
 class TestParseEngine:

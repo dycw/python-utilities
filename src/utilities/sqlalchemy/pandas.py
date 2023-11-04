@@ -2,23 +2,25 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Iterable, Iterator
+from datetime import timezone
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, overload
+from functools import partial
+from typing import Any, cast, overload
 
 from numpy import int64
-from pandas import DataFrame
-from sqlalchemy import Column, Table
-from sqlalchemy.engine import Connection, Engine, Row
-from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnElement, Select
-
-from utilities.itertools import (
-    EmptyIterableError,
-    IterableContainsDuplicatesError,
-    check_duplicates,
-    one,
+from pandas import DataFrame, DatetimeTZDtype
+from sqlalchemy import (
+    Column,
+    Connection,
+    Engine,
+    Row,
+    Select,
+    Table,
 )
-from utilities.numpy import datetime64ns, has_dtype
+from sqlalchemy.sql.base import ReadOnlyColumnCollection
+
+from utilities.datetime import UTC
+from utilities.numpy import datetime64ns
 from utilities.pandas import (
     Int64,
     astype,
@@ -28,251 +30,169 @@ from utilities.pandas import (
     timestamp_to_date,
     timestamp_to_datetime,
 )
-from utilities.sqlalchemy.sqlalchemy import (
-    get_column_names,
-    get_columns,
+from utilities.sqlalchemy import (
+    check_dataframe_schema_against_table,
+    check_selectable_for_duplicate_columns,
     insert_items,
     yield_connection,
 )
-from utilities.text import ensure_str, snake_case, snake_case_mappings
-
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import SeriesA
+from utilities.text import snake_case_mappings
 
 
-def insert_dataframe(
+def insert_pandas_dataframe(
+    engine_or_conn: Engine | Connection,
     df: DataFrame,
     table_or_mapped_class: Table | type[Any],
-    engine_or_conn: Engine | Connection,
     /,
     *,
-    snake: bool = False,
     allow_naive_datetimes: bool = False,
+    snake: bool = False,
 ) -> None:
     """Insert a DataFrame into a database."""
-    rows = _yield_dataframe_rows_as_dicts(
-        df,
-        table_or_mapped_class,
-        snake=snake,
-        allow_naive_datetimes=allow_naive_datetimes,
+    check_dtype = partial(
+        _check_pandas_series, allow_naive_datetimes=allow_naive_datetimes
     )
-    return insert_items(engine_or_conn, (list(rows), table_or_mapped_class))
-
-
-def _yield_dataframe_rows_as_dicts(
-    df: DataFrame,
-    table_or_mapped_class: Table | type[Any],
-    /,
-    *,
-    snake: bool = False,
-    allow_naive_datetimes: bool = False,
-) -> Iterator[dict[str, Any]]:
-    """Yield the rows of a DataFrame as dicts, ready for insertion."""
-    parsed = [
-        _parse_series_against_table(
-            sr,
-            table_or_mapped_class,
-            snake=snake,
-            allow_naive_datetimes=allow_naive_datetimes,
-        )
-        for _, sr in df.items()
-    ]
-    keys = [key for key, _ in parsed]
-    for row in zip(*(it for _, it in parsed), strict=True):
-        yield dict(zip(keys, row, strict=True))
-
-
-def _parse_series_against_table(
-    series: SeriesA,
-    table_or_mapped_class: Table | type[Any],
-    /,
-    *,
-    snake: bool = False,
-    allow_naive_datetimes: bool = False,
-) -> tuple[str, Iterator[Any]]:
-    """Parse a series against a table.
-
-    In particular:
-     - check the column which it will insert into, and
-     - yield the elements for insertion.
-    """
-    series_name = ensure_str(series.name)
-    if snake:
-        column_names = map(snake_case, get_column_names(table_or_mapped_class))
-        target_name = snake_case(series_name)
-        error = SeriesNameSnakeCaseNotInTableError
-    else:
-        column_names = get_column_names(table_or_mapped_class)
-        target_name = snake_case(series_name)
-        error = SeriesNameNotInTableError
-    try:
-        column = one(
-            col
-            for name, col in zip(
-                column_names, get_columns(table_or_mapped_class), strict=True
-            )
-            if name == target_name
-        )
-    except EmptyIterableError:
-        msg = f"Unable to map {series_name!r} to {table_or_mapped_class}"
-        raise error(msg) from None
-    _check_series_against_table_column(
-        series, column, allow_naive_datetimes=allow_naive_datetimes
+    mapping = check_dataframe_schema_against_table(
+        dict(df.dtypes), table_or_mapped_class, check_dtype, snake=snake
     )
-    return column.name, _yield_insertion_elements(series)
+    df_items = df[list(mapping)].rename(columns=mapping)
+    for name, col in df_items.items():
+        col_obj = col.astype(object).where(col.notna(), None)
+        if col.dtype == datetime64ns:
+            is_not_null = col.notnull()
+            values = col.loc[is_not_null]
+            if (values == values.dt.normalize()).all():
+                func = timestamp_to_date
+            else:
+                func = timestamp_to_datetime
+            col_obj.loc[is_not_null] = values.map(func)
+        df_items[name] = col_obj
+    items = df_items.to_dict(orient="records")
+    if (len(df) > 0) and (len(items) == 0):
+        msg = f"{df=}, {items=}"
+        raise PandasDataFrameYieldsNoRowsError(msg)
+    return insert_items(engine_or_conn, (items, table_or_mapped_class))
 
 
-class SeriesNameSnakeCaseNotInTableError(ValueError):
-    """Raised when a Series name is not in a table, modulo snake case."""
+class PandasDataFrameYieldsNoRowsError(ValueError):
+    """Raised when a DataFrame yields no rows to insert."""
 
 
-class SeriesNameNotInTableError(ValueError):
-    """Raised when a Series name is not in a table."""
-
-
-def _check_series_against_table_column(
-    series: SeriesA,
-    table_column: Column[Any],
+def _check_pandas_series(
+    dtype: Any,
+    py_type: type,
     /,
     *,
     allow_naive_datetimes: bool = False,
-) -> None:
-    """Check if a series can be inserted into a column."""
-    py_type = table_column.type.python_type
-    if not (
-        (has_dtype(series, (bool, boolean)) and issubclass(py_type, bool | int))
-        or (has_dtype(series, float) and issubclass(py_type, float))
-        or (
-            has_dtype(series, datetime64ns)
-            and issubclass(py_type, dt.date)
-            and not issubclass(py_type, dt.datetime)
-        )
-        or (has_dtype(series, datetime64nsutc) and issubclass(py_type, dt.datetime))
+) -> bool:
+    is_bool = (dtype == bool) or (dtype == boolean)  # noqa: PLR1714
+    is_int = (dtype == int) or (dtype == int64) or (dtype == Int64)  # noqa: PLR1714
+    return (
+        (is_bool and issubclass(py_type, bool))
+        or ((dtype == datetime64ns) and issubclass(py_type, dt.date))
+        or ((dtype == datetime64nsutc) and issubclass(py_type, dt.datetime))
         or (
             allow_naive_datetimes
-            and has_dtype(series, datetime64ns)
+            and (dtype == datetime64ns)
             and issubclass(py_type, dt.datetime)
         )
-        or (has_dtype(series, (int, int64, Int64)) and (py_type, int))
-        or (has_dtype(series, string) and (py_type, str))
-    ):
-        msg = f"{series=}, {table_column=}"
-        raise SeriesAgainstTableColumnError(msg)
-
-
-class SeriesAgainstTableColumnError(TypeError):
-    """Raised when a series has incompatible dtype with a table column."""
-
-
-def _yield_insertion_elements(series: SeriesA, /) -> Iterator[Any]:
-    """Yield the elements for insertion."""
-    if has_dtype(series, (bool, boolean)):
-        cast = bool
-    elif has_dtype(series, datetime64ns):
-        if (series.notna() & (series != series.dt.normalize())).any():
-            raise DatesWithTimeComponentsError(str(series))
-        cast = timestamp_to_date
-    elif has_dtype(series, datetime64nsutc):
-        cast = timestamp_to_datetime
-    elif has_dtype(series, float):
-        cast = float
-    elif has_dtype(series, (int, int64, Int64)):
-        cast = int
-    elif has_dtype(series, string):
-        cast = str
-    else:
-        msg = f"Invalid dtype: {series=}"
-        raise TypeError(msg)
-    return (None if n else cast(v) for n, v in zip(series.isna(), series, strict=True))
-
-
-class DatesWithTimeComponentsError(ValueError):
-    """Raised when dates with time components are encountered."""
+        or ((dtype == float) and issubclass(py_type, float))
+        or (is_int and issubclass(py_type, int))
+        or ((dtype == string) and issubclass(py_type, str))
+    )
 
 
 @overload
-def select_to_dataframe(
+def select_to_pandas_dataframe(
     sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
-    snake: bool = False,
     stream: int,
+    time_zone: timezone = ...,
+    snake: bool = ...,
 ) -> Iterator[DataFrame]:
     ...
 
 
 @overload
-def select_to_dataframe(
+def select_to_pandas_dataframe(
     sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
+    stream: None = ...,
+    time_zone: timezone = ...,
     snake: bool = False,
-    stream: None = None,
 ) -> DataFrame:
     ...
 
 
-def select_to_dataframe(
+def select_to_pandas_dataframe(
     sel: Select[Any],
     engine_or_conn: Engine | Connection,
     /,
     *,
-    snake: bool = False,
     stream: int | None = None,
+    time_zone: timezone = UTC,
+    snake: bool = False,
 ) -> DataFrame | Iterator[DataFrame]:
     """Read a table from a database into a DataFrame.
 
     Optionally stream it in chunks.
     """
-    _check_select_for_duplicates(sel)
+    check_selectable_for_duplicate_columns(sel)
     if stream is None:
         with yield_connection(engine_or_conn) as conn:
             rows = conn.execute(sel).all()
-            return _rows_to_dataframe(sel, rows, snake=snake)
-    return _stream_dataframes(sel, engine_or_conn, stream, snake=snake)
-
-
-def _check_select_for_duplicates(sel: Select[Any], /) -> None:
-    """Check a select statement contains no duplicates."""
-    col_names = [col.name for col in sel.selected_columns.values()]
-    try:
-        check_duplicates(col_names)
-    except IterableContainsDuplicatesError:
-        msg = f"{col_names=}"
-        raise DuplicateColumnError(msg) from None
+            return _rows_to_dataframe(sel, rows, time_zone=time_zone, snake=snake)
+    return _stream_dataframes(
+        sel, engine_or_conn, stream, time_zone=time_zone, snake=snake
+    )
 
 
 def _rows_to_dataframe(
-    sel: Select[Any], rows: Iterable[Row[Any]], /, *, snake: bool = False
+    sel: Select[Any],
+    rows: Iterable[Row[Any]],
+    /,
+    *,
+    time_zone: timezone = UTC,
+    snake: bool = False,
 ) -> DataFrame:
     """Convert a set of rows into a DataFrame."""
+    columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
     dtypes = {
-        col.name: _table_column_to_dtype(col) for col in sel.selected_columns.values()
+        col.name: _table_column_to_dtype(col, time_zone=time_zone)
+        for col in columns.values()
     }
     df = DataFrame(rows, columns=list(dtypes))
     df = astype(df, dtypes)
-    if snake:
-        return _dataframe_columns_to_snake(df)
-    return df
+    return _dataframe_columns_to_snake(df) if snake else df
 
 
-def _table_column_to_dtype(column: ColumnElement[Any], /) -> Any:
+def _table_column_to_dtype(column: Column[Any], /, *, time_zone: timezone = UTC) -> Any:
     """Map a table column to a DataFrame dtype."""
-    py_type = column.type.python_type
-    if py_type is bool:
+    db_type = column.type
+    py_type = db_type.python_type
+    if issubclass(py_type, bool):
         return boolean
-    if (py_type is float) or (py_type is Decimal):
-        return float
-    if py_type is int:
-        return Int64
-    if py_type is str:
-        return string
-    if issubclass(py_type, dt.date):
+    if issubclass(py_type, dt.date) and not issubclass(py_type, dt.datetime):
         return datetime64ns
-    msg = f"Invalid type: {py_type=}"  # pragma: no cover
-    raise TypeError(msg)  # pragma: no cover
+    if issubclass(py_type, dt.datetime):
+        has_tz: bool = cast(Any, db_type).timezone
+        return DatetimeTZDtype(tz=time_zone) if has_tz else datetime64ns
+    if issubclass(py_type, float | Decimal):
+        return float
+    if issubclass(py_type, int):
+        return Int64
+    if issubclass(py_type, str):
+        return string
+    msg = f"{column=}"
+    raise ColumnToPandasDTypeError(msg)
+
+
+class ColumnToPandasDTypeError(TypeError):
+    """Raised when an invalid column type is encountered."""
 
 
 def _dataframe_columns_to_snake(df: DataFrame, /) -> DataFrame:
@@ -287,18 +207,21 @@ def _stream_dataframes(
     stream: int,
     /,
     *,
+    time_zone: timezone = UTC,
     snake: bool = False,
 ) -> Iterator[DataFrame]:
     if stream <= 0:
         raise NonPositiveStreamError(str(stream))
     if isinstance(engine_or_conn, Engine):
         with engine_or_conn.begin() as conn:
-            yield from _stream_dataframes(sel, conn, stream, snake=snake)
+            yield from _stream_dataframes(
+                sel, conn, stream, time_zone=time_zone, snake=snake
+            )
     else:
         for rows in (
             engine_or_conn.execution_options(yield_per=stream).execute(sel).partitions()
         ):
-            yield _rows_to_dataframe(sel, rows, snake=snake)
+            yield _rows_to_dataframe(sel, rows, time_zone=time_zone, snake=snake)
 
 
 class NonPositiveStreamError(ValueError):

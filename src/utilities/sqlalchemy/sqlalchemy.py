@@ -11,9 +11,12 @@ from operator import ge, itemgetter, le
 from typing import Any, Literal, NoReturn, cast
 
 from sqlalchemy import (
+    URL,
     Boolean,
     Column,
+    Connection,
     DateTime,
+    Engine,
     Enum,
     Float,
     Interval,
@@ -21,6 +24,7 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     Select,
+    Selectable,
     String,
     Table,
     Unicode,
@@ -38,34 +42,115 @@ from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.engine import URL, Connection, Engine
 from sqlalchemy.exc import (
     ArgumentError,
     DatabaseError,
+    DuplicateColumnError,
     NoSuchTableError,
     OperationalError,
 )
-from sqlalchemy.orm import InstrumentedAttribute, declared_attr
+from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.orm.util import class_mapper
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
-from utilities.itertools import chunked, is_iterable_not_str, one
+from utilities.itertools import (
+    EmptyIterableError,
+    IterableContainsDuplicatesError,
+    MultipleElementsError,
+    check_duplicates,
+    chunked,
+    is_iterable_not_str,
+    one,
+)
 from utilities.math import FloatNonNeg, IntNonNeg
 from utilities.text import ensure_str, snake_case, snake_case_mappings
 from utilities.typing import IterableStrs, never
 
 
-class TablenameMixin:
-    """Mix-in for an auto-generated tablename."""
+def check_dataframe_schema_against_table(
+    df_schema: Mapping[str, Any],
+    table_or_mapped_class: Table | type[Any],
+    check_dtype: Callable[[Any, type], bool],
+    /,
+    *,
+    snake: bool = False,
+) -> dict[str, str]:
+    table_schema = {
+        col.name: col.type.python_type
+        for col in get_columns(get_table(table_or_mapped_class))
+    }
+    out: dict[str, str] = {}
+    for sr_name, sr_dtype in df_schema.items():
+        with suppress(SeriesMatchesAgainstNoColumnError):
+            out[sr_name] = _check_series_against_against_table(
+                sr_name, sr_dtype, table_schema, check_dtype, snake=snake
+            )
+    return out
 
-    @cast(Any, declared_attr)
-    def __tablename__(cls) -> str:  # noqa: N805
-        return get_class_name(cls, snake=True)
+
+def _check_series_against_against_table(
+    sr_name: str,
+    sr_dtype: Any,
+    table_schema: Mapping[str, type],
+    check_dtype: Callable[[Any, type], bool],
+    /,
+    *,
+    snake: bool = False,
+) -> str:
+    db_name, db_type = _match_series_name_to_table_column(
+        sr_name, table_schema, snake=snake
+    )
+    if not check_dtype(sr_dtype, db_type):
+        msg = f"{sr_dtype=}, {db_type=}"
+        raise SeriesAndTableColumnIncompatibleError(msg)
+    return db_name
+
+
+class SeriesAndTableColumnIncompatibleError(TypeError):
+    """Raised when a Series and table column are incompatible."""
+
+
+def _match_series_name_to_table_column(
+    sr_name: str,
+    table_schema: Mapping[str, type],
+    /,
+    *,
+    snake: bool = False,
+) -> tuple[str, type]:
+    items = table_schema.items()
+    try:
+        if snake:
+            return one((n, t) for n, t in items if snake_case(n) == snake_case(sr_name))
+        return one((n, t) for n, t in items if n == sr_name)
+    except EmptyIterableError:
+        msg = f"{sr_name=}, {table_schema=}"
+        raise SeriesMatchesAgainstNoColumnError(msg) from None
+    except MultipleElementsError:
+        msg = f"{sr_name=}, {table_schema=}"
+        raise SeriesMatchesAgainstMultipleColumnsError(msg) from None
+
+
+class SeriesMatchesAgainstNoColumnError(ValueError):
+    """Raised when a Series matches against no column."""
+
+
+class SeriesMatchesAgainstMultipleColumnsError(ValueError):
+    """Raised when a Series matches against multiple columns."""
+
+
+def check_selectable_for_duplicate_columns(sel: Select[Any], /) -> None:
+    """Check a selectable for duplicate columns."""
+    columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
+    names = [col.name for col in columns]
+    try:
+        check_duplicates(names)
+    except IterableContainsDuplicatesError:
+        msg = f"{names=}"
+        raise DuplicateColumnError(msg) from None
 
 
 def check_table_against_reflection(
@@ -846,6 +931,14 @@ def serialize_engine(engine: Engine, /) -> str:
     return engine.url.render_as_string(hide_password=False)
 
 
+class TablenameMixin:
+    """Mix-in for an auto-generated tablename."""
+
+    @cast(Any, declared_attr)
+    def __tablename__(cls) -> str:  # noqa: N805
+        return get_class_name(cls, snake=True)
+
+
 @contextmanager
 def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
     """Yield a connection."""
@@ -857,7 +950,7 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
 
 
 def yield_in_clause_rows(
-    sel: Select[Any],
+    sel: Selectable,
     column: Any,
     values: Iterable[Any],
     engine_or_conn: Engine | Connection,

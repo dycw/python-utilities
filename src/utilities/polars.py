@@ -17,6 +17,8 @@ def check_dataframe(
     columns: SequenceStrs | None = None,
     dtypes: list[PolarsDataType] | None = None,
     height: int | None = None,
+    min_height: int | None = None,
+    max_height: int | None = None,
     schema: SchemaDict | None = None,
     shape: tuple[int, int] | None = None,
     sorted: IntoExpr | Iterable[IntoExpr] | None = None,  # noqa: A002
@@ -32,6 +34,12 @@ def check_dataframe(
     if (height is not None) and (df.height != height):
         msg = f"{df=}"
         raise DataFrameHeightError(msg)
+    if (min_height is not None) and (len(df) < min_height):
+        msg = f"{df=}, {min_height=}"
+        raise DataFrameMinHeightError(msg)
+    if (max_height is not None) and (len(df) > max_height):
+        msg = f"{df=}, {max_height=}"
+        raise DataFrameMaxHeightError(msg)
     if (schema is not None) and (df.schema != schema):
         set_act, set_exp = map(set, [df.schema, schema])
         extra = set_act - set_exp
@@ -71,6 +79,14 @@ class DataFrameDTypesError(ValueError):
 
 class DataFrameHeightError(ValueError):
     """Raised when a DataFrame has the incorrect height."""
+
+
+class DataFrameMinHeightError(ValueError):
+    """Raised when a DataFrame does not reach the minimum height."""
+
+
+class DataFrameMaxHeightError(ValueError):
+    """Raised when a DataFrame exceeds the maximum height."""
 
 
 class DataFrameSchemaError(ValueError):

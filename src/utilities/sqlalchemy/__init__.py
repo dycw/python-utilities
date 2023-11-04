@@ -11,6 +11,9 @@ from utilities.sqlalchemy.sqlalchemy import (
     NotATableOrAMappedClassError,
     ParseEngineError,
     SecondArgumentNotATableOrMappedClassError,
+    SeriesAndTableColumnIncompatibleError,
+    SeriesMatchesAgainstMultipleColumnsError,
+    SeriesMatchesAgainstNoColumnError,
     TableAlreadyExistsError,
     TablenameMixin,
     TupleNotAPairError,
@@ -42,7 +45,9 @@ from utilities.sqlalchemy.sqlalchemy import (
     UnequalUUIDAsUUIDError,
     UnequalUUIDNativeUUIDError,
     UnsupportedDialectError,
+    check_dataframe_schema_against_table,
     check_engine,
+    check_selectable_for_duplicate_columns,
     check_table_against_reflection,
     check_tables_equal,
     columnwise_max,
@@ -69,7 +74,9 @@ from utilities.sqlalchemy.sqlalchemy import (
 )
 
 __all__ = [
+    "check_dataframe_schema_against_table",
     "check_engine",
+    "check_selectable_for_duplicate_columns",
     "check_table_against_reflection",
     "check_tables_equal",
     "columnwise_max",
@@ -101,6 +108,9 @@ __all__ = [
     "redirect_to_table_already_exists_error",
     "SecondArgumentNotATableOrMappedClassError",
     "serialize_engine",
+    "SeriesAndTableColumnIncompatibleError",
+    "SeriesMatchesAgainstMultipleColumnsError",
+    "SeriesMatchesAgainstNoColumnError",
     "TableAlreadyExistsError",
     "TablenameMixin",
     "TupleNotAPairError",
@@ -148,27 +158,40 @@ else:
 
 try:
     from utilities.sqlalchemy.pandas import (
-        DatesWithTimeComponentsError,
+        ColumnToPandasDTypeError,
         NonPositiveStreamError,
-        SeriesAgainstTableColumnError,
-        SeriesNameNotInTableError,
-        SeriesNameSnakeCaseNotInTableError,
-        insert_dataframe,
-        select_to_dataframe,
+        PandasDataFrameYieldsNoRowsError,
+        insert_pandas_dataframe,
+        select_to_pandas_dataframe,
     )
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
     __all__ += [
-        "DatesWithTimeComponentsError",
-        "insert_dataframe",
+        "ColumnToPandasDTypeError",
+        "insert_pandas_dataframe",
         "NonPositiveStreamError",
-        "select_to_dataframe",
-        "SeriesAgainstTableColumnError",
-        "SeriesNameNotInTableError",
-        "SeriesNameSnakeCaseNotInTableError",
+        "PandasDataFrameYieldsNoRowsError",
+        "select_to_pandas_dataframe",
     ]
 
+
+try:
+    from utilities.sqlalchemy.polars import (
+        ColumnToPolarsExprError,
+        PolarsDataFrameYieldsNoRowsError,
+        insert_polars_dataframe,
+        select_to_polars_dataframe,
+    )
+except ModuleNotFoundError:  # pragma: no cover
+    pass
+else:
+    __all__ += [
+        "ColumnToPolarsExprError",
+        "insert_polars_dataframe",
+        "PolarsDataFrameYieldsNoRowsError",
+        "select_to_polars_dataframe",
+    ]
 
 try:
     from utilities.sqlalchemy.timeout_decorator import (

@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import NoReturn
 
 import timeout_decorator
-from sqlalchemy import Sequence
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy import Connection, Engine, Sequence
 from sqlalchemy.exc import DatabaseError
 
 from utilities.errors import redirect_error

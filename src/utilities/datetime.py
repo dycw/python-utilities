@@ -38,7 +38,7 @@ class IsWeekendError(ValueError):
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: tzinfo = UTC
+    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: tzinfo | None = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
