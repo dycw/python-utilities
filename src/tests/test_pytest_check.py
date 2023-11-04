@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from _pytest.legacypath import Testdir
 
 
 class TestCheck:
-    def test_regular(self, testdir: Any) -> None:
-        testdir.makepyfile(
+    def test_regular(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
             """
             from utilities.pytest_check import check
 
@@ -22,8 +22,8 @@ class TestCheck:
             ["FAILURE: first", "FAILURE: second", "Failed Checks: 2"]
         )
 
-    def test_fail_on_first(self, testdir: Any) -> None:
-        testdir.makepyfile(
+    def test_fail_on_first(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
             """
             from utilities.os import temp_environ
             from utilities.pytest_check import check

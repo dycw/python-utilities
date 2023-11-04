@@ -3,8 +3,8 @@ from __future__ import annotations
 from inspect import signature
 from pathlib import Path
 from time import sleep
-from typing import Any
 
+from _pytest.legacypath import Testdir
 from pytest import MonkeyPatch, mark, param
 
 from utilities.pytest import is_pytest, throttle
@@ -12,8 +12,8 @@ from utilities.typing import IterableStrs
 
 
 class TestPytestOptions:
-    def test_unknown_mark(self, *, testdir: Any) -> None:
-        testdir.makepyfile(
+    def test_unknown_mark(self, *, testdir: Testdir) -> None:
+        _ = testdir.makepyfile(
             """
             from pytest import mark
 
@@ -27,9 +27,9 @@ class TestPytestOptions:
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
     @mark.parametrize("configure", [param(True), param(False)])
-    def test_unknown_option(self, *, configure: bool, testdir: Any) -> None:
+    def test_unknown_option(self, *, configure: bool, testdir: Testdir) -> None:
         if configure:
-            testdir.makeconftest(
+            _ = testdir.makeconftest(
                 """
                 from utilities.pytest import add_pytest_configure
 
@@ -37,7 +37,7 @@ class TestPytestOptions:
                     add_pytest_configure(config, [("slow", "slow to run")])
                 """
             )
-        testdir.makepyfile(
+        _ = testdir.makepyfile(
             """
             from pytest import mark
 
@@ -55,13 +55,13 @@ class TestPytestOptions:
     def test_one_mark_and_option(
         self,
         *,
-        testdir: Any,
+        testdir: Testdir,
         case: IterableStrs,
         passed: int,
         skipped: int,
         matches: IterableStrs,
     ) -> None:
-        testdir.makeconftest(
+        _ = testdir.makeconftest(
             """
             from utilities.pytest import add_pytest_addoption
             from utilities.pytest import add_pytest_collection_modifyitems
@@ -77,7 +77,7 @@ class TestPytestOptions:
                 add_pytest_configure(config, [("slow", "slow to run")])
             """
         )
-        testdir.makepyfile(
+        _ = testdir.makepyfile(
             """
             from pytest import mark
 
@@ -88,7 +88,7 @@ class TestPytestOptions:
         )
         result = testdir.runpytest("-rs", *case)
         result.assert_outcomes(passed=passed, skipped=skipped)
-        result.stdout.re_match_lines(matches)
+        result.stdout.re_match_lines(list(matches))
 
     @mark.parametrize(
         ("case", "passed", "skipped", "matches"),
@@ -121,13 +121,13 @@ class TestPytestOptions:
     def test_two_marks_and_options(
         self,
         *,
-        testdir: Any,
+        testdir: Testdir,
         case: IterableStrs,
         passed: int,
         skipped: int,
         matches: IterableStrs,
     ) -> None:
-        testdir.makeconftest(
+        _ = testdir.makeconftest(
             """
             from utilities.pytest import add_pytest_addoption
             from utilities.pytest import add_pytest_collection_modifyitems
@@ -147,7 +147,7 @@ class TestPytestOptions:
                 )
             """
         )
-        testdir.makepyfile(
+        _ = testdir.makepyfile(
             """
             from pytest import mark
 
@@ -170,7 +170,7 @@ class TestPytestOptions:
         )
         result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
-        result.stdout.re_match_lines(matches)
+        result.stdout.re_match_lines(list(matches))
 
 
 class TestIsPytest:
@@ -186,7 +186,7 @@ class TestThrottle:
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_pass", [param(True), param(False)])
     def test_basic(
-        self, *, testdir: Any, tmp_path: Path, as_float: bool, on_pass: bool
+        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_pass: bool
     ) -> None:
         root_str = str(tmp_path)
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
@@ -198,14 +198,14 @@ class TestThrottle:
             def test_main():
                 assert True
             """
-        testdir.makepyfile(contents)
+        _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    def test_on_pass(self, *, testdir: Any, tmp_path: Path) -> None:
-        testdir.makeconftest(
+    def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
+        _ = testdir.makeconftest(
             """
             from pytest import fixture
 
@@ -225,7 +225,7 @@ class TestThrottle:
             def test_main(is_pass):
                 assert is_pass
             """
-        testdir.makepyfile(contents)
+        _ = testdir.makepyfile(contents)
         for _ in range(2):
             testdir.runpytest().assert_outcomes(failed=1)
         testdir.runpytest("--pass").assert_outcomes(passed=1)
@@ -233,6 +233,24 @@ class TestThrottle:
         sleep(1.0)
         testdir.runpytest().assert_outcomes(failed=1)
         testdir.runpytest("--pass").assert_outcomes(passed=1)
+
+    def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
+        root_str = str(tmp_path)
+        contents = f"""
+            from pytest import mark
+            from string import printable
+            from utilities.pytest import throttle
+
+            @mark.parametrize('arg', [10 * printable])
+            @throttle(root={root_str!r}, duration=1.0)
+            def test_main(*, arg: str):
+                assert True
+            """
+        _ = testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
         @throttle()
