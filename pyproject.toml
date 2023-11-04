@@ -203,7 +203,7 @@ path = "src/utilities/__init__.py"
 style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-generate-hashes.toml",
 ]
 
 # pyright
