@@ -8,11 +8,11 @@ from freezegun import freeze_time
 from hypothesis import given
 from hypothesis.strategies import integers
 
-from utilities.clean_dir import main
-from utilities.clean_dir.classes import Config
 from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import temp_paths
 from utilities.pytest import skipif_windows
+from utilities.scripts.clean_dir import main
+from utilities.scripts.clean_dir.classes import Config
 
 
 class TestCleanDir:

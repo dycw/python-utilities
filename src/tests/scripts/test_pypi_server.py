@@ -9,7 +9,7 @@ from pytest import raises
 
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pathlib import temp_cwd
-from utilities.pypi_server import _check_password_file, _get_args, main
+from utilities.scripts.pypi_server import _check_password_file, _get_args, main
 
 
 class TestPypiServer:

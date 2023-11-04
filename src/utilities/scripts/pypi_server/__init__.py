@@ -8,7 +8,7 @@ from loguru import logger
 
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike
-from utilities.pypi_server.classes import Config
+from utilities.scripts.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
 

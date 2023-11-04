@@ -6,8 +6,8 @@ from pathlib import Path
 from click.testing import CliRunner
 from pytest import fixture
 
-from utilities.csv_to_markdown import _csv_to_markdown, main
 from utilities.platform import IS_WINDOWS
+from utilities.scripts.csv_to_markdown import _csv_to_markdown, main
 from utilities.text import strip_and_dedent
 
 
