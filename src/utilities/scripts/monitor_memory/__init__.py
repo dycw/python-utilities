@@ -17,8 +17,8 @@ from psutil import swap_memory, virtual_memory
 
 from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
-from utilities.monitor_memory.classes import Config, Item
 from utilities.platform import SYSTEM, System
+from utilities.scripts.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
 from utilities.typing import never

@@ -13,10 +13,10 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.clean_dir.classes import Config, Item
 from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
 from utilities.pathlib import PathLike
+from utilities.scripts.clean_dir.classes import Config, Item
 from utilities.typed_settings import click_options
 
 _CONFIG = Config()
