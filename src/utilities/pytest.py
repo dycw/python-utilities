@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from contextlib import suppress
-from functools import wraps
+from functools import cache, wraps
 from os import environ
 from pathlib import Path
 from typing import Any
@@ -10,6 +9,7 @@ from typing import Any
 from utilities.atomicwrites import writer
 from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.git import get_repo_root
+from utilities.hashlib import md5_hash
 from utilities.pathlib import PathLike
 from utilities.platform import (
     IS_LINUX,
@@ -19,7 +19,6 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.re import NoMatchesError, extract_group
 from utilities.types import Duration
 from utilities.typing import IterableStrs
 
@@ -118,10 +117,7 @@ def throttle(
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]
-            with suppress(NoMatchesError):
-                test = extract_group(r"^(.+) \(.+\)$", test)
-            path = root_use.joinpath(*test.split("::"))
-            if path.exists():
+            if (path := root_use.joinpath(_throttle_md5_hash(test))).exists():
                 with path.open(mode="r") as fh:
                     contents = fh.read()
                 prev = float(contents)
@@ -144,6 +140,11 @@ def throttle(
         return wrapped
 
     return wrapper
+
+
+@cache
+def _throttle_md5_hash(text: str, /) -> str:
+    return md5_hash(text)
 
 
 def _throttle_write(path: Path, now: float, /) -> None:
