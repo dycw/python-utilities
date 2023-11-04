@@ -5,23 +5,22 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from typed_settings import option, settings
-
 from utilities.tempfile import TEMP_DIR
+from utilities.typed_settings import click_field
 
 
-@settings(frozen=True)
+@dataclass(frozen=True)
 class Config:
     """Settings for the `clean_dir` script."""
 
-    paths: list[Path] = option(
-        default=[TEMP_DIR], click={"param_decls": ("-p", "--path")}
+    paths: set[Path] = click_field(
+        default=frozenset([TEMP_DIR]), param_decls=("-p", "--path")
     )
-    days: int = option(default=7, click={"param_decls": ("-d", "--days")})
-    chunk_size: Optional[int] = option(  # noqa: UP007
-        default=None, click={"param_decls": ("-cs", "--chunk-size")}
+    days: int = click_field(default=7, param_decls=("-d", "--days"))
+    chunk_size: Optional[int] = click_field(  # noqa: UP007
+        default=None, param_decls=("-cs", "--chunk-size")
     )
-    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
+    dry_run: bool = click_field(default=False, param_decls=("-dr", "--dry-run"))
 
 
 @dataclass(frozen=True)

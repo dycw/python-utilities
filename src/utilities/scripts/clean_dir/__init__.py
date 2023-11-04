@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Iterable, Iterator
+from dataclasses import asdict
 from functools import partial
 from getpass import getuser
 from itertools import islice
 from pathlib import Path
 from shutil import rmtree
 
-from attrs import asdict
 from click import command
 from loguru import logger
 from typed_settings import find

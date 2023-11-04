@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
-from attrs import asdict
 from click import command
 from loguru import logger
 

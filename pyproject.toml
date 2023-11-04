@@ -332,6 +332,9 @@ ban-relative-imports = "all"
 [tool.ruff.isort]
 known-first-party = ["utilities"]
 
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["utilities.typed_settings.click_field"]
+
 [tool.ruff.per-file-ignores]
 "src/tests/**/*.py" = [
   "FBT001",  # flake8-boolean-trap, boolean-positional-arg-in-function-definition

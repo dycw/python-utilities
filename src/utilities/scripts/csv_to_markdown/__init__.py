@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from csv import reader
+from dataclasses import asdict
 from itertools import chain
 from pathlib import Path
 
-import attrs
 from click import command
 from loguru import logger
 from mdutils import MdUtils
@@ -29,7 +29,7 @@ def main(config: Config, /) -> None:
 
 
 def _log_config(config: Config, /) -> None:
-    for key, value in attrs.asdict(config).items():
+    for key, value in asdict(config).items():
         logger.info("{key:4} = {value}", key=key, value=value)
 
 

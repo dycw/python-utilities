@@ -2,39 +2,17 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Iterable
-from enum import Enum
-from itertools import starmap
-from operator import attrgetter, itemgetter
 from pathlib import Path
 from re import search
 from typing import Any, TypeVar, cast
 
-from click import ParamType
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
-from typed_settings.cli_utils import (
-    Default,
-    StrDict,
-    TypeArgsMaker,
-    TypeHandler,
-    TypeHandlerFunc,
-)
-from typed_settings.click_utils import ClickHandler
-from typed_settings.click_utils import click_options as _click_options
 from typed_settings.converters import TSConverter
 from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
 
-from utilities.click import Date, DateTime, Time, Timedelta
-from utilities.click import Enum as ClickEnum
-from utilities.datetime import (
-    ensure_date,
-    ensure_time,
-    ensure_timedelta,
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-)
+from utilities.datetime import ensure_date, ensure_time, ensure_timedelta
 from utilities.git import InvalidRepoError, get_repo_root
 from utilities.pathlib import PathLike
 
@@ -75,29 +53,8 @@ def load_settings(
         config_files_var=config_files_var,
         env_prefix=env_prefix,
     )
-    converter = ExtendedTSConverter()
+    converter = _ExtendedTSConverter()
     return _load_settings(cast(Any, cls), loaders, converter=converter)
-
-
-def click_options(
-    cls: type[Any],
-    /,
-    *,
-    appname: str = "appname",
-    config_files: Iterable[PathLike] = _CONFIG_FILES,
-    argname: str | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    """Generate click options with the extended converter."""
-    loaders = _get_loaders(appname=appname, config_files=config_files)
-    converter = ExtendedTSConverter()
-    type_args_maker = TypeArgsMaker(cast(TypeHandler, _make_click_handler()))
-    return _click_options(
-        cls,
-        loaders,
-        converter=converter,
-        type_args_maker=type_args_maker,
-        argname=argname,
-    )
 
 
 def _get_loaders(
@@ -124,7 +81,7 @@ class AppNameContainsUnderscoreError(ValueError):
     """Raised when the appname contains a space."""
 
 
-class ExtendedTSConverter(TSConverter):
+class _ExtendedTSConverter(TSConverter):
     def __init__(
         self,
         *,
@@ -145,14 +102,14 @@ class ExtendedTSConverter(TSConverter):
             pass
         else:
             cases.append((Engine, ensure_engine))
-        extras = {cls: _make_structure_hook(cls, func) for cls, func in cases}
+        extras = {cls: _make_converter(cls, func) for cls, func in cases}
         self.scalar_converters |= extras
 
 
-def _make_structure_hook(
+def _make_converter(
     cls: type[Any], func: Callable[[Any], Any], /
 ) -> Callable[[Any, type[Any]], Any]:
-    """Make the structure hook for a given type."""
+    """Lift a callable into a connverter."""
 
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
         if not isinstance(value, cls | str):
@@ -161,53 +118,3 @@ def _make_structure_hook(
         return func(value)
 
     return hook
-
-
-def _make_click_handler() -> ClickHandler:
-    """Make the click handler."""
-    cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
-        (dt.datetime, DateTime, serialize_datetime),
-        (dt.date, Date, serialize_date),
-        (dt.time, Time, serialize_time),
-        (dt.timedelta, Timedelta, str),
-        (Enum, ClickEnum, attrgetter("name")),
-    ]
-    try:
-        from sqlalchemy import Engine
-
-        from utilities.click import Engine as ClickEngine
-        from utilities.sqlalchemy import serialize_engine
-    except ModuleNotFoundError:  # pragma: no cover
-        pass
-    else:
-        cases.append((Engine, ClickEngine, serialize_engine))
-    extra_types = dict(
-        zip(
-            map(itemgetter(0), cases),
-            starmap(_make_type_handler_func, cases),
-            strict=True,
-        )
-    )
-    return ClickHandler(extra_types=extra_types)
-
-
-def _make_type_handler_func(
-    cls: type[Any], param: type[ParamType], serialize: Callable[[Any], str], /
-) -> TypeHandlerFunc:
-    """Make the type handler for a given type/parameter."""
-
-    def handler(
-        type_: type[Any],
-        default: Default,
-        is_optional: bool,  # noqa: FBT001
-        /,
-    ) -> StrDict:
-        args = (type_,) if issubclass(type_, Enum) else ()
-        mapping: StrDict = {"type": param(*args)}
-        if isinstance(default, cls):  # pragma: no cover
-            mapping["default"] = serialize(default)
-        elif is_optional:  # pragma: no cover
-            mapping["default"] = None
-        return mapping
-
-    return cast(TypeHandlerFunc, handler)
