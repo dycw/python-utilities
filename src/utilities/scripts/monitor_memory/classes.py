@@ -5,26 +5,21 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from typed_settings import option, settings
-
 from utilities.platform import SYSTEM, System
+from utilities.typed_settings import click_field
 from utilities.typing import never
 
 
-@settings(frozen=True)
+@dataclass(frozen=True)
 class Config:
     """Settings for the `monitor_memory` script."""
 
-    path: Path = option(
-        default=Path("memory.csv"), click={"param_decls": ("-p", "--path")}
-    )
-    freq: int = option(
-        default=60, help="in seconds", click={"param_decls": ("-f", "--freq")}
-    )
-    duration: Optional[int] = option(  # noqa: UP007
+    path: Path = click_field(default=Path("memory.csv"), param_decls=("-p", "--path"))
+    freq: int = click_field(default=60, help="in seconds", param_decls=("-f", "--freq"))
+    duration: Optional[int] = click_field(  # noqa: UP007
         default=None,
         help="in seconds",
-        click={"param_decls": ("-d", "--duration")},
+        param_decls=("-d", "--duration"),
     )
 
 

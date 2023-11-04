@@ -1,14 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
-from typed_settings import option, settings
+from utilities.typed_settings import click_field
 
 
-@settings(frozen=True)
+@dataclass(frozen=True)
 class Config:
     """Settings for the `monitor_memory` script."""
 
-    path: Path = option(
-        default=Path("input.csv"), click={"param_decls": ("-p", "--path")}
-    )
+    path: Path = click_field(default=Path("input.csv"), param_decls=("-p", "--path"))

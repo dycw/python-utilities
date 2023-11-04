@@ -1,22 +1,24 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
-from typed_settings import option, settings
+from utilities.typed_settings import click_field
 
 
-@settings(frozen=True)
+@dataclass(frozen=True)
 class Config:
     """Settings for the `pypi_server` script."""
 
-    path_password: Path = option(
+    path_password: Path = click_field(
         default=Path("password"),
-        click={"param_decls": ("-pw", "--path-password")},
-    )  # generate using "htpasswd -nbB username password"
-    path_packages: Path = option(
-        default=Path("packages"),
-        click={"param_decls": ("-pk", "--path-packages")},
+        help="generate using 'htpasswd -nbB username password'",
+        param_decls=("-pw", "--path-password"),
     )
-    port: int = option(default=1461, click={"param_decls": ("-po", "--port")})
-    dry_run: bool = option(default=False, click={"param_decls": ("-dr", "--dry-run")})
-    exist_ok: bool = option(default=False, click={"param_decls": ("-e", "--exist-ok")})
+    path_packages: Path = click_field(
+        default=Path("packages"),
+        param_decls=("-pk", "--path-packages"),
+    )
+    port: int = click_field(default=1461, param_decls=("-po", "--port"))
+    dry_run: bool = click_field(default=False, param_decls=("-dr", "--dry-run"))
+    exist_ok: bool = click_field(default=False, param_decls=("-e", "--exist-ok"))

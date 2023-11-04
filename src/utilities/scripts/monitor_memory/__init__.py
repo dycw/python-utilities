@@ -5,12 +5,11 @@ import datetime as dt
 from collections.abc import Iterator
 from contextlib import contextmanager
 from csv import DictWriter
-from dataclasses import fields
+from dataclasses import asdict, fields
 from pathlib import Path
 from time import sleep
 from typing import Any, cast
 
-import attrs
 from click import command
 from loguru import logger
 from psutil import swap_memory, virtual_memory
@@ -36,7 +35,7 @@ def main(config: Config, /) -> None:
 
 
 def _log_config(config: Config, /) -> None:
-    for key, value in attrs.asdict(config).items():
+    for key, value in asdict(config).items():
         logger.info("{key:8} = {value}", key=key, value=value)
 
 
