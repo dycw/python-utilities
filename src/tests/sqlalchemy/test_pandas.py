@@ -47,7 +47,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.numpy import datetime64ns
-from utilities.pandas import Int64, boolean, datetime64nsutc, string
+from utilities.pandas import Int64, astype, boolean, datetime64nsutc, string
 from utilities.sqlalchemy import (
     DatesWithTimeComponentsError,
     NonPositiveStreamError,
@@ -134,7 +134,8 @@ class TestInsertDataFrame:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
-        df = DataFrame(rows, columns=["id"]).astype(int)
+        df = DataFrame(rows, columns=["id"])
+        df = astype(df, int)
         insert_dataframe(df, table, engine)
         with engine.begin() as conn:
             res = conn.execute(select(func.count()).select_from(table)).scalar()
@@ -157,7 +158,8 @@ class TestInsertItems:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_tables_created(table, engine)
         rows = data.draw(table_records_lists(table, max_size=10))
-        df = DataFrame(rows, columns=["id"]).astype(int)
+        df = DataFrame(rows, columns=["id"])
+        df = astype(df, int)
         insert_items([(df, table)], engine)
         with engine.begin() as conn:
             res = conn.execute(select(func.count()).select_from(table)).scalar()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from fastparquet import write
 from hypothesis import assume, given
@@ -47,7 +47,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.numpy import datetime64ns
-from utilities.pandas import DataFrameRangeIndexError, Int64, string
+from utilities.pandas import DataFrameRangeIndexError, Int64, astype, string
 from utilities.pytest import skipif_windows
 
 
@@ -79,7 +79,8 @@ class TestGetDtypes:
         root=temp_paths(),
     )
     def test_main(self, *, dtypes: Mapping[str, Any], root: Path) -> None:
-        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes)).astype(dtypes)
+        df = DataFrame(None, index=RangeIndex(1), columns=list(dtypes))
+        df = astype(df, dtypes)
         write_parquet(df, path := root.joinpath("df.parq"))
         result = get_dtypes(path)
         assert result == dtypes
@@ -144,7 +145,8 @@ class TestReadAndWriteParquet:
     ) -> None:
         rows = data.draw(lists(elements, min_size=1))
         n = len(rows)
-        df = DataFrame(rows, index=RangeIndex(n), columns=["value"]).astype(dtype)
+        df = DataFrame(rows, index=RangeIndex(n), columns=["value"])
+        df = astype(df, dtype)
         write_parquet(df, path := root.joinpath("df.parq"))
         head = data.draw(sampled_from([n, None]))
         columns = "value" if as_series else None
@@ -216,7 +218,7 @@ class TestReadAndWriteParquet:
         row_group_offsets: int,
     ) -> None:
         def as_str(df: DataFrame, /) -> DataFrame:
-            return df.astype(cast(Literal["string"], string))
+            return astype(df, string)
 
         elements = data_frames(
             [cast(Any, column)("value", elements=text_ascii())],

@@ -156,7 +156,7 @@ def timestamps(
     timestamp: Timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)
+        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
         timestamp += timedelta
         _ = assume(min_value <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value)

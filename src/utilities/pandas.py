@@ -29,29 +29,29 @@ from utilities.numpy import NDArray1, datetime64ns, has_dtype
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    IndexA: TypeAlias = Index[Any]  # type: ignore
-    IndexB: TypeAlias = Index[bool]  # type: ignore
-    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore
-    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore
-    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore
-    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore
-    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore
-    IndexF: TypeAlias = Index[float]  # type: ignore
-    IndexI: TypeAlias = Index[int]  # type: ignore
-    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore
-    IndexS: TypeAlias = Index[StringDtype]  # type: ignore
+    IndexA: TypeAlias = Index[Any]
+    IndexB: TypeAlias = Index[bool]
+    IndexBn: TypeAlias = Index[BooleanDtype]
+    IndexC: TypeAlias = Index[CategoricalDtype]
+    IndexD: TypeAlias = Index[dt.datetime]
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]
+    IndexF: TypeAlias = Index[float]
+    IndexI: TypeAlias = Index[int]
+    IndexI64: TypeAlias = Index[Int64Dtype]
+    IndexS: TypeAlias = Index[StringDtype]
 
-    SeriesA: TypeAlias = Series[Any]  # type: ignore
-    SeriesB: TypeAlias = Series[bool]  # type: ignore
-    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore
-    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore
-    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore
-    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore
-    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore
-    SeriesF: TypeAlias = Series[float]  # type: ignore
-    SeriesI: TypeAlias = Series[int]  # type: ignore
-    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore
-    SeriesS: TypeAlias = Series[StringDtype]  # type: ignore
+    SeriesA: TypeAlias = Series[Any]
+    SeriesB: TypeAlias = Series[bool]
+    SeriesBn: TypeAlias = Series[BooleanDtype]
+    SeriesC: TypeAlias = Series[CategoricalDtype]
+    SeriesD: TypeAlias = Series[dt.datetime]
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]
+    SeriesF: TypeAlias = Series[float]
+    SeriesI: TypeAlias = Series[int]
+    SeriesI64: TypeAlias = Series[Int64Dtype]
+    SeriesS: TypeAlias = Series[StringDtype]
 
 
 Int64 = "Int64"
@@ -63,6 +63,10 @@ datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
 
 
 _Index = TypeVar("_Index", bound=Index)
+
+
+def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
+    return cast(Any, df).astype(dtype)
 
 
 def check_dataframe(
@@ -93,7 +97,7 @@ def check_dataframe(
         msg = f"{df=}, {length=}"
         raise DataFrameLengthError(msg)
     if sorted is not None:
-        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)
+        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
         try:
             assert_frame_equal(df, df_sorted)
         except AssertionError:
@@ -138,10 +142,10 @@ def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
         if not isinstance(obj, RangeIndex):
             msg = f"Invalid type: {obj=}"
             raise TypeError(msg)
-        if obj.start != 0:
+        if obj.start != 0:  # type: ignore
             msg = f"{obj=}"
             raise RangeIndexStartError(msg)
-        if obj.step != 1:
+        if obj.step != 1:  # type: ignore
             msg = f"{obj=}"
             raise RangeIndexStepError(msg)
         if obj.name is not None:
