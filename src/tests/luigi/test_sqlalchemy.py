@@ -3,35 +3,31 @@ from __future__ import annotations
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers
-from hypothesis_sqlalchemy.sample import table_records_lists
+from hypothesis.strategies import integers, sets, tuples
 from luigi import Task
-from sqlalchemy import Column, Engine, Integer, MetaData, Table, insert, select
+from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import namespace_mixins, sqlite_engines
 from utilities.luigi import DatabaseTarget, EngineParameter, TableParameter
+from utilities.sqlalchemy import ensure_tables_created, insert_items
 
 
 class TestDatabaseTarget:
-    @given(data=data(), engine=sqlite_engines())
-    def test_main(self, data: DataObject, engine: Engine) -> None:
+    @given(engine=sqlite_engines(), rows=sets(tuples(integers(0, 10), integers(0, 10))))
+    def test_main(self, *, engine: Engine, rows: set[tuple[int, int]]) -> None:
         table = Table(
             "example",
             MetaData(),
             Column("id1", Integer, primary_key=True),
             Column("id2", Integer, primary_key=True),
         )
-        sel = select(table).where(table.c.id1 == 0)
+        sel = select(table).where(table.c["id1"] == 0)
         target = DatabaseTarget(sel, engine)
         assert not target.exists()
-        rows = data.draw(
-            table_records_lists(table, id1=integers(0, 10), min_size=1, max_size=10)
-        )
-        with engine.begin() as conn:
-            table.create(conn)
-            _ = conn.execute(insert(table).values(rows))
-        expected = any(row[0] == 0 for row in rows)
+        ensure_tables_created(engine, table)
+        insert_items(engine, (rows, table))
+        expected = any(first == 0 for first, _ in rows)
         assert target.exists() is expected
 
 

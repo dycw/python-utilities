@@ -16,8 +16,8 @@ from hypothesis.strategies import (
     just,
     lists,
     none,
+    sets,
 )
-from hypothesis_sqlalchemy.sample import table_records_lists
 from numpy import int64
 from pandas import DataFrame, NaT, Series
 from pytest import mark, param, raises
@@ -32,12 +32,9 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
-    func,
-    insert,
     select,
 )
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import (
     dates_pd,
@@ -47,7 +44,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.numpy import datetime64ns
-from utilities.pandas import Int64, astype, boolean, datetime64nsutc, string
+from utilities.pandas import Int64, boolean, datetime64nsutc, string
 from utilities.sqlalchemy import (
     DatesWithTimeComponentsError,
     NonPositiveStreamError,
@@ -55,7 +52,6 @@ from utilities.sqlalchemy import (
     SeriesNameNotInTableError,
     SeriesNameSnakeCaseNotInTableError,
     ensure_tables_created,
-    get_table,
     insert_dataframe,
     insert_items,
     select_to_dataframe,
@@ -129,65 +125,16 @@ class TestDataFrameColumnsToSnake:
 
 
 class TestInsertDataFrame:
-    @given(data=data(), engine=sqlite_engines())
-    def test_main(self, *, data: DataObject, engine: Engine) -> None:
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    def test_main(self, *, engine: Engine, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
-        rows = data.draw(table_records_lists(table, max_size=10))
-        df = DataFrame(rows, columns=["id"])
-        df = astype(df, int)
+        ensure_tables_created(engine, table)
+        df = DataFrame(list(ids), columns=["id"], dtype=int)
         insert_dataframe(df, table, engine)
+        sel = select(table.c["id"])
         with engine.begin() as conn:
-            res = conn.execute(select(func.count()).select_from(table)).scalar()
-        assert res == len(rows)
-
-
-class TestInsertItems:
-    @given(data=data(), engine=sqlite_engines())
-    def test_lists_of_tuples(self, *, data: DataObject, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
-        rows = data.draw(table_records_lists(table, max_size=10))
-        insert_items([(rows, table)], engine)
-        with engine.begin() as conn:
-            res = conn.execute(select(func.count()).select_from(table)).scalar()
-        assert res == len(rows)
-
-    @given(data=data(), engine=sqlite_engines())
-    def test_dataframe_with_table(self, *, data: DataObject, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
-        rows = data.draw(table_records_lists(table, max_size=10))
-        df = DataFrame(rows, columns=["id"])
-        df = astype(df, int)
-        insert_items([(df, table)], engine)
-        with engine.begin() as conn:
-            res = conn.execute(select(func.count()).select_from(table)).scalar()
-        assert res == len(rows)
-
-    @given(data=data(), engine=sqlite_engines())
-    def test_model(self, *, data: DataObject, engine: Engine) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
-
-            id_ = Column(Integer, primary_key=True)
-
-        ensure_tables_created(Example, engine)
-        rows = data.draw(table_records_lists(get_table(Example), max_size=10))
-        items = [Example(id_=id_) for (id_,) in rows]
-        insert_items(items, engine)
-        with engine.begin() as conn:
-            res = conn.execute(
-                select(func.count()).select_from(get_table(Example))
-            ).scalar()
-        assert res == len(rows)
-
-    @given(engine=sqlite_engines())
-    def test_type_error(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        items = [(None, table)]
-        with raises(TypeError, match="Invalid type: first="):
-            insert_items(items, engine)
+            res = conn.execute(sel).scalars().all()
+        assert set(res) == ids
 
 
 class TestParseSeriesAgainstTable:
@@ -226,38 +173,37 @@ class TestParseSeriesAgainstTable:
 
 
 class TestRowsToDataFrame:
-    @given(data=data(), engine=sqlite_engines())
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
     @mark.parametrize(("col_name", "snake"), [param("id", False), param("Id", True)])
     def test_main(
-        self, *, data: DataObject, col_name: str, engine: Engine, snake: bool
+        self, *, col_name: str, ids: set[int], engine: Engine, snake: bool
     ) -> None:
         table = Table(
             "example", MetaData(), Column(col_name, Integer, primary_key=True)
         )
-        ensure_tables_created(table, engine)
-        values = data.draw(table_records_lists(table, min_size=1, max_size=10))
-        with engine.begin() as conn:
-            _ = conn.execute(insert(table).values(values))
+        ensure_tables_created(engine, table)
+        insert_items(engine, ([(id_,) for id_ in ids], table))
         with engine.begin() as conn:
             rows = conn.execute(sel := select(table)).all()
         df = _rows_to_dataframe(sel, rows, snake=snake)
-        assert len(df) == len(values)
+        assert len(df) == len(ids)
         assert dict(df.dtypes) == {"id": Int64}
 
 
 class TestSelectToDataFrame:
-    @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10) | none())
-    def test_main(
-        self, *, data: DataObject, engine: Engine, stream: int | None
-    ) -> None:
+    @given(
+        engine=sqlite_engines(),
+        ids=sets(integers(min_value=0, max_value=10), min_size=1, max_size=10),
+        stream=integers(1, 10) | none(),
+    )
+    def test_main(self, *, engine: Engine, ids: set[int], stream: int | None) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
-        rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
-        insert_items([(rows, table)], engine)
+        ensure_tables_created(engine, table)
+        insert_items(engine, ([(id_,) for id_ in ids], table))
         result = select_to_dataframe(select(table), engine, stream=stream)
         if stream is None:
             assert isinstance(result, DataFrame)
-            assert len(cast(Sized, result)) == len(rows)
+            assert len(cast(Sized, result)) == len(ids)
             assert dict(cast(Any, result).dtypes) == {"id": Int64}
         else:
             assert not isinstance(result, DataFrame)
@@ -267,12 +213,15 @@ class TestSelectToDataFrame:
 
 
 class TestStreamDataFrames:
-    @given(data=data(), engine=sqlite_engines(), stream=integers(1, 10))
-    def test_main(self, *, data: DataObject, engine: Engine, stream: int) -> None:
+    @given(
+        engine=sqlite_engines(),
+        ids=sets(integers(min_value=0, max_value=10), min_size=1, max_size=10),
+        stream=integers(1, 10),
+    )
+    def test_main(self, *, engine: Engine, ids: set[int], stream: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
-        rows = data.draw(table_records_lists(table, min_size=1, max_size=10))
-        insert_items([(rows, table)], engine)
+        ensure_tables_created(engine, table)
+        insert_items(engine, ([(id_,) for id_ in ids], table))
         for df in _stream_dataframes(select(table), engine, stream):
             assert 1 <= len(df) <= stream
             assert dict(df.dtypes) == {"id": Int64}

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import enum
 import typing
-from collections.abc import Mapping
 from enum import auto
 from pathlib import Path
 from typing import Any, TypedDict, cast
@@ -13,15 +12,13 @@ from hypothesis.strategies import (
     DataObject,
     booleans,
     data,
-    fixed_dictionaries,
     integers,
-    lists,
     none,
     permutations,
     sampled_from,
     sets,
+    tuples,
 )
-from hypothesis_sqlalchemy.sample import table_records_lists
 from pytest import mark, param, raises
 from sqlalchemy import (
     BIGINT,
@@ -54,6 +51,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Double,
+    Engine,
     Float,
     Integer,
     Interval,
@@ -68,12 +66,10 @@ from sqlalchemy import (
     Unicode,
     UnicodeText,
     Uuid,
-    func,
-    insert,
     select,
 )
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.engine import Connection
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
@@ -83,13 +79,20 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
+from utilities.itertools import one
 from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import (
     EngineError,
+    FirstArgumentInvalidError,
     IncorrectNumberOfTablesError,
+    InvalidItemError,
+    InvalidItemInIterableError,
+    NotATableOrAMappedClassError,
     ParseEngineError,
+    SecondArgumentNotATableOrMappedClassError,
     TableAlreadyExistsError,
     TablenameMixin,
+    TupleNotAPairError,
     UnequalBooleanColumnCreateConstraintError,
     UnequalBooleanColumnNameError,
     UnequalColumnTypesError,
@@ -131,7 +134,10 @@ from utilities.sqlalchemy import (
     get_dialect,
     get_table,
     get_table_name,
-    model_to_dict,
+    insert_items,
+    is_mapped_class,
+    is_table_or_mapped_class,
+    mapped_class_to_dict,
     parse_engine,
     redirect_to_no_such_table_error,
     redirect_to_table_already_exists_error,
@@ -144,8 +150,10 @@ from utilities.sqlalchemy.sqlalchemy import (
     _check_column_types_equal,
     _check_columns_equal,
     _check_table_or_column_names_equal,
+    _insert_items_collect,
+    _insert_items_collect_iterable,
+    _InsertionItem,
     _reflect_table,
-    yield_tables,
 )
 
 
@@ -590,7 +598,7 @@ class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_num_tables(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
+        ensure_tables_created(engine, table)
         check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
@@ -601,7 +609,10 @@ class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_num_tables_rel_tol_correct(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
+        ensure_tables_created(
+            engine,
+            table,
+        )
         check_engine(engine, num_tables=2, rel_tol=0.5)
 
     @given(engine=sqlite_engines())
@@ -623,7 +634,7 @@ class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
     def test_reflected(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        ensure_tables_created(table, engine)
+        ensure_tables_created(engine, table)
         check_table_against_reflection(table, engine)
 
     @given(engine=sqlite_engines())
@@ -659,7 +670,7 @@ class TestCheckTablesEqual:
         y = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         check_tables_equal(x, y, snake_columns=True)
 
-    def test_orm(self) -> None:
+    def test_mapped_class(self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -690,7 +701,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
-    def test_orm(self, *, name: str | None, expected: str) -> None:
+    def test_mapped_class(self, *, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
 
@@ -708,42 +719,32 @@ class TestCheckTableOrColumnNamesEqual:
 
 class TestColumnwiseMinMax:
     @given(
-        values=lists(
-            fixed_dictionaries(
-                {"x": integers(0, 100) | none(), "y": integers(0, 100) | none()}
-            ),
-            min_size=1,
-            max_size=10,
-        ),
         engine=sqlite_engines(),
+        values=sets(tuples(integers(0, 10) | none(), integers(0, 10) | none())),
     )
     def test_main(
         self,
         *,
-        values: typing.Sequence[Mapping[str, int | None]],
         engine: Engine,
+        values: set[tuple[int | None, int | None]],
     ) -> None:
         table = Table(
             "example",
             MetaData(),
-            Column("id_", Integer, primary_key=True, autoincrement=True),
+            Column("id", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
             Column("y", Integer),
         )
-        ensure_tables_created(table, engine)
-        with engine.begin() as conn:
-            _ = conn.execute(table.insert(), values)
-            res = conn.execute(table.select()).all()
-
+        ensure_tables_created(engine, table)
+        insert_items(engine, ([{"x": x, "y": y} for x, y in values], table))
         sel = select(
-            table.c.x,
-            table.c.y,
-            columnwise_min(table.c.x, table.c.y).label("min_xy"),
-            columnwise_max(table.c.x, table.c.y).label("max_xy"),
+            table.c["x"],
+            table.c["y"],
+            columnwise_min(table.c["x"], table.c["y"]).label("min_xy"),
+            columnwise_max(table.c["x"], table.c["y"]).label("max_xy"),
         )
         with engine.begin() as conn:
             res = conn.execute(sel).all()
-
         assert len(res) == len(values)
         for x, y, min_xy, max_xy in res:
             if (x is None) and (y is None):
@@ -767,7 +768,7 @@ class TestColumnwiseMinMax:
             Column("id_", Integer, primary_key=True, autoincrement=True),
             Column("x", Integer),
         )
-        ensure_tables_created(table, engine)
+        ensure_tables_created(engine, table)
 
         sel = select(columnwise_min(table.c.x, table.c.x))
         with engine.begin() as conn:
@@ -803,13 +804,13 @@ class TestEnsureEngine:
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_core(self, *, engine: Engine, runs: int) -> None:
+    def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_orm(self, *, engine: Engine, runs: int) -> None:
+    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -817,15 +818,17 @@ class TestEnsureTablesCreated:
 
         self._run_test(Example, engine, runs)
 
-    def _run_test(self, table_or_model: Any, engine: Engine, runs: int, /) -> None:
-        sel = get_table(table_or_model).select()
+    def _run_test(
+        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+    ) -> None:
+        sel = get_table(table_or_mapped_class).select()
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
                 _ = conn.execute(sel).all()
             except DatabaseError as error:
                 redirect_to_no_such_table_error(engine, error)
         for _ in range(runs):
-            ensure_tables_created(table_or_model, engine)
+            ensure_tables_created(engine, table_or_mapped_class)
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -833,13 +836,13 @@ class TestEnsureTablesCreated:
 class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_core(self, *, engine: Engine, runs: int) -> None:
+    def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_orm(self, *, engine: Engine, runs: int) -> None:
+    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -847,14 +850,16 @@ class TestEnsureTablesDropped:
 
         self._run_test(Example, engine, runs)
 
-    def _run_test(self, table_or_model: Any, engine: Engine, runs: int, /) -> None:
-        table = get_table(table_or_model)
+    def _run_test(
+        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+    ) -> None:
+        table = get_table(table_or_mapped_class)
         sel = table.select()
         with engine.begin() as conn:
             table.create(conn)
             _ = conn.execute(sel).all()
         for _ in range(runs):
-            ensure_tables_dropped(table_or_model, engine)
+            ensure_tables_dropped(engine, table_or_mapped_class)
         with raises(NoSuchTableError), engine.begin() as conn:
             try:
                 _ = conn.execute(sel).all()
@@ -863,11 +868,11 @@ class TestEnsureTablesDropped:
 
 
 class TestGetColumnNames:
-    def test_core(self) -> None:
+    def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table)
 
-    def test_orm(self) -> None:
+    def test_mapped_class(self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -875,16 +880,16 @@ class TestGetColumnNames:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_model: Any, /) -> None:
-        assert get_column_names(table_or_model) == ["id_"]
+    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+        assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
 class TestGetColumns:
-    def test_core(self) -> None:
+    def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         self._run_test(table)
 
-    def test_orm(self) -> None:
+    def test_mapped_class(self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -892,8 +897,8 @@ class TestGetColumns:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_model: Any, /) -> None:
-        columns = get_columns(table_or_model)
+    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+        columns = get_columns(table_or_mapped_class)
         assert isinstance(columns, list)
         assert len(columns) == 1
         assert isinstance(columns[0], Column)
@@ -922,12 +927,12 @@ class TestGetDialect:
 
 
 class TestGetTable:
-    def test_core(self) -> None:
+    def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table(table)
         assert result is table
 
-    def test_orm(self) -> None:
+    def test_mapped_class(self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -937,15 +942,19 @@ class TestGetTable:
         result = get_table(table)
         assert result is Example.__table__
 
+    def test_error(self) -> None:
+        with raises(NotATableOrAMappedClassError):
+            _ = get_table(type(None))
+
 
 class TestGetTableName:
-    def test_core(self) -> None:
+    def test_table(self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table_name(table)
         expected = "example"
         assert result == expected
 
-    def test_orm(self) -> None:
+    def test_mapped_class(self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -956,7 +965,157 @@ class TestGetTableName:
         assert result == expected
 
 
-class TestModelToDict:
+class TestInsertItems:
+    @given(engine=sqlite_engines(), id_=integers(0, 10))
+    def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
+        self._run_test(engine, {id_}, ((id_,), self._table))
+
+    @given(engine=sqlite_engines(), id_=integers(0, 10))
+    def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
+        self._run_test(engine, {id_}, ({"id": id_}, self._table))
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), max_size=10))
+    def test_pair_of_lists_of_tuples_and_table(
+        self, *, engine: Engine, ids: set[int]
+    ) -> None:
+        self._run_test(engine, ids, ([((id_,)) for id_ in ids], self._table))
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    def test_pair_of_lists_of_dicts_and_table(
+        self, *, engine: Engine, ids: set[int]
+    ) -> None:
+        self._run_test(engine, ids, ([({"id": id_}) for id_ in ids], self._table))
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    def test_list_of_pairs_of_tuples_and_tables(
+        self, *, engine: Engine, ids: set[int]
+    ) -> None:
+        self._run_test(engine, ids, [(((id_,), self._table)) for id_ in ids])
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    def test_list_of_pairs_of_dicts_and_tables(
+        self, *, engine: Engine, ids: set[int]
+    ) -> None:
+        self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
+
+    @given(engine=sqlite_engines(), id_=integers(0, 10))
+    def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id = Column(Integer, primary_key=True)  # noqa: A003
+
+        self._run_test(engine, {id_}, Example(id=id_))
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id", Integer, primary_key=True))
+
+    def _run_test(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
+        ensure_tables_created(engine, self._table)
+        insert_items(engine, *args)
+        sel = select(self._table.c["id"])
+        with engine.begin() as conn:
+            res = conn.execute(sel).scalars().all()
+        assert set(res) == ids
+
+
+class TestInsertItemsCollect:
+    def test_tuple_not_a_pair_error(self) -> None:
+        with raises(TupleNotAPairError):
+            _ = list(_insert_items_collect((None,)))
+
+    def test_second_argument_not_a_table_or_mapped_class_error(self) -> None:
+        with raises(SecondArgumentNotATableOrMappedClassError):
+            _ = list(_insert_items_collect((None, None)))
+
+    @given(id_=integers())
+    def test_pair_with_tuple_data(self, *, id_: int) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect(((id_,), table)))
+        expected = [_InsertionItem(values=(id_,), table=table)]
+        assert result == expected
+
+    @given(id_=integers())
+    def test_pair_with_dict_data(self, *, id_: int) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect(({"id": id_}, table)))
+        expected = [_InsertionItem(values={"id": id_}, table=table)]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_pair_with_list_of_tuple_data(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect(([(id_,) for id_ in ids], table)))
+        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_pair_with_list_of_dict_data(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect(([{"id": id_} for id_ in ids], table)))
+        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+        assert result == expected
+
+    def test_first_argument_invalid_error(self) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        with raises(FirstArgumentInvalidError):
+            _ = list(_insert_items_collect((None, table)))
+
+    @given(ids=sets(integers()))
+    def test_list(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect([((id_,), table) for id_ in ids]))
+        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_set(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect({((id_,), table) for id_ in ids}))
+        assert {one(r.values) for r in result} == ids
+
+    @given(id_=integers())
+    def test_mapped_class(self, *, id_: int) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        item = Example(id_=id_)
+        result = list(_insert_items_collect(item))
+        expected = [_InsertionItem(values={"id_": id_}, table=get_table(Example))]
+        assert result == expected
+
+    def test_invalid_item_error(self) -> None:
+        with raises(InvalidItemError):
+            _ = list(_insert_items_collect(None))
+
+
+class TestInsertItemsCollectIterable:
+    @given(ids=sets(integers()))
+    def test_list_of_tuples(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(_insert_items_collect_iterable([(id_,) for id_ in ids], table))
+        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_list_of_dicts(self, *, ids: set[int]) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        result = list(
+            _insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
+        )
+        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+        assert result == expected
+
+    def test_invalid_item_in_iterable_error(self) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        with raises(InvalidItemInIterableError):
+            _ = list(_insert_items_collect_iterable([None], table))
+
+
+class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:
         class Example(declarative_base()):
@@ -964,7 +1123,7 @@ class TestModelToDict:
             id_ = Column(Integer, primary_key=True)
 
         example = Example(id_=id_)
-        assert model_to_dict(example) == {"id_": id_}
+        assert mapped_class_to_dict(example) == {"id_": id_}
 
     @given(id_=integers())
     def test_explicitly_named_column(self, *, id_: int) -> None:
@@ -973,7 +1132,37 @@ class TestModelToDict:
             ID = Column(Integer, primary_key=True, name="id")
 
         example = Example(ID=id_)
-        assert model_to_dict(example) == {"id": id_}
+        assert mapped_class_to_dict(example) == {"id": id_}
+
+
+class TestIsMappedClass:
+    def test_mapped_class(self) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        assert is_mapped_class(Example)
+
+    def test_other(self) -> None:
+        assert not is_mapped_class(int)
+
+
+class TestIsTableOrMappedClass:
+    def test_table(self) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        assert is_table_or_mapped_class(table)
+
+    def test_mapped_class(self) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        assert is_table_or_mapped_class(Example)
+
+    def test_other(self) -> None:
+        assert not is_table_or_mapped_class(int)
 
 
 class TestParseEngine:
@@ -1040,7 +1229,7 @@ class TestReflectTable:
     )
     def test_reflected(self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
-        ensure_tables_created(table, engine)
+        ensure_tables_created(engine, table)
         reflected = _reflect_table(table, engine)
         check_tables_equal(reflected, table)
 
@@ -1083,42 +1272,23 @@ class TestYieldInClauseRows:
     @given(
         data=data(),
         engine=sqlite_engines(),
+        ids=sets(integers(0, 10), min_size=1, max_size=10),
         chunk_size=integers(1, 10) | none(),
     )
     def test_main(
-        self, *, data: DataObject, engine: Engine, chunk_size: int | None
+        self, *, data: DataObject, engine: Engine, ids: set[int], chunk_size: int | None
     ) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        rows = data.draw(table_records_lists(table, min_size=1))
-        num_rows = len(rows)
-        with engine.begin() as conn:
-            table.create(conn)
-            _ = conn.execute(insert(table).values(rows))
-            assert (
-                conn.execute(select(func.count()).select_from(table)).scalar()
-                == num_rows
-            )
-        row_vals = [row[0] for row in rows]
-        values = data.draw(sets(sampled_from(row_vals)))
+        ensure_tables_created(engine, table)
+        insert_items(engine, ([(id_,) for id_ in ids], table))
+        values = data.draw(sets(sampled_from(sorted(ids))))
         result = list(
             yield_in_clause_rows(
-                select(table.c.id),
-                table.c.id,
+                select(table.c["id"]),
+                table.c["id"],
                 values,
                 engine,
                 chunk_size=chunk_size,
             )
         )
         assert len(result) == len(values)
-
-
-class TestYieldTables:
-    def test_single(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        result = list(yield_tables(table))
-        assert result == [table]
-
-    def test_multiple(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        result = list(yield_tables([table, table]))
-        assert result == [table, table]
