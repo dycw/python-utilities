@@ -166,15 +166,16 @@ def _rows_to_dataframe(
         for col in columns.values()
     }
     rows = list(rows)
-    if len(rows) == 0:
+    if len(rows) >= 1:
+        by_cols = zip(*rows, strict=True)
+        series = (
+            Series(data, dtype=dtype, name=name)
+            for data, (name, dtype) in zip(by_cols, dtypes.items(), strict=True)
+        )
+        df = concat(series, axis=1)
+    else:
         df = DataFrame(columns=list(dtypes))
-        return astype(df, dtypes)
-    by_cols = zip(*rows, strict=True)
-    series = (
-        Series(data, dtype=dtype, name=name)
-        for data, (name, dtype) in zip(by_cols, dtypes.items(), strict=True)
-    )
-    df = concat(series, axis=1)
+        df = astype(df, dtypes)
     return _dataframe_columns_to_snake(df) if snake else df
 
 
