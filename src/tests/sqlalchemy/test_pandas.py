@@ -37,7 +37,7 @@ from sqlalchemy import (
     select,
 )
 
-from utilities.datetime import UTC, date_to_datetime
+from utilities.datetime import date_to_datetime
 from utilities.hypothesis import (
     dates_pd,
     datetimes_pd,
@@ -96,9 +96,14 @@ class TestInsertPandasDataFrame:
             param(booleans(), bool, Boolean, eq),
             param(booleans() | none(), boolean, Boolean, eq),
             param(dates_pd() | none(), datetime64ns, Date, eq),
-            param(datetimes_pd() | none(), datetime64ns, DateTime, _check_datetime),
             param(
-                datetimes_pd().map(lambda x: x.astimezone(UTC)) | none(),
+                datetimes_pd().map(lambda x: x.replace(tzinfo=None)) | none(),
+                datetime64ns,
+                DateTime,
+                _check_datetime,
+            ),
+            param(
+                datetimes_pd() | none(),
                 datetime64nsutc,
                 DateTime(timezone=True),
                 _check_datetime,
