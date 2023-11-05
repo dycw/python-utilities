@@ -15,7 +15,7 @@ from utilities.numpy import NDArray1
 from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
-from utilities.zarr.zarr import (
+from utilities.zarr import (
     InvalidDimensionError,
     IselIndexer,
     NDArrayWithIndexes,

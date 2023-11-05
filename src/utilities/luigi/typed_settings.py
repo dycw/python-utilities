@@ -26,7 +26,7 @@ from luigi import (
 )
 
 from utilities.class_name import get_class_name
-from utilities.luigi.luigi import (
+from utilities.luigi import (
     DateHourParameter,
     DateMinuteParameter,
     DateParameter,

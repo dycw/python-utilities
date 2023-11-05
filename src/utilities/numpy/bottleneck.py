@@ -5,7 +5,7 @@ from typing import cast
 from bottleneck import push
 from numpy import errstate, flip, isfinite, nan, where
 
-from utilities.numpy.numpy import NDArrayF, NDArrayI, shift
+from utilities.numpy import NDArrayF, NDArrayI, shift
 
 
 def ffill(array: NDArrayF, /, *, limit: int | None = None, axis: int = -1) -> NDArrayF:

@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from numbagg import move_exp_nanmean, move_exp_nansum
 
-from utilities.xarray.xarray import DataArrayF, DataArrayI
+from utilities.xarray import DataArrayF, DataArrayI
 
 
 def ewma(

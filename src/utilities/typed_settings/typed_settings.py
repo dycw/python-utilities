@@ -97,7 +97,7 @@ class _ExtendedTSConverter(TSConverter):
         try:
             from sqlalchemy import Engine
 
-            from utilities.sqlalchemy.sqlalchemy import ensure_engine
+            from utilities.sqlalchemy import ensure_engine
         except ModuleNotFoundError:  # pragma: no cover
             pass
         else:
