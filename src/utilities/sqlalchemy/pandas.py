@@ -23,6 +23,7 @@ from utilities.datetime import UTC
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
     Int64,
+    astype,
     boolean,
     datetime64nsutc,
     string,
@@ -164,6 +165,10 @@ def _rows_to_dataframe(
         col.name: _table_column_to_dtype(col, time_zone=time_zone)
         for col in columns.values()
     }
+    rows = list(rows)
+    if len(rows) == 0:
+        df = DataFrame(columns=list(dtypes))
+        return astype(df, dtypes)
     by_cols = zip(*rows, strict=True)
     series = (
         Series(data, dtype=dtype, name=name)
