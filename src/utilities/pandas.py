@@ -76,6 +76,8 @@ def check_dataframe(
     columns: Sequence[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
     length: int | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
     sorted: Hashable | Sequence[Hashable] | None = None,  # noqa: A002
     unique: Hashable | Sequence[Hashable] | None = None,
 ) -> None:
@@ -96,6 +98,12 @@ def check_dataframe(
     if (length is not None) and (len(df) != length):
         msg = f"{df=}, {length=}"
         raise DataFrameLengthError(msg)
+    if (min_length is not None) and (len(df) < min_length):
+        msg = f"{df=}, {min_length=}"
+        raise DataFrameMinLengthError(msg)
+    if (max_length is not None) and (len(df) > max_length):
+        msg = f"{df=}, {max_length=}"
+        raise DataFrameMaxLengthError(msg)
     if sorted is not None:
         df_sorted = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
         try:
@@ -126,6 +134,14 @@ class DataFrameDTypesError(ValueError):
 
 class DataFrameLengthError(ValueError):
     """Raised when a DataFrame has the incorrect length."""
+
+
+class DataFrameMinLengthError(ValueError):
+    """Raised when a DataFrame does not reach the minimum length."""
+
+
+class DataFrameMaxLengthError(ValueError):
+    """Raised when a DataFrame exceeds the maximum length."""
 
 
 class DataFrameSortedError(ValueError):

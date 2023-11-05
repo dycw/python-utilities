@@ -7,6 +7,8 @@ from utilities.polars import (
     DataFrameColumnsError,
     DataFrameDTypesError,
     DataFrameHeightError,
+    DataFrameMaxHeightError,
+    DataFrameMinHeightError,
     DataFrameSchemaError,
     DataFrameShapeError,
     DataFrameSortedError,
@@ -49,6 +51,24 @@ class TestCheckDataFrame:
         df = DataFrame()
         with raises(DataFrameHeightError):
             check_dataframe(df, height=1)
+
+    def test_min_height_pass(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        check_dataframe(df, min_height=1)
+
+    def test_min_height_error(self) -> None:
+        df = DataFrame()
+        with raises(DataFrameMinHeightError):
+            check_dataframe(df, min_height=1)
+
+    def test_max_height_pass(self) -> None:
+        df = DataFrame()
+        check_dataframe(df, max_height=1)
+
+    def test_max_height_error(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        with raises(DataFrameMaxHeightError):
+            check_dataframe(df, max_height=1)
 
     def test_schema_pass(self) -> None:
         df = DataFrame()
