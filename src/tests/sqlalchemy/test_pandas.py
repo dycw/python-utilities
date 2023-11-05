@@ -203,9 +203,14 @@ class TestSelectToPandasDataFrame:
             param(booleans(), bool, boolean, Boolean),
             param(booleans() | none(), boolean, boolean, Boolean),
             param(dates_pd() | none(), datetime64ns, datetime64ns, Date),
-            param(datetimes_pd() | none(), datetime64ns, datetime64ns, DateTime),
             param(
-                datetimes_pd().map(lambda x: x.astimezone(UTC)) | none(),
+                datetimes_pd().map(lambda x: x.replace(tzinfo=None)) | none(),
+                datetime64ns,
+                datetime64ns,
+                DateTime,
+            ),
+            param(
+                datetimes_pd() | none(),
                 datetime64nsutc,
                 datetime64nsutc,
                 DateTime(timezone=True),
