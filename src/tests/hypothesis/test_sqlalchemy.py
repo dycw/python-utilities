@@ -9,7 +9,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import sqlite_engines
-from utilities.sqlalchemy.sqlalchemy import get_table, insert_items
+from utilities.sqlalchemy import get_table, insert_items
 
 
 class TestSQLiteEngines:

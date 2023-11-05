@@ -8,7 +8,7 @@ from sqlalchemy.exc import DatabaseError
 
 from utilities.errors import redirect_error
 from utilities.math import FloatFinNonNeg, IntNonNeg
-from utilities.sqlalchemy.sqlalchemy import get_dialect, yield_connection
+from utilities.sqlalchemy import get_dialect, yield_connection
 from utilities.typing import never
 
 
