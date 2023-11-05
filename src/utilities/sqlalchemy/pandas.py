@@ -8,7 +8,7 @@ from functools import partial
 from typing import Any, cast, overload
 
 from numpy import int64
-from pandas import DataFrame, DatetimeTZDtype
+from pandas import DataFrame, DatetimeTZDtype, Series, concat
 from sqlalchemy import (
     Column,
     Connection,
@@ -23,7 +23,6 @@ from utilities.datetime import UTC
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
     Int64,
-    astype,
     boolean,
     datetime64nsutc,
     string,
@@ -165,8 +164,12 @@ def _rows_to_dataframe(
         col.name: _table_column_to_dtype(col, time_zone=time_zone)
         for col in columns.values()
     }
-    df = DataFrame(rows, columns=list(dtypes))
-    df = astype(df, dtypes)
+    by_cols = zip(*rows, strict=True)
+    series = (
+        Series(data, dtype=dtype, name=name)
+        for data, (name, dtype) in zip(by_cols, dtypes.items(), strict=True)
+    )
+    df = concat(series, axis=1)
     return _dataframe_columns_to_snake(df) if snake else df
 
 
