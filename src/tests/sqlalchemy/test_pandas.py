@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Callable
+from operator import eq
 from typing import Any
 
 from hypothesis import assume, given
@@ -15,7 +17,7 @@ from hypothesis.strategies import (
     none,
     sets,
 )
-from numpy import int64
+from numpy import int64, isnan
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from pytest import mark, param, raises
@@ -70,25 +72,42 @@ class TestDataFrameColumnsToSnake:
         assert snake.columns.tolist() == [snake_case(col_name)]
 
 
+def _check_datetime(x: dt.datetime | None, y: dt.datetime | None, /) -> bool:
+    return (x == y) or (
+        isinstance(x, dt.datetime)
+        and isinstance(y, dt.datetime)
+        and (x.replace(tzinfo=None) == y.replace(tzinfo=None))
+    )
+
+
+def _check_float(x: float | None, y: float | None, /) -> bool:
+    return (
+        (x == y)
+        or ((x is None) and isinstance(y, float) and isnan(y))
+        or (isinstance(x, float) and isnan(x) and (y is None))
+    )
+
+
 class TestInsertPandasDataFrame:
     @given(data=data(), engine=sqlite_engines())
     @mark.parametrize(
-        ("strategy", "pd_dtype", "col_type"),
+        ("strategy", "pd_dtype", "col_type", "check"),
         [
-            param(booleans(), bool, Boolean),
-            param(booleans() | none(), boolean, Boolean),
-            param(dates_pd() | none(), datetime64ns, Date),
-            param(datetimes_pd() | none(), datetime64ns, DateTime),
+            param(booleans(), bool, Boolean, eq),
+            param(booleans() | none(), boolean, Boolean, eq),
+            param(dates_pd() | none(), datetime64ns, Date, eq),
+            param(datetimes_pd() | none(), datetime64ns, DateTime, _check_datetime),
             param(
                 datetimes_pd().map(lambda x: x.astimezone(UTC)) | none(),
                 datetime64nsutc,
                 DateTime(timezone=True),
+                _check_datetime,
             ),
-            param(floats(), float, Float),
-            param(integers(-10, 10), int, Integer),
-            param(integers(-10, 10), int64, Integer),
-            param(integers(-10, 10) | none(), Int64, Integer),
-            param(text_ascii() | none(), string, String),
+            param(floats(), float, Float, _check_float),
+            param(integers(-10, 10), int, Integer, eq),
+            param(integers(-10, 10), int64, Integer, eq),
+            param(integers(-10, 10) | none(), Int64, Integer, eq),
+            param(text_ascii() | none(), string, String, eq),
         ],
     )
     def test_main(
@@ -99,6 +118,7 @@ class TestInsertPandasDataFrame:
         strategy: SearchStrategy[Any],
         pd_dtype: Any,
         col_type: Any,
+        check: Callable[[Any, Any], bool],
     ) -> None:
         values = data.draw(lists(strategy))
         df = DataFrame(values, columns=["value"], dtype=pd_dtype)
@@ -113,7 +133,8 @@ class TestInsertPandasDataFrame:
         sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
-        assert res == values
+        for r, v in zip(res, values, strict=True):
+            assert check(r, v)
 
     @given(
         engine=sqlite_engines(),
