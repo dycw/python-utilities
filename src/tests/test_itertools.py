@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from itertools import chain
 from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
+    binary,
     data,
+    dictionaries,
     integers,
     lists,
     sampled_from,
     sets,
+    text,
 )
 from pytest import mark, param, raises
 
@@ -19,12 +22,59 @@ from utilities.itertools import (
     EmptyIterableError,
     IterableContainsDuplicatesError,
     MultipleElementsError,
+    always_iterable,
     check_duplicates,
     chunked,
     is_iterable_not_str,
     one,
     take,
 )
+
+
+class TestAlwaysIterable:
+    @given(x=binary())
+    def test_bytes(self, *, x: bytes) -> None:
+        assert list(always_iterable(x)) == [x]
+        assert list(always_iterable(x, base_type=None)) == list(x)
+        assert list(always_iterable(x, base_type=bytes)) == [x]
+        assert list(always_iterable(x, base_type=(bytes,))) == [x]
+
+    @given(x=integers())
+    def test_integer(self, *, x: int) -> None:
+        assert list(always_iterable(x)) == [x]
+        assert list(always_iterable(x, base_type=None)) == [x]
+        assert list(always_iterable(x, base_type=int)) == [x]
+        assert list(always_iterable(x, base_type=(int,))) == [x]
+
+    @given(x=text())
+    def test_string(self, *, x: str) -> None:
+        assert list(always_iterable(x)) == [x]
+        assert list(always_iterable(x, base_type=None)) == list(x)
+        assert list(always_iterable(x, base_type=str)) == [x]
+        assert list(always_iterable(x, base_type=(str,))) == [x]
+
+    @given(x=dictionaries(text(), integers()))
+    def test_dict(self, *, x: dict[str, int]) -> None:
+        assert list(always_iterable(x)) == list(x)
+        assert list(always_iterable(x, base_type=dict)) == [x]
+        assert list(always_iterable(x, base_type=(dict,))) == [x]
+
+    @given(x=lists(integers()))
+    def test_lists(self, *, x: list[int]) -> None:
+        assert list(always_iterable(x)) == x
+        assert list(always_iterable(x, base_type=None)) == x
+        assert list(always_iterable(x, base_type=list)) == [x]
+        assert list(always_iterable(x, base_type=(list,))) == [x]
+
+    def test_none(self) -> None:
+        assert list(always_iterable(None)) == []
+
+    def test_generator(self) -> None:
+        def yield_ints() -> Iterator[int]:
+            yield 0
+            yield 1
+
+        assert list(always_iterable(yield_ints())) == [0, 1]
 
 
 class TestCheckDuplicates:
