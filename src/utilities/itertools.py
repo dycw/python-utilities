@@ -9,6 +9,23 @@ from typing import Any, TypeVar, cast
 _T = TypeVar("_T")
 
 
+def always_iterable(
+    obj: _T | Iterable[_T],
+    /,
+    *,
+    base_type: type[Any] | tuple[type[Any], ...] | None = (str, bytes),
+) -> Iterator[_T]:
+    """If *obj* is iterable, return an iterator over its items."""
+    if obj is None:
+        return iter(())
+    if (base_type is not None) and isinstance(obj, base_type):
+        return iter((obj,))
+    try:
+        return iter(obj)
+    except TypeError:
+        return iter((obj,))
+
+
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
     """Check if an iterable contains any duplicates."""
     dup = {k: v for k, v in Counter(iterable).items() if v > 1}
