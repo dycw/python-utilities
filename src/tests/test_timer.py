@@ -53,18 +53,18 @@ class TestTimer:
             _ = timer == "error"
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, func: Callable[[Timer], str]) -> None:
+    def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
-            sleep(0.001)
+            sleep(0.01)
         as_str = func(timer)
         assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
 
     def test_running(self) -> None:
-        duration = 1e-3
+        duration = 0.01
         timer = Timer()
-        sleep(duration)
+        sleep(2 * duration)
         assert timer >= duration
-        sleep(duration)
+        sleep(2 * duration)
         assert timer >= 2 * duration
 
     def test_timedelta(self) -> None:
