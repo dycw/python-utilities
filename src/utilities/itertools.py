@@ -19,11 +19,11 @@ def always_iterable(
     if obj is None:
         return iter(())
     if (base_type is not None) and isinstance(obj, base_type):
-        return iter((obj,))
+        return iter(cast(Iterable[_T], (obj,)))
     try:
-        return iter(obj)
+        return iter(cast(Iterable[_T], obj))
     except TypeError:
-        return iter((obj,))
+        return iter(cast(Iterable[_T], (obj,)))
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:

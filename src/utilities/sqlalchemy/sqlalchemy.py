@@ -24,7 +24,6 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     Select,
-    Selectable,
     String,
     Table,
     Unicode,
@@ -950,7 +949,7 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
 
 
 def yield_in_clause_rows(
-    sel: Selectable,
+    sel: Select[Any],
     column: Any,
     values: Iterable[Any],
     engine_or_conn: Engine | Connection,
