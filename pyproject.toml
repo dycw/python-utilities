@@ -19,6 +19,7 @@ airium = ["airium >= 0.2.6"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 23.1.0"]
 beartype = ["beartype >= 0.16.4"]
+beautifulsoup4 = ["beautifulsoup4 >= 4.12.2"]
 bottleneck = ["bottleneck >= 1.3.7"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 41.0.5"]
@@ -29,6 +30,7 @@ dev = [
   "atomicwrites >= 1.4.1",
   "attrs >= 23.1.0",
   "beartype >= 0.16.4",
+  "beautifulsoup4 >= 4.12.2",
   "bottleneck >= 1.3.7",
   "click >= 8.1.7",
   "cryptography >= 41.0.5",

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastparquet import write
-from sqlalchemy import Connection, Engine, Selectable
+from sqlalchemy import Connection, Engine, Select
 
 from utilities.atomicwrites import writer
 from utilities.fastparquet import Compression, write_parquet
@@ -12,7 +14,7 @@ from .sqlalchemy import yield_connection  # noqa: TID252
 
 
 def select_to_parquet(
-    sel: Selectable,
+    sel: Select[Any],
     engine_or_conn: Engine | Connection,
     path: PathLike,
     /,
