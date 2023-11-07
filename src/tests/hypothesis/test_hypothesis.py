@@ -48,7 +48,7 @@ from utilities.typing import IterableStrs
 
 class TestAssumeDoesNotRaise:
     @given(x=booleans())
-    def test_no_match_and_suppressed(self, x: bool) -> None:
+    def test_no_match_and_suppressed(self, *, x: bool) -> None:
         with assume_does_not_raise(ValueError):
             if x is True:
                 msg = "x is True"
@@ -56,14 +56,14 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=booleans())
-    def test_no_match_and_not_suppressed(self, x: bool) -> None:
+    def test_no_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
                 raise ValueError(msg)
 
     @given(x=booleans())
-    def test_with_match_and_suppressed(self, x: bool) -> None:
+    def test_with_match_and_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with assume_does_not_raise(ValueError, match=msg):
@@ -71,7 +71,7 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=just(True))
-    def test_with_match_and_not_suppressed(self, x: bool) -> None:
+    def test_with_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with raises(ValueError, match=msg), assume_does_not_raise(
@@ -83,7 +83,7 @@ class TestAssumeDoesNotRaise:
 class TestDatetimesUTC:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
     def test_main(
-        self, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
         _ = assume(min_value <= max_value)
@@ -104,6 +104,7 @@ class TestFloatsExtra:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_value: float | None,
         max_value: float | None,
@@ -141,17 +142,48 @@ class TestFloatsExtra:
         if integral:
             assert (isfinite(x) and x == round(x)) or not isfinite(x)
 
+    @given(
+        data=data(),
+        min_value=floats() | none(),
+        max_value=floats() | none(),
+    )
+    def test_finite_and_integral(
+        self,
+        *,
+        data: DataObject,
+        min_value: float | None,
+        max_value: float | None,
+    ) -> None:  # hard to reach
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(
+                floats_extra(
+                    min_value=min_value,
+                    max_value=max_value,
+                    allow_nan=False,
+                    allow_inf=False,
+                    allow_pos_inf=False,
+                    allow_neg_inf=False,
+                    integral=True,
+                )
+            )
+        assert isfinite(x)
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+        assert x == round(x)
+
 
 class TestHashables:
     @given(data=data())
-    def test_fixed(self, data: DataObject) -> None:
+    def test_fixed(self, *, data: DataObject) -> None:
         x = data.draw(hashables())
         _ = hash(x)
 
 
 class TestLiftDraw:
     @given(data=data(), x=booleans())
-    def test_fixed(self, data: DataObject, x: bool) -> None:
+    def test_fixed(self, *, data: DataObject, x: bool) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
             _ = _draw(booleans())
@@ -161,7 +193,7 @@ class TestLiftDraw:
         assert result is x
 
     @given(data=data())
-    def test_strategy(self, data: DataObject) -> None:
+    def test_strategy(self, *, data: DataObject) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
             return _draw(booleans())
@@ -179,7 +211,7 @@ class TestListsFixedLength:
         "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
     def test_main(
-        self, data: DataObject, size: int, unique: bool, sorted_: bool
+        self, *, data: DataObject, size: int, unique: bool, sorted_: bool
     ) -> None:
         result = data.draw(
             lists_fixed_length(integers(), size, unique=unique, sorted=sorted_)
@@ -194,7 +226,7 @@ class TestListsFixedLength:
 
 class TestSlices:
     @given(data=data(), iter_len=integers(0, 10))
-    def test_main(self, data: DataObject, iter_len: int) -> None:
+    def test_main(self, *, data: DataObject, iter_len: int) -> None:
         slice_len = data.draw(integers(0, iter_len) | none())
         slice_ = data.draw(slices(iter_len, slice_len=slice_len))
         range_slice = range(iter_len)[slice_]
@@ -203,7 +235,7 @@ class TestSlices:
             assert len(range_slice) == slice_len
 
     @given(data=data(), iter_len=integers(0, 10))
-    def test_error(self, data: DataObject, iter_len: int) -> None:
+    def test_error(self, *, data: DataObject, iter_len: int) -> None:
         with raises(
             InvalidArgument,
             match=r"Slice length \d+ exceeds iterable length \d+",
@@ -224,7 +256,7 @@ class TestSetupHypothesisProfiles:
         assert Phase.shrink not in settings().phases
 
     @given(max_examples=integers(1, 100))
-    def test_max_examples(self, max_examples: int) -> None:
+    def test_max_examples(self, *, max_examples: int) -> None:
         with temp_environ({_MAX_EXAMPLES: str(max_examples)}):
             setup_hypothesis_profiles()
         assert settings().max_examples == max_examples
@@ -244,7 +276,7 @@ class TestTempDirs:
 
 class TestTempPaths:
     @given(temp_path=temp_paths())
-    def test_main(self, temp_path: Path) -> None:
+    def test_main(self, *, temp_path: Path) -> None:
         _test_temp_path(temp_path)
 
     @given(
@@ -279,6 +311,7 @@ class TestTextAscii:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_size: int,
         max_size: int | None,
@@ -309,6 +342,7 @@ class TestTextClean:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_size: int,
         max_size: int | None,
@@ -339,6 +373,7 @@ class TestTextPrintable:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         min_size: int,
         max_size: int | None,
