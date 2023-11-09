@@ -27,3 +27,10 @@ def _get_fernet(*, env_var: str = _ENV_VAR) -> Fernet:
 
 class FernetKeyMissingError(RuntimeError):
     """Raised when the fernet key is missing."""
+
+
+__all__ = [
+    "decrypt",
+    "encrypt",
+    "FernetKeyMissingError",
+]
