@@ -62,3 +62,9 @@ def _handle_warnings_1(
         kwargs = cast(Kwargs, {} if category is None else {"category": category})
         filterwarnings(action, message=message, **kwargs)
         yield
+
+
+__all__ = [
+    "catch_warnings_as_errors",
+    "suppress_warnings",
+]

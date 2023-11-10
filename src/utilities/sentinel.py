@@ -33,3 +33,9 @@ class Sentinel(metaclass=_Meta):
 
 
 sentinel = Sentinel()
+
+
+__all__ = [
+    "sentinel",
+    "Sentinel",
+]

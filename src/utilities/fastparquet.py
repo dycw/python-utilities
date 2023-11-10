@@ -204,3 +204,18 @@ class EmptyDataFrameError(ValueError):
 
 class InvalidDTypeError(TypeError):
     """Raised when an invalid dtype is encountered."""
+
+
+__all__ = [
+    "Compression",
+    "count_rows",
+    "EmptyDataFrameError",
+    "Filters",
+    "get_columns",
+    "get_dtypes",
+    "get_num_row_groups",
+    "InvalidDTypeError",
+    "InvalidRowGroupIndexError",
+    "read_parquet",
+    "write_parquet",
+]

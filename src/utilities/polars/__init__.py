@@ -17,6 +17,7 @@ from utilities.polars.polars import (
 )
 
 __all__ = [
+    "check_dataframe",
     "DataFrameColumnsError",
     "DataFrameDTypesError",
     "DataFrameHeightError",
@@ -28,13 +29,15 @@ __all__ = [
     "DataFrameUniqueError",
     "DataFrameWidthError",
     "EmptyDataFrameError",
-    "check_dataframe",
     "set_first_row_as_columns",
 ]
 
 
 try:
-    from utilities.polars.bs4 import MultipleTHRowsError, yield_tables
+    from utilities.polars.bs4 import (
+        MultipleTHRowsError,
+        yield_tables,
+    )
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:

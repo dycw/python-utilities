@@ -21,20 +21,6 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     return as_path.with_name(".".join(parts))
 
 
-def walk(
-    top: PathLike,
-    /,
-    *,
-    topdown: bool = True,
-    onerror: Callable[[OSError], None] | None = None,
-    followlinks: bool = False,
-) -> Iterator[tuple[Path, list[Path], list[Path]]]:
-    for dirpath, dirnames, filenames in _walk(
-        top, topdown=topdown, onerror=onerror, followlinks=followlinks
-    ):
-        yield Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames))
-
-
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
@@ -44,3 +30,26 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         yield
     finally:
         chdir(prev)
+
+
+def walk(
+    top: PathLike,
+    /,
+    *,
+    topdown: bool = True,
+    onerror: Callable[[OSError], None] | None = None,
+    followlinks: bool = False,
+) -> Iterator[tuple[Path, list[Path], list[Path]]]:
+    """Iterate through a directory recursively."""
+    for dirpath, dirnames, filenames in _walk(
+        top, topdown=topdown, onerror=onerror, followlinks=followlinks
+    ):
+        yield Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames))
+
+
+__all__ = [
+    "ensure_suffix",
+    "PathLike",
+    "temp_cwd",
+    "walk",
+]

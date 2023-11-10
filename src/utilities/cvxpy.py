@@ -450,3 +450,19 @@ def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
     if isinstance(x, ndarray):
         return float(np.sum(x))
     return cvxpy.sum(x)
+
+
+__all__ = [
+    "abs_",
+    "add",
+    "divide",
+    "multiply",
+    "neg",
+    "norm",
+    "pos",
+    "power",
+    "quad_form",
+    "sqrt",
+    "subtract",
+    "sum_",
+]

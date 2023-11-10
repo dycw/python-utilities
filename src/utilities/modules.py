@@ -74,3 +74,10 @@ def yield_module_subclasses(
     return yield_module_contents(
         module, recursive=recursive, type=type, predicate=predicate_use
     )
+
+
+__all__ = [
+    "yield_module_contents",
+    "yield_module_subclasses",
+    "yield_modules",
+]

@@ -25,6 +25,7 @@ def check_dataframe(
     unique: IntoExpr | Iterable[IntoExpr] | None = None,
     width: int | None = None,
 ) -> None:
+    """Check the properties of a DataFrame."""
     if (columns is not None) and (df.columns != list(columns)):
         msg = f"{df=}, {columns=}"
         raise DataFrameColumnsError(msg)
@@ -123,3 +124,20 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
 
 class EmptyDataFrameError(ValueError):
     """Raised when a DataFrame is empty."""
+
+
+__all__ = [
+    "check_dataframe",
+    "DataFrameColumnsError",
+    "DataFrameDTypesError",
+    "DataFrameHeightError",
+    "DataFrameMaxHeightError",
+    "DataFrameMinHeightError",
+    "DataFrameSchemaError",
+    "DataFrameShapeError",
+    "DataFrameSortedError",
+    "DataFrameUniqueError",
+    "DataFrameWidthError",
+    "EmptyDataFrameError",
+    "set_first_row_as_columns",
+]

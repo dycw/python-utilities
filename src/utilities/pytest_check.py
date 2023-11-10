@@ -15,3 +15,8 @@ def check() -> Iterator[None]:
     else:
         with _check():
             yield
+
+
+__all__ = [
+    "check",
+]

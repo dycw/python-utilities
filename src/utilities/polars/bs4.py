@@ -39,3 +39,9 @@ class MultipleTHRowsError(ValueError):
 def _get_text(tag: Tag, child: str, /) -> list[str]:
     children = cast(Iterable[Tag], tag.find_all(child))
     return [ensure_str(x.string) for x in children]
+
+
+__all__ = [
+    "MultipleTHRowsError",
+    "yield_tables",
+]

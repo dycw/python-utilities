@@ -25,3 +25,8 @@ class APIRouter(_APIRouter):
             )
         msg = f"Invalid route: {path}"
         raise ValueError(msg)
+
+
+__all__ = [
+    "APIRouter",
+]

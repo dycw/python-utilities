@@ -66,3 +66,10 @@ def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
 
 class InvalidContentsError(TypeError):
     """Raised when an invalid set of contents is encountered."""
+
+
+__all__ = [
+    "InvalidContentsError",
+    "is_pytest",
+    "send_email",
+]

@@ -66,6 +66,7 @@ _Index = TypeVar("_Index", bound=Index)
 
 
 def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
+    """Wrapper around `.astype`."""
     return cast(Any, df).astype(dtype)
 
 
@@ -81,7 +82,7 @@ def check_dataframe(
     sorted: Hashable | Sequence[Hashable] | None = None,  # noqa: A002
     unique: Hashable | Sequence[Hashable] | None = None,
 ) -> None:
-    """Check if the properties of a DataFrame."""
+    """Check the properties of a DataFrame."""
     check_range_index(df.index)
     if df.columns.name is not None:
         msg = f"{df=}"
@@ -212,6 +213,7 @@ class EmptyPandasConcatError(ValueError):
 
 
 def rename_index(index: _Index, name: Hashable, /) -> _Index:
+    """Wrapper around `.rename`."""
     return cast(_Index, index.rename(name))
 
 
@@ -305,3 +307,45 @@ def to_numpy(series: SeriesA, /) -> NDArray1:
         ).astype(object)
     msg = f"Invalid dtype: {series=}"  # pragma: no cover
     raise TypeError(msg)  # pragma: no cover
+
+
+__all__ = [
+    "astype",
+    "boolean",
+    "category",
+    "check_dataframe",
+    "check_range_index",
+    "DataFrameColumnsDuplicatedError",
+    "DataFrameColumnsError",
+    "DataFrameColumnsNameError",
+    "DataFrameDTypesError",
+    "DataFrameLengthError",
+    "DataFrameMaxLengthError",
+    "DataFrameMinLengthError",
+    "DataFrameRangeIndexError",
+    "DataFrameSortedError",
+    "DataFrameUniqueError",
+    "datetime64nshk",
+    "datetime64nsutc",
+    "DifferentDTypeError",
+    "EmptyPandasConcatError",
+    "Int64",
+    "RangeIndexNameError",
+    "RangeIndexStartError",
+    "RangeIndexStepError",
+    "redirect_to_empty_pandas_concat_error",
+    "rename_index",
+    "series_max",
+    "series_min",
+    "SeriesRangeIndexError",
+    "sort_index",
+    "string",
+    "TIMESTAMP_MAX_AS_DATE",
+    "TIMESTAMP_MAX_AS_DATETIME",
+    "TIMESTAMP_MIN_AS_DATE",
+    "TIMESTAMP_MIN_AS_DATETIME",
+    "timestamp_to_date",
+    "timestamp_to_datetime",
+    "TimestampIsNaTError",
+    "to_numpy",
+]

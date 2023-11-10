@@ -102,3 +102,12 @@ def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
             yield template.format(k, v)
 
     return "\n".join(yield_lines())  # pragma: os-ne-windows
+
+
+__all__ = [
+    "get_shell_output",
+    "MultipleActivateError",
+    "NoActivateError",
+    "run_accept_address_in_use",
+    "tabulate_called_process_error",
+]

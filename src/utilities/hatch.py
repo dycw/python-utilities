@@ -14,3 +14,8 @@ def get_hatch_version(
     version = get_shell_output("hatch version", cwd=cwd, activate=activate).strip("\n")
     major, minor, patch = extract_groups(r"^(\d+)\.(\d+)\.(\d+)$", version)
     return int(major), int(minor), int(patch)
+
+
+__all__ = [
+    "get_hatch_version",
+]

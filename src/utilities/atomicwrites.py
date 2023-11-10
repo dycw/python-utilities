@@ -33,3 +33,8 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
             if path.exists() and not overwrite:
                 raise DirectoryExistsError(path)
             return move(src, dest)
+
+
+__all__ = [
+    "writer",
+]
