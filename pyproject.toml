@@ -158,6 +158,7 @@ zarr = ["zarr >= 2.16.1", "atomicwrites >= 1.4.1"]
 [project.scripts]
 clean-dir = "utilities.scripts.clean_dir:main"
 csv-to-markdown = "utilities.scripts.csv_to_markdown:main"
+generate-snippets = "utilities.scripts.generate_snippets:main"
 monitor-memory = "utilities.scripts.monitor_memory:main"
 start-luigi-server = "utilities.scripts.luigi.server:main"
 start-pypi-server = "utilities.scripts.pypi_server:main"
