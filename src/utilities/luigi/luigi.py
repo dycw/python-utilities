@@ -424,3 +424,24 @@ def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Tas
             (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
         ) and (task_cls is not smtp):
             yield cast(type[_Task], task_cls)
+
+
+__all__ = [
+    "AwaitTask",
+    "AwaitTime",
+    "build",
+    "clone",
+    "DateHourParameter",
+    "DateMinuteParameter",
+    "DateParameter",
+    "DateSecondParameter",
+    "EnumParameter",
+    "ExternalFile",
+    "ExternalTask",
+    "get_dependencies_downstream",
+    "get_dependencies_upstream",
+    "get_task_classes",
+    "PathTarget",
+    "TimeParameter",
+    "WeekdayParameter",
+]

@@ -70,4 +70,7 @@ try:
 except (ImportError, ModuleNotFoundError):  # pragma: no cover
     pass
 else:
-    __all__ += ["ewma", "exp_moving_sum"]
+    __all__ += [
+        "ewma",
+        "exp_moving_sum",
+    ]

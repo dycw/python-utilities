@@ -24,3 +24,8 @@ class VersionParameter(Parameter):
     def serialize(self, x: Version) -> str:
         """Serialize a `Version` argument."""
         return str(x)
+
+
+__all__ = [
+    "VersionParameter",
+]

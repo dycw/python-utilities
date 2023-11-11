@@ -15,3 +15,8 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
         task_namespace = path.name
 
     return NamespaceMixin
+
+
+__all__ = [
+    "namespace_mixins",
+]

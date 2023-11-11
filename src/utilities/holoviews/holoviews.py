@@ -24,3 +24,10 @@ def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a plot to disk."""
     with writer(path, overwrite=overwrite) as temp:  # pragma: os-ne-linux
         save(plot, temp, backend="bokeh")
+
+
+__all__ = [
+    "apply_opts",
+    "relabel_plot",
+    "save_plot",
+]

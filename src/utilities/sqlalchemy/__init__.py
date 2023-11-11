@@ -142,7 +142,6 @@ __all__ = [
     "UnequalUUIDAsUUIDError",
     "UnequalUUIDNativeUUIDError",
     "UnsupportedDialectError",
-    "UnsupportedDialectError",
     "yield_connection",
     "yield_in_clause_rows",
 ]
@@ -153,7 +152,9 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["select_to_parquet"]
+    __all__ += [
+        "select_to_parquet",
+    ]
 
 
 try:

@@ -62,3 +62,10 @@ class TableParameter(Parameter):
     def serialize(self, x: Any) -> str:
         """Serialize a `Table` or model argument."""
         return get_table_name(x)
+
+
+__all__ = [
+    "DatabaseTarget",
+    "EngineParameter",
+    "TableParameter",
+]

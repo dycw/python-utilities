@@ -14,23 +14,14 @@ from polars import (
     Expr,
     Float64,
     Int64,
+    PolarsDataType,
     Utf8,
     col,
     read_database,
     when,
 )
-from polars.type_aliases import (
-    ConnectionOrCursor,
-    PolarsDataType,
-    SchemaDict,
-)
-from sqlalchemy import (
-    Column,
-    Connection,
-    Engine,
-    Select,
-    Table,
-)
+from polars.type_aliases import ConnectionOrCursor, SchemaDict
+from sqlalchemy import Column, Connection, Engine, Select, Table
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.datetime import UTC
@@ -234,3 +225,11 @@ def _stream_dataframes(
             **kwargs,
         ):
             yield _post_process(df, sel, time_zone=time_zone, snake=snake)
+
+
+__all__ = [
+    "ColumnToPolarsExprError",
+    "insert_polars_dataframe",
+    "PolarsDataFrameYieldsNoRowsError",
+    "select_to_polars_dataframe",
+]

@@ -310,3 +310,15 @@ class InvalidDimensionError(ValueError):
 
 class InvalidIndexValueError(ValueError):
     """Raised when an index value is invalid."""
+
+
+__all__ = [
+    "ffill_non_nan_slices",
+    "InvalidDimensionError",
+    "IselIndexer",
+    "InvalidIndexValueError",
+    "NDArrayWithIndexes",
+    "NoIndexesError",
+    "yield_array_with_indexes",
+    "yield_group_and_array",
+]

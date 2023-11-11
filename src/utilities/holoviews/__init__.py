@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from utilities.holoviews.holoviews import apply_opts, relabel_plot, save_plot
 
-__all__ = ["apply_opts", "relabel_plot", "save_plot"]
+__all__ = [
+    "apply_opts",
+    "relabel_plot",
+    "save_plot",
+]
 
 
 try:
