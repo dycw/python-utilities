@@ -31,6 +31,7 @@ from utilities.pandas import (
     timestamp_to_datetime,
 )
 from utilities.sqlalchemy import (
+    CHUNK_SIZE_FRAC,
     check_dataframe_schema_against_table,
     check_selectable_for_duplicate_columns,
     insert_items,
@@ -47,6 +48,7 @@ def insert_pandas_dataframe(
     *,
     allow_naive_datetimes: bool = False,
     snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a DataFrame into a database."""
     check_dtype = partial(
@@ -71,7 +73,9 @@ def insert_pandas_dataframe(
     if (len(df) > 0) and (len(items) == 0):
         msg = f"{df=}, {items=}"
         raise PandasDataFrameYieldsNoRowsError(msg)
-    return insert_items(engine_or_conn, (items, table_or_mapped_class))
+    return insert_items(
+        engine_or_conn, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
+    )
 
 
 class PandasDataFrameYieldsNoRowsError(ValueError):

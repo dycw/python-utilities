@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from utilities.sqlalchemy.sqlalchemy import (
+    CHUNK_SIZE_FRAC,
     Dialect,
     EngineError,
     FirstArgumentInvalidError,
@@ -70,7 +71,6 @@ from utilities.sqlalchemy.sqlalchemy import (
     redirect_to_table_already_exists_error,
     serialize_engine,
     yield_connection,
-    yield_in_clause_rows,
 )
 
 __all__ = [
@@ -79,6 +79,7 @@ __all__ = [
     "check_selectable_for_duplicate_columns",
     "check_table_against_reflection",
     "check_tables_equal",
+    "CHUNK_SIZE_FRAC",
     "columnwise_max",
     "columnwise_min",
     "create_engine",
@@ -143,7 +144,6 @@ __all__ = [
     "UnequalUUIDNativeUUIDError",
     "UnsupportedDialectError",
     "yield_connection",
-    "yield_in_clause_rows",
 ]
 
 

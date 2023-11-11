@@ -83,6 +83,7 @@ from utilities.hypothesis import (
 from utilities.itertools import one
 from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import (
+    Dialect,
     EngineError,
     FirstArgumentInvalidError,
     IncorrectNumberOfTablesError,
@@ -149,7 +150,6 @@ from utilities.sqlalchemy import (
     redirect_to_table_already_exists_error,
     serialize_engine,
     yield_connection,
-    yield_in_clause_rows,
 )
 from utilities.sqlalchemy.sqlalchemy import (
     _check_column_collections_equal,
@@ -874,6 +874,12 @@ class TestCreateEngine:
         assert isinstance(engine, Engine)
 
 
+class TestDialect:
+    @mark.parametrize("dialect", Dialect)
+    def test_max_params(self, *, dialect: Dialect) -> None:
+        assert isinstance(dialect.max_params, int)
+
+
 class TestEnsureEngine:
     @given(data=data(), engine=sqlite_engines())
     def test_main(self, *, data: DataObject, engine: Engine) -> None:
@@ -990,23 +996,31 @@ class TestGetColumns:
 class TestGetDialect:
     @given(engine=sqlite_engines())
     def test_sqlite(self, *, engine: Engine) -> None:
-        assert get_dialect(engine) == "sqlite"
+        assert get_dialect(engine) is Dialect.sqlite
 
     @mark.parametrize(
         ("url", "expected"),
         [
-            param("mssql+pyodbc://scott:tiger@mydsn", "mssql", marks=skipif_not_linux),
-            param("mysql://scott:tiger@localhost/foo", "mysql", marks=skipif_not_linux),
-            param("oracle://scott:tiger@127.0.0.1:1521/sidname", "oracle"),
+            param(
+                "mssql+pyodbc://scott:tiger@mydsn",
+                Dialect.mssql,
+                marks=skipif_not_linux,
+            ),
+            param(
+                "mysql://scott:tiger@localhost/foo",
+                Dialect.mysql,
+                marks=skipif_not_linux,
+            ),
+            param("oracle://scott:tiger@127.0.0.1:1521/sidname", Dialect.oracle),
             param(
                 "postgresql://scott:tiger@localhost/mydatabase",
-                "postgresql",
+                Dialect.postgresql,
                 marks=skipif_not_linux,
             ),
         ],
     )
-    def test_non_sqlite(self, *, url: str, expected: str) -> None:
-        assert get_dialect(_create_engine(url)) == expected
+    def test_non_sqlite(self, *, url: str, expected: Dialect) -> None:
+        assert get_dialect(_create_engine(url)) is expected
 
 
 class TestGetTable:
@@ -1079,6 +1093,13 @@ class TestInsertItems:
     def test_list_of_pairs_of_dicts_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
+        self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
+
+    @given(
+        engine=sqlite_engines(),
+        ids=sets(integers(0, 10000), min_size=1000, max_size=1000),
+    )
+    def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
         self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
@@ -1373,29 +1394,3 @@ class TestYieldConnection:
     def test_connection(self, *, engine: Engine) -> None:
         with engine.begin() as conn1, yield_connection(conn1) as conn2:
             assert isinstance(conn2, Connection)
-
-
-class TestYieldInClauseRows:
-    @given(
-        data=data(),
-        engine=sqlite_engines(),
-        ids=sets(integers(0, 10), min_size=1, max_size=10),
-        chunk_size=integers(1, 10) | none(),
-    )
-    def test_main(
-        self, *, data: DataObject, engine: Engine, ids: set[int], chunk_size: int | None
-    ) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(engine, table)
-        insert_items(engine, ([(id_,) for id_ in ids], table))
-        values = data.draw(sets(sampled_from(sorted(ids))))
-        result = list(
-            yield_in_clause_rows(
-                select(table.c["id"]),
-                table.c["id"],
-                values,
-                engine,
-                chunk_size=chunk_size,
-            )
-        )
-        assert len(result) == len(values)

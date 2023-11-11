@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
+from enum import auto
 from functools import reduce
 from itertools import chain
-from math import isclose
+from math import floor, isclose
 from operator import ge, itemgetter, le
-from typing import Any, Literal, NoReturn, cast
+from typing import Any, NoReturn, cast
 
+import sqlalchemy
 from sqlalchemy import (
     URL,
     Boolean,
@@ -17,7 +20,6 @@ from sqlalchemy import (
     Connection,
     DateTime,
     Engine,
-    Enum,
     Float,
     Interval,
     LargeBinary,
@@ -52,7 +54,6 @@ from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
-from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
@@ -322,7 +323,7 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalColumnTypesError(msg)
     if isinstance(x_inst, Boolean) and isinstance(y_inst, Boolean):
         _check_boolean_column_types_equal(x_inst, y_inst)
-    if isinstance(x_inst, Enum) and isinstance(y_inst, Enum):
+    if isinstance(x_inst, sqlalchemy.Enum) and isinstance(y_inst, sqlalchemy.Enum):
         _check_enum_column_types_equal(x_inst, y_inst)
     if (
         isinstance(x_inst, Float | Numeric)
@@ -526,14 +527,14 @@ def check_engine(
     """
     dialect = get_dialect(engine)
     if (  # pragma: no cover
-        (dialect == "mssql")  # noqa: PLR1714
-        or (dialect == "mysql")
-        or (dialect == "postgresql")
+        (dialect is Dialect.mssql)
+        or (dialect is Dialect.mysql)
+        or (dialect is Dialect.postgresql)
     ):
         query = "select * from information_schema.tables"  # pragma: no cover
-    elif dialect == "oracle":  # pragma: no cover
+    elif dialect is Dialect.oracle:  # pragma: no cover
         query = "select * from all_objects"
-    elif dialect == "sqlite":
+    elif dialect is Dialect.sqlite:
         query = "select * from sqlite_master where type='table'"
     else:
         return never(dialect)  # pragma: no cover
@@ -684,23 +685,43 @@ def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]
     return list(get_table(table_or_mapped_class).columns)
 
 
-Dialect = Literal["mssql", "mysql", "oracle", "postgresql", "sqlite"]
+class Dialect(enum.Enum):
+    """An enumeration of the SQL dialects."""
+
+    mssql = auto()
+    mysql = auto()
+    oracle = auto()
+    postgresql = auto()
+    sqlite = auto()
+
+    @property
+    def max_params(self, /) -> int:
+        if self is Dialect.mssql:  # pragma: no cover
+            return 2100
+        if self is Dialect.mysql:  # pragma: no cover
+            return 65535
+        if self is Dialect.oracle:  # pragma: no cover
+            return 1000
+        if self is Dialect.postgresql:  # pragma: no cover
+            return 32767
+        if self is Dialect.sqlite:
+            return 100
+        return never(self)  # pragma: no cover
 
 
 def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     """Get the dialect of a database."""
-    if isinstance(
-        dialect := engine_or_conn.dialect, mssql_dialect
-    ):  # pragma: os-ne-linux
-        return "mssql"
+    dialect = engine_or_conn.dialect
+    if isinstance(dialect, mssql_dialect):  # pragma: os-ne-linux
+        return Dialect.mssql
     if isinstance(dialect, mysql_dialect):  # pragma: os-ne-linux
-        return "mysql"
+        return Dialect.mysql
     if isinstance(dialect, oracle_dialect):
-        return "oracle"
+        return Dialect.oracle
     if isinstance(dialect, postgresql_dialect):  # pragma: os-ne-linux
-        return "postgresql"
+        return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
-        return "sqlite"
+        return Dialect.sqlite
     msg = f"{dialect=}"  # pragma: no cover
     raise UnsupportedDialectError(msg)  # pragma: no cover
 
@@ -728,15 +749,22 @@ def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
     return get_table(table_or_mapped_class).name
 
 
+_InsertItemValues = tuple[Any, ...] | dict[str, Any]
+
+
 @dataclass
 class _InsertionItem:
-    values: tuple[Any, ...] | dict[str, Any]
+    values: _InsertItemValues
     table: Table
+
+
+CHUNK_SIZE_FRAC = 0.95
 
 
 def insert_items(
     engine_or_conn: Engine | Connection,
     *items: Any,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -748,17 +776,24 @@ def insert_items(
      - Model
     """
 
-    to_insert: dict[Table, list[Any]] = defaultdict(list)
-    for item in chain(*map(_insert_items_collect, items)):
-        to_insert[item.table].append(item.values)
     dialect = get_dialect(engine_or_conn)
+    max_params = dialect.max_params
+    to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
+    lengths: set[int] = set()
+    for item in chain(*map(_insert_items_collect, items)):
+        values = item.values
+        to_insert[item.table].append(values)
+        lengths.add(len(values))
+    max_length = max(lengths, default=1)
+    chunk_size = floor(chunk_size_frac * max_params / max_length)
     with yield_connection(engine_or_conn) as conn:
         for table, values in to_insert.items():
             ins = insert(table)
-            if dialect == "oracle":  # pragma: no cover
-                _ = conn.execute(ins, values)
-            else:
-                _ = conn.execute(ins.values(values))
+            for chunk in chunked(values, n=chunk_size):
+                if dialect is Dialect.oracle:  # pragma: no cover
+                    _ = conn.execute(ins, cast(list[Any], chunk))
+                else:
+                    _ = conn.execute(ins.values(chunk))
 
 
 def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
@@ -887,14 +922,14 @@ def redirect_to_no_such_table_error(
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
-        dialect == "mssql"  # noqa: PLR1714
-        or dialect == "mysql"
-        or dialect == "postgresql"
+        (dialect is Dialect.mssql)
+        or (dialect is Dialect.mysql)
+        or (dialect is Dialect.postgresql)
     ):
         raise NotImplementedError(dialect)  # pragma: no cover
-    if dialect == "oracle":  # pragma: no cover
+    if dialect is Dialect.oracle:  # pragma: no cover
         pattern = "ORA-00942: table or view does not exist"
-    elif dialect == "sqlite":
+    elif dialect is Dialect.sqlite:
         pattern = "no such table"
     else:  # pragma: no cover
         return never(dialect)
@@ -907,17 +942,17 @@ def redirect_to_table_already_exists_error(
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
     if (  # pragma: no cover
-        dialect == "mssql"  # noqa: PLR1714
-        or dialect == "mysql"
-        or dialect == "postgresql"
+        (dialect is Dialect.mssql)
+        or (dialect is Dialect.mysql)
+        or (dialect is Dialect.postgresql)
     ):
         raise NotImplementedError(dialect)  # pragma: no cover
-    if dialect == "oracle":  # pragma: no cover
+    if dialect is Dialect.oracle:  # pragma: no cover
         pattern = "ORA-00955: name is already used by an existing object"
-    elif dialect == "sqlite":
+    elif dialect is Dialect.sqlite:
         pattern = "table .* already exists"
     else:
-        assert_never(dialect)  # pragma: no cover
+        return never(dialect)  # pragma: no cover
     return redirect_error(error, pattern, TableAlreadyExistsError)
 
 
@@ -948,46 +983,13 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
         yield engine_or_conn
 
 
-def yield_in_clause_rows(
-    sel: Select[Any],
-    column: Any,
-    values: Iterable[Any],
-    engine_or_conn: Engine | Connection,
-    /,
-    *,
-    chunk_size: int | None = None,
-    frac: float = 0.95,
-) -> Iterator[Any]:
-    """Yield the rows from an `in` clause."""
-    if chunk_size is None:
-        dialect = get_dialect(engine_or_conn)
-        if dialect == "mssql":  # pragma: no cover
-            max_params = 2100
-        elif dialect == "mysql":  # pragma: no cover
-            max_params = 65535
-        elif dialect == "oracle":  # pragma: no cover
-            max_params = 1000
-        elif dialect == "postgresql":  # pragma: no cover
-            max_params = 32767
-        elif dialect == "sqlite":
-            max_params = 100
-        else:  # pragma: no cover
-            return never(dialect)
-        chunk_size_use = round(frac * max_params)
-    else:
-        chunk_size_use = chunk_size
-    with yield_connection(engine_or_conn) as conn:
-        for values_i in chunked(values, n=chunk_size_use):
-            sel_i = sel.where(column.in_(values_i))
-            yield from conn.execute(sel_i).all()
-
-
 __all__ = [
     "check_dataframe_schema_against_table",
     "check_engine",
     "check_selectable_for_duplicate_columns",
     "check_table_against_reflection",
     "check_tables_equal",
+    "CHUNK_SIZE_FRAC",
     "columnwise_max",
     "columnwise_min",
     "create_engine",
@@ -1052,5 +1054,4 @@ __all__ = [
     "UnequalUUIDNativeUUIDError",
     "UnsupportedDialectError",
     "yield_connection",
-    "yield_in_clause_rows",
 ]
