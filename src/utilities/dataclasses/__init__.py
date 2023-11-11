@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from utilities.dataclasses.dataclasses import Dummy
+from utilities.dataclasses.dataclasses import is_dataclass_instance
 
 __all__ = [
-    "Dummy",
+    "is_dataclass_instance",
 ]
 
 
