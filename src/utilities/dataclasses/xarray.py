@@ -11,3 +11,8 @@ def rename_data_arrays(obj: Any, /) -> None:
     for key, value in asdict(obj).items():
         if isinstance(value, DataArray) and (value.name != key):
             setattr(obj, key, value.rename(key))
+
+
+__all__ = [
+    "rename_data_arrays",
+]

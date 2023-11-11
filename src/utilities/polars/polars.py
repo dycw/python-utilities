@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from polars import DataFrame
+from polars import DataFrame, PolarsDataType
 from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
-from polars.type_aliases import IntoExpr, PolarsDataType, SchemaDict
+from polars.type_aliases import IntoExpr, SchemaDict
 
 from utilities.typing import SequenceStrs
 

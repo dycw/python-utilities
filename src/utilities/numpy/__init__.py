@@ -869,7 +869,11 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["ffill", "pct_change", "ZeroPercentageChangeSpanError"]
+    __all__ += [
+        "ffill",
+        "pct_change",
+        "ZeroPercentageChangeSpanError",
+    ]
 
 
 try:
@@ -877,4 +881,7 @@ try:
 except (ImportError, ModuleNotFoundError):  # pragma: no cover
     pass
 else:
-    __all__ += ["ewma", "exp_moving_sum"]
+    __all__ += [
+        "ewma",
+        "exp_moving_sum",
+    ]

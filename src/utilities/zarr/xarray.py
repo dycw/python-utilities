@@ -192,3 +192,11 @@ class DataArrayOnDisk(NDArrayWithIndexes):
             return self._get_index_by_name(coord)
         except InvalidDimensionError:
             return self.attrs[f"coord_{coord}"]
+
+
+__all__ = [
+    "DataArrayOnDisk",
+    "NotOneDimensionalArrayError",
+    "save_data_array_to_disk",
+    "yield_data_array_on_disk",
+]

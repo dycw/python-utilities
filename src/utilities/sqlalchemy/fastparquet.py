@@ -38,3 +38,8 @@ def select_to_parquet(
         for i, df in enumerate(dfs):
             write(str(temp), df, compression=compression, append=i >= 1)
     return None
+
+
+__all__ = [
+    "select_to_parquet",
+]

@@ -42,3 +42,8 @@ def git_repos(
                 check=True,
             )
     return path
+
+
+__all__ = [
+    "git_repos",
+]

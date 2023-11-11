@@ -23,3 +23,8 @@ class Engine(ParamType):
             return ensure_engine(value)
         except ParseEngineError:
             self.fail(f"Unable to parse {value}", param, ctx)
+
+
+__all__ = [
+    "Engine",
+]

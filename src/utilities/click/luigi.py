@@ -27,3 +27,10 @@ workers_option = option(
     show_default=True,
     help="The number of workers to use",
 )
+
+
+__all__ = [
+    "local_scheduler_option_default_central",
+    "local_scheduler_option_default_local",
+    "workers_option",
+]

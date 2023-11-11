@@ -53,3 +53,36 @@ DataArrayDns3: TypeAlias = Annotated[DataArray, DTypeDns, NDim3]
 DataArrayF3: TypeAlias = Annotated[DataArray, DTypeF, NDim3]
 DataArrayI3: TypeAlias = Annotated[DataArray, DTypeI, NDim3]
 DataArrayO3: TypeAlias = Annotated[DataArray, DTypeO, NDim3]
+
+
+__all__ = [
+    "DataArray0",
+    "DataArray1",
+    "DataArray2",
+    "DataArray3",
+    "DataArrayB",
+    "DataArrayB0",
+    "DataArrayB1",
+    "DataArrayB2",
+    "DataArrayB3",
+    "DataArrayDns",
+    "DataArrayDns0",
+    "DataArrayDns1",
+    "DataArrayDns2",
+    "DataArrayDns3",
+    "DataArrayF",
+    "DataArrayF0",
+    "DataArrayF1",
+    "DataArrayF2",
+    "DataArrayF3",
+    "DataArrayI",
+    "DataArrayI0",
+    "DataArrayI1",
+    "DataArrayI2",
+    "DataArrayI3",
+    "DataArrayO",
+    "DataArrayO0",
+    "DataArrayO1",
+    "DataArrayO2",
+    "DataArrayO3",
+]

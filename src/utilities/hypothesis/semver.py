@@ -58,3 +58,8 @@ def versions(  # noqa: PLR0912
         msg = "Invalid case"  # pragma: no cover
         raise RuntimeError(msg)  # pragma: no cover
     return Version(major=major, minor=minor, patch=patch)
+
+
+__all__ = [
+    "versions",
+]

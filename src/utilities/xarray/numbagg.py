@@ -54,3 +54,9 @@ def _move_exp_nansum(array: Any, /, *, axis: Any, alpha: Any) -> Any:
     if axis == ():  # pragma: no cover
         return array.astype(float)
     return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
+
+
+__all__ = [
+    "ewma",
+    "exp_moving_sum",
+]

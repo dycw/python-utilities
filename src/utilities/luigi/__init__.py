@@ -46,7 +46,9 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["VersionParameter"]
+    __all__ += [
+        "VersionParameter",
+    ]
 
 
 try:
@@ -58,7 +60,11 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["DatabaseTarget", "EngineParameter", "TableParameter"]
+    __all__ += [
+        "DatabaseTarget",
+        "EngineParameter",
+        "TableParameter",
+    ]
 
 
 try:

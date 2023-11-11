@@ -21,4 +21,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["click_field", "click_options"]
+    __all__ += [
+        "click_field",
+        "click_options",
+    ]

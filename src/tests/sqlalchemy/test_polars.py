@@ -22,9 +22,8 @@ from hypothesis.strategies import (
     lists,
     none,
 )
-from polars import DataFrame, Datetime, Float64, Int64, Utf8
+from polars import DataFrame, Datetime, Float64, Int64, PolarsDataType, Utf8
 from polars.testing import assert_frame_equal
-from polars.type_aliases import PolarsDataType
 from pytest import mark, param, raises
 from sqlalchemy import (
     Column,
