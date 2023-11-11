@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 
 from click import command
@@ -20,7 +19,6 @@ _CONFIG = Config()
 def main(config: Config, /) -> None:
     """CLI for starting the luigi server."""
     setup_loguru()
-    _log_config(config)
     config.log_dir.mkdir(parents=True, exist_ok=True)
     args = _get_args(
         pid_file=config.pid_file,
@@ -30,11 +28,6 @@ def main(config: Config, /) -> None:
     )
     if not config.dry_run:
         run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
-
-
-def _log_config(config: Config, /) -> None:
-    for key, value in asdict(config).items():
-        logger.info("{key:10} = {value}", key=key, value=value)
 
 
 def _get_args(

@@ -5,7 +5,7 @@ import datetime as dt
 from collections.abc import Iterator
 from contextlib import contextmanager
 from csv import DictWriter
-from dataclasses import asdict, fields
+from dataclasses import fields
 from pathlib import Path
 from time import sleep
 from typing import Any, cast
@@ -30,13 +30,7 @@ _CONFIG = Config()
 def main(config: Config, /) -> None:
     """CLI for the `monitor_memory` script."""
     setup_loguru()
-    _log_config(config)
     _monitor_memory(path=config.path, freq=config.freq, duration=config.duration)
-
-
-def _log_config(config: Config, /) -> None:
-    for key, value in asdict(config).items():
-        logger.info("{key:8} = {value}", key=key, value=value)
 
 
 def _monitor_memory(

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Iterable, Iterator
-from dataclasses import asdict
 from functools import partial
 from getpass import getuser
 from itertools import islice
@@ -27,7 +26,6 @@ _CONFIG = Config()
 def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     setup_loguru()  # pragma: os-ne-windows
-    _log_config(config)  # pragma: os-ne-windows
     if config.dry_run:  # pragma: os-ne-windows
         for item in _yield_items(  # pragma: os-ne-windows
             paths=config.paths, days=config.days, chunk_size=config.chunk_size
@@ -37,11 +35,6 @@ def main(config: Config, /) -> None:
         _clean_dir(  # pragma: os-ne-windows
             paths=config.paths, days=config.days, chunk_size=config.chunk_size
         )
-
-
-def _log_config(config: Config, /) -> None:
-    for key, value in asdict(config).items():  # pragma: os-ne-windows
-        logger.info("{key:10} = {value}", key=key, value=value)  # pragma: os-ne-windows
 
 
 def _clean_dir(

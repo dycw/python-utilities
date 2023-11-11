@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from csv import reader
-from dataclasses import asdict
 from itertools import chain
 from pathlib import Path
 
@@ -23,14 +22,8 @@ _CONFIG = Config()
 def main(config: Config, /) -> None:
     """CLI for the `csv_to_markdown` script."""
     setup_loguru()
-    _log_config(config)
     markdown = _csv_to_markdown(path=config.path)
     logger.info(f"{markdown}")
-
-
-def _log_config(config: Config, /) -> None:
-    for key, value in asdict(config).items():
-        logger.info("{key:4} = {value}", key=key, value=value)
 
 
 def _csv_to_markdown(*, path: Path = _CONFIG.path) -> str:

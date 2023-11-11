@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 
 from click import command
@@ -20,7 +19,6 @@ _CONFIG = Config()
 def main(config: Config, /) -> None:
     """CLI for starting the PyPI server."""
     setup_loguru()
-    _log_config(config)
     _check_password_file(path_password=config.path_password)
     config.path_packages.mkdir(parents=True, exist_ok=True)
     args = _get_args(
@@ -30,11 +28,6 @@ def main(config: Config, /) -> None:
     )
     if not config.dry_run:
         run_accept_address_in_use(args, exist_ok=config.exist_ok)  # pragma: no cover
-
-
-def _log_config(config: Config, /) -> None:
-    for key, value in asdict(config).items():
-        logger.info("{key:13} = {value}", key=key, value=value)
 
 
 def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
