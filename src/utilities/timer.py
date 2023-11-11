@@ -70,3 +70,8 @@ class Timer:
             return op(self.timedelta, other)
         msg = f"Invalid type: {other=}"
         raise TypeError(msg)
+
+
+__all__ = [
+    "Timer",
+]

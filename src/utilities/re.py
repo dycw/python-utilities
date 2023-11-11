@@ -49,3 +49,13 @@ class NoMatchesError(ValueError):
 
 class MultipleMatchesError(ValueError):
     """Raised when multiple matches are found."""
+
+
+__all__ = [
+    "extract_group",
+    "extract_groups",
+    "MultipleCaptureGroupsError",
+    "MultipleMatchesError",
+    "NoCaptureGroupsError",
+    "NoMatchesError",
+]

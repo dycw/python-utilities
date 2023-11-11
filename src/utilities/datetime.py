@@ -45,6 +45,7 @@ def date_to_datetime(
 
 
 def duration_to_float(duration: Duration, /) -> float:
+    """Ensure the duration is a float."""
     if isinstance(duration, int):
         return float(duration)
     if isinstance(duration, float):
@@ -53,6 +54,7 @@ def duration_to_float(duration: Duration, /) -> float:
 
 
 def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
+    """Ensure the duration is a timedelta."""
     if isinstance(duration, int | float):
         return dt.timedelta(seconds=duration)
     return duration
@@ -83,6 +85,7 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
 
 
 def get_now(*, tz: tzinfo | None = UTC) -> dt.datetime:
+    """Get the current, timezone-aware time."""
     return dt.datetime.now(tz=tz)
 
 
@@ -90,6 +93,7 @@ NOW_UTC, NOW_HKG, NOW_TKY = (get_now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
 
 
 def get_today(*, tz: tzinfo | None = UTC) -> dt.date:
+    """Get the current, timezone-aware date."""
     return get_now(tz=tz).date()
 
 
@@ -290,3 +294,50 @@ def yield_weekdays(
 
 class YieldWeekdaysError(ValueError):
     """Raised when an invalid call to `yield_weekdays` is made."""
+
+
+__all__ = [
+    "add_weekdays",
+    "date_to_datetime",
+    "duration_to_float",
+    "duration_to_timedelta",
+    "ensure_date",
+    "ensure_datetime",
+    "ensure_time",
+    "ensure_timedelta",
+    "EPOCH_UTC",
+    "extract_groups",
+    "get_now",
+    "get_today",
+    "is_weekday",
+    "IsWeekendError",
+    "local_timezone",
+    "LocalTimeZoneError",
+    "maybe_sub_pct_y",
+    "never",
+    "NOW_HKG",
+    "NOW_TKY",
+    "NOW_UTC",
+    "parse_date",
+    "parse_datetime",
+    "parse_time",
+    "parse_timedelta",
+    "ParseDateError",
+    "ParseDateTimeError",
+    "ParseTimedeltaError",
+    "ParseTimeError",
+    "round_to_next_weekday",
+    "round_to_prev_weekday",
+    "serialize_date",
+    "serialize_datetime",
+    "serialize_time",
+    "serialize_timedelta",
+    "System",
+    "SYSTEM",
+    "TODAY_HKG",
+    "TODAY_TKY",
+    "TODAY_UTC",
+    "UTC",
+    "yield_weekdays",
+    "YieldWeekdaysError",
+]

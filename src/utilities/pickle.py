@@ -18,3 +18,9 @@ def write_pickle(obj: Any, path: PathLike, /, *, overwrite: bool = False) -> Non
     """Write an object to disk."""
     with writer(path, overwrite=overwrite) as temp, gzip.open(temp, mode="wb") as gz:
         dump(obj, gz)
+
+
+__all__ = [
+    "read_pickle",
+    "write_pickle",
+]

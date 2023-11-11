@@ -16,3 +16,8 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
         zf.extractall(path=temp)
         yield list(temp.iterdir())
     _ = zf  # make coverage understand this is returned
+
+
+__all__ = [
+    "yield_zip_file_contents",
+]

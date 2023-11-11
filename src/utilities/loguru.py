@@ -237,3 +237,8 @@ def _add_live_file_sink(
         rotation=rotation,
         retention=retention,
     )
+
+
+__all__ = [
+    "setup_loguru",
+]

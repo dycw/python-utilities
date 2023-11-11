@@ -12,3 +12,8 @@ def md5_hash(obj: Any, /) -> str:
     if isinstance(obj, str):
         return md5_hash(obj.encode())
     return md5_hash(dumps(obj))
+
+
+__all__ = [
+    "md5_hash",
+]

@@ -14,3 +14,8 @@ def yield_airium() -> Iterator[Airium]:
     airium("<!DOCTYPE html>")
     with cast(Any, airium).html().body():
         yield airium
+
+
+__all__ = [
+    "yield_airium",
+]

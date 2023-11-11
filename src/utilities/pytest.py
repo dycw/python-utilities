@@ -150,3 +150,12 @@ def _throttle_md5_hash(text: str, /) -> str:
 def _throttle_write(path: Path, now: float, /) -> None:
     with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
         _ = fh.write(str(now))
+
+
+__all__ = [
+    "add_pytest_addoption",
+    "add_pytest_collection_modifyitems",
+    "add_pytest_configure",
+    "is_pytest",
+    "throttle",
+]

@@ -48,3 +48,8 @@ def _default(x: Any, /) -> str:
         return f"frozenset({inner})"
     msg = f"Invalid type: {x}"
     raise TypeError(msg)
+
+
+__all__ = [
+    "serialize",
+]

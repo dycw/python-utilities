@@ -239,3 +239,9 @@ def _get_desc(
 
 def _starmap_helper(func: Callable[..., _T], *args: Any) -> _T:
     return func(*args)
+
+
+__all__ = [
+    "pmap",
+    "pstarmap",
+]

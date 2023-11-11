@@ -64,3 +64,8 @@ def _password_entered() -> None:
         del session_state[_USERNAME]  # pragma: no cover
     else:
         session_state[_PASSWORD_CORRECT] = False  # pragma: no cover
+
+
+__all__ = [
+    "ensure_logged_in",
+]

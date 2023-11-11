@@ -71,3 +71,8 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     pdf.add_page()
     pdf.set_font("Helvetica", size=10)
     yield pdf
+
+
+__all__ = [
+    "yield_pdf",
+]

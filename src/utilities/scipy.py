@@ -27,3 +27,8 @@ def _ppf_1d(array: NDArrayF1, cutoff: FloatFinNonNeg, /) -> NDArrayF1:
     phi = norm.cdf(-cutoff)
     ppf = norm.ppf((1.0 - 2.0 * phi) * centred + phi)
     return clip(ppf, a_min=-cutoff, a_max=cutoff)
+
+
+__all__ = [
+    "ppf",
+]

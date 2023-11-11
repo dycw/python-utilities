@@ -20,3 +20,8 @@ def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
     filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
+
+
+__all__ = [
+    "profile",
+]

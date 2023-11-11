@@ -25,3 +25,9 @@ class LogLevel(str, Enum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+__all__ = [
+    "basic_config",
+    "LogLevel",
+]
