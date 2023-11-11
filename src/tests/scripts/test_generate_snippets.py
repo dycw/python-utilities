@@ -19,7 +19,6 @@ from utilities.scripts.generate_snippets import (
     main,
     yield_imports,
 )
-from utilities.text import strip_and_dedent
 
 
 class TestCLI:
@@ -45,20 +44,26 @@ class TestGenerateSnippet:
         expected = "fab-abc: from abc import ABC"
         assert result == expected
 
+    def test_as(self) -> None:
+        imp = ImportFrom(
+            module="collections.abc", names=[alias(name="Set", asname="AbstractSet")]
+        )
+        template = "{key}: {value}"
+        result = _generate_snippet(imp, template)
+        expected = "fco-set: from collections.abc import Set as AbstractSet"
+        assert result == expected
+
 
 class TestGenerateSnippets:
     def test_main(self) -> None:
-        imports = [
+        imports = {
             ImportFrom(module="abc", names=[alias(name=name)])
             for name in ["ABC", "ABCMeta"]
-        ]
+        }
         template = "{key}: {value}"
         result = _generate_snippets(imports, template)
-        expected = """
-            fab-abc: from abc import ABC
-            fab-abc-meta: from abc import ABCMeta
-        """
-        assert result == strip_and_dedent(expected)
+        expected = "fab-abc: from abc import ABC,fab-abc-meta: from abc import ABCMeta,"
+        assert result == expected
 
 
 class TestNodeToKey:

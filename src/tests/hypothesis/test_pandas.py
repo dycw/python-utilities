@@ -155,6 +155,7 @@ class TestTimestamps:
         max_value=datetimes_utc(max_value=TIMESTAMP_MAX_AS_DATETIME),
         allow_nanoseconds=booleans(),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,

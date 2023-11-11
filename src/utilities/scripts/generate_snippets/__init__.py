@@ -3,6 +3,7 @@ from __future__ import annotations
 from ast import AST, Call, ImportFrom, Module, Name, With, alias, expr, parse
 from collections.abc import Iterable, Iterator
 from enum import Enum, auto
+from operator import itemgetter
 from sys import stdout
 from types import ModuleType
 from typing import Any
@@ -24,18 +25,22 @@ class Method(Enum):
     parse = auto()
 
 
-def yield_imports(*, method: Method = Method.parse) -> Iterator[ImportFrom]:
+def yield_imports(
+    *, method: Method = Method.parse, include_suppress: bool = True
+) -> Iterator[ImportFrom]:
     if method is Method.direct:
         return _yield_import_nodes_directly(click, [command, option])
     if method is Method.parse:
         text = """
-                from click import (
-                    BOOL,  # noqa: F401
-                    FLOAT,  # noqa: F401
-                    INT,  # noqa: F401
-                )
+
+from itertools import (
+    accumulate,  # noqa: F401
+    chain,  # noqa: F401
+    combinations,  # noqa: F401
+)
+
             """
-        return _yield_import_nodes_from_text(text)
+        return _yield_import_nodes_from_text(text, include_suppress=include_suppress)
     return never(method)  # pragma: no cover
 
 
@@ -47,16 +52,11 @@ def main() -> None:
     _ = stdout.write(_generate_ipython_imports(imports) + "\n")
 
     logger.info("Neovim snippets")
-    neovim_template = """s("{key}", {{ t("{value}") }}),"""
+    neovim_template = 's("{key}", {{ t("{value}") }})'
     _ = stdout.write(_generate_snippets(imports, neovim_template) + "\n")
 
     logger.info("VSCode snippets")
-    vscode_template = """
-        "{key}": {{
-            "prefix": "{key}",
-            "body": ["{value}", "$0"]
-        }},
-    """
+    vscode_template = '"{key}": {{ "prefix": "{key}", "body": ["{value}", "$0"] }}'
     _ = stdout.write(_generate_snippets(imports, vscode_template) + "\n")
 
 
@@ -124,8 +124,10 @@ def _generate_ipython_imports(imports: Iterable[ImportFrom], /) -> str:
 
 
 def _generate_snippets(imports: Iterable[ImportFrom], template: str, /) -> str:
-    snippets = (_generate_snippet(imp, template) for imp in imports)
-    return "\n".join(snippets)
+    items = ((_node_to_key(imp), _generate_snippet(imp, template)) for imp in imports)
+    sorted_items = sorted(items, key=itemgetter(0))
+    snippets = (f"{s}," for _, s in sorted_items)
+    return "".join(snippets)
 
 
 def _generate_snippet(imp: ImportFrom, template: str, /) -> str:
