@@ -26,6 +26,7 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.datetime import UTC
 from utilities.sqlalchemy import (
+    CHUNK_SIZE_FRAC,
     check_dataframe_schema_against_table,
     check_selectable_for_duplicate_columns,
     insert_items,
@@ -41,6 +42,7 @@ def insert_polars_dataframe(
     /,
     *,
     snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a DataFrame into a database."""
     mapping = check_dataframe_schema_against_table(
@@ -50,7 +52,9 @@ def insert_polars_dataframe(
     if (df.height > 0) and (len(items) == 0):
         msg = f"{df=}, {items=}"
         raise PolarsDataFrameYieldsNoRowsError(msg)
-    return insert_items(engine_or_conn, (items, table_or_mapped_class))
+    return insert_items(
+        engine_or_conn, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
+    )
 
 
 class PolarsDataFrameYieldsNoRowsError(ValueError):

@@ -8,7 +8,7 @@ from sqlalchemy.exc import DatabaseError
 
 from utilities.errors import redirect_error
 from utilities.math import FloatFinNonNeg, IntNonNeg
-from utilities.sqlalchemy import get_dialect, yield_connection
+from utilities.sqlalchemy import Dialect, get_dialect, yield_connection
 from utilities.typing import never
 
 
@@ -49,13 +49,15 @@ def redirect_to_no_such_sequence_error(
     """Redirect to the `NoSuchSequenceError`."""
     dialect = get_dialect(engine_or_conn)  # pragma: no cover
     if (  # pragma: no cover
-        dialect == "mssql"  # noqa: PLR1714
-        or dialect == "mysql"
-        or dialect == "postgresql"
-        or dialect == "sqlite"
+        dialect is Dialect.mssql
+        or dialect is Dialect.mysql
+        or dialect is Dialect.postgresql
+        or dialect is Dialect.sqlite(dialect is Dialect.mssql)
+        or (dialect is Dialect.mysql)
+        or (dialect is Dialect.postgresql)
     ):
         raise NotImplementedError(dialect)  # pragma: no cover
-    if dialect == "oracle":  # pragma: no cover
+    if dialect is Dialect.oracle:  # pragma: no cover
         pattern = "ORA-02289: sequence does not exist"
     else:  # pragma: no cover
         return never(dialect)
