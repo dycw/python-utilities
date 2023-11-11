@@ -39,9 +39,6 @@ def yield_imports(*, method: Method = Method.parse) -> Iterator[ImportFrom]:
     return never(method)  # pragma: no cover
 
 
-#
-
-
 @command()
 def main() -> None:
     imports = list(yield_imports())
