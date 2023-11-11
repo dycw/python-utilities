@@ -54,6 +54,7 @@ from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
+from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
@@ -68,7 +69,7 @@ from utilities.itertools import (
 )
 from utilities.math import FloatNonNeg, IntNonNeg
 from utilities.text import ensure_str, snake_case, snake_case_mappings
-from utilities.typing import IterableStrs, never
+from utilities.typing import IterableStrs
 
 
 def check_dataframe_schema_against_table(
@@ -526,18 +527,16 @@ def check_engine(
     such a table.
     """
     dialect = get_dialect(engine)
-    if (  # pragma: no cover
-        (dialect is Dialect.mssql)
-        or (dialect is Dialect.mysql)
-        or (dialect is Dialect.postgresql)
-    ):
-        query = "select * from information_schema.tables"  # pragma: no cover
-    elif dialect is Dialect.oracle:  # pragma: no cover
-        query = "select * from all_objects"
-    elif dialect is Dialect.sqlite:
-        query = "select * from sqlite_master where type='table'"
-    else:
-        return never(dialect)  # pragma: no cover
+    match dialect:
+        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+            query = "select * from information_schema.tables"
+        case Dialect.oracle:  # pragma: no cover
+            query = "select * from all_objects"
+        case Dialect.sqlite:
+            query = "select * from sqlite_master where type='table'"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(dialect)
+
     try:
         with engine.begin() as conn:
             rows = conn.execute(text(query)).all()
@@ -557,7 +556,6 @@ def check_engine(
             ):
                 msg = f"{len(rows)=}, {num_tables=}, {rel_tol=}, {abs_tol=}"
                 raise IncorrectNumberOfTablesError(msg)
-    return None
 
 
 class EngineError(ValueError):
@@ -696,17 +694,19 @@ class Dialect(enum.Enum):
 
     @property
     def max_params(self, /) -> int:
-        if self is Dialect.mssql:  # pragma: no cover
-            return 2100
-        if self is Dialect.mysql:  # pragma: no cover
-            return 65535
-        if self is Dialect.oracle:  # pragma: no cover
-            return 1000
-        if self is Dialect.postgresql:  # pragma: no cover
-            return 32767
-        if self is Dialect.sqlite:
-            return 100
-        return never(self)  # pragma: no cover
+        match self:
+            case Dialect.mssql:  # pragma: no cover
+                return 2100
+            case Dialect.mysql:  # pragma: no cover
+                return 65535
+            case Dialect.oracle:  # pragma: no cover
+                return 1000
+            case Dialect.postgresql:  # pragma: no cover
+                return 32767
+            case Dialect.sqlite:
+                return 100
+            case _:  # pragma: no cover  # type: ignore
+                assert_never(self)
 
 
 def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
@@ -921,18 +921,15 @@ def redirect_to_no_such_table_error(
 ) -> NoReturn:
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
-    if (  # pragma: no cover
-        (dialect is Dialect.mssql)
-        or (dialect is Dialect.mysql)
-        or (dialect is Dialect.postgresql)
-    ):
-        raise NotImplementedError(dialect)  # pragma: no cover
-    if dialect is Dialect.oracle:  # pragma: no cover
-        pattern = "ORA-00942: table or view does not exist"
-    elif dialect is Dialect.sqlite:
-        pattern = "no such table"
-    else:  # pragma: no cover
-        return never(dialect)
+    match dialect:
+        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.oracle:  # pragma: no cover
+            pattern = "ORA-00942: table or view does not exist"
+        case Dialect.sqlite:
+            pattern = "no such table"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(dialect)
     return redirect_error(error, pattern, NoSuchTableError)
 
 
@@ -941,18 +938,15 @@ def redirect_to_table_already_exists_error(
 ) -> NoReturn:
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
-    if (  # pragma: no cover
-        (dialect is Dialect.mssql)
-        or (dialect is Dialect.mysql)
-        or (dialect is Dialect.postgresql)
-    ):
-        raise NotImplementedError(dialect)  # pragma: no cover
-    if dialect is Dialect.oracle:  # pragma: no cover
-        pattern = "ORA-00955: name is already used by an existing object"
-    elif dialect is Dialect.sqlite:
-        pattern = "table .* already exists"
-    else:
-        return never(dialect)  # pragma: no cover
+    match dialect:
+        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.oracle:  # pragma: no cover
+            pattern = "ORA-00955: name is already used by an existing object"
+        case Dialect.sqlite:
+            pattern = "table .* already exists"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(dialect)
     return redirect_error(error, pattern, TableAlreadyExistsError)
 
 

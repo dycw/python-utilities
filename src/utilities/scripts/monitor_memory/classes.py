@@ -5,9 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from typing_extensions import assert_never
+
 from utilities.platform import SYSTEM, System
 from utilities.typed_settings import click_field
-from utilities.typing import never
 
 
 @dataclass(frozen=True)
@@ -86,11 +87,12 @@ class ItemLinux:
     swap_sout: int
 
 
-if SYSTEM is System.windows:  # pragma: os-ne-windows
-    Item = ItemWindows
-elif SYSTEM is System.mac:  # pragma: os-ne-macos
-    Item = ItemMacOS
-elif SYSTEM is System.linux:  # pragma: os-ne-linux
-    Item = ItemLinux
-else:  # pragma: no cover
-    never(SYSTEM)
+match SYSTEM:
+    case System.windows:  # pragma: os-ne-windows
+        Item = ItemWindows
+    case System.mac:  # pragma: os-ne-macos
+        Item = ItemMacOS
+    case System.linux:  # pragma: os-ne-linux
+        Item = ItemLinux
+    case _:  # pragma: no cover  # type: ignore
+        assert_never(SYSTEM)

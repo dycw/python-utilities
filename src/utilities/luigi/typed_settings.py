@@ -24,6 +24,7 @@ from luigi import (
     Parameter,
     PathParameter,
 )
+from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.luigi import (
@@ -36,7 +37,6 @@ from utilities.luigi import (
     WeekdayParameter,
 )
 from utilities.types import NoneType
-from utilities.typing import never
 
 _T = TypeVar("_T")
 
@@ -187,11 +187,13 @@ def _map_date_annotation(
     *, kind: Literal["date", "weekday"]
 ) -> type[Parameter] | Callable[..., Parameter]:
     """Map a date annotation to a parameter class."""
-    if kind == "date":
-        return DateParameter
-    if kind == "weekday":
-        return WeekdayParameter
-    return never(kind)  # pragma: no cover
+    match kind:
+        case "date":
+            return DateParameter
+        case "weekday":
+            return WeekdayParameter
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(kind)
 
 
 class AmbiguousDateError(Exception):
@@ -202,14 +204,15 @@ def _map_datetime_annotation(
     *, kind: Literal["hour", "minute", "second"], interval: int = 1
 ) -> type[Parameter] | Callable[..., Parameter]:
     """Map a datetime annotation to a parameter class."""
-    if kind == "hour":
-        cls = DateHourParameter
-    elif kind == "minute":
-        cls = DateMinuteParameter
-    elif kind == "second":
-        cls = DateSecondParameter
-    else:
-        return never(kind)  # pragma: no cover
+    match kind:
+        case "hour":
+            cls = DateHourParameter
+        case "minute":
+            cls = DateMinuteParameter
+        case "second":
+            cls = DateSecondParameter
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(kind)
     return partial(cls, interval=interval)
 
 

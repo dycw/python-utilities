@@ -4,7 +4,9 @@ from collections.abc import Iterator
 from enum import Enum, unique
 from platform import system
 
-from utilities.typing import IterableStrs, never
+from typing_extensions import assert_never
+
+from utilities.typing import IterableStrs
 
 
 @unique
@@ -24,7 +26,8 @@ def get_system() -> System:
         return System.mac
     if sys == "Linux":  # pragma: os-ne-linux
         return System.linux
-    raise UnableToDetermineSystemError  # pragma: no cover
+    msg = f"{sys=}"  # pragma: no cover
+    raise UnableToDetermineSystemError(msg)  # pragma: no cover
 
 
 class UnableToDetermineSystemError(ValueError):
@@ -46,14 +49,15 @@ IS_NOT_LINUX = not IS_LINUX
 
 def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
-    if SYSTEM is System.windows:  # noqa: SIM114 # pragma: os-ne-windows
-        yield from (t.lower() for t in text)
-    elif SYSTEM is System.mac:  # pragma: os-ne-macos
-        yield from (t.lower() for t in text)
-    elif SYSTEM is System.linux:  # pragma: os-ne-linux
-        yield from text
-    else:  # pragma: no cover
-        return never(SYSTEM)
+    match SYSTEM:
+        case System.windows:  # pragma: os-ne-windows
+            yield from (t.lower() for t in text)
+        case System.mac:  # pragma: os-ne-macos
+            yield from (t.lower() for t in text)
+        case System.linux:  # pragma: os-ne-linux
+            yield from text
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(SYSTEM)
 
 
 __all__ = [

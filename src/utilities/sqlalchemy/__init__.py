@@ -197,6 +197,7 @@ else:
 try:
     from utilities.sqlalchemy.timeout_decorator import (
         NoSuchSequenceError,
+        SQLiteDoesNotSupportSequencesError,
         next_from_sequence,
         redirect_to_no_such_sequence_error,
     )
@@ -207,4 +208,5 @@ else:
         "next_from_sequence",
         "NoSuchSequenceError",
         "redirect_to_no_such_sequence_error",
+        "SQLiteDoesNotSupportSequencesError",
     ]

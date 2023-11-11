@@ -6,10 +6,11 @@ from contextlib import suppress
 from datetime import tzinfo
 from re import sub
 
+from typing_extensions import assert_never
+
 from utilities.platform import SYSTEM, System
 from utilities.re import extract_groups
 from utilities.types import Duration
-from utilities.typing import never
 from utilities.zoneinfo import HONG_KONG, TOKYO
 
 UTC = dt.timezone.utc
@@ -121,13 +122,15 @@ class LocalTimeZoneError(ValueError):
 
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
-    if SYSTEM is System.windows:  # pragma: os-ne-windows
-        return text
-    if SYSTEM is System.mac:  # pragma: os-ne-macos
-        return text
-    if SYSTEM is System.linux:  # pragma: os-ne-linux
-        return sub("%Y", "%4Y", text)
-    return never(SYSTEM)  # pragma: no cover
+    match SYSTEM:
+        case System.windows:  # pragma: os-ne-windows
+            return text
+        case System.mac:  # pragma: os-ne-macos
+            return text
+        case System.linux:  # pragma: os-ne-linux
+            return sub("%Y", "%4Y", text)
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(SYSTEM)
 
 
 def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
@@ -314,7 +317,6 @@ __all__ = [
     "local_timezone",
     "LocalTimeZoneError",
     "maybe_sub_pct_y",
-    "never",
     "NOW_HKG",
     "NOW_TKY",
     "NOW_UTC",
