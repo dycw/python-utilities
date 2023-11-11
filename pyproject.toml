@@ -16,6 +16,7 @@ requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 airium = ["airium >= 0.2.6"]
+ast-comments = ["ast-comments >= 1.2.0"]
 atomicwrites = ["atomicwrites >= 1.4.1"]
 attrs = ["attrs >= 23.1.0"]
 beartype = ["beartype >= 0.16.4"]
@@ -27,6 +28,7 @@ cvxpy = ["cvxpy >= 1.4.1"]
 dev = [
   # core
   "airium >= 0.2.6",
+  "ast-comments >= 1.2.0",
   "atomicwrites >= 1.4.1",
   "attrs >= 23.1.0",
   "beartype >= 0.16.4",

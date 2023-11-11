@@ -19,6 +19,8 @@ argcomplete==3.1.4
     # via nox
 asciitree==0.3.3
     # via zarr
+ast-comments==1.2.0
+    # manually
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 attrs==23.1.0
