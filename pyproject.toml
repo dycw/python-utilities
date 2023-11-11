@@ -41,8 +41,8 @@ dev = [
   "fastparquet >= 2023.10.1",
   "fpdf2 >= 2.7.6",
   "hatch >= 1.7.0",
-  "holoviews >= 1.18.0",
-  "hypothesis >= 6.87.4",
+  "holoviews >= 1.18.1",
+  "hypothesis >= 6.88.3",
   "loguru >= 0.7.2",
   "luigi >= 3.4.0",
   "mdutils >= 1.6.0",
@@ -50,11 +50,11 @@ dev = [
   "more-itertools >= 10.1.0",
   "numbagg >= 0.6.0",
   "numpy >= 1.26.1",
-  "pandas >= 2.1.2",
-  "polars >= 0.19.12",
+  "pandas >= 2.1.3",
+  "polars >= 0.19.13",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
-  "pyinstrument >= 4.6.0",
+  "pyinstrument >= 4.6.1",
   "pypiserver[passlib] >= 2.0.1",
   "pytest >= 7.4.3",
   "pytest-check >= 2.2.2",
@@ -65,7 +65,7 @@ dev = [
   "streamlit >= 1.28.1",
   "timeout-decorator >= 0.5.0",
   "tqdm >= 4.66.1",
-  "typed-settings >= 23.1.0",
+  "typed-settings >= 23.1.1",
   "xarray >= 2023.10.1",
   "xlrd >= 2.0.1",
   "zarr >= 2.16.1",
@@ -92,16 +92,16 @@ fastparquet = ["fastparquet >= 2023.10.1", "atomicwrites >= 1.4.1"]
 fpdf2 = [
   "fpdf2 >= 2.7.6",
   "atomicwrites >= 1.4.1",
-  "holoviews >= 1.18.0",
+  "holoviews >= 1.18.1",
   "selenium >= 4.15.2",
 ]
 hatch = ["hatch >= 1.7.0"]
 holoviews = [
-  "holoviews >= 1.18.0",
+  "holoviews >= 1.18.1",
   "atomicwrites >= 1.4.1",
   "selenium >= 4.15.2",
 ]
-hypothesis = ["hypothesis >= 6.87.4"]
+hypothesis = ["hypothesis >= 6.88.3"]
 loguru = ["loguru >= 0.7.2"]
 luigi = ["luigi >= 3.4.0"]
 mdutils = ["mdutils >= 1.6.0"]
@@ -110,30 +110,35 @@ more-itertools = ["more-itertools >= 10.1.0"]
 numbagg = ["numbagg >= 0.6.0"]
 numpy = ["numpy >= 1.26.1"]
 numpy-all = ["numbagg >= 0.6.0", "numpy >= 1.26.1"]
-pandas = ["pandas >= 2.1.2"]
-polars = ["polars >= 0.19.12"]
+pandas = ["pandas >= 2.1.3"]
+polars = ["polars >= 0.19.13"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
-pyinstrument = ["pyinstrument >= 4.6.0", "atomicwrites >= 1.4.1"]
+pyinstrument = ["pyinstrument >= 4.6.1", "atomicwrites >= 1.4.1"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 7.4.3"]
 pytest-check = ["pytest-check >= 2.2.2"]
 scipy = ["scipy >= 1.11.3"]
-scripts = ["loguru >= 0.7.2", "typed-settings[click] >= 23.1.0"]
+scripts = ["loguru >= 0.7.2", "typed-settings[click] >= 23.1.1"]
 scripts-csv-to-markdown = [
   "loguru >= 0.7.2",
   "mdutils >= 1.6.0",
-  "typed-settings[click] >= 23.1.0",
+  "typed-settings[click] >= 23.1.1",
+]
+scripts-generate-snippets = [
+  "ast-comments >= 1.2.0",
+  "loguru >= 0.7.2",
+  "typed-settings[click] >= 23.1.1",
 ]
 scripts-luigi = [
   "loguru >= 0.7.2",
   "luigi >= 3.4.0",
-  "typed-settings[click] >= 23.1.0",
+  "typed-settings[click] >= 23.1.1",
 ]
 scripts-pypi = [
   "pypiserver[passlib] >= 2.0.1",
   "loguru >= 0.7.2",
-  "typed-settings[click] >= 23.1.0",
+  "typed-settings[click] >= 23.1.1",
 ]
 selenium = ["selenium >= 4.15.2"]
 semver = ["semver >= 3.0.2"]

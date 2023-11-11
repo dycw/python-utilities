@@ -9,7 +9,6 @@ from operator import attrgetter, itemgetter
 from typing import Any, cast
 
 from click import ParamType
-from typed_settings import cli_click, types
 from typed_settings.cli_utils import (
     Default,
     StrDict,
@@ -19,6 +18,7 @@ from typed_settings.cli_utils import (
 )
 from typed_settings.click_utils import ClickHandler
 from typed_settings.click_utils import click_options as _click_options
+from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 
 from utilities.click import Date, DateTime, Time, Timedelta
 from utilities.click import Enum as ClickEnum
@@ -138,9 +138,9 @@ def _get_metadata(
 ) -> dict[str, Any]:
     # copied from typed_settings.cls_attrs, which we cannot import
     metadata_use = {} if metadata is None else dict(metadata)
-    ts_meta = metadata_use.setdefault(types.METADATA_KEY, {})
+    ts_meta = metadata_use.setdefault(METADATA_KEY, {})
     ts_meta["help"] = help_
-    ts_meta[cli_click.METADATA_KEY] = {"help": help_} | (
+    ts_meta[CLICK_METADATA_KEY] = {"help": help_} | (
         {} if click is None else dict(click)
     )
     return metadata_use
