@@ -4,6 +4,7 @@ import abc
 from abc import ABC, ABCMeta
 from ast import ImportFrom, alias
 
+import pytest
 from click.testing import CliRunner
 from pytest import LogCaptureFixture, mark, param
 
@@ -15,6 +16,7 @@ from utilities.scripts.generate_snippets import (
     _generate_snippets,
     _node_to_key,
     _yield_import_nodes_directly,
+    _yield_import_nodes_from_module_all,
     _yield_import_nodes_from_text,
     main,
     yield_imports,
@@ -97,6 +99,14 @@ class TestYieldImportNodesDirectly:
         assert one(imp1.names).name == "ABC"
         assert imp2.module == "abc"
         assert one(imp2.names).name == "ABCMeta"
+
+
+class TestYieldImportNodesFromModuleAll:
+    def test_main(self) -> None:
+        imports = list(_yield_import_nodes_from_module_all(pytest))
+        assert len(imports) == 77
+        for imp in imports:
+            assert imp.module == "pytest"
 
 
 class TestYieldImportNodesFromText:

@@ -15,6 +15,7 @@ from click import command, option
 from loguru import logger
 from typing_extensions import assert_never
 
+import utilities.itertools
 from utilities.itertools import one
 from utilities.text import ensure_str, snake_case, strip_and_dedent
 
@@ -23,15 +24,18 @@ class Method(Enum):
     """An enumeration of the import generation methods."""
 
     direct = auto()
+    module = auto()
     parse = auto()
 
 
 def yield_imports(
-    *, method: Method = Method.parse, include_suppress: bool = True
+    *, method: Method = Method.module, include_suppress: bool = True
 ) -> Iterator[ImportFrom]:
     match method:
         case Method.direct:
             return _yield_import_nodes_directly(click, [command, option])
+        case Method.module:
+            return _yield_import_nodes_from_module_all(utilities.itertools)
         case Method.parse:
             text = """
 from itertools import (
@@ -71,6 +75,14 @@ def _yield_import_nodes_directly(
     mod_name = module.__name__
     for obj in objs:
         yield ImportFrom(module=mod_name, names=[alias(name=obj.__qualname__)])
+
+
+def _yield_import_nodes_from_module_all(
+    module: ModuleType,
+    /,
+) -> Iterator[ImportFrom]:
+    for key in module.__all__:
+        yield ImportFrom(module=module.__name__, names=[alias(name=key)])
 
 
 def _yield_import_nodes_from_text(
