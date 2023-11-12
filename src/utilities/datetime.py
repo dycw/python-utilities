@@ -309,7 +309,6 @@ __all__ = [
     "ensure_time",
     "ensure_timedelta",
     "EPOCH_UTC",
-    "extract_groups",
     "get_now",
     "get_today",
     "is_weekday",
