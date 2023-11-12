@@ -6,19 +6,22 @@ from locale import LC_CTYPE, LC_NUMERIC, getlocale, setlocale
 from locale import atof as _atof
 from locale import atoi as _atoi
 
+from typing_extensions import assert_never
+
 from utilities.platform import SYSTEM, System
-from utilities.typing import never
 
 
 def get_locale_for_platform(locale: str, /) -> str:
     """Get the platform-dependent locale."""
-    if SYSTEM is System.windows:  # pragma: os-ne-windows
-        return locale
-    if SYSTEM is System.mac:  # pragma: os-ne-macos
-        return locale
-    if SYSTEM is System.linux:  # pragma: os-ne-linux
-        return f"{locale}.utf8"
-    return never(SYSTEM)  # pragma: no cover
+    match SYSTEM:
+        case System.windows:  # pragma: os-ne-windows
+            return locale
+        case System.mac:  # pragma: os-ne-macos
+            return locale
+        case System.linux:  # pragma: os-ne-linux
+            return f"{locale}.utf8"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(SYSTEM)
 
 
 @contextmanager

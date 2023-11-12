@@ -12,10 +12,10 @@ import click
 from ast_comments import Comment, unparse
 from click import command, option
 from loguru import logger
+from typing_extensions import assert_never
 
 from utilities.itertools import one
 from utilities.text import ensure_str, snake_case, strip_and_dedent
-from utilities.typing import never
 
 
 class Method(Enum):
@@ -28,20 +28,22 @@ class Method(Enum):
 def yield_imports(
     *, method: Method = Method.parse, include_suppress: bool = True
 ) -> Iterator[ImportFrom]:
-    if method is Method.direct:
-        return _yield_import_nodes_directly(click, [command, option])
-    if method is Method.parse:
-        text = """
-
+    match method:
+        case Method.direct:
+            return _yield_import_nodes_directly(click, [command, option])
+        case Method.parse:
+            text = """
 from itertools import (
     accumulate,  # noqa: F401
     chain,  # noqa: F401
     combinations,  # noqa: F401
 )
-
             """
-        return _yield_import_nodes_from_text(text, include_suppress=include_suppress)
-    return never(method)  # pragma: no cover
+            return _yield_import_nodes_from_text(
+                text, include_suppress=include_suppress
+            )
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(method)
 
 
 @command()

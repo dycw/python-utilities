@@ -13,6 +13,7 @@ from typing import Any, cast
 from click import command
 from loguru import logger
 from psutil import swap_memory, virtual_memory
+from typing_extensions import assert_never
 
 from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
@@ -20,7 +21,6 @@ from utilities.platform import SYSTEM, System
 from utilities.scripts.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
-from utilities.typing import never
 
 _CONFIG = Config()
 
@@ -66,21 +66,22 @@ def _yield_writer(
 def _get_memory_usage() -> Item:
     virtual = cast(Any, virtual_memory())
     virtual_kwargs: dict[str, Any] = {}
-    if SYSTEM is System.windows:  # pragma: os-ne-windows
-        pass
-    elif SYSTEM is System.mac:  # pragma: os-ne-macos
-        virtual_kwargs["virtual_active"] = virtual.active
-        virtual_kwargs["virtual_inactive"] = virtual.inactive
-        virtual_kwargs["virtual_wired"] = virtual.wired
-    elif SYSTEM is System.linux:  # pragma: os-ne-linux
-        virtual_kwargs["virtual_active"] = virtual.active
-        virtual_kwargs["virtual_inactive"] = virtual.inactive
-        virtual_kwargs["virtual_buffers"] = virtual.buffers
-        virtual_kwargs["virtual_cached"] = virtual.cached
-        virtual_kwargs["virtual_shared"] = virtual.shared
-        virtual_kwargs["virtual_slab"] = virtual.slab
-    else:  # pragma: no cover
-        never(SYSTEM)
+    match SYSTEM:
+        case System.windows:  # pragma: os-ne-windows
+            pass
+        case System.mac:  # pragma: os-ne-macos
+            virtual_kwargs["virtual_active"] = virtual.active
+            virtual_kwargs["virtual_inactive"] = virtual.inactive
+            virtual_kwargs["virtual_wired"] = virtual.wired
+        case System.linux:  # pragma: os-ne-linux
+            virtual_kwargs["virtual_active"] = virtual.active
+            virtual_kwargs["virtual_inactive"] = virtual.inactive
+            virtual_kwargs["virtual_buffers"] = virtual.buffers
+            virtual_kwargs["virtual_cached"] = virtual.cached
+            virtual_kwargs["virtual_shared"] = virtual.shared
+            virtual_kwargs["virtual_slab"] = virtual.slab
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(SYSTEM)
     swap = swap_memory()
     return Item(
         datetime=get_now(tz=UTC),

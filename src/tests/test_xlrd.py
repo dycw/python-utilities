@@ -2,11 +2,26 @@ from __future__ import annotations
 
 import datetime as dt
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.datetime import UTC
-from utilities.platform import IS_NOT_MAC, IS_NOT_WINDOWS
-from utilities.xlrd import to_date, to_datetime
+from utilities.platform import (
+    IS_NOT_MAC,
+    IS_NOT_WINDOWS,
+    SYSTEM,
+    System,
+    UnsupportedSystemError,
+)
+from utilities.xlrd import _get_date_mode, to_date, to_datetime
+
+
+class TestGetDateMode:
+    def test_main(self) -> None:
+        if SYSTEM is System.linux:
+            with raises(UnsupportedSystemError):
+                _ = _get_date_mode()
+        else:
+            assert _get_date_mode() in {0, 1}
 
 
 class TestToDate:
