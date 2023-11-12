@@ -108,7 +108,10 @@ def throttle(
 ) -> Any:
     """Throttle a test. On run by default, by pass otherwise."""
 
-    root_use = get_repo_root().joinpath(".pytest_cache") if root is None else Path(root)
+    if root is None:
+        root_use = get_repo_root().joinpath(".pytest_cache", "throttle")
+    else:
+        root_use = Path(root)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
