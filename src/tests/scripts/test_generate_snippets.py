@@ -5,7 +5,7 @@ from abc import ABC, ABCMeta
 from ast import ImportFrom, alias
 
 from click.testing import CliRunner
-from pytest import mark, param
+from pytest import LogCaptureFixture, mark, param
 
 from utilities.itertools import one
 from utilities.scripts.generate_snippets import (
@@ -64,6 +64,16 @@ class TestGenerateSnippets:
         result = _generate_snippets(imports, template)
         expected = "fab-abc: from abc import ABC,fab-abc-meta: from abc import ABCMeta,"
         assert result == expected
+
+    def test_duplicated_keys(self, *, caplog: LogCaptureFixture) -> None:
+        imports = {
+            ImportFrom(module="dataclasses", names=[alias(name=name)])
+            for name in ["field", "Field"]
+        }
+        template = "{key}: {value}"
+        _ = _generate_snippets(imports, template)
+        (record,) = caplog.records
+        assert record.message == "Duplicated keys: {'fda-field'}"
 
 
 class TestNodeToKey:

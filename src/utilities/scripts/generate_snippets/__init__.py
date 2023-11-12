@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ast import AST, Call, ImportFrom, Module, Name, With, alias, expr, parse
+from collections import Counter
 from collections.abc import Iterable, Iterator
 from enum import Enum, auto
 from operator import itemgetter
@@ -128,6 +129,10 @@ def _generate_ipython_imports(imports: Iterable[ImportFrom], /) -> str:
 def _generate_snippets(imports: Iterable[ImportFrom], template: str, /) -> str:
     items = ((_node_to_key(imp), _generate_snippet(imp, template)) for imp in imports)
     sorted_items = sorted(items, key=itemgetter(0))
+    counts = Counter(k for k, _ in sorted_items)
+    duplicated = {k for k, v in counts.items() if v >= 2}  # noqa: PLR2004
+    if len(duplicated) >= 1:
+        logger.warning(f"Duplicated keys: {duplicated}")
     snippets = (f"{s}," for _, s in sorted_items)
     return "".join(snippets)
 
