@@ -312,7 +312,9 @@ pycparser==2.21
 pyct==0.5.0
     # via colorcet
 pydantic==2.4.2
-    # via fastapi
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   fastapi
 pydantic-core==2.10.1
     # via pydantic
 pydeck==0.8.1b0
