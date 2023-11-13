@@ -333,8 +333,6 @@ __all__ = [
     "serialize_datetime",
     "serialize_time",
     "serialize_timedelta",
-    "System",
-    "SYSTEM",
     "TODAY_HKG",
     "TODAY_TKY",
     "TODAY_UTC",
