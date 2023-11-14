@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 from utilities.dataclasses.dataclasses import (
+    Dataclass,
     NotADataClassNorADataClassInstanceError,
     get_dataclass_class,
     is_dataclass_class,
     is_dataclass_instance,
+    replace_non_sentinel,
     yield_field_names,
 )
 
 __all__ = [
+    "Dataclass",
     "get_dataclass_class",
     "is_dataclass_class",
     "is_dataclass_instance",
     "NotADataClassNorADataClassInstanceError",
+    "replace_non_sentinel",
     "yield_field_names",
 ]
 
