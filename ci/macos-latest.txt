@@ -15,7 +15,7 @@ anyio==3.7.1
     #   fastapi
     #   httpx
     #   starlette
-argcomplete==3.1.4
+argcomplete==3.1.6
     # via nox
 asciitree==0.3.3
     # via zarr
@@ -110,7 +110,7 @@ fastparquet==2023.10.1
     # via dycw-utilities (pyproject.toml)
 filelock==3.13.1
     # via virtualenv
-fonttools==4.44.0
+fonttools==4.44.3
     # via fpdf2
 fpdf2==2.7.6
     # via dycw-utilities (pyproject.toml)
@@ -138,7 +138,7 @@ httpx==0.25.1
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.88.3
+hypothesis==6.89.0
     # via dycw-utilities (pyproject.toml)
 idna==3.4
     # via
@@ -162,9 +162,9 @@ jinja2==3.1.2
     #   pydeck
 jsonschema==4.19.2
     # via altair
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2023.11.1
     # via jsonschema
-keyring==24.2.0
+keyring==24.3.0
     # via hatch
 linkify-it-py==2.0.2
     # via panel
@@ -201,11 +201,11 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.58.1
     # via numbagg
-numbagg==0.6.0
+numbagg==0.6.2
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   altair
     #   bokeh
@@ -291,7 +291,7 @@ polars==0.19.13
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==4.25.0
+protobuf==4.25.1
     # via streamlit
 psutil==5.9.6
     # via
@@ -309,9 +309,11 @@ pycparser==2.21
     # via cffi
 pyct==0.5.0
     # via colorcet
-pydantic==2.4.2
-    # via fastapi
-pydantic-core==2.10.1
+pydantic==2.5.1
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   fastapi
+pydantic-core==2.14.3
     # via pydantic
 pydeck==0.8.1b0
     # via streamlit
@@ -347,7 +349,7 @@ pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
-pytest-xdist==3.3.1
+pytest-xdist==3.4.0
     # via dycw-utilities (pyproject.toml)
 python-daemon==3.0.1
     # via luigi
@@ -367,7 +369,7 @@ pyyaml==6.0.1
     # via bokeh
 qdldl==0.1.7.post0
     # via osqp
-referencing==0.30.2
+referencing==0.31.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -375,11 +377,11 @@ requests==2.31.0
     # via
     #   panel
     #   streamlit
-rich==13.6.0
+rich==13.7.0
     # via
     #   hatch
     #   streamlit
-rpds-py==0.12.0
+rpds-py==0.13.0
     # via
     #   jsonschema
     #   referencing
@@ -421,7 +423,7 @@ sqlalchemy==2.0.23
     # via dycw-utilities (pyproject.toml)
 starlette==0.27.0
     # via fastapi
-streamlit==1.28.1
+streamlit==1.28.2
     # via dycw-utilities (pyproject.toml)
 tenacity==8.2.3
     # via
@@ -433,7 +435,7 @@ toml==0.10.2
     # via streamlit
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.2
+tomlkit==0.12.3
     # via hatch
 toolz==0.12.0
     # via altair
@@ -453,7 +455,7 @@ trio==0.23.1
     #   trio-websocket
 trio-websocket==0.11.1
     # via selenium
-trove-classifiers==2023.11.9
+trove-classifiers==2023.11.14
     # via hatchling
 typed-settings==23.1.1
     # via dycw-utilities (pyproject.toml)
@@ -473,7 +475,7 @@ tzlocal==5.2
     # via streamlit
 uc-micro-py==1.0.2
     # via linkify-it-py
-urllib3[socks]==2.0.7
+urllib3[socks]==2.1.0
     # via
     #   requests
     #   selenium
