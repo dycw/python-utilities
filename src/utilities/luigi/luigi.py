@@ -34,8 +34,10 @@ from utilities.datetime import (
     serialize_time,
 )
 from utilities.enum import ensure_enum, parse_enum
+from utilities.json import deserialize, serialize
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
+from utilities.typing import IterableStrs
 
 _E = TypeVar("_E", bound=Enum)
 
@@ -142,6 +144,22 @@ class DateParameter(luigi.DateParameter):
     @override
     def serialize(self, dt: dt.date) -> str:
         return serialize_date(dt)
+
+
+class FrozenSetStrsParameter(Parameter):
+    """A parameter which takes the value of a frozen set of strings."""
+
+    @override
+    def normalize(self, x: IterableStrs) -> frozenset[str]:
+        return frozenset(x)
+
+    @override
+    def parse(self, x: str) -> frozenset[str]:
+        return deserialize(x)
+
+    @override
+    def serialize(self, x: frozenset[str]) -> str:
+        return serialize(x)
 
 
 class TimeParameter(Parameter, Generic[_E]):
@@ -438,6 +456,7 @@ __all__ = [
     "EnumParameter",
     "ExternalFile",
     "ExternalTask",
+    "FrozenSetStrsParameter",
     "get_dependencies_downstream",
     "get_dependencies_upstream",
     "get_task_classes",
