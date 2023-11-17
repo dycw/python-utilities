@@ -300,11 +300,7 @@ class TestDatetime64ToDatetime:
 class TestDatetime64DTypeToUnit:
     @mark.parametrize(
         ("dtype", "expected"),
-        [
-            param(datetime64D, "D"),
-            param(datetime64Y, "Y"),
-            param(datetime64ns, "ns"),
-        ],
+        [param(datetime64D, "D"), param(datetime64Y, "Y"), param(datetime64ns, "ns")],
     )
     def test_example(self, *, dtype: Any, expected: Datetime64Unit) -> None:
         assert datetime64_dtype_to_unit(dtype) == expected
@@ -317,11 +313,7 @@ class TestDatetime64DTypeToUnit:
 class TestDatetime64DUnitToDType:
     @mark.parametrize(
         ("unit", "expected"),
-        [
-            param("D", datetime64D),
-            param("Y", datetime64Y),
-            param("ns", datetime64ns),
-        ],
+        [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
     )
     def test_example(self, *, unit: Datetime64Unit, expected: Any) -> None:
         assert datetime64_unit_to_dtype(unit) == expected
@@ -422,31 +414,17 @@ class TestFFillNonNanSlices:
             param(
                 None,
                 0,
-                [
-                    [0.1, nan, nan, 0.2],
-                    [0.1, nan, nan, 0.2],
-                    [0.3, nan, nan, nan],
-                ],
+                [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]],
             ),
             param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
             param(
-                1,
-                0,
-                [
-                    [0.1, nan, nan, 0.2],
-                    [0.1, nan, nan, 0.2],
-                    [0.3, nan, nan, nan],
-                ],
+                1, 0, [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]]
             ),
             param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
         ],
     )
     def test_main(
-        self,
-        *,
-        limit: int | None,
-        axis: int,
-        expected_v: Sequence[Sequence[float]],
+        self, *, limit: int | None, axis: int, expected_v: Sequence[Sequence[float]]
     ) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
@@ -568,15 +546,7 @@ class TestIsAtLeast:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
@@ -605,15 +575,7 @@ class TestIsAtMost:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
@@ -636,37 +598,17 @@ class TestIsBetween:
         ],
     )
     def test_main(
-        self,
-        *,
-        x: float,
-        low: float,
-        high: float,
-        equal_nan: bool,
-        expected: bool,
+        self, *, x: float, low: float, high: float, equal_nan: bool, expected: bool
     ) -> None:
         assert is_between(x, low, high, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
         "low",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
     @mark.parametrize(
         "high",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
     def test_nan(self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
@@ -902,15 +844,7 @@ class TestIsGreaterThan:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
@@ -970,15 +904,7 @@ class TestIsLessThan:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
@@ -1286,12 +1212,7 @@ class TestShift:
                 [4 * [nan], [0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]],
                 id="axis=0, n=1",
             ),
-            param(
-                0,
-                2,
-                [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]],
-                id="axis=0, n=2",
-            ),
+            param(0, 2, [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]], id="axis=0, n=2"),
             param(
                 0,
                 -1,
@@ -1299,49 +1220,30 @@ class TestShift:
                 id="axis=0, n=-1",
             ),
             param(
-                0,
-                -2,
-                [[8.0, 9.0, 10.0, 11.0], 4 * [nan], 4 * [nan]],
-                id="axis=0, n=-2",
+                0, -2, [[8.0, 9.0, 10.0, 11.0], 4 * [nan], 4 * [nan]], id="axis=0, n=-2"
             ),
             param(
                 1,
                 1,
-                [
-                    [nan, 0.0, 1.0, 2.0],
-                    [nan, 4.0, 5.0, 6.0],
-                    [nan, 8.0, 9.0, 10.0],
-                ],
+                [[nan, 0.0, 1.0, 2.0], [nan, 4.0, 5.0, 6.0], [nan, 8.0, 9.0, 10.0]],
                 id="axis=1, n=1",
             ),
             param(
                 1,
                 2,
-                [
-                    [nan, nan, 0.0, 1.0],
-                    [nan, nan, 4.0, 5.0],
-                    [nan, nan, 8.0, 9.0],
-                ],
+                [[nan, nan, 0.0, 1.0], [nan, nan, 4.0, 5.0], [nan, nan, 8.0, 9.0]],
                 id="axis=1, n=1",
             ),
             param(
                 1,
                 -1,
-                [
-                    [1.0, 2.0, 3.0, nan],
-                    [5.0, 6.0, 7.0, nan],
-                    [9.0, 10.0, 11.0, nan],
-                ],
+                [[1.0, 2.0, 3.0, nan], [5.0, 6.0, 7.0, nan], [9.0, 10.0, 11.0, nan]],
                 id="axis=1, n=-1",
             ),
             param(
                 1,
                 -2,
-                [
-                    [2.0, 3.0, nan, nan],
-                    [6.0, 7.0, nan, nan],
-                    [10.0, 11.0, nan, nan],
-                ],
+                [[2.0, 3.0, nan, nan], [6.0, 7.0, nan, nan], [10.0, 11.0, nan, nan]],
                 id="axis=1, n=-2",
             ),
         ],

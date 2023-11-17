@@ -129,12 +129,7 @@ def str_indexes(
     elements = text_ascii(min_size=min_size, max_size=max_size)
     index = draw(
         indexes(
-            elements=elements,
-            dtype=object,
-            n=n,
-            unique=unique,
-            name=name,
-            sort=sort,
+            elements=elements, dtype=object, n=n, unique=unique, name=name, sort=sort
         )
     )
     return index.astype(string)

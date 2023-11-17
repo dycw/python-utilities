@@ -18,11 +18,7 @@ class TestEnsureClass:
 class TestIsSubclassExceptBoolInt:
     @mark.parametrize(
         ("x", "y", "expected"),
-        [
-            param(bool, bool, True),
-            param(bool, int, False),
-            param(int, int, True),
-        ],
+        [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
     )
     def test_main(self, *, x: type[Any], y: type[Any], expected: bool) -> None:
         assert issubclass_except_bool_int(x, y) is expected

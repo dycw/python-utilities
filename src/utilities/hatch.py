@@ -16,6 +16,4 @@ def get_hatch_version(
     return int(major), int(minor), int(patch)
 
 
-__all__ = [
-    "get_hatch_version",
-]
+__all__ = ["get_hatch_version"]

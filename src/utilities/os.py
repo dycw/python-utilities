@@ -43,8 +43,4 @@ def _apply_environment(items: Iterable[tuple[str, str | None]], /) -> None:
             environ[key] = value
 
 
-__all__ = [
-    "CPU_COUNT",
-    "temp_environ",
-    "UnableToDetermineCPUCountError",
-]
+__all__ = ["CPU_COUNT", "temp_environ", "UnableToDetermineCPUCountError"]

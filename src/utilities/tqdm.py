@@ -119,6 +119,4 @@ def _get_total(total: float | None, iterable: Any, /) -> float | None:
         return None
 
 
-__all__ = [
-    "tqdm",
-]
+__all__ = ["tqdm"]

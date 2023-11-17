@@ -29,8 +29,4 @@ class FernetKeyMissingError(RuntimeError):
     """Raised when the fernet key is missing."""
 
 
-__all__ = [
-    "decrypt",
-    "encrypt",
-    "FernetKeyMissingError",
-]
+__all__ = ["decrypt", "encrypt", "FernetKeyMissingError"]

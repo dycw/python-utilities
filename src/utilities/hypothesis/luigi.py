@@ -17,6 +17,4 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
     return NamespaceMixin
 
 
-__all__ = [
-    "namespace_mixins",
-]
+__all__ = ["namespace_mixins"]

@@ -60,6 +60,4 @@ def versions(  # noqa: PLR0912
     return Version(major=major, minor=minor, patch=patch)
 
 
-__all__ = [
-    "versions",
-]
+__all__ = ["versions"]

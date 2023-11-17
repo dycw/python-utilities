@@ -64,8 +64,4 @@ class TableParameter(Parameter):
         return get_table_name(x)
 
 
-__all__ = [
-    "DatabaseTarget",
-    "EngineParameter",
-    "TableParameter",
-]
+__all__ = ["DatabaseTarget", "EngineParameter", "TableParameter"]

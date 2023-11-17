@@ -116,11 +116,7 @@ class SeriesAndTableColumnIncompatibleError(TypeError):
 
 
 def _match_series_name_to_table_column(
-    sr_name: str,
-    table_schema: Mapping[str, type],
-    /,
-    *,
-    snake: bool = False,
+    sr_name: str, table_schema: Mapping[str, type], /, *, snake: bool = False
 ) -> tuple[str, type]:
     items = table_schema.items()
     try:
@@ -289,12 +285,7 @@ class UnequalSetOfColumnsError(ValueError):
 
 
 def _check_columns_equal(
-    x: Column[Any],
-    y: Column[Any],
-    /,
-    *,
-    snake: bool = False,
-    primary_key: bool = True,
+    x: Column[Any], y: Column[Any], /, *, snake: bool = False, primary_key: bool = True
 ) -> None:
     """Check that a pair of columns are equal."""
     _check_table_or_column_names_equal(x.name, y.name, snake=snake)
@@ -659,9 +650,7 @@ def ensure_tables_created(
 
 
 def ensure_tables_dropped(
-    engine_or_conn: Engine | Connection,
-    /,
-    *tables_or_mapped_classes: Table | type[Any],
+    engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     try:

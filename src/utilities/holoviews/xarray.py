@@ -54,8 +54,4 @@ class ArrayNameIsEmptyStringError(TypeError):
     """Raised when the array name is the empty string."""
 
 
-__all__ = [
-    "ArrayNameIsEmptyStringError",
-    "ArrayNameNotAStringError",
-    "plot_curve",
-]
+__all__ = ["ArrayNameIsEmptyStringError", "ArrayNameNotAStringError", "plot_curve"]

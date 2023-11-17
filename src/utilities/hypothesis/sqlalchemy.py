@@ -29,6 +29,4 @@ def sqlite_engines(
     return engine
 
 
-__all__ = [
-    "sqlite_engines",
-]
+__all__ = ["sqlite_engines"]

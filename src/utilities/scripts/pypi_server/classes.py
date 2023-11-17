@@ -16,8 +16,7 @@ class Config:
         param_decls=("-pw", "--path-password"),
     )
     path_packages: Path = click_field(
-        default=Path("packages"),
-        param_decls=("-pk", "--path-packages"),
+        default=Path("packages"), param_decls=("-pk", "--path-packages")
     )
     port: int = click_field(default=1461, param_decls=("-po", "--port"))
     dry_run: bool = click_field(default=False, param_decls=("-dr", "--dry-run"))

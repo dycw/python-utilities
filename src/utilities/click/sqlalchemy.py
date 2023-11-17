@@ -25,6 +25,4 @@ class Engine(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
-__all__ = [
-    "Engine",
-]
+__all__ = ["Engine"]

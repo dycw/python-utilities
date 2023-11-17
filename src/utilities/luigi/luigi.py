@@ -106,12 +106,7 @@ class EnumParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of an Enum."""
 
     def __init__(
-        self,
-        enum: type[_E],
-        /,
-        *args: Any,
-        case_sensitive: bool = True,
-        **kwargs: Any,
+        self, enum: type[_E], /, *args: Any, case_sensitive: bool = True, **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         self._enum = enum
@@ -182,10 +177,7 @@ class WeekdayParameter(Parameter):
     """A parameter which takes the valeu of the previous/next weekday."""
 
     def __init__(
-        self,
-        *args: Any,
-        rounding: Literal["prev", "next"] = "prev",
-        **kwargs: Any,
+        self, *args: Any, rounding: Literal["prev", "next"] = "prev", **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         if rounding == "prev":

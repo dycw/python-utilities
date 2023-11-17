@@ -127,11 +127,7 @@ class NDArrayWithIndexes:
     """An `ndarray` with indexes stored on disk."""
 
     def __init__(
-        self,
-        path: PathLike,
-        /,
-        *,
-        mode: Literal["r", "r+", "a", "w", "w-"] = "a",
+        self, path: PathLike, /, *, mode: Literal["r", "r+", "a", "w", "w-"] = "a"
     ) -> None:
         super().__init__()
         self._path = Path(path)
@@ -216,10 +212,7 @@ class NDArrayWithIndexes:
         return len(self.shape)
 
     def sel(
-        self,
-        indexers: Mapping[str, Any] | None = None,
-        /,
-        **indexer_kwargs: Any,
+        self, indexers: Mapping[str, Any] | None = None, /, **indexer_kwargs: Any
     ) -> Any:
         """Select orthogonally using index values."""
         merged = ({} if indexers is None else dict(indexers)) | indexer_kwargs

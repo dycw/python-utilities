@@ -9,8 +9,4 @@ IterableStrs = SequenceStrs | AbstractSet[str] | Mapping[str, Any]
 Number = float | int
 
 
-__all__ = [
-    "IterableStrs",
-    "Number",
-    "SequenceStrs",
-]
+__all__ = ["IterableStrs", "Number", "SequenceStrs"]

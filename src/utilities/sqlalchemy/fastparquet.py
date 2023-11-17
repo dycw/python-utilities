@@ -40,6 +40,4 @@ def select_to_parquet(
     return None
 
 
-__all__ = [
-    "select_to_parquet",
-]
+__all__ = ["select_to_parquet"]

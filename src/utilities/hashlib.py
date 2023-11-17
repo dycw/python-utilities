@@ -16,6 +16,4 @@ def md5_hash(obj: Any, /) -> str:
     return md5(ser, usedforsecurity=False).hexdigest()
 
 
-__all__ = [
-    "md5_hash",
-]
+__all__ = ["md5_hash"]

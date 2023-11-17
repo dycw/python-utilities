@@ -17,6 +17,4 @@ def check() -> Iterator[None]:
             yield
 
 
-__all__ = [
-    "check",
-]
+__all__ = ["check"]

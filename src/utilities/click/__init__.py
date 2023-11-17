@@ -9,14 +9,7 @@ from utilities.click.click import (
     log_level_option,
 )
 
-__all__ = [
-    "Date",
-    "DateTime",
-    "Enum",
-    "log_level_option",
-    "Time",
-    "Timedelta",
-]
+__all__ = ["Date", "DateTime", "Enum", "log_level_option", "Time", "Timedelta"]
 
 
 try:

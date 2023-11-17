@@ -40,12 +40,7 @@ from utilities.fastparquet import (
     read_parquet,
     write_parquet,
 )
-from utilities.hypothesis import (
-    dates_pd,
-    lists_fixed_length,
-    temp_paths,
-    text_ascii,
-)
+from utilities.hypothesis import dates_pd, lists_fixed_length, temp_paths, text_ascii
 from utilities.numpy import datetime64ns
 from utilities.pandas import DataFrameRangeIndexError, Int64, astype, string
 from utilities.pytest import skipif_windows
@@ -111,10 +106,7 @@ class TestGetParquetFile:
         with raises(InvalidRowGroupIndexError):
             _ = _get_parquet_file(path, row_group=2)
 
-    @mark.parametrize(
-        "as_str",
-        [param(True), param(False, marks=skipif_windows)],
-    )
+    @mark.parametrize("as_str", [param(True), param(False, marks=skipif_windows)])
     def test_error(self, *, tmp_path: Path, as_str: bool) -> None:
         path = tmp_path.joinpath("file")
         path_use = str(path) if as_str else path
@@ -168,12 +160,7 @@ class TestReadAndWriteParquet:
         result = read_parquet(path)
         assert_frame_equal(result, df)
 
-    @given(
-        data=data(),
-        column1=text_ascii(),
-        column2=text_ascii(),
-        root=temp_paths(),
-    )
+    @given(data=data(), column1=text_ascii(), column2=text_ascii(), root=temp_paths())
     def test_series_from_dataframe_with_two_string_columns(
         self, *, data: DataObject, column1: str, column2: str, root: Path
     ) -> None:
@@ -181,10 +168,7 @@ class TestReadAndWriteParquet:
         elements = text_ascii() | none()
         rows = data.draw(lists(tuples(elements, elements), min_size=1))
         df = DataFrame(
-            rows,
-            index=RangeIndex(len(rows)),
-            columns=[column1, column2],
-            dtype=string,
+            rows, index=RangeIndex(len(rows)), columns=[column1, column2], dtype=string
         )
         write_parquet(df, path := root.joinpath("df.parq"))
         sr = read_parquet(path, columns=column1)
@@ -210,12 +194,7 @@ class TestReadAndWriteParquet:
         row_group_offsets=integers(1, 10),
     )
     def test_iterable_of_dfs_with_strings(
-        self,
-        *,
-        data: DataObject,
-        root: Path,
-        num_dfs: int,
-        row_group_offsets: int,
+        self, *, data: DataObject, root: Path, num_dfs: int, row_group_offsets: int
     ) -> None:
         def as_str(df: DataFrame, /) -> DataFrame:
             return astype(df, string)
@@ -226,9 +205,7 @@ class TestReadAndWriteParquet:
         ).map(as_str)
         dfs = data.draw(lists_fixed_length(elements, num_dfs))
         write_parquet(
-            dfs,
-            path := root.joinpath("df.parq"),
-            row_group_offsets=row_group_offsets,
+            dfs, path := root.joinpath("df.parq"), row_group_offsets=row_group_offsets
         )
         result = read_parquet(path)
         expected = concat(dfs).reset_index(drop=True)
@@ -268,7 +245,5 @@ class TestWriteParquet:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         with raises(InvalidDTypeError):
             write_parquet(
-                df,
-                tmp_path.joinpath("df.parq"),
-                extra_dtypes={"other": float32},
+                df, tmp_path.joinpath("df.parq"), extra_dtypes={"other": float32}
             )

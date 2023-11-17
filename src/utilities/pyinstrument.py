@@ -22,6 +22,4 @@ def profile(*, path: PathLike = Path.cwd()) -> Iterator[None]:
         _ = fh.write(profiler.output_html())
 
 
-__all__ = [
-    "profile",
-]
+__all__ = ["profile"]

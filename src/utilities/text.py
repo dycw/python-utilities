@@ -4,10 +4,7 @@ from re import search, sub
 from textwrap import dedent
 from typing import Any
 
-from utilities.itertools import (
-    IterableContainsDuplicatesError,
-    check_duplicates,
-)
+from utilities.itertools import IterableContainsDuplicatesError, check_duplicates
 from utilities.typing import IterableStrs
 
 

@@ -5,14 +5,7 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import (
-    DataObject,
-    booleans,
-    data,
-    floats,
-    integers,
-    none,
-)
+from hypothesis.strategies import DataObject, booleans, data, floats, integers, none
 from numpy import int64
 from pandas.testing import assert_index_equal
 
@@ -178,9 +171,7 @@ class TestMergeIntoDictOfIndexes:
         _ = data.draw(_merge_into_dict_of_indexes())
 
     @given(
-        data=data(),
-        indexes1=dicts_of_indexes() | none(),
-        indexes2=dicts_of_indexes(),
+        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
     )
     def test_non_empty(
         self,

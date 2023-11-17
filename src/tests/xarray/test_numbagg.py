@@ -4,13 +4,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    dictionaries,
-    integers,
-    sampled_from,
-)
+from hypothesis.strategies import DataObject, data, dictionaries, integers, sampled_from
 from xarray import DataArray
 
 from utilities.hypothesis import (

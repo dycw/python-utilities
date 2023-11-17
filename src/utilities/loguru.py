@@ -239,6 +239,4 @@ def _add_live_file_sink(
     )
 
 
-__all__ = [
-    "setup_loguru",
-]
+__all__ = ["setup_loguru"]

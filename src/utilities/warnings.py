@@ -49,11 +49,7 @@ def _handle_warnings(
 
 @contextmanager
 def _handle_warnings_1(
-    action: _ActionKind,
-    /,
-    *,
-    message: str = "",
-    category: type[Warning] | None = None,
+    action: _ActionKind, /, *, message: str = "", category: type[Warning] | None = None
 ) -> Iterator[None]:
     class Kwargs(TypedDict, total=False):
         category: type[Warning]
@@ -64,7 +60,4 @@ def _handle_warnings_1(
         yield
 
 
-__all__ = [
-    "catch_warnings_as_errors",
-    "suppress_warnings",
-]
+__all__ = ["catch_warnings_as_errors", "suppress_warnings"]

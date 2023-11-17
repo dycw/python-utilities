@@ -137,12 +137,7 @@ def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
-    for fmt in [
-        "%Y%m%d",
-        "%Y %m %d",
-        "%d%b%Y",
-        "%d %b %Y",
-    ]:
+    for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(date, fmt).replace(tzinfo=tzinfo).date()
     raise ParseDateError(date)
@@ -269,10 +264,7 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 
 
 def yield_weekdays(
-    *,
-    start: dt.date | None = None,
-    end: dt.date | None = None,
-    days: int | None = None,
+    *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
     if (start is not None) and (end is not None) and (days is None):

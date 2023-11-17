@@ -38,12 +38,7 @@ from sqlalchemy import (
 )
 
 from utilities.datetime import date_to_datetime
-from utilities.hypothesis import (
-    dates_pd,
-    datetimes_pd,
-    sqlite_engines,
-    text_ascii,
-)
+from utilities.hypothesis import dates_pd, datetimes_pd, sqlite_engines, text_ascii
 from utilities.numpy import datetime64ns
 from utilities.pandas import Int64, boolean, check_dataframe, datetime64nsutc, string
 from utilities.sqlalchemy import (

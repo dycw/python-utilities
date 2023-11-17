@@ -31,7 +31,4 @@ def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
     return 1.0 / (1.0 + com)
 
 
-__all__ = [
-    "ewma",
-    "exp_moving_sum",
-]
+__all__ = ["ewma", "exp_moving_sum"]

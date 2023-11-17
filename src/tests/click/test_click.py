@@ -37,10 +37,7 @@ class TestParameters:
     cases = (
         param(Date(), dt.date, dates(), serialize_date),
         param(
-            DateTime(),
-            dt.datetime,
-            datetimes(timezones=just(UTC)),
-            serialize_datetime,
+            DateTime(), dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
         ),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),

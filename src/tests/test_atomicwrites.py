@@ -14,10 +14,7 @@ from utilities.platform import IS_WINDOWS
 class TestWriter:
     @mark.parametrize(
         ("is_binary", "contents"),
-        [
-            param(False, "contents", id="text"),
-            param(True, b"contents", id="binary"),
-        ],
+        [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
     )
     def test_file_writing(
         self, *, tmp_path: Path, is_binary: bool, contents: str | bytes

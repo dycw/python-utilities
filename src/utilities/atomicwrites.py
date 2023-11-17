@@ -35,6 +35,4 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
             return move(src, dest)
 
 
-__all__ = [
-    "writer",
-]
+__all__ = ["writer"]

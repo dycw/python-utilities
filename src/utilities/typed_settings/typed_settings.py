@@ -120,8 +120,4 @@ def _make_converter(
     return hook
 
 
-__all__ = [
-    "AppNameContainsUnderscoreError",
-    "get_repo_root_config",
-    "load_settings",
-]
+__all__ = ["AppNameContainsUnderscoreError", "get_repo_root_config", "load_settings"]

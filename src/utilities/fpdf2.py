@@ -73,6 +73,4 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
     yield pdf
 
 
-__all__ = [
-    "yield_pdf",
-]
+__all__ = ["yield_pdf"]

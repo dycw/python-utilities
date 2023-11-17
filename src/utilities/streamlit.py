@@ -56,8 +56,7 @@ def _password_entered() -> None:
     if (
         session_state[_USERNAME] in secrets["passwords"]  # pragma: no cover
     ) and compare_digest(
-        session_state[_PASSWORD],
-        secrets.passwords[session_state[_USERNAME]],
+        session_state[_PASSWORD], secrets.passwords[session_state[_USERNAME]]
     ):
         session_state[_PASSWORD_CORRECT] = True  # pragma: no cover
         del session_state[_PASSWORD]  # pragma: no cover
@@ -66,6 +65,4 @@ def _password_entered() -> None:
         session_state[_PASSWORD_CORRECT] = False  # pragma: no cover
 
 
-__all__ = [
-    "ensure_logged_in",
-]
+__all__ = ["ensure_logged_in"]

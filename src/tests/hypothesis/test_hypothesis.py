@@ -142,17 +142,9 @@ class TestFloatsExtra:
         if integral:
             assert (isfinite(x) and x == round(x)) or not isfinite(x)
 
-    @given(
-        data=data(),
-        min_value=floats() | none(),
-        max_value=floats() | none(),
-    )
+    @given(data=data(), min_value=floats() | none(), max_value=floats() | none())
     def test_finite_and_integral(
-        self,
-        *,
-        data: DataObject,
-        min_value: float | None,
-        max_value: float | None,
+        self, *, data: DataObject, min_value: float | None, max_value: float | None
     ) -> None:  # hard to reach
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(
@@ -237,8 +229,7 @@ class TestSlices:
     @given(data=data(), iter_len=integers(0, 10))
     def test_error(self, *, data: DataObject, iter_len: int) -> None:
         with raises(
-            InvalidArgument,
-            match=r"Slice length \d+ exceeds iterable length \d+",
+            InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
 
@@ -279,10 +270,7 @@ class TestTempPaths:
     def test_main(self, *, temp_path: Path) -> None:
         _test_temp_path(temp_path)
 
-    @given(
-        temp_path=temp_paths(),
-        contents=sets(text_ascii(min_size=1), max_size=10),
-    )
+    @given(temp_path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(
         self, *, temp_path: Path, contents: AbstractSet[str]
     ) -> None:
@@ -320,9 +308,7 @@ class TestTextAscii:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(
                 text_ascii(
-                    min_size=min_size,
-                    max_size=max_size,
-                    disallow_na=disallow_na,
+                    min_size=min_size, max_size=max_size, disallow_na=disallow_na
                 )
             )
         assert search("^[A-Za-z]*$", text)
@@ -351,9 +337,7 @@ class TestTextClean:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(
                 text_clean(
-                    min_size=min_size,
-                    max_size=max_size,
-                    disallow_na=disallow_na,
+                    min_size=min_size, max_size=max_size, disallow_na=disallow_na
                 )
             )
         assert search("^\\S[^\\r\\n]*$|^$", text)
@@ -382,9 +366,7 @@ class TestTextPrintable:
         with assume_does_not_raise(InvalidArgument, AssertionError):
             text = data.draw(
                 text_printable(
-                    min_size=min_size,
-                    max_size=max_size,
-                    disallow_na=disallow_na,
+                    min_size=min_size, max_size=max_size, disallow_na=disallow_na
                 )
             )
         assert search(r"^[0-9A-Za-z!\"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~\s]*$", text)

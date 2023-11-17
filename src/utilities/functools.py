@@ -18,6 +18,4 @@ class partial(_partial[_T]):  # noqa: N801
         return self.func(*head, *iter_args, **{**self.keywords, **kwargs})
 
 
-__all__ = [
-    "partial",
-]
+__all__ = ["partial"]
