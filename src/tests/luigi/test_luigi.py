@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     booleans,
     data,
     dates,
+    iterables,
     sampled_from,
     times,
 )
@@ -27,7 +28,7 @@ from utilities.datetime import (
     serialize_datetime,
     serialize_time,
 )
-from utilities.hypothesis import datetimes_utc, namespace_mixins, temp_paths
+from utilities.hypothesis import datetimes_utc, namespace_mixins, temp_paths, text_ascii
 from utilities.luigi import (
     AwaitTask,
     AwaitTime,
@@ -38,6 +39,7 @@ from utilities.luigi import (
     EnumParameter,
     ExternalFile,
     ExternalTask,
+    FrozenSetStrsParameter,
     PathTarget,
     TimeParameter,
     WeekdayParameter,
@@ -48,6 +50,7 @@ from utilities.luigi import (
     get_task_classes,
 )
 from utilities.luigi.luigi import _yield_task_classes
+from utilities.typing import IterableStrs
 
 
 class TestAwaitTask:
@@ -68,7 +71,7 @@ class TestAwaitTask:
 
 class TestAwaitTime:
     @given(time_start=datetimes_utc(), time_now=datetimes_utc())
-    def test_main(self, time_start: dt.datetime, time_now: dt.datetime) -> None:
+    def test_main(self, *, time_start: dt.datetime, time_now: dt.datetime) -> None:
         _ = assume(time_start.microsecond == 0)
         task: AwaitTime = cast(Any, AwaitTime)(time_start)
         with freeze_time(time_now):
@@ -79,7 +82,7 @@ class TestAwaitTime:
 
 class TestBuild:
     @given(namespace_mixin=namespace_mixins())
-    def test_main(self, namespace_mixin: Any) -> None:
+    def test_main(self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task):
             ...
 
@@ -116,7 +119,7 @@ class TestClone:
 
 class TestDateParameter:
     @given(data=data(), date=dates())
-    def test_main(self, data: DataObject, date: dt.date) -> None:
+    def test_main(self, *, data: DataObject, date: dt.date) -> None:
         param = DateParameter()
         input_ = data.draw(sampled_from([date, serialize_date(date)]))
         norm = param.normalize(input_)
@@ -135,6 +138,7 @@ class TestDateTimeParameter:
     )
     def test_main(
         self,
+        *,
         data: DataObject,
         datetime: dt.datetime,
         param_cls: type[Parameter],
@@ -145,9 +149,17 @@ class TestDateTimeParameter:
         assert param.parse(param.serialize(norm)) == norm
 
 
+class TestFrozenSetStrsParameter:
+    @given(text=iterables(text_ascii()))
+    def test_main(self, *, text: IterableStrs) -> None:
+        param = FrozenSetStrsParameter()
+        norm = param.normalize(text)
+        assert param.parse(param.serialize(norm)) == norm
+
+
 class TestEnumParameter:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
 
@@ -159,7 +171,7 @@ class TestEnumParameter:
 
 class TestExternalFile:
     @given(namespace_mixin=namespace_mixins(), root=temp_paths())
-    def test_main(self, namespace_mixin: Any, root: Path) -> None:
+    def test_main(self, *, namespace_mixin: Any, root: Path) -> None:
         path = root.joinpath("file")
 
         class Example(namespace_mixin, ExternalFile):
@@ -189,7 +201,7 @@ class TestExternalTask:
 class TestGetDependencies:
     @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_main(self, namespace_mixin: Any) -> None:
+    def test_main(self, *, namespace_mixin: Any) -> None:
         class A(namespace_mixin, Task):
             ...
 
@@ -238,7 +250,7 @@ class TestGetDependencies:
 class TestGetTaskClasses:
     @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_main(self, namespace_mixin: Any) -> None:
+    def test_main(self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task):
             ...
 
@@ -249,7 +261,7 @@ class TestGetTaskClasses:
 
     @given(namespace_mixin=namespace_mixins())
     @settings(max_examples=1)
-    def test_filter(self, namespace_mixin: Any) -> None:
+    def test_filter(self, *, namespace_mixin: Any) -> None:
         class Parent(namespace_mixin, Task):
             ...
 
@@ -262,7 +274,7 @@ class TestGetTaskClasses:
 
 
 class TestPathTarget:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_main(self, *, tmp_path: Path) -> None:
         target = PathTarget(path := tmp_path.joinpath("file"))
         assert isinstance(target.path, Path)
         assert not target.exists()
@@ -272,7 +284,7 @@ class TestPathTarget:
 
 class TestTimeParameter:
     @given(data=data(), time=times())
-    def test_main(self, data: DataObject, time: dt.time) -> None:
+    def test_main(self, *, data: DataObject, time: dt.time) -> None:
         param = TimeParameter()
         input_ = data.draw(sampled_from([time, serialize_time(time)]))
         norm = param.normalize(input_)
@@ -282,7 +294,7 @@ class TestTimeParameter:
 class TestWeekdayParameter:
     @given(data=data(), rounding=sampled_from(["prev", "next"]), date=dates())
     def test_main(
-        self, data: DataObject, rounding: Literal["prev", "next"], date: dt.date
+        self, *, data: DataObject, rounding: Literal["prev", "next"], date: dt.date
     ) -> None:
         param = WeekdayParameter(rounding=rounding)
         input_ = data.draw(sampled_from([date, serialize_date(date)]))
