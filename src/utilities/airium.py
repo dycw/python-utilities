@@ -16,6 +16,4 @@ def yield_airium() -> Iterator[Airium]:
         yield airium
 
 
-__all__ = [
-    "yield_airium",
-]
+__all__ = ["yield_airium"]

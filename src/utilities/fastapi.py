@@ -27,6 +27,4 @@ class APIRouter(_APIRouter):
         raise ValueError(msg)
 
 
-__all__ = [
-    "APIRouter",
-]
+__all__ = ["APIRouter"]

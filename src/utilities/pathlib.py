@@ -47,9 +47,4 @@ def walk(
         yield Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames))
 
 
-__all__ = [
-    "ensure_suffix",
-    "PathLike",
-    "temp_cwd",
-    "walk",
-]
+__all__ = ["ensure_suffix", "PathLike", "temp_cwd", "walk"]

@@ -68,19 +68,14 @@ def main() -> None:
 
 
 def _yield_import_nodes_directly(
-    module: ModuleType,
-    objs: Iterable[Any],
-    /,
+    module: ModuleType, objs: Iterable[Any], /
 ) -> Iterator[ImportFrom]:
     mod_name = module.__name__
     for obj in objs:
         yield ImportFrom(module=mod_name, names=[alias(name=obj.__qualname__)])
 
 
-def _yield_import_nodes_from_module_all(
-    module: ModuleType,
-    /,
-) -> Iterator[ImportFrom]:
+def _yield_import_nodes_from_module_all(module: ModuleType, /) -> Iterator[ImportFrom]:
     for key in module.__all__:
         yield ImportFrom(module=module.__name__, names=[alias(name=key)])
 

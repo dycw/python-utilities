@@ -121,11 +121,4 @@ log_level_option = option(
 )
 
 
-__all__ = [
-    "Date",
-    "DateTime",
-    "Enum",
-    "log_level_option",
-    "Time",
-    "Timedelta",
-]
+__all__ = ["Date", "DateTime", "Enum", "log_level_option", "Time", "Timedelta"]

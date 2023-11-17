@@ -5,11 +5,7 @@ from subprocess import run
 
 from hypothesis.strategies import DrawFn, composite
 
-from utilities.hypothesis.hypothesis import (
-    MaybeSearchStrategy,
-    lift_draw,
-    temp_paths,
-)
+from utilities.hypothesis.hypothesis import MaybeSearchStrategy, lift_draw, temp_paths
 from utilities.pathlib import temp_cwd
 
 
@@ -44,6 +40,4 @@ def git_repos(
     return path
 
 
-__all__ = [
-    "git_repos",
-]
+__all__ = ["git_repos"]

@@ -3,9 +3,7 @@ from pathlib import Path
 from hypothesis import given
 from sqlalchemy import Engine
 
-from tests.typed_settings.test_click import (
-    TestClickOptions as _TestClickOptions,
-)
+from tests.typed_settings.test_click import TestClickOptions as _TestClickOptions
 from tests.typed_settings.test_typed_settings import (
     TestLoadSettings as _TestLoadSettings,
 )
@@ -25,12 +23,7 @@ class TestLoadSettings:
         value=sqlite_engines(),
     )
     def test_main(
-        self,
-        *,
-        default: Engine,
-        root: Path,
-        appname: str,
-        value: Engine,
+        self, *, default: Engine, root: Path, appname: str, value: Engine
     ) -> None:
         def equal(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
@@ -50,13 +43,7 @@ class TestClickOptions:
         cfg=sqlite_engines(),
     )
     def test_main(
-        self,
-        *,
-        default: Engine,
-        appname: str,
-        root: Path,
-        value: Engine,
-        cfg: Engine,
+        self, *, default: Engine, appname: str, root: Path, value: Engine, cfg: Engine
     ) -> None:
         _TestClickOptions.run_test(
             Engine, default, appname, serialize_engine, root, value, cfg

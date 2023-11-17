@@ -212,7 +212,4 @@ class JsonDeserializationError(ValueError):
     """Raised when an object cannot be deserialized."""
 
 
-__all__ = [
-    "deserialize",
-    "serialize",
-]
+__all__ = ["deserialize", "serialize"]

@@ -158,11 +158,7 @@ class TestSelectToPolarsDataFrame:
                 Datetime(time_zone=UTC),
                 DateTime(timezone=True),
             ),
-            param(
-                floats(),
-                Float64,
-                Float,
-            ),
+            param(floats(), Float64, Float),
             param(integers(-10, 10) | none(), Int64, Integer),
             param(text_ascii() | none(), Utf8, String),
         ],

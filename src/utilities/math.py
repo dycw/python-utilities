@@ -7,48 +7,28 @@ from typing import Annotated
 
 
 def is_at_least(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if -inf < x < inf and x == int(x)."""
     return (x >= y) or _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_at_least_or_nan(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x >= y or x == nan."""
     return is_at_least(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
 
 
 def is_at_most(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <= y."""
     return (x <= y) or _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_at_most_or_nan(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x <= y or x == nan."""
     return is_at_most(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
@@ -172,24 +152,14 @@ def is_finite_or_nan(x: float, /) -> bool:
 
 
 def is_greater_than(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > y."""
     return (x > y) and not _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_greater_than_or_nan(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x > y or x == nan."""
     return is_greater_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
@@ -214,24 +184,14 @@ def is_integral_or_nan(
 
 
 def is_less_than(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < y."""
     return (x < y) and not _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
 def is_less_than_or_nan(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x < y or x == nan."""
     return is_less_than(x, y, rel_tol=rel_tol, abs_tol=abs_tol) or isnan(x)
@@ -354,12 +314,7 @@ def is_zero_or_non_micro_or_nan(
 
 
 def _is_close(
-    x: float,
-    y: float,
-    /,
-    *,
-    rel_tol: float | None = None,
-    abs_tol: float | None = None,
+    x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
     """Check if x == y."""
     return isclose(

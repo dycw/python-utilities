@@ -83,9 +83,7 @@ class TestAugmentLevels:
         assert result == levels
 
     @given(
-        env_var_prefix=env_var_prefixes,
-        module=modules,
-        level=sampled_from(LogLevel),
+        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_with_env_var(
         self, *, env_var_prefix: str, module: str, level: LogLevel
@@ -95,9 +93,7 @@ class TestAugmentLevels:
         assert result == {module: level}
 
     @given(
-        env_var_prefix=env_var_prefixes,
-        module=modules,
-        level=sampled_from(LogLevel),
+        env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_without_env_var(
         self, *, env_var_prefix: str, module: str, level: LogLevel

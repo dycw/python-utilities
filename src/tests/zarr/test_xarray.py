@@ -42,11 +42,7 @@ class TestDataArrayOnDisk:
         root=temp_paths(),
     )
     def test_main(
-        self,
-        data: DataObject,
-        coords: Mapping[str, Any],
-        name: str | None,
-        root: Path,
+        self, data: DataObject, coords: Mapping[str, Any], name: str | None, root: Path
     ) -> None:
         indexes = {k: v for k, v in coords.items() if isinstance(v, Index)}
         shape = tuple(map(len, indexes.values()))
@@ -73,9 +69,7 @@ class TestDataArrayOnDisk:
             param(
                 {"x": []},
                 DataArray(
-                    zeros((0, 3), dtype=int),
-                    {"x": [], "y": arange(3)},
-                    ["x", "y"],
+                    zeros((0, 3), dtype=int), {"x": [], "y": arange(3)}, ["x", "y"]
                 ),
             ),
             param(
@@ -89,18 +83,14 @@ class TestDataArrayOnDisk:
             param({"x": 0, "y": 0}, DataArray(0, {"x": 0, "y": 0}, [])),
             param({"x": 0, "y": -1}, DataArray(2, {"x": 0, "y": 2}, [])),
             param(
-                {"x": 0, "y": slice(None, 1)},
-                DataArray([0], {"x": 0, "y": [0]}, ["y"]),
+                {"x": 0, "y": slice(None, 1)}, DataArray([0], {"x": 0, "y": [0]}, ["y"])
             ),
             param({"x": 0, "y": []}, DataArray([], {"x": 0, "y": []}, ["y"])),
             param(
                 {"x": 0, "y": array([True, False, False])},
                 DataArray([0], {"x": 0, "y": [0]}, ["y"]),
             ),
-            param(
-                {"x": 0, "y": array([0])},
-                DataArray([0], {"x": 0, "y": [0]}, ["y"]),
-            ),
+            param({"x": 0, "y": array([0])}, DataArray([0], {"x": 0, "y": [0]}, ["y"])),
         ],
     )
     def test_isel(
@@ -134,9 +124,7 @@ class TestDataArrayOnDisk:
             param(
                 {"x": ["x0"]},
                 DataArray(
-                    [[0, 1, 2]],
-                    {"x": ["x0"], "y": ["y0", "y1", "y2"]},
-                    ["x", "y"],
+                    [[0, 1, 2]], {"x": ["x0"], "y": ["y0", "y1", "y2"]}, ["x", "y"]
                 ),
             ),
             param(

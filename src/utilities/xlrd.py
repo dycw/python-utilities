@@ -38,7 +38,4 @@ def _get_date_mode() -> Literal[0, 1]:
             assert_never(SYSTEM)
 
 
-__all__ = [
-    "to_date",
-    "to_datetime",
-]
+__all__ = ["to_date", "to_datetime"]

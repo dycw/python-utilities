@@ -34,14 +34,8 @@ __all__ = [
 
 
 try:
-    from utilities.polars.bs4 import (
-        MultipleTHRowsError,
-        yield_tables,
-    )
+    from utilities.polars.bs4 import MultipleTHRowsError, yield_tables
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += [
-        "MultipleTHRowsError",
-        "yield_tables",
-    ]
+    __all__ += ["MultipleTHRowsError", "yield_tables"]

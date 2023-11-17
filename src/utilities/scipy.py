@@ -29,6 +29,4 @@ def _ppf_1d(array: NDArrayF1, cutoff: FloatFinNonNeg, /) -> NDArrayF1:
     return clip(ppf, a_min=-cutoff, a_max=cutoff)
 
 
-__all__ = [
-    "ppf",
-]
+__all__ = ["ppf"]

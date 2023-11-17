@@ -8,6 +8,4 @@ def ensure_version(version: Version | str, /) -> Version:
     return version if isinstance(version, Version) else Version.parse(version)
 
 
-__all__ = [
-    "ensure_version",
-]
+__all__ = ["ensure_version"]

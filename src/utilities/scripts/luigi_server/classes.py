@@ -15,8 +15,7 @@ class Config:
     )
     log_dir: Path = click_field(default=Path("logs"), param_decls=("-ld", "--log-dir"))
     state_path: Path = click_field(
-        default=Path("luigi-state.pickle"),
-        param_decls=("-sp", "--state-path"),
+        default=Path("luigi-state.pickle"), param_decls=("-sp", "--state-path")
     )
     port: int = click_field(default=1456, param_decls=("-po", "--port"))
     dry_run: bool = click_field(default=False, param_decls=("-dr", "--dry-run"))

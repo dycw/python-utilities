@@ -457,13 +457,10 @@ class TestCheckColumnTypesEqual:
                 _check_column_types_equal(x, y)
 
     @given(
-        cls=sampled_from([Float, Numeric]),
-        asdecimals=lists_fixed_length(booleans(), 2),
+        cls=sampled_from([Float, Numeric]), asdecimals=lists_fixed_length(booleans(), 2)
     )
     def test_float_asdecimal(
-        self,
-        cls: type[Float[Any] | Numeric[Any]],
-        asdecimals: typing.Sequence[bool],
+        self, cls: type[Float[Any] | Numeric[Any]], asdecimals: typing.Sequence[bool]
     ) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (cls(asdecimal=cast(Any, a)) for a in asdecimals)
@@ -672,10 +669,7 @@ class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_num_tables_rel_tol_correct(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(
-            engine,
-            table,
-        )
+        ensure_tables_created(engine, table)
         check_engine(engine, num_tables=2, rel_tol=0.5)
 
     @given(engine=sqlite_engines())
@@ -806,10 +800,7 @@ class TestColumnwiseMinMax:
         values=sets(tuples(integers(0, 10) | none(), integers(0, 10) | none())),
     )
     def test_main(
-        self,
-        *,
-        engine: Engine,
-        values: set[tuple[int | None, int | None]],
+        self, *, engine: Engine, values: set[tuple[int | None, int | None]]
     ) -> None:
         table = Table(
             "example",

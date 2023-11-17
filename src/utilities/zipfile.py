@@ -18,6 +18,4 @@ def yield_zip_file_contents(path: PathLike, /) -> Iterator[list[Path]]:
     _ = zf  # make coverage understand this is returned
 
 
-__all__ = [
-    "yield_zip_file_contents",
-]
+__all__ = ["yield_zip_file_contents"]

@@ -81,10 +81,7 @@ class TestGenerateSnippets:
 class TestNodeToKey:
     @mark.parametrize(
         ("module", "name", "expected"),
-        [
-            param("abc", "ABC", "fab-abc"),
-            param("abc", "ABCMeta", "fab-abc-meta"),
-        ],
+        [param("abc", "ABC", "fab-abc"), param("abc", "ABCMeta", "fab-abc-meta")],
     )
     def test_main(self, *, module: str, name: str, expected: str) -> None:
         node = ImportFrom(module=module, names=[alias(name=name)])
@@ -179,7 +176,7 @@ class TestYieldImportNodesFromText:
                     from abc import ABC
                     with suppress(ModuleNotFoundError):
                         from abc import ABCMeta
-                """,
+                """
             ),
             param(
                 """
@@ -189,7 +186,7 @@ class TestYieldImportNodesFromText:
                     with suppress(ModuleNotFoundError):
                         from abc import ABC
                     from abc import ABCMeta
-                """,
+                """
             ),
         ],
     )

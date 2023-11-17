@@ -77,13 +77,7 @@ def bool_arrays(
     draw = lift_draw(_draw)
     strategy = cast(
         SearchStrategy[NDArrayB],
-        arrays(
-            bool,
-            draw(shape),
-            elements=booleans(),
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(bool, draw(shape), elements=booleans(), fill=fill, unique=draw(unique)),
     )
     return draw(strategy)
 
@@ -186,13 +180,7 @@ def datetime64_arrays(
         valid_datetimes=valid_datetimes,
     )
     return draw(
-        arrays(
-            dtype,
-            draw(shape),
-            elements=elements,
-            fill=fill,
-            unique=draw(unique),
-        )
+        arrays(dtype, draw(shape), elements=elements, fill=fill, unique=draw(unique))
     )
 
 
@@ -387,13 +375,7 @@ def float_arrays(
     )
     strategy = cast(
         SearchStrategy[NDArrayF],
-        arrays(
-            float,
-            draw(shape),
-            elements=elements,
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(float, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
     return draw(strategy)
 
@@ -418,13 +400,7 @@ def int_arrays(
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy = cast(
         SearchStrategy[NDArrayI],
-        arrays(
-            int64,
-            draw(shape),
-            elements=elements,
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(int64, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
     return draw(strategy)
 
@@ -466,13 +442,7 @@ def str_arrays(
         elements |= none()
     strategy = cast(
         SearchStrategy[NDArrayO],
-        arrays(
-            object,
-            draw(shape),
-            elements=elements,
-            fill=fill,
-            unique=draw(unique),
-        ),
+        arrays(object, draw(shape), elements=elements, fill=fill, unique=draw(unique)),
     )
     return draw(strategy)
 

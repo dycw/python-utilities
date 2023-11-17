@@ -13,6 +13,4 @@ def rename_data_arrays(obj: Any, /) -> None:
             setattr(obj, key, value.rename(key))
 
 
-__all__ = [
-    "rename_data_arrays",
-]
+__all__ = ["rename_data_arrays"]

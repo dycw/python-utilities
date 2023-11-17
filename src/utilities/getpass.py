@@ -5,6 +5,4 @@ from getpass import getuser
 USER = getuser()
 
 
-__all__ = [
-    "USER",
-]
+__all__ = ["USER"]

@@ -17,9 +17,7 @@ class TestHasDtype:
             param("Int64", int, False),
             param(DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="UTC"), True),
             param(
-                DatetimeTZDtype(tz="UTC"),
-                DatetimeTZDtype(tz="Asia/Hong_Kong"),
-                False,
+                DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="Asia/Hong_Kong"), False
             ),
         ],
     )

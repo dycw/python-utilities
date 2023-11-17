@@ -45,8 +45,7 @@ def _get_variable(
         scalar = var
     threshold = 10.0
     problem = Problem(
-        objective(scalar),
-        [cast(Any, var) >= -threshold, cast(Any, var) <= threshold],
+        objective(scalar), [cast(Any, var) >= -threshold, cast(Any, var) <= threshold]
     )
     _ = problem.solve()
     return var
@@ -86,21 +85,14 @@ class TestAdd:
         ],
     )
     def test_float_and_array(
-        self,
-        *,
-        x: float | NDArrayF,
-        y: float | NDArrayF,
-        expected: float | NDArrayF,
+        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(add(x, y), expected)
 
     @mark.parametrize("x", [param(1.0), param(array([1.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
-        self,
-        *,
-        x: float | NDArrayF | Expression,
-        objective: type[Maximize | Minimize],
+        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
         assert_equal(add(x, var).value, add(x, var.value))
@@ -130,21 +122,14 @@ class TestDivide:
         ],
     )
     def test_float_and_array(
-        self,
-        *,
-        x: float | NDArrayF,
-        y: float | NDArrayF,
-        expected: float | NDArrayF,
+        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(divide(x, y), expected)
 
     @mark.parametrize("x", [param(1.0), param(array([1.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
-        self,
-        *,
-        x: float | NDArrayF | Expression,
-        objective: type[Maximize | Minimize],
+        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
         assert_equal(divide(x, var).value, divide(x, var.value))
@@ -174,21 +159,14 @@ class TestMultiply:
         ],
     )
     def test_float_and_array(
-        self,
-        *,
-        x: float | NDArrayF,
-        y: float | NDArrayF,
-        expected: float | NDArrayF,
+        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(multiply(x, y), expected)
 
     @mark.parametrize("x", [param(2.0), param(array([2.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
-        self,
-        *,
-        x: float | NDArrayF | Expression,
-        objective: type[Maximize | Minimize],
+        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
         assert_equal(multiply(x, var).value, multiply(x, var.value))
@@ -279,11 +257,7 @@ class TestPower:
         ],
     )
     def test_float_and_array(
-        self,
-        *,
-        x: float | NDArrayF,
-        p: float | NDArrayF,
-        expected: float | NDArrayF,
+        self, *, x: float | NDArrayF, p: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(power(x, p), expected)
 
@@ -360,21 +334,14 @@ class TestSubtract:
         ],
     )
     def test_float_and_array(
-        self,
-        *,
-        x: float | NDArrayF,
-        y: float | NDArrayF,
-        expected: float | NDArrayF,
+        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(subtract(x, y), expected)
 
     @mark.parametrize("x", [param(1.0), param(array([1.0]))])
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_one_expression(
-        self,
-        *,
-        x: float | NDArrayF | Expression,
-        objective: type[Maximize | Minimize],
+        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
         assert_equal(subtract(x, var).value, subtract(x, var.value))

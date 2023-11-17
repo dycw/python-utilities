@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from click import option
 
-(
-    local_scheduler_option_default_local,
-    local_scheduler_option_default_central,
-) = (
+(local_scheduler_option_default_local, local_scheduler_option_default_central) = (
     option(
         "-ls/-nls",
         "--local-scheduler/--no-local-scheduler",
@@ -14,10 +11,7 @@ from click import option
         show_default=True,
         help=f"Pass {flag!r} to use the {desc} scheduler",
     )
-    for default, flag, desc in [
-        (True, "-nls", "central"),
-        (False, "-ls", "local"),
-    ]
+    for default, flag, desc in [(True, "-nls", "central"), (False, "-ls", "local")]
 )
 workers_option = option(
     "-w",

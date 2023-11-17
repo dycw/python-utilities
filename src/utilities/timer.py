@@ -72,6 +72,4 @@ class Timer:
         raise TypeError(msg)
 
 
-__all__ = [
-    "Timer",
-]
+__all__ = ["Timer"]

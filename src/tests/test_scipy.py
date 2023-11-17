@@ -32,10 +32,7 @@ class TestPPF:
 
     @given(
         array=float_arrays(
-            shape=integers(0, 10),
-            min_value=-10.0,
-            max_value=10.0,
-            allow_nan=True,
+            shape=integers(0, 10), min_value=-10.0, max_value=10.0, allow_nan=True
         ),
         cutoff=floats(0.0, 10.0),
     )

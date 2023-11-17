@@ -26,6 +26,4 @@ class VersionParameter(Parameter):
         return str(x)
 
 
-__all__ = [
-    "VersionParameter",
-]
+__all__ = ["VersionParameter"]

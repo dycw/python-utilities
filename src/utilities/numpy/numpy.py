@@ -1053,9 +1053,7 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
 def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
     """Redirect to the `EmptyNumpyConcatenateError`."""
     redirect_error(
-        error,
-        "need at least one array to concatenate",
-        EmptyNumpyConcatenateError,
+        error, "need at least one array to concatenate", EmptyNumpyConcatenateError
     )
 
 

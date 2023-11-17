@@ -166,17 +166,10 @@ class DataArrayOnDisk(NDArrayWithIndexes):
     ) -> DataArray:
         """Select orthogonally using index values."""
         empty = self._empty.sel(
-            indexers,
-            method=method,
-            tolerance=tolerance,
-            drop=drop,
-            **indexer_kwargs,
+            indexers, method=method, tolerance=tolerance, drop=drop, **indexer_kwargs
         )
         return DataArray(
-            super().sel(indexers, **indexer_kwargs),
-            empty.coords,
-            empty.dims,
-            self.name,
+            super().sel(indexers, **indexer_kwargs), empty.coords, empty.dims, self.name
         )
 
     @property

@@ -56,9 +56,4 @@ class InvalidRepoError(TypeError):
     """Raised when an invalid repo is encountered."""
 
 
-__all__ = [
-    "get_branch_name",
-    "get_repo_name",
-    "get_repo_root",
-    "InvalidRepoError",
-]
+__all__ = ["get_branch_name", "get_repo_name", "get_repo_root", "InvalidRepoError"]

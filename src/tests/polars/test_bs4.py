@@ -99,7 +99,7 @@ class TestReadTable:
                 ),
                 ("Maria Anders", "Francisco Chang", "Roland Mendel", "Helen Bennett"),
                 ("Germany", "Mexico", "Austria", "UK"),
-            ],
+            ]
         )
         assert_frame_equal(df, expected)
 

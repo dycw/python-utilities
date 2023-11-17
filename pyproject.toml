@@ -338,19 +338,16 @@ select = [
 src = ["src"]
 target-version = "py310"
 
-[tool.ruff.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.isort]
-known-first-party = ["utilities"]
-
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["utilities.typed_settings.click_field"]
-
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = [
   "FBT001",  # flake8-boolean-trap, boolean-positional-arg-in-function-definition
   "FBT003",  # flake8-boolean-trap, boolean-positional-value-in-function-call
   "PLR2004",  # refactor, magic-value-comparison
   "S101",  # flake8-bandit, assert-used
 ]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["utilities.typed_settings.click_field"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"

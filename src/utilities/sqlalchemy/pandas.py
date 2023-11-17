@@ -9,14 +9,7 @@ from typing import Any, cast, overload
 
 from numpy import int64
 from pandas import DataFrame, DatetimeTZDtype, Series, concat
-from sqlalchemy import (
-    Column,
-    Connection,
-    Engine,
-    Row,
-    Select,
-    Table,
-)
+from sqlalchemy import Column, Connection, Engine, Row, Select, Table
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities.datetime import UTC
@@ -83,11 +76,7 @@ class PandasDataFrameYieldsNoRowsError(ValueError):
 
 
 def _check_pandas_series(
-    dtype: Any,
-    py_type: type,
-    /,
-    *,
-    allow_naive_datetimes: bool = False,
+    dtype: Any, py_type: type, /, *, allow_naive_datetimes: bool = False
 ) -> bool:
     is_bool = (dtype == bool) or (dtype == boolean)  # noqa: PLR1714
     is_int = (dtype == int) or (dtype == int64) or (dtype == Int64)  # noqa: PLR1714

@@ -71,15 +71,7 @@ class TestChecks:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_is_at_least_or_nan(self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
@@ -105,15 +97,7 @@ class TestChecks:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_is_at_most_or_nan(self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
@@ -140,25 +124,11 @@ class TestChecks:
 
     @mark.parametrize(
         "low",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
     @mark.parametrize(
         "high",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
     def test_is_between_or_nan(self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
@@ -342,15 +312,7 @@ class TestChecks:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_is_greater_than_or_nan(self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
@@ -405,15 +367,7 @@ class TestChecks:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y",
-        [
-            param(-inf),
-            param(-1.0),
-            param(0.0),
-            param(1.0),
-            param(inf),
-            param(nan),
-        ],
+        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_is_less_than_or_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)

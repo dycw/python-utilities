@@ -32,8 +32,7 @@ class TestSequenceStrs:
         die_if_unbearable(x, SequenceStrs)
 
     @mark.parametrize(
-        "x",
-        [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")],
+        "x", [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")]
     )
     def test_fail(self, *, x: IterableStrs | str) -> None:
         with raises(BeartypeAbbyHintViolation):

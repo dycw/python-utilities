@@ -20,7 +20,4 @@ def write_pickle(obj: Any, path: PathLike, /, *, overwrite: bool = False) -> Non
         dump(obj, gz)
 
 
-__all__ = [
-    "read_pickle",
-    "write_pickle",
-]
+__all__ = ["read_pickle", "write_pickle"]

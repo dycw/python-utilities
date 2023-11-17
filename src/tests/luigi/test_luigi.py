@@ -23,11 +23,7 @@ from luigi.task import Parameter
 from pytest import mark, param
 from typing_extensions import override
 
-from utilities.datetime import (
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-)
+from utilities.datetime import serialize_date, serialize_datetime, serialize_time
 from utilities.hypothesis import datetimes_utc, namespace_mixins, temp_paths, text_ascii
 from utilities.luigi import (
     AwaitTask,
@@ -137,11 +133,7 @@ class TestDateTimeParameter:
         ],
     )
     def test_main(
-        self,
-        *,
-        data: DataObject,
-        datetime: dt.datetime,
-        param_cls: type[Parameter],
+        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
     ) -> None:
         param = param_cls()
         input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
@@ -226,11 +218,9 @@ class TestGetDependencies:
         assert up_c == {b}
         assert down_c == set()
 
-        (
-            (up_a_rec, down_a_rec),
-            (up_b_rec, down_b_rec),
-            (up_c_rec, down_c_rec),
-        ) = map(partial(self._get_sets, recursive=True), [a, b, c])
+        ((up_a_rec, down_a_rec), (up_b_rec, down_b_rec), (up_c_rec, down_c_rec)) = map(
+            partial(self._get_sets, recursive=True), [a, b, c]
+        )
         assert up_a_rec == set()
         assert down_a_rec == {b, c}
         assert up_b_rec == {a}

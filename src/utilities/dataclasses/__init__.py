@@ -22,12 +22,8 @@ __all__ = [
 
 
 try:
-    from utilities.dataclasses.xarray import (
-        rename_data_arrays,
-    )
+    from utilities.dataclasses.xarray import rename_data_arrays
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += [
-        "rename_data_arrays",
-    ]
+    __all__ += ["rename_data_arrays"]

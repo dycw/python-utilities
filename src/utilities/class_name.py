@@ -11,6 +11,4 @@ def get_class_name(x: Any, /, *, snake: bool = False) -> str:
     return snake_case(cls_name) if snake else cls_name
 
 
-__all__ = [
-    "get_class_name",
-]
+__all__ = ["get_class_name"]

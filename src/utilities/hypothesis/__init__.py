@@ -44,9 +44,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += [
-        "namespace_mixins",
-    ]
+    __all__ += ["namespace_mixins"]
 
 
 try:
@@ -120,9 +118,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += [
-        "versions",
-    ]
+    __all__ += ["versions"]
 
 
 try:
@@ -130,9 +126,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += [
-        "sqlite_engines",
-    ]
+    __all__ += ["sqlite_engines"]
 
 
 try:

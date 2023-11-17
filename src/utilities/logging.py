@@ -27,7 +27,4 @@ class LogLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-__all__ = [
-    "basic_config",
-    "LogLevel",
-]
+__all__ = ["basic_config", "LogLevel"]

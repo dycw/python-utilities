@@ -72,22 +72,11 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_generic(
-        self,
-        *,
-        data: DataObject,
-        n: int,
-        unique: bool,
-        name: Hashable,
-        sort: bool,
+        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
     ) -> None:
         index = data.draw(
             indexes(
-                elements=int64s(),
-                dtype=int64,
-                n=n,
-                unique=unique,
-                name=name,
-                sort=sort,
+                elements=int64s(), dtype=int64, n=n, unique=unique, name=name, sort=sort
             )
         )
         assert len(index) == n
@@ -105,13 +94,7 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_int(
-        self,
-        *,
-        data: DataObject,
-        n: int,
-        unique: bool,
-        name: Hashable,
-        sort: bool,
+        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
     ) -> None:
         index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == int64
@@ -130,13 +113,7 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_str(
-        self,
-        *,
-        data: DataObject,
-        n: int,
-        unique: bool,
-        name: Hashable,
-        sort: bool,
+        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
     ) -> None:
         index = data.draw(str_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == string

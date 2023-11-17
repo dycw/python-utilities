@@ -146,7 +146,4 @@ def _get_metadata(
     return metadata_use
 
 
-__all__ = [
-    "click_field",
-    "click_options",
-]
+__all__ = ["click_field", "click_options"]

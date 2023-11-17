@@ -41,7 +41,4 @@ def _get_text(tag: Tag, child: str, /) -> list[str]:
     return [ensure_str(x.string) for x in children]
 
 
-__all__ = [
-    "MultipleTHRowsError",
-    "yield_tables",
-]
+__all__ = ["MultipleTHRowsError", "yield_tables"]

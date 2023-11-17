@@ -13,12 +13,7 @@ from utilities.hypothesis.hypothesis import (
     lists_fixed_length,
     text_ascii,
 )
-from utilities.hypothesis.numpy import (
-    bool_arrays,
-    float_arrays,
-    int_arrays,
-    str_arrays,
-)
+from utilities.hypothesis.numpy import bool_arrays, float_arrays, int_arrays, str_arrays
 from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
 
 from .pandas import int_indexes  # noqa: TID252
@@ -60,10 +55,7 @@ def dicts_of_indexes(
     draw = lift_draw(_draw)
     shape = draw(
         array_shapes(
-            min_dims=min_dims,
-            max_dims=max_dims,
-            min_side=min_side,
-            max_side=max_side,
+            min_dims=min_dims, max_dims=max_dims, min_side=min_side, max_side=max_side
         )
     )
     ndims = len(shape)

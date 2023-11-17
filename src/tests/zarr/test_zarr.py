@@ -6,13 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    dictionaries,
-    floats,
-    integers,
-)
+from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
 from numpy import arange, array, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
@@ -20,12 +14,7 @@ from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.class_name import get_class_name
-from utilities.hypothesis import (
-    float_arrays,
-    int_arrays,
-    temp_paths,
-    text_ascii,
-)
+from utilities.hypothesis import float_arrays, int_arrays, temp_paths, text_ascii
 from utilities.numpy import NDArrayI1, NDArrayO1, datetime64D, datetime64ns
 from utilities.zarr import (
     InvalidIndexValueError,

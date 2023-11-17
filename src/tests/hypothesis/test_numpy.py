@@ -142,13 +142,7 @@ class TestDatetime64DIndexes:
         sort=booleans(),
     )
     def test_main(
-        self,
-        *,
-        data: DataObject,
-        n: int,
-        valid_dates: bool,
-        unique: bool,
-        sort: bool,
+        self, *, data: DataObject, n: int, valid_dates: bool, unique: bool, sort: bool
     ) -> None:
         index = data.draw(
             datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
@@ -452,10 +446,7 @@ class TestIntArrays:
         with assume_does_not_raise(InvalidArgument):
             array = data.draw(
                 int_arrays(
-                    shape=shape,
-                    min_value=min_value,
-                    max_value=max_value,
-                    unique=unique,
+                    shape=shape, min_value=min_value, max_value=max_value, unique=unique
                 )
             )
         assert array.dtype == int64

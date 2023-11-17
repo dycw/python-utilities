@@ -45,19 +45,9 @@ def atof(
         return _atof(text, func=func)
 
 
-def atoi(
-    text: str,
-    /,
-    *,
-    locale: str | Iterable[str | None] | None = None,
-) -> float:
+def atoi(text: str, /, *, locale: str | Iterable[str | None] | None = None) -> float:
     with override_locale(category=LC_NUMERIC, locale=locale):
         return _atoi(text)
 
 
-__all__ = [
-    "atof",
-    "atoi",
-    "get_locale_for_platform",
-    "override_locale",
-]
+__all__ = ["atof", "atoi", "get_locale_for_platform", "override_locale"]

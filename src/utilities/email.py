@@ -68,8 +68,4 @@ class InvalidContentsError(TypeError):
     """Raised when an invalid set of contents is encountered."""
 
 
-__all__ = [
-    "InvalidContentsError",
-    "is_pytest",
-    "send_email",
-]
+__all__ = ["InvalidContentsError", "is_pytest", "send_email"]

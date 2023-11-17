@@ -18,9 +18,7 @@ class Config:
     path: Path = click_field(default=Path("memory.csv"), param_decls=("-p", "--path"))
     freq: int = click_field(default=60, help="in seconds", param_decls=("-f", "--freq"))
     duration: Optional[int] = click_field(  # noqa: UP007
-        default=None,
-        help="in seconds",
-        param_decls=("-d", "--duration"),
+        default=None, help="in seconds", param_decls=("-d", "--duration")
     )
 
 

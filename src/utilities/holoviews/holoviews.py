@@ -26,8 +26,4 @@ def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
         save(plot, temp, backend="bokeh")
 
 
-__all__ = [
-    "apply_opts",
-    "relabel_plot",
-    "save_plot",
-]
+__all__ = ["apply_opts", "relabel_plot", "save_plot"]
