@@ -343,9 +343,14 @@ target-version = "py310"
   "PLR2004",  # refactor, magic-value-comparison
   "S101",  # flake8-bandit, assert-used
 ]
+"src/tests/luigi/test_*.py" = ["I002"]  # isort, missing-required-import
+"src/tests/typed_settings/test_*.py" = ["I002"]  # isort, missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["utilities.typed_settings.click_field"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]
