@@ -41,16 +41,6 @@ repos:
     rev: v0.34.0
     hooks:
       - id: nitpick-check
-  - repo: https://github.com/pycqa/flake8
-    rev: "6.1.0"
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8-future-import]
-        args:
-          [
-            --select=FI18,
-            "--per-file-ignores=src/tests/typed_settings/test_*.py:FI18,src/tests/luigi/test_typed_settings.py:FI18",
-          ]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.9.0.6
     hooks:
