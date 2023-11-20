@@ -7,6 +7,7 @@ from decimal import Decimal
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from json import dumps, loads
+from operator import itemgetter
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID
@@ -91,7 +92,11 @@ def _default(obj: Any, /) -> Any:  # noqa: PLR0911, PLR0912
     if isinstance(obj, Decimal):
         return {_CLASS: "Decimal", _VALUE: str(obj)}
     if isinstance(obj, _DictWrapper):
-        return {_CLASS: "dict", _VALUE: list(obj.value.items())}
+        try:
+            value = sorted(obj.value.items(), key=itemgetter(0))
+        except TypeError:
+            value = list(obj.value.items())
+        return {_CLASS: "dict", _VALUE: value}
     if isinstance(obj, dt.date) and not isinstance(obj, dt.datetime):
         return {_CLASS: "dt.date", _VALUE: serialize_date(obj)}
     if isinstance(obj, dt.datetime):
@@ -108,7 +113,11 @@ def _default(obj: Any, /) -> Any:  # noqa: PLR0911, PLR0912
     if isinstance(obj, Fraction):
         return {_CLASS: "Fraction", _VALUE: obj.as_integer_ratio()}
     if isinstance(obj, frozenset):
-        return {_CLASS: "frozenset", _VALUE: list(obj)}
+        try:
+            value = sorted(obj)
+        except TypeError:
+            value = list(obj)
+        return {_CLASS: "frozenset", _VALUE: value}
     if isinstance(obj, IPv4Address):
         return {_CLASS: "IPv4Address", _VALUE: str(obj)}
     if isinstance(obj, IPv6Address):
@@ -116,7 +125,11 @@ def _default(obj: Any, /) -> Any:  # noqa: PLR0911, PLR0912
     if isinstance(obj, Path):
         return {_CLASS: "Path", _VALUE: str(obj)}
     if isinstance(obj, set):
-        return {_CLASS: "set", _VALUE: list(obj)}
+        try:
+            value = sorted(obj)
+        except TypeError:
+            value = list(obj)
+        return {_CLASS: "set", _VALUE: value}
     if isinstance(obj, slice):
         return {_CLASS: "slice", _VALUE: (obj.start, obj.stop, obj.step)}
     if isinstance(obj, _TupleWrapper):

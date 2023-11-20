@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import Decimal
 from json import dumps
 from math import isnan
@@ -37,7 +38,11 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.datetime import NOW_HKG, UTC
-from utilities.hypothesis.hypothesis import assume_does_not_raise, temp_paths
+from utilities.hypothesis.hypothesis import (
+    assume_does_not_raise,
+    temp_paths,
+    text_ascii,
+)
 from utilities.json import (
     _CLASS,
     _VALUE,
@@ -58,13 +63,10 @@ class TestSerialize:
             param(characters()),
             param(dates()),
             param(datetimes(timezones=just(UTC) | none())),
-            param(dictionaries(integers(), integers(), max_size=3)),
             param(fractions()),
-            param(frozensets(integers(), max_size=3)),
             param(ip_addresses()),
             param(lists(integers(), max_size=3)),
             param(none()),
-            param(sets(integers(), max_size=3)),
             param(temp_paths()),
             param(text()),
             param(timedeltas()),
@@ -120,6 +122,32 @@ class TestSerialize:
         expected = eq(x, y)
         assert res is expected
 
+    @given(data=data(), n=integers(0, 10))
+    def test_dicts_sortable(self, *, data: DataObject, n: int) -> None:
+        elements = dictionaries(
+            integers(0, 2 * n), integers(0, 2 * n), min_size=n, max_size=n
+        )
+        x = data.draw(elements)
+        ser_x = serialize(x)
+        assert deserialize(ser_x) == x
+        y = data.draw(elements)
+        res = ser_x == serialize(y)
+        expected = x == y
+        assert res is expected
+
+    @given(data=data(), n=integers(0, 10))
+    def test_dicts_unsortable(self, *, data: DataObject, n: int) -> None:
+        elements = dictionaries(
+            integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
+            integers(0, 2 * n),
+            min_size=n,
+            max_size=n,
+        )
+        x, y = data.draw(tuples(elements, elements))
+        ser_x, ser_y = map(serialize, [x, y])
+        if ser_x == ser_y:
+            assert x == y
+
     @given(x=floats(), y=floats())
     def test_floats(self, *, x: float, y: float) -> None:
         ser_x = serialize(x)
@@ -142,9 +170,42 @@ class TestSerialize:
         expected = x == y
         assert res is expected
 
+    @given(data=data(), n=integers(0, 10))
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    def test_sets_sortable(
+        self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
+    ) -> None:
+        elements = strategy(integers(0, 2 * n), min_size=n, max_size=n)
+        x = data.draw(elements)
+        ser_x = serialize(x)
+        assert deserialize(ser_x) == x
+        y = data.draw(elements)
+        res = ser_x == serialize(y)
+        expected = x == y
+        assert res is expected
+
+    @given(data=data(), n=integers(0, 10))
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    def test_sets_unsortable(
+        self,
+        *,
+        data: DataObject,
+        n: int,
+        strategy: Callable[..., SearchStrategy[int | str]],
+    ) -> None:
+        elements = strategy(
+            integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
+            min_size=n,
+            max_size=n,
+        )
+        x, y = data.draw(tuples(elements, elements))
+        ser_x, ser_y = map(serialize, [x, y])
+        if ser_x == ser_y:
+            assert x == y
+
     @given(data=data(), n=integers(0, 3))
     def test_tuples(self, *, data: DataObject, n: int) -> None:
-        elements = tuples(*(n * [integers()]))
+        elements = tuples(*(n * [integers(0, 2 * n)]))
         x = data.draw(elements)
         ser_x = serialize(x)
         assert deserialize(ser_x) == x

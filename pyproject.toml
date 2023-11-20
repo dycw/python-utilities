@@ -42,7 +42,7 @@ dev = [
   "fpdf2 >= 2.7.6",
   "hatch >= 1.7.0",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.89.0",
+  "hypothesis >= 6.90.0",
   "loguru >= 0.7.2",
   "luigi >= 3.4.0",
   "mdutils >= 1.6.0",
@@ -59,7 +59,7 @@ dev = [
   "pypiserver[passlib] >= 2.0.1",
   "pytest >= 7.4.3",
   "pytest-check >= 2.2.2",
-  "scipy >= 1.11.3",
+  "scipy >= 1.11.4",
   "selenium >= 4.15.2",
   "semver >= 3.0.2",
   "sqlalchemy >= 2.0.23",
@@ -102,7 +102,7 @@ holoviews = [
   "atomicwrites >= 1.4.1",
   "selenium >= 4.15.2",
 ]
-hypothesis = ["hypothesis >= 6.89.0"]
+hypothesis = ["hypothesis >= 6.90.0"]
 loguru = ["loguru >= 0.7.2"]
 luigi = ["luigi >= 3.4.0"]
 mdutils = ["mdutils >= 1.6.0"]
@@ -119,7 +119,7 @@ pyinstrument = ["pyinstrument >= 4.6.1", "atomicwrites >= 1.4.1"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 7.4.3"]
 pytest-check = ["pytest-check >= 2.2.2"]
-scipy = ["scipy >= 1.11.3"]
+scipy = ["scipy >= 1.11.4"]
 scripts = ["loguru >= 0.7.2", "typed-settings[click] >= 23.1.1"]
 scripts-csv-to-markdown = [
   "loguru >= 0.7.2",
