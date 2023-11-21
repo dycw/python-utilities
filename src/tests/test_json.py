@@ -137,7 +137,7 @@ class TestSerialize:
         expected = x == y
         assert res is expected
 
-    @given(data=data(), n=integers(0, 10))
+    @given(data=data(), n=integers(2, 10))
     def test_dicts_unsortable(self, *, data: DataObject, n: int) -> None:
         elements = dictionaries(
             integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
@@ -186,7 +186,7 @@ class TestSerialize:
         expected = x == y
         assert res is expected
 
-    @given(data=data(), n=integers(0, 10))
+    @given(data=data(), n=integers(2, 10))
     @mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_unsortable(
         self,

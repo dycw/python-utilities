@@ -25,14 +25,23 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
         except KeyboardInterrupt:
             rmtree(temp_dir)
         else:
-            src, dest = str(temp_path), str(path)
             if temp_path.is_file():
+                src, dest = map(str, [temp_path, path])
                 if overwrite:
                     return replace_atomic(src, dest)
                 return move_atomic(src, dest)
-            if path.exists() and not overwrite:
-                raise DirectoryExistsError(path)
-            return move(src, dest)
+            elif temp_path.is_dir():
+                if (not path.exists()) or overwrite:
+                    return move(temp_path, path)
+                msg = f"{temp_dir=}, {path=}"
+                raise DirectoryExistsError(msg)
+            else:
+                msg = f"{temp_path=}"
+                raise WriterEmptyError(msg)
 
 
-__all__ = ["writer"]
+class WriterEmptyError(OSError):
+    """Raised when the `writer`'s source path does not exist."""
+
+
+__all__ = ["writer", "WriterEmptyError"]

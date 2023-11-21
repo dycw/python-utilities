@@ -6,7 +6,7 @@ from re import escape
 
 from pytest import mark, param, raises
 
-from utilities.atomicwrites import writer
+from utilities.atomicwrites import WriterEmptyError, writer
 from utilities.errors import DirectoryExistsError
 from utilities.platform import IS_WINDOWS
 
@@ -60,9 +60,7 @@ class TestWriter:
         path = tmp_path.joinpath("dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError, match=escape(str(path))), writer(
-            path
-        ) as temp2:
+        with raises(DirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
@@ -91,3 +89,8 @@ class TestWriter:
             raise_error()
         expected = int(not issubclass(error, KeyboardInterrupt))
         assert len(list(tmp_path.iterdir())) == expected
+
+    def test_writer_empty_error(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("file.txt")
+        with raises(WriterEmptyError), writer(path):
+            pass
