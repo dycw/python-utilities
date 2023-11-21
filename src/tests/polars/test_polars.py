@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from polars import DataFrame, Float64, Utf8
+from polars import DataFrame, Float64, Int64, Utf8
+from polars.testing import assert_frame_equal
 from pytest import raises
 
 from utilities.polars import (
@@ -16,6 +17,7 @@ from utilities.polars import (
     DataFrameWidthError,
     EmptyDataFrameError,
     check_dataframe,
+    join,
     set_first_row_as_columns,
 )
 
@@ -114,6 +116,17 @@ class TestCheckDataFrame:
         df = DataFrame()
         with raises(DataFrameWidthError):
             check_dataframe(df, width=1)
+
+
+class TestJoin:
+    def test_main(self) -> None:
+        df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
+        df2 = DataFrame([{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
+        result = join(df1, df2, on="a")
+        expected = DataFrame(
+            [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
+        )
+        assert_frame_equal(result, expected)
 
 
 class TestSetFirstRowAsColumns:

@@ -13,6 +13,7 @@ from utilities.polars.polars import (
     DataFrameWidthError,
     EmptyDataFrameError,
     check_dataframe,
+    join,
     set_first_row_as_columns,
 )
 
@@ -29,6 +30,7 @@ __all__ = [
     "DataFrameUniqueError",
     "DataFrameWidthError",
     "EmptyDataFrameError",
+    "join",
     "set_first_row_as_columns",
 ]
 

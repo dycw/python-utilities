@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from functools import reduce
+from itertools import chain
 
-from polars import DataFrame, PolarsDataType
+from polars import DataFrame, Expr, PolarsDataType
 from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
-from polars.type_aliases import IntoExpr, SchemaDict
+from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
 from utilities.typing import SequenceStrs
 
@@ -110,6 +112,19 @@ class DataFrameWidthError(ValueError):
     """Raised when a DataFrame has the incorrect width."""
 
 
+def join(
+    df: DataFrame,
+    *dfs: DataFrame,
+    on: str | Expr | Sequence[str | Expr],
+    how: JoinStrategy = "inner",
+    validate: JoinValidation = "m:m",
+) -> DataFrame:
+    def inner(left: DataFrame, right: DataFrame, /) -> DataFrame:
+        return left.join(right, on=on, how=how, validate=validate)
+
+    return reduce(inner, chain([df], dfs))
+
+
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
 
@@ -139,5 +154,6 @@ __all__ = [
     "DataFrameUniqueError",
     "DataFrameWidthError",
     "EmptyDataFrameError",
+    "join",
     "set_first_row_as_columns",
 ]
