@@ -44,11 +44,11 @@ def get_shell_output(
         )
 
 
-class NoActivateError(ValueError):
+class NoActivateError(Exception):
     """Raised when no `activate` script can be found."""
 
 
-class MultipleActivateError(ValueError):
+class MultipleActivateError(Exception):
     """Raised when multiple `activate` scripts can be found."""
 
 

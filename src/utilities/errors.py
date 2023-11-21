@@ -27,7 +27,7 @@ def redirect_error(
         raise old
 
 
-class NoUniqueArgError(ValueError):
+class NoUniqueArgError(Exception):
     """Raised when no unique argument can be found."""
 
 

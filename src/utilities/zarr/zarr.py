@@ -111,7 +111,7 @@ def yield_group_and_array(
         yield root, array
 
 
-class NoIndexesError(ValueError):
+class NoIndexesError(Exception):
     """Raised when there are no indexes."""
 
 
@@ -297,11 +297,11 @@ class NDArrayWithIndexes:
         return cast(indexer)
 
 
-class InvalidDimensionError(ValueError):
+class InvalidDimensionError(Exception):
     """Raised when an dimension is invalid."""
 
 
-class InvalidIndexValueError(ValueError):
+class InvalidIndexValueError(Exception):
     """Raised when an index value is invalid."""
 
 

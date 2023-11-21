@@ -130,11 +130,11 @@ def _default(  # noqa: PLR0911, PLR0912
     raise JsonSerializationError(msg)
 
 
-class InvalidTimeZoneError(ValueError):
+class InvalidTimeZoneError(Exception):
     """Raised when an invalid timezone is encountered."""
 
 
-class JsonSerializationError(ValueError):
+class JsonSerializationError(Exception):
     """Raised when an object cannot be serialized."""
 
 
@@ -220,7 +220,7 @@ def _object_hook(  # noqa: PLR0911
             raise JsonDeserializationError(msg)
 
 
-class JsonDeserializationError(ValueError):
+class JsonDeserializationError(Exception):
     """Raised when an object cannot be deserialized."""
 
 

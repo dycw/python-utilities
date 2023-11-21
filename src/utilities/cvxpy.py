@@ -345,15 +345,15 @@ def solve(
     raise InvalidStatusError(msg)  # pragma: no cover
 
 
-class InfeasibleProblemError(ValueError):
+class InfeasibleProblemError(Exception):
     """Raised when an infeasible problem is encountered."""
 
 
-class UnboundedProblemError(ValueError):
+class UnboundedProblemError(Exception):
     """Raised when an unbounded problem is encountered."""
 
 
-class InvalidStatusError(ValueError):
+class InvalidStatusError(Exception):
     """Raised when an invalid status is encountered."""
 
 

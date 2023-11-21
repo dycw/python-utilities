@@ -34,7 +34,7 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
         raise IterableContainsDuplicatesError(msg)
 
 
-class IterableContainsDuplicatesError(ValueError):
+class IterableContainsDuplicatesError(Exception):
     """Raised when an iterable contains duplicates."""
 
 

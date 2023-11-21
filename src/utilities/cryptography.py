@@ -25,7 +25,7 @@ def _get_fernet(*, env_var: str = _ENV_VAR) -> Fernet:
     return Fernet(key.encode())
 
 
-class FernetKeyMissingError(RuntimeError):
+class FernetKeyMissingError(Exception):
     """Raised when the fernet key is missing."""
 
 

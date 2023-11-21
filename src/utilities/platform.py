@@ -30,7 +30,7 @@ def get_system() -> System:
     raise UnableToDetermineSystemError(msg)  # pragma: no cover
 
 
-class UnableToDetermineSystemError(ValueError):
+class UnableToDetermineSystemError(Exception):
     """Raised when unable to determine the system."""
 
 

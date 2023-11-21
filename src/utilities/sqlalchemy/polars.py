@@ -57,7 +57,7 @@ def insert_polars_dataframe(
     )
 
 
-class PolarsDataFrameYieldsNoRowsError(ValueError):
+class PolarsDataFrameYieldsNoRowsError(Exception):
     """Raised when a DataFrame yields no rows to insert."""
 
 
@@ -188,7 +188,7 @@ def _table_column_to_expr(column: Column[Any], /, *, time_zone: timezone = UTC) 
     raise ColumnToPolarsExprError(msg)
 
 
-class ColumnToPolarsExprError(TypeError):
+class ColumnToPolarsExprError(Exception):
     """Raised when an invalid column type is encountered."""
 
 

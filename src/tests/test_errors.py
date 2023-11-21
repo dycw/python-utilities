@@ -9,6 +9,9 @@ from utilities.itertools import one
 
 
 class TestRedirectError:
+    class _CustomError(Exception):
+        ...
+
     def test_generic_redirected_to_custom(self) -> None:
         with raises(self._CustomError):
             self._raises_custom("generic error")
@@ -24,9 +27,6 @@ class TestRedirectError:
         except ValueError as error:
             redirect_error(error, pattern, self._CustomError)
 
-    class _CustomError(ValueError):
-        ...
-
     def test_generic_with_no_unique_arg(self) -> None:
         with raises(NoUniqueArgError):
             try:
@@ -38,7 +38,7 @@ class TestRedirectError:
 class TestRetry:
     @mark.parametrize("use_predicate", [param(None), param(True), param(False)])
     def test_main(self, *, use_predicate: bool | None) -> None:
-        class TooLargeError(ValueError):
+        class TooLargeError(Exception):
             ...
 
         def increment() -> int:

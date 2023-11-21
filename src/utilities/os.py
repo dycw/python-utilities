@@ -13,7 +13,7 @@ def _get_cpu_count() -> int:
     return count
 
 
-class UnableToDetermineCPUCountError(ValueError):
+class UnableToDetermineCPUCountError(Exception):
     """Raised when unable to determine the CPU count."""
 
 
