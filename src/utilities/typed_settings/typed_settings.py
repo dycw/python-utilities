@@ -13,26 +13,19 @@ from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
 
 from utilities.datetime import ensure_date, ensure_time, ensure_timedelta
-from utilities.git import InvalidRepoError, get_repo_root
+from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.pathlib import PathLike
 
 _T = TypeVar("_T")
 
 
-def get_repo_root_config(
-    *, cwd: PathLike = Path.cwd(), filename: str = "config.toml"
-) -> Path | None:
-    """Get the config under the repo root, if it exists."""
-    try:
-        root = get_repo_root(cwd=cwd)
-    except (FileNotFoundError, InvalidRepoError):
-        return None
-    if (path := root.joinpath(filename)).exists():
-        return path
-    return None
+def _config_toml(root: Path, /) -> Path | None:
+    return path if (path := root.joinpath("config.toml")).exists() else None
 
 
-_CONFIG_FILES = [p for p in [get_repo_root_config()] if p is not None]
+_CONFIG_FILES = [
+    p for p in [get_repo_root_or_cwd_sub_path(_config_toml)] if p is not None
+]
 
 
 def load_settings(
@@ -120,4 +113,4 @@ def _make_converter(
     return hook
 
 
-__all__ = ["AppNameContainsUnderscoreError", "get_repo_root_config", "load_settings"]
+__all__ = ["AppNameContainsUnderscoreError", "load_settings"]

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from typing_extensions import override
 from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
@@ -16,7 +16,7 @@ from zarr.core import Attributes
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
 from utilities.datetime import ensure_date, ensure_datetime
-from utilities.itertools import is_iterable_not_str
+from utilities.itertools import is_iterable_not_str, is_sized_not_str
 from utilities.numpy import (
     MultipleTrueElementsError,
     NDArray1,
@@ -271,8 +271,8 @@ class NDArrayWithIndexes:
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
         elif has_dtype(index, datetime64ns):
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
-        if is_iterable_not_str(indexer):
-            bool_indexer = isin(index, indexer)
+        if is_sized_not_str(indexer):
+            bool_indexer = isin(index, cast(ArrayLike, indexer))
             if sum(bool_indexer) == len(indexer):
                 return bool_indexer
             msg = f"{dim=}, {indexer=}"

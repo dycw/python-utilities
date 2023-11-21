@@ -799,10 +799,7 @@ def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
         if _insert_items_collect_valid(data):
             yield _InsertionItem(values=data, table=get_table(table_or_mapped_class))
         elif is_iterable_not_str(data):
-            data_as_iter = cast(Iterable[Any], data)
-            yield from _insert_items_collect_iterable(
-                data_as_iter, table_or_mapped_class
-            )
+            yield from _insert_items_collect_iterable(data, table_or_mapped_class)
         else:
             msg = f"{data=}"
             raise FirstArgumentInvalidError(msg)
