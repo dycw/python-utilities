@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from fractions import Fraction
+from functools import partial
 from ipaddress import IPv4Address, IPv6Address
 from json import dumps, loads
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypeVar, cast
 from uuid import UUID
 
 from utilities.datetime import (
@@ -24,36 +25,16 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 
+_T = TypeVar("_T")
+_ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
+_ExtraDes = Mapping[str, Callable[[Any], Any]]
 _CLASS = "__class__"
 _VALUE = "__value__"
 
 
-def serialize(
-    x: Any,
-    /,
-    *,
-    skipkeys: bool = False,
-    ensure_ascii: bool = True,
-    check_circular: bool = True,
-    allow_nan: bool = True,
-    indent: int | str | None = None,
-    separators: tuple[str, str] | None = None,
-    sort_keys: bool = False,
-    **kwargs: Any,
-) -> str:
+def serialize(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> str:
     """Serialize an object."""
-    return dumps(
-        _pre_process(x),
-        skipkeys=skipkeys,
-        ensure_ascii=ensure_ascii,
-        check_circular=check_circular,
-        allow_nan=allow_nan,
-        indent=indent,
-        separators=separators,
-        default=_default,
-        sort_keys=sort_keys,
-        **kwargs,
-    )
+    return dumps(_pre_process(obj), default=partial(_default, extra=extra))
 
 
 @dataclass
@@ -80,7 +61,9 @@ def _positive_zero(x: float, /) -> float:
     return abs(x) if x == 0.0 else x  # noqa: PLR2004
 
 
-def _default(obj: Any, /) -> Any:  # noqa: PLR0911, PLR0912
+def _default(  # noqa: PLR0911, PLR0912
+    obj: Any, /, *, extra: _ExtraSer[Any] | None = None
+) -> Any:
     """Extension for the JSON serializer."""
     if isinstance(obj, bytes):
         return {_CLASS: "bytes", _VALUE: obj.decode()}
@@ -136,6 +119,13 @@ def _default(obj: Any, /) -> Any:  # noqa: PLR0911, PLR0912
         return {_CLASS: "tuple", _VALUE: list(obj.value)}
     if isinstance(obj, UUID):
         return {_CLASS: "UUID", _VALUE: str(obj)}
+    if extra is not None:
+        try:
+            key, func = extra[type(obj)]
+        except KeyError:
+            msg = f"{type(obj)=}"
+            raise JsonSerializationError(msg) from None
+        return {_CLASS: key, _VALUE: func(obj)}
     msg = f"{type(obj)=}"
     raise JsonSerializationError(msg)
 
@@ -148,13 +138,15 @@ class JsonSerializationError(ValueError):
     """Raised when an object cannot be serialized."""
 
 
-def deserialize(text: str | bytes, /) -> Any:
-    return loads(text, object_hook=_object_hook)
+def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
+    return loads(text, object_hook=partial(_object_hook, extra=extra))
 
 
-def _object_hook(mapping: Mapping[str, Any], /) -> Any:  # noqa: PLR0911
+def _object_hook(  # noqa: PLR0911
+    mapping: Mapping[str, Any], /, *, extra: _ExtraDes | None = None
+) -> Any:
     try:
-        cls = mapping[_CLASS]
+        cls = cast(str, mapping[_CLASS])
     except KeyError:
         return mapping
     value = mapping[_VALUE]
@@ -217,6 +209,13 @@ def _object_hook(mapping: Mapping[str, Any], /) -> Any:  # noqa: PLR0911
             value = cast(str, value)
             return UUID(value)
         case _:
+            if extra is not None:
+                try:
+                    func = extra[cls]
+                except KeyError:
+                    msg = f"{cls=}, {value=}"
+                    raise JsonDeserializationError(msg) from None
+                return func(value)
             msg = f"{cls=}, {value=}"
             raise JsonDeserializationError(msg)
 
