@@ -72,43 +72,43 @@ def check_dataframe(
         raise DataFrameWidthError(msg)
 
 
-class DataFrameColumnsError(ValueError):
+class DataFrameColumnsError(Exception):
     """Raised when a DataFrame has the incorrect columns."""
 
 
-class DataFrameDTypesError(ValueError):
+class DataFrameDTypesError(Exception):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-class DataFrameHeightError(ValueError):
+class DataFrameHeightError(Exception):
     """Raised when a DataFrame has the incorrect height."""
 
 
-class DataFrameMinHeightError(ValueError):
+class DataFrameMinHeightError(Exception):
     """Raised when a DataFrame does not reach the minimum height."""
 
 
-class DataFrameMaxHeightError(ValueError):
+class DataFrameMaxHeightError(Exception):
     """Raised when a DataFrame exceeds the maximum height."""
 
 
-class DataFrameSchemaError(ValueError):
+class DataFrameSchemaError(Exception):
     """Raised when a DataFrame has the incorrect schema."""
 
 
-class DataFrameShapeError(ValueError):
+class DataFrameShapeError(Exception):
     """Raised when a DataFrame has the incorrect shape."""
 
 
-class DataFrameSortedError(ValueError):
+class DataFrameSortedError(Exception):
     """Raised when a DataFrame has non-sorted values."""
 
 
-class DataFrameUniqueError(ValueError):
+class DataFrameUniqueError(Exception):
     """Raised when a DataFrame has non-unique values."""
 
 
-class DataFrameWidthError(ValueError):
+class DataFrameWidthError(Exception):
     """Raised when a DataFrame has the incorrect width."""
 
 
@@ -137,7 +137,7 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     return df[1:].rename(mapping)
 
 
-class EmptyDataFrameError(ValueError):
+class EmptyDataFrameError(Exception):
     """Raised when a DataFrame is empty."""
 
 

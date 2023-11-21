@@ -71,7 +71,7 @@ def insert_pandas_dataframe(
     )
 
 
-class PandasDataFrameYieldsNoRowsError(ValueError):
+class PandasDataFrameYieldsNoRowsError(Exception):
     """Raised when a DataFrame yields no rows to insert."""
 
 
@@ -193,7 +193,7 @@ def _table_column_to_dtype(column: Column[Any], /, *, time_zone: timezone = UTC)
     raise ColumnToPandasDTypeError(msg)
 
 
-class ColumnToPandasDTypeError(TypeError):
+class ColumnToPandasDTypeError(Exception):
     """Raised when an invalid column type is encountered."""
 
 
@@ -226,7 +226,7 @@ def _stream_dataframes(
             yield _rows_to_dataframe(sel, rows, time_zone=time_zone, snake=snake)
 
 
-class NonPositiveStreamError(ValueError):
+class NonPositiveStreamError(Exception):
     """Raised when the `stream` arguemnt is non-positive."""
 
 

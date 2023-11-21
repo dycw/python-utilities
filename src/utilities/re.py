@@ -14,7 +14,7 @@ def extract_group(pattern: str, text: str, /) -> str:
     raise MultipleCaptureGroupsError(pattern)
 
 
-class MultipleCaptureGroupsError(ValueError):
+class MultipleCaptureGroupsError(Exception):
     """Raised when multiple capture groups are found."""
 
 
@@ -39,15 +39,15 @@ def extract_groups(pattern: str, text: str, /) -> list[str]:
     raise MultipleMatchesError(msg)
 
 
-class NoCaptureGroupsError(ValueError):
+class NoCaptureGroupsError(Exception):
     """Raised when no capture groups are found."""
 
 
-class NoMatchesError(ValueError):
+class NoMatchesError(Exception):
     """Raised when no matches are found."""
 
 
-class MultipleMatchesError(ValueError):
+class MultipleMatchesError(Exception):
     """Raised when multiple matches are found."""
 
 

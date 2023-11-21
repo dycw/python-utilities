@@ -99,7 +99,7 @@ def _to_ndarray1(x: Any, /) -> NDArray1:
     raise NotOneDimensionalArrayError(msg)
 
 
-class NotOneDimensionalArrayError(ValueError):
+class NotOneDimensionalArrayError(Exception):
     """Raised when an object is not a 1-dimensional array."""
 
 

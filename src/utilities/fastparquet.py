@@ -121,7 +121,7 @@ def _get_parquet_file(
         redirect_error(error, "list index out of range", InvalidRowGroupIndexError(msg))
 
 
-class InvalidRowGroupIndexError(IndexError):
+class InvalidRowGroupIndexError(Exception):
     """Raised when a row group index is invalid."""
 
 
@@ -198,11 +198,11 @@ def _write_parquet_core(
     )
 
 
-class EmptyDataFrameError(ValueError):
+class EmptyDataFrameError(Exception):
     """Raised when a DataFrame is empty."""
 
 
-class InvalidDTypeError(TypeError):
+class InvalidDTypeError(Exception):
     """Raised when an invalid dtype is encountered."""
 
 

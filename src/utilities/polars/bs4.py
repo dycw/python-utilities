@@ -32,7 +32,7 @@ def _table_tag_to_dataframe(table: Tag, /) -> DataFrame:
     return df.rename({f"column_{i}": th for i, th in enumerate(th_rows)})
 
 
-class MultipleTHRowsError(ValueError):
+class MultipleTHRowsError(Exception):
     """Raised when multiple TH rows are found."""
 
 

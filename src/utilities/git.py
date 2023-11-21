@@ -52,7 +52,7 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
         return Path(output.strip("\n"))
 
 
-class InvalidRepoError(TypeError):
+class InvalidRepoError(Exception):
     """Raised when an invalid repo is encountered."""
 
 

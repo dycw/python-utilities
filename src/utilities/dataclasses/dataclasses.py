@@ -29,7 +29,7 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     raise NotADataClassNorADataClassInstanceError(msg)
 
 
-class NotADataClassNorADataClassInstanceError(TypeError):
+class NotADataClassNorADataClassInstanceError(Exception):
     """Raised when an object is neither a dataclass nor an instance of one."""
 
 

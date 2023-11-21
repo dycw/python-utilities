@@ -77,7 +77,7 @@ def _get_loaders(
     )
 
 
-class AppNameContainsUnderscoreError(ValueError):
+class AppNameContainsUnderscoreError(Exception):
     """Raised when the appname contains a space."""
 
 

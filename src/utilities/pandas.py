@@ -117,39 +117,39 @@ def check_dataframe(
         raise DataFrameUniqueError(msg)
 
 
-class DataFrameColumnsNameError(ValueError):
+class DataFrameColumnsNameError(Exception):
     """Raised when a DataFrame's columns' index name is not None."""
 
 
-class DataFrameColumnsDuplicatedError(ValueError):
+class DataFrameColumnsDuplicatedError(Exception):
     """Raised when a DataFrame's columns has duplicated values."""
 
 
-class DataFrameColumnsError(ValueError):
+class DataFrameColumnsError(Exception):
     """Raised when a DataFrame has the incorrect columns."""
 
 
-class DataFrameDTypesError(ValueError):
+class DataFrameDTypesError(Exception):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-class DataFrameLengthError(ValueError):
+class DataFrameLengthError(Exception):
     """Raised when a DataFrame has the incorrect length."""
 
 
-class DataFrameMinLengthError(ValueError):
+class DataFrameMinLengthError(Exception):
     """Raised when a DataFrame does not reach the minimum length."""
 
 
-class DataFrameMaxLengthError(ValueError):
+class DataFrameMaxLengthError(Exception):
     """Raised when a DataFrame exceeds the maximum length."""
 
 
-class DataFrameSortedError(ValueError):
+class DataFrameSortedError(Exception):
     """Raised when a DataFrame has non-sorted values."""
 
 
-class DataFrameUniqueError(ValueError):
+class DataFrameUniqueError(Exception):
     """Raised when a DataFrame has non-unique values."""
 
 
@@ -183,23 +183,23 @@ def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
             raise DataFrameRangeIndexError(msg) from error
 
 
-class RangeIndexStartError(ValueError):
+class RangeIndexStartError(Exception):
     """Raised when a RangeIndex start is not 0."""
 
 
-class RangeIndexStepError(ValueError):
+class RangeIndexStepError(Exception):
     """Raised when a RangeIndex step is not 1."""
 
 
-class RangeIndexNameError(ValueError):
+class RangeIndexNameError(Exception):
     """Raised when a RangeIndex name is not None."""
 
 
-class SeriesRangeIndexError(ValueError):
+class SeriesRangeIndexError(Exception):
     """Raised when Series does not have a standard RangeIndex."""
 
 
-class DataFrameRangeIndexError(ValueError):
+class DataFrameRangeIndexError(Exception):
     """Raised when DataFrame does not have a standard RangeIndex."""
 
 
@@ -208,7 +208,7 @@ def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
     redirect_error(error, "No objects to concatenate", EmptyPandasConcatError)
 
 
-class EmptyPandasConcatError(ValueError):
+class EmptyPandasConcatError(Exception):
     """Raised when there are no objects to concatenate."""
 
 
@@ -245,7 +245,7 @@ def _series_minmax(
     return out
 
 
-class DifferentDTypeError(ValueError):
+class DifferentDTypeError(Exception):
     """Raised when two series have different dtypes."""
 
 
@@ -269,7 +269,7 @@ def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetim
     return datetime
 
 
-class TimestampIsNaTError(ValueError):
+class TimestampIsNaTError(Exception):
     """Raised when a NaT is received."""
 
 

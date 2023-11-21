@@ -64,7 +64,7 @@ def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
     message.attach(part)
 
 
-class InvalidContentsError(TypeError):
+class InvalidContentsError(Exception):
     """Raised when an invalid set of contents is encountered."""
 
 

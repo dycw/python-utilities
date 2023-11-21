@@ -8,15 +8,15 @@ from utilities.itertools import IterableContainsDuplicatesError, check_duplicate
 from utilities.typing import IterableStrs
 
 
-def ensure_str(x: Any, /) -> str:
+def ensure_str(obj: Any, /) -> str:
     """Ensure an object is a string."""
-    if isinstance(x, str):
-        return x
-    msg = f"{x=}"
+    if isinstance(obj, str):
+        return obj
+    msg = f"{obj=}"
     raise NotAStringError(msg)
 
 
-class NotAStringError(TypeError):
+class NotAStringError(Exception):
     """Raised when an object is not a string."""
 
 
@@ -49,7 +49,7 @@ def snake_case_mappings(
     return dict(zip(as_list, snaked, strict=True))
 
 
-class SnakeCaseContainsDuplicatesError(ValueError):
+class SnakeCaseContainsDuplicatesError(Exception):
     """Raised when the snake case values contain duplicates."""
 
 

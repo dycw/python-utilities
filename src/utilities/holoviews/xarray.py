@@ -46,11 +46,11 @@ def plot_curve(
     return curve
 
 
-class ArrayNameNotAStringError(TypeError):
+class ArrayNameNotAStringError(Exception):
     """Raised when the array name is not a string."""
 
 
-class ArrayNameIsEmptyStringError(TypeError):
+class ArrayNameIsEmptyStringError(Exception):
     """Raised when the array name is the empty string."""
 
 

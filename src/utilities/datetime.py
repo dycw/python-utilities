@@ -9,7 +9,7 @@ from re import sub
 from typing_extensions import assert_never
 
 from utilities.platform import SYSTEM, System
-from utilities.re import extract_groups
+from utilities.re import NoMatchesError, extract_groups
 from utilities.types import Duration
 from utilities.zoneinfo import HONG_KONG, TOKYO
 
@@ -34,7 +34,7 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     return date
 
 
-class IsWeekendError(ValueError):
+class IsWeekendError(Exception):
     """Raised when 0 days is added to a weekend."""
 
 
@@ -116,7 +116,7 @@ def local_timezone() -> tzinfo:
     return tz
 
 
-class LocalTimeZoneError(ValueError):
+class LocalTimeZoneError(Exception):
     """Raised when the local timezone cannot be found."""
 
 
@@ -143,7 +143,7 @@ def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
     raise ParseDateError(date)
 
 
-class ParseDateError(ValueError):
+class ParseDateError(Exception):
     """Raised when a `dt.date` cannot be parsed."""
 
 
@@ -166,7 +166,7 @@ def parse_datetime(datetime: str, /, *, tzinfo: tzinfo = UTC) -> dt.datetime:
     raise ParseDateTimeError(datetime)
 
 
-class ParseDateTimeError(ValueError):
+class ParseDateTimeError(Exception):
     """Raised when a `dt.datetime` cannot be parsed."""
 
 
@@ -180,7 +180,7 @@ def parse_time(time: str, /) -> dt.time:
     raise ParseTimeError(time)
 
 
-class ParseTimeError(ValueError):
+class ParseTimeError(Exception):
     """Raised when a `dt.time` cannot be parsed."""
 
 
@@ -203,7 +203,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
         )
     try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
-    except ValueError:
+    except NoMatchesError:
         raise ParseTimedeltaError(timedelta) from None
     else:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
@@ -216,7 +216,7 @@ def _parse_timedelta(timedelta: str, fmt: str, /) -> dt.datetime | None:
         return None
 
 
-class ParseTimedeltaError(ValueError):
+class ParseTimedeltaError(Exception):
     """Raised when a `dt.timedelta` cannot be parsed."""
 
 
@@ -287,7 +287,7 @@ def yield_weekdays(
         raise YieldWeekdaysError(msg)
 
 
-class YieldWeekdaysError(ValueError):
+class YieldWeekdaysError(Exception):
     """Raised when an invalid call to `yield_weekdays` is made."""
 
 

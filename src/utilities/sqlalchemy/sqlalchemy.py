@@ -111,7 +111,7 @@ def _check_series_against_against_table(
     return db_name
 
 
-class SeriesAndTableColumnIncompatibleError(TypeError):
+class SeriesAndTableColumnIncompatibleError(Exception):
     """Raised when a Series and table column are incompatible."""
 
 
@@ -131,11 +131,11 @@ def _match_series_name_to_table_column(
         raise SeriesMatchesAgainstMultipleColumnsError(msg) from None
 
 
-class SeriesMatchesAgainstNoColumnError(ValueError):
+class SeriesMatchesAgainstNoColumnError(Exception):
     """Raised when a Series matches against no column."""
 
 
-class SeriesMatchesAgainstMultipleColumnsError(ValueError):
+class SeriesMatchesAgainstMultipleColumnsError(Exception):
     """Raised when a Series matches against multiple columns."""
 
 
@@ -221,11 +221,11 @@ def _check_table_or_column_names_equal(
         raise UnequalTableOrColumnNamesError(msg)
 
 
-class UnequalTableOrColumnNamesError(ValueError):
+class UnequalTableOrColumnNamesError(Exception):
     """Raised when two table/columns' names differ."""
 
 
-class UnequalTableOrColumnSnakeCaseNamesError(ValueError):
+class UnequalTableOrColumnSnakeCaseNamesError(Exception):
     """Raised when two table/columns' snake case names differ."""
 
 
@@ -276,11 +276,11 @@ def _check_column_collections_equal(
         _check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
 
 
-class UnequalNumberOfColumnsError(ValueError):
+class UnequalNumberOfColumnsError(Exception):
     """Raised when two column collections' lengths differ."""
 
 
-class UnequalSetOfColumnsError(ValueError):
+class UnequalSetOfColumnsError(Exception):
     """Raised when two column collections' set of columns differ."""
 
 
@@ -298,11 +298,11 @@ def _check_columns_equal(
         raise UnequalNullableStatusError(msg)
 
 
-class UnequalPrimaryKeyStatusError(ValueError):
+class UnequalPrimaryKeyStatusError(Exception):
     """Raised when two columns differ in primary key status."""
 
 
-class UnequalNullableStatusError(ValueError):
+class UnequalNullableStatusError(Exception):
     """Raised when two columns differ in nullable status."""
 
 
@@ -347,7 +347,7 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:
         _check_uuid_column_types_equal(x_inst, y_inst)
 
 
-class UnequalColumnTypesError(TypeError):
+class UnequalColumnTypesError(Exception):
     """Raised when two columns' types differ."""
 
 
@@ -360,15 +360,15 @@ def _check_boolean_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalBooleanColumnNameError(msg)
 
 
-class UnequalBooleanColumnCreateConstraintError(TypeError):
+class UnequalBooleanColumnCreateConstraintError(Exception):
     """Raised when two boolean columns' create constraints differ."""
 
 
-class UnequalBooleanColumnNameError(TypeError):
+class UnequalBooleanColumnNameError(Exception):
     """Raised when two boolean columns' names differ."""
 
 
-class UnequalDateTimeColumnTimezoneError(TypeError):
+class UnequalDateTimeColumnTimezoneError(Exception):
     """Raised when two datetime columns' timezones differ."""
 
 
@@ -396,23 +396,23 @@ def _check_enum_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalEnumColumnInheritSchemaError(msg)
 
 
-class UnequalEnumColumnTypesError(TypeError):
+class UnequalEnumColumnTypesError(Exception):
     """Raised when two enum columns' types differ."""
 
 
-class UnequalEnumColumnCreateConstraintError(TypeError):
+class UnequalEnumColumnCreateConstraintError(Exception):
     """Raised when two enum columns' create constraints differ."""
 
 
-class UnequalEnumColumnNativeEnumError(TypeError):
+class UnequalEnumColumnNativeEnumError(Exception):
     """Raised when two enum columns' native enums differ."""
 
 
-class UnequalEnumColumnLengthError(TypeError):
+class UnequalEnumColumnLengthError(Exception):
     """Raised when two enum columns' lengths differ."""
 
 
-class UnequalEnumColumnInheritSchemaError(TypeError):
+class UnequalEnumColumnInheritSchemaError(Exception):
     """Raised when two enum columns' inherit schemas differ."""
 
 
@@ -427,15 +427,15 @@ def _check_float_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalNumericScaleError(msg)
 
 
-class UnequalFloatColumnPrecisionsError(TypeError):
+class UnequalFloatColumnPrecisionsError(Exception):
     """Raised when two float columns' precisions differ."""
 
 
-class UnequalFloatColumnAsDecimalError(TypeError):
+class UnequalFloatColumnAsDecimalError(Exception):
     """Raised when two float columns' asdecimal differ."""
 
 
-class UnequalFloatColumnDecimalReturnScaleError(TypeError):
+class UnequalFloatColumnDecimalReturnScaleError(Exception):
     """Raised when two float columns' decimal return scales differ."""
 
 
@@ -450,23 +450,23 @@ def _check_interval_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalIntervalColumnDayPrecisionError(msg)
 
 
-class UnequalIntervalColumnNativeError(TypeError):
+class UnequalIntervalColumnNativeError(Exception):
     """Raised when two intervals columns' native differ."""
 
 
-class UnequalIntervalColumnSecondPrecisionError(TypeError):
+class UnequalIntervalColumnSecondPrecisionError(Exception):
     """Raised when two intervals columns' second precisions differ."""
 
 
-class UnequalIntervalColumnDayPrecisionError(TypeError):
+class UnequalIntervalColumnDayPrecisionError(Exception):
     """Raised when two intervals columns' day precisions differ."""
 
 
-class UnequalLargeBinaryColumnLengthError(TypeError):
+class UnequalLargeBinaryColumnLengthError(Exception):
     """Raised when two large binary columns' lengths differ."""
 
 
-class UnequalNumericScaleError(TypeError):
+class UnequalNumericScaleError(Exception):
     """Raised when two numeric columns' scales differ."""
 
 
@@ -479,11 +479,11 @@ def _check_string_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalStringCollationError(msg)
 
 
-class UnequalStringLengthError(TypeError):
+class UnequalStringLengthError(Exception):
     """Raised when two string columns' lengths differ."""
 
 
-class UnequalStringCollationError(TypeError):
+class UnequalStringCollationError(Exception):
     """Raised when two string columns' collations differ."""
 
 
@@ -496,11 +496,11 @@ def _check_uuid_column_types_equal(x: Any, y: Any, /) -> None:
         raise UnequalUUIDNativeUUIDError(msg)
 
 
-class UnequalUUIDAsUUIDError(TypeError):
+class UnequalUUIDAsUUIDError(Exception):
     """Raised when two UUID columns' as_uuid differ."""
 
 
-class UnequalUUIDNativeUUIDError(TypeError):
+class UnequalUUIDNativeUUIDError(Exception):
     """Raised when two UUID columns' native UUID differ."""
 
 
@@ -549,11 +549,11 @@ def check_engine(
                 raise IncorrectNumberOfTablesError(msg)
 
 
-class EngineError(ValueError):
+class EngineError(Exception):
     """Raised when an Engine cannot connect."""
 
 
-class IncorrectNumberOfTablesError(ValueError):
+class IncorrectNumberOfTablesError(Exception):
     """Raised when there are an incorrect number of tables."""
 
 
@@ -715,7 +715,7 @@ def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     raise UnsupportedDialectError(msg)  # pragma: no cover
 
 
-class UnsupportedDialectError(TypeError):
+class UnsupportedDialectError(Exception):
     """Raised when a dialect is unsupported."""
 
 
@@ -729,7 +729,7 @@ def get_table(table_or_mapped_class: Table | type[Any], /) -> Table:
     raise NotATableOrAMappedClassError(msg)
 
 
-class NotATableOrAMappedClassError(TypeError):
+class NotATableOrAMappedClassError(Exception):
     """Raised when an object is neither a Table nor a mapped class."""
 
 
@@ -834,27 +834,27 @@ def _insert_items_collect_valid(obj: Any, /) -> bool:
     )
 
 
-class TupleNotAPairError(ValueError):
+class TupleNotAPairError(Exception):
     """Raised when the tuple is not a pair."""
 
 
-class SecondArgumentNotATableOrMappedClassError(ValueError):
+class SecondArgumentNotATableOrMappedClassError(Exception):
     """Raised when the second argument is not a table or mapped class."""
 
 
-class FirstArgumentListItemInvalidError(ValueError):
+class FirstArgumentListItemInvalidError(Exception):
     """Raised when the first argument contains an invalid item."""
 
 
-class FirstArgumentInvalidError(ValueError):
+class FirstArgumentInvalidError(Exception):
     """Raised when ths first argument is invalid."""
 
 
-class InvalidItemError(ValueError):
+class InvalidItemError(Exception):
     """Raised when the item is invalid."""
 
 
-class InvalidItemInIterableError(ValueError):
+class InvalidItemInIterableError(Exception):
     """Raised when the item in the iterable is invalid."""
 
 
@@ -901,7 +901,7 @@ def parse_engine(engine: str, /) -> Engine:
         raise ParseEngineError from None
 
 
-class ParseEngineError(ValueError):
+class ParseEngineError(Exception):
     """Raised when an `Engine` cannot be parsed."""
 
 

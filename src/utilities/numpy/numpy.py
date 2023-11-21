@@ -354,11 +354,11 @@ def datetime64_unit_to_kind(unit: Datetime64Unit, /) -> Datetime64Kind:
     return "date" if unit in {"Y", "M", "W", "D"} else "time"
 
 
-class DateOverflowError(ValueError):
+class DateOverflowError(Exception):
     """Raised when a date overflows."""
 
 
-class LossOfNanosecondsError(ValueError):
+class LossOfNanosecondsError(Exception):
     """Raised when nanoseconds are lost."""
 
 
@@ -456,7 +456,7 @@ def get_fill_value(dtype: Any, /) -> Any:
     raise InvalidDTypeError(msg)
 
 
-class InvalidDTypeError(TypeError):
+class InvalidDTypeError(Exception):
     """Raised when a dtype is invalid."""
 
 
@@ -1057,7 +1057,7 @@ def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
     )
 
 
-class EmptyNumpyConcatenateError(ValueError):
+class EmptyNumpyConcatenateError(Exception):
     """Raised when there are no arrays to concatenate."""
 
 

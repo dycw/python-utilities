@@ -40,7 +40,7 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
                 raise WriterEmptyError(msg)
 
 
-class WriterEmptyError(OSError):
+class WriterEmptyError(Exception):
     """Raised when the `writer`'s source path does not exist."""
 
 
