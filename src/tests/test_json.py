@@ -4,6 +4,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from json import dumps
 from math import isnan
+from operator import neg
 from typing import Any
 
 from hypothesis import given
@@ -36,6 +37,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
+from typing_extensions import override
 
 from utilities.datetime import NOW_HKG, UTC
 from utilities.hypothesis.hypothesis import (
@@ -225,11 +227,70 @@ class TestSerialize:
         with raises(JsonSerializationError):
             _ = serialize(Example())
 
-    def test_deserializing_regular_dictionary(self) -> None:
-        ser = dumps({"a": 1, "b": 2})
-        _ = deserialize(ser)
+    @given(obj=dictionaries(text_ascii(), integers()))
+    def test_deserializing_regular_dictionary(self, *, obj: dict[str, int]) -> None:
+        ser = dumps(obj)
+        assert deserialize(ser) == obj
 
     def test_deserialization_error(self) -> None:
         ser = dumps({_CLASS: "unknown", _VALUE: None})
         with raises(JsonDeserializationError):
             _ = deserialize(ser)
+
+    @given(m=integers(), n=integers())
+    def test_extra(self, *, m: int, n: int) -> None:
+        class Example:
+            def __init__(self, n: int, /) -> None:
+                super().__init__()
+                self.n = n
+
+            @override
+            def __eq__(self, other: object) -> bool:
+                return isinstance(other, Example) and (self.n == other.n)
+
+        def f_ser(obj: Example, /) -> int:
+            return obj.n
+
+        extra_ser = {Example: ("example", f_ser)}
+
+        def f_des(n: int, /) -> Example:
+            return Example(n)
+
+        extra_des = {"example": f_des}
+        x = Example(m)
+        ser_x = serialize(x, extra=extra_ser)
+        assert deserialize(ser_x, extra=extra_des) == x
+        y = Example(n)
+        res = ser_x == serialize(y, extra=extra_ser)
+        expected = x == y
+        assert res is expected
+
+    def test_serialization_extra_error(self) -> None:
+        class Example1:
+            pass
+
+        x = Example1()
+
+        class Example2:
+            pass
+
+        extra = {Example2: ("example", neg)}
+        with raises(JsonSerializationError):
+            _ = serialize(x, extra=extra)
+
+    @given(n=integers())
+    def test_deserialization_extra_error(self, *, n: int) -> None:
+        class Example:
+            def __init__(self, n: int, /) -> None:
+                super().__init__()
+                self.n = n
+
+        def f_ser(obj: Example, /) -> int:
+            return obj.n
+
+        x = Example(n)
+        extra_ser = {Example: ("example", f_ser)}
+        ser = serialize(x, extra=extra_ser)
+        extra_des = {"wrong": neg}
+        with raises(JsonDeserializationError):
+            _ = deserialize(ser, extra=extra_des)
