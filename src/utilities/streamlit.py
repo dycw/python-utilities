@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from hmac import compare_digest
+from typing import NoReturn
 
 from streamlit import (
     error,
@@ -9,9 +10,9 @@ from streamlit import (
     form_submit_button,
     secrets,
     session_state,
-    stop,
     text_input,
 )
+from streamlit import stop as _stop
 
 _USERNAME = "username"
 _PASSWORD = "password"  # noqa: S105
@@ -27,7 +28,7 @@ def ensure_logged_in(
     """Ensure the user is logged in."""
 
     if not (skip or _check_password(before_form=before_form, after_form=after_form)):
-        stop()
+        _stop()
 
 
 def _check_password(
@@ -63,6 +64,14 @@ def _password_entered() -> None:
         del session_state[_USERNAME]  # pragma: no cover
     else:
         session_state[_PASSWORD_CORRECT] = False  # pragma: no cover
+
+
+def stop() -> NoReturn:
+    """Wrapper around `stop`."""
+
+    _stop()
+    msg = "Failed to stop the `streamlit` document"  # pragma: no cover
+    raise RuntimeError(msg)  # pragma: no cover
 
 
 __all__ = ["ensure_logged_in"]

@@ -58,3 +58,15 @@ class TestEnsureLoggedIn:
         at.session_state[_PASSWORD_CORRECT] = is_logged_in
         _ = at.run()
         assert not at.exception
+
+
+class TestStop:
+    def test_main(self) -> None:
+        def func() -> None:
+            from utilities.streamlit import stop
+
+            stop()
+
+        at = AppTest.from_function(func)
+        _ = at.run()
+        assert not at.exception
