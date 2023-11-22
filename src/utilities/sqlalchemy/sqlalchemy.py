@@ -635,31 +635,31 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    engine_or_connection: Engine | Connection,
-    /,
-    *tables_or_mapped_classes: Table | type[Any],
+    engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    try:
-        with yield_connection(engine_or_connection) as conn:
-            for table_or_mapped_class in tables_or_mapped_classes:
-                get_table(table_or_mapped_class).create(conn)
-    except DatabaseError as error:
-        with suppress(TableAlreadyExistsError):
-            redirect_to_table_already_exists_error(engine_or_connection, error)
+    for table_or_mapped_class in tables_or_mapped_classes:
+        table = get_table(table_or_mapped_class)
+        with yield_connection(engine_or_conn) as conn:
+            try:
+                table.create(conn)
+            except DatabaseError as error:
+                with suppress(TableAlreadyExistsError):
+                    redirect_to_table_already_exists_error(conn, error)
 
 
 def ensure_tables_dropped(
     engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
-    try:
+    for table_or_mapped_class in tables_or_mapped_classes:
+        table = get_table(table_or_mapped_class)
         with yield_connection(engine_or_conn) as conn:
-            for table_or_mapped_class in tables_or_mapped_classes:
-                get_table(table_or_mapped_class).drop(conn)
-    except DatabaseError as error:
-        with suppress(NoSuchTableError):
-            redirect_to_no_such_table_error(engine_or_conn, error)
+            try:
+                table.drop(conn)
+            except DatabaseError as error:
+                with suppress(NoSuchTableError):
+                    redirect_to_no_such_table_error(conn, error)
 
 
 def get_column_names(table_or_mapped_class: Table | type[Any], /) -> list[str]:
@@ -911,8 +911,13 @@ def redirect_to_no_such_table_error(
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
     match dialect:
-        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
+        case Dialect.mysql:  # pragma: no cover
+            pattern = (
+                "Cannot drop the table .*, because it does not exist or you do "
+                "not have permission"
+            )
         case Dialect.oracle:  # pragma: no cover
             pattern = "ORA-00942: table or view does not exist"
         case Dialect.sqlite:
@@ -928,8 +933,10 @@ def redirect_to_table_already_exists_error(
     """Redirect to the `TableAlreadyExistsError`."""
     dialect = get_dialect(engine_or_conn)
     match dialect:
-        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
+        case Dialect.mysql:  # pragma: no cover
+            pattern = "There is already an object named .* in the database"
         case Dialect.oracle:  # pragma: no cover
             pattern = "ORA-00955: name is already used by an existing object"
         case Dialect.sqlite:
