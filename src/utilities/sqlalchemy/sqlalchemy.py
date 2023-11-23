@@ -911,9 +911,9 @@ def redirect_to_no_such_table_error(
     """Redirect to the `NoSuchTableError`."""
     dialect = get_dialect(engine_or_conn)
     match dialect:
-        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
+        case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.mysql:  # pragma: no cover
+        case Dialect.mssql:  # pragma: no cover
             pattern = (
                 "Cannot drop the table .*, because it does not exist or you do "
                 "not have permission"
