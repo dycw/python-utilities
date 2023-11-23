@@ -269,7 +269,7 @@ def yield_weekdays(
     """Yield the weekdays in a range."""
     if (start is not None) and (end is not None) and (days is None):
         date = round_to_next_weekday(start)
-        while date < end:
+        while date <= end:
             yield date
             date = round_to_next_weekday(date + dt.timedelta(days=1))
     elif (start is not None) and (end is None) and (days is not None):
@@ -283,7 +283,7 @@ def yield_weekdays(
             yield date
             date = round_to_prev_weekday(date - dt.timedelta(days=1))
     else:
-        msg = f"{start=}, {end=}, {days=}"
+        msg = f"Invalid arguments: {start=}, {end=}, {days=}"
         raise YieldWeekdaysError(msg)
 
 
