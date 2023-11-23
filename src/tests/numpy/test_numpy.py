@@ -22,6 +22,7 @@ from numpy import (
     zeros,
     zeros_like,
 )
+from numpy.random import Generator
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
 
@@ -122,6 +123,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
+from utilities.numpy.numpy import DEFAULT_RNG
 
 
 class TestArrayIndexer:
@@ -330,6 +332,11 @@ class TestDatetime64DUnitToKind:
     )
     def test_example(self, *, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
         assert datetime64_unit_to_kind(unit) == expected
+
+
+class TestDefaultRng:
+    def test_main(self) -> None:
+        assert isinstance(DEFAULT_RNG, Generator)
 
 
 class TestDiscretize:
