@@ -3,7 +3,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from operator import eq
 from pathlib import Path
-from subprocess import check_call
 from typing import Any, TypeVar
 
 from hypothesis import given
@@ -18,7 +17,7 @@ from hypothesis.strategies import (
     times,
     tuples,
 )
-from pytest import MonkeyPatch, mark, param, raises
+from pytest import mark, param, raises
 from typed_settings.exceptions import InvalidSettingsError
 
 from utilities.datetime import (
@@ -29,26 +28,10 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import temp_paths, text_ascii
-from utilities.typed_settings import (
-    AppNameContainsUnderscoreError,
-    get_repo_root_config,
-    load_settings,
-)
+from utilities.typed_settings import AppNameContainsUnderscoreError, load_settings
 from utilities.typed_settings.typed_settings import _get_loaders
 
 app_names = text_ascii(min_size=1).map(str.lower)
-
-
-class TestGetRepoRootConfig:
-    def test_exists(self, *, monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.chdir(tmp_path)
-        _ = check_call(["git", "init"])  # noqa: S603, S607
-        Path("config.toml").touch()
-        expected = tmp_path.joinpath("config.toml")
-        assert get_repo_root_config(cwd=tmp_path) == expected
-
-    def test_does_not_exist(self, *, tmp_path: Path) -> None:
-        assert get_repo_root_config(cwd=tmp_path) is None
 
 
 class TestGetLoaders:

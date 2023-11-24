@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
+from typing import TypeVar, overload
 
 from utilities.pathlib import PathLike
 
 _GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+_T = TypeVar("_T")
+_U = TypeVar("_U")
 
 
 def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
@@ -56,4 +60,45 @@ class InvalidRepoError(Exception):
     """Raised when an invalid repo is encountered."""
 
 
-__all__ = ["get_branch_name", "get_repo_name", "get_repo_root", "InvalidRepoError"]
+@overload
+def get_repo_root_or_cwd_sub_path(
+    if_exists: Callable[[Path], _T], /, *, cwd: PathLike = ..., if_missing: None = ...
+) -> _T | None:
+    ...
+
+
+@overload
+def get_repo_root_or_cwd_sub_path(
+    if_exists: Callable[[Path], _T],
+    /,
+    *,
+    cwd: PathLike = ...,
+    if_missing: Callable[[Path], _U] = ...,
+) -> _T | _U:
+    ...
+
+
+def get_repo_root_or_cwd_sub_path(
+    if_exists: Callable[[Path], _T],
+    /,
+    *,
+    cwd: PathLike = Path.cwd(),
+    if_missing: Callable[[Path], _U] | None = None,
+) -> _T | _U | None:
+    """Get a path under the repo root, if it exists, else under the CWD."""
+    try:
+        root = get_repo_root(cwd=cwd)
+    except (FileNotFoundError, InvalidRepoError):
+        if if_missing is None:
+            return None
+        return if_missing(Path(cwd))
+    return if_exists(root)
+
+
+__all__ = [
+    "get_branch_name",
+    "get_repo_name",
+    "get_repo_root",
+    "get_repo_root_or_cwd_sub_path",
+    "InvalidRepoError",
+]

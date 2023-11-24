@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable, Iterable, Iterator
+from collections.abc import Hashable, Iterable, Iterator, Sized
 from functools import partial
 from itertools import islice
-from typing import Any, TypeVar, cast
+from typing import Any, TypeGuard, TypeVar, cast
 
 _T = TypeVar("_T")
 
@@ -62,13 +62,22 @@ def chunked(
     return iterator
 
 
-def is_iterable_not_str(x: Any, /) -> bool:
+def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable, but not a string."""
     try:
-        iter(x)
+        iter(obj)
     except TypeError:
         return False
-    return not isinstance(x, str)
+    return not isinstance(obj, str)
+
+
+def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
+    """Check if an object is sized, but not a string."""
+    try:
+        _ = len(obj)
+    except TypeError:
+        return False
+    return not isinstance(obj, str)
 
 
 def one(iterable: Iterable[_T], /) -> _T:
@@ -109,6 +118,7 @@ __all__ = [
     "chunked",
     "EmptyIterableError",
     "is_iterable_not_str",
+    "is_sized_not_str",
     "IterableContainsDuplicatesError",
     "MultipleElementsError",
     "one",

@@ -11,15 +11,17 @@ from utilities.git import (
     get_branch_name,
     get_repo_name,
     get_repo_root,
+    get_repo_root_or_cwd_sub_path,
 )
 from utilities.hypothesis import git_repos, text_ascii
+from utilities.hypothesis.hypothesis import temp_paths
 
 
 class TestGetBranchName:
     @given(data=data(), branch=text_ascii(min_size=1))
     def test_main(self, *, data: DataObject, branch: str) -> None:
-        path = data.draw(git_repos(branch=branch))
-        result = get_branch_name(cwd=path)
+        root = data.draw(git_repos(branch=branch))
+        result = get_branch_name(cwd=root)
         assert result == branch
 
 
@@ -31,11 +33,45 @@ class TestGetRepoName:
 
 
 class TestGetRepoRoot:
-    @given(path=git_repos())
-    def test_main(self, *, path: Path) -> None:
-        result = get_repo_root(cwd=path)
-        assert result == path.resolve()
+    @given(root=git_repos())
+    def test_main(self, *, root: Path) -> None:
+        result = get_repo_root(cwd=root)
+        expected = root.resolve()
+        assert result == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
         with raises(InvalidRepoError):
             _ = get_repo_root(cwd=tmp_path)
+
+
+class TestGetRepoRootOrCwdSubPath:
+    @given(root=git_repos())
+    def test_exists(self, *, root: Path) -> None:
+        def get_file(root: Path, /) -> Path:
+            return root.joinpath("file.txt")
+
+        result = get_repo_root_or_cwd_sub_path(get_file, cwd=root)
+        expected = root.joinpath("file.txt").resolve()
+        assert result == expected
+
+    @given(root=temp_paths())
+    def test_does_not_exist(self, *, root: Path) -> None:
+        def get_file(root: Path, /) -> Path:
+            return root.joinpath("file.txt")
+
+        result = get_repo_root_or_cwd_sub_path(get_file, cwd=root)
+        assert result is None
+
+    @given(root=temp_paths())
+    def test_missing(self, *, root: Path) -> None:
+        def get_file_1(root: Path, /) -> Path:
+            return root.joinpath("file_1.txt")
+
+        def get_file_2(root: Path, /) -> Path:
+            return root.joinpath("file_2.txt")
+
+        result = get_repo_root_or_cwd_sub_path(
+            get_file_1, cwd=root, if_missing=get_file_2
+        )
+        expected = root.joinpath("file_2.txt")
+        assert result == expected

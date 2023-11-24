@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from utilities.typed_settings.typed_settings import (
     AppNameContainsUnderscoreError,
-    get_repo_root_config,
     load_settings,
 )
 
-__all__ = ["AppNameContainsUnderscoreError", "get_repo_root_config", "load_settings"]
+__all__ = ["AppNameContainsUnderscoreError", "load_settings"]
 
 
 try:

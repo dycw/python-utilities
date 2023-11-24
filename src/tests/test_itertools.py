@@ -26,6 +26,7 @@ from utilities.itertools import (
     check_duplicates,
     chunked,
     is_iterable_not_str,
+    is_sized_not_str,
     one,
     take,
 )
@@ -105,11 +106,20 @@ class TestChunked:
 
 class TestIsIterableNotStr:
     @mark.parametrize(
-        ("x", "expected"),
+        ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", False)],
     )
-    def test_main(self, *, x: Any, expected: bool) -> None:
-        assert is_iterable_not_str(x) is expected
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_iterable_not_str(obj) is expected
+
+
+class TestIsSizedNotStr:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param([], True), param((), True), param("", False)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_sized_not_str(obj) is expected
 
 
 class TestOne:

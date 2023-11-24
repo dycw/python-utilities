@@ -4,15 +4,29 @@ from typing import Any
 
 from pytest import mark, param
 
-from utilities.types import NoneType, ensure_class, issubclass_except_bool_int
+from utilities.types import (
+    NoneType,
+    ensure_class,
+    is_hashable,
+    issubclass_except_bool_int,
+)
 
 
 class TestEnsureClass:
     @mark.parametrize(
-        ("x", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
+        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
     )
-    def test_main(self, *, x: Any, expected: type[Any]) -> None:
-        assert ensure_class(x) is expected
+    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
+        assert ensure_class(obj) is expected
+
+
+class TestIsHashable:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(0, True), param((1, 2, 3), True), param([1, 2, 3], False)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_hashable(obj) is expected
 
 
 class TestIsSubclassExceptBoolInt:
