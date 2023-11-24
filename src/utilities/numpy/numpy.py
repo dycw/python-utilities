@@ -44,6 +44,10 @@ from utilities.errors import redirect_error
 from utilities.itertools import is_iterable_not_str
 from utilities.re import extract_group
 
+# RNG
+DEFAULT_RNG = default_rng()
+
+
 # types
 Datetime64Unit = Literal[
     "Y", "M", "W", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"
@@ -1117,7 +1121,6 @@ def _predicate_annotation(predicate: Callable[..., Any], /) -> Any:
         from beartype.vale import Is
     except ModuleNotFoundError:  # pragma: no cover
         return _HasPredicate(predicate)
-    rng = default_rng()
 
     def inner(array: NDArrayI | NDArrayF, /) -> bool:
         if (size := array.size) == 0:
@@ -1125,7 +1128,7 @@ def _predicate_annotation(predicate: Callable[..., Any], /) -> Any:
         if size == 1:
             return predicate(array).item()
         num_samples = round(log(size))
-        indices = rng.integers(0, size, size=num_samples)
+        indices = DEFAULT_RNG.integers(0, size, size=num_samples)
         sample = array[unravel_index(indices, array.shape)]
         return predicate(sample).all().item()
 
@@ -1411,6 +1414,7 @@ __all__ = [
     "datetime64us",
     "datetime64W",
     "datetime64Y",
+    "DEFAULT_RNG",
     "discretize",
     "DTypeB",
     "DTypeDns",
