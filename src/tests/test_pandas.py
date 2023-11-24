@@ -49,6 +49,7 @@ from utilities.pandas import (
     RangeIndexStepError,
     SeriesRangeIndexError,
     TimestampIsNaTError,
+    _check_dataframe_length,
     astype,
     boolean,
     check_dataframe,
@@ -153,6 +154,26 @@ class TestCheckDataFrame:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         with raises(DataFrameUniqueError):
             check_dataframe(df, unique="value")
+
+
+class TestCheckDataFrameLength:
+    def test_int_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        _check_dataframe_length(df, 1)
+
+    def test_int_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        with raises(DataFrameLengthError):
+            _check_dataframe_length(df, 2)
+
+    def test_tuple_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(11), columns=["value"])
+        _check_dataframe_length(df, (10, 0.1))
+
+    def test_tuple_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(12), columns=["value"])
+        with raises(DataFrameLengthError):
+            _check_dataframe_length(df, (10, 0.1))
 
 
 class TestCheckRangeIndex:

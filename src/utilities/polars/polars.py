@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import reduce
 from itertools import chain
+from math import isclose
 
 from polars import DataFrame, Expr, PolarsDataType
 from polars.exceptions import OutOfBoundsError
@@ -18,7 +19,7 @@ def check_dataframe(
     *,
     columns: SequenceStrs | None = None,
     dtypes: list[PolarsDataType] | None = None,
-    height: int | None = None,
+    height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
     max_height: int | None = None,
     schema: SchemaDict | None = None,
@@ -34,9 +35,8 @@ def check_dataframe(
     if (dtypes is not None) and (df.dtypes != dtypes):
         msg = f"{df=}, {dtypes=}"
         raise DataFrameDTypesError(msg)
-    if (height is not None) and (df.height != height):
-        msg = f"{df=}"
-        raise DataFrameHeightError(msg)
+    if height is not None:
+        _check_dataframe_height(df, height)
     if (min_height is not None) and (len(df) < min_height):
         msg = f"{df=}, {min_height=}"
         raise DataFrameMinHeightError(msg)
@@ -80,10 +80,6 @@ class DataFrameDTypesError(Exception):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-class DataFrameHeightError(Exception):
-    """Raised when a DataFrame has the incorrect height."""
-
-
 class DataFrameMinHeightError(Exception):
     """Raised when a DataFrame does not reach the minimum height."""
 
@@ -110,6 +106,21 @@ class DataFrameUniqueError(Exception):
 
 class DataFrameWidthError(Exception):
     """Raised when a DataFrame has the incorrect width."""
+
+
+def _check_dataframe_height(df: DataFrame, height: int | tuple[int, float], /) -> None:
+    if isinstance(height, int) and (len(df) != height):
+        msg = f"{df=}, {height=}"
+        raise DataFrameHeightError(msg)
+    if isinstance(height, tuple):
+        height_int, rel_tol = height
+        if not isclose(len(df), height_int, rel_tol=rel_tol):
+            msg = f"{df=}, {height=}"
+            raise DataFrameHeightError(msg)
+
+
+class DataFrameHeightError(Exception):
+    """Raised when a DataFrame has the incorrect height."""
 
 
 def join(

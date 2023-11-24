@@ -4,6 +4,7 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
+from math import isclose
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, TypeVar, cast
 
 from numpy import where
@@ -76,7 +77,7 @@ def check_dataframe(
     *,
     columns: Sequence[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
-    length: int | None = None,
+    length: int | tuple[int, float] | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
     sorted: Hashable | Sequence[Hashable] | None = None,  # noqa: A002
@@ -96,9 +97,8 @@ def check_dataframe(
     if (dtypes is not None) and (dict(df.dtypes) != dict(dtypes)):
         msg = f"{df=}, {dtypes=}"
         raise DataFrameDTypesError(msg)
-    if (length is not None) and (len(df) != length):
-        msg = f"{df=}, {length=}"
-        raise DataFrameLengthError(msg)
+    if length is not None:
+        _check_dataframe_length(df, length)
     if (min_length is not None) and (len(df) < min_length):
         msg = f"{df=}, {min_length=}"
         raise DataFrameMinLengthError(msg)
@@ -106,7 +106,7 @@ def check_dataframe(
         msg = f"{df=}, {max_length=}"
         raise DataFrameMaxLengthError(msg)
     if sorted is not None:
-        df_sorted = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
+        df_sorted: DataFrame = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
         try:
             assert_frame_equal(df, df_sorted)
         except AssertionError:
@@ -133,10 +133,6 @@ class DataFrameDTypesError(Exception):
     """Raised when a DataFrame has the incorrect dtypes."""
 
 
-class DataFrameLengthError(Exception):
-    """Raised when a DataFrame has the incorrect length."""
-
-
 class DataFrameMinLengthError(Exception):
     """Raised when a DataFrame does not reach the minimum length."""
 
@@ -151,6 +147,21 @@ class DataFrameSortedError(Exception):
 
 class DataFrameUniqueError(Exception):
     """Raised when a DataFrame has non-unique values."""
+
+
+def _check_dataframe_length(df: DataFrame, length: int | tuple[int, float], /) -> None:
+    if isinstance(length, int) and (len(df) != length):
+        msg = f"{df=}, {length=}"
+        raise DataFrameLengthError(msg)
+    if isinstance(length, tuple):
+        length_int, rel_tol = length
+        if not isclose(len(df), length_int, rel_tol=rel_tol):
+            msg = f"{df=}, {length=}"
+            raise DataFrameLengthError(msg)
+
+
+class DataFrameLengthError(Exception):
+    """Raised when a DataFrame has the incorrect length."""
 
 
 def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
