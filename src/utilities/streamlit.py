@@ -74,4 +74,4 @@ def stop() -> NoReturn:
     raise RuntimeError(msg)  # pragma: no cover
 
 
-__all__ = ["ensure_logged_in"]
+__all__ = ["ensure_logged_in", "stop"]
