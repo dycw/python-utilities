@@ -441,6 +441,10 @@ class TestYieldWeekdays:
         dates = list(yield_weekdays(start=start, end=end))
         assert all(start <= d <= end for d in dates)
         assert all(map(is_weekday, dates))
+        if is_weekday(start):
+            assert start in dates
+        if is_weekday(end):
+            assert end in dates
 
     @given(start=dates(), days=integers(0, 10))
     def test_start_and_days(self, *, start: dt.date, days: int) -> None:
