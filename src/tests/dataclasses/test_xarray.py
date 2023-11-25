@@ -12,7 +12,7 @@ from utilities.hypothesis import text_ascii
 
 class TestRenameDataArrays:
     @given(name_array=text_ascii() | none(), name_other=text_ascii() | none())
-    def test_main(self, name_array: str | None, name_other: str | None) -> None:
+    def test_main(self, *, name_array: str | None, name_other: str | None) -> None:
         @dataclass
         class Other:
             name: str | None

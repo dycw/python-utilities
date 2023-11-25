@@ -15,7 +15,7 @@ _LockArgs = tuple[bool | None, float | None] | tuple[bool | None] | None
 @dataclass(frozen=True)
 class _Defaults:
     desc: str | None = None
-    total: int | float | None = None
+    total: float | None = None
     leave: bool | None = True
     file: TextIOWrapper | StringIO | None = None
     ncols: int | None = None

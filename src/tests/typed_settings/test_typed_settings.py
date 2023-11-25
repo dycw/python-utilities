@@ -28,19 +28,9 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import temp_paths, text_ascii
-from utilities.typed_settings import AppNameContainsUnderscoreError, load_settings
-from utilities.typed_settings.typed_settings import _get_loaders
+from utilities.typed_settings import load_settings
 
 app_names = text_ascii(min_size=1).map(str.lower)
-
-
-class TestGetLoaders:
-    def test_success(self) -> None:
-        _ = _get_loaders()
-
-    def test_error(self) -> None:
-        with raises(AppNameContainsUnderscoreError):
-            _ = _get_loaders(appname="app_name")
 
 
 _T = TypeVar("_T")

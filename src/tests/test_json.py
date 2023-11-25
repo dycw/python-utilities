@@ -40,11 +40,7 @@ from pytest import mark, param, raises
 from typing_extensions import override
 
 from utilities.datetime import NOW_HKG, UTC
-from utilities.hypothesis.hypothesis import (
-    assume_does_not_raise,
-    temp_paths,
-    text_ascii,
-)
+from utilities.hypothesis import assume_does_not_raise, temp_paths, text_ascii
 from utilities.json import (
     _CLASS,
     _VALUE,

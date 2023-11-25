@@ -10,7 +10,7 @@ from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
 from utilities.itertools import is_iterable_not_str
 from utilities.math import IntNonNeg
-from utilities.numpy import datetime64ns, has_dtype
+from utilities.numpy import dt64ns, has_dtype
 from utilities.pandas import Int64, astype, check_range_index, string
 from utilities.pathlib import PathLike
 from utilities.text import ensure_str
@@ -23,7 +23,7 @@ Compression = _Compression | Mapping[str, _Compression | None]
 _Op = Literal["==", "=", ">", ">=", "<", "<=", "!=", "in", "not in"]
 _Filter = tuple[str, _Op, Any]
 Filters = Sequence[_Filter] | Sequence[Sequence[_Filter]]
-_PARQUET_DTYPES = {bool, cast(str, datetime64ns), float, Int64, string}
+_PARQUET_DTYPES = {bool, cast(str, dt64ns), float, Int64, string}
 
 
 def count_rows(path: PathLike, /, *, filters: Filters | None = None) -> int:
@@ -118,11 +118,11 @@ def _get_parquet_file(
         return file[row_group]
     except IndexError as error:
         msg = f"{path=}, {row_group=}"
-        redirect_error(error, "list index out of range", InvalidRowGroupIndexError(msg))
+        redirect_error(error, "list index out of range", GetParquetFileError(msg))
 
 
-class InvalidRowGroupIndexError(Exception):
-    """Raised when a row group index is invalid."""
+class GetParquetFileError(Exception):
+    ...
 
 
 def _maybe_row_filter(filters: Filters | None, /) -> dict[str, bool]:
@@ -143,7 +143,7 @@ def write_parquet(
     """Atomically write a DataFrame to a Parquet file."""
     with writer(path, overwrite=overwrite) as temp:
         if isinstance(df, DataFrame):
-            _write_parquet_core(
+            write_parquet_core(
                 df,
                 temp,
                 extra_dtypes=extra_dtypes,
@@ -152,7 +152,7 @@ def write_parquet(
             )
         else:
             for i, df_i in enumerate(df):
-                _write_parquet_core(
+                write_parquet_core(
                     df_i,
                     temp,
                     extra_dtypes=extra_dtypes,
@@ -162,7 +162,7 @@ def write_parquet(
                 )
 
 
-def _write_parquet_core(
+def write_parquet_core(
     df: DataFrame,
     path: PathLike,
     /,
@@ -175,7 +175,7 @@ def _write_parquet_core(
     """Atomically write a DataFrame to a Parquet file."""
     if len(df) == 0:
         msg = f"{df=}"
-        raise EmptyDataFrameError(msg)
+        raise WriteParquetCoreError(msg)
     check_range_index(df)
     for name, column in df.items():
         allowed_dtypes = _PARQUET_DTYPES
@@ -188,7 +188,7 @@ def _write_parquet_core(
                 allowed_dtypes = allowed_dtypes | {extra_dtype}
         if not has_dtype(column, allowed_dtypes):
             msg = f"{column=}"
-            raise InvalidDTypeError(msg)
+            raise WriteParquetCoreError(msg)
     write(
         path,
         df,
@@ -198,24 +198,20 @@ def _write_parquet_core(
     )
 
 
-class EmptyDataFrameError(Exception):
-    """Raised when a DataFrame is empty."""
-
-
-class InvalidDTypeError(Exception):
-    """Raised when an invalid dtype is encountered."""
+class WriteParquetCoreError(Exception):
+    ...
 
 
 __all__ = [
     "Compression",
     "count_rows",
-    "EmptyDataFrameError",
+    "WriteParquetCoreError",
     "Filters",
     "get_columns",
     "get_dtypes",
     "get_num_row_groups",
-    "InvalidDTypeError",
-    "InvalidRowGroupIndexError",
+    "GetParquetFileError",
     "read_parquet",
     "write_parquet",
+    "write_parquet_core",
 ]

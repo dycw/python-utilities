@@ -7,7 +7,7 @@ from numpy import arange, array, nan
 from numpy.testing import assert_allclose, assert_equal
 from pytest import mark, param, raises
 
-from utilities.numpy import ZeroPercentageChangeSpanError, ffill, pct_change
+from utilities._numpy.bottleneck import PctChangeError, ffill, pct_change
 
 
 class TestFFill:
@@ -121,5 +121,5 @@ class TestPctChange:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(ZeroPercentageChangeSpanError):
+        with raises(PctChangeError):
             _ = pct_change(arr, n=0)

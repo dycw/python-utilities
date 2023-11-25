@@ -36,9 +36,8 @@ from numpy import (
 from numpy.testing import assert_equal
 from pytest import raises
 
-from utilities.hypothesis import (
+from utilities._hypothesis.numpy import (
     Shape,
-    assume_does_not_raise,
     bool_arrays,
     concatenated_arrays,
     datetime64_arrays,
@@ -49,7 +48,6 @@ from utilities.hypothesis import (
     datetime64D_indexes,
     datetime64s,
     datetime64us_indexes,
-    datetimes_utc,
     float_arrays,
     int32s,
     int64s,
@@ -58,6 +56,7 @@ from utilities.hypothesis import (
     uint32s,
     uint64s,
 )
+from utilities.hypothesis import assume_does_not_raise, datetimes_utc
 from utilities.numpy import (
     Datetime64Kind,
     Datetime64Unit,
@@ -66,8 +65,8 @@ from utilities.numpy import (
     datetime64_to_datetime,
     datetime64_to_int,
     datetime64_unit_to_kind,
-    datetime64D,
-    datetime64us,
+    dt64D,
+    dt64us,
 )
 
 
@@ -147,7 +146,7 @@ class TestDatetime64DIndexes:
         index = data.draw(
             datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
         )
-        assert index.dtype == datetime64D
+        assert index.dtype == dt64D
         assert len(index) == n
         if valid_dates:
             _ = [datetime64_to_date(d) for d in index]
@@ -244,7 +243,7 @@ class TestDatetime64usIndexes:
                 n=n, valid_datetimes=valid_datetimes, unique=unique, sort=sort
             )
         )
-        assert index.dtype == datetime64us
+        assert index.dtype == dt64us
         assert len(index) == n
         if valid_datetimes:
             _ = [datetime64_to_datetime(d) for d in index]

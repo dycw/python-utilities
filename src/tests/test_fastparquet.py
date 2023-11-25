@@ -29,9 +29,8 @@ from pytest import mark, param, raises
 
 from utilities.fastparquet import (
     _PARQUET_DTYPES,
-    EmptyDataFrameError,
-    InvalidDTypeError,
-    InvalidRowGroupIndexError,
+    GetParquetFileError,
+    WriteParquetCoreError,
     _get_parquet_file,
     count_rows,
     get_columns,
@@ -41,8 +40,8 @@ from utilities.fastparquet import (
     write_parquet,
 )
 from utilities.hypothesis import dates_pd, lists_fixed_length, temp_paths, text_ascii
-from utilities.numpy import datetime64ns
-from utilities.pandas import DataFrameRangeIndexError, Int64, astype, string
+from utilities.numpy import dt64ns
+from utilities.pandas import Int64, astype, string
 from utilities.pytest import skipif_windows
 
 
@@ -103,7 +102,7 @@ class TestGetParquetFile:
         write(path, df, row_group_offsets=1)
         _ = _get_parquet_file(path, row_group=0)
         _ = _get_parquet_file(path, row_group=1)
-        with raises(InvalidRowGroupIndexError):
+        with raises(GetParquetFileError):
             _ = _get_parquet_file(path, row_group=2)
 
     @mark.parametrize("as_str", [param(True), param(False, marks=skipif_windows)])
@@ -120,7 +119,7 @@ class TestReadAndWriteParquet:
         ("elements", "dtype"),
         [
             param(booleans(), bool),
-            param(dates_pd() | none(), datetime64ns),
+            param(dates_pd() | none(), dt64ns),
             param(floats(-10.0, 10.0) | none(), float),
             param(integers(-10, 10) | none(), Int64),
             param(text_ascii() | none(), string),
@@ -184,7 +183,7 @@ class TestReadAndWriteParquet:
         result2 = read_parquet(path, row_group=1)
         expected2 = df.iloc[1:].reset_index(drop=True)
         assert_frame_equal(result2, expected2)
-        with raises(InvalidRowGroupIndexError):
+        with raises(GetParquetFileError):
             _ = read_parquet(path, row_group=2)
 
     @given(
@@ -212,7 +211,7 @@ class TestReadAndWriteParquet:
         assert_frame_equal(result, expected)
 
 
-class TestWriteParquet:
+class TestWriteParquetCore:
     @given(value=text_ascii(), root=temp_paths())
     def test_strings_are_stored_as_objects(self, *, value: str, root: Path) -> None:
         df = DataFrame(value, index=RangeIndex(1), columns=["value"], dtype=string)
@@ -222,28 +221,26 @@ class TestWriteParquet:
         expected = {"value": object}
         assert dtypes == expected
 
-    def test_empty_dataframe_error(self, *, tmp_path: Path) -> None:
-        df = DataFrame()
-        with raises(EmptyDataFrameError):
-            write_parquet(df, tmp_path.joinpath("df.parq"))
-
-    def test_check_range_index(self, *, tmp_path: Path) -> None:
-        df = DataFrame(nan, index=[0], columns=["value"])
-        with raises(DataFrameRangeIndexError):
-            write_parquet(df, tmp_path.joinpath("df.parq"))
-
-    def test_check_invalid_dtype(self, *, tmp_path: Path) -> None:
-        df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
-        with raises(InvalidDTypeError):
-            write_parquet(df, tmp_path.joinpath("df.parq"))
-
     def test_extra_dtype(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
         write_parquet(df, tmp_path.joinpath("df.parq"), extra_dtypes={"value": float32})
 
+    @mark.parametrize(
+        "df",
+        [
+            param(DataFrame()),
+            param(
+                DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
+            ),
+        ],
+    )
+    def test_error(self, *, df: DataFrame, tmp_path: Path) -> None:
+        with raises(WriteParquetCoreError):
+            write_parquet(df, tmp_path.joinpath("df.parq"))
+
     def test_extra_dtype_ignored(self, *, tmp_path: Path) -> None:
         df = DataFrame(nan, index=RangeIndex(1), columns=["value"], dtype=float32)
-        with raises(InvalidDTypeError):
+        with raises(WriteParquetCoreError):
             write_parquet(
                 df, tmp_path.joinpath("df.parq"), extra_dtypes={"other": float32}
             )

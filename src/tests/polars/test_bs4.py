@@ -5,11 +5,11 @@ from polars import DataFrame, Utf8
 from polars.testing import assert_frame_equal
 from pytest import raises
 
-from utilities.polars import MultipleTHRowsError, yield_tables
+from utilities._polars.bs4 import TableTagToDataFrameError, yield_tables
 from utilities.text import strip_and_dedent
 
 
-class TestReadTable:
+class TestYieldTables:
     def test_with_header(self) -> None:
         html = """
             <table>
@@ -149,5 +149,5 @@ class TestReadTable:
             </table>
         """
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
-        with raises(MultipleTHRowsError):
+        with raises(TableTagToDataFrameError):
             _ = list(yield_tables(soup))
