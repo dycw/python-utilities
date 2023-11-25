@@ -7,16 +7,18 @@ from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import DrawFn, SearchStrategy, composite
 from xarray import DataArray
 
-from utilities.hypothesis.hypothesis import (
+from utilities.hypothesis import (
     MaybeSearchStrategy,
+    bool_arrays,
+    float_arrays,
+    int_arrays,
+    int_indexes,
     lift_draw,
     lists_fixed_length,
+    str_arrays,
     text_ascii,
 )
-from utilities.hypothesis.numpy import bool_arrays, float_arrays, int_arrays, str_arrays
 from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
-
-from .pandas import int_indexes  # noqa: TID252
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA, IndexI

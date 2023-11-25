@@ -30,7 +30,7 @@ from numpy import (
 )
 from numpy.typing import NDArray
 
-from utilities.hypothesis.hypothesis import (
+from utilities.hypothesis import (
     MaybeSearchStrategy,
     Shape,
     floats_extra,

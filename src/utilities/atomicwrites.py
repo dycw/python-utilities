@@ -6,6 +6,7 @@ from pathlib import Path
 from shutil import move, rmtree
 
 from atomicwrites import move_atomic, replace_atomic
+from pathvalidate import validate_filepath
 
 from utilities.errors import DirectoryExistsError
 from utilities.pathlib import PathLike
@@ -16,6 +17,7 @@ from utilities.tempfile import TemporaryDirectory
 def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
+    validate_filepath(path, platform="auto")
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     name = path.name

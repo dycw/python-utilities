@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import enum
 from collections.abc import Callable
-from enum import Enum, auto
+from enum import auto
 from typing import Any
 
 from click import ParamType, argument, command, echo, option
@@ -21,8 +22,8 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param
 
+import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta, log_level_option
-from utilities.click import Enum as ClickEnum
 from utilities.datetime import (
     UTC,
     serialize_date,
@@ -47,6 +48,7 @@ class TestParameters:
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_argument(
         self,
+        *,
         data: DataObject,
         param: ParamType,
         cls: Any,
@@ -72,6 +74,7 @@ class TestParameters:
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_option(
         self,
+        *,
         data: DataObject,
         param: ParamType,
         cls: Any,
@@ -91,16 +94,16 @@ class TestParameters:
 
 
 class TestEnum:
-    class Truth(Enum):
+    class Truth(enum.Enum):
         true = auto()
         false = auto()
 
     @given(truth=sampled_from(Truth))
-    def test_command(self, truth: Truth) -> None:
+    def test_command(self, *, truth: Truth) -> None:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @argument("truth", type=ClickEnum(Truth))
+        @argument("truth", type=utilities.click.Enum(Truth))
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
@@ -112,11 +115,11 @@ class TestEnum:
         assert result.exit_code == 2
 
     @given(data=data(), truth=sampled_from(Truth))
-    def test_case_insensitive(self, data: DataObject, truth: Truth) -> None:
+    def test_case_insensitive(self, *, data: DataObject, truth: Truth) -> None:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @argument("truth", type=ClickEnum(Truth, case_sensitive=False))
+        @argument("truth", type=utilities.click.Enum(Truth, case_sensitive=False))
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
@@ -127,11 +130,11 @@ class TestEnum:
         assert result.stdout == f"truth = {truth}\n"
 
     @given(truth=sampled_from(Truth))
-    def test_option(self, truth: Truth) -> None:
+    def test_option(self, *, truth: Truth) -> None:
         Truth = self.Truth  # noqa: N806
 
         @command()
-        @option("--truth", type=ClickEnum(Truth), default=truth)
+        @option("--truth", type=utilities.click.Enum(Truth), default=truth)
         def cli(*, truth: Truth) -> None:
             echo(f"truth = {truth}")
 
@@ -142,7 +145,7 @@ class TestEnum:
 
 class TestLogLevelOption:
     @given(log_level=sampled_from(LogLevel))
-    def test_main(self, log_level: LogLevel) -> None:
+    def test_main(self, *, log_level: LogLevel) -> None:
         @command()
         @log_level_option
         def cli(*, log_level: LogLevel) -> None:

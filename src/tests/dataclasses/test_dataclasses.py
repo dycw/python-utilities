@@ -10,8 +10,9 @@ from utilities.dataclasses import (
     get_dataclass_class,
     is_dataclass_class,
     is_dataclass_instance,
+    replace_non_sentinel,
+    yield_field_names,
 )
-from utilities.dataclasses.dataclasses import replace_non_sentinel, yield_field_names
 from utilities.sentinel import sentinel
 from utilities.types import NoneType
 

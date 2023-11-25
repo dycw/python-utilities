@@ -4,5 +4,23 @@
 #
 #    pip-compile --allow-unsafe pyproject.toml
 #
+atomicwrites==1.4.1
+    # via dycw-utilities (pyproject.toml)
+beartype==0.16.4
+    # via dycw-utilities (pyproject.toml)
+click==8.1.7
+    # via dycw-utilities (pyproject.toml)
+loguru==0.7.2
+    # via dycw-utilities (pyproject.toml)
+more-itertools==10.1.0
+    # via dycw-utilities (pyproject.toml)
+pathvalidate==3.2.0
+    # via dycw-utilities (pyproject.toml)
+semver==3.0.2
+    # via dycw-utilities (pyproject.toml)
+tqdm==4.66.1
+    # via dycw-utilities (pyproject.toml)
+typed-settings==23.1.1
+    # via dycw-utilities (pyproject.toml)
 typing-extensions==4.8.0
     # via dycw-utilities (pyproject.toml)

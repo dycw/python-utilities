@@ -66,8 +66,8 @@ from utilities.numpy import (
     datetime64_to_datetime,
     datetime64_to_int,
     datetime64_unit_to_kind,
-    datetime64D,
-    datetime64us,
+    dt64D,
+    dt64us,
 )
 
 
@@ -147,7 +147,7 @@ class TestDatetime64DIndexes:
         index = data.draw(
             datetime64D_indexes(n=n, valid_dates=valid_dates, unique=unique, sort=sort)
         )
-        assert index.dtype == datetime64D
+        assert index.dtype == dt64D
         assert len(index) == n
         if valid_dates:
             _ = [datetime64_to_date(d) for d in index]
@@ -244,7 +244,7 @@ class TestDatetime64usIndexes:
                 n=n, valid_datetimes=valid_datetimes, unique=unique, sort=sort
             )
         )
-        assert index.dtype == datetime64us
+        assert index.dtype == dt64us
         assert len(index) == n
         if valid_datetimes:
             _ = [datetime64_to_datetime(d) for d in index]

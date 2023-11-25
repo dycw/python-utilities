@@ -38,7 +38,7 @@ def _handle_warnings(
     message: str = "",
     category: type[Warning] | tuple[type[Warning], ...] | None = None,
 ) -> ExitStack:
-    """Suppress warnings."""
+    """Handle a set of warnings."""
     stack = ExitStack()
     categories = category if isinstance(category, tuple) else [category]
     for cat in categories:
@@ -51,6 +51,8 @@ def _handle_warnings(
 def _handle_warnings_1(
     action: _ActionKind, /, *, message: str = "", category: type[Warning] | None = None
 ) -> Iterator[None]:
+    """Handle one set of warnings."""
+
     class Kwargs(TypedDict, total=False):
         category: type[Warning]
 

@@ -5,9 +5,8 @@ from typing import Any, cast
 from hypothesis.strategies import DrawFn, composite
 from sqlalchemy import Engine, MetaData
 
+from utilities.hypothesis import temp_paths
 from utilities.sqlalchemy import create_engine
-
-from .hypothesis import temp_paths  # noqa: TID252
 
 
 @composite

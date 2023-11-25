@@ -5,8 +5,6 @@ from functools import wraps
 from re import search
 from typing import NoReturn, TypeVar, cast
 
-from utilities.text import ensure_str
-
 
 class DirectoryExistsError(Exception):
     """Raised when a directory already exists."""
@@ -22,7 +20,7 @@ def redirect_error(
     except ValueError:
         raise NoUniqueArgError(args) from None
     else:
-        if search(pattern, ensure_str(msg)):
+        if isinstance(msg, str) and search(pattern, msg):
             raise new from None
         raise old
 

@@ -5,13 +5,13 @@ from pytest import raises
 from sqlalchemy import Engine
 from sqlalchemy.exc import DatabaseError
 
+from utilities._sqlalchemy.timeout_decorator import (
+    RedirectToNextFromSequenceSQLiteError,
+    next_from_sequence,
+    redirect_to_next_from_sequence_error,
+)
 from utilities.hypothesis import sqlite_engines
 from utilities.hypothesis.hypothesis import text_ascii
-from utilities.sqlalchemy import (
-    SQLiteDoesNotSupportSequencesError,
-    next_from_sequence,
-    redirect_to_no_such_sequence_error,
-)
 
 
 class TestNextFromSequence:
@@ -25,5 +25,5 @@ class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         error = DatabaseError(None, None, ValueError("base"))
-        with raises(SQLiteDoesNotSupportSequencesError):
-            _ = redirect_to_no_such_sequence_error(engine, error)
+        with raises(RedirectToNextFromSequenceSQLiteError):
+            _ = redirect_to_next_from_sequence_error(engine, error)

@@ -5,8 +5,8 @@ from hypothesis.strategies import floats
 from pytest import raises
 
 from utilities.holoviews import (
-    ArrayNameIsEmptyStringError,
-    ArrayNameNotAStringError,
+    PlotCurveNameEmptyError,
+    PlotCurveNameNotStringError,
     plot_curve,
 )
 from utilities.hypothesis import (
@@ -43,12 +43,12 @@ class TestPlotCurve:
 
     @given(array=float_data_arrays(dim=int_indexes()))
     def test_array_name_not_a_string(self, *, array: DataArrayF1) -> None:
-        with raises(ArrayNameNotAStringError):
+        with raises(PlotCurveNameNotStringError):
             _ = plot_curve(array)
 
     @given(array=float_data_arrays(dim=int_indexes(), name=text_ascii(max_size=0)))
     def test_array_name_is_empty_string(self, *, array: DataArrayF1) -> None:
-        with raises(ArrayNameIsEmptyStringError):
+        with raises(PlotCurveNameEmptyError):
             _ = plot_curve(array)
 
     @given(array=bool_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)))

@@ -38,12 +38,12 @@ from sqlalchemy import (
     select,
 )
 
+from utilities._sqlalchemy.polars import TableColumnToExprError, table_column_to_expr
 from utilities.datetime import UTC
 from utilities.hypothesis import sqlite_engines, text_ascii
 from utilities.polars import check_dataframe
 from utilities.sqlalchemy import (
-    ColumnToPolarsExprError,
-    PolarsDataFrameYieldsNoRowsError,
+    InsertPolarsDataFrameError,
     ensure_tables_created,
     insert_polars_dataframe,
     select_to_polars_dataframe,
@@ -141,7 +141,7 @@ class TestInsertPolarsDataFrame:
             Column("value", sqlalchemy.Boolean),
         )
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(PolarsDataFrameYieldsNoRowsError):
+        with raises(InsertPolarsDataFrameError):
             insert_polars_dataframe(engine, df, table)
 
 
@@ -228,15 +228,23 @@ class TestSelectToPolarsDataFrame:
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(res, expected)
 
-    @given(engine=sqlite_engines())
-    def test_column_to_polars_expr_error(self, *, engine: Engine) -> None:
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", LargeBinary),
-        )
-        ensure_tables_created(engine, table)
-        sel = select(table.c["value"])
-        with raises(ColumnToPolarsExprError):
-            _ = select_to_polars_dataframe(sel, engine)
+
+class TestTableColumnToExpr:
+    # @mark.parametrize(
+    #     ("column", "expected"),
+    #     [
+    #         param(Column(Boolean), boolean),
+    #         param(Column(Date), dt64ns),
+    #         param(Column(DateTime), Datetime),
+    #         param(Column(DECIMAL), Decimal),
+    #         param(Column(Float), Float64),
+    #         param(Column(Integer), Int64),
+    #         param(Column(String), Utf8),
+    #     ],
+    # )
+    # def test_main(self, *, column: Any, expected: Any) -> None:
+    #     assert table_column_to_expr(column) == expected
+    def test_error(self) -> None:
+        column = Column("value", LargeBinary)
+        with raises(TableColumnToExprError):
+            _ = table_column_to_expr(column)
