@@ -20,6 +20,7 @@ from utilities.polars import (
     join,
     set_first_row_as_columns,
 )
+from utilities.polars.polars import _check_dataframe_height
 
 
 class TestCheckDataFrame:
@@ -46,13 +47,13 @@ class TestCheckDataFrame:
             check_dataframe(df, dtypes=[Float64])
 
     def test_height_pass(self) -> None:
-        df = DataFrame()
-        check_dataframe(df, height=0)
+        df = DataFrame({"value": [0.0]})
+        check_dataframe(df, height=1)
 
     def test_height_error(self) -> None:
-        df = DataFrame()
+        df = DataFrame({"value": [0.0]})
         with raises(DataFrameHeightError):
-            check_dataframe(df, height=1)
+            check_dataframe(df, height=2)
 
     def test_min_height_pass(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
@@ -116,6 +117,26 @@ class TestCheckDataFrame:
         df = DataFrame()
         with raises(DataFrameWidthError):
             check_dataframe(df, width=1)
+
+
+class TestCheckDataFrameHeight:
+    def test_int_pass(self) -> None:
+        df = DataFrame({"value": [0.0]})
+        _check_dataframe_height(df, 1)
+
+    def test_int_error(self) -> None:
+        df = DataFrame({"value": [0.0]})
+        with raises(DataFrameHeightError):
+            _check_dataframe_height(df, 2)
+
+    def test_tuple_pass(self) -> None:
+        df = DataFrame({"value": range(11)})
+        _check_dataframe_height(df, (10, 0.1))
+
+    def test_tuple_error(self) -> None:
+        df = DataFrame({"value": range(12)})
+        with raises(DataFrameHeightError):
+            _check_dataframe_height(df, (10, 0.1))
 
 
 class TestJoin:
