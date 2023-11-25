@@ -39,11 +39,11 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
                 raise DirectoryExistsError(msg)
             else:
                 msg = f"{temp_path=}"
-                raise WriterEmptyError(msg)
+                raise WriterError(msg)
 
 
-class WriterEmptyError(Exception):
-    """Raised when the `writer`'s source path does not exist."""
+class WriterError(Exception):
+    ...
 
 
-__all__ = ["writer", "WriterEmptyError"]
+__all__ = ["writer", "WriterError"]

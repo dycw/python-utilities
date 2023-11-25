@@ -7,7 +7,7 @@ from typing import NoReturn, TypeVar, cast
 
 
 class DirectoryExistsError(Exception):
-    """Raised when a directory already exists."""
+    ...
 
 
 def redirect_error(
@@ -18,15 +18,15 @@ def redirect_error(
     try:
         (msg,) = args
     except ValueError:
-        raise NoUniqueArgError(args) from None
+        raise RedirectErrorError(args) from None
     else:
         if isinstance(msg, str) and search(pattern, msg):
             raise new from None
         raise old
 
 
-class NoUniqueArgError(Exception):
-    """Raised when no unique argument can be found."""
+class RedirectErrorError(Exception):
+    ...
 
 
 _T = TypeVar("_T")
@@ -57,4 +57,4 @@ def retry(
     return inner
 
 
-__all__ = ["DirectoryExistsError", "NoUniqueArgError", "redirect_error", "retry"]
+__all__ = ["DirectoryExistsError", "RedirectErrorError", "redirect_error", "retry"]

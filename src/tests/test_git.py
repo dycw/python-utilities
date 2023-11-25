@@ -7,7 +7,7 @@ from hypothesis.strategies import DataObject, data
 from pytest import raises
 
 from utilities.git import (
-    InvalidRepoError,
+    GetRepoRootError,
     get_branch_name,
     get_repo_name,
     get_repo_root,
@@ -39,7 +39,7 @@ class TestGetRepoRoot:
         assert result == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(InvalidRepoError):
+        with raises(GetRepoRootError):
             _ = get_repo_root(cwd=tmp_path)
 
 

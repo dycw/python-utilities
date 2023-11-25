@@ -15,9 +15,6 @@ class Dataclass(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Any]]
 
 
-_TDC = TypeVar("_TDC", bound=Dataclass)
-
-
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     """Get the underlying dataclass, if possible."""
 
@@ -26,11 +23,11 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     if is_dataclass_instance(obj):
         return type(obj)
     msg = f"{obj=}"
-    raise NotADataClassNorADataClassInstanceError(msg)
+    raise GetDataClassClassError(msg)
 
 
-class NotADataClassNorADataClassInstanceError(Exception):
-    """Raised when an object is neither a dataclass nor an instance of one."""
+class GetDataClassClassError(Exception):
+    ...
 
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
@@ -45,7 +42,11 @@ def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
     return (not isinstance(obj, type)) and is_dataclass(obj)
 
 
-def replace_non_sentinel(obj: _TDC, **kwargs: Any) -> _TDC:
+_T = TypeVar("_T", bound=Dataclass)
+
+
+def replace_non_sentinel(obj: _T, **kwargs: Any) -> _T:
+    """Replace attributes on a dataclass, filtering out sentinel values."""
     return replace(
         obj, **{k: v for k, v in kwargs.items() if not isinstance(v, Sentinel)}
     )
@@ -61,9 +62,9 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 __all__ = [
     "Dataclass",
     "get_dataclass_class",
+    "GetDataClassClassError",
     "is_dataclass_class",
     "is_dataclass_instance",
-    "NotADataClassNorADataClassInstanceError",
     "replace_non_sentinel",
     "yield_field_names",
 ]

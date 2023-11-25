@@ -23,34 +23,7 @@ except ImportError:  # pragma: version-ge-311
 
 
 StrEnum = _StrEnum
-
-
 _E = TypeVar("_E", bound=Enum)
-
-
-def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
-    """Parse a string into the enum."""
-    enum_ = cast(Iterable[Any], enum)
-    if case_sensitive:
-        els = {el for el in enum_ if el.name == member}
-    else:
-        els = {el for el in enum_ if el.name.lower() == member.lower()}
-    if (n := len(els)) == 0:
-        msg = f"{enum=}, {member=}"
-        raise NoMatchingMemberError(msg)
-    if n == 1:
-        (el,) = els
-        return el
-    msg = f"{enum=}, {member=}"
-    raise MultipleMatchingMembersError(msg)
-
-
-class NoMatchingMemberError(Exception):
-    """Raised when an iterable is empty."""
-
-
-class MultipleMatchingMembersError(Exception):
-    """Raised when an iterable contains multiple elements."""
 
 
 def ensure_enum(
@@ -62,10 +35,25 @@ def ensure_enum(
     return parse_enum(enum, member, case_sensitive=case_sensitive)
 
 
-__all__ = [
-    "ensure_enum",
-    "MultipleMatchingMembersError",
-    "NoMatchingMemberError",
-    "parse_enum",
-    "StrEnum",
-]
+def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
+    """Parse a string into the enum."""
+    enum_ = cast(Iterable[Any], enum)
+    if case_sensitive:
+        els = {el for el in enum_ if el.name == member}
+    else:
+        els = {el for el in enum_ if el.name.lower() == member.lower()}
+    if (n := len(els)) == 0:
+        msg = f"{enum=}, {member=}"
+        raise ParseEnumError(msg)
+    if n == 1:
+        (el,) = els
+        return el
+    msg = f"{enum=}, {member=}"
+    raise ParseEnumError(msg)
+
+
+class ParseEnumError(Exception):
+    ...
+
+
+__all__ = ["ensure_enum", "parse_enum", "ParseEnumError", "StrEnum"]

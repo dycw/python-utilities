@@ -5,7 +5,7 @@ from dataclasses import asdict, fields
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from types import UnionType, new_class
+from types import NoneType, UnionType, new_class
 from typing import Any, Literal, TypeVar, cast, get_args, get_origin
 
 from luigi import (
@@ -35,7 +35,6 @@ from utilities._luigi.common import (
 )
 from utilities.class_name import get_class_name
 from utilities.dataclasses import Dataclass
-from utilities.types import NoneType
 
 _T = TypeVar("_T", bound=Dataclass)
 

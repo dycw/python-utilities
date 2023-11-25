@@ -7,18 +7,12 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
-from utilities.enum import (
-    MultipleMatchingMembersError,
-    NoMatchingMemberError,
-    StrEnum,
-    ensure_enum,
-    parse_enum,
-)
+from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 
 
 class TestParseEnum:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -28,7 +22,7 @@ class TestParseEnum:
         assert result is truth
 
     @given(data=data())
-    def test_case_insensitive(self, data: DataObject) -> None:
+    def test_case_insensitive(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -39,27 +33,27 @@ class TestParseEnum:
         result = parse_enum(Truth, input_, case_sensitive=False)
         assert result is truth
 
-    def test_no_matching_member(self) -> None:
+    def test_error_empty(self) -> None:
         class Example(Enum):
             pass
 
-        with raises(NoMatchingMemberError):
+        with raises(ParseEnumError):
             _ = parse_enum(Example, "not-a-member")
 
     @given(data=data())
-    def test_multiple_matching_members(self, data: DataObject) -> None:
+    def test_error_non_unique(self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
             MEMBER = auto()
 
         member = data.draw(sampled_from(Example))
-        with raises(MultipleMatchingMembersError):
+        with raises(ParseEnumError):
             _ = parse_enum(Example, member.name, case_sensitive=False)
 
 
 class TestEnsureEnum:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -72,7 +66,7 @@ class TestEnsureEnum:
 
 class TestStrEnum:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         class Truth(cast(type[Enum], StrEnum)):
             true = auto()
             false = auto()

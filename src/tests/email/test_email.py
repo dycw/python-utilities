@@ -5,8 +5,9 @@ from smtplib import SMTPServerDisconnected
 
 from pytest import raises
 
-from utilities.email import InvalidContentsError, send_email
+from utilities.email import SendEmailError, send_email
 from utilities.pytest import is_pytest
+from utilities.sentinel import sentinel
 
 
 class TestSendEmail:
@@ -42,13 +43,13 @@ class TestSendEmail:
                 disable=None,
             )
 
-    def test_invalid_contents(self) -> None:
-        with raises(InvalidContentsError):
+    def test_contents_error(self) -> None:
+        with raises(SendEmailError):
             send_email(
                 "no-reply@test.com",
                 ["user@test.com"],
                 subject="Subject",
-                contents=object(),
+                contents=sentinel,
                 disable=None,
             )
 

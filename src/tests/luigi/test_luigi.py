@@ -53,7 +53,7 @@ from utilities.luigi import (
     get_dependencies_upstream,
     get_task_classes,
 )
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 class TestAwaitTask:

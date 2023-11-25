@@ -8,7 +8,7 @@ from pandas import DataFrame
 
 from utilities.atomicwrites import writer
 from utilities.errors import redirect_error
-from utilities.itertools import is_iterable_not_str
+from utilities.iterables import is_iterable_not_str
 from utilities.math import IntNonNeg
 from utilities.numpy import dt64ns, has_dtype
 from utilities.pandas import Int64, astype, check_range_index, string

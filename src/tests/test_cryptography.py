@@ -7,10 +7,10 @@ from pytest import raises
 
 from utilities.cryptography import (
     _ENV_VAR,
-    FernetKeyMissingError,
-    _get_fernet,
+    GetFernetError,
     decrypt,
     encrypt,
+    get_fernet,
 )
 from utilities.os import temp_environ
 
@@ -22,6 +22,14 @@ class TestEncryptAndDecrypt:
         with temp_environ({_ENV_VAR: key.decode()}):
             assert decrypt(encrypt(text)) == text
 
-    def test_no_env_var(self) -> None:
-        with temp_environ({_ENV_VAR: None}), raises(FernetKeyMissingError):
-            _ = _get_fernet()
+
+class TestGetFernet:
+    def test_main(self) -> None:
+        key = Fernet.generate_key()
+        with temp_environ({_ENV_VAR: key.decode()}):
+            fernet = get_fernet()
+        assert isinstance(fernet, Fernet)
+
+    def test_error(self) -> None:
+        with temp_environ({_ENV_VAR: None}), raises(GetFernetError):
+            _ = get_fernet()

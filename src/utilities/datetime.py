@@ -9,7 +9,7 @@ from re import sub
 from typing_extensions import assert_never
 
 from utilities.platform import SYSTEM, System
-from utilities.re import NoMatchesError, extract_groups
+from utilities.re import ExtractGroupsError, extract_groups
 from utilities.types import Duration
 from utilities.zoneinfo import HONG_KONG, TOKYO
 
@@ -24,7 +24,7 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     counts as 1 move.
     """
     if n == 0 and not is_weekday(date):
-        raise IsWeekendError(date)
+        raise AddWeekdaysError(date)
     if n >= 1:
         for _ in range(n):
             date = round_to_next_weekday(date + dt.timedelta(days=1))
@@ -34,8 +34,8 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     return date
 
 
-class IsWeekendError(Exception):
-    """Raised when 0 days is added to a weekend."""
+class AddWeekdaysError(Exception):
+    ...
 
 
 def date_to_datetime(
@@ -117,7 +117,7 @@ def local_timezone() -> tzinfo:
 
 
 class LocalTimeZoneError(Exception):
-    """Raised when the local timezone cannot be found."""
+    ...
 
 
 def maybe_sub_pct_y(text: str, /) -> str:
@@ -144,7 +144,7 @@ def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
 
 
 class ParseDateError(Exception):
-    """Raised when a `dt.date` cannot be parsed."""
+    ...
 
 
 def parse_datetime(datetime: str, /, *, tzinfo: tzinfo = UTC) -> dt.datetime:
@@ -167,7 +167,7 @@ def parse_datetime(datetime: str, /, *, tzinfo: tzinfo = UTC) -> dt.datetime:
 
 
 class ParseDateTimeError(Exception):
-    """Raised when a `dt.datetime` cannot be parsed."""
+    ...
 
 
 def parse_time(time: str, /) -> dt.time:
@@ -181,16 +181,23 @@ def parse_time(time: str, /) -> dt.time:
 
 
 class ParseTimeError(Exception):
-    """Raised when a `dt.time` cannot be parsed."""
+    ...
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
+
+    def try_parse(fmt: str, /) -> dt.datetime | None:
+        try:
+            return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
+        except ValueError:
+            return None
+
     try:
         as_dt = next(
             parsed
             for fmt in ("%H:%M:%S", "%H:%M:%S.%f")
-            if (parsed := _parse_timedelta(timedelta, fmt)) is not None
+            if (parsed := try_parse(fmt)) is not None
         )
     except StopIteration:
         pass
@@ -203,21 +210,14 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
         )
     try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
-    except NoMatchesError:
+    except ExtractGroupsError:
         raise ParseTimedeltaError(timedelta) from None
     else:
         return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-def _parse_timedelta(timedelta: str, fmt: str, /) -> dt.datetime | None:
-    try:
-        return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
-    except ValueError:
-        return None
-
-
 class ParseTimedeltaError(Exception):
-    """Raised when a `dt.timedelta` cannot be parsed."""
+    ...
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
@@ -288,11 +288,12 @@ def yield_weekdays(
 
 
 class YieldWeekdaysError(Exception):
-    """Raised when an invalid call to `yield_weekdays` is made."""
+    ...
 
 
 __all__ = [
     "add_weekdays",
+    "AddWeekdaysError",
     "date_to_datetime",
     "duration_to_float",
     "duration_to_timedelta",
@@ -304,7 +305,6 @@ __all__ = [
     "get_now",
     "get_today",
     "is_weekday",
-    "IsWeekendError",
     "local_timezone",
     "LocalTimeZoneError",
     "maybe_sub_pct_y",

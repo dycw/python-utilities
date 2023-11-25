@@ -8,8 +8,8 @@ from typed_settings.types import AUTO, _Auto
 
 from utilities._typed_settings.common import (
     CONFIG_FILES,
-    AppNameContainsUnderscoreError,
     ExtendedTSConverter,
+    GetLoadersError,
     get_loaders,
 )
 from utilities.pathlib import PathLike
@@ -39,7 +39,13 @@ def load_settings(
     return _load_settings(cast(Any, cls), loaders, converter=converter)
 
 
-__all__ = ["AppNameContainsUnderscoreError", "load_settings"]
+__all__ = [
+    "CONFIG_FILES",
+    "ExtendedTSConverter",
+    "get_loaders",
+    "GetLoadersError",
+    "load_settings",
+]
 
 
 try:

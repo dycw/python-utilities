@@ -44,12 +44,12 @@ from utilities.hypothesis import assume_does_not_raise, temp_paths, text_ascii
 from utilities.json import (
     _CLASS,
     _VALUE,
-    InvalidTimeZoneError,
     JsonDeserializationError,
     JsonSerializationError,
     deserialize,
     serialize,
 )
+from utilities.sentinel import sentinel
 
 
 class TestSerialize:
@@ -212,16 +212,13 @@ class TestSerialize:
         expected = x == y
         assert res is expected
 
-    def test_timezone_error(self) -> None:
-        with raises(InvalidTimeZoneError):
-            _ = serialize(NOW_HKG)
-
-    def test_serialization_error(self) -> None:
-        class Example:
-            pass
-
+    @mark.parametrize(
+        "obj",
+        [param(NOW_HKG, id="invalid timezone"), param(sentinel, id="invalid object")],
+    )
+    def test_error(self, *, obj: Any) -> None:
         with raises(JsonSerializationError):
-            _ = serialize(Example())
+            _ = serialize(obj)
 
     @given(obj=dictionaries(text_ascii(), integers()))
     def test_deserializing_regular_dictionary(self, *, obj: dict[str, int]) -> None:

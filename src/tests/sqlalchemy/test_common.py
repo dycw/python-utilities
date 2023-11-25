@@ -36,7 +36,7 @@ from utilities._sqlalchemy.common import (
     yield_connection,
 )
 from utilities.hypothesis import sqlite_engines
-from utilities.itertools import one
+from utilities.more_itertools import one
 from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import ensure_tables_created
 

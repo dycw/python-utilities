@@ -37,7 +37,7 @@ def pct_change(
 
 
 class PctChangeError(Exception):
-    """Raised when the percentage change span is zero."""
+    ...
 
 
 __all__ = ["ffill", "pct_change", "PctChangeError"]

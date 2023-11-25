@@ -2,6 +2,7 @@ import datetime as dt
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
+from types import NoneType
 from typing import Any, Literal
 
 from hypothesis import given
@@ -47,7 +48,6 @@ from utilities.luigi import (
     WeekdayParameter,
     build_params_mixin,
 )
-from utilities.types import NoneType
 
 
 class TestAnnotationAndKeywordsToDict:

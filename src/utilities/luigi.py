@@ -30,7 +30,7 @@ from utilities.json import deserialize, serialize
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 from utilities.semver import ensure_version
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 # parameters
 

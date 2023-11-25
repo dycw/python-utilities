@@ -8,8 +8,8 @@ from click import command
 from loguru import logger
 from mdutils import MdUtils
 
-from utilities.itertools import one
 from utilities.loguru import setup_loguru
+from utilities.more_itertools import one
 from utilities.scripts.csv_to_markdown.classes import Config
 from utilities.tempfile import TemporaryDirectory
 from utilities.typed_settings import click_options

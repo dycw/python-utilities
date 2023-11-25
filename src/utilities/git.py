@@ -50,14 +50,14 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise InvalidRepoError(cwd) from None
+            raise GetRepoRootError(cwd) from None
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
 
 
-class InvalidRepoError(Exception):
-    """Raised when an invalid repo is encountered."""
+class GetRepoRootError(Exception):
+    ...
 
 
 @overload
@@ -88,7 +88,7 @@ def get_repo_root_or_cwd_sub_path(
     """Get a path under the repo root, if it exists, else under the CWD."""
     try:
         root = get_repo_root(cwd=cwd)
-    except (FileNotFoundError, InvalidRepoError):
+    except (FileNotFoundError, GetRepoRootError):
         if if_missing is None:
             return None
         return if_missing(Path(cwd))
@@ -98,7 +98,7 @@ def get_repo_root_or_cwd_sub_path(
 __all__ = [
     "get_branch_name",
     "get_repo_name",
-    "get_repo_root",
     "get_repo_root_or_cwd_sub_path",
-    "InvalidRepoError",
+    "get_repo_root",
+    "GetRepoRootError",
 ]

@@ -11,8 +11,8 @@ from numpy.testing import assert_equal
 from pytest import mark, param, raises
 
 from utilities.cvxpy import (
-    InfeasibleProblemError,
-    UnboundedProblemError,
+    SolveInfeasibleError,
+    SolveUnboundedError,
     abs_,
     add,
     divide,
@@ -293,13 +293,13 @@ class TestSolve:
             Minimize(sum_(abs_(var))),
             [cast(Any, var) >= threshold, cast(Any, var) <= -threshold],
         )
-        with raises(InfeasibleProblemError):
+        with raises(SolveInfeasibleError):
             _ = solve(problem)
 
     def test_unbounded_problem(self) -> None:
         var = Variable()
         problem = Problem(Maximize(sum_(var)), [])
-        with raises(UnboundedProblemError):
+        with raises(SolveUnboundedError):
             _ = solve(problem)
 
 

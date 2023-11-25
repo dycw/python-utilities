@@ -4,8 +4,8 @@ from re import search, sub
 from textwrap import dedent
 from typing import Any
 
-from utilities.itertools import CheckDuplicatesError, check_duplicates
-from utilities.typing import IterableStrs
+from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.types import IterableStrs
 
 
 def ensure_str(obj: Any, /) -> str:

@@ -163,7 +163,7 @@ def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
 
 
 class EmptyPandasConcatError(Exception):
-    """Raised when there are no objects to concatenate."""
+    ...
 
 
 def rename_index(index: _Index, name: Hashable, /) -> _Index:
@@ -173,22 +173,22 @@ def rename_index(index: _Index, name: Hashable, /) -> _Index:
 
 def series_max(*series: SeriesA) -> SeriesA:
     """Compute the maximum of a set of Series."""
-    return reduce(partial(_series_minmax, kind="lower"), series)
+    return reduce(partial(series_minmax, kind="lower"), series)
 
 
 def series_min(*series: SeriesA) -> SeriesA:
     """Compute the minimum of a set of Series."""
-    return reduce(partial(_series_minmax, kind="upper"), series)
+    return reduce(partial(series_minmax, kind="upper"), series)
 
 
-def _series_minmax(
+def series_minmax(
     x: SeriesA, y: SeriesA, /, *, kind: Literal["lower", "upper"]
 ) -> SeriesA:
     """Compute the minimum/maximum of a pair of Series."""
     assert_index_equal(x.index, y.index)
     if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
-        msg = f"{x=}, {y=}"
-        raise DifferentDTypeError(msg)
+        msg = f"{x.dtype=}, {y.dtype=}"
+        raise SeriesMinMaxError(msg)
     out = x.copy()
     for first, second in permutations([x, y]):
         i = first.notna() & second.isna()
@@ -199,8 +199,8 @@ def _series_minmax(
     return out
 
 
-class DifferentDTypeError(Exception):
-    """Raised when two series have different dtypes."""
+class SeriesMinMaxError(Exception):
+    ...
 
 
 def sort_index(index: _Index, /) -> _Index:
@@ -279,13 +279,14 @@ __all__ = [
     "CheckRangeIndexError",
     "datetime64nshk",
     "datetime64nsutc",
-    "DifferentDTypeError",
     "EmptyPandasConcatError",
     "Int64",
     "redirect_to_empty_pandas_concat_error",
     "rename_index",
     "series_max",
     "series_min",
+    "series_minmax",
+    "SeriesMinMaxError",
     "sort_index",
     "string",
     "TIMESTAMP_MAX_AS_DATE",

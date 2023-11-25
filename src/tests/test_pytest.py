@@ -8,7 +8,7 @@ from _pytest.legacypath import Testdir
 from pytest import MonkeyPatch, mark, param
 
 from utilities.pytest import is_pytest, throttle
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 class TestPytestOptions:
