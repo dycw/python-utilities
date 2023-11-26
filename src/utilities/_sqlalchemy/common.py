@@ -28,7 +28,7 @@ from utilities.iterables import (
     check_duplicates,
     is_iterable_not_str,
 )
-from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
+from utilities.more_itertools import OneError, one
 from utilities.text import snake_case
 
 
@@ -47,8 +47,8 @@ def check_dataframe_schema_against_table(
     }
     out: dict[str, str] = {}
     for sr_name, sr_dtype in df_schema.items():
-        with suppress(CheckSeriesAgainstTableColumnError):
-            out[sr_name] = check_series_against_table_schema(
+        with suppress(_CheckSeriesAgainstTableColumnError):
+            out[sr_name] = _check_series_against_table_schema(
                 sr_name, sr_dtype, table_schema, check_dtype, snake=snake
             )
     return out
@@ -65,7 +65,7 @@ def check_selectable_for_duplicate_columns(sel: Select[Any], /) -> None:
         raise DuplicateColumnError(msg) from None
 
 
-def check_series_against_table_column(
+def _check_series_against_table_column(
     sr_name: str, table_schema: Mapping[str, type], /, *, snake: bool = False
 ) -> tuple[str, type]:
     """Check a Series is compatible with a table schema."""
@@ -74,16 +74,16 @@ def check_series_against_table_column(
         if snake:
             return one((n, t) for n, t in items if snake_case(n) == snake_case(sr_name))
         return one((n, t) for n, t in items if n == sr_name)
-    except (OneEmptyError, OneNonUniqueError):
+    except OneError:
         msg = f"{sr_name=}, {table_schema=}"
-        raise CheckSeriesAgainstTableColumnError(msg) from None
+        raise _CheckSeriesAgainstTableColumnError(msg) from None
 
 
-class CheckSeriesAgainstTableColumnError(Exception):
+class _CheckSeriesAgainstTableColumnError(Exception):
     ...
 
 
-def check_series_against_table_schema(
+def _check_series_against_table_schema(
     sr_name: str,
     sr_dtype: Any,
     table_schema: Mapping[str, type],
@@ -93,16 +93,16 @@ def check_series_against_table_schema(
     snake: bool = False,
 ) -> str:
     """Check a Series is compatible with a table schema."""
-    db_name, db_type = check_series_against_table_column(
+    db_name, db_type = _check_series_against_table_column(
         sr_name, table_schema, snake=snake
     )
     if not check_dtype(sr_dtype, db_type):
         msg = f"{sr_dtype=}, {db_type=}"
-        raise CheckSeriesAgainstTableSchemaError(msg)
+        raise _CheckSeriesAgainstTableSchemaError(msg)
     return db_name
 
 
-class CheckSeriesAgainstTableSchemaError(Exception):
+class _CheckSeriesAgainstTableSchemaError(Exception):
     ...
 
 
@@ -199,7 +199,7 @@ def insert_items(
     max_params = dialect.max_params
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
-    for item in chain(*map(insert_items_collect, items)):
+    for item in chain(*map(_insert_items_collect, items)):
         values = item.values
         to_insert[item.table].append(values)
         lengths.add(len(values))
@@ -224,56 +224,56 @@ class _InsertionItem:
     table: Table
 
 
-def insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
+def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
     """Collect the insertion items."""
     if isinstance(item, tuple):
         try:
             data, table_or_mapped_class = item
         except ValueError:
             msg = f"{item=}"
-            raise InsertItemsCollectError(msg) from None
+            raise _InsertItemsCollectError(msg) from None
         if not is_table_or_mapped_class(table_or_mapped_class):
             msg = f"{table_or_mapped_class=}"
-            raise InsertItemsCollectError(msg)
-        if insert_items_collect_valid(data):
+            raise _InsertItemsCollectError(msg)
+        if _insert_items_collect_valid(data):
             yield _InsertionItem(values=data, table=get_table(table_or_mapped_class))
         elif is_iterable_not_str(data):
-            yield from insert_items_collect_iterable(data, table_or_mapped_class)
+            yield from _insert_items_collect_iterable(data, table_or_mapped_class)
         else:
             msg = f"{data=}"
-            raise InsertItemsCollectError(msg)
+            raise _InsertItemsCollectError(msg)
     elif is_iterable_not_str(item):
         for i in item:
-            yield from insert_items_collect(i)
+            yield from _insert_items_collect(i)
     elif is_mapped_class(cls := type(item)):
         yield _InsertionItem(values=mapped_class_to_dict(item), table=get_table(cls))
     else:
         msg = f"{item=}"
-        raise InsertItemsCollectError(msg)
+        raise _InsertItemsCollectError(msg)
 
 
-class InsertItemsCollectError(Exception):
+class _InsertItemsCollectError(Exception):
     ...
 
 
-def insert_items_collect_iterable(
+def _insert_items_collect_iterable(
     obj: Iterable[Any], table_or_mapped_class: Table | type[Any], /
 ) -> Iterator[_InsertionItem]:
     """Collect the insertion items, for an iterable."""
     table = get_table(table_or_mapped_class)
     for datum in obj:
-        if insert_items_collect_valid(datum):
+        if _insert_items_collect_valid(datum):
             yield _InsertionItem(values=datum, table=table)
         else:
             msg = f"{datum=}"
-            raise InsertItemsCollectIterableError(msg)
+            raise _InsertItemsCollectIterableError(msg)
 
 
-class InsertItemsCollectIterableError(Exception):
+class _InsertItemsCollectIterableError(Exception):
     ...
 
 
-def insert_items_collect_valid(obj: Any, /) -> bool:
+def _insert_items_collect_valid(obj: Any, /) -> bool:
     """Check if an insertion item being collected is valid."""
     return isinstance(obj, tuple) or (
         isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
@@ -328,10 +328,6 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
 __all__ = [
     "check_dataframe_schema_against_table",
     "check_selectable_for_duplicate_columns",
-    "check_series_against_table_column",
-    "check_series_against_table_schema",
-    "CheckSeriesAgainstTableColumnError",
-    "CheckSeriesAgainstTableSchemaError",
     "Dialect",
     "get_column_names",
     "get_columns",
@@ -340,12 +336,7 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "INSERT_ITEMS_CHUNK_SIZE_FRAC",
-    "insert_items_collect_iterable",
-    "insert_items_collect_valid",
-    "insert_items_collect",
     "insert_items",
-    "InsertItemsCollectError",
-    "InsertItemsCollectIterableError",
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",

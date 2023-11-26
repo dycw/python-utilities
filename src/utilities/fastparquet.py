@@ -205,13 +205,13 @@ class WriteParquetCoreError(Exception):
 __all__ = [
     "Compression",
     "count_rows",
-    "WriteParquetCoreError",
     "Filters",
     "get_columns",
     "get_dtypes",
     "get_num_row_groups",
     "GetParquetFileError",
     "read_parquet",
-    "write_parquet",
     "write_parquet_core",
+    "write_parquet",
+    "WriteParquetCoreError",
 ]

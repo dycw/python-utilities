@@ -40,7 +40,7 @@ from sqlalchemy import (
 
 from utilities.datetime import UTC
 from utilities.hypothesis import sqlite_engines, text_ascii
-from utilities.polars import check_dataframe
+from utilities.polars import check_polars_dataframe
 from utilities.sqlalchemy import (
     InsertPolarsDataFrameError,
     TableColumnToExprError,
@@ -209,7 +209,7 @@ class TestSelectToPolarsDataFrame:
             sel, engine, iter_batches=True, batch_size=batch_size
         )
         for df in dfs:
-            check_dataframe(
+            check_polars_dataframe(
                 df, min_height=1, max_height=batch_size, schema={"value": pl.Boolean}
             )
 

@@ -3,7 +3,9 @@ from pathlib import Path
 from hypothesis import given
 from sqlalchemy import Engine
 
-from tests.typed_settings.test_click import TestClickOptions as _TestClickOptions
+from tests.typed_settings.test_typed_settings import (
+    TestClickOptions as _TestClickOptions,
+)
 from tests.typed_settings.test_typed_settings import (
     TestLoadSettings as _TestLoadSettings,
 )

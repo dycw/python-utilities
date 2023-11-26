@@ -44,24 +44,16 @@ from typing_extensions import assert_never
 
 from utilities._sqlalchemy.common import (
     INSERT_ITEMS_CHUNK_SIZE_FRAC,
-    CheckSeriesAgainstTableColumnError,
-    CheckSeriesAgainstTableSchemaError,
     Dialect,
     GetDialectError,
     GetTableError,
-    InsertItemsCollectError,
-    InsertItemsCollectIterableError,
     check_dataframe_schema_against_table,
     check_selectable_for_duplicate_columns,
-    check_series_against_table_column,
-    check_series_against_table_schema,
     get_column_names,
     get_columns,
     get_dialect,
     get_table,
     insert_items,
-    insert_items_collect,
-    insert_items_collect_iterable,
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
@@ -74,7 +66,7 @@ from utilities.text import ensure_str, snake_case, snake_case_mappings
 from utilities.types import IterableStrs
 
 
-def check_column_collections_equal(
+def _check_column_collections_equal(
     x: ReadOnlyColumnCollection[Any, Any],
     y: ReadOnlyColumnCollection[Any, Any],
     /,
@@ -90,7 +82,7 @@ def check_column_collections_equal(
     )
     if len(name_to_col_x) != len(name_to_col_y):
         msg = f"{x=}, {y=}"
-        raise CheckColumnCollectionsEqualError(msg)
+        raise _CheckColumnCollectionsEqualError(msg)
     if snake:
         snake_to_name_x, snake_to_name_y = (
             snake_case_mappings(i, inverse=True) for i in [name_to_col_x, name_to_col_y]
@@ -116,91 +108,91 @@ def check_column_collections_equal(
     diff = set(key_to_col_x).symmetric_difference(set(key_to_col_y))
     if len(diff) >= 1:
         msg = f"{x=}, {y=}"
-        raise CheckColumnCollectionsEqualError(msg)
+        raise _CheckColumnCollectionsEqualError(msg)
     for x_i, y_i in zip(cols_to_check_x, cols_to_check_y, strict=True):
-        check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
+        _check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
 
 
-class CheckColumnCollectionsEqualError(Exception):
+class _CheckColumnCollectionsEqualError(Exception):
     ...
 
 
-def check_columns_equal(
+def _check_columns_equal(
     x: Column[Any], y: Column[Any], /, *, snake: bool = False, primary_key: bool = True
 ) -> None:
     """Check that a pair of columns are equal."""
-    check_table_or_column_names_equal(x.name, y.name, snake=snake)
-    check_column_types_equal(x.type, y.type)
+    _check_table_or_column_names_equal(x.name, y.name, snake=snake)
+    _check_column_types_equal(x.type, y.type)
     if primary_key and (x.primary_key != y.primary_key):
         msg = f"{x.primary_key=}, {y.primary_key=}"
-        raise CheckColumnsEqualError(msg)
+        raise _CheckColumnsEqualError(msg)
     if x.nullable != y.nullable:
         msg = f"{x.nullable=}, {y.nullable=}"
-        raise CheckColumnsEqualError(msg)
+        raise _CheckColumnsEqualError(msg)
 
 
-class CheckColumnsEqualError(Exception):
+class _CheckColumnsEqualError(Exception):
     ...
 
 
-def check_column_types_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
     msg = f"{x=}, {y=}"
     if not (isinstance(x_inst, y_cls) and isinstance(y_inst, x_cls)):
-        raise CheckColumnTypesEqualError(msg)
+        raise _CheckColumnTypesEqualError(msg)
     if isinstance(x_inst, Boolean) and isinstance(y_inst, Boolean):
-        check_column_types_boolean_equal(x_inst, y_inst)
+        _check_column_types_boolean_equal(x_inst, y_inst)
     if isinstance(x_inst, DateTime) and isinstance(y_inst, DateTime):
-        check_column_types_datetime_equal(x_inst, y_inst)
+        _check_column_types_datetime_equal(x_inst, y_inst)
     if isinstance(x_inst, sqlalchemy.Enum) and isinstance(y_inst, sqlalchemy.Enum):
-        check_column_types_enum_equal(x_inst, y_inst)
+        _check_column_types_enum_equal(x_inst, y_inst)
     if isinstance(x_inst, Float) and isinstance(y_inst, Float):
-        check_column_types_float_equal(x_inst, y_inst)
+        _check_column_types_float_equal(x_inst, y_inst)
     if isinstance(x_inst, Interval) and isinstance(y_inst, Interval):
-        check_column_types_interval_equal(x_inst, y_inst)
+        _check_column_types_interval_equal(x_inst, y_inst)
     if isinstance(x_inst, LargeBinary) and isinstance(y_inst, LargeBinary):
-        check_column_types_large_binary_equal(x_inst, y_inst)
+        _check_column_types_large_binary_equal(x_inst, y_inst)
     if isinstance(x_inst, Numeric) and isinstance(y_inst, Numeric):
-        check_column_types_numeric_equal(x_inst, y_inst)
+        _check_column_types_numeric_equal(x_inst, y_inst)
     if isinstance(x_inst, String | Unicode | UnicodeText) and isinstance(
         y_inst, String | Unicode | UnicodeText
     ):
-        check_column_types_string_equal(x_inst, y_inst)
+        _check_column_types_string_equal(x_inst, y_inst)
     if isinstance(x_inst, Uuid) and isinstance(y_inst, Uuid):
-        check_column_types_uuid_equal(x_inst, y_inst)
+        _check_column_types_uuid_equal(x_inst, y_inst)
 
 
-class CheckColumnTypesEqualError(Exception):
+class _CheckColumnTypesEqualError(Exception):
     ...
 
 
-def check_column_types_boolean_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_boolean_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of boolean column types are equal."""
     msg = f"{x=}, {y=}"
     if x.create_constraint is not y.create_constraint:
-        raise CheckColumnTypesBooleanEqualError(msg)
+        raise _CheckColumnTypesBooleanEqualError(msg)
     if x.name != y.name:
-        raise CheckColumnTypesBooleanEqualError(msg)
+        raise _CheckColumnTypesBooleanEqualError(msg)
 
 
-class CheckColumnTypesBooleanEqualError(Exception):
+class _CheckColumnTypesBooleanEqualError(Exception):
     ...
 
 
-def check_column_types_datetime_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_datetime_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of datetime column types are equal."""
     if x.timezone is not y.timezone:
         msg = f"{x=}, {y=}"
-        raise CheckColumnTypesDateTimeEqualError(msg)
+        raise _CheckColumnTypesDateTimeEqualError(msg)
 
 
-class CheckColumnTypesDateTimeEqualError(Exception):
+class _CheckColumnTypesDateTimeEqualError(Exception):
     ...
 
 
-def check_column_types_enum_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_enum_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of enum column types are equal."""
     x_enum, y_enum = (i.enum_class for i in [x, y])
     if (x_enum is None) and (y_enum is None):
@@ -209,104 +201,104 @@ def check_column_types_enum_equal(x: Any, y: Any, /) -> None:
     if ((x_enum is None) and (y_enum is not None)) or (
         (x_enum is not None) and (y_enum is None)
     ):
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
     if not (issubclass(x_enum, y_enum) and issubclass(y_enum, x_enum)):
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
     if x.create_constraint is not y.create_constraint:
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
     if x.native_enum is not y.native_enum:
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
     if x.length != y.length:
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
     if x.inherit_schema is not y.inherit_schema:
-        raise CheckColumnTypesEnumEqualError(msg)
+        raise _CheckColumnTypesEnumEqualError(msg)
 
 
-class CheckColumnTypesEnumEqualError(Exception):
+class _CheckColumnTypesEnumEqualError(Exception):
     ...
 
 
-def check_column_types_float_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_float_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of float column types are equal."""
     msg = f"{x=}, {y=}"
     if x.precision != y.precision:
-        raise CheckColumnTypesFloatEqualError(msg)
+        raise _CheckColumnTypesFloatEqualError(msg)
     if x.asdecimal is not y.asdecimal:
-        raise CheckColumnTypesFloatEqualError(msg)
+        raise _CheckColumnTypesFloatEqualError(msg)
     if x.decimal_return_scale != y.decimal_return_scale:
-        raise CheckColumnTypesFloatEqualError(msg)
+        raise _CheckColumnTypesFloatEqualError(msg)
 
 
-class CheckColumnTypesFloatEqualError(Exception):
+class _CheckColumnTypesFloatEqualError(Exception):
     ...
 
 
-def check_column_types_interval_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_interval_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of interval column types are equal."""
     msg = f"{x=}, {y=}"
     if x.native is not y.native:
-        raise CheckColumnTypesIntervalEqualError(msg)
+        raise _CheckColumnTypesIntervalEqualError(msg)
     if x.second_precision != y.second_precision:
-        raise CheckColumnTypesIntervalEqualError(msg)
+        raise _CheckColumnTypesIntervalEqualError(msg)
     if x.day_precision != y.day_precision:
-        raise CheckColumnTypesIntervalEqualError(msg)
+        raise _CheckColumnTypesIntervalEqualError(msg)
 
 
-class CheckColumnTypesIntervalEqualError(Exception):
+class _CheckColumnTypesIntervalEqualError(Exception):
     ...
 
 
-def check_column_types_large_binary_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_large_binary_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of large binary column types are equal."""
     if x.length != y.length:
         msg = f"{x=}, {y=}"
-        raise CheckColumnTypesLargeBinaryEqualError(msg)
+        raise _CheckColumnTypesLargeBinaryEqualError(msg)
 
 
-class CheckColumnTypesLargeBinaryEqualError(Exception):
+class _CheckColumnTypesLargeBinaryEqualError(Exception):
     ...
 
 
-def check_column_types_numeric_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_numeric_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of numeric column types are equal."""
     msg = f"{x=}, {y=}"
     if x.precision != y.precision:
-        raise CheckColumnTypesNumericEqualError(msg)
+        raise _CheckColumnTypesNumericEqualError(msg)
     if x.scale != y.scale:
-        raise CheckColumnTypesNumericEqualError(msg)
+        raise _CheckColumnTypesNumericEqualError(msg)
     if x.asdecimal != y.asdecimal:
-        raise CheckColumnTypesNumericEqualError(msg)
+        raise _CheckColumnTypesNumericEqualError(msg)
     if x.decimal_return_scale != y.decimal_return_scale:
-        raise CheckColumnTypesNumericEqualError(msg)
+        raise _CheckColumnTypesNumericEqualError(msg)
 
 
-class CheckColumnTypesNumericEqualError(Exception):
+class _CheckColumnTypesNumericEqualError(Exception):
     ...
 
 
-def check_column_types_string_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_string_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of string column types are equal."""
     msg = f"{x=}, {y=}"
     if x.length != y.length:
-        raise CheckColumnTypesStringEqualError(msg)
+        raise _CheckColumnTypesStringEqualError(msg)
     if x.collation != y.collation:
-        raise CheckColumnTypesStringEqualError(msg)
+        raise _CheckColumnTypesStringEqualError(msg)
 
 
-class CheckColumnTypesStringEqualError(Exception):
+class _CheckColumnTypesStringEqualError(Exception):
     ...
 
 
-def check_column_types_uuid_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_uuid_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of UUID column types are equal."""
     msg = f"{x=}, {y=}"
     if x.as_uuid is not y.as_uuid:
-        raise CheckColumnTypesUuidEqualError(msg)
+        raise _CheckColumnTypesUuidEqualError(msg)
     if x.native_uuid is not y.native_uuid:
-        raise CheckColumnTypesUuidEqualError(msg)
+        raise _CheckColumnTypesUuidEqualError(msg)
 
 
-class CheckColumnTypesUuidEqualError(Exception):
+class _CheckColumnTypesUuidEqualError(Exception):
     ...
 
 
@@ -372,7 +364,7 @@ def check_table_against_reflection(
 ) -> None:
     """Check that a table equals its reflection."""
     reflected = reflect_table(table_or_mapped_class, engine_or_conn, schema=schema)
-    check_tables_equal(
+    _check_tables_equal(
         reflected,
         table_or_mapped_class,
         snake_table=snake_table,
@@ -382,7 +374,7 @@ def check_table_against_reflection(
     )
 
 
-def check_tables_equal(
+def _check_tables_equal(
     x: Any,
     y: Any,
     /,
@@ -394,8 +386,8 @@ def check_tables_equal(
 ) -> None:
     """Check that a pair of tables are equal."""
     x_t, y_t = map(get_table, [x, y])
-    check_table_or_column_names_equal(x_t.name, y_t.name, snake=snake_table)
-    check_column_collections_equal(
+    _check_table_or_column_names_equal(x_t.name, y_t.name, snake=snake_table)
+    _check_column_collections_equal(
         x_t.columns,
         y_t.columns,
         snake=snake_columns,
@@ -404,19 +396,19 @@ def check_tables_equal(
     )
 
 
-def check_table_or_column_names_equal(
+def _check_table_or_column_names_equal(
     x: str | quoted_name, y: str | quoted_name, /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
     msg = f"{x=}, {y=}"
     if (not snake) and (x != y):
-        raise CheckTableOrColumnNamesEqualError(msg)
+        raise _CheckTableOrColumnNamesEqualError(msg)
     if snake and (snake_case(x) != snake_case(y)):
-        raise CheckTableOrColumnNamesEqualError(msg)
+        raise _CheckTableOrColumnNamesEqualError(msg)
 
 
-class CheckTableOrColumnNamesEqualError(Exception):
+class _CheckTableOrColumnNamesEqualError(Exception):
     ...
 
 
@@ -615,40 +607,11 @@ class TablenameMixin:
 
 
 __all__ = [
-    "check_column_collections_equal",
-    "check_column_types_boolean_equal",
-    "check_column_types_datetime_equal",
-    "check_column_types_enum_equal",
-    "check_column_types_equal",
-    "check_column_types_float_equal",
-    "check_column_types_interval_equal",
-    "check_column_types_large_binary_equal",
-    "check_column_types_numeric_equal",
-    "check_column_types_uuid_equal",
-    "check_columns_equal",
     "check_dataframe_schema_against_table",
     "check_engine",
     "check_selectable_for_duplicate_columns",
-    "check_series_against_table_column",
-    "check_series_against_table_schema",
     "check_table_against_reflection",
-    "check_table_or_column_names_equal",
-    "check_tables_equal",
-    "CheckColumnCollectionsEqualError",
-    "CheckColumnsEqualError",
-    "CheckColumnTypesBooleanEqualError",
-    "CheckColumnTypesDateTimeEqualError",
-    "CheckColumnTypesEnumEqualError",
-    "CheckColumnTypesEqualError",
-    "CheckColumnTypesFloatEqualError",
-    "CheckColumnTypesIntervalEqualError",
-    "CheckColumnTypesNumericEqualError",
-    "CheckColumnTypesStringEqualError",
-    "CheckColumnTypesUuidEqualError",
     "CheckEngineError",
-    "CheckSeriesAgainstTableColumnError",
-    "CheckSeriesAgainstTableSchemaError",
-    "CheckTableOrColumnNamesEqualError",
     "columnwise_max",
     "columnwise_min",
     "create_engine",
@@ -669,11 +632,7 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "INSERT_ITEMS_CHUNK_SIZE_FRAC",
-    "insert_items_collect_iterable",
-    "insert_items_collect",
     "insert_items",
-    "InsertItemsCollectError",
-    "InsertItemsCollectIterableError",
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",

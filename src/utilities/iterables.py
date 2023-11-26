@@ -37,4 +37,9 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return not isinstance(obj, str)
 
 
-__all__ = ["check_duplicates", "CheckDuplicatesError", "is_iterable_not_str"]
+__all__ = [
+    "check_duplicates",
+    "CheckDuplicatesError",
+    "ensure_hashables",
+    "is_iterable_not_str",
+]
