@@ -6,7 +6,7 @@ from re import escape
 
 from pytest import mark, param, raises
 
-from utilities.atomicwrites import WriterEmptyError, writer
+from utilities.atomicwrites import WriterError, writer
 from utilities.errors import DirectoryExistsError
 from utilities.platform import IS_WINDOWS
 
@@ -90,7 +90,7 @@ class TestWriter:
         expected = int(not issubclass(error, KeyboardInterrupt))
         assert len(list(tmp_path.iterdir())) == expected
 
-    def test_writer_empty_error(self, *, tmp_path: Path) -> None:
+    def test_writer(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("file.txt")
-        with raises(WriterEmptyError), writer(path):
+        with raises(WriterError), writer(path):
             pass

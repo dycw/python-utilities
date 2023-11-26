@@ -3,15 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from time import sleep
 
-from pytest import raises
-
-from utilities.cacher import (
-    NonHashableArgumentError,
-    _yield_hashable_args,
-    _yield_hashable_kwargs,
-    cache_to_disk,
-)
-from utilities.itertools import one
+from utilities.cacher import cache_to_disk
+from utilities.more_itertools import one
 
 
 class TestCacheToDisk:
@@ -65,25 +58,3 @@ class TestCacheToDisk:
         assert len(list(path_inc.iterdir())) == 1
         assert add(x=1, y=1) == 2
         assert len(list(path_inc.iterdir())) == 2
-
-
-class TestYieldHashableArgs:
-    def test_main(self) -> None:
-        result = list(_yield_hashable_args(1, 2, 3))
-        expected = [1, 2, 3]
-        assert result == expected
-
-    def test_error(self) -> None:
-        with raises(NonHashableArgumentError):
-            _ = list(_yield_hashable_args([]))
-
-
-class TestYieldHashableKwargs:
-    def test_main(self) -> None:
-        result = list(_yield_hashable_kwargs(a=1, b=2, c=3))
-        expected = [("a", 1), ("b", 2), ("c", 3)]
-        assert result == expected
-
-    def test_error(self) -> None:
-        with raises(NonHashableArgumentError):
-            _ = list(_yield_hashable_kwargs(x=[]))

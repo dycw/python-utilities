@@ -8,13 +8,19 @@ from pytest import raises
 
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (
-    MultipleActivateError,
-    NoActivateError,
+    GetShellOutputError,
     _address_already_in_use_pattern,
     get_shell_output,
     tabulate_called_process_error,
 )
 from utilities.text import strip_and_dedent
+
+
+class TestAddressAlreadyInUsePattern:
+    def test_pattern(self) -> None:
+        pattern = _address_already_in_use_pattern()
+        text = "OSError: [Errno 98] Address already in use"
+        assert search(pattern, text) is not None
 
 
 class TestGetShellOutput:
@@ -33,24 +39,8 @@ class TestGetShellOutput:
 
     def test_no_activate(self, *, tmp_path: Path) -> None:
         venv = tmp_path.joinpath(".venv")
-        with raises(NoActivateError):
+        with raises(GetShellOutputError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
-
-    def test_multiple_activates(self, *, tmp_path: Path) -> None:
-        venv = tmp_path.joinpath(".venv")
-        for i in range(2):
-            activate = venv.joinpath(str(i), "activate")
-            activate.parent.mkdir(parents=True)
-            activate.touch()
-        with raises(MultipleActivateError):
-            _ = get_shell_output("ls", cwd=venv, activate=venv)
-
-
-class TestAddressAlreadyInUsePattern:
-    def test_pattern(self) -> None:
-        pattern = _address_already_in_use_pattern()
-        text = "OSError: [Errno 98] Address already in use"
-        assert search(pattern, text) is not None
 
 
 class TestTabulateCalledProcessError:

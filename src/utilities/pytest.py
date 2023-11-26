@@ -19,8 +19,7 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import Duration
-from utilities.typing import IterableStrs
+from utilities.types import Duration, IterableStrs
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config

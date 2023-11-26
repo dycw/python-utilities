@@ -46,7 +46,7 @@ from utilities._numpy.common import (
 )
 from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
-from utilities.itertools import is_iterable_not_str
+from utilities.iterables import is_iterable_not_str
 from utilities.re import extract_group
 
 # RNG
@@ -1028,7 +1028,7 @@ def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
 
 
 class EmptyNumpyConcatenateError(Exception):
-    """Raised when there are no arrays to concatenate."""
+    ...
 
 
 def shift_bool(

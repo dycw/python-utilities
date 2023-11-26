@@ -23,14 +23,12 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
-from utilities.itertools import (
+from utilities.iterables import (
     CheckDuplicatesError,
-    OneEmptyError,
-    OneNonUniqueError,
     check_duplicates,
     is_iterable_not_str,
-    one,
 )
+from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
 from utilities.text import snake_case
 
 
@@ -162,7 +160,7 @@ def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
 
 
 class GetDialectError(Exception):
-    """Raised when a dialect is unsupported."""
+    ...
 
 
 def get_table(table_or_mapped_class: Table | type[Any], /) -> Table:
@@ -176,7 +174,7 @@ def get_table(table_or_mapped_class: Table | type[Any], /) -> Table:
 
 
 class GetTableError(Exception):
-    """Raised when an object is neither a Table nor a mapped class."""
+    ...
 
 
 INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95

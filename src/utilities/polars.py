@@ -10,7 +10,7 @@ from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
-from utilities.typing import SequenceStrs
+from utilities.types import SequenceStrs
 
 
 def check_dataframe(

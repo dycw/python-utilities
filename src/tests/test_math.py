@@ -1,16 +1,61 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from math import inf, nan
+from typing import Any
 
+from beartype.door import die_if_unbearable
+from beartype.roar import BeartypeDoorHintViolation
+from hypothesis import Phase, given, settings
+from hypothesis.strategies import floats, integers
 from pytest import mark, param
 
 from utilities.math import (
+    FloatFin,
+    FloatFinInt,
+    FloatFinIntNan,
+    FloatFinNan,
+    FloatFinNeg,
+    FloatFinNegNan,
+    FloatFinNonNeg,
+    FloatFinNonNegNan,
+    FloatFinNonPos,
+    FloatFinNonPosNan,
+    FloatFinNonZr,
+    FloatFinNonZrNan,
+    FloatFinPos,
+    FloatFinPosNan,
+    FloatInt,
+    FloatIntNan,
+    FloatNeg,
+    FloatNegNan,
+    FloatNonNeg,
+    FloatNonNegNan,
+    FloatNonPos,
+    FloatNonPosNan,
+    FloatNonZr,
+    FloatNonZrNan,
+    FloatPos,
+    FloatPosNan,
+    FloatZr,
+    FloatZrFinNonMic,
+    FloatZrFinNonMicNan,
+    FloatZrNan,
+    FloatZrNonMic,
+    FloatZrNonMicNan,
+    IntNeg,
+    IntNonNeg,
+    IntNonPos,
+    IntNonZr,
+    IntPos,
+    IntZr,
     is_at_least,
     is_at_least_or_nan,
     is_at_most,
     is_at_most_or_nan,
     is_between,
     is_between_or_nan,
+    is_finite,
     is_finite_and_integral,
     is_finite_and_integral_or_nan,
     is_finite_and_negative,
@@ -47,6 +92,57 @@ from utilities.math import (
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
 )
+
+
+class TestAnnotations:
+    @given(x=integers() | floats(allow_infinity=True, allow_nan=True))
+    @mark.parametrize(
+        "hint",
+        [
+            param(IntNeg),
+            param(IntNonNeg),
+            param(IntNonPos),
+            param(IntNonZr),
+            param(IntPos),
+            param(IntZr),
+            param(FloatFin),
+            param(FloatFinInt),
+            param(FloatFinIntNan),
+            param(FloatFinNeg),
+            param(FloatFinNegNan),
+            param(FloatFinNonNeg),
+            param(FloatFinNonNegNan),
+            param(FloatFinNonPos),
+            param(FloatFinNonPosNan),
+            param(FloatFinNonZr),
+            param(FloatFinNonZrNan),
+            param(FloatFinPos),
+            param(FloatFinPosNan),
+            param(FloatFinNan),
+            param(FloatInt),
+            param(FloatIntNan),
+            param(FloatNeg),
+            param(FloatNegNan),
+            param(FloatNonNeg),
+            param(FloatNonNegNan),
+            param(FloatNonPos),
+            param(FloatNonPosNan),
+            param(FloatNonZr),
+            param(FloatNonZrNan),
+            param(FloatPos),
+            param(FloatPosNan),
+            param(FloatZr),
+            param(FloatZrFinNonMic),
+            param(FloatZrFinNonMicNan),
+            param(FloatZrNan),
+            param(FloatZrNonMic),
+            param(FloatZrNonMicNan),
+        ],
+    )
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_main(self, *, x: float, hint: Any) -> None:
+        with suppress(BeartypeDoorHintViolation):
+            die_if_unbearable(x, hint)
 
 
 class TestChecks:
@@ -132,6 +228,20 @@ class TestChecks:
     )
     def test_is_between_or_nan(self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(-inf, False),
+            param(-1.0, True),
+            param(0.0, True),
+            param(1.0, True),
+            param(inf, False),
+            param(nan, False),
+        ],
+    )
+    def test_is_finite(self, *, x: float, expected: bool) -> None:
+        assert is_finite(x) is expected
 
     @mark.parametrize(
         ("x", "expected"),

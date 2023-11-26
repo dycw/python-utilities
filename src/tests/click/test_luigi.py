@@ -11,7 +11,7 @@ from utilities.click import (
     local_scheduler_option_default_local,
     workers_option,
 )
-from utilities.typing import SequenceStrs
+from utilities.types import SequenceStrs
 
 
 class TestLocalSchedulerOption:

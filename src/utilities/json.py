@@ -88,7 +88,7 @@ def _default(  # noqa: PLR0911, PLR0912
         if tzinfo is UTC:
             return {_CLASS: "dt.datetime|UTC", _VALUE: serialize_datetime(obj)}
         msg = f"{tzinfo=}"
-        raise InvalidTimeZoneError(msg)
+        raise JsonSerializationError(msg)
     if isinstance(obj, dt.time):
         return {_CLASS: "dt.time", _VALUE: serialize_time(obj)}
     if isinstance(obj, dt.timedelta):
@@ -130,12 +130,8 @@ def _default(  # noqa: PLR0911, PLR0912
     raise JsonSerializationError(msg)
 
 
-class InvalidTimeZoneError(Exception):
-    """Raised when an invalid timezone is encountered."""
-
-
 class JsonSerializationError(Exception):
-    """Raised when an object cannot be serialized."""
+    ...
 
 
 def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
@@ -221,7 +217,7 @@ def _object_hook(  # noqa: PLR0911
 
 
 class JsonDeserializationError(Exception):
-    """Raised when an object cannot be deserialized."""
+    ...
 
 
 __all__ = ["deserialize", "serialize"]

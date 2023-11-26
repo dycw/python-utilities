@@ -26,6 +26,8 @@ CONFIG_FILES = [
 
 
 class ExtendedTSConverter(TSConverter):
+    """An extension of the TSConverter for custom types."""
+
     def __init__(
         self,
         *,
@@ -46,22 +48,20 @@ class ExtendedTSConverter(TSConverter):
             pass
         else:
             cases.append((Engine, ensure_engine))
-        extras = {cls: _make_converter(cls, func) for cls, func in cases}
+
+        def lift(
+            cls: type[Any], func: Callable[[Any], Any], /
+        ) -> Callable[[Any, type[Any]], Any]:
+            def hook(value: Any, _: type[Any] = Any, /) -> Any:
+                if not isinstance(value, cls | str):
+                    msg = f"Could not convert value to {cls.__name__}: {value}"
+                    raise TypeError(msg)
+                return func(value)
+
+            return hook
+
+        extras = {cls: lift(cls, func) for cls, func in cases}
         self.scalar_converters |= extras
-
-
-def _make_converter(
-    cls: type[Any], func: Callable[[Any], Any], /
-) -> Callable[[Any, type[Any]], Any]:
-    """Lift a callable into a connverter."""
-
-    def hook(value: Any, _: type[Any] = Any, /) -> Any:
-        if not isinstance(value, cls | str):
-            msg = f"Could not convert value to {cls.__name__}: {value}"
-            raise TypeError(msg)
-        return func(value)
-
-    return hook
 
 
 def get_loaders(
@@ -74,7 +74,7 @@ def get_loaders(
 ) -> list[Loader]:
     if search("_", appname):
         msg = f"{appname=}"
-        raise AppNameContainsUnderscoreError(msg)
+        raise GetLoadersError(msg)
     return default_loaders(
         appname,
         config_files=config_files,
@@ -84,5 +84,8 @@ def get_loaders(
     )
 
 
-class AppNameContainsUnderscoreError(Exception):
-    """Raised when the appname contains a space."""
+class GetLoadersError(Exception):
+    ...
+
+
+__all__ = ["CONFIG_FILES", "ExtendedTSConverter", "get_loaders", "GetLoadersError"]

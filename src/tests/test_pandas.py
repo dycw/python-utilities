@@ -32,9 +32,9 @@ from utilities.pandas import (
     CheckDataFrameError,
     CheckDataFrameLengthError,
     CheckRangeIndexError,
-    DifferentDTypeError,
     EmptyPandasConcatError,
     Int64,
+    SeriesMinMaxError,
     TimestampToDateTimeError,
     astype,
     boolean,
@@ -270,12 +270,10 @@ class TestSeriesMinMax:
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_different_dtype(
-        self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
-    ) -> None:
+    def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore
-        with raises(DifferentDTypeError):
+        with raises(SeriesMinMaxError):
             _ = func(x, y)
 
 

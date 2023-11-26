@@ -4,8 +4,8 @@ from typing import NoReturn
 
 from pytest import mark, param, raises
 
-from utilities.errors import NoUniqueArgError, redirect_error, retry
-from utilities.itertools import one
+from utilities.errors import RedirectErrorError, redirect_error, retry
+from utilities.more_itertools import one
 
 
 class TestRedirectError:
@@ -28,7 +28,7 @@ class TestRedirectError:
             redirect_error(error, pattern, self._CustomError)
 
     def test_generic_with_no_unique_arg(self) -> None:
-        with raises(NoUniqueArgError):
+        with raises(RedirectErrorError):
             try:
                 raise ValueError(0, 1)  # noqa: TRY301
             except ValueError as error:

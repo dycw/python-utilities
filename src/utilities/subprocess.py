@@ -8,9 +8,10 @@ from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any
 
+from utilities.more_itertools import OneError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 def get_shell_output(
@@ -27,13 +28,13 @@ def get_shell_output(
     """
     cwd = Path(cwd)
     if activate is not None:
-        activates = list(cwd.rglob("activate"))
-        if (n := len(activates)) == 0:
-            raise NoActivateError(cwd)
-        if n == 1:
-            cmd = f"source {activates[0]}; {cmd}"  # pragma: os-ne-windows
-        else:
-            raise MultipleActivateError(activates)
+        try:
+            activate = one(cwd.rglob("activate"))
+        except OneError:
+            msg = f"{cwd=}"
+            raise GetShellOutputError(msg) from None
+        cmd = f"source {activate}; {cmd}"  # pragma: os-ne-windows
+
     with temp_environ(env):
         return check_output(
             cmd,
@@ -44,12 +45,8 @@ def get_shell_output(
         )
 
 
-class NoActivateError(Exception):
-    """Raised when no `activate` script can be found."""
-
-
-class MultipleActivateError(Exception):
-    """Raised when multiple `activate` scripts can be found."""
+class GetShellOutputError(Exception):
+    ...
 
 
 def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:
@@ -106,8 +103,7 @@ def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
 
 __all__ = [
     "get_shell_output",
-    "MultipleActivateError",
-    "NoActivateError",
+    "GetShellOutputError",
     "run_accept_address_in_use",
     "tabulate_called_process_error",
 ]

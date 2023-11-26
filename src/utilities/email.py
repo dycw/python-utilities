@@ -10,7 +10,7 @@ from typing import Any
 
 from utilities.pathlib import PathLike
 from utilities.pytest import is_pytest
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 def send_email(
@@ -41,10 +41,10 @@ def send_email(
             try:
                 from airium import Airium
             except ModuleNotFoundError:  # pragma: no cover
-                raise InvalidContentsError(contents) from None
+                raise SendEmailError(contents) from None
             else:
                 if not isinstance(contents, Airium):
-                    raise InvalidContentsError(contents)
+                    raise SendEmailError(contents)
                 text = MIMEText(str(contents), "html")
         message.attach(text)
     if attachments is not None:
@@ -64,8 +64,8 @@ def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
     message.attach(part)
 
 
-class InvalidContentsError(Exception):
-    """Raised when an invalid set of contents is encountered."""
+class SendEmailError(Exception):
+    ...
 
 
-__all__ = ["InvalidContentsError", "is_pytest", "send_email"]
+__all__ = ["SendEmailError", "is_pytest", "send_email"]

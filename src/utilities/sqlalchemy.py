@@ -71,7 +71,7 @@ from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
 from utilities.math import FloatNonNeg, IntNonNeg
 from utilities.text import ensure_str, snake_case, snake_case_mappings
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 def check_column_collections_equal(
@@ -584,7 +584,7 @@ def redirect_to_table_already_exists_error(
 
 
 class TableAlreadyExistsError(Exception):
-    """Raised when a table already exists."""
+    ...
 
 
 def reflect_table(

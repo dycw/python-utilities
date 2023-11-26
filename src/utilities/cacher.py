@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Hashable, Iterator
+from collections.abc import Callable
 from functools import partial, wraps
 from inspect import signature
 from pathlib import Path
-from typing import Any, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 from utilities.datetime import UTC, duration_to_timedelta, get_now
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.hashlib import md5_hash
+from utilities.iterables import ensure_hashables
 from utilities.pathlib import PathLike
 from utilities.pickle import read_pickle, write_pickle
-from utilities.types import Duration, is_hashable
+from utilities.types import Duration
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -46,9 +47,9 @@ def _cache_to_disk(
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         """The decorated function."""
         ba = sig.bind(*args, **kwargs)
-        hash_args = tuple(_yield_hashable_args(*ba.args))
-        hash_kwargs = tuple(_yield_hashable_kwargs(**ba.kwargs))
-        path = root.joinpath(md5_hash((hash_args, hash_kwargs)))
+        hash_args, hash_kwargs = ensure_hashables(*ba.args, **ba.kwargs)
+        hash_pair = tuple(hash_args), tuple(hash_kwargs.items())
+        path = root.joinpath(md5_hash(hash_pair))
         if _needs_run(path, ttl=ttl_use):
             value = func(*args, **kwargs)
             write_pickle(value, path, overwrite=True)
@@ -56,28 +57,6 @@ def _cache_to_disk(
         return read_pickle(path)
 
     return wrapped
-
-
-def _yield_hashable_args(*args: Any) -> Iterator[Hashable]:
-    for i, arg in enumerate(args):
-        if is_hashable(arg):
-            yield arg
-        else:
-            msg = f"Positional argument {arg} (index {i}) is non-hashable"
-            raise NonHashableArgumentError(msg)
-
-
-def _yield_hashable_kwargs(**kwargs: Any) -> Iterator[tuple[str, Hashable]]:
-    for key, arg in kwargs.items():
-        if is_hashable(arg):
-            yield key, arg
-        else:
-            msg = f"Keyword argument {key} = {arg} is non-hashable"
-            raise NonHashableArgumentError(msg)
-
-
-class NonHashableArgumentError(Exception):
-    """Raised when an argument is non-hashable."""
 
 
 def _needs_run(path: Path, /, *, ttl: dt.timedelta | None = None) -> bool:
@@ -89,3 +68,6 @@ def _needs_run(path: Path, /, *, ttl: dt.timedelta | None = None) -> bool:
     modified = dt.datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
     age = now - modified
     return age >= ttl
+
+
+__all__ = ["cache_to_disk"]

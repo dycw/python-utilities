@@ -337,24 +337,24 @@ def solve(
         return obj
     if status in {"infeasible", "infeasible_inaccurate"}:
         msg = f"{problem=}"
-        raise InfeasibleProblemError(msg)
+        raise SolveInfeasibleError(msg)
     if status == "unbounded":
         msg = f"{problem=}"
-        raise UnboundedProblemError(msg)
+        raise SolveUnboundedError(msg)
     msg = f"{status=}"  # pragma: no cover
-    raise InvalidStatusError(msg)  # pragma: no cover
+    raise SolveError(msg)  # pragma: no cover
 
 
-class InfeasibleProblemError(Exception):
-    """Raised when an infeasible problem is encountered."""
+class SolveError(Exception):
+    ...
 
 
-class UnboundedProblemError(Exception):
-    """Raised when an unbounded problem is encountered."""
+class SolveInfeasibleError(SolveError):
+    ...
 
 
-class InvalidStatusError(Exception):
-    """Raised when an invalid status is encountered."""
+class SolveUnboundedError(SolveError):
+    ...
 
 
 @overload
@@ -462,6 +462,10 @@ __all__ = [
     "pos",
     "power",
     "quad_form",
+    "solve",
+    "SolveError",
+    "SolveInfeasibleError",
+    "SolveUnboundedError",
     "sqrt",
     "subtract",
     "sum_",

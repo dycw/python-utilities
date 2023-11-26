@@ -17,11 +17,7 @@ from utilities.datetime import (
     ensure_time,
     ensure_timedelta,
 )
-from utilities.enum import (
-    MultipleMatchingMembersError,
-    NoMatchingMemberError,
-    ensure_enum,
-)
+from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
 
 
@@ -107,7 +103,7 @@ class Enum(ParamType, Generic[_E]):
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
-        except (NoMatchingMemberError, MultipleMatchingMembersError):
+        except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import NoneType
 from typing import Any
 
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
-    NotADataClassNorADataClassInstanceError,
+    GetDataClassClassError,
     get_dataclass_class,
     is_dataclass_class,
     is_dataclass_instance,
@@ -14,7 +15,6 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
-from utilities.types import NoneType
 
 
 class TestGetDataClassClass:
@@ -27,7 +27,7 @@ class TestGetDataClassClass:
             assert get_dataclass_class(obj) is Example
 
     def test_error(self) -> None:
-        with raises(NotADataClassNorADataClassInstanceError):
+        with raises(GetDataClassClassError):
             _ = get_dataclass_class(None)  # type: ignore
 
 

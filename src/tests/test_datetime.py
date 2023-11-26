@@ -34,7 +34,7 @@ from utilities.datetime import (
     TODAY_TKY,
     TODAY_UTC,
     UTC,
-    IsWeekendError,
+    AddWeekdaysError,
     ParseDateError,
     ParseDateTimeError,
     ParseTimedeltaError,
@@ -91,12 +91,12 @@ class TestAddWeekdays:
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error(self, *, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
-        with raises(IsWeekendError):
+        with raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
     def test_two(self, *, date: dt.date, n1: int, n2: int) -> None:
-        with assume_does_not_raise(IsWeekendError, OverflowError):
+        with assume_does_not_raise(AddWeekdaysError, OverflowError):
             weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
         result = weekday1 <= weekday2
         expected = n1 <= n2

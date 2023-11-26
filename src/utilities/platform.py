@@ -6,7 +6,7 @@ from platform import system
 
 from typing_extensions import assert_never
 
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 @unique
@@ -31,7 +31,7 @@ def get_system() -> System:
 
 
 class GetSystemError(Exception):
-    """Raised when unable to determine the system."""
+    ...
 
 
 SYSTEM = get_system()

@@ -3,35 +3,30 @@ from __future__ import annotations
 from pytest import mark, param, raises
 
 from utilities.re import (
-    MultipleCaptureGroupsError,
-    MultipleMatchesError,
-    NoCaptureGroupsError,
-    NoMatchesError,
+    ExtractGroupError,
+    ExtractGroupsError,
     extract_group,
     extract_groups,
 )
-from utilities.typing import IterableStrs
+from utilities.types import IterableStrs
 
 
 class TestExtractGroup:
-    def test_success(self) -> None:
+    def test_main(self) -> None:
         assert extract_group(r"(\d)", "A0A") == "0"
 
-    def test_no_groups(self) -> None:
-        with raises(NoCaptureGroupsError):
-            _ = extract_group(r"\d", "0")
-
-    def test_multiple_groups(self) -> None:
-        with raises(MultipleCaptureGroupsError):
-            _ = extract_group(r"(\d)(\w)", "0A")
-
-    def test_no_matches(self) -> None:
-        with raises(NoMatchesError, match="pattern='.*', text='.*'"):
-            _ = extract_group(r"(\d)", "A")
-
-    def test_multiple_matches(self) -> None:
-        with raises(MultipleMatchesError, match="pattern='.*', text='.*'"):
-            _ = extract_group(r"(\d)", "0A0")
+    @mark.parametrize(
+        ("pattern", "text"),
+        [
+            param(r"\d", "0", id="no groups"),
+            param(r"(\d)(\w)", "0A", id="multiple groups"),
+            param(r"(\d)", "A", id="no matches"),
+            param(r"(\d)", "0A0", id="multiple matches"),
+        ],
+    )
+    def test_errors(self, *, pattern: str, text: str) -> None:
+        with raises(ExtractGroupError):
+            _ = extract_group(pattern, text)
 
 
 class TestExtractGroups:
@@ -39,23 +34,19 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_success(self, pattern: str, text: str, expected: IterableStrs) -> None:
+    def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
         assert extract_groups(pattern, text) == expected
 
-    def test_no_groups(self) -> None:
-        with raises(NoCaptureGroupsError):
-            _ = extract_groups(r"\d", "0")
-
     @mark.parametrize(
-        ("pattern", "text"), [param(r"(\d)", "A"), param(r"(\d)(\w)", "A0")]
+        ("pattern", "text"),
+        [
+            param(r"\d", "0", id="no groups"),
+            param(r"(\d)", "A", id="one group, no matches"),
+            param(r"(\d)", "0A0", id="one group, multiple matches"),
+            param(r"(\d)(\w)", "A0", id="multiple groups, no matches"),
+            param(r"(\d)(\w)", "0A0A", id="multiple groups, multiple matches"),
+        ],
     )
-    def test_no_matches(self, pattern: str, text: str) -> None:
-        with raises(NoMatchesError, match="pattern='.*', text='.*'"):
-            _ = extract_groups(pattern, text)
-
-    @mark.parametrize(
-        ("pattern", "text"), [param(r"(\d)", "0A0"), param(r"(\d)(\w)", "0A0A")]
-    )
-    def test_multiple_matches(self, pattern: str, text: str) -> None:
-        with raises(MultipleMatchesError, match="pattern='.*', text='.*'"):
+    def test_errors(self, *, pattern: str, text: str) -> None:
+        with raises(ExtractGroupsError):
             _ = extract_groups(pattern, text)

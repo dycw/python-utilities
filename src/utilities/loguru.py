@@ -16,8 +16,8 @@ from typing_extensions import override
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 from utilities.platform import IS_WINDOWS
-from utilities.re import NoMatchesError, extract_group
-from utilities.typing import IterableStrs
+from utilities.re import ExtractGroupError, extract_group
+from utilities.types import IterableStrs
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
@@ -101,7 +101,7 @@ def _augment_levels(
             key_use = key.upper() if IS_WINDOWS else key
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
-            except NoMatchesError:
+            except ExtractGroupError:
                 pass
             else:
                 module = suffix.replace("__", ".").lower()
