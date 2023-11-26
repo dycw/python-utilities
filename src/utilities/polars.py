@@ -127,8 +127,8 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "CheckPolarsDataFrameHeightError",
     "SetFirstRowAsColumnsError",
-    "check_polars_dataframe_height",
     "check_polars_dataframe",
+    "check_polars_dataframe_height",
     "join",
     "set_first_row_as_columns",
 ]
