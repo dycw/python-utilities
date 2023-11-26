@@ -5,18 +5,18 @@ import datetime as dt
 from pytest import mark, param, raises
 
 from utilities.datetime import UTC
-from utilities.platform import SYSTEM, System, UnsupportedSystemError
+from utilities.platform import SYSTEM, System
 from utilities.pytest import skipif_not_mac, skipif_not_windows
-from utilities.xlrd import _get_date_mode, to_date, to_datetime
+from utilities.xlrd import GetDateModeError, get_date_mode, to_date, to_datetime
 
 
 class TestGetDateMode:
     def test_main(self) -> None:
         if SYSTEM is System.linux:
-            with raises(UnsupportedSystemError):
-                _ = _get_date_mode()
+            with raises(GetDateModeError):
+                _ = get_date_mode()
         else:
-            assert _get_date_mode() in {0, 1}
+            assert get_date_mode() in {0, 1}
 
 
 class TestToDate:

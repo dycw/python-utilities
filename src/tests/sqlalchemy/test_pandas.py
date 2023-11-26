@@ -37,24 +37,24 @@ from sqlalchemy import (
     select,
 )
 
+from utilities._sqlalchemy.pandas import (
+    InsertPandasDataFrameError,
+    StreamDataFramesError,
+    TableColumnToDTypeError,
+    _dataframe_columns_to_snake,
+    _rows_to_dataframe,
+    stream_dataframes,
+    table_column_to_dtype,
+)
 from utilities.datetime import date_to_datetime
 from utilities.hypothesis import dates_pd, datetimes_pd, sqlite_engines, text_ascii
-from utilities.numpy import datetime64ns
+from utilities.numpy import dt64ns
 from utilities.pandas import Int64, boolean, check_dataframe, datetime64nsutc, string
 from utilities.sqlalchemy import (
-    ColumnToPandasDTypeError,
-    NonPositiveStreamError,
-    PandasDataFrameYieldsNoRowsError,
     ensure_tables_created,
     insert_items,
     insert_pandas_dataframe,
     select_to_pandas_dataframe,
-)
-from utilities.sqlalchemy.pandas import (
-    _dataframe_columns_to_snake,
-    _rows_to_dataframe,
-    _stream_dataframes,
-    _table_column_to_dtype,
 )
 from utilities.text import snake_case
 
@@ -90,10 +90,10 @@ class TestInsertPandasDataFrame:
         [
             param(booleans(), bool, Boolean, eq),
             param(booleans() | none(), boolean, Boolean, eq),
-            param(dates_pd() | none(), datetime64ns, Date, eq),
+            param(dates_pd() | none(), dt64ns, Date, eq),
             param(
                 datetimes_pd().map(lambda x: x.replace(tzinfo=None)) | none(),
-                datetime64ns,
+                dt64ns,
                 DateTime,
                 _check_datetime,
             ),
@@ -147,7 +147,7 @@ class TestInsertPandasDataFrame:
         _ = assume(
             (datetime.hour != 0) or (datetime.minute != 0) or (datetime.second != 0)
         )
-        df = DataFrame([date, datetime], columns=["value"], dtype=datetime64ns)
+        df = DataFrame([date, datetime], columns=["value"], dtype=dt64ns)
         table = Table(
             "example",
             MetaData(),
@@ -163,9 +163,7 @@ class TestInsertPandasDataFrame:
         assert res == expected
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), min_size=1))
-    def test_pandas_data_frame_yields_no_rows_error(
-        self, *, engine: Engine, values: list[bool | None]
-    ) -> None:
+    def test_error(self, *, engine: Engine, values: list[bool | None]) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -173,7 +171,7 @@ class TestInsertPandasDataFrame:
             Column("value", Boolean),
         )
         df = DataFrame(values, columns=["other"], dtype=boolean)
-        with raises(PandasDataFrameYieldsNoRowsError):
+        with raises(InsertPandasDataFrameError):
             insert_pandas_dataframe(engine, df, table)
 
 
@@ -202,11 +200,11 @@ class TestSelectToPandasDataFrame:
         [
             param(booleans(), bool, boolean, Boolean),
             param(booleans() | none(), boolean, boolean, Boolean),
-            param(dates_pd() | none(), datetime64ns, datetime64ns, Date),
+            param(dates_pd() | none(), dt64ns, dt64ns, Date),
             param(
                 datetimes_pd().map(lambda x: x.replace(tzinfo=None)) | none(),
-                datetime64ns,
-                datetime64ns,
+                dt64ns,
+                dt64ns,
                 DateTime,
             ),
             param(
@@ -287,19 +285,6 @@ class TestSelectToPandasDataFrame:
         expected = DataFrame(values, columns=["value"], dtype=boolean)
         assert_frame_equal(result, expected)
 
-    @given(engine=sqlite_engines())
-    def test_column_to_pandas_dtype_error(self, *, engine: Engine) -> None:
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", LargeBinary),
-        )
-        ensure_tables_created(engine, table)
-        sel = select(table.c["value"])
-        with raises(ColumnToPandasDTypeError):
-            _ = select_to_pandas_dataframe(sel, engine)
-
 
 class TestStreamDataFrames:
     @given(
@@ -311,24 +296,24 @@ class TestStreamDataFrames:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_tables_created(engine, table)
         insert_items(engine, ([(id_,) for id_ in ids], table))
-        for df in _stream_dataframes(select(table), engine, stream):
+        for df in stream_dataframes(select(table), engine, stream):
             assert 1 <= len(df) <= stream
             assert dict(df.dtypes) == {"id": Int64}
 
     @given(engine=sqlite_engines())
-    def test_non_positive_stream(self, *, engine: Engine) -> None:
+    def test_error(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(NonPositiveStreamError):
-            _ = list(_stream_dataframes(select(table), engine, 0))
+        with raises(StreamDataFramesError):
+            _ = list(stream_dataframes(select(table), engine, 0))
 
 
-class TestTableColumnToDtype:
+class TestTableColumnToDType:
     @mark.parametrize(
         ("column", "expected"),
         [
             param(Column(Boolean), boolean),
-            param(Column(Date), datetime64ns),
-            param(Column(DateTime), datetime64ns),
+            param(Column(Date), dt64ns),
+            param(Column(DateTime), dt64ns),
             param(Column(DECIMAL), float),
             param(Column(Float), float),
             param(Column(Integer), Int64),
@@ -336,4 +321,9 @@ class TestTableColumnToDtype:
         ],
     )
     def test_main(self, *, column: Any, expected: Any) -> None:
-        assert _table_column_to_dtype(column) == expected
+        assert table_column_to_dtype(column) == expected
+
+    def test_error(self) -> None:
+        column = Column("value", LargeBinary)
+        with raises(TableColumnToDTypeError):
+            _ = table_column_to_dtype(column)

@@ -27,15 +27,11 @@ def get_system() -> System:
     if sys == "Linux":  # pragma: os-ne-linux
         return System.linux
     msg = f"{sys=}"  # pragma: no cover
-    raise UnableToDetermineSystemError(msg)  # pragma: no cover
+    raise GetSystemError(msg)  # pragma: no cover
 
 
-class UnableToDetermineSystemError(Exception):
+class GetSystemError(Exception):
     """Raised when unable to determine the system."""
-
-
-class UnsupportedSystemError(RuntimeWarning):
-    """Raised when the system is unsupported."""
 
 
 SYSTEM = get_system()
@@ -71,6 +67,5 @@ __all__ = [
     "maybe_yield_lower_case",
     "System",
     "SYSTEM",
-    "UnableToDetermineSystemError",
-    "UnsupportedSystemError",
+    "GetSystemError",
 ]

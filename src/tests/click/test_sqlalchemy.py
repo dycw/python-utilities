@@ -1,24 +1,24 @@
 from __future__ import annotations
 
+import sqlalchemy
 from click import argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
-from sqlalchemy import Engine
 
-from utilities.click import Engine as ClickEngine
+import utilities.click
 from utilities.hypothesis import sqlite_engines
 from utilities.sqlalchemy import serialize_engine
 
 
 class TestEngineParameter:
     @given(data=data())
-    def test_argument(self, data: DataObject) -> None:
+    def test_argument(self, *, data: DataObject) -> None:
         runner = CliRunner()
 
         @command()
-        @argument("engine", type=ClickEngine())
-        def cli(*, engine: Engine) -> None:
+        @argument("engine", type=utilities.click.Engine())
+        def cli(*, engine: sqlalchemy.Engine) -> None:
             echo(f"engine = {serialize_engine(engine)}")
 
         engine_str = serialize_engine(data.draw(sqlite_engines()))
@@ -34,8 +34,8 @@ class TestEngineParameter:
         engine = data.draw(sqlite_engines())
 
         @command()
-        @option("--engine", type=ClickEngine(), default=engine)
-        def cli(*, engine: Engine) -> None:
+        @option("--engine", type=utilities.click.Engine(), default=engine)
+        def cli(*, engine: sqlalchemy.Engine) -> None:
             echo(f"engine = {serialize_engine(engine)}")
 
         result = CliRunner().invoke(cli)

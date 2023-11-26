@@ -24,6 +24,7 @@ class TestGetDesc:
     )
     def test_main(
         self,
+        *,
         desc: str | None | Sentinel,
         func: Callable[..., Any],
         expected: Mapping[str, str],
@@ -42,7 +43,7 @@ class TestPMap:
     @mark.parametrize("parallelism", [param("processes"), param("threads")])
     @mark.parametrize("n_jobs", [param(1), param(2)])
     def test_unary(
-        self, parallelism: Literal["processes", "threads"], n_jobs: int
+        self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pmap(neg, [1, 2, 3], parallelism=parallelism, n_jobs=n_jobs)
         expected = [-1, -2, -3]
@@ -51,7 +52,7 @@ class TestPMap:
     @mark.parametrize("parallelism", [param("processes"), param("threads")])
     @mark.parametrize("n_jobs", [param(1), param(2)])
     def test_binary(
-        self, parallelism: Literal["processes", "threads"], n_jobs: int
+        self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pmap(
             pow, [2, 3, 10], [5, 2, 3], parallelism=parallelism, n_jobs=n_jobs
@@ -64,7 +65,7 @@ class TestPStarMap:
     @mark.parametrize("parallelism", [param("processes"), param("threads")])
     @mark.parametrize("n_jobs", [param(1), param(2)])
     def test_unary(
-        self, parallelism: Literal["processes", "threads"], n_jobs: int
+        self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pstarmap(
             neg, [(1,), (2,), (3,)], parallelism=parallelism, n_jobs=n_jobs
@@ -75,7 +76,7 @@ class TestPStarMap:
     @mark.parametrize("parallelism", [param("processes"), param("threads")])
     @mark.parametrize("n_jobs", [param(1), param(2)])
     def test_binary(
-        self, parallelism: Literal["processes", "threads"], n_jobs: int
+        self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
         result = pstarmap(
             pow, [(2, 5), (3, 2), (10, 3)], parallelism=parallelism, n_jobs=n_jobs

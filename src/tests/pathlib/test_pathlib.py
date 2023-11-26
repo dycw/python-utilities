@@ -6,7 +6,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pytest import mark, param
 
-from utilities.hypothesis.hypothesis import temp_paths
+from utilities.hypothesis import temp_paths
 from utilities.pathlib import ensure_suffix, temp_cwd, walk
 
 

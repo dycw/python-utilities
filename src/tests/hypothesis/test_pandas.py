@@ -10,17 +10,16 @@ from numpy import int64
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
 
-from utilities.hypothesis import (
+from utilities._hypothesis.pandas import (
     dates_pd,
     datetimes_pd,
-    datetimes_utc,
-    hashables,
     indexes,
     int64s,
     int_indexes,
     str_indexes,
     timestamps,
 )
+from utilities.hypothesis import datetimes_utc, hashables
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
     TIMESTAMP_MAX_AS_DATETIME,

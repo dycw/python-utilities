@@ -7,7 +7,8 @@ from io import StringIO, TextIOWrapper
 from multiprocessing import cpu_count
 from typing import Any, Literal, TypeVar, cast
 
-from pqdm import processes
+from pqdm import processes, threads
+from typing_extensions import assert_never
 
 from utilities.class_name import get_class_name
 from utilities.sentinel import Sentinel, sentinel
@@ -143,76 +144,79 @@ def pstarmap(
     tqdm_class = cast(Any, tqdm)
     desc_kwargs = _get_desc(desc, func)
     total = _get_total(total, iterable)
-    if parallelism == "processes":
-        result = processes.pqdm(
-            iterable,
-            partial(_starmap_helper, func),
-            n_jobs=n_jobs,
-            argument_type="args",
-            bounded=bounded,
-            exception_behaviour=exception_behaviour,
-            tqdm_class=tqdm_class,
-            **desc_kwargs,
-            total=total,
-            leave=leave,
-            file=file,
-            ncols=ncols,
-            mininterval=mininterval,
-            maxinterval=maxinterval,
-            miniters=miniters,
-            ascii=ascii,
-            unit=unit,
-            unit_scale=unit_scale,
-            dynamic_ncols=dynamic_ncols,
-            smoothing=smoothing,
-            bar_format=bar_format,
-            initial=initial,
-            position=position,
-            postfix=postfix,
-            unit_divisor=unit_divisor,
-            write_bytes=write_bytes,
-            lock_args=lock_args,
-            nrows=nrows,
-            colour=colour,
-            delay=delay,
-            gui=gui,
-            **kwargs,
-        )
-    else:
-        result = processes.pqdm(
-            iterable,
-            partial(_starmap_helper, func),
-            n_jobs=n_jobs,
-            argument_type="args",
-            bounded=bounded,
-            exception_behaviour=exception_behaviour,
-            tqdm_class=tqdm_class,
-            **desc_kwargs,
-            total=total,
-            leave=leave,
-            file=file,
-            ncols=ncols,
-            mininterval=mininterval,
-            maxinterval=maxinterval,
-            miniters=miniters,
-            ascii=ascii,
-            unit=unit,
-            unit_scale=unit_scale,
-            dynamic_ncols=dynamic_ncols,
-            smoothing=smoothing,
-            bar_format=bar_format,
-            initial=initial,
-            position=position,
-            postfix=postfix,
-            unit_divisor=unit_divisor,
-            write_bytes=write_bytes,
-            lock_args=lock_args,
-            nrows=nrows,
-            colour=colour,
-            delay=delay,
-            gui=gui,
-            **kwargs,
-        )
+    match parallelism:
+        case "processes":
+            result = processes.pqdm(
+                iterable,
+                partial(_starmap_helper, func),
+                n_jobs=n_jobs,
+                argument_type="args",
+                bounded=bounded,
+                exception_behaviour=exception_behaviour,
+                tqdm_class=tqdm_class,
+                **desc_kwargs,
+                total=total,
+                leave=leave,
+                file=file,
+                ncols=ncols,
+                mininterval=mininterval,
+                maxinterval=maxinterval,
+                miniters=miniters,
+                ascii=ascii,
+                unit=unit,
+                unit_scale=unit_scale,
+                dynamic_ncols=dynamic_ncols,
+                smoothing=smoothing,
+                bar_format=bar_format,
+                initial=initial,
+                position=position,
+                postfix=postfix,
+                unit_divisor=unit_divisor,
+                write_bytes=write_bytes,
+                lock_args=lock_args,
+                nrows=nrows,
+                colour=colour,
+                delay=delay,
+                gui=gui,
+                **kwargs,
+            )
+        case "threads":
+            result = threads.pqdm(
+                iterable,
+                partial(_starmap_helper, func),
+                n_jobs=n_jobs,
+                argument_type="args",
+                bounded=bounded,
+                exception_behaviour=exception_behaviour,
+                tqdm_class=tqdm_class,
+                **desc_kwargs,
+                total=total,
+                leave=leave,
+                file=file,
+                ncols=ncols,
+                mininterval=mininterval,
+                maxinterval=maxinterval,
+                miniters=miniters,
+                ascii=ascii,
+                unit=unit,
+                unit_scale=unit_scale,
+                dynamic_ncols=dynamic_ncols,
+                smoothing=smoothing,
+                bar_format=bar_format,
+                initial=initial,
+                position=position,
+                postfix=postfix,
+                unit_divisor=unit_divisor,
+                write_bytes=write_bytes,
+                lock_args=lock_args,
+                nrows=nrows,
+                colour=colour,
+                delay=delay,
+                gui=gui,
+                **kwargs,
+            )
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(parallelism)
     return list(result)
 
 

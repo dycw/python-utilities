@@ -9,6 +9,7 @@ from hypothesis.strategies import DataObject, booleans, data, floats, integers, 
 from numpy import int64
 from pandas.testing import assert_index_equal
 
+from utilities._hypothesis.xarray import _merge_into_dict_of_indexes
 from utilities.hypothesis import (
     assume_does_not_raise,
     bool_data_arrays,
@@ -19,7 +20,6 @@ from utilities.hypothesis import (
     str_data_arrays,
     text_ascii,
 )
-from utilities.hypothesis.xarray import _merge_into_dict_of_indexes
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA

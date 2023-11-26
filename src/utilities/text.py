@@ -4,7 +4,7 @@ from re import search, sub
 from textwrap import dedent
 from typing import Any
 
-from utilities.itertools import IterableContainsDuplicatesError, check_duplicates
+from utilities.itertools import CheckDuplicatesError, check_duplicates
 from utilities.typing import IterableStrs
 
 
@@ -13,11 +13,11 @@ def ensure_str(obj: Any, /) -> str:
     if isinstance(obj, str):
         return obj
     msg = f"{obj=}"
-    raise NotAStringError(msg)
+    raise EnsureStrError(msg)
 
 
-class NotAStringError(Exception):
-    """Raised when an object is not a string."""
+class EnsureStrError(Exception):
+    ...
 
 
 def snake_case(text: str, /) -> str:
@@ -41,16 +41,16 @@ def snake_case_mappings(
     snaked = list(map(snake_case, as_list))
     try:
         check_duplicates(snaked)
-    except IterableContainsDuplicatesError:
+    except CheckDuplicatesError:
         msg = f"{text=}"
-        raise SnakeCaseContainsDuplicatesError(msg) from None
+        raise SnakeCaseMappingsError(msg) from None
     if inverse:
         return {v: k for k, v in snake_case_mappings(as_list).items()}
     return dict(zip(as_list, snaked, strict=True))
 
 
-class SnakeCaseContainsDuplicatesError(Exception):
-    """Raised when the snake case values contain duplicates."""
+class SnakeCaseMappingsError(Exception):
+    ...
 
 
 def strip_and_dedent(text: str, /) -> str:
@@ -60,9 +60,9 @@ def strip_and_dedent(text: str, /) -> str:
 
 __all__ = [
     "ensure_str",
-    "NotAStringError",
+    "EnsureStrError",
     "snake_case_mappings",
     "snake_case",
-    "SnakeCaseContainsDuplicatesError",
+    "SnakeCaseMappingsError",
     "strip_and_dedent",
 ]

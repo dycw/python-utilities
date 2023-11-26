@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from sqlalchemy import Engine
 
-from utilities.luigi import EngineParameter
-from utilities.luigi.typed_settings import _map_annotation
+from utilities.luigi import EngineParameter, annotation_to_class
 
 
-class TestMapAnnotation:
+class TestAnnotationToClass:
     def test_main(self) -> None:
-        result = _map_annotation(Engine)
+        result = annotation_to_class(Engine)
         param = result()
         assert isinstance(param, EngineParameter)

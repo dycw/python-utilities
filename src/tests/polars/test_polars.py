@@ -2,25 +2,17 @@ from __future__ import annotations
 
 from polars import DataFrame, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.polars import (
-    DataFrameColumnsError,
-    DataFrameDTypesError,
-    DataFrameHeightError,
-    DataFrameMaxHeightError,
-    DataFrameMinHeightError,
-    DataFrameSchemaError,
-    DataFrameShapeError,
-    DataFrameSortedError,
-    DataFrameUniqueError,
-    DataFrameWidthError,
-    EmptyDataFrameError,
+    CheckDataFrameError,
+    CheckDataFrameHeightError,
+    SetFirstRowAsColumnsError,
     check_dataframe,
+    check_dataframe_height,
     join,
     set_first_row_as_columns,
 )
-from utilities.polars.polars import _check_dataframe_height
 
 
 class TestCheckDataFrame:
@@ -34,7 +26,7 @@ class TestCheckDataFrame:
 
     def test_columns_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameColumnsError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, columns=["value"])
 
     def test_dtypes_pass(self) -> None:
@@ -43,17 +35,12 @@ class TestCheckDataFrame:
 
     def test_dtypes_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameDTypesError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, dtypes=[Float64])
 
-    def test_height_pass(self) -> None:
+    def test_height(self) -> None:
         df = DataFrame({"value": [0.0]})
         check_dataframe(df, height=1)
-
-    def test_height_error(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        with raises(DataFrameHeightError):
-            check_dataframe(df, height=2)
 
     def test_min_height_pass(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
@@ -61,7 +48,7 @@ class TestCheckDataFrame:
 
     def test_min_height_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameMinHeightError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, min_height=1)
 
     def test_max_height_pass(self) -> None:
@@ -70,7 +57,7 @@ class TestCheckDataFrame:
 
     def test_max_height_error(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
-        with raises(DataFrameMaxHeightError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, max_height=1)
 
     def test_schema_pass(self) -> None:
@@ -79,7 +66,7 @@ class TestCheckDataFrame:
 
     def test_schema_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameSchemaError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, schema={"value": Float64})
 
     def test_shape_pass(self) -> None:
@@ -88,7 +75,7 @@ class TestCheckDataFrame:
 
     def test_shape_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameShapeError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, shape=(1, 1))
 
     def test_sorted_pass(self) -> None:
@@ -97,7 +84,7 @@ class TestCheckDataFrame:
 
     def test_sorted_error(self) -> None:
         df = DataFrame({"value": [1.0, 0.0]})
-        with raises(DataFrameSortedError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
@@ -106,7 +93,7 @@ class TestCheckDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame({"value": [0.0, 0.0]})
-        with raises(DataFrameUniqueError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, unique="value")
 
     def test_width_pass(self) -> None:
@@ -115,28 +102,21 @@ class TestCheckDataFrame:
 
     def test_width_error(self) -> None:
         df = DataFrame()
-        with raises(DataFrameWidthError):
+        with raises(CheckDataFrameError):
             check_dataframe(df, width=1)
 
 
 class TestCheckDataFrameHeight:
-    def test_int_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        _check_dataframe_height(df, 1)
+    @mark.parametrize("height", [param(10), param((11, 0.1))])
+    def test_main(self, *, height: int | tuple[int, float]) -> None:
+        df = DataFrame({"value": range(10)})
+        check_dataframe_height(df, height)
 
-    def test_int_error(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        with raises(DataFrameHeightError):
-            _check_dataframe_height(df, 2)
-
-    def test_tuple_pass(self) -> None:
-        df = DataFrame({"value": range(11)})
-        _check_dataframe_height(df, (10, 0.1))
-
-    def test_tuple_error(self) -> None:
-        df = DataFrame({"value": range(12)})
-        with raises(DataFrameHeightError):
-            _check_dataframe_height(df, (10, 0.1))
+    @mark.parametrize("height", [param(0), param((12, 0.1))])
+    def test_error(self, *, height: int | tuple[int, float]) -> None:
+        df = DataFrame({"value": range(10)})
+        with raises(CheckDataFrameHeightError):
+            check_dataframe_height(df, height)
 
 
 class TestJoin:
@@ -153,7 +133,7 @@ class TestJoin:
 class TestSetFirstRowAsColumns:
     def test_empty(self) -> None:
         df = DataFrame()
-        with raises(EmptyDataFrameError):
+        with raises(SetFirstRowAsColumnsError):
             _ = set_first_row_as_columns(df)
 
     def test_one_row(self) -> None:

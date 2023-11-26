@@ -17,14 +17,20 @@ from hypothesis.strategies import (
     sampled_from,
     times,
 )
-from luigi import BoolParameter, Task
+from luigi import BoolParameter, Parameter, Task
 from luigi.notifications import smtp
-from luigi.task import Parameter
 from pytest import mark, param
+from semver import VersionInfo
 from typing_extensions import override
 
 from utilities.datetime import serialize_date, serialize_datetime, serialize_time
-from utilities.hypothesis import datetimes_utc, namespace_mixins, temp_paths, text_ascii
+from utilities.hypothesis import (
+    datetimes_utc,
+    namespace_mixins,
+    temp_paths,
+    text_ascii,
+    versions,
+)
 from utilities.luigi import (
     AwaitTask,
     AwaitTime,
@@ -38,14 +44,15 @@ from utilities.luigi import (
     FrozenSetStrsParameter,
     PathTarget,
     TimeParameter,
+    VersionParameter,
     WeekdayParameter,
+    _yield_task_classes,
     build,
     clone,
     get_dependencies_downstream,
     get_dependencies_upstream,
     get_task_classes,
 )
-from utilities.luigi.luigi import _yield_task_classes
 from utilities.typing import IterableStrs
 
 
@@ -279,6 +286,14 @@ class TestTimeParameter:
         input_ = data.draw(sampled_from([time, serialize_time(time)]))
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == time
+
+
+class TestVersionParameter:
+    @given(version=versions())
+    def test_main(self, version: VersionInfo) -> None:
+        param = VersionParameter()
+        norm = param.normalize(version)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestWeekdayParameter:

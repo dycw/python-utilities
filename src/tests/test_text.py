@@ -5,8 +5,8 @@ from pytest import mark, param, raises
 
 from utilities.hypothesis import text_ascii
 from utilities.text import (
-    NotAStringError,
-    SnakeCaseContainsDuplicatesError,
+    EnsureStrError,
+    SnakeCaseMappingsError,
     ensure_str,
     snake_case,
     snake_case_mappings,
@@ -19,7 +19,7 @@ class TestEnsureStr:
         assert isinstance(ensure_str(""), str)
 
     def test_not_str(self) -> None:
-        with raises(NotAStringError):
+        with raises(EnsureStrError):
             _ = ensure_str(None)
 
 
@@ -72,7 +72,7 @@ class TestSnakeCaseMappings:
 
     @given(text=text_ascii(min_size=1))
     def test_error(self, *, text: str) -> None:
-        with raises(SnakeCaseContainsDuplicatesError):
+        with raises(SnakeCaseMappingsError):
             _ = snake_case_mappings([text.lower(), text.upper()])
 
 

@@ -22,7 +22,7 @@ class TestGetTotal:
         ],
     )
     def test_main(
-        self, total: float | None, iterable: Any, expected: float | None
+        self, *, total: float | None, iterable: Any, expected: float | None
     ) -> None:
         assert _get_total(total, iterable) == expected
 
@@ -36,10 +36,10 @@ class TestGetTotal:
 
 
 class TestTqdm:
-    def test_disable_tqdm(self, capsys: Any) -> None:
+    def test_disable_tqdm(self, *, capsys: Any) -> None:
         _ = list(tqdm(range(10)))
         assert not capsys.readouterr().err
 
-    def test_disable_native(self, capsys: Any) -> None:
+    def test_disable_native(self, *, capsys: Any) -> None:
         _ = list(_tqdm(range(10)))
         assert capsys.readouterr().err

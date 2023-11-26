@@ -13,8 +13,7 @@ from utilities.git import (
     get_repo_root,
     get_repo_root_or_cwd_sub_path,
 )
-from utilities.hypothesis import git_repos, text_ascii
-from utilities.hypothesis.hypothesis import temp_paths
+from utilities.hypothesis import git_repos, temp_paths, text_ascii
 
 
 class TestGetBranchName:
