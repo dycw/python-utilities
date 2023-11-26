@@ -453,6 +453,9 @@ def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
 
 
 __all__ = [
+    "SolveError",
+    "SolveInfeasibleError",
+    "SolveUnboundedError",
     "abs_",
     "add",
     "divide",
@@ -463,9 +466,6 @@ __all__ = [
     "power",
     "quad_form",
     "solve",
-    "SolveError",
-    "SolveInfeasibleError",
-    "SolveUnboundedError",
     "sqrt",
     "subtract",
     "sum_",

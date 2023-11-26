@@ -29,4 +29,4 @@ class GetFernetError(Exception):
     ...
 
 
-__all__ = ["decrypt", "encrypt", "get_fernet", "GetFernetError"]
+__all__ = ["GetFernetError", "decrypt", "encrypt", "get_fernet"]

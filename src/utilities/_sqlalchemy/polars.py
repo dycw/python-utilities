@@ -232,9 +232,9 @@ def _stream_dataframes(
 
 
 __all__ = [
-    "insert_polars_dataframe",
     "InsertPolarsDataFrameError",
+    "TableColumnToExprError",
+    "insert_polars_dataframe",
     "select_to_polars_dataframe",
     "table_column_to_expr",
-    "TableColumnToExprError",
 ]

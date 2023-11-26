@@ -33,4 +33,4 @@ def memory_profiled(func: Callable[_P, _T], /) -> Callable[_P, Output[_T]]:
     return wrapped
 
 
-__all__ = ["memory_profiled", "Output"]
+__all__ = ["Output", "memory_profiled"]

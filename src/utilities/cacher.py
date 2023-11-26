@@ -108,4 +108,4 @@ def _maybe_clean(root: Path, /, max_size: int | None = None) -> None:
         path.unlink(missing_ok=True)
 
 
-__all__ = ["cache_to_disk", "CacheToDiskError"]
+__all__ = ["CacheToDiskError", "cache_to_disk"]

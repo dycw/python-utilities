@@ -49,4 +49,4 @@ class PlotCurveError(Exception):
     ...
 
 
-__all__ = ["plot_curve", "PlotCurveError"]
+__all__ = ["PlotCurveError", "plot_curve"]

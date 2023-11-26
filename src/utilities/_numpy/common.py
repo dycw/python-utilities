@@ -42,6 +42,6 @@ __all__ = [
     "NDArrayF",
     "NDArrayI",
     "NDArrayO",
-    "shift",
     "ShiftError",
+    "shift",
 ]

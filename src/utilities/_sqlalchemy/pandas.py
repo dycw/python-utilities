@@ -231,11 +231,11 @@ class StreamDataFramesError(Exception):
 
 
 __all__ = [
-    "insert_pandas_dataframe",
     "InsertPandasDataFrameError",
+    "StreamDataFramesError",
+    "TableColumnToDTypeError",
+    "insert_pandas_dataframe",
     "select_to_pandas_dataframe",
     "stream_dataframes",
-    "StreamDataFramesError",
     "table_column_to_dtype",
-    "TableColumnToDTypeError",
 ]

@@ -42,4 +42,4 @@ def yield_tables(tag: Tag, /) -> Iterator[DataFrame]:
     return map(table_tag_to_dataframe, tag.find_all("table"))
 
 
-__all__ = ["table_tag_to_dataframe", "TableTagToDataFrameError", "yield_tables"]
+__all__ = ["TableTagToDataFrameError", "table_tag_to_dataframe", "yield_tables"]

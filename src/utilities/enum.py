@@ -56,4 +56,4 @@ class ParseEnumError(Exception):
     ...
 
 
-__all__ = ["ensure_enum", "parse_enum", "ParseEnumError", "StrEnum"]
+__all__ = ["ParseEnumError", "StrEnum", "ensure_enum", "parse_enum"]

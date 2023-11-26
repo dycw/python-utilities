@@ -11,6 +11,7 @@ from pytest import mark, param
 
 from tests.modules import package_with, package_without, standalone
 from utilities.class_name import get_class_name
+from utilities.iterables import check_duplicates
 from utilities.modules import (
     yield_module_contents,
     yield_module_subclasses,
@@ -32,6 +33,41 @@ class TestYieldModules:
     )
     def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
+
+    def test_all(self) -> None:
+        import utilities
+        import utilities.click
+        import utilities.dataclasses
+        import utilities.holoviews
+        import utilities.hypothesis
+        import utilities.luigi
+        import utilities.numpy
+        import utilities.polars
+
+        exceptions = {
+            utilities.click,
+            utilities.dataclasses,
+            utilities.holoviews,
+            utilities.hypothesis,
+            utilities.luigi,
+            utilities.numpy,
+            utilities.polars,
+        }
+
+        for module in yield_modules(utilities, recursive=True):
+            try:
+                all_ = module.__all__
+            except AttributeError:  # noqa: PERF203
+                pass
+            else:
+                check_duplicates(all_)
+                if module not in exceptions:
+                    expected = sorted(all_)
+                    msg = (
+                        f"Please paste in\n\t{module.__name__}\nthe following:\n\n\n"
+                        f"\t__all__ = {expected}\n\n"
+                    )
+                    assert all_ == expected, msg
 
 
 class TestYieldModuleContents:

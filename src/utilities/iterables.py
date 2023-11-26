@@ -38,8 +38,8 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
 
 
 __all__ = [
-    "check_duplicates",
     "CheckDuplicatesError",
+    "check_duplicates",
     "ensure_hashables",
     "is_iterable_not_str",
 ]

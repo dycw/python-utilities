@@ -46,4 +46,4 @@ class WriterError(Exception):
     ...
 
 
-__all__ = ["writer", "WriterError"]
+__all__ = ["WriterError", "writer"]

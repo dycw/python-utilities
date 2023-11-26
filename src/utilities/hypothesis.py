@@ -269,6 +269,8 @@ def versions(  # noqa: PLR0912
 
 
 __all__ = [
+    "MaybeSearchStrategy",
+    "Shape",
     "assume_does_not_raise",
     "datetimes_utc",
     "draw_text",
@@ -277,9 +279,7 @@ __all__ = [
     "hashables",
     "lift_draw",
     "lists_fixed_length",
-    "MaybeSearchStrategy",
     "setup_hypothesis_profiles",
-    "Shape",
     "slices",
     "temp_dirs",
     "temp_paths",

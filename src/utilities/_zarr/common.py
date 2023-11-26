@@ -289,6 +289,6 @@ __all__ = [
     "GetSelIndexerError",
     "IselIndexer",
     "NDArrayWithIndexes",
-    "yield_group_and_array",
     "yield_array_with_indexes",
+    "yield_group_and_array",
 ]

@@ -307,8 +307,6 @@ def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Tas
 __all__ = [
     "AwaitTask",
     "AwaitTime",
-    "build",
-    "clone",
     "DateHourParameter",
     "DateMinuteParameter",
     "DateParameter",
@@ -317,13 +315,15 @@ __all__ = [
     "ExternalFile",
     "ExternalTask",
     "FrozenSetStrsParameter",
-    "get_dependencies_downstream",
-    "get_dependencies_upstream",
-    "get_task_classes",
     "PathTarget",
     "TimeParameter",
     "VersionParameter",
     "WeekdayParameter",
+    "build",
+    "clone",
+    "get_dependencies_downstream",
+    "get_dependencies_upstream",
+    "get_task_classes",
 ]
 
 
@@ -356,14 +356,14 @@ except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
     __all__ += [
+        "AnnotationAndKeywordsToDictError",
+        "AnnotationIterableToClassError",
+        "AnnotationToClassError",
         "annotation_date_to_class",
         "annotation_and_keywords_to_dict",
         "annotation_datetime_to_class",
         "annotation_iterable_to_class",
         "annotation_to_class",
         "annotation_union_to_class",
-        "AnnotationAndKeywordsToDictError",
-        "AnnotationIterableToClassError",
-        "AnnotationToClassError",
         "build_params_mixin",
     ]
