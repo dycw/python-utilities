@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
+from inspect import getsource
 from operator import le, lt
 from re import search
 from types import ModuleType
@@ -9,7 +10,9 @@ from typing import Any
 
 from pytest import mark, param
 
+import utilities
 from tests.modules import package_with, package_without, standalone
+from utilities.ast import yield_dunder_all
 from utilities.class_name import get_class_name
 from utilities.iterables import check_duplicates
 from utilities.modules import (
@@ -35,39 +38,16 @@ class TestYieldModules:
         assert len(list(yield_modules(module, recursive=recursive))) == expected
 
     def test_all(self) -> None:
-        import utilities
-        import utilities.click
-        import utilities.dataclasses
-        import utilities.holoviews
-        import utilities.hypothesis
-        import utilities.luigi
-        import utilities.numpy
-        import utilities.polars
-
-        exceptions = {
-            utilities.click,
-            utilities.dataclasses,
-            utilities.holoviews,
-            utilities.hypothesis,
-            utilities.luigi,
-            utilities.numpy,
-            utilities.polars,
-        }
-
         for module in yield_modules(utilities, recursive=True):
-            try:
-                all_ = module.__all__
-            except AttributeError:  # noqa: PERF203
-                pass
-            else:
-                check_duplicates(all_)
-                if module not in exceptions:
-                    expected = sorted(all_)
-                    msg = (
-                        f"Please paste in\n\t{module.__name__}\nthe following:\n\n\n"
-                        f"\t__all__ = {expected}\n\n"
-                    )
-                    assert all_ == expected, msg
+            source = getsource(module)
+            for dunder_all in yield_dunder_all(source):
+                check_duplicates(dunder_all)
+                expected = sorted(dunder_all)
+                msg = (
+                    f"Please paste in\n\t{module.__name__}\nthe following:\n\n\n"
+                    f"\t__all__ = {expected}\n\n"
+                )
+                assert dunder_all == expected, msg
 
 
 class TestYieldModuleContents:
