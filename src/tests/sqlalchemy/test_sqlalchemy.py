@@ -79,40 +79,40 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.sqlalchemy import (
-    CheckColumnCollectionsEqualError,
-    CheckColumnsEqualError,
-    CheckColumnTypesBooleanEqualError,
-    CheckColumnTypesDateTimeEqualError,
-    CheckColumnTypesEnumEqualError,
-    CheckColumnTypesEqualError,
-    CheckColumnTypesFloatEqualError,
-    CheckColumnTypesIntervalEqualError,
-    CheckColumnTypesLargeBinaryEqualError,
-    CheckColumnTypesNumericEqualError,
-    CheckColumnTypesStringEqualError,
-    CheckColumnTypesUuidEqualError,
     CheckEngineError,
-    CheckTableOrColumnNamesEqualError,
     ParseEngineError,
     TableAlreadyExistsError,
     TablenameMixin,
-    check_column_collections_equal,
-    check_column_types_boolean_equal,
-    check_column_types_datetime_equal,
-    check_column_types_enum_equal,
-    check_column_types_equal,
-    check_column_types_float_equal,
-    check_column_types_interval_equal,
-    check_column_types_large_binary_equal,
-    check_column_types_numeric_equal,
-    check_column_types_string_equal,
-    check_column_types_uuid_equal,
-    check_columns_equal,
+    _check_column_collections_equal,
+    _check_column_types_boolean_equal,
+    _check_column_types_datetime_equal,
+    _check_column_types_enum_equal,
+    _check_column_types_equal,
+    _check_column_types_float_equal,
+    _check_column_types_interval_equal,
+    _check_column_types_large_binary_equal,
+    _check_column_types_numeric_equal,
+    _check_column_types_string_equal,
+    _check_column_types_uuid_equal,
+    _check_columns_equal,
+    _check_table_or_column_names_equal,
+    _check_tables_equal,
+    _CheckColumnCollectionsEqualError,
+    _CheckColumnsEqualError,
+    _CheckColumnTypesBooleanEqualError,
+    _CheckColumnTypesDateTimeEqualError,
+    _CheckColumnTypesEnumEqualError,
+    _CheckColumnTypesEqualError,
+    _CheckColumnTypesFloatEqualError,
+    _CheckColumnTypesIntervalEqualError,
+    _CheckColumnTypesLargeBinaryEqualError,
+    _CheckColumnTypesNumericEqualError,
+    _CheckColumnTypesStringEqualError,
+    _CheckColumnTypesUuidEqualError,
+    _CheckTableOrColumnNamesEqualError,
     check_dataframe_schema_against_table,
     check_engine,
     check_table_against_reflection,
-    check_table_or_column_names_equal,
-    check_tables_equal,
     columnwise_max,
     columnwise_min,
     create_engine,
@@ -133,12 +133,12 @@ from utilities.sqlalchemy import (
 class TestCheckColumnCollectionsEqual:
     def test_main(self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
-        check_column_collections_equal(x.columns, x.columns)
+        _check_column_collections_equal(x.columns, x.columns)
 
     def test_snake(self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("y", MetaData(), Column("Id", Integer, primary_key=True))
-        check_column_collections_equal(x.columns, y.columns, snake=True)
+        _check_column_collections_equal(x.columns, y.columns, snake=True)
 
     def test_allow_permutations(self) -> None:
         x = Table(
@@ -153,7 +153,7 @@ class TestCheckColumnCollectionsEqual:
             Column("id2", Integer, primary_key=True),
             Column("id1", Integer, primary_key=True),
         )
-        check_column_collections_equal(x.columns, y.columns, allow_permutations=True)
+        _check_column_collections_equal(x.columns, y.columns, allow_permutations=True)
 
     def test_snake_and_allow_permutations(self) -> None:
         x = Table(
@@ -168,7 +168,7 @@ class TestCheckColumnCollectionsEqual:
             Column("Id2", Integer, primary_key=True),
             Column("Id1", Integer, primary_key=True),
         )
-        check_column_collections_equal(
+        _check_column_collections_equal(
             x.columns, y.columns, snake=True, allow_permutations=True
         )
 
@@ -191,24 +191,24 @@ class TestCheckColumnCollectionsEqual:
         ],
     )
     def test_errors(self, *, x: Table, y: Table) -> None:
-        with raises(CheckColumnCollectionsEqualError):
-            check_column_collections_equal(x.columns, y.columns)
+        with raises(_CheckColumnCollectionsEqualError):
+            _check_column_collections_equal(x.columns, y.columns)
 
 
 class TestCheckColumnsEqual:
     def test_equal(self) -> None:
         x = Column("id", Integer)
-        check_columns_equal(x, x)
+        _check_columns_equal(x, x)
 
     def test_snake(self) -> None:
         x = Column("id", Integer)
         y = Column("Id", Integer)
-        check_columns_equal(x, y, snake=True)
+        _check_columns_equal(x, y, snake=True)
 
     def test_primary_key_off(self) -> None:
         x = Column("id", Integer, primary_key=True)
         y = Column("id", Integer, nullable=False)
-        check_columns_equal(x, y, primary_key=False)
+        _check_columns_equal(x, y, primary_key=False)
 
     @mark.parametrize(
         ("x", "y"),
@@ -218,8 +218,8 @@ class TestCheckColumnsEqual:
         ],
     )
     def test_errors(self, *, x: Any, y: Any) -> None:
-        with raises(CheckColumnsEqualError):
-            check_columns_equal(x, y)
+        with raises(_CheckColumnsEqualError):
+            _check_columns_equal(x, y)
 
 
 class TestCheckColumnTypesEqual:
@@ -274,13 +274,13 @@ class TestCheckColumnTypesEqual:
         ],
     )
     def test_equal_for_primaries(self, *, cls: type[Any]) -> None:
-        check_column_types_equal(cls(), cls())
+        _check_column_types_equal(cls(), cls())
 
     def test_equal_for_primaries_enum(self) -> None:
         class Example(enum.Enum):
             member = auto()
 
-        check_column_types_equal(sqlalchemy.Enum(Example), sqlalchemy.Enum(Example))
+        _check_column_types_equal(sqlalchemy.Enum(Example), sqlalchemy.Enum(Example))
 
     @given(data=data())
     def test_equal_across_groups(self, *, data: DataObject) -> None:
@@ -288,7 +288,7 @@ class TestCheckColumnTypesEqual:
         cls = data.draw(sampled_from(group))
         elements = sampled_from([cls, cls()])
         x, y = data.draw(lists_fixed_length(elements, 2))
-        check_column_types_equal(x, y)
+        _check_column_types_equal(x, y)
 
     @given(data=data())
     def test_unequal(self, *, data: DataObject) -> None:
@@ -298,8 +298,8 @@ class TestCheckColumnTypesEqual:
         group_i, group_j = groups[i], groups[j]
         cls_x, cls_y = (data.draw(sampled_from(g)) for g in [group_i, group_j])
         x, y = (data.draw(sampled_from([c, c()])) for c in [cls_x, cls_y])
-        with raises(CheckColumnTypesEqualError):
-            check_column_types_equal(x, y)
+        with raises(_CheckColumnTypesEqualError):
+            _check_column_types_equal(x, y)
 
 
 class TestCheckColumnTypesBooleanEqual:
@@ -310,20 +310,20 @@ class TestCheckColumnTypesBooleanEqual:
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (Boolean(create_constraint=cs) for cs in create_constraints)
         if create_constraint_x is create_constraint_y:
-            check_column_types_boolean_equal(x, y)
+            _check_column_types_boolean_equal(x, y)
         else:
-            with raises(CheckColumnTypesBooleanEqualError):
-                check_column_types_boolean_equal(x, y)
+            with raises(_CheckColumnTypesBooleanEqualError):
+                _check_column_types_boolean_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
     def test_name(self, *, names: typing.Sequence[str | None]) -> None:
         name_x, name_y = names
         x, y = (Boolean(name=n) for n in names)
         if name_x == name_y:
-            check_column_types_boolean_equal(x, y)
+            _check_column_types_boolean_equal(x, y)
         else:
-            with raises(CheckColumnTypesBooleanEqualError):
-                check_column_types_boolean_equal(x, y)
+            with raises(_CheckColumnTypesBooleanEqualError):
+                _check_column_types_boolean_equal(x, y)
 
 
 class TestCheckColumnTypesDateTimeEqual:
@@ -332,16 +332,16 @@ class TestCheckColumnTypesDateTimeEqual:
         timezone_x, timezone_y = timezones
         x, y = (DateTime(timezone=tz) for tz in timezones)
         if timezone_x is timezone_y:
-            check_column_types_datetime_equal(x, y)
+            _check_column_types_datetime_equal(x, y)
         else:
-            with raises(CheckColumnTypesDateTimeEqualError):
-                check_column_types_datetime_equal(x, y)
+            with raises(_CheckColumnTypesDateTimeEqualError):
+                _check_column_types_datetime_equal(x, y)
 
 
 class TestCheckColumnTypesEnumEqual:
     def test_no_enum_classes(self) -> None:
         x = sqlalchemy.Enum()
-        check_column_types_enum_equal(x, x)
+        _check_column_types_enum_equal(x, x)
 
     @given(data=data())
     def test_one_enum_class(self, *, data: DataObject) -> None:
@@ -351,8 +351,8 @@ class TestCheckColumnTypesEnumEqual:
         x = sqlalchemy.Enum(Example)
         y = sqlalchemy.Enum()
         x, y = data.draw(permutations([x, y]))
-        with raises(CheckColumnTypesEnumEqualError):
-            check_column_types_enum_equal(x, y)
+        with raises(_CheckColumnTypesEnumEqualError):
+            _check_column_types_enum_equal(x, y)
 
     def test_two_enum_classes(self) -> None:
         class EnumX(enum.Enum):
@@ -362,8 +362,8 @@ class TestCheckColumnTypesEnumEqual:
             member = auto()
 
         x, y = (sqlalchemy.Enum(e) for e in [EnumX, EnumY])
-        with raises(CheckColumnTypesEnumEqualError):
-            check_column_types_enum_equal(x, y)
+        with raises(_CheckColumnTypesEnumEqualError):
+            _check_column_types_enum_equal(x, y)
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_create_constraint(
@@ -377,10 +377,10 @@ class TestCheckColumnTypesEnumEqual:
             sqlalchemy.Enum(Example, create_constraint=cs) for cs in create_constraints
         )
         if create_constraint_x is create_constraint_y:
-            check_column_types_enum_equal(x, y)
+            _check_column_types_enum_equal(x, y)
         else:
-            with raises(CheckColumnTypesEnumEqualError):
-                check_column_types_enum_equal(x, y)
+            with raises(_CheckColumnTypesEnumEqualError):
+                _check_column_types_enum_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
     def test_native_enum(self, *, native_enums: typing.Sequence[bool]) -> None:
@@ -390,10 +390,10 @@ class TestCheckColumnTypesEnumEqual:
         native_enum_x, native_enum_y = native_enums
         x, y = (sqlalchemy.Enum(Example, native_enum=ne) for ne in native_enums)
         if native_enum_x is native_enum_y:
-            check_column_types_enum_equal(x, y)
+            _check_column_types_enum_equal(x, y)
         else:
-            with raises(CheckColumnTypesEnumEqualError):
-                check_column_types_enum_equal(x, y)
+            with raises(_CheckColumnTypesEnumEqualError):
+                _check_column_types_enum_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
     def test_length(self, *, lengths: typing.Sequence[int]) -> None:
@@ -403,10 +403,10 @@ class TestCheckColumnTypesEnumEqual:
         length_x, length_y = lengths
         x, y = (sqlalchemy.Enum(Example, length=l_) for l_ in lengths)
         if length_x == length_y:
-            check_column_types_enum_equal(x, y)
+            _check_column_types_enum_equal(x, y)
         else:
-            with raises(CheckColumnTypesEnumEqualError):
-                check_column_types_enum_equal(x, y)
+            with raises(_CheckColumnTypesEnumEqualError):
+                _check_column_types_enum_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
     def test_inherit_schema(self, *, inherit_schemas: typing.Sequence[bool]) -> None:
@@ -416,10 +416,10 @@ class TestCheckColumnTypesEnumEqual:
         inherit_schema_x, inherit_schema_y = inherit_schemas
         x, y = (sqlalchemy.Enum(Example, inherit_schema=is_) for is_ in inherit_schemas)
         if inherit_schema_x is inherit_schema_y:
-            check_column_types_enum_equal(x, y)
+            _check_column_types_enum_equal(x, y)
         else:
-            with raises(CheckColumnTypesEnumEqualError):
-                check_column_types_enum_equal(x, y)
+            with raises(_CheckColumnTypesEnumEqualError):
+                _check_column_types_enum_equal(x, y)
 
 
 class TestCheckColumnTypesFloatEqual:
@@ -428,20 +428,20 @@ class TestCheckColumnTypesFloatEqual:
         precision_x, precision_y = precisions
         x, y = (Float(precision=p) for p in precisions)
         if precision_x == precision_y:
-            check_column_types_float_equal(x, y)
+            _check_column_types_float_equal(x, y)
         else:
-            with raises(CheckColumnTypesFloatEqualError):
-                check_column_types_float_equal(x, y)
+            with raises(_CheckColumnTypesFloatEqualError):
+                _check_column_types_float_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
     def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Float(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
-            check_column_types_float_equal(x, y)
+            _check_column_types_float_equal(x, y)
         else:
-            with raises(CheckColumnTypesFloatEqualError):
-                check_column_types_float_equal(x, y)
+            with raises(_CheckColumnTypesFloatEqualError):
+                _check_column_types_float_equal(x, y)
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
@@ -450,10 +450,10 @@ class TestCheckColumnTypesFloatEqual:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Float(decimal_return_scale=drs) for drs in dec_ret_scales)
         if dec_ret_scale_x == dec_ret_scale_y:
-            check_column_types_float_equal(x, y)
+            _check_column_types_float_equal(x, y)
         else:
-            with raises(CheckColumnTypesFloatEqualError):
-                check_column_types_float_equal(x, y)
+            with raises(_CheckColumnTypesFloatEqualError):
+                _check_column_types_float_equal(x, y)
 
 
 class TestCheckColumnTypesIntervalEqual:
@@ -462,10 +462,10 @@ class TestCheckColumnTypesIntervalEqual:
         native_x, native_y = natives
         x, y = (Interval(native=n) for n in natives)
         if native_x is native_y:
-            check_column_types_interval_equal(x, y)
+            _check_column_types_interval_equal(x, y)
         else:
-            with raises(CheckColumnTypesIntervalEqualError):
-                check_column_types_interval_equal(x, y)
+            with raises(_CheckColumnTypesIntervalEqualError):
+                _check_column_types_interval_equal(x, y)
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_second_precision(
@@ -474,10 +474,10 @@ class TestCheckColumnTypesIntervalEqual:
         second_precision_x, second_precision_y = second_precisions
         x, y = (Interval(second_precision=sp) for sp in second_precisions)
         if second_precision_x == second_precision_y:
-            check_column_types_interval_equal(x, y)
+            _check_column_types_interval_equal(x, y)
         else:
-            with raises(CheckColumnTypesIntervalEqualError):
-                check_column_types_interval_equal(x, y)
+            with raises(_CheckColumnTypesIntervalEqualError):
+                _check_column_types_interval_equal(x, y)
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_day_precision(
@@ -486,10 +486,10 @@ class TestCheckColumnTypesIntervalEqual:
         day_precision_x, day_precision_y = day_precisions
         x, y = (Interval(day_precision=dp) for dp in day_precisions)
         if day_precision_x == day_precision_y:
-            check_column_types_interval_equal(x, y)
+            _check_column_types_interval_equal(x, y)
         else:
-            with raises(CheckColumnTypesIntervalEqualError):
-                check_column_types_interval_equal(x, y)
+            with raises(_CheckColumnTypesIntervalEqualError):
+                _check_column_types_interval_equal(x, y)
 
 
 class TestCheckColumnTypesLargeBinaryEqual:
@@ -498,10 +498,10 @@ class TestCheckColumnTypesLargeBinaryEqual:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
-            check_column_types_large_binary_equal(x, y)
+            _check_column_types_large_binary_equal(x, y)
         else:
-            with raises(CheckColumnTypesLargeBinaryEqualError):
-                check_column_types_large_binary_equal(x, y)
+            with raises(_CheckColumnTypesLargeBinaryEqualError):
+                _check_column_types_large_binary_equal(x, y)
 
 
 class TestCheckColumnTypesNumericEqual:
@@ -510,30 +510,30 @@ class TestCheckColumnTypesNumericEqual:
         precision_x, precision_y = precisions
         x, y = (Numeric(precision=p) for p in precisions)
         if precision_x == precision_y:
-            check_column_types_numeric_equal(x, y)
+            _check_column_types_numeric_equal(x, y)
         else:
-            with raises(CheckColumnTypesNumericEqualError):
-                check_column_types_numeric_equal(x, y)
+            with raises(_CheckColumnTypesNumericEqualError):
+                _check_column_types_numeric_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
     def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Numeric(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
-            check_column_types_numeric_equal(x, y)
+            _check_column_types_numeric_equal(x, y)
         else:
-            with raises(CheckColumnTypesNumericEqualError):
-                check_column_types_numeric_equal(x, y)
+            with raises(_CheckColumnTypesNumericEqualError):
+                _check_column_types_numeric_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_numeric_scale(self, *, scales: typing.Sequence[int | None]) -> None:
         scale_x, scale_y = scales
         x, y = (Numeric(scale=s) for s in scales)
         if scale_x == scale_y:
-            check_column_types_numeric_equal(x, y)
+            _check_column_types_numeric_equal(x, y)
         else:
-            with raises(CheckColumnTypesNumericEqualError):
-                check_column_types_numeric_equal(x, y)
+            with raises(_CheckColumnTypesNumericEqualError):
+                _check_column_types_numeric_equal(x, y)
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
@@ -542,10 +542,10 @@ class TestCheckColumnTypesNumericEqual:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Numeric(decimal_return_scale=drs) for drs in dec_ret_scales)
         if dec_ret_scale_x == dec_ret_scale_y:
-            check_column_types_numeric_equal(x, y)
+            _check_column_types_numeric_equal(x, y)
         else:
-            with raises(CheckColumnTypesNumericEqualError):
-                check_column_types_numeric_equal(x, y)
+            with raises(_CheckColumnTypesNumericEqualError):
+                _check_column_types_numeric_equal(x, y)
 
 
 class TestCheckColumnTypesStringEqual:
@@ -562,20 +562,20 @@ class TestCheckColumnTypesStringEqual:
         length_x, length_y = lengths
         x, y = (cls(length=l_) for l_ in lengths)
         if length_x == length_y:
-            check_column_types_string_equal(x, y)
+            _check_column_types_string_equal(x, y)
         else:
-            with raises(CheckColumnTypesStringEqualError):
-                check_column_types_string_equal(x, y)
+            with raises(_CheckColumnTypesStringEqualError):
+                _check_column_types_string_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
     def test_collation(self, *, collations: typing.Sequence[str | None]) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
-            check_column_types_string_equal(x, y)
+            _check_column_types_string_equal(x, y)
         else:
-            with raises(CheckColumnTypesStringEqualError):
-                check_column_types_string_equal(x, y)
+            with raises(_CheckColumnTypesStringEqualError):
+                _check_column_types_string_equal(x, y)
 
 
 class TestCheckColumnTypesUuidEqual:
@@ -584,20 +584,20 @@ class TestCheckColumnTypesUuidEqual:
         as_uuid_x, as_uuid_y = as_uuids
         x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
         if as_uuid_x is as_uuid_y:
-            check_column_types_uuid_equal(x, y)
+            _check_column_types_uuid_equal(x, y)
         else:
-            with raises(CheckColumnTypesUuidEqualError):
-                check_column_types_uuid_equal(x, y)
+            with raises(_CheckColumnTypesUuidEqualError):
+                _check_column_types_uuid_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
     def test_native_uuid(self, *, native_uuids: typing.Sequence[bool]) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
-            check_column_types_uuid_equal(x, y)
+            _check_column_types_uuid_equal(x, y)
         else:
-            with raises(CheckColumnTypesUuidEqualError):
-                check_column_types_uuid_equal(x, y)
+            with raises(_CheckColumnTypesUuidEqualError):
+                _check_column_types_uuid_equal(x, y)
 
 
 class TestCheckDataFrameSchemaAgainstTable:
@@ -715,17 +715,17 @@ class TestCheckTableAgainstReflection:
 class TestCheckTablesEqual:
     def test_main(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        check_tables_equal(table, table)
+        _check_tables_equal(table, table)
 
     def test_snake_table(self) -> None:
         x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("Example", MetaData(), Column("id", Integer, primary_key=True))
-        check_tables_equal(x, y, snake_table=True)
+        _check_tables_equal(x, y, snake_table=True)
 
     def test_snake_columns(self) -> None:
         x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        check_tables_equal(x, y, snake_columns=True)
+        _check_tables_equal(x, y, snake_columns=True)
 
     def test_mapped_class(self) -> None:
         class Example(declarative_base()):
@@ -733,7 +733,7 @@ class TestCheckTablesEqual:
 
             Id = Column(Integer, primary_key=True)
 
-        check_tables_equal(Example, Example)
+        _check_tables_equal(Example, Example)
 
 
 class TestCheckTableOrColumnNamesEqual:
@@ -750,10 +750,10 @@ class TestCheckTableOrColumnNamesEqual:
     )
     def test_main(self, *, x: str, y: str, snake: bool, success: bool) -> None:
         if success:
-            check_table_or_column_names_equal(x, y, snake=snake)
+            _check_table_or_column_names_equal(x, y, snake=snake)
         else:
-            with raises(CheckTableOrColumnNamesEqualError):
-                check_table_or_column_names_equal(x, y, snake=snake)
+            with raises(_CheckTableOrColumnNamesEqualError):
+                _check_table_or_column_names_equal(x, y, snake=snake)
 
     @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
     def test_quoted_name(self, *, name: str | None, expected: str) -> None:
@@ -769,7 +769,7 @@ class TestCheckTableOrColumnNamesEqual:
                 **(cast(Kwargs, {} if name is None else {"name": name})),
             )
 
-        check_table_or_column_names_equal(Example.Id.name, expected)
+        _check_table_or_column_names_equal(Example.Id.name, expected)
 
 
 class TestColumnwiseMinMax:
@@ -1002,7 +1002,7 @@ class TestReflectTable:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
         ensure_tables_created(engine, table)
         reflected = reflect_table(table, engine)
-        check_tables_equal(reflected, table)
+        _check_tables_equal(reflected, table)
 
     @given(engine=sqlite_engines())
     def test_error(self, *, engine: Engine) -> None:

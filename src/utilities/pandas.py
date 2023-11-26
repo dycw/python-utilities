@@ -71,7 +71,7 @@ def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
     return cast(Any, df).astype(dtype)
 
 
-def check_dataframe(
+def check_pandas_dataframe(
     df: DataFrame,
     /,
     *,
@@ -87,53 +87,55 @@ def check_dataframe(
     check_range_index(df.index)
     if df.columns.name is not None:
         msg = f"{df=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if df.columns.duplicated().any():
         msg = f"{df=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if (columns is not None) and (list(df.columns) != columns):
         msg = f"{df=}, {columns=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if (dtypes is not None) and (dict(df.dtypes) != dict(dtypes)):
         msg = f"{df=}, {dtypes=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if length is not None:
-        check_dataframe_length(df, length)
+        check_pandas_dataframe_length(df, length)
     if (min_length is not None) and (len(df) < min_length):
         msg = f"{df=}, {min_length=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if (max_length is not None) and (len(df) > max_length):
         msg = f"{df=}, {max_length=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
     if sorted is not None:
         df_sorted: DataFrame = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
         try:
             assert_frame_equal(df, df_sorted)
         except AssertionError:
             msg = f"{df=}, {sorted=}"
-            raise CheckDataFrameError(msg) from None
+            raise CheckPandasDataFrameError(msg) from None
     if (unique is not None) and df.duplicated(subset=unique).any():
         msg = f"{df=}, {unique=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPandasDataFrameError(msg)
 
 
-class CheckDataFrameError(Exception):
+class CheckPandasDataFrameError(Exception):
     ...
 
 
-def check_dataframe_length(df: DataFrame, length: int | tuple[int, float], /) -> None:
+def check_pandas_dataframe_length(
+    df: DataFrame, length: int | tuple[int, float], /
+) -> None:
     """Check the length of a DataFrame."""
     if isinstance(length, int) and (len(df) != length):
         msg = f"{df=}, {length=}"
-        raise CheckDataFrameLengthError(msg)
+        raise CheckPandasDataFrameLengthError(msg)
     if isinstance(length, tuple):
         length_int, rel_tol = length
         if not isclose(len(df), length_int, rel_tol=rel_tol):
             msg = f"{df=}, {length=}"
-            raise CheckDataFrameLengthError(msg)
+            raise CheckPandasDataFrameLengthError(msg)
 
 
-class CheckDataFrameLengthError(Exception):
+class CheckPandasDataFrameLengthError(Exception):
     ...
 
 
@@ -271,11 +273,11 @@ __all__ = [
     "astype",
     "boolean",
     "category",
-    "check_dataframe_length",
-    "check_dataframe",
+    "check_pandas_dataframe_length",
+    "check_pandas_dataframe",
     "check_range_index",
-    "CheckDataFrameError",
-    "CheckDataFrameLengthError",
+    "CheckPandasDataFrameError",
+    "CheckPandasDataFrameLengthError",
     "CheckRangeIndexError",
     "datetime64nshk",
     "datetime64nsutc",

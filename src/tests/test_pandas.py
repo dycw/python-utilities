@@ -29,8 +29,8 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
-    CheckDataFrameError,
-    CheckDataFrameLengthError,
+    CheckPandasDataFrameError,
+    CheckPandasDataFrameLengthError,
     CheckRangeIndexError,
     EmptyPandasConcatError,
     Int64,
@@ -38,8 +38,8 @@ from utilities.pandas import (
     TimestampToDateTimeError,
     astype,
     boolean,
-    check_dataframe,
-    check_dataframe_length,
+    check_pandas_dataframe,
+    check_pandas_dataframe_length,
     check_range_index,
     redirect_to_empty_pandas_concat_error,
     rename_index,
@@ -59,15 +59,15 @@ if TYPE_CHECKING:  # pragma: no cover
 class TestAsType:
     def test_main(self) -> None:
         df = DataFrame(0, index=RangeIndex(1), columns=["value"], dtype=int)
-        check_dataframe(df, dtypes={"value": int})
+        check_pandas_dataframe(df, dtypes={"value": int})
         result = astype(df, float)
-        check_dataframe(result, dtypes={"value": float})
+        check_pandas_dataframe(result, dtypes={"value": float})
 
 
-class TestCheckDataFrame:
+class TestCheckPandasDataFrame:
     def test_main(self) -> None:
         df = DataFrame(index=RangeIndex(0))
-        check_dataframe(df)
+        check_pandas_dataframe(df)
 
     @mark.parametrize(
         "df",
@@ -83,79 +83,79 @@ class TestCheckDataFrame:
         ],
     )
     def test_errors(self, *, df: DataFrame) -> None:
-        with raises(CheckDataFrameError):
-            check_dataframe(df)
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df)
 
     def test_columns_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_dataframe(df, columns=["value"])
+        check_pandas_dataframe(df, columns=["value"])
 
     def test_columns_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, columns=["other"])
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, columns=["other"])
 
     def test_dtypes_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_dataframe(df, dtypes={"value": float})
+        check_pandas_dataframe(df, dtypes={"value": float})
 
     def test_dtypes_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, dtypes={"value": int})
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, dtypes={"value": int})
 
     def test_length_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_dataframe(df, length=1)
+        check_pandas_dataframe(df, length=1)
 
     def test_min_length_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        check_dataframe(df, min_length=1)
+        check_pandas_dataframe(df, min_length=1)
 
     def test_min_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, min_length=1)
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, min_length=1)
 
     def test_max_length_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        check_dataframe(df, max_length=1)
+        check_pandas_dataframe(df, max_length=1)
 
     def test_max_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, max_length=1)
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, max_length=1)
 
     def test_sorted_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
-        check_dataframe(df, sorted="value")
+        check_pandas_dataframe(df, sorted="value")
 
     def test_sorted_error(self) -> None:
         df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, sorted="value")
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
-        check_dataframe(df, unique="value")
+        check_pandas_dataframe(df, unique="value")
 
     def test_unique_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(CheckDataFrameError):
-            check_dataframe(df, unique="value")
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, unique="value")
 
 
-class TestCheckDataFrameLength:
+class TestCheckPandasDataFrameLength:
     @mark.parametrize("length", [param(10), param((11, 0.1))])
     def test_main(self, *, length: int | tuple[int, float]) -> None:
         df = DataFrame(0.0, index=RangeIndex(10), columns=["value"])
-        check_dataframe_length(df, length)
+        check_pandas_dataframe_length(df, length)
 
     @mark.parametrize("length", [param(0), param((12, 0.1))])
     def test_error(self, *, length: int | tuple[int, float]) -> None:
         df = DataFrame(0.0, index=RangeIndex(10), columns=["value"])
-        with raises(CheckDataFrameLengthError):
-            check_dataframe_length(df, length)
+        with raises(CheckPandasDataFrameLengthError):
+            check_pandas_dataframe_length(df, length)
 
 
 class TestCheckRangeIndex:

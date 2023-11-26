@@ -12,24 +12,24 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
 
 from utilities._sqlalchemy.common import (
-    CheckSeriesAgainstTableColumnError,
-    CheckSeriesAgainstTableSchemaError,
     Dialect,
     GetTableError,
-    InsertItemsCollectError,
-    InsertItemsCollectIterableError,
+    _check_series_against_table_column,
+    _check_series_against_table_schema,
+    _CheckSeriesAgainstTableColumnError,
+    _CheckSeriesAgainstTableSchemaError,
+    _insert_items_collect,
+    _insert_items_collect_iterable,
+    _insert_items_collect_valid,
     _InsertionItem,
+    _InsertItemsCollectError,
+    _InsertItemsCollectIterableError,
     check_selectable_for_duplicate_columns,
-    check_series_against_table_column,
-    check_series_against_table_schema,
     get_column_names,
     get_columns,
     get_dialect,
     get_table,
     insert_items,
-    insert_items_collect,
-    insert_items_collect_iterable,
-    insert_items_collect_valid,
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
@@ -52,39 +52,39 @@ class TestCheckSelectableForDuplicates:
 class TestCheckSeriesAgainstAgainstTableColumn:
     def test_main(self) -> None:
         schema = {"a": int, "b": float, "c": str}
-        result = check_series_against_table_column("b", schema)
+        result = _check_series_against_table_column("b", schema)
         expected = ("b", float)
         assert result == expected
 
     @mark.parametrize("sr_name", [param("b"), param("B")])
     def test_snake(self, *, sr_name: str) -> None:
         schema = {"A": int, "B": float, "C": str}
-        result = check_series_against_table_column(sr_name, schema, snake=True)
+        result = _check_series_against_table_column(sr_name, schema, snake=True)
         expected = ("B", float)
         assert result == expected
 
     @mark.parametrize("snake", [param(True), param(False)])
     def test_error_empty(self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
-        with raises(CheckSeriesAgainstTableColumnError):
-            _ = check_series_against_table_column("value", schema, snake=snake)
+        with raises(_CheckSeriesAgainstTableColumnError):
+            _ = _check_series_against_table_column("value", schema, snake=snake)
 
     def test_error_non_unique(self) -> None:
         schema = {"a": int, "b": float, "B": float, "c": str}
-        with raises(CheckSeriesAgainstTableColumnError):
-            _ = check_series_against_table_column("b", schema, snake=True)
+        with raises(_CheckSeriesAgainstTableColumnError):
+            _ = _check_series_against_table_column("b", schema, snake=True)
 
 
 class TestCheckSeriesAgainstAgainstTableSchema:
     def test_success(self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
-        result = check_series_against_table_schema("b", float, table_schema, eq)
+        result = _check_series_against_table_schema("b", float, table_schema, eq)
         assert result == "b"
 
     def test_fail(self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
-        with raises(CheckSeriesAgainstTableSchemaError):
-            _ = check_series_against_table_schema("b", int, table_schema, eq)
+        with raises(_CheckSeriesAgainstTableSchemaError):
+            _ = _check_series_against_table_schema("b", int, table_schema, eq)
 
 
 class TestDialect:
@@ -247,42 +247,42 @@ class TestInsertItemsCollect:
     @given(id_=integers())
     def test_pair_with_tuple_data(self, *, id_: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect(((id_,), table)))
+        result = list(_insert_items_collect(((id_,), table)))
         expected = [_InsertionItem(values=(id_,), table=table)]
         assert result == expected
 
     @given(id_=integers())
     def test_pair_with_dict_data(self, *, id_: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect(({"id": id_}, table)))
+        result = list(_insert_items_collect(({"id": id_}, table)))
         expected = [_InsertionItem(values={"id": id_}, table=table)]
         assert result == expected
 
     @given(ids=sets(integers()))
     def test_pair_with_list_of_tuple_data(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect(([(id_,) for id_ in ids], table)))
+        result = list(_insert_items_collect(([(id_,) for id_ in ids], table)))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
     def test_pair_with_list_of_dict_data(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect(([{"id": id_} for id_ in ids], table)))
+        result = list(_insert_items_collect(([{"id": id_} for id_ in ids], table)))
         expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
     def test_list(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect([((id_,), table) for id_ in ids]))
+        result = list(_insert_items_collect([((id_,), table) for id_ in ids]))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
     def test_set(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect({((id_,), table) for id_ in ids}))
+        result = list(_insert_items_collect({((id_,), table) for id_ in ids}))
         assert {one(r.values) for r in result} == ids
 
     @given(id_=integers())
@@ -293,7 +293,7 @@ class TestInsertItemsCollect:
             id_ = Column(Integer, primary_key=True)
 
         item = Example(id_=id_)
-        result = list(insert_items_collect(item))
+        result = list(_insert_items_collect(item))
         expected = [_InsertionItem(values={"id_": id_}, table=get_table(Example))]
         assert result == expected
 
@@ -306,20 +306,20 @@ class TestInsertItemsCollect:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(InsertItemsCollectError):
-            _ = list(insert_items_collect(item))
+        with raises(_InsertItemsCollectError):
+            _ = list(_insert_items_collect(item))
 
     def test_error_tuple_but_first_argument_invalid(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(InsertItemsCollectError):
-            _ = list(insert_items_collect((None, table)))
+        with raises(_InsertItemsCollectError):
+            _ = list(_insert_items_collect((None, table)))
 
 
 class TestInsertItemsCollectIterable:
     @given(ids=sets(integers()))
     def test_list_of_tuples(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(insert_items_collect_iterable([(id_,) for id_ in ids], table))
+        result = list(_insert_items_collect_iterable([(id_,) for id_ in ids], table))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
@@ -327,15 +327,15 @@ class TestInsertItemsCollectIterable:
     def test_list_of_dicts(self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(
-            insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
+            _insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
         )
         expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
         assert result == expected
 
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(InsertItemsCollectIterableError):
-            _ = list(insert_items_collect_iterable([None], table))
+        with raises(_InsertItemsCollectIterableError):
+            _ = list(_insert_items_collect_iterable([None], table))
 
 
 class TestInsertItemsCollectValid:
@@ -349,7 +349,7 @@ class TestInsertItemsCollectValid:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = insert_items_collect_valid(obj)
+        result = _insert_items_collect_valid(obj)
         assert result is expected
 
 

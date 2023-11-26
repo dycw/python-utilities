@@ -13,7 +13,7 @@ from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDi
 from utilities.types import SequenceStrs
 
 
-def check_dataframe(
+def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
@@ -31,18 +31,18 @@ def check_dataframe(
     """Check the properties of a DataFrame."""
     if (columns is not None) and (df.columns != list(columns)):
         msg = f"{df=}, {columns=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if (dtypes is not None) and (df.dtypes != dtypes):
         msg = f"{df=}, {dtypes=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if height is not None:
-        check_dataframe_height(df, height)
+        check_polars_dataframe_height(df, height)
     if (min_height is not None) and (len(df) < min_height):
         msg = f"{df=}, {min_height=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if (max_height is not None) and (len(df) > max_height):
         msg = f"{df=}, {max_height=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if (schema is not None) and (df.schema != schema):
         set_act, set_exp = map(set, [df.schema, schema])
         extra = set_act - set_exp
@@ -53,42 +53,44 @@ def check_dataframe(
             if (left := df.schema[col]) != (right := schema[col])
         }
         msg = f"{df=}, {extra=}, {missing=}, {differ=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if (shape is not None) and (df.shape != shape):
         msg = f"{df=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if sorted is not None:
         df_sorted = df.sort(sorted)
         try:
             assert_frame_equal(df, df_sorted)
         except AssertionError:
             msg = f"{df=}, {sorted=}"
-            raise CheckDataFrameError(msg) from None
+            raise CheckPolarsDataFrameError(msg) from None
     if (unique is not None) and df.select(unique).is_duplicated().any():
         msg = f"{df=}, {unique=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
     if (width is not None) and (df.width != width):
         msg = f"{df=}"
-        raise CheckDataFrameError(msg)
+        raise CheckPolarsDataFrameError(msg)
 
 
-class CheckDataFrameError(Exception):
+class CheckPolarsDataFrameError(Exception):
     ...
 
 
-def check_dataframe_height(df: DataFrame, height: int | tuple[int, float], /) -> None:
+def check_polars_dataframe_height(
+    df: DataFrame, height: int | tuple[int, float], /
+) -> None:
     """Check the height of a DataFrame."""
     if isinstance(height, int) and (len(df) != height):
         msg = f"{df=}, {height=}"
-        raise CheckDataFrameHeightError(msg)
+        raise CheckPolarsDataFrameHeightError(msg)
     if isinstance(height, tuple):
         height_int, rel_tol = height
         if not isclose(len(df), height_int, rel_tol=rel_tol):
             msg = f"{df=}, {height=}"
-            raise CheckDataFrameHeightError(msg)
+            raise CheckPolarsDataFrameHeightError(msg)
 
 
-class CheckDataFrameHeightError(Exception):
+class CheckPolarsDataFrameHeightError(Exception):
     ...
 
 
@@ -122,10 +124,10 @@ class SetFirstRowAsColumnsError(Exception):
 
 
 __all__ = [
-    "check_dataframe_height",
-    "check_dataframe",
-    "CheckDataFrameError",
-    "CheckDataFrameHeightError",
+    "check_polars_dataframe_height",
+    "check_polars_dataframe",
+    "CheckPolarsDataFrameError",
+    "CheckPolarsDataFrameHeightError",
     "join",
     "set_first_row_as_columns",
     "SetFirstRowAsColumnsError",

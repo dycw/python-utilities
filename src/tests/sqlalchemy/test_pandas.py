@@ -49,7 +49,13 @@ from utilities._sqlalchemy.pandas import (
 from utilities.datetime import date_to_datetime
 from utilities.hypothesis import dates_pd, datetimes_pd, sqlite_engines, text_ascii
 from utilities.numpy import dt64ns
-from utilities.pandas import Int64, boolean, check_dataframe, datetime64nsutc, string
+from utilities.pandas import (
+    Int64,
+    boolean,
+    check_pandas_dataframe,
+    datetime64nsutc,
+    string,
+)
 from utilities.sqlalchemy import (
     ensure_tables_created,
     insert_items,
@@ -265,7 +271,7 @@ class TestSelectToPandasDataFrame:
         sel = select(table.c["value"])
         dfs = select_to_pandas_dataframe(sel, engine, stream=stream)
         for df in dfs:
-            check_dataframe(
+            check_pandas_dataframe(
                 df, dtypes={"value": boolean}, min_length=1, max_length=stream
             )
 
