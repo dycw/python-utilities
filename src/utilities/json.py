@@ -126,6 +126,16 @@ def _default(  # noqa: PLR0911, PLR0912
             msg = f"{type(obj)=}"
             raise JsonSerializationError(msg) from None
         return {_CLASS: key, _VALUE: func(obj)}
+    try:
+        from sqlalchemy import Engine
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(obj, Engine):
+            return {
+                _CLASS: "sqlalchemy.Engine",
+                _VALUE: obj.url.render_as_string(hide_password=False),
+            }
     msg = f"{type(obj)=}"
     raise JsonSerializationError(msg)
 
@@ -204,6 +214,11 @@ def _object_hook(  # noqa: PLR0911
         case "UUID":
             value = cast(str, value)
             return UUID(value)
+        case "sqlalchemy.Engine":
+            from sqlalchemy import create_engine
+
+            value = cast(str, value)
+            return create_engine(value)
         case _:
             if extra is not None:
                 try:

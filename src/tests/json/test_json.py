@@ -4,7 +4,7 @@ from collections.abc import Callable
 from decimal import Decimal
 from json import dumps
 from math import isnan
-from operator import neg
+from operator import eq, neg
 from typing import Any
 
 from hypothesis import given
@@ -52,10 +52,10 @@ from utilities.json import (
 from utilities.sentinel import sentinel
 
 
-class TestSerialize:
+class TestSerializeAndDeserialize:
     @given(data=data())
     @mark.parametrize(
-        "strategy",
+        "elements",
         [
             param(booleans()),
             param(characters()),
@@ -72,66 +72,42 @@ class TestSerialize:
             param(uuids()),
         ],
     )
-    def test_main(self, *, data: DataObject, strategy: SearchStrategy[Any]) -> None:
-        x = data.draw(strategy)
-        ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        y = data.draw(strategy)
-        res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
+    def test_main(self, *, data: DataObject, elements: SearchStrategy[Any]) -> None:
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y)
 
     @given(x=binary(), y=binary())
     def test_binary(self, *, x: bytes, y: bytes) -> None:
         with assume_does_not_raise(UnicodeDecodeError):
-            ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        with assume_does_not_raise(UnicodeDecodeError):
-            res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
+            _ = list(map(serialize, [x, y]))
+        self._assert_standard(x, y)
 
     @given(x=complex_numbers(), y=complex_numbers())
     def test_complex(self, *, x: complex, y: complex) -> None:
-        ser_x = serialize(x)
-
         def eq(x: complex, y: complex, /) -> bool:
             return ((x.real == y.real) or (isnan(x.real) and isnan(y.real))) and (
                 (x.imag == y.imag) or (isnan(x.imag) and isnan(y.imag))
             )
 
-        assert eq(deserialize(ser_x), x)
-        res = ser_x == serialize(y)
-        expected = eq(x, y)
-        assert res is expected
+        self._assert_standard(x, y, eq=eq)
 
     @given(x=decimals(), y=decimals())
     def test_decimal(self, *, x: Decimal, y: Decimal) -> None:
-        ser_x = serialize(x)
-
         def eq(x: Decimal, y: Decimal, /) -> bool:
             x_nan, y_nan = x.is_nan(), y.is_nan()
             if x_nan and y_nan:
                 return (x.is_qnan() == y.is_qnan()) and (x.is_signed() == y.is_signed())
             return (x_nan == y_nan) and (x == y)
 
-        assert eq(deserialize(ser_x), x)
-        res = ser_x == serialize(y)
-        expected = eq(x, y)
-        assert res is expected
+        self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 10))
     def test_dicts_sortable(self, *, data: DataObject, n: int) -> None:
         elements = dictionaries(
             integers(0, 2 * n), integers(0, 2 * n), min_size=n, max_size=n
         )
-        x = data.draw(elements)
-        ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        y = data.draw(elements)
-        res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y)
 
     @given(data=data(), n=integers(2, 10))
     def test_dicts_unsortable(self, *, data: DataObject, n: int) -> None:
@@ -142,31 +118,20 @@ class TestSerialize:
             max_size=n,
         )
         x, y = data.draw(tuples(elements, elements))
-        ser_x, ser_y = map(serialize, [x, y])
-        if ser_x == ser_y:
-            assert x == y
+        self._assert_unsortable_collection(x, y)
 
     @given(x=floats(), y=floats())
     def test_floats(self, *, x: float, y: float) -> None:
-        ser_x = serialize(x)
-
         def eq(x: float, y: float, /) -> bool:
             return (x == y) or (isnan(x) and isnan(y))
 
-        assert eq(deserialize(ser_x), x)
-        res = ser_x == serialize(y)
-        expected = eq(x, y)
-        assert res is expected
+        self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 3))
     def test_slices(self, *, data: DataObject, n: int) -> None:
-        x = data.draw(slices(n))
-        ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        y = data.draw(slices(n))
-        res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
+        elements = slices(n)
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 10))
     @mark.parametrize("strategy", [param(frozensets), param(sets)])
@@ -174,13 +139,8 @@ class TestSerialize:
         self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
     ) -> None:
         elements = strategy(integers(0, 2 * n), min_size=n, max_size=n)
-        x = data.draw(elements)
-        ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        y = data.draw(elements)
-        res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(2, 10))
     @mark.parametrize("strategy", [param(frozensets), param(sets)])
@@ -197,38 +157,13 @@ class TestSerialize:
             max_size=n,
         )
         x, y = data.draw(tuples(elements, elements))
-        ser_x, ser_y = map(serialize, [x, y])
-        if ser_x == ser_y:
-            assert x == y
+        self._assert_unsortable_collection(x, y)
 
     @given(data=data(), n=integers(0, 3))
     def test_tuples(self, *, data: DataObject, n: int) -> None:
         elements = tuples(*(n * [integers(0, 2 * n)]))
-        x = data.draw(elements)
-        ser_x = serialize(x)
-        assert deserialize(ser_x) == x
-        y = data.draw(elements)
-        res = ser_x == serialize(y)
-        expected = x == y
-        assert res is expected
-
-    @mark.parametrize(
-        "obj",
-        [param(NOW_HKG, id="invalid timezone"), param(sentinel, id="invalid object")],
-    )
-    def test_error(self, *, obj: Any) -> None:
-        with raises(JsonSerializationError):
-            _ = serialize(obj)
-
-    @given(obj=dictionaries(text_ascii(), integers()))
-    def test_deserializing_regular_dictionary(self, *, obj: dict[str, int]) -> None:
-        ser = dumps(obj)
-        assert deserialize(ser) == obj
-
-    def test_deserialization_error(self) -> None:
-        ser = dumps({_CLASS: "unknown", _VALUE: None})
-        with raises(JsonDeserializationError):
-            _ = deserialize(ser)
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, eq=eq)
 
     @given(m=integers(), n=integers())
     def test_extra(self, *, m: int, n: int) -> None:
@@ -258,7 +193,33 @@ class TestSerialize:
         expected = x == y
         assert res is expected
 
-    def test_serialization_extra_error(self) -> None:
+    @mark.parametrize(
+        "obj",
+        [param(NOW_HKG, id="invalid timezone"), param(sentinel, id="invalid object")],
+    )
+    def test_error(self, *, obj: Any) -> None:
+        with raises(JsonSerializationError):
+            _ = serialize(obj)
+
+    def _assert_standard(
+        self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
+    ) -> None:
+        ser_x = serialize(x)
+        assert eq(deserialize(ser_x), x)
+        res = ser_x == serialize(y)
+        expected = eq(x, y)
+        assert res is expected
+
+    def _assert_unsortable_collection(self, x: Any, y: Any, /) -> None:
+        ser_x = serialize(x)
+        assert deserialize(ser_x) == x
+        ser_y = serialize(y)
+        if ser_x == ser_y:
+            assert x == y
+
+
+class TestSerialize:
+    def test_error_despite_extra(self) -> None:
         class Example1:
             pass
 
@@ -271,8 +232,20 @@ class TestSerialize:
         with raises(JsonSerializationError):
             _ = serialize(x, extra=extra)
 
+
+class TestDeserialization:
+    @given(obj=dictionaries(text_ascii(), integers()))
+    def test_regular_dictionary(self, *, obj: dict[str, int]) -> None:
+        ser = dumps(obj)
+        assert deserialize(ser) == obj
+
+    def test_error_unknown_class(self) -> None:
+        ser = dumps({_CLASS: "unknown", _VALUE: None})
+        with raises(JsonDeserializationError):
+            _ = deserialize(ser)
+
     @given(n=integers())
-    def test_deserialization_extra_error(self, *, n: int) -> None:
+    def test_error_despite_extra(self, *, n: int) -> None:
         class Example:
             def __init__(self, n: int, /) -> None:
                 super().__init__()
