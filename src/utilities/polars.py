@@ -124,13 +124,13 @@ class SetFirstRowAsColumnsError(Exception):
 
 
 __all__ = [
-    "check_polars_dataframe_height",
-    "check_polars_dataframe",
     "CheckPolarsDataFrameError",
     "CheckPolarsDataFrameHeightError",
+    "SetFirstRowAsColumnsError",
+    "check_polars_dataframe_height",
+    "check_polars_dataframe",
     "join",
     "set_first_row_as_columns",
-    "SetFirstRowAsColumnsError",
 ]
 
 
@@ -143,4 +143,4 @@ try:
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
-    __all__ += ["table_tag_to_dataframe", "TableTagToDataFrameError", "yield_tables"]
+    __all__ += ["TableTagToDataFrameError", "table_tag_to_dataframe", "yield_tables"]

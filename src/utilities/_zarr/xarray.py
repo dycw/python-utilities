@@ -189,8 +189,8 @@ class DataArrayOnDisk(NDArrayWithIndexes):
 
 __all__ = [
     "DataArrayOnDisk",
+    "ToNDArray1Error",
     "save_data_array_to_disk",
     "to_ndarray1",
-    "ToNDArray1Error",
     "yield_data_array_on_disk",
 ]

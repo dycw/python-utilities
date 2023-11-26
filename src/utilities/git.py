@@ -96,9 +96,9 @@ def get_repo_root_or_cwd_sub_path(
 
 
 __all__ = [
+    "GetRepoRootError",
     "get_branch_name",
     "get_repo_name",
-    "get_repo_root_or_cwd_sub_path",
     "get_repo_root",
-    "GetRepoRootError",
+    "get_repo_root_or_cwd_sub_path",
 ]

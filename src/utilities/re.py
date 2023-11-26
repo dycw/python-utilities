@@ -45,4 +45,4 @@ class ExtractGroupsError(Exception):
     ...
 
 
-__all__ = ["extract_group", "extract_groups", "ExtractGroupError", "ExtractGroupsError"]
+__all__ = ["ExtractGroupError", "ExtractGroupsError", "extract_group", "extract_groups"]

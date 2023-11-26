@@ -176,12 +176,12 @@ def text_ascii(
 
 
 __all__ = [
+    "MaybeSearchStrategy",
+    "Shape",
     "draw_text",
     "floats_extra",
     "lift_draw",
     "lists_fixed_length",
-    "MaybeSearchStrategy",
-    "Shape",
     "temp_dirs",
     "temp_paths",
     "text_ascii",

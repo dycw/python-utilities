@@ -326,16 +326,16 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
 
 
 __all__ = [
+    "Dialect",
+    "GetDialectError",
+    "GetTableError",
+    "INSERT_ITEMS_CHUNK_SIZE_FRAC",
     "check_dataframe_schema_against_table",
     "check_selectable_for_duplicate_columns",
-    "Dialect",
     "get_column_names",
     "get_columns",
     "get_dialect",
     "get_table",
-    "GetDialectError",
-    "GetTableError",
-    "INSERT_ITEMS_CHUNK_SIZE_FRAC",
     "insert_items",
     "is_mapped_class",
     "is_table_or_mapped_class",

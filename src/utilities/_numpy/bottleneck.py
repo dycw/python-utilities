@@ -40,4 +40,4 @@ class PctChangeError(Exception):
     ...
 
 
-__all__ = ["ffill", "pct_change", "PctChangeError"]
+__all__ = ["PctChangeError", "ffill", "pct_change"]

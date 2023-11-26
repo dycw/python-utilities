@@ -61,8 +61,8 @@ def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
 
 __all__ = [
     "Dataclass",
-    "get_dataclass_class",
     "GetDataClassClassError",
+    "get_dataclass_class",
     "is_dataclass_class",
     "is_dataclass_instance",
     "replace_non_sentinel",

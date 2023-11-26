@@ -44,4 +44,4 @@ def temp_environ(
         apply(prev)
 
 
-__all__ = ["CPU_COUNT", "temp_environ", "get_cpu_count", "GetCPUCountError"]
+__all__ = ["CPU_COUNT", "GetCPUCountError", "get_cpu_count", "temp_environ"]

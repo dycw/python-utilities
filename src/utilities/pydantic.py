@@ -30,4 +30,4 @@ def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) 
         _ = fh.write(model.model_dump_json())
 
 
-__all__ = ["save_model", "load_model", "HashableBaseModel"]
+__all__ = ["HashableBaseModel", "load_model", "save_model"]

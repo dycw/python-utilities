@@ -73,7 +73,7 @@ class NextFromSequenceError(Exception):
 
 
 __all__ = [
-    "next_from_sequence",
     "NextFromSequenceError",
+    "next_from_sequence",
     "redirect_to_next_from_sequence_error",
 ]

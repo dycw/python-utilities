@@ -40,4 +40,4 @@ class OneNonUniqueError(OneError):
     ...
 
 
-__all__ = ["one", "OneError", "OneEmptyError", "OneNonUniqueError"]
+__all__ = ["OneEmptyError", "OneError", "OneNonUniqueError", "one"]
