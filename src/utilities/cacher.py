@@ -8,13 +8,12 @@ from operator import itemgetter
 from pathlib import Path
 from typing import ParamSpec, TypeVar
 
-from pathvalidate import sanitize_filepath
-
 from utilities.datetime import UTC, duration_to_timedelta, get_now
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.hashlib import md5_hash
 from utilities.iterables import ensure_hashables
 from utilities.pathlib import PathLike
+from utilities.pathvalidate import ensure_path
 from utilities.pickle import read_pickle, write_pickle
 from utilities.types import Duration
 
@@ -68,7 +67,7 @@ def _cache_to_disk(
         ba = sig.bind(*args, **kwargs)
         hash_args, hash_kwargs = ensure_hashables(*ba.args, **ba.kwargs)
         hash_pair = (tuple(hash_args), tuple(hash_kwargs.items()))
-        path = sanitize_filepath(full.joinpath(md5_hash(hash_pair)))
+        path = ensure_path(full.joinpath(md5_hash(hash_pair)), sanitize=True)
         if _needs_run(path, rerun=rerun, ttl=ttl_use):
             value = func(*args, **kwargs)
             write_pickle(value, path, overwrite=True)

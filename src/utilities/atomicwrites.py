@@ -6,24 +6,26 @@ from pathlib import Path
 from shutil import move, rmtree
 
 from atomicwrites import move_atomic, replace_atomic
-from pathvalidate import validate_filepath
 
 from utilities.errors import DirectoryExistsError
 from utilities.pathlib import PathLike
+from utilities.pathvalidate import ensure_path
 from utilities.tempfile import TemporaryDirectory
 
 
 @contextmanager
-def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
+def writer(
+    path: PathLike, /, *, sanitize: bool = False, overwrite: bool = False
+) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
-    path = Path(path)
-    validate_filepath(path, platform="auto")
+    path = ensure_path(path, sanitize=sanitize)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
+        temp_path = ensure_path(temp_dir.joinpath(name), sanitize=sanitize)
         try:
-            yield (temp_path := temp_dir.joinpath(name))
+            yield temp_path
         except KeyboardInterrupt:
             rmtree(temp_dir)
         else:

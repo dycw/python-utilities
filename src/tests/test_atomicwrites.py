@@ -3,11 +3,14 @@ from __future__ import annotations
 from contextlib import suppress
 from pathlib import Path
 from re import escape
+from string import printable
 
+from pathvalidate import ValidationError
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import WriterError, writer
 from utilities.errors import DirectoryExistsError
+from utilities.pathvalidate import ensure_path
 from utilities.platform import IS_WINDOWS
 
 
@@ -94,3 +97,14 @@ class TestWriter:
         path = tmp_path.joinpath("file.txt")
         with raises(WriterError), writer(path):
             pass
+
+    def test_long_path_error(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath(100 * printable)
+        with raises(ValidationError), writer(path) as temp:
+            temp.touch()
+
+    def test_long_path_sanitized(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath(100 * printable)
+        with writer(path, sanitize=True) as temp:
+            temp.touch()
+        assert ensure_path(path, sanitize=True).exists()
