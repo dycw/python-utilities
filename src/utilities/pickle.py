@@ -5,7 +5,7 @@ from pickle import dump, load
 from typing import Any
 
 from utilities.atomicwrites import writer
-from utilities.pathlib import PathLike
+from utilities.types import PathLike
 
 
 def read_pickle(path: PathLike, /) -> Any:

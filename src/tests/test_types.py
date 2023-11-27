@@ -8,11 +8,13 @@ from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
 from pytest import mark, param, raises
 
+from utilities.pathvalidate import valid_path_home
 from utilities.types import (
     Duration,
     EnsureHashableError,
     IterableStrs,
     Number,
+    PathLike,
     SequenceStrs,
     ensure_class,
     ensure_hashable,
@@ -109,6 +111,16 @@ class TestNumber:
     def test_error(self) -> None:
         with raises(BeartypeAbbyHintViolation):
             die_if_unbearable("0", Number)
+
+
+class TestPathLike:
+    @mark.parametrize("path", [param(valid_path_home()), param("~")])
+    def test_main(self, *, path: PathLike) -> None:
+        die_if_unbearable(path, PathLike)
+
+    def test_error(self) -> None:
+        with raises(BeartypeAbbyHintViolation):
+            die_if_unbearable(None, PathLike)
 
 
 class TestSequenceStrs:

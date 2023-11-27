@@ -6,6 +6,7 @@ from hypothesis.strategies import DrawFn, composite
 from sqlalchemy import Engine, MetaData
 
 from utilities._hypothesis.common import temp_paths
+from utilities.pathvalidate import valid_path
 from utilities.sqlalchemy import create_engine
 
 
@@ -15,7 +16,7 @@ def sqlite_engines(
 ) -> Engine:
     """Strategy for generating SQLite engines."""
     temp_path = _draw(temp_paths())
-    path = temp_path.joinpath("db.sqlite")
+    path = valid_path(temp_path, "db.sqlite")
     engine = create_engine("sqlite", database=str(path))
     if metadata is not None:
         metadata.create_all(engine)

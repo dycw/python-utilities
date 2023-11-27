@@ -4,14 +4,13 @@ from collections.abc import Callable, Iterable
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from pathlib import Path
 from smtplib import SMTP
 from typing import Any
 
 from utilities.errors import redirect_error
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.pytest import is_pytest
-from utilities.types import IterableStrs
+from utilities.types import IterableStrs, PathLike
 
 
 def send_email(
@@ -55,7 +54,7 @@ def send_email(
 
 def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
     """Add an attachment to an email."""
-    path = Path(path)
+    path = valid_path(path)
     name = path.name
     with path.open(mode="rb") as fh:
         part = MIMEApplication(fh.read(), Name=name)

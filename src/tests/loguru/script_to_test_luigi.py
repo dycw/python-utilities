@@ -17,6 +17,7 @@ from utilities.logging import LogLevel
 from utilities.loguru import setup_loguru
 from utilities.luigi import PathTarget, build
 from utilities.os import CPU_COUNT
+from utilities.pathvalidate import valid_path
 from utilities.tempfile import TEMP_DIR
 
 
@@ -27,7 +28,7 @@ class Example(Task):
 
     @override
     def output(self) -> PathTarget:  # type: ignore
-        return PathTarget(TEMP_DIR.joinpath(get_class_name(self)))
+        return PathTarget(valid_path(TEMP_DIR, get_class_name(self)))
 
     @override
     def run(self) -> None:

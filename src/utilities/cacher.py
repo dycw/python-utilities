@@ -8,22 +8,20 @@ from operator import itemgetter
 from pathlib import Path
 from typing import ParamSpec, TypeVar
 
-from pathvalidate import sanitize_filepath
-
 from utilities.datetime import UTC, duration_to_timedelta, get_now
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.hashlib import md5_hash
 from utilities.iterables import ensure_hashables
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.pickle import read_pickle, write_pickle
-from utilities.types import Duration
+from utilities.types import Duration, PathLike
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
 
 def _caches(path: Path, /) -> Path:
-    return path.joinpath(".caches")
+    return valid_path(path, ".caches")
 
 
 _ROOT = get_repo_root_or_cwd_sub_path(_caches, if_missing=_caches)
@@ -52,7 +50,7 @@ def _cache_to_disk(
 ) -> Callable[_P, _R]:
     """Decorator which caches locally using pickles."""
 
-    full = Path(root, func.__module__, func.__name__)
+    full = valid_path(root, func.__module__, func.__name__)
     sig = signature(func)
     ttl_use = None if ttl is None else duration_to_timedelta(ttl)
 
@@ -68,7 +66,7 @@ def _cache_to_disk(
         ba = sig.bind(*args, **kwargs)
         hash_args, hash_kwargs = ensure_hashables(*ba.args, **ba.kwargs)
         hash_pair = (tuple(hash_args), tuple(hash_kwargs.items()))
-        path = sanitize_filepath(full.joinpath(md5_hash(hash_pair)))
+        path = valid_path(full, md5_hash(hash_pair))
         if _needs_run(path, rerun=rerun, ttl=ttl_use):
             value = func(*args, **kwargs)
             write_pickle(value, path, overwrite=True)

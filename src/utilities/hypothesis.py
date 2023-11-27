@@ -41,6 +41,7 @@ from utilities._hypothesis.common import (
 from utilities.datetime import UTC
 from utilities.math import FloatFinPos
 from utilities.pathlib import temp_cwd
+from utilities.pathvalidate import valid_path
 from utilities.text import ensure_str
 from utilities.typed_settings import load_settings
 
@@ -101,7 +102,7 @@ def git_repos(
             ["git", "config", "user.email", "a@z.com"],  # noqa: S603, S607
             check=True,
         )
-        file = path.joinpath("file")
+        file = valid_path(path, "file")
         file.touch()
         file_str = str(file)
         _ = run(["git", "add", file_str], check=True)  # noqa: S603, S607

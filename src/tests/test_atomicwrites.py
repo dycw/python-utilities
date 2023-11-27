@@ -7,6 +7,7 @@ from re import escape
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
+from utilities.pathvalidate import valid_path
 from utilities.platform import IS_WINDOWS
 
 
@@ -18,14 +19,14 @@ class TestWriter:
     def test_file_writing(
         self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
     ) -> None:
-        path = tmp_path.joinpath("file.txt")
+        path = valid_path(tmp_path, "file.txt")
         with writer(path) as temp, temp.open(mode="wb" if is_binary else "w") as fh1:
             _ = fh1.write(contents)
         with path.open(mode="rb" if is_binary else "r") as fh2:
             assert fh2.read() == contents
 
     def test_file_exists_error(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
+        path = valid_path(tmp_path, "file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
         match = (
@@ -39,7 +40,7 @@ class TestWriter:
             _ = fh2.write("new contents")
 
     def test_file_overwrite(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
+        path = valid_path(tmp_path, "file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
         with writer(path, overwrite=True) as temp2, temp2.open(mode="w") as fh2:
@@ -48,37 +49,37 @@ class TestWriter:
             assert fh3.read() == "new contents"
 
     def test_dir_writing(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("dir")
+        path = valid_path(tmp_path, "dir")
         with writer(path) as temp:
             temp.mkdir()
             for i in range(2):
-                temp.joinpath(f"file{i}").touch()
+                valid_path(temp, f"file{i}").touch()
         assert len(list(path.iterdir())) == 2
 
     def test_dir_exists_error(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("dir")
+        path = valid_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
         with raises(DirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("dir")
+        path = valid_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
             for i in range(2):
-                temp1.joinpath(f"file{i}").touch()
+                valid_path(temp1, f"file{i}").touch()
         with writer(path, overwrite=True) as temp2:
             temp2.mkdir()
             for i in range(3):
-                temp2.joinpath(f"file{i}").touch()
+                valid_path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
     @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
     def test_error_during_write(
         self, *, tmp_path: Path, error: type[Exception]
     ) -> None:
-        path = tmp_path.joinpath("file.txt")
+        path = valid_path(tmp_path, "file.txt")
 
         def raise_error() -> None:
             raise error
@@ -90,6 +91,6 @@ class TestWriter:
         assert len(list(tmp_path.iterdir())) == expected
 
     def test_writer(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("file.txt")
+        path = valid_path(tmp_path, "file.txt")
         with raises(WriterError), writer(path):
             pass

@@ -7,6 +7,7 @@ from typing import Optional
 
 from typing_extensions import assert_never
 
+from utilities.pathvalidate import valid_path
 from utilities.platform import SYSTEM, System
 from utilities.typed_settings import click_field
 
@@ -15,7 +16,9 @@ from utilities.typed_settings import click_field
 class Config:
     """Settings for the `monitor_memory` script."""
 
-    path: Path = click_field(default=Path("memory.csv"), param_decls=("-p", "--path"))
+    path: Path = click_field(
+        default=valid_path("memory.csv"), param_decls=("-p", "--path")
+    )
     freq: int = click_field(default=60, help="in seconds", param_decls=("-f", "--freq"))
     duration: Optional[int] = click_field(  # noqa: UP007
         default=None, help="in seconds", param_decls=("-d", "--duration")

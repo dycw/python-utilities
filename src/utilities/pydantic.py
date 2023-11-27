@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import override
 
 from utilities.atomicwrites import writer
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
+from utilities.types import PathLike
 
 _BM = TypeVar("_BM", bound=BaseModel)
 
@@ -21,7 +21,7 @@ class HashableBaseModel(BaseModel):
 
 
 def load_model(model: type[_BM], path: PathLike, /) -> _BM:
-    with Path(path).open() as fh:
+    with valid_path(path).open() as fh:
         return model.model_validate_json(fh.read())
 
 

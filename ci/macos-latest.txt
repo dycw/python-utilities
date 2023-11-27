@@ -244,7 +244,7 @@ packaging==23.2
     #   pytest
     #   streamlit
     #   xarray
-pandas==2.1.3
+pandas==2.1.4
     # via
     #   altair
     #   bokeh
@@ -496,7 +496,7 @@ wheel==0.42.0
     # via pip-tools
 wsproto==1.2.0
     # via trio-websocket
-xarray==2023.11.0
+xarray==2023.12.0
     # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
     # via dycw-utilities (pyproject.toml)

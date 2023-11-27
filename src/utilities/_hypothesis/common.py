@@ -21,6 +21,7 @@ from hypothesis.strategies import (
     uuids,
 )
 
+from utilities.pathvalidate import valid_path
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 
@@ -136,14 +137,16 @@ def lists_fixed_length(
     return elements
 
 
+_TEMP_DIR_HYPOTHESIS = valid_path(TEMP_DIR, "hypothesis")
+
+
 @composite
 def temp_dirs(_draw: DrawFn, /) -> TemporaryDirectory:
     """Search strategy for temporary directories."""
-    dir_ = TEMP_DIR.joinpath("hypothesis")
-    dir_.mkdir(exist_ok=True)
+    _TEMP_DIR_HYPOTHESIS.mkdir(exist_ok=True)
     uuid = _draw(uuids())
     return TemporaryDirectory(
-        prefix=f"{uuid}__", dir=dir_, ignore_cleanup_errors=IS_WINDOWS
+        prefix=f"{uuid}__", dir=_TEMP_DIR_HYPOTHESIS, ignore_cleanup_errors=IS_WINDOWS
     )
 
 

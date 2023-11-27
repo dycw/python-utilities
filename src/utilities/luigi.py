@@ -25,9 +25,9 @@ from utilities._luigi.common import (
 )
 from utilities.datetime import UTC, get_now
 from utilities.logging import LogLevel
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.semver import ensure_version
-from utilities.types import IterableStrs
+from utilities.types import IterableStrs, PathLike
 
 # parameters
 
@@ -52,7 +52,7 @@ class FrozenSetIntsParameter(Parameter):
         return frozenset(map(int, split))
 
     @override
-    def serialize(self, x: frozenset[str]) -> str:
+    def serialize(self, x: frozenset[int]) -> str:
         if len(x) >= 1:
             return self._separator.join(sorted(map(str, x)))
         return self._empty
@@ -111,7 +111,7 @@ class PathTarget(Target):
 
     def __init__(self, path: PathLike, /) -> None:
         super().__init__()
-        self.path = Path(path)
+        self.path = valid_path(path)
 
     @override
     def exists(self) -> bool:  # type: ignore

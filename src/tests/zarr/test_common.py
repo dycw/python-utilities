@@ -21,6 +21,7 @@ from utilities._zarr.common import (
 from utilities.class_name import get_class_name
 from utilities.hypothesis import float_arrays, temp_paths, text_ascii
 from utilities.numpy import NDArrayI1, NDArrayO1, dt64D, dt64ns
+from utilities.pathvalidate import valid_path
 
 indexes_1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 
@@ -39,7 +40,7 @@ class TestNDArrayWithIndexes:
         if shape == ():
             arrays |= floats(allow_nan=True, allow_infinity=True).map(array)
         arr = data.draw(arrays)
-        path = root.joinpath("array")
+        path = valid_path(root, "array")
         with yield_array_with_indexes(indexes, path) as z_array:
             if shape == ():
                 z_array[:] = arr.item()
@@ -65,7 +66,7 @@ class TestNDArrayWithIndexes:
 
     @given(root=temp_paths())
     def test_dtype(self, *, root: Path) -> None:
-        path = root.joinpath("array")
+        path = valid_path(root, "array")
         with yield_array_with_indexes({}, path, dtype=int):
             pass
         view = NDArrayWithIndexes(path)
@@ -79,7 +80,7 @@ class TestNDArrayWithIndexes:
     def test_fill_value(
         self, *, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
     ) -> None:
-        path = root.joinpath("array")
+        path = valid_path(root, "array")
         with yield_array_with_indexes(indexes, path, fill_value=fill_value):
             pass
         view = NDArrayWithIndexes(path)
@@ -106,7 +107,7 @@ class TestNDArrayWithIndexes:
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
@@ -115,7 +116,7 @@ class TestNDArrayWithIndexes:
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
     def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
@@ -145,7 +146,7 @@ class TestNDArrayWithIndexes:
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": array(["x0", "x1"]), "y": array(["y0", "y1", "y2"])}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
@@ -163,7 +164,7 @@ class TestNDArrayWithIndexes:
         self, *, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
     ) -> None:
         indexes = {"x": index}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(2, dtype=int)
         view = NDArrayWithIndexes(path)
@@ -172,7 +173,7 @@ class TestNDArrayWithIndexes:
 
     def test_missing(self, *, tmp_path: Path) -> None:
         with raises(FileNotFoundError):
-            _ = NDArrayWithIndexes(tmp_path.joinpath("array"))
+            _ = NDArrayWithIndexes(valid_path(tmp_path, "array"))
 
     @mark.parametrize(
         ("indexer", "expected"),
@@ -191,7 +192,7 @@ class TestNDArrayWithIndexes:
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=dt64D)}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3)
         view = NDArrayWithIndexes(path)
@@ -228,7 +229,7 @@ class TestNDArrayWithIndexes:
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=dt64ns)}
-        path = tmp_path.joinpath("array")
+        path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3, dtype=int)
         view = NDArrayWithIndexes(path)

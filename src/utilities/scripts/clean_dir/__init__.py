@@ -14,9 +14,9 @@ from typed_settings import find
 
 from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
-from utilities.pathlib import PathLike
 from utilities.scripts.clean_dir.classes import Config, Item
 from utilities.typed_settings import click_options
+from utilities.types import PathLike
 
 _CONFIG = Config()
 

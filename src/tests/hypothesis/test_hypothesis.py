@@ -38,6 +38,7 @@ from utilities.hypothesis import (
     versions,
 )
 from utilities.os import temp_environ
+from utilities.pathvalidate import valid_path
 
 
 class TestAssumeDoesNotRaise:
@@ -91,7 +92,7 @@ class TestGitRepos:
     def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         path = data.draw(git_repos(branch=branch))
-        assert set(path.iterdir()) == {path.joinpath(".git")}
+        assert set(path.iterdir()) == {valid_path(path, ".git")}
         if branch is not None:
             output = check_output(
                 _GET_BRANCH_NAME,  # noqa: S603

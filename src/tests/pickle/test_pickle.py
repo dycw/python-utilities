@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans, floats, integers, none, text
 
 from utilities.hypothesis import temp_paths
+from utilities.pathvalidate import valid_path
 from utilities.pickle import read_pickle, write_pickle
 
 
@@ -16,6 +17,6 @@ class TestReadAndWritePickle:
         root=temp_paths(),
     )
     def test_main(self, *, obj: Any, root: Path) -> None:
-        write_pickle(obj, path := root.joinpath("file"))
+        write_pickle(obj, path := valid_path(root, "file"))
         result = read_pickle(path)
         assert result == obj

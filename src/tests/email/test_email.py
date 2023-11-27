@@ -6,6 +6,7 @@ from smtplib import SMTPServerDisconnected
 from pytest import raises
 
 from utilities.email import SendEmailError, send_email
+from utilities.pathvalidate import valid_path
 from utilities.pytest import is_pytest
 from utilities.sentinel import sentinel
 
@@ -32,7 +33,7 @@ class TestSendEmail:
             )
 
     def test_attachment(self, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("file")
+        file = valid_path(tmp_path, "file")
         file.touch()
         with raises(SMTPServerDisconnected):
             send_email(

@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
-from pathlib import Path
 from typing import Any, Literal, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
@@ -30,10 +29,10 @@ from utilities.numpy import (
     get_fill_value,
     has_dtype,
 )
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import is_sized_not_str
+from utilities.types import PathLike, is_sized_not_str
 
 IselIndexer = int | slice | Sequence[int] | NDArrayB1 | NDArrayI1
 
@@ -118,7 +117,7 @@ class NDArrayWithIndexes:
         self, path: PathLike, /, *, mode: Literal["r", "r+", "a", "w", "w-"] = "a"
     ) -> None:
         super().__init__()
-        self._path = Path(path)
+        self._path = valid_path(path)
         if not self._path.exists():
             msg = f"{self._path}"
             raise FileNotFoundError(msg)

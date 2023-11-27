@@ -51,6 +51,7 @@ from utilities.luigi import (
     clone,
     yield_dependencies,
 )
+from utilities.pathvalidate import valid_path
 from utilities.types import IterableStrs
 
 
@@ -161,7 +162,7 @@ class TestEnumParameter:
 class TestExternalFile:
     @given(namespace_mixin=namespace_mixins(), root=temp_paths())
     def test_main(self, *, namespace_mixin: Any, root: Path) -> None:
-        path = root.joinpath("file")
+        path = valid_path(root, "file")
 
         class Example(namespace_mixin, ExternalFile):
             ...
@@ -247,7 +248,7 @@ class TestGetDependencies:
 
 class TestPathTarget:
     def test_main(self, *, tmp_path: Path) -> None:
-        target = PathTarget(path := tmp_path.joinpath("file"))
+        target = PathTarget(path := valid_path(tmp_path, "file"))
         assert isinstance(target.path, Path)
         assert not target.exists()
         path.touch()

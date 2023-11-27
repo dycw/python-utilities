@@ -8,6 +8,7 @@ from pytest import mark, param
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import ensure_suffix, temp_cwd, walk
+from utilities.pathvalidate import valid_path, valid_path_cwd
 
 
 class TestEnsureSuffix:
@@ -27,7 +28,7 @@ class TestEnsureSuffix:
     )
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = ensure_suffix(path, ".txt")
-        assert result == Path(expected)
+        assert result == valid_path(expected)
 
 
 class TestWalk:
@@ -61,7 +62,7 @@ class TestWalk:
 
 class TestTempCWD:
     def test_main(self, *, tmp_path: Path) -> None:
-        assert Path.cwd() != tmp_path
+        assert valid_path_cwd() != tmp_path
         with temp_cwd(tmp_path):
-            assert Path.cwd() == tmp_path
-        assert Path.cwd() != tmp_path
+            assert valid_path_cwd() == tmp_path
+        assert valid_path_cwd() != tmp_path

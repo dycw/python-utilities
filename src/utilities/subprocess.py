@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterator, Mapping
 from functools import partial
 from itertools import chain, repeat, starmap
-from pathlib import Path
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any
@@ -11,15 +10,15 @@ from typing import Any
 from utilities.errors import redirect_error
 from utilities.more_itertools import OneError, one
 from utilities.os import temp_environ
-from utilities.pathlib import PathLike
-from utilities.types import IterableStrs
+from utilities.pathvalidate import valid_path, valid_path_cwd
+from utilities.types import IterableStrs, PathLike
 
 
 def get_shell_output(
     cmd: str,
     /,
     *,
-    cwd: PathLike = Path.cwd(),
+    cwd: PathLike = valid_path_cwd(),
     activate: PathLike | None = None,
     env: Mapping[str, str | None] | None = None,
 ) -> str:
@@ -27,7 +26,7 @@ def get_shell_output(
 
     Optionally, activate a virtual environment if necessary.
     """
-    cwd = Path(cwd)
+    cwd = valid_path(cwd)
     if activate is not None:
         with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))

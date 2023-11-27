@@ -5,6 +5,7 @@ from pathlib import Path
 from holoviews import Curve
 
 from utilities.holoviews import apply_cols, relabel_plot, save_plot
+from utilities.pathvalidate import valid_path
 from utilities.pytest import skipif_not_linux
 
 
@@ -26,4 +27,4 @@ class TestSavePlot:
     @skipif_not_linux
     def test_main(self, *, tmp_path: Path) -> None:
         curve = Curve([])
-        save_plot(curve, tmp_path.joinpath("plot.png"))
+        save_plot(curve, valid_path(tmp_path, "plot.png"))
