@@ -7,7 +7,7 @@ from utilities.more_itertools import one
 from utilities.text import strip_and_dedent
 
 
-class TestYieldDunerAll:
+class TestYieldDunderAll:
     def test_main(self) -> None:
         text = strip_and_dedent(
             """

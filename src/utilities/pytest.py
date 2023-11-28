@@ -159,5 +159,11 @@ __all__ = [
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
     "is_pytest",
+    "skipif_linux",
+    "skipif_mac",
+    "skipif_not_linux",
+    "skipif_not_mac",
+    "skipif_not_windows",
+    "skipif_windows",
     "throttle",
 ]

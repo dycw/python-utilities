@@ -52,7 +52,7 @@ def _cache_to_disk(
 ) -> Callable[_P, _R]:
     """Decorator which caches locally using pickles."""
 
-    full = Path(root, func.__qualname__, func.__name__)
+    full = Path(root, func.__module__, func.__name__)
     sig = signature(func)
     ttl_use = None if ttl is None else duration_to_timedelta(ttl)
 
