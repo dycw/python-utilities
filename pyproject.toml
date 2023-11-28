@@ -31,7 +31,7 @@ ast-comments = ["ast-comments >= 1.2.0"]
 attrs = ["attrs >= 23.1.0"]
 beautifulsoup4 = ["beautifulsoup4 >= 4.12.2"]
 bottleneck = ["bottleneck >= 1.3.7"]
-cryptography = ["cryptography >= 41.0.5"]
+cryptography = ["cryptography >= 41.0.7"]
 cvxpy = ["cvxpy >= 1.4.1"]
 dev = [
   # core
@@ -40,21 +40,21 @@ dev = [
   "attrs >= 23.1.0",
   "beautifulsoup4 >= 4.12.2",
   "bottleneck >= 1.3.7",
-  "cryptography >= 41.0.5",
+  "cryptography >= 41.0.7",
   "cvxpy >= 1.4.1",
   "fastapi >= 0.104.1",
   "fastparquet >= 2023.10.1",
   "fpdf2 >= 2.7.6",
   "hatch >= 1.7.0",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.90.0",
+  "hypothesis >= 6.91.0",
   "luigi >= 3.4.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
   "numbagg >= 0.6.3",
   "numpy >= 1.26.2",
   "pandas >= 2.1.3",
-  "polars >= 0.19.15",
+  "polars >= 0.19.17",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
   "pydantic >= 2.5.2",
@@ -92,14 +92,14 @@ fastparquet = ["fastparquet >= 2023.10.1"]
 fpdf2 = ["fpdf2 >= 2.7.6", "holoviews >= 1.18.1", "selenium >= 4.15.2"]
 hatch = ["hatch >= 1.7.0"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.15.2"]
-hypothesis = ["hypothesis >= 6.90.0"]
+hypothesis = ["hypothesis >= 6.91.0"]
 luigi = ["luigi >= 3.4.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 numbagg = ["numbagg >= 0.6.3"]
 numpy = ["numpy >= 1.26.2"]
 pandas = ["pandas >= 2.1.3"]
-polars = ["polars >= 0.19.15"]
+polars = ["polars >= 0.19.17"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
 pydantic = ["pydantic >= 2.5.2"]
