@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import auto
 from itertools import chain
 from math import floor
-from typing import Any, cast
+from typing import Any, TypeGuard, TypeVar, cast
 
 from more_itertools import chunked
 from sqlalchemy import Column, Connection, Engine, Select, Table, insert
@@ -106,6 +106,26 @@ class _CheckSeriesAgainstTableSchemaError(Exception):
     ...
 
 
+_T = TypeVar("_T")
+INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95
+
+
+def chunk_for_engine(
+    engine_or_conn: Engine | Connection,
+    items: Iterable[_T],
+    /,
+    *,
+    chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    scaling: float = 1.0,
+) -> Iterator[Iterable[_T]]:
+    """Chunk a set of items for a given engine."""
+
+    dialect = get_dialect(engine_or_conn)
+    max_params = dialect.max_params
+    chunk_size = floor(chunk_size_frac * max_params / scaling)
+    return chunked(items, n=chunk_size)
+
+
 class Dialect(enum.Enum):
     """An enumeration of the SQL dialects."""
 
@@ -177,9 +197,6 @@ class GetTableError(Exception):
     ...
 
 
-INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95
-
-
 def insert_items(
     engine_or_conn: Engine | Connection,
     *items: Any,
@@ -196,7 +213,6 @@ def insert_items(
     """
 
     dialect = get_dialect(engine_or_conn)
-    max_params = dialect.max_params
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
@@ -204,15 +220,20 @@ def insert_items(
         to_insert[item.table].append(values)
         lengths.add(len(values))
     max_length = max(lengths, default=1)
-    chunk_size = floor(chunk_size_frac * max_params / max_length)
     with yield_connection(engine_or_conn) as conn:
         for table, values in to_insert.items():
             ins = insert(table)
-            for chunk in chunked(values, chunk_size):
+            chunks = chunk_for_engine(
+                engine_or_conn,
+                values,
+                chunk_size_frac=chunk_size_frac,
+                scaling=max_length,
+            )
+            for chunk in chunks:
                 if dialect is Dialect.oracle:  # pragma: no cover
-                    _ = conn.execute(ins, cast(list[Any], chunk))
+                    _ = conn.execute(ins, cast(Any, chunk))
                 else:
-                    _ = conn.execute(ins.values(chunk))
+                    _ = conn.execute(ins.values(list(chunk)))
 
 
 _InsertItemValues = tuple[Any, ...] | dict[str, Any]
@@ -273,7 +294,7 @@ class _InsertItemsCollectIterableError(Exception):
     ...
 
 
-def _insert_items_collect_valid(obj: Any, /) -> bool:
+def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
     """Check if an insertion item being collected is valid."""
     return isinstance(obj, tuple) or (
         isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
@@ -332,6 +353,7 @@ __all__ = [
     "INSERT_ITEMS_CHUNK_SIZE_FRAC",
     "check_dataframe_schema_against_table",
     "check_selectable_for_duplicate_columns",
+    "chunk_for_engine",
     "get_column_names",
     "get_columns",
     "get_dialect",

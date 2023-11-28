@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import floor
 from operator import eq
 from typing import Any
 
@@ -12,6 +13,7 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
 
 from utilities._sqlalchemy.common import (
+    INSERT_ITEMS_CHUNK_SIZE_FRAC,
     Dialect,
     GetTableError,
     _check_series_against_table_column,
@@ -25,6 +27,7 @@ from utilities._sqlalchemy.common import (
     _InsertItemsCollectError,
     _InsertItemsCollectIterableError,
     check_selectable_for_duplicate_columns,
+    chunk_for_engine,
     get_column_names,
     get_columns,
     get_dialect,
@@ -85,6 +88,15 @@ class TestCheckSeriesAgainstAgainstTableSchema:
         table_schema = {"a": int, "b": float, "c": str}
         with raises(_CheckSeriesAgainstTableSchemaError):
             _ = _check_series_against_table_schema("b", int, table_schema, eq)
+
+
+class TestChunkForEngine:
+    @given(engine=sqlite_engines(), n=integers(0, 1000))
+    def test_main(self, *, engine: Engine, n: int) -> None:
+        items = range(n)
+        chunk_size = floor(INSERT_ITEMS_CHUNK_SIZE_FRAC * Dialect.sqlite.max_params)
+        for i in chunk_for_engine(engine, items):
+            assert len(list(i)) <= chunk_size
 
 
 class TestDialect:
