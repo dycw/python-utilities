@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import enum
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Mapping
-from contextlib import contextmanager, suppress
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import auto
 from itertools import chain
@@ -11,100 +11,19 @@ from math import floor
 from typing import Any, TypeGuard, TypeVar, cast
 
 from more_itertools import chunked
-from sqlalchemy import Column, Connection, Engine, Select, Table, insert
+from sqlalchemy import Column, Connection, Engine, Table, insert
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.exc import ArgumentError, DuplicateColumnError
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper
 from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
-from utilities.iterables import (
-    CheckDuplicatesError,
-    check_duplicates,
-    is_iterable_not_str,
-)
-from utilities.more_itertools import OneError, one
-from utilities.text import snake_case
-
-
-def check_dataframe_schema_against_table(
-    df_schema: Mapping[str, Any],
-    table_or_mapped_class: Table | type[Any],
-    check_dtype: Callable[[Any, type], bool],
-    /,
-    *,
-    snake: bool = False,
-) -> dict[str, str]:
-    """Check a DataFrame is compatible with a table."""
-    table_schema = {
-        col.name: col.type.python_type
-        for col in get_columns(get_table(table_or_mapped_class))
-    }
-    out: dict[str, str] = {}
-    for sr_name, sr_dtype in df_schema.items():
-        with suppress(_CheckSeriesAgainstTableColumnError):
-            out[sr_name] = _check_series_against_table_schema(
-                sr_name, sr_dtype, table_schema, check_dtype, snake=snake
-            )
-    return out
-
-
-def check_selectable_for_duplicate_columns(sel: Select[Any], /) -> None:
-    """Check a selectable for duplicate columns."""
-    columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
-    names = [col.name for col in columns]
-    try:
-        check_duplicates(names)
-    except CheckDuplicatesError:
-        msg = f"{names=}"
-        raise DuplicateColumnError(msg) from None
-
-
-def _check_series_against_table_column(
-    sr_name: str, table_schema: Mapping[str, type], /, *, snake: bool = False
-) -> tuple[str, type]:
-    """Check a Series is compatible with a table schema."""
-    items = table_schema.items()
-    try:
-        if snake:
-            return one((n, t) for n, t in items if snake_case(n) == snake_case(sr_name))
-        return one((n, t) for n, t in items if n == sr_name)
-    except OneError:
-        msg = f"{sr_name=}, {table_schema=}"
-        raise _CheckSeriesAgainstTableColumnError(msg) from None
-
-
-class _CheckSeriesAgainstTableColumnError(Exception):
-    ...
-
-
-def _check_series_against_table_schema(
-    sr_name: str,
-    sr_dtype: Any,
-    table_schema: Mapping[str, type],
-    check_dtype: Callable[[Any, type], bool],
-    /,
-    *,
-    snake: bool = False,
-) -> str:
-    """Check a Series is compatible with a table schema."""
-    db_name, db_type = _check_series_against_table_column(
-        sr_name, table_schema, snake=snake
-    )
-    if not check_dtype(sr_dtype, db_type):
-        msg = f"{sr_dtype=}, {db_type=}"
-        raise _CheckSeriesAgainstTableSchemaError(msg)
-    return db_name
-
-
-class _CheckSeriesAgainstTableSchemaError(Exception):
-    ...
-
+from utilities.iterables import is_iterable_not_str
+from utilities.more_itertools import one
 
 _T = TypeVar("_T")
 INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95
@@ -351,8 +270,6 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "INSERT_ITEMS_CHUNK_SIZE_FRAC",
-    "check_dataframe_schema_against_table",
-    "check_selectable_for_duplicate_columns",
     "chunk_for_engine",
     "get_column_names",
     "get_columns",

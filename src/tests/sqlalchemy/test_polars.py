@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import datetime as dt
 from collections.abc import Callable
-from math import isnan
 from operator import eq
 from typing import Any
 
@@ -37,37 +35,33 @@ from sqlalchemy import (
     Table,
     select,
 )
+from sqlalchemy.exc import DuplicateColumnError
 
-from utilities.datetime import UTC
+from utilities._sqlalchemy.polars import (
+    _insert_dataframe_map_df_column_to_table_column_and_type,
+    _insert_dataframe_map_df_column_to_table_schema,
+    _insert_dataframe_map_df_schema_to_table,
+    _InsertDataFrameMapDFColumnToTableColumnAndTypeError,
+    _InsertDataFrameMapDFColumnToTableSchemaError,
+    _select_to_dataframe_apply_snake,
+    _select_to_dataframe_check_duplicates,
+    _select_to_dataframe_map_select_to_df_schema,
+    _TableColumnToExprError,
+)
+from utilities.datetime import UTC, is_equal_mod_tz
 from utilities.hypothesis import sqlite_engines, text_ascii
+from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
 from utilities.sqlalchemy import (
-    InsertPolarsDataFrameError,
-    TableColumnToExprError,
+    InsertDataFrameError,
+    _select_to_dataframe_map_table_column_to_dtype,
     ensure_tables_created,
-    insert_polars_dataframe,
-    select_to_polars_dataframe,
-    table_column_to_expr,
+    insert_dataframe,
+    select_to_dataframe,
 )
 
 
-def _check_datetime(x: dt.datetime | None, y: dt.datetime | None, /) -> bool:
-    return (x == y) or (
-        isinstance(x, dt.datetime)
-        and isinstance(y, dt.datetime)
-        and (x.replace(tzinfo=None) == y.replace(tzinfo=None))
-    )
-
-
-def _check_float(x: float | None, y: float | None, /) -> bool:
-    return (
-        (x == y)
-        or ((x is None) and isinstance(y, float) and isnan(y))
-        or (isinstance(x, float) and isnan(x) and (y is None))
-    )
-
-
-class TestInsertPolarsDataFrame:
+class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
     @mark.parametrize(
         ("strategy", "pl_dtype", "col_type", "check"),
@@ -79,9 +73,9 @@ class TestInsertPolarsDataFrame:
                 datetimes(timezones=just(UTC)) | none(),
                 Datetime(time_zone=UTC),
                 DateTime(timezone=True),
-                _check_datetime,
+                is_equal_mod_tz,
             ),
-            param(floats(), Float64, Float, _check_float),
+            param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
             param(integers(-10, 10) | none(), Int64, Integer, eq),
             param(text_ascii() | none(), Utf8, String, eq),
         ],
@@ -105,12 +99,12 @@ class TestInsertPolarsDataFrame:
             Column("value", col_type),
         )
         ensure_tables_created(engine, table)
-        insert_polars_dataframe(engine, df, table)
+        insert_dataframe(engine, df, table)
         sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         for r, v in zip(res, values, strict=True):
-            assert check(r, v)
+            assert ((r is None) == (v is None)) or check(r, v)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none()))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
@@ -125,7 +119,7 @@ class TestInsertPolarsDataFrame:
             Column("Value", sqlalchemy.Boolean),
         )
         ensure_tables_created(engine, table)
-        insert_polars_dataframe(engine, df, table, snake=True)
+        insert_dataframe(engine, df, table, snake=True)
         sel = select(table.c["Value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -142,11 +136,114 @@ class TestInsertPolarsDataFrame:
             Column("value", sqlalchemy.Boolean),
         )
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(InsertPolarsDataFrameError):
-            insert_polars_dataframe(engine, df, table)
+        with raises(InsertDataFrameError):
+            insert_dataframe(engine, df, table)
 
 
-class TestSelectToPolarsDataFrame:
+class TestInsertDataFrameMapDFColumnToTableColumnAndType:
+    def test_main(self) -> None:
+        schema = {"a": int, "b": float, "c": str}
+        result = _insert_dataframe_map_df_column_to_table_column_and_type("b", schema)
+        expected = ("b", float)
+        assert result == expected
+
+    @mark.parametrize("sr_name", [param("b"), param("B")])
+    def test_snake(self, *, sr_name: str) -> None:
+        schema = {"A": int, "B": float, "C": str}
+        result = _insert_dataframe_map_df_column_to_table_column_and_type(
+            sr_name, schema, snake=True
+        )
+        expected = ("B", float)
+        assert result == expected
+
+    @mark.parametrize("snake", [param(True), param(False)])
+    def test_error_empty(self, *, snake: bool) -> None:
+        schema = {"a": int, "b": float, "c": str}
+        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+            _ = _insert_dataframe_map_df_column_to_table_column_and_type(
+                "value", schema, snake=snake
+            )
+
+    def test_error_non_unique(self) -> None:
+        schema = {"a": int, "b": float, "B": float, "c": str}
+        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+            _ = _insert_dataframe_map_df_column_to_table_column_and_type(
+                "b", schema, snake=True
+            )
+
+
+class TestInsertDataFrameMapDFColumnToTableSchema:
+    def test_main(self) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        result = _insert_dataframe_map_df_column_to_table_schema(
+            "b", Float64, table_schema
+        )
+        assert result == "b"
+
+    def test_error(self) -> None:
+        table_schema = {"a": int, "b": float, "c": str}
+        with raises(_InsertDataFrameMapDFColumnToTableSchemaError):
+            _ = _insert_dataframe_map_df_column_to_table_schema(
+                "b", Int64, table_schema
+            )
+
+
+class TestInsertDataFrameMapDFSchemaToTable:
+    def test_default(self) -> None:
+        df_schema = {"a": Int64, "b": Float64}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+        )
+        result = _insert_dataframe_map_df_schema_to_table(df_schema, table)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+    def test_snake(self) -> None:
+        df_schema = {"a": Int64, "b": Float64}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+            Column("A", Integer),
+            Column("B", Float),
+        )
+        result = _insert_dataframe_map_df_schema_to_table(df_schema, table, snake=True)
+        expected = {"a": "A", "b": "B"}
+        assert result == expected
+
+    def test_df_schema_has_extra_columns(self) -> None:
+        df_schema = {"a": Int64, "b": Float64, "c": Utf8}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+        )
+        result = _insert_dataframe_map_df_schema_to_table(df_schema, table)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+    def test_table_has_extra_columns(self) -> None:
+        df_schema = {"a": Int64, "b": Float64}
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("a", Integer),
+            Column("b", Float),
+            Column("c", String),
+        )
+        result = _insert_dataframe_map_df_schema_to_table(df_schema, table)
+        expected = {"a": "a", "b": "b"}
+        assert result == expected
+
+
+class TestSelectToDataFrame:
     @given(data=data(), engine=sqlite_engines())
     @mark.parametrize(
         ("strategy", "pl_dtype", "col_type"),
@@ -159,7 +256,7 @@ class TestSelectToPolarsDataFrame:
                 Datetime(time_zone=UTC),
                 DateTime(timezone=True),
             ),
-            param(floats(), Float64, Float),
+            param(floats(allow_nan=False) | none(), Float64, Float),
             param(integers(-10, 10) | none(), Int64, Integer),
             param(text_ascii() | none(), Utf8, String),
         ],
@@ -182,10 +279,26 @@ class TestSelectToPolarsDataFrame:
             Column("value", col_type),
         )
         ensure_tables_created(engine, table)
-        insert_polars_dataframe(engine, df, table)
+        insert_dataframe(engine, df, table)
         sel = select(table.c["value"])
-        result = select_to_polars_dataframe(sel, engine)
+        result = select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
+
+    @given(engine=sqlite_engines(), values=lists(booleans() | none()))
+    def test_snake(self, *, engine: Engine, values: list[bool | None]) -> None:
+        df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
+        table = Table(
+            "example",
+            MetaData(),
+            Column("Id", Integer, primary_key=True),
+            Column("Value", sqlalchemy.Boolean),
+        )
+        ensure_tables_created(engine, table)
+        insert_dataframe(engine, df, table)
+        sel = select(table.c["Value"])
+        res = select_to_dataframe(sel, engine, snake=True)
+        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
+        assert_frame_equal(res, expected)
 
     @given(
         engine=sqlite_engines(),
@@ -203,35 +316,52 @@ class TestSelectToPolarsDataFrame:
             Column("value", sqlalchemy.Boolean),
         )
         ensure_tables_created(engine, table)
-        insert_polars_dataframe(engine, df, table)
+        insert_dataframe(engine, df, table)
         sel = select(table.c["value"])
-        dfs = select_to_polars_dataframe(
-            sel, engine, iter_batches=True, batch_size=batch_size
-        )
+        with engine.begin() as conn:
+            dfs = list(
+                select_to_dataframe(sel, conn, iter_batches=True, batch_size=batch_size)
+            )
         for df in dfs:
             check_polars_dataframe(
                 df, min_height=1, max_height=batch_size, schema={"value": pl.Boolean}
             )
 
-    @given(engine=sqlite_engines(), values=lists(booleans() | none()))
-    def test_snake(self, *, engine: Engine, values: list[bool | None]) -> None:
-        df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
+
+class TestSelectToDataFrameApplySnake:
+    def test_main(self) -> None:
         table = Table(
             "example",
             MetaData(),
             Column("Id", Integer, primary_key=True),
             Column("Value", sqlalchemy.Boolean),
         )
-        ensure_tables_created(engine, table)
-        insert_polars_dataframe(engine, df, table)
-        sel = select(table.c["Value"])
-        res = select_to_polars_dataframe(sel, engine, snake=True)
-        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
-        assert_frame_equal(res, expected)
+        sel = select(table)
+        res = _select_to_dataframe_apply_snake(sel)
+        expected = ["id", "value"]
+        for col, exp in zip(res.c, expected, strict=True):
+            assert col.name == exp
 
 
-class TestTableColumnToExpr:
+class TestSelectToDataFrameCheckDuplicates:
+    def test_error(self) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        sel = select(table.c.id, table.c.id)
+        with raises(DuplicateColumnError):
+            _select_to_dataframe_check_duplicates(sel.c)
+
+
+class TestSelectToDataFrameMapSelectToDFSchema:
+    def test_main(self) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        sel = select(table.c.id)
+        schema = _select_to_dataframe_map_select_to_df_schema(sel)
+        expected = {"id": Int64}
+        assert schema == expected
+
+
+class TestSelectToDataFrameMapTableColumnToDType:
     def test_error(self) -> None:
         column = Column("value", LargeBinary)
-        with raises(TableColumnToExprError):
-            _ = table_column_to_expr(column)
+        with raises(_TableColumnToExprError):
+            _ = _select_to_dataframe_map_table_column_to_dtype(column)

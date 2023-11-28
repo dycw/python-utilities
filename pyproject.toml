@@ -7,7 +7,7 @@ requires = ["hatchling"]
 
 # project
 [project]
-authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
+authors = [{ name = "Derek Wan", email = "d.wan@icloud.com" }]
 dependencies = [
   "atomicwrites >= 1.4.1",
   "beartype >= 0.16.4",
@@ -43,7 +43,6 @@ dev = [
   "cryptography >= 41.0.7",
   "cvxpy >= 1.4.1",
   "fastapi >= 0.104.1",
-  "fastparquet >= 2023.10.1",
   "fpdf2 >= 2.7.6",
   "hatch >= 1.7.0",
   "holoviews >= 1.18.1",
@@ -54,7 +53,7 @@ dev = [
   "numbagg >= 0.6.4",
   "numpy >= 1.26.2",
   "pandas >= 2.1.3",
-  "polars >= 0.19.18",
+  "polars >= 0.19.19",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
   "pydantic >= 2.5.2",
@@ -65,7 +64,7 @@ dev = [
   "scipy >= 1.11.4",
   "selenium >= 4.15.2",
   "sqlalchemy >= 2.0.23",
-  "streamlit >= 1.28.2",
+  "streamlit >= 1.29.0",
   "timeout-decorator >= 0.5.0",
   "xarray >= 2023.11.0",
   "xlrd >= 2.0.1",
@@ -75,7 +74,7 @@ dev = [
   "pip-tools",
   # sqlalchemy-dbs
   "cx-oracle",
-  "mysqlclient",  # ci-mac-disable
+  "mysqlclient",     # ci-mac-disable
   "psycopg2-binary",
   "pyodbc",
   # test
@@ -88,7 +87,6 @@ dev = [
   "pytest-xdist >= 3.3.1",
 ]
 fastapi = ["fastapi >= 0.104.1"]
-fastparquet = ["fastparquet >= 2023.10.1"]
 fpdf2 = ["fpdf2 >= 2.7.6", "holoviews >= 1.18.1", "selenium >= 4.15.2"]
 hatch = ["hatch >= 1.7.0"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.15.2"]
@@ -99,7 +97,7 @@ memory-profiler = ["memory-profiler >= 0.61.0"]
 numbagg = ["numbagg >= 0.6.4"]
 numpy = ["numpy >= 1.26.2"]
 pandas = ["pandas >= 2.1.3"]
-polars = ["polars >= 0.19.18"]
+polars = ["polars >= 0.19.19"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
 pydantic = ["pydantic >= 2.5.2"]
@@ -115,7 +113,7 @@ scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.15.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.23"]
 sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
-streamlit = ["streamlit >= 1.28.2"]
+streamlit = ["streamlit >= 1.29.0"]
 test = [
   "exceptiongroup >= 1.1.3",
   "pytest >= 7.4.0",
@@ -186,7 +184,7 @@ style = [
 # pyright
 [tool.pyright]
 exclude = ["**/__pycache__", ".direnv", ".git", ".nox"]
-executionEnvironments = [{root = "src"}]
+executionEnvironments = [{ root = "src" }]
 include = ["src"]
 pythonVersion = "3.10"
 reportImplicitOverride = "error"
@@ -238,67 +236,67 @@ ignore = [
   "ANN101",  # flake8-annotations, missing-type-self
   "ANN102",  # flake8-annotations, missing-type-cls
   "ANN401",  # flake8-annotations, dynamically-typed-expression
-  "B008",  # flake8-bugbear, function-call-argument-default
+  "B008",    # flake8-bugbear, function-call-argument-default
   "COM812",  # flake8-commas, trailing-comma-missing
   "PGH003",  # pygrep-hooks, blanket-type-ignore
-  "PLR0913",  # refactor, too-many-arguments
-  "PT012",  # flake8-pytest-style, raises-with-multiple-statements
-  "PT013",  # flake8-pytest-style, incorrect-pytest-import
+  "PLR0913", # refactor, too-many-arguments
+  "PT012",   # flake8-pytest-style, raises-with-multiple-statements
+  "PT013",   # flake8-pytest-style, incorrect-pytest-import
   # formatter
-  "E501",  # pycodestyle, line-too-long
-  "ISC001",  # flake8-implicit-str-concat, single-line-implicit-string-concatenation
-  "W191",  # pycodestyle, tab-indentation
+  "E501",   # pycodestyle, line-too-long
+  "ISC001", # flake8-implicit-str-concat, single-line-implicit-string-concatenation
+  "W191",   # pycodestyle, tab-indentation
 ]
 select = [
-  "A",  # flake8-builtins
-  "ANN",  # flake8-annotations
-  "ARG",  # flake8-unused-arguments
-  "ASYNC",  # flake8-async
-  "B",  # flake8-bugbear
-  "BLE",  # flake8-blind-excpt
-  "C4",  # flake8-comprehensions
-  "DTZ",  # flake8-datetimez
-  "E",  # pycodestyle
-  "EM",  # flake8-errmsg
-  "ERA",  # eradicate
-  "EXE",  # flake8-executable
-  "F",  # pyflakes
-  "FA",  # flake8-future-annotations
-  "FBT",  # flake8-boolean-trap
-  "FIX",  # flake8-fixme
-  "FLY",  # flynt
+  "A",     # flake8-builtins
+  "ANN",   # flake8-annotations
+  "ARG",   # flake8-unused-arguments
+  "ASYNC", # flake8-async
+  "B",     # flake8-bugbear
+  "BLE",   # flake8-blind-excpt
+  "C4",    # flake8-comprehensions
+  "DTZ",   # flake8-datetimez
+  "E",     # pycodestyle
+  "EM",    # flake8-errmsg
+  "ERA",   # eradicate
+  "EXE",   # flake8-executable
+  "F",     # pyflakes
+  "FA",    # flake8-future-annotations
+  "FBT",   # flake8-boolean-trap
+  "FIX",   # flake8-fixme
+  "FLY",   # flynt
   "FURB",  # refurb
-  "G",  # flake8-logging-format
-  "I",  # isort
-  "ICN",  # flake8-import-conventions
-  "INP",  # flake8-no-pep420
-  "INT",  # flake8-gettext
-  "ISC",  # flake8-implicit-str-concat
-  "LOG",  # flake8-logging
-  "N",  # pep8-naming
-  "NPY",  # numpy-specific-rules
+  "G",     # flake8-logging-format
+  "I",     # isort
+  "ICN",   # flake8-import-conventions
+  "INP",   # flake8-no-pep420
+  "INT",   # flake8-gettext
+  "ISC",   # flake8-implicit-str-concat
+  "LOG",   # flake8-logging
+  "N",     # pep8-naming
+  "NPY",   # numpy-specific-rules
   "PERF",  # perflint
-  "PGH",  # pygrep-hooks
-  "PIE",  # flake8-pie
-  "PL",  # pylint
-  "PT",  # flake8-pytest-style
-  "PTH",  # flake8-use-pathlib
-  "PYI",  # flake8-pyi
-  "RET",  # flake8-return
-  "RSE",  # flake8-raise
-  "RUF",  # ruff
-  "S",  # flake8-bandit
-  "SIM",  # flake8-simplify
-  "SLF",  # flake8-self
+  "PGH",   # pygrep-hooks
+  "PIE",   # flake8-pie
+  "PL",    # pylint
+  "PT",    # flake8-pytest-style
+  "PTH",   # flake8-use-pathlib
+  "PYI",   # flake8-pyi
+  "RET",   # flake8-return
+  "RSE",   # flake8-raise
+  "RUF",   # ruff
+  "S",     # flake8-bandit
+  "SIM",   # flake8-simplify
+  "SLF",   # flake8-self
   "SLOT",  # flake8-slots
-  "T10",  # flake8-debugger
-  "T20",  # flake8-print
-  "TD",  # flake8-todos
-  "TID",  # flake8-tidy-imports
-  "TRY",  # tryceratops
-  "UP",  # pyupgrade
-  "W",  # pycodestyle
-  "YTT",  # flake8-2020
+  "T10",   # flake8-debugger
+  "T20",   # flake8-print
+  "TD",    # flake8-todos
+  "TID",   # flake8-tidy-imports
+  "TRY",   # tryceratops
+  "UP",    # pyupgrade
+  "W",     # pycodestyle
+  "YTT",   # flake8-2020
 ]
 src = ["src"]
 target-version = "py310"
@@ -307,14 +305,14 @@ target-version = "py310"
 "src/tests/**/*.py" = [
   "FBT001",  # flake8-boolean-trap, boolean-positional-arg-in-function-definition
   "FBT003",  # flake8-boolean-trap, boolean-positional-value-in-function-call
-  "PLR2004",  # refactor, magic-value-comparison
-  "S101",  # flake8-bandit, assert-used
+  "PLR2004", # refactor, magic-value-comparison
+  "S101",    # flake8-bandit, assert-used
 ]
-"src/tests/luigi/test_*.py" = ["I002"]  # isort, missing-required-import
-"src/tests/typed_settings/test_*.py" = ["I002"]  # isort, missing-required-import
+"src/tests/luigi/test_*.py" = ["I002"] # isort, missing-required-import
+"src/tests/typed_settings/test_*.py" = ["I002"] # isort, missing-required-import
 "src/utilities/_luigi/typed_settings.py" = [
   "I002",
-]  # isort, missing-required-import
+] # isort, missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["utilities.typed_settings.click_field"]

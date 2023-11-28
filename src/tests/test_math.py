@@ -56,6 +56,7 @@ from utilities.math import (
     is_at_most_or_nan,
     is_between,
     is_between_or_nan,
+    is_equal,
     is_finite,
     is_finite_and_integral,
     is_finite_and_integral_or_nan,
@@ -666,3 +667,26 @@ class TestChecks:
 
     def test_is_zero_or_non_micro_or_nan(self) -> None:
         assert is_zero_or_non_micro_or_nan(nan)
+
+
+class TestIsEqual:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(0.0, -inf, False),
+            param(0.0, -1.0, False),
+            param(0.0, -1e-6, False),
+            param(0.0, -1e-7, False),
+            param(0.0, -1e-8, False),
+            param(0.0, 0.0, True),
+            param(0.0, 1e-8, False),
+            param(0.0, 1e-7, False),
+            param(0.0, 1e-6, False),
+            param(0.0, 1.0, False),
+            param(0.0, inf, False),
+            param(0.0, nan, False),
+        ],
+    )
+    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+        assert is_equal(x, y) is expected
+        assert is_equal(y, x) is expected
