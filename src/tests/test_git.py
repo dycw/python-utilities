@@ -13,11 +13,17 @@ from utilities.git import (
     get_repo_root,
     get_repo_root_or_cwd_sub_path,
 )
-from utilities.hypothesis import git_repos, temp_paths, text_ascii
+from utilities.hypothesis import (
+    git_repos,
+    settings_with_reduced_examples,
+    temp_paths,
+    text_ascii,
+)
 
 
 class TestGetBranchName:
     @given(data=data(), branch=text_ascii(min_size=1))
+    @settings_with_reduced_examples()
     def test_main(self, *, data: DataObject, branch: str) -> None:
         root = data.draw(git_repos(branch=branch))
         result = get_branch_name(cwd=root)
@@ -33,6 +39,7 @@ class TestGetRepoName:
 
 class TestGetRepoRoot:
     @given(root=git_repos())
+    @settings_with_reduced_examples()
     def test_main(self, *, root: Path) -> None:
         result = get_repo_root(cwd=root)
         expected = root.resolve()
@@ -45,6 +52,7 @@ class TestGetRepoRoot:
 
 class TestGetRepoRootOrCwdSubPath:
     @given(root=git_repos())
+    @settings_with_reduced_examples()
     def test_exists(self, *, root: Path) -> None:
         def get_file(root: Path, /) -> Path:
             return root.joinpath("file.txt")

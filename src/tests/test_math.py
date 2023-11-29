@@ -6,10 +6,11 @@ from typing import Any
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
-from hypothesis import Phase, given, settings
+from hypothesis import given
 from hypothesis.strategies import floats, integers
 from pytest import mark, param
 
+from utilities.hypothesis import settings_with_reduced_examples
 from utilities.math import (
     FloatFin,
     FloatFinInt,
@@ -139,7 +140,7 @@ class TestAnnotations:
             param(FloatZrNonMicNan),
         ],
     )
-    @settings(max_examples=1, phases={Phase.generate})
+    @settings_with_reduced_examples()
     def test_main(self, *, x: float, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(x, hint)
