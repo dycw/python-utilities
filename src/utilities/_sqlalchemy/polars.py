@@ -30,9 +30,9 @@ from utilities._sqlalchemy.common import (
 )
 from utilities.datetime import UTC
 from utilities.functions import identity
+from utilities.humps import snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.more_itertools import OneError, one
-from utilities.text import snake_case
 
 
 def insert_dataframe(

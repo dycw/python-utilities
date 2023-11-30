@@ -60,8 +60,9 @@ from utilities._sqlalchemy.common import (
 )
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
+from utilities.humps import snake_case, snake_case_mappings
 from utilities.math import FloatNonNeg, IntNonNeg
-from utilities.text import ensure_str, snake_case, snake_case_mappings
+from utilities.text import ensure_str
 from utilities.types import IterableStrs
 
 

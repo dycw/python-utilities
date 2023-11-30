@@ -15,8 +15,9 @@ from click import command, option
 from loguru import logger
 from typing_extensions import assert_never
 
+from utilities.humps import snake_case
 from utilities.more_itertools import one
-from utilities.text import ensure_str, snake_case, strip_and_dedent
+from utilities.text import ensure_str, strip_and_dedent
 
 
 class Method(Enum):

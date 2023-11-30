@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from utilities.text import snake_case
+from utilities.humps import snake_case
 
 
 def get_class_name(x: Any, /, *, snake: bool = False) -> str:

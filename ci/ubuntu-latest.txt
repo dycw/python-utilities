@@ -314,6 +314,8 @@ pydeck==0.8.1b0
     # via streamlit
 pygments==2.17.2
     # via rich
+pyhumps==3.8.0
+    # via dycw-utilities (pyproject.toml)
 pyinstrument==4.6.1
     # via dycw-utilities (pyproject.toml)
 pyodbc==5.0.1
