@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 from freezegun import freeze_time
-from hypothesis import assume, given, settings
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -27,6 +27,7 @@ from utilities.datetime import serialize_date, serialize_datetime, serialize_tim
 from utilities.hypothesis import (
     datetimes_utc,
     namespace_mixins,
+    settings_with_reduced_examples,
     temp_paths,
     text_ascii,
     versions,
@@ -199,7 +200,7 @@ class TestExternalTask:
 
 class TestGetDependencies:
     @given(namespace_mixin=namespace_mixins())
-    @settings(max_examples=1)
+    @settings_with_reduced_examples(0.01)
     def test_main(self, *, namespace_mixin: Any) -> None:
         class A(namespace_mixin, Task):
             ...
@@ -246,7 +247,7 @@ class TestGetDependencies:
 
 class TestGetTaskClasses:
     @given(namespace_mixin=namespace_mixins())
-    @settings(max_examples=1)
+    @settings_with_reduced_examples(0.01)
     def test_main(self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task):
             ...
@@ -257,7 +258,7 @@ class TestGetTaskClasses:
         assert smtp not in _yield_task_classes()
 
     @given(namespace_mixin=namespace_mixins())
-    @settings(max_examples=1)
+    @settings_with_reduced_examples(0.01)
     def test_filter(self, *, namespace_mixin: Any) -> None:
         class Parent(namespace_mixin, Task):
             ...

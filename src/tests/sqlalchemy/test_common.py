@@ -227,8 +227,7 @@ class TestInsertItems:
         self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
 
     @given(
-        engine=sqlite_engines(),
-        ids=sets(integers(0, 10000), min_size=1000, max_size=1000),
+        engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
     def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
         self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])

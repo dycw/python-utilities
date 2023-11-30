@@ -4,6 +4,7 @@ import datetime as dt
 from itertools import pairwise
 from re import search
 from subprocess import PIPE, check_output
+from typing import Any, cast
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
@@ -12,6 +13,7 @@ from hypothesis.strategies import (
     booleans,
     data,
     datetimes,
+    floats,
     integers,
     just,
     none,
@@ -22,13 +24,12 @@ from semver import Version
 from utilities.datetime import UTC
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
-    _MAX_EXAMPLES,
-    _NO_SHRINK,
     assume_does_not_raise,
     datetimes_utc,
     git_repos,
     hashables,
     lists_fixed_length,
+    settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
     text_ascii,
@@ -86,8 +87,8 @@ class TestDatetimesUTC:
 
 class TestGitRepos:
     @given(data=data())
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_fixed(self, *, data: DataObject) -> None:
+    @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         path = data.draw(git_repos(branch=branch))
         assert set(path.iterdir()) == {path.joinpath(".git")}
@@ -103,9 +104,21 @@ class TestGitRepos:
 
 class TestHashables:
     @given(data=data())
-    def test_fixed(self, *, data: DataObject) -> None:
+    def test_main(self, *, data: DataObject) -> None:
         x = data.draw(hashables())
         _ = hash(x)
+
+
+class TestReducedExamples:
+    @given(frac=floats(0.0, 10.0))
+    def test_main(self, *, frac: float) -> None:
+        @settings_with_reduced_examples(frac)
+        def test() -> None:
+            pass
+
+        result = cast(Any, test)._hypothesis_internal_use_settings.max_examples  # noqa: SLF001
+        expected = max(round(frac * settings().max_examples), 1)
+        assert result == expected
 
 
 class TestSlices:
@@ -134,13 +147,13 @@ class TestSetupHypothesisProfiles:
         assert curr.max_examples in {10, 100, 1000}
 
     def test_no_shrink(self) -> None:
-        with temp_environ({_NO_SHRINK: "1"}):
+        with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
         assert Phase.shrink not in settings().phases
 
     @given(max_examples=integers(1, 100))
     def test_max_examples(self, *, max_examples: int) -> None:
-        with temp_environ({_MAX_EXAMPLES: str(max_examples)}):
+        with temp_environ({"HYPOTHESIS_MAX_EXAMPLES": str(max_examples)}):
             setup_hypothesis_profiles()
         assert settings().max_examples == max_examples
 

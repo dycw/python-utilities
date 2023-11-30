@@ -6,11 +6,11 @@ from pathlib import Path
 from re import search
 from time import sleep
 
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
 
-from utilities.hypothesis import temp_paths, text_ascii
+from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
 from utilities.logging import LogLevel
 from utilities.loguru import (
     _FILES_ENV_VAR,
@@ -48,7 +48,7 @@ class TestSetupLoguru:
         logger.info("test")
 
     @given(root=temp_paths(), files=text_ascii(min_size=1))
-    @settings(max_examples=1)
+    @settings_with_reduced_examples()
     def test_files(self, *, root: Path, files: str) -> None:
         setup_loguru(files=files, files_root=root)
         sleep(0.05)

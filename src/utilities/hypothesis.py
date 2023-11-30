@@ -3,12 +3,13 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator
 from contextlib import contextmanager
-from os import environ, getenv
+from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from re import search
 from string import printable
 from subprocess import run
-from typing import TypedDict, cast
+from typing import Any
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -24,6 +25,7 @@ from hypothesis.strategies import (
     none,
 )
 from semver import Version
+from typing_extensions import assert_never
 
 from utilities._hypothesis.common import (
     MaybeSearchStrategy,
@@ -37,8 +39,10 @@ from utilities._hypothesis.common import (
     text_ascii,
 )
 from utilities.datetime import UTC
+from utilities.math import FloatFinPos
 from utilities.pathlib import temp_cwd
 from utilities.text import ensure_str
+from utilities.typed_settings import load_settings
 
 
 @contextmanager
@@ -117,57 +121,86 @@ def hashables() -> SearchStrategy[Hashable]:
     return booleans() | integers() | none() | text_ascii()
 
 
-_MAX_EXAMPLES: str = "MAX_EXAMPLES"
-_NO_SHRINK: str = "NO_SHRINK"
+class _HypothesisProfile(Enum):
+    """An enumeration of the profiles."""
+
+    dev = auto()
+    default = auto()
+    ci = auto()
+    debug = auto()
+
+    @property
+    def max_examples(self) -> int:
+        match self:
+            case _HypothesisProfile.dev | _HypothesisProfile.debug:
+                return 10
+            case _HypothesisProfile.default:
+                return 100
+            case _HypothesisProfile.ci:
+                return 1000
+            case _:  # pragma: no cover  # type: ignore
+                assert_never(self)
+
+    @property
+    def verbosity(self) -> Verbosity | None:
+        match self:
+            case (
+                _HypothesisProfile.dev
+                | _HypothesisProfile.default
+                | _HypothesisProfile.ci
+            ):
+                return Verbosity.normal
+            case _HypothesisProfile.debug:
+                return Verbosity.debug
+            case _:  # pragma: no cover  # type: ignore
+                assert_never(self)
+
+
+@dataclass(frozen=True)
+class _HypothesisConfig:
+    """A collection of settings for hypothesis."""
+
+    profile: _HypothesisProfile = _HypothesisProfile.default
+    max_examples: int | None = None
+    verbosity: Verbosity | None = None
+    no_shrink: bool = False
 
 
 def setup_hypothesis_profiles(
-    *,
-    max_examples: str = _MAX_EXAMPLES,
-    no_shrink: str = _NO_SHRINK,
-    suppress_health_check: Iterable[HealthCheck] = (),
+    *, suppress_health_check: Iterable[HealthCheck] = ()
 ) -> None:
     """Set up the hypothesis profiles."""
 
-    def yield_phases() -> Iterator[Phase]:
-        yield Phase.explicit
-        yield Phase.reuse
-        yield Phase.generate
-        yield Phase.target
-        if not bool(int(getenv(no_shrink, default="0"))):
-            yield Phase.shrink
-
-    phases = set(yield_phases())
-
-    class Kwargs(TypedDict, total=False):
-        verbosity: Verbosity
-
-    for name, default_max_examples, verbosity in [
-        ("dev", 10, None),
-        ("default", 100, None),
-        ("ci", 1000, None),
-        ("debug", 10, Verbosity.verbose),
-    ]:
-        try:
-            env_var = environ[max_examples]
-        except KeyError:
-            max_examples_use = default_max_examples
+    config = load_settings(_HypothesisConfig, appname="hypothesis")
+    phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target} | (
+        set() if config.no_shrink else {Phase.shrink}
+    )
+    for profile in _HypothesisProfile:
+        if config.max_examples is None:
+            max_examples = profile.max_examples
         else:
-            max_examples_use = int(env_var)
-        verbosity_use = cast(
-            Kwargs, {} if verbosity is None else {"verbosity": verbosity}
-        )
+            max_examples = config.max_examples
+        verbosity = profile.verbosity if config.verbosity is None else config.verbosity
         settings.register_profile(
-            name,
-            max_examples=max_examples_use,
-            **verbosity_use,
+            profile.name,
+            max_examples=max_examples,
             phases=phases,
             report_multiple_bugs=True,
-            suppress_health_check=suppress_health_check,
             deadline=None,
             print_blob=True,
+            suppress_health_check=suppress_health_check,
+            verbosity=verbosity,
         )
-    settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
+    settings.load_profile(config.profile.name)
+
+
+def settings_with_reduced_examples(
+    frac: FloatFinPos = 0.1, /, **kwargs: Any
+) -> settings:
+    """A `settings` decorator for fewer max examples."""
+    curr = settings()
+    max_examples = max(round(frac * curr.max_examples), 1)
+    return settings(max_examples=max_examples, **kwargs)
 
 
 @composite
