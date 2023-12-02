@@ -3,12 +3,12 @@ from __future__ import annotations
 import enum
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
-from contextlib import contextmanager
+from contextlib import suppress
 from dataclasses import dataclass
 from enum import auto
 from itertools import chain
 from math import floor
-from typing import Any, TypeGuard, TypeVar, cast
+from typing import Any, TypeGuard, cast
 
 from more_itertools import chunked
 from sqlalchemy import Column, Connection, Engine, Table, insert
@@ -17,7 +17,7 @@ from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
-from sqlalchemy.exc import ArgumentError
+from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper
 from sqlalchemy.orm.exc import UnmappedClassError
 from typing_extensions import assert_never
@@ -26,24 +26,7 @@ from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.more_itertools import one
 
-_T = TypeVar("_T")
-INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95
-
-
-def chunk_for_engine(
-    engine_or_conn: Engine | Connection,
-    items: Iterable[_T],
-    /,
-    *,
-    chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC,
-    scaling: float = 1.0,
-) -> Iterator[Iterable[_T]]:
-    """Chunk a set of items for a given engine."""
-
-    dialect = get_dialect(engine_or_conn)
-    max_params = dialect.max_params
-    chunk_size = floor(chunk_size_frac * max_params / scaling)
-    return chunked(items, n=chunk_size)
+CHUNK_SIZE_FRAC = 0.95
 
 
 class Dialect(enum.Enum):
@@ -70,6 +53,48 @@ class Dialect(enum.Enum):
                 return 100
             case _:  # pragma: no cover  # type: ignore
                 assert_never(self)
+
+
+def ensure_tables_created(
+    engine: Engine, /, *tables_or_mapped_classes: Table | type[Any]
+) -> None:
+    """Ensure a table/set of tables is/are created."""
+
+    class TableAlreadyExistsError(Exception):
+        ...
+
+    match dialect := get_dialect(engine):
+        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.mysql:  # pragma: no cover
+            match = "There is already an object named .* in the database"
+        case Dialect.oracle:  # pragma: no cover
+            match = "ORA-00955: name is already used by an existing object"
+        case Dialect.sqlite:
+            match = "table .* already exists"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(dialect)
+
+    for table_or_mapped_class in tables_or_mapped_classes:
+        table = get_table(table_or_mapped_class)
+        with suppress(TableAlreadyExistsError), redirect_error(
+            DatabaseError, TableAlreadyExistsError, match=match
+        ), engine.begin() as conn:
+            table.create(conn)
+
+
+def get_chunk_size(
+    engine_or_conn: Engine | Connection,
+    /,
+    *,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    scaling: float = 1.0,
+) -> int:
+    """Get the maximum chunk size for an engine."""
+
+    dialect = get_dialect(engine_or_conn)
+    max_params = dialect.max_params
+    return max(floor(chunk_size_frac * max_params / scaling), 1)
 
 
 def get_column_names(table_or_mapped_class: Table | type[Any], /) -> list[str]:
@@ -118,9 +143,7 @@ class GetTableError(Exception):
 
 
 def insert_items(
-    engine_or_conn: Engine | Connection,
-    *items: Any,
-    chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    engine: Engine, *items: Any, chunk_size_frac: float = CHUNK_SIZE_FRAC
 ) -> None:
     """Insert a set of items into a database.
 
@@ -132,7 +155,7 @@ def insert_items(
      - Model
     """
 
-    dialect = get_dialect(engine_or_conn)
+    dialect = get_dialect(engine)
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
@@ -140,16 +163,14 @@ def insert_items(
         to_insert[item.table].append(values)
         lengths.add(len(values))
     max_length = max(lengths, default=1)
-    with yield_connection(engine_or_conn) as conn:
-        for table, values in to_insert.items():
-            ins = insert(table)
-            chunks = chunk_for_engine(
-                engine_or_conn,
-                values,
-                chunk_size_frac=chunk_size_frac,
-                scaling=max_length,
-            )
-            for chunk in chunks:
+    chunk_size = get_chunk_size(
+        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
+    )
+    for table, values in to_insert.items():
+        ensure_tables_created(engine, table)
+        ins = insert(table)
+        with engine.begin() as conn:
+            for chunk in chunked(values, n=chunk_size):
                 if dialect is Dialect.oracle:  # pragma: no cover
                     _ = conn.execute(ins, cast(Any, chunk))
                 else:
@@ -253,22 +274,13 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
     return dict(yield_items())
 
 
-@contextmanager
-def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
-    """Yield a connection."""
-    if isinstance(engine_or_conn, Engine):
-        with engine_or_conn.begin() as conn:
-            yield conn
-    else:
-        yield engine_or_conn
-
-
 __all__ = [
+    "CHUNK_SIZE_FRAC",
     "Dialect",
     "GetDialectError",
     "GetTableError",
-    "INSERT_ITEMS_CHUNK_SIZE_FRAC",
-    "chunk_for_engine",
+    "ensure_tables_created",
+    "get_chunk_size",
     "get_column_names",
     "get_columns",
     "get_dialect",
@@ -277,5 +289,4 @@ __all__ = [
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
-    "yield_connection",
 ]

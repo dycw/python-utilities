@@ -22,8 +22,9 @@ class DatabaseTarget(Target):
         self._engine = engine
 
     def exists(self) -> bool:  # type: ignore
+        engine = self._engine
         try:
-            with self._engine.begin() as conn, redirect_table_does_not_exist(conn):
+            with redirect_table_does_not_exist(engine), engine.begin() as conn:
                 res = conn.execute(self._sel).one_or_none()
         except TableDoesNotExistError:
             return False

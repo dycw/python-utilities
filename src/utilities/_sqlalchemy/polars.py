@@ -4,9 +4,11 @@ import datetime as dt
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import suppress
 from datetime import timezone
-from typing import Any, Literal, cast, overload
+from itertools import chain
+from typing import Any, cast, overload
 
 import polars as pl
+from more_itertools import chunked
 from polars import (
     DataFrame,
     Date,
@@ -23,10 +25,11 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities._sqlalchemy.common import (
-    INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    CHUNK_SIZE_FRAC,
+    ensure_tables_created,
+    get_chunk_size,
     get_columns,
     insert_items,
-    yield_connection,
 )
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
@@ -37,24 +40,26 @@ from utilities.more_itertools import OneError, one
 
 
 def insert_dataframe(
-    engine_or_conn: Engine | Connection,
     df: DataFrame,
     table_or_mapped_class: Table | type[Any],
+    engine: Engine,
     /,
     *,
     snake: bool = False,
-    chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a DataFrame into a database."""
     mapping = _insert_dataframe_map_df_schema_to_table(
         df.schema, table_or_mapped_class, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
-    if (df.height > 0) and (len(items) == 0):
+    if len(items) == 0:
+        if df.height == 0:
+            return ensure_tables_created(engine, table_or_mapped_class)
         msg = f"{df=}, {items=}"
         raise InsertDataFrameError(msg)
     return insert_items(
-        engine_or_conn, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
+        engine, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
     )
 
 
@@ -144,13 +149,31 @@ def _insert_dataframe_check_df_and_db_types(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Engine,
     /,
     *,
     snake: bool = ...,
     time_zone: timezone = ...,
-    iter_batches: Literal[True],
-    batch_size: int | None = ...,
+    batch_size: None = ...,
+    in_clauses: None = ...,
+    in_clauses_chunk_size: int | None = ...,
+    schema_overrides: SchemaDict | None = ...,
+    **kwargs: Any,
+) -> DataFrame:
+    ...
+
+
+@overload
+def select_to_dataframe(
+    sel: Select[Any],
+    engine: Connection,
+    /,
+    *,
+    snake: bool = ...,
+    time_zone: timezone = ...,
+    batch_size: int = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
+    in_clauses_chunk_size: int | None = ...,
     schema_overrides: SchemaDict | None = ...,
     **kwargs: Any,
 ) -> Iterator[DataFrame]:
@@ -160,16 +183,17 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Connection,
     /,
     *,
     snake: bool = ...,
     time_zone: timezone = ...,
-    iter_batches: Literal[False] = ...,
     batch_size: int | None = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
+    in_clauses_chunk_size: int | None = ...,
     schema_overrides: SchemaDict | None = ...,
     **kwargs: Any,
-) -> DataFrame:
+) -> Iterator[DataFrame]:
     ...
 
 
@@ -180,8 +204,10 @@ def select_to_dataframe(
     *,
     snake: bool = False,
     time_zone: timezone = UTC,
-    iter_batches: bool = False,
     batch_size: int | None = None,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
+    in_clauses_chunk_size: int | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
@@ -189,20 +215,81 @@ def select_to_dataframe(
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if iter_batches:
-        with yield_connection(engine_or_conn) as conn:
+    if (
+        isinstance(engine_or_conn, Engine)
+        and (batch_size is None)
+        and (in_clauses is None)
+    ):
+        with engine_or_conn.begin() as conn:
             return read_database(
+                sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
+            )
+    if (
+        isinstance(engine_or_conn, Connection)
+        and (batch_size is not None)
+        and (in_clauses is None)
+    ):
+        return read_database(
+            sel,
+            cast(ConnectionOrCursor, engine_or_conn),
+            iter_batches=True,
+            batch_size=batch_size,
+            schema_overrides=schema,
+            **kwargs,
+        )
+    if (
+        isinstance(engine_or_conn, Connection)
+        and (batch_size is None)
+        and (in_clauses is not None)
+    ):
+        sels = _select_to_dataframe_yield_selects_with_in_clauses(
+            sel,
+            engine_or_conn,
+            in_clauses,
+            in_clauses_chunk_size=in_clauses_chunk_size,
+            chunk_size_frac=chunk_size_frac,
+        )
+        return (
+            read_database(
                 sel,
-                cast(ConnectionOrCursor, conn),
-                iter_batches=True,
+                cast(ConnectionOrCursor, engine_or_conn),
                 batch_size=batch_size,
                 schema_overrides=schema,
                 **kwargs,
             )
-    with yield_connection(engine_or_conn) as conn:
-        return read_database(
-            sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
+            for sel in sels
         )
+    if (
+        isinstance(engine_or_conn, Connection)
+        and (batch_size is not None)
+        and (in_clauses is not None)
+    ):
+        sels = _select_to_dataframe_yield_selects_with_in_clauses(
+            sel,
+            engine_or_conn,
+            in_clauses,
+            in_clauses_chunk_size=in_clauses_chunk_size,
+            chunk_size_frac=chunk_size_frac,
+        )
+        return chain(
+            *(
+                read_database(
+                    sel,
+                    cast(ConnectionOrCursor, engine_or_conn),
+                    iter_batches=True,
+                    batch_size=batch_size,
+                    schema_overrides=schema,
+                    **kwargs,
+                )
+                for sel in sels
+            )
+        )
+    msg = f"{engine_or_conn=}, {batch_size=}, {in_clauses=}"
+    raise SelectToDataFrameError(msg)
+
+
+class SelectToDataFrameError(Exception):
+    ...
 
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
@@ -261,4 +348,31 @@ def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) 
         check_duplicates(names)
 
 
-__all__ = ["InsertDataFrameError", "insert_dataframe", "select_to_dataframe"]
+def _select_to_dataframe_yield_selects_with_in_clauses(
+    sel: Select[Any],
+    conn: Connection,
+    in_clauses: tuple[Column[Any], Iterable[Any]],
+    /,
+    *,
+    in_clauses_chunk_size: int | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> Iterator[Select[Any]]:
+    max_length = len(sel.selected_columns)
+    in_col, in_values = in_clauses
+    if in_clauses_chunk_size is None:
+        chunk_size = get_chunk_size(
+            conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+        )
+    else:
+        chunk_size = in_clauses_chunk_size
+    return (
+        sel.where(in_col.in_(values)) for values in chunked(in_values, n=chunk_size)
+    )
+
+
+__all__ = [
+    "InsertDataFrameError",
+    "SelectToDataFrameError",
+    "insert_dataframe",
+    "select_to_dataframe",
+]

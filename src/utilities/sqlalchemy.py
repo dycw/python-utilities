@@ -11,7 +11,6 @@ from sqlalchemy import (
     URL,
     Boolean,
     Column,
-    Connection,
     DateTime,
     Engine,
     Float,
@@ -37,11 +36,12 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never
 
 from utilities._sqlalchemy.common import (
-    INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    CHUNK_SIZE_FRAC,
     Dialect,
     GetDialectError,
     GetTableError,
-    chunk_for_engine,
+    ensure_tables_created,
+    get_chunk_size,
     get_column_names,
     get_columns,
     get_dialect,
@@ -50,7 +50,6 @@ from utilities._sqlalchemy.common import (
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
-    yield_connection,
 )
 from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
@@ -333,7 +332,7 @@ class CheckEngineError(Exception):
 
 def check_table_against_reflection(
     table_or_mapped_class: Table | type[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Engine,
     /,
     *,
     schema: str | None = None,
@@ -343,7 +342,7 @@ def check_table_against_reflection(
     primary_key: bool = True,
 ) -> None:
     """Check that a table equals its reflection."""
-    reflected = reflect_table(table_or_mapped_class, engine_or_conn, schema=schema)
+    reflected = reflect_table(table_or_mapped_class, engine, schema=schema)
     _check_tables_equal(
         reflected,
         table_or_mapped_class,
@@ -469,43 +468,15 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
     return parse_engine(engine)
 
 
-def ensure_tables_created(
-    engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
-) -> None:
-    """Ensure a table/set of tables is/are created."""
-
-    class TableAlreadyExistsError(Exception):
-        ...
-
-    match dialect := get_dialect(engine_or_conn):
-        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.mysql:  # pragma: no cover
-            match = "There is already an object named .* in the database"
-        case Dialect.oracle:  # pragma: no cover
-            match = "ORA-00955: name is already used by an existing object"
-        case Dialect.sqlite:
-            match = "table .* already exists"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
-
-    for table_or_mapped_class in tables_or_mapped_classes:
-        table = get_table(table_or_mapped_class)
-        with suppress(TableAlreadyExistsError), redirect_error(
-            DatabaseError, TableAlreadyExistsError, match=match
-        ), yield_connection(engine_or_conn) as conn:
-            table.create(conn)
-
-
 def ensure_tables_dropped(
-    engine_or_conn: Engine | Connection, *tables_or_mapped_classes: Table | type[Any]
+    engine: Engine, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with suppress(TableDoesNotExistError), yield_connection(
-            engine_or_conn
-        ) as conn, redirect_table_does_not_exist(conn):
+        with suppress(TableDoesNotExistError), redirect_table_does_not_exist(
+            engine
+        ), engine.begin() as conn:
             table.drop(conn)
 
 
@@ -525,11 +496,9 @@ class ParseEngineError(Exception):
 
 
 @contextmanager
-def redirect_table_does_not_exist(
-    engine_or_conn: Engine | Connection, /
-) -> Iterator[None]:
+def redirect_table_does_not_exist(engine: Engine, /) -> Iterator[None]:
     """Redirect to the `TableDoesNotExistError`."""
-    match dialect := get_dialect(engine_or_conn):
+    match dialect := get_dialect(engine):
         case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
         case Dialect.mssql:  # pragma: no cover
@@ -553,7 +522,7 @@ class TableDoesNotExistError(Exception):
 
 def reflect_table(
     table_or_mapped_class: Table | type[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Engine,
     /,
     *,
     schema: str | None = None,
@@ -561,7 +530,7 @@ def reflect_table(
     """Reflect a table from a database."""
     name = get_table_name(table_or_mapped_class)
     metadata = MetaData(schema=schema)
-    with yield_connection(engine_or_conn) as conn:
+    with engine.begin() as conn:
         return Table(name, metadata, autoload_with=conn)
 
 
@@ -582,7 +551,6 @@ __all__ = [
     "check_engine",
     "check_table_against_reflection",
     "CheckEngineError",
-    "chunk_for_engine",
     "columnwise_max",
     "columnwise_min",
     "create_engine",
@@ -590,6 +558,7 @@ __all__ = [
     "ensure_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
+    "get_chunk_size",
     "get_column_names",
     "get_columns",
     "get_dialect",
@@ -597,7 +566,7 @@ __all__ = [
     "get_table",
     "GetDialectError",
     "GetTableError",
-    "INSERT_ITEMS_CHUNK_SIZE_FRAC",
+    "CHUNK_SIZE_FRAC",
     "insert_items",
     "is_mapped_class",
     "is_table_or_mapped_class",
@@ -607,7 +576,6 @@ __all__ = [
     "redirect_table_does_not_exist",
     "serialize_engine",
     "TablenameMixin",
-    "yield_connection",
 ]
 
 
