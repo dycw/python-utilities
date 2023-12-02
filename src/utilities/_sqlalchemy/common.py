@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import auto
 from itertools import chain
 from math import floor
-from typing import Any, TypeGuard, TypeVar, cast
+from typing import Any, TypeGuard, cast
 
 from more_itertools import chunked
 from sqlalchemy import Column, Connection, Engine, Table, insert
@@ -26,24 +26,7 @@ from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.more_itertools import one
 
-_T = TypeVar("_T")
-INSERT_ITEMS_CHUNK_SIZE_FRAC = 0.95
-
-
-def chunk_for_engine(
-    engine: Engine,
-    items: Iterable[_T],
-    /,
-    *,
-    chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC,
-    scaling: float = 1.0,
-) -> Iterator[Iterable[_T]]:
-    """Chunk a set of items for a given engine."""
-
-    dialect = get_dialect(engine)
-    max_params = dialect.max_params
-    chunk_size = floor(chunk_size_frac * max_params / scaling)
-    return chunked(items, n=chunk_size)
+CHUNK_SIZE_FRAC = 0.95
 
 
 class Dialect(enum.Enum):
@@ -100,6 +83,20 @@ def ensure_tables_created(
             table.create(conn)
 
 
+def get_chunk_size(
+    engine_or_conn: Engine | Connection,
+    /,
+    *,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    scaling: float = 1.0,
+) -> int:
+    """Get the maximum chunk size for an engine."""
+
+    dialect = get_dialect(engine_or_conn)
+    max_params = dialect.max_params
+    return max(floor(chunk_size_frac * max_params / scaling), 1)
+
+
 def get_column_names(table_or_mapped_class: Table | type[Any], /) -> list[str]:
     """Get the column names from a table or model."""
     return [col.name for col in get_columns(table_or_mapped_class)]
@@ -146,7 +143,7 @@ class GetTableError(Exception):
 
 
 def insert_items(
-    engine: Engine, *items: Any, chunk_size_frac: float = INSERT_ITEMS_CHUNK_SIZE_FRAC
+    engine: Engine, *items: Any, chunk_size_frac: float = CHUNK_SIZE_FRAC
 ) -> None:
     """Insert a set of items into a database.
 
@@ -166,14 +163,14 @@ def insert_items(
         to_insert[item.table].append(values)
         lengths.add(len(values))
     max_length = max(lengths, default=1)
+    chunk_size = get_chunk_size(
+        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
+    )
     for table, values in to_insert.items():
         ensure_tables_created(engine, table)
         ins = insert(table)
-        chunks = chunk_for_engine(
-            engine, values, chunk_size_frac=chunk_size_frac, scaling=max_length
-        )
         with engine.begin() as conn:
-            for chunk in chunks:
+            for chunk in chunked(values, n=chunk_size):
                 if dialect is Dialect.oracle:  # pragma: no cover
                     _ = conn.execute(ins, cast(Any, chunk))
                 else:
@@ -278,12 +275,12 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
 
 
 __all__ = [
+    "CHUNK_SIZE_FRAC",
     "Dialect",
     "GetDialectError",
     "GetTableError",
-    "INSERT_ITEMS_CHUNK_SIZE_FRAC",
-    "chunk_for_engine",
     "ensure_tables_created",
+    "get_chunk_size",
     "get_column_names",
     "get_columns",
     "get_dialect",

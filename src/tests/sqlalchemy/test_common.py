@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from math import floor
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import integers, sets
+from hypothesis.strategies import floats, integers, sets
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.orm import declarative_base
 
 from utilities._sqlalchemy.common import (
-    INSERT_ITEMS_CHUNK_SIZE_FRAC,
     Dialect,
     GetTableError,
     _insert_items_collect,
@@ -20,7 +18,7 @@ from utilities._sqlalchemy.common import (
     _InsertionItem,
     _InsertItemsCollectError,
     _InsertItemsCollectIterableError,
-    chunk_for_engine,
+    get_chunk_size,
     get_columns,
     get_dialect,
     get_table,
@@ -33,15 +31,6 @@ from utilities.hypothesis import sqlite_engines
 from utilities.more_itertools import one
 from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import ensure_tables_created
-
-
-class TestChunkForEngine:
-    @given(engine=sqlite_engines(), n=integers(0, 1000))
-    def test_main(self, *, engine: Engine, n: int) -> None:
-        items = range(n)
-        chunk_size = floor(INSERT_ITEMS_CHUNK_SIZE_FRAC * Dialect.sqlite.max_params)
-        for i in chunk_for_engine(engine, items):
-            assert len(list(i)) <= chunk_size
 
 
 class TestDialect:
@@ -75,6 +64,21 @@ class TestEnsureTablesCreated:
         sel = get_table(table_or_mapped_class).select()
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
+
+
+class TestGetChunkSize:
+    @given(
+        engine=sqlite_engines(),
+        chunk_size_frac=floats(0.0, 1.0),
+        scaling=floats(0.1, 10.0),
+    )
+    def test_main(
+        self, *, engine: Engine, chunk_size_frac: float, scaling: float
+    ) -> None:
+        result = get_chunk_size(
+            engine, chunk_size_frac=chunk_size_frac, scaling=scaling
+        )
+        assert result >= 1
 
 
 class TestGetColumns:
