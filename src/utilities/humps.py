@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from re import search
 
+from bidict import ValueDuplicationError, bidict
 from humps import decamelize
 
+from utilities.errors import redirect_context
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.types import IterableStrs
 
@@ -17,25 +19,23 @@ def snake_case(text: str, /) -> str:
     return text.lower()
 
 
+def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
+    """Map a set of text into their snake cases."""
+
+    text_as_list = list(text)
+    with redirect_context(
+        CheckDuplicatesError, SnakeCaseMappingsError(f"{text_as_list=}")
+    ):
+        check_duplicates(text_as_list)
+
+    with redirect_context(
+        ValueDuplicationError, SnakeCaseMappingsError(f"{text_as_list=}")
+    ):
+        return bidict({t: snake_case(t) for t in text_as_list})
+
+
 class SnakeCaseMappingsError(Exception):
     ...
-
-
-def snake_case_mappings(
-    text: IterableStrs, /, *, inverse: bool = False
-) -> dict[str, str]:
-    """Map a set of text into their snake cases."""
-    as_list = list(text)
-    check_duplicates(as_list)
-    snaked = list(map(snake_case, as_list))
-    try:
-        check_duplicates(snaked)
-    except CheckDuplicatesError:
-        msg = f"{text=}"
-        raise SnakeCaseMappingsError(msg) from None
-    if inverse:
-        return {v: k for k, v in snake_case_mappings(as_list).items()}
-    return dict(zip(as_list, snaked, strict=True))
 
 
 __all__ = ["SnakeCaseMappingsError", "snake_case", "snake_case_mappings"]

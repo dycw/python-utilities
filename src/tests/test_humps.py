@@ -41,18 +41,17 @@ class TestSnakeCase:
 
 class TestSnakeCaseMappings:
     @given(text=text_ascii())
-    def test_success(self, *, text: str) -> None:
+    def test_main(self, *, text: str) -> None:
         result = snake_case_mappings([text])
         expected = {text: snake_case(text)}
         assert result == expected
 
-    @given(text=text_ascii())
-    def test_inverse(self, *, text: str) -> None:
-        result = snake_case_mappings([text], inverse=True)
-        expected = {snake_case(text): text}
-        assert result == expected
+    @given(text=text_ascii(min_size=1))
+    def test_error_keys(self, *, text: str) -> None:
+        with raises(SnakeCaseMappingsError):
+            _ = snake_case_mappings([text, text])
 
     @given(text=text_ascii(min_size=1))
-    def test_error(self, *, text: str) -> None:
+    def test_error_values(self, *, text: str) -> None:
         with raises(SnakeCaseMappingsError):
             _ = snake_case_mappings([text.lower(), text.upper()])

@@ -60,7 +60,7 @@ def redirect_to_next_from_sequence_error(
             pattern = "ORA-02289: sequence does not exist"
         case Dialect.sqlite:
             msg = f"{engine_or_conn=}, {error=}"
-            raise NextFromSequenceError(msg) from None
+            raise NextFromSequenceError(msg)
         case _:  # pragma: no cover  # type: ignore
             assert_never(dialect)
     return redirect_error(

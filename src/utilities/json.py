@@ -24,6 +24,7 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
+from utilities.errors import redirect_context
 
 _T = TypeVar("_T")
 _ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
@@ -120,11 +121,11 @@ def _default(  # noqa: PLR0911, PLR0912
     if isinstance(obj, UUID):
         return {_CLASS: "UUID", _VALUE: str(obj)}
     if extra is not None:
-        try:
-            key, func = extra[type(obj)]
-        except KeyError:
-            msg = f"{type(obj)=}"
-            raise JsonSerializationError(msg) from None
+        cls = type(obj)
+        with redirect_context(
+            (KeyError, ValueError), JsonSerializationError(f"{cls=}")
+        ):
+            key, func = extra[cls]
         return {_CLASS: key, _VALUE: func(obj)}
     try:
         from sqlalchemy import Engine
@@ -221,11 +222,10 @@ def _object_hook(  # noqa: PLR0911
             return create_engine(value)
         case _:
             if extra is not None:
-                try:
+                with redirect_context(
+                    KeyError, JsonDeserializationError(f"{cls=}, {extra=}")
+                ):
                     func = extra[cls]
-                except KeyError:
-                    msg = f"{cls=}, {value=}"
-                    raise JsonDeserializationError(msg) from None
                 return func(value)
             msg = f"{cls=}, {value=}"
             raise JsonDeserializationError(msg)

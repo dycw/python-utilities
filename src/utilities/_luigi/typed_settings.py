@@ -35,6 +35,7 @@ from utilities._luigi.common import (
 )
 from utilities.class_name import get_class_name
 from utilities.dataclasses import Dataclass
+from utilities.errors import redirect_context
 
 _T = TypeVar("_T", bound=Dataclass)
 
@@ -62,24 +63,25 @@ def build_params_mixin(obj: _T, /, **kwargs: Any) -> type[_T]:
 
 def annotation_and_keywords_to_dict(ann: Any, kwargs: Any, /) -> dict[str, Any]:
     """Map an annotation and a set of keywords to a dictionary."""
-    msg = f"{ann=}, {kwargs=}"
     if not isinstance(ann, type):
+        msg = f"{ann=}"
         raise AnnotationAndKeywordsToDictError(msg)
     if issubclass(ann, dt.datetime):
         allowed = {"hour", "minute", "second"}
         if isinstance(kwargs, str) and (kwargs in allowed):
             return {"datetime": kwargs}
         if isinstance(kwargs, tuple):
-            try:
+            with redirect_context(
+                ValueError, AnnotationAndKeywordsToDictError(f"{ann=}, {kwargs=}")
+            ):
                 datetime, interval = kwargs
-            except ValueError:
-                raise AnnotationAndKeywordsToDictError(msg) from None
             if (
                 isinstance(datetime, str)
                 and (datetime in allowed)
                 and isinstance(interval, int)
             ):
                 return {"datetime": datetime, "interval": interval}
+        msg = f"{ann=}"
         raise AnnotationAndKeywordsToDictError(msg)
     if (
         issubclass(ann, dt.date)
@@ -87,6 +89,7 @@ def annotation_and_keywords_to_dict(ann: Any, kwargs: Any, /) -> dict[str, Any]:
         and (kwargs in {"date", "weekday"})
     ):
         return {"date": kwargs}
+    msg = f"{ann=}, {kwargs=}"
     raise AnnotationAndKeywordsToDictError(msg)
 
 
@@ -198,14 +201,12 @@ def annotation_union_to_class(
     ann: Any, /
 ) -> type[Parameter] | Callable[..., Parameter]:
     """Map a union annotation to a parameter class."""
-    msg = f"{ann=}"
     if get_origin(ann) is not UnionType:
+        msg = f"{ann=}"
         raise AnnotationUnionToClassError(msg)
     args = [arg for arg in get_args(ann) if arg is not NoneType]
-    try:
+    with redirect_context(ValueError, AnnotationUnionToClassError(f"{ann=}")):
         (arg,) = args
-    except ValueError:
-        raise AnnotationUnionToClassError(msg) from None
     if (inner := annotation_to_class(arg)) is BoolParameter:
         return OptionalBoolParameter
     if inner is FloatParameter:
@@ -218,6 +219,7 @@ def annotation_union_to_class(
         return OptionalPathParameter
     if inner is Parameter:
         return OptionalStrParameter
+    msg = f"{ann=}"
     raise AnnotationUnionToClassError(msg)
 
 

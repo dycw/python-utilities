@@ -16,6 +16,7 @@ from zarr.core import Attributes
 from utilities.atomicwrites import writer
 from utilities.class_name import get_class_name
 from utilities.datetime import ensure_date, ensure_datetime
+from utilities.errors import redirect_context
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy import (
     FlatN0Error,
@@ -228,11 +229,8 @@ class NDArrayWithIndexes:
 
     def _get_index_by_name(self, dim: str, /) -> NDArray1:
         """Get the index of a given dimension, by its dimension name."""
-        try:
+        with redirect_context(ValueError, GetIndexByNameError(f"{dim=}")):
             i = self.dims.index(dim)
-        except ValueError:
-            msg = f"{dim=}"
-            raise GetIndexByNameError(msg) from None
         return self._get_index_by_int(i)
 
     def _get_isel_indexer(
@@ -263,12 +261,9 @@ class NDArrayWithIndexes:
             if sum(bool_indexer) == len(indexer):
                 return bool_indexer
             msg = f"{dim=}, {indexer=}"
-            raise GetSelIndexerError(msg) from None
-        try:
+            raise GetSelIndexerError(msg)
+        with redirect_context(FlatN0Error, GetSelIndexerError(f"{dim=}, {indexer=}")):
             return flatn0(index == indexer)
-        except FlatN0Error:
-            msg = f"{dim=}, {indexer=}"
-            raise GetSelIndexerError(msg) from None
 
     def _cast_date_indexer(
         self, indexer: Any, dtype: Any, ensure: Callable[[Any], Any], /

@@ -59,7 +59,7 @@ from utilities._sqlalchemy.common import (
     yield_connection,
 )
 from utilities.class_name import get_class_name
-from utilities.errors import redirect_error
+from utilities.errors import redirect_context, redirect_error
 from utilities.humps import snake_case, snake_case_mappings
 from utilities.math import FloatNonNeg, IntNonNeg
 from utilities.text import ensure_str
@@ -85,7 +85,7 @@ def _check_column_collections_equal(
         raise _CheckColumnCollectionsEqualError(msg)
     if snake:
         snake_to_name_x, snake_to_name_y = (
-            snake_case_mappings(i, inverse=True) for i in [name_to_col_x, name_to_col_y]
+            snake_case_mappings(i).inv for i in [name_to_col_x, name_to_col_y]
         )
         key_to_col_x, key_to_col_y = (
             {key: name_to_col[snake_to_name[key]] for key in snake_to_name}
@@ -524,10 +524,8 @@ def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
 
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
-    try:
+    with redirect_context(ArgumentError, ParseEngineError(f"{engine=}")):
         return _create_engine(engine, poolclass=NullPool)
-    except ArgumentError:
-        raise ParseEngineError from None
 
 
 class ParseEngineError(Exception):

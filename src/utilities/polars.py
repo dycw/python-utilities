@@ -91,11 +91,8 @@ def join(
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
 
-    try:
+    with redirect_context(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
         row = df.row(0)
-    except OutOfBoundsError:
-        msg = f"{df=}"
-        raise SetFirstRowAsColumnsError(msg) from None
     mapping = dict(zip(df.columns, row, strict=True))
     return df[1:].rename(mapping)
 

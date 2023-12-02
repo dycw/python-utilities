@@ -4,6 +4,7 @@ from holoviews import Curve
 from holoviews.plotting import bokeh
 
 from utilities._holoviews.common import apply_opts
+from utilities.errors import redirect_context
 from utilities.numpy import has_dtype
 from utilities.text import EnsureStrError, ensure_str
 from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1
@@ -23,14 +24,11 @@ def plot_curve(
     if has_dtype(array, bool):
         return plot_curve(array.astype(int), label=label, smooth=smooth, aspect=aspect)
     (kdim,) = array.dims
-    try:
+    with redirect_context(EnsureStrError, PlotCurveError(f"{array.name=}")):
         vdim = ensure_str(array.name)
-    except EnsureStrError:
-        msg = f"{array.name=}"
-        raise PlotCurveError(msg) from None
     if len(vdim) == 0:
         msg = f"{array.name=}"
-        raise PlotCurveError(msg) from None
+        raise PlotCurveError(msg)
     if label is None:
         label = vdim
     if smooth is not None:

@@ -8,6 +8,8 @@ atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 beartype==0.16.4
     # via dycw-utilities (pyproject.toml)
+bidict==0.22.1
+    # via dycw-utilities (pyproject.toml)
 click==8.1.7
     # via dycw-utilities (pyproject.toml)
 loguru==0.7.2

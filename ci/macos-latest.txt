@@ -35,6 +35,8 @@ beartype==0.16.4
     # via dycw-utilities (pyproject.toml)
 beautifulsoup4==4.12.2
     # via dycw-utilities (pyproject.toml)
+bidict==0.22.1
+    # via dycw-utilities (pyproject.toml)
 bleach==6.1.0
     # via panel
 blinker==1.7.0
