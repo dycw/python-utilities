@@ -35,7 +35,7 @@ from utilities._luigi.common import (
 )
 from utilities.class_name import get_class_name
 from utilities.dataclasses import Dataclass
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 
 _T = TypeVar("_T", bound=Dataclass)
 
@@ -71,7 +71,7 @@ def annotation_and_keywords_to_dict(ann: Any, kwargs: Any, /) -> dict[str, Any]:
         if isinstance(kwargs, str) and (kwargs in allowed):
             return {"datetime": kwargs}
         if isinstance(kwargs, tuple):
-            with redirect_context(
+            with redirect_error(
                 ValueError, AnnotationAndKeywordsToDictError(f"{ann=}, {kwargs=}")
             ):
                 datetime, interval = kwargs
@@ -205,7 +205,7 @@ def annotation_union_to_class(
         msg = f"{ann=}"
         raise AnnotationUnionToClassError(msg)
     args = [arg for arg in get_args(ann) if arg is not NoneType]
-    with redirect_context(ValueError, AnnotationUnionToClassError(f"{ann=}")):
+    with redirect_error(ValueError, AnnotationUnionToClassError(f"{ann=}")):
         (arg,) = args
     if (inner := annotation_to_class(arg)) is BoolParameter:
         return OptionalBoolParameter

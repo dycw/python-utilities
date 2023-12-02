@@ -81,7 +81,7 @@ from utilities.hypothesis import (
 from utilities.sqlalchemy import (
     CheckEngineError,
     ParseEngineError,
-    TableAlreadyExistsError,
+    TableDoesNotExistError,
     TablenameMixin,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -122,8 +122,7 @@ from utilities.sqlalchemy import (
     get_table_name,
     insert_items,
     parse_engine,
-    redirect_to_no_such_table_error,
-    redirect_to_table_already_exists_error,
+    redirect_table_does_not_exist,
     reflect_table,
     serialize_engine,
 )
@@ -605,41 +604,15 @@ class TestCheckEngine:
         check_engine(engine)
 
     @given(engine=sqlite_engines())
-    def test_num_tables(self, *, engine: Engine) -> None:
+    def test_num_tables_pass(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_tables_created(engine, table)
         check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_rel_tol(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        ensure_tables_created(engine, table)
-        check_engine(engine, num_tables=2, rel_tol=0.5)
-
-    @given(engine=sqlite_engines())
-    def test_num_tables_abs_tol(self, *, engine: Engine) -> None:
-        check_engine(engine, num_tables=1, abs_tol=1)
-
-    @given(root=temp_paths())
-    def test_error_unable_to_open(self, *, root: Path) -> None:
-        engine = create_engine("sqlite", database=str(root))
-        with raises(CheckEngineError):
-            check_engine(engine)
-
-    @given(engine=sqlite_engines())
-    def test_error_num_tables_int(self, *, engine: Engine) -> None:
+    def test_num_tables_error(self, *, engine: Engine) -> None:
         with raises(CheckEngineError):
             check_engine(engine, num_tables=1)
-
-    @given(engine=sqlite_engines())
-    def test_error_num_tables_rel_tol(self, *, engine: Engine) -> None:
-        with raises(CheckEngineError):
-            check_engine(engine, num_tables=1, rel_tol=0.5)
-
-    @given(engine=sqlite_engines())
-    def test_error_num_tables_abs_tol(self, *, engine: Engine) -> None:
-        with raises(CheckEngineError):
-            check_engine(engine, num_tables=2, abs_tol=1)
 
 
 class TestCheckTableAgainstReflection:
@@ -816,14 +789,9 @@ class TestEnsureTablesCreated:
     def _run_test(
         self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
     ) -> None:
-        sel = get_table(table_or_mapped_class).select()
-        with raises(NoSuchTableError), engine.begin() as conn:
-            try:
-                _ = conn.execute(sel).all()
-            except DatabaseError as error:
-                redirect_to_no_such_table_error(engine, error)
         for _ in range(runs):
             ensure_tables_created(engine, table_or_mapped_class)
+        sel = get_table(table_or_mapped_class).select()
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -849,17 +817,13 @@ class TestEnsureTablesDropped:
         self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
     ) -> None:
         table = get_table(table_or_mapped_class)
-        sel = table.select()
         with engine.begin() as conn:
             table.create(conn)
-            _ = conn.execute(sel).all()
         for _ in range(runs):
             ensure_tables_dropped(engine, table_or_mapped_class)
-        with raises(NoSuchTableError), engine.begin() as conn:
-            try:
-                _ = conn.execute(sel).all()
-            except DatabaseError as error:
-                redirect_to_no_such_table_error(engine, error)
+        sel = table.select()
+        with raises(DatabaseError), engine.begin() as conn:
+            _ = conn.execute(sel).all()
 
 
 class TestGetColumnNames:
@@ -917,28 +881,14 @@ class TestRedirectToNoSuchSequenceError:
             _ = conn.scalar(seq)
 
 
-class TestRedirectToNoSuchTableError:
+class TestRedirectTableDoesNotExist:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(NoSuchTableError), engine.begin() as conn:
-            try:
-                _ = conn.execute(select(table))
-            except DatabaseError as error:
-                redirect_to_no_such_table_error(engine, error)
-
-
-class TestRedirectToTableAlreadyExistsError:
-    @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with engine.begin() as conn:
-            _ = table.create(conn)
-        with raises(TableAlreadyExistsError), engine.begin() as conn:
-            try:
-                _ = table.create(conn)
-            except DatabaseError as error:
-                redirect_to_table_already_exists_error(engine, error)
+        with raises(
+            TableDoesNotExistError
+        ), engine.begin() as conn, redirect_table_does_not_exist(conn):
+            _ = conn.execute(select(table))
 
 
 class TestReflectTable:

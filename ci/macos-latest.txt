@@ -108,7 +108,7 @@ fasteners==0.19
     # via zarr
 filelock==3.13.1
     # via virtualenv
-fonttools==4.45.1
+fonttools==4.46.0
     # via fpdf2
 fpdf2==2.7.6
     # via dycw-utilities (pyproject.toml)

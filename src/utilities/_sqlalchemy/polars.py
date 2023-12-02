@@ -29,7 +29,7 @@ from utilities._sqlalchemy.common import (
     yield_connection,
 )
 from utilities.datetime import UTC
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.functions import identity
 from utilities.humps import snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
@@ -111,7 +111,7 @@ def _insert_dataframe_map_df_column_to_table_column_and_type(
     items = table_schema.items()
     func = snake_case if snake else identity
     target = func(df_col_name)
-    with redirect_context(
+    with redirect_error(
         OneError,
         _InsertDataFrameMapDFColumnToTableColumnAndTypeError(
             f"{df_col_name=}, {table_schema=}, {snake=}"
@@ -257,7 +257,7 @@ class _SelectToDataFrameMapTableColumnToDTypeError(Exception):
 def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) -> None:
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
-    with redirect_context(CheckDuplicatesError, DuplicateColumnError(f"{names=}")):
+    with redirect_error(CheckDuplicatesError, DuplicateColumnError(f"{names=}")):
         check_duplicates(names)
 
 

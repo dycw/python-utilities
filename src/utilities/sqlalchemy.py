@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
-from contextlib import suppress
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import contextmanager, suppress
 from functools import reduce
-from math import isclose
 from operator import ge, itemgetter, le
-from typing import Any, NoReturn, cast
+from typing import Any, cast
 
 import sqlalchemy
 from sqlalchemy import (
@@ -31,12 +30,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.exc import (
-    ArgumentError,
-    DatabaseError,
-    NoSuchTableError,
-    OperationalError,
-)
+from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import declared_attr
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
@@ -59,9 +53,10 @@ from utilities._sqlalchemy.common import (
     yield_connection,
 )
 from utilities.class_name import get_class_name
-from utilities.errors import redirect_context, redirect_error
+from utilities.errors import redirect_error
 from utilities.humps import snake_case, snake_case_mappings
-from utilities.math import FloatNonNeg, IntNonNeg
+from utilities.iterables import CheckLengthError, check_length
+from utilities.math import FloatFinNonNeg, IntNonNeg
 from utilities.text import ensure_str
 from utilities.types import IterableStrs
 
@@ -306,17 +301,14 @@ def check_engine(
     engine: Engine,
     /,
     *,
-    num_tables: IntNonNeg | None = None,
-    rel_tol: FloatNonNeg | None = None,
-    abs_tol: IntNonNeg | None = None,
+    num_tables: IntNonNeg | tuple[IntNonNeg, FloatFinNonNeg] | None = None,
 ) -> None:
     """Check that an engine can connect.
 
     Optionally query for the number of tables, or the number of columns in
     such a table.
     """
-    dialect = get_dialect(engine)
-    match dialect:
+    match dialect := get_dialect(engine):
         case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             query = "select * from information_schema.tables"
         case Dialect.oracle:  # pragma: no cover
@@ -325,26 +317,14 @@ def check_engine(
             query = "select * from sqlite_master where type='table'"
         case _:  # pragma: no cover  # type: ignore
             assert_never(dialect)
-
-    try:
-        with engine.begin() as conn:
-            rows = conn.execute(text(query)).all()
-    except OperationalError as error:
-        redirect_error(error, "unable to open database file", CheckEngineError)
+    statement = text(query)
+    with engine.begin() as conn:
+        rows = conn.execute(statement).all()
     if num_tables is not None:
-        n_rows = len(rows)
-        if (rel_tol is None) and (abs_tol is None):
-            if n_rows != num_tables:
-                msg = f"{len(rows)=}, {num_tables=}"
-                raise CheckEngineError(msg)
-        else:
-            rel_tol_use = 1e-9 if rel_tol is None else rel_tol
-            abs_tol_use = 0.0 if abs_tol is None else abs_tol
-            if not isclose(
-                n_rows, num_tables, rel_tol=rel_tol_use, abs_tol=abs_tol_use
-            ):
-                msg = f"{len(rows)=}, {num_tables=}, {rel_tol=}, {abs_tol=}"
-                raise CheckEngineError(msg)
+        with redirect_error(
+            CheckLengthError, CheckEngineError(f"{engine=}, {num_tables=}")
+        ):
+            check_length(rows, equal_or_approx=num_tables)
 
 
 class CheckEngineError(Exception):
@@ -493,28 +473,40 @@ def ensure_tables_created(
     engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
+
+    class TableAlreadyExistsError(Exception):
+        ...
+
+    match dialect := get_dialect(engine_or_conn):
+        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.mysql:  # pragma: no cover
+            match = "There is already an object named .* in the database"
+        case Dialect.oracle:  # pragma: no cover
+            match = "ORA-00955: name is already used by an existing object"
+        case Dialect.sqlite:
+            match = "table .* already exists"
+        case _:  # pragma: no cover  # type: ignore
+            assert_never(dialect)
+
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with yield_connection(engine_or_conn) as conn:
-            try:
-                table.create(conn)
-            except DatabaseError as error:
-                with suppress(TableAlreadyExistsError):
-                    redirect_to_table_already_exists_error(conn, error)
+        with suppress(TableAlreadyExistsError), redirect_error(
+            DatabaseError, TableAlreadyExistsError, match=match
+        ), yield_connection(engine_or_conn) as conn:
+            table.create(conn)
 
 
 def ensure_tables_dropped(
-    engine_or_conn: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
+    engine_or_conn: Engine | Connection, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with yield_connection(engine_or_conn) as conn:
-            try:
-                table.drop(conn)
-            except DatabaseError as error:
-                with suppress(NoSuchTableError):
-                    redirect_to_no_such_table_error(conn, error)
+        with suppress(TableDoesNotExistError), yield_connection(
+            engine_or_conn
+        ) as conn, redirect_table_does_not_exist(conn):
+            table.drop(conn)
 
 
 def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
@@ -524,7 +516,7 @@ def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
 
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
-    with redirect_context(ArgumentError, ParseEngineError(f"{engine=}")):
+    with redirect_error(ArgumentError, ParseEngineError(f"{engine=}")):
         return _create_engine(engine, poolclass=NullPool)
 
 
@@ -532,48 +524,30 @@ class ParseEngineError(Exception):
     ...
 
 
-def redirect_to_no_such_table_error(
-    engine_or_conn: Engine | Connection, error: DatabaseError, /
-) -> NoReturn:
-    """Redirect to the `NoSuchTableError`."""
-    dialect = get_dialect(engine_or_conn)
-    match dialect:
+@contextmanager
+def redirect_table_does_not_exist(
+    engine_or_conn: Engine | Connection, /
+) -> Iterator[None]:
+    """Redirect to the `TableDoesNotExistError`."""
+    match dialect := get_dialect(engine_or_conn):
         case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
         case Dialect.mssql:  # pragma: no cover
-            pattern = (
+            match = (
                 "Cannot drop the table .*, because it does not exist or you do "
                 "not have permission"
             )
         case Dialect.oracle:  # pragma: no cover
-            pattern = "ORA-00942: table or view does not exist"
+            match = "ORA-00942: table or view does not exist"
         case Dialect.sqlite:
-            pattern = "no such table"
+            match = "no such table"
         case _:  # pragma: no cover  # type: ignore
             assert_never(dialect)
-    return redirect_error(error, pattern, NoSuchTableError)
+    with redirect_error(DatabaseError, TableDoesNotExistError, match=match):
+        yield
 
 
-def redirect_to_table_already_exists_error(
-    engine_or_conn: Engine | Connection, error: DatabaseError, /
-) -> NoReturn:
-    """Redirect to the `TableAlreadyExistsError`."""
-    dialect = get_dialect(engine_or_conn)
-    match dialect:
-        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.mysql:  # pragma: no cover
-            pattern = "There is already an object named .* in the database"
-        case Dialect.oracle:  # pragma: no cover
-            pattern = "ORA-00955: name is already used by an existing object"
-        case Dialect.sqlite:
-            pattern = "table .* already exists"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
-    return redirect_error(error, pattern, TableAlreadyExistsError)
-
-
-class TableAlreadyExistsError(Exception):
+class TableDoesNotExistError(Exception):
     ...
 
 
@@ -630,10 +604,8 @@ __all__ = [
     "mapped_class_to_dict",
     "parse_engine",
     "ParseEngineError",
-    "redirect_to_no_such_table_error",
-    "redirect_to_table_already_exists_error",
+    "redirect_table_does_not_exist",
     "serialize_engine",
-    "TableAlreadyExistsError",
     "TablenameMixin",
     "yield_connection",
 ]
@@ -660,7 +632,7 @@ try:
     from utilities._sqlalchemy.timeout_decorator import (
         NextFromSequenceError,
         next_from_sequence,
-        redirect_to_next_from_sequence_error,
+        redirect_next_from_sequence_error,
     )
 except ModuleNotFoundError:  # pragma: no cover
     pass
@@ -668,5 +640,5 @@ else:
     __all__ += [
         "next_from_sequence",
         "NextFromSequenceError",
-        "redirect_to_next_from_sequence_error",
+        "redirect_next_from_sequence_error",
     ]

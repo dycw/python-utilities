@@ -24,7 +24,7 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 
 _T = TypeVar("_T")
 _ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
@@ -122,9 +122,7 @@ def _default(  # noqa: PLR0911, PLR0912
         return {_CLASS: "UUID", _VALUE: str(obj)}
     if extra is not None:
         cls = type(obj)
-        with redirect_context(
-            (KeyError, ValueError), JsonSerializationError(f"{cls=}")
-        ):
+        with redirect_error((KeyError, ValueError), JsonSerializationError(f"{cls=}")):
             key, func = extra[cls]
         return {_CLASS: key, _VALUE: func(obj)}
     try:
@@ -222,7 +220,7 @@ def _object_hook(  # noqa: PLR0911
             return create_engine(value)
         case _:
             if extra is not None:
-                with redirect_context(
+                with redirect_error(
                     KeyError, JsonDeserializationError(f"{cls=}, {extra=}")
                 ):
                     func = extra[cls]

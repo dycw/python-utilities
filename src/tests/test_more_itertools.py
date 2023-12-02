@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from re import escape
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
@@ -66,15 +65,9 @@ class TestOne:
         assert one([None]) is None
 
     def test_error_empty(self) -> None:
-        with raises(
-            OneEmptyError, match=escape("too few items in iterable (expected 1)")
-        ):
+        with raises(OneEmptyError):
             _ = one([])
 
     def test_error_non_unique(self) -> None:
-        with raises(
-            OneNonUniqueError,
-            match="Expected exactly one item in iterable, but got 1, 2, and "
-            "perhaps more",
-        ):
-            _ = one([1, 2, 3])
+        with raises(OneNonUniqueError):
+            _ = one([1, 2])

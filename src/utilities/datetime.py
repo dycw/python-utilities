@@ -9,7 +9,7 @@ from typing import Any, cast
 
 from typing_extensions import assert_never
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.types import Duration
@@ -224,7 +224,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
             seconds=as_dt.second,
             microseconds=as_dt.microsecond,
         )
-    with redirect_context(ExtractGroupsError, ParseTimedeltaError(f"{timedelta=}")):
+    with redirect_error(ExtractGroupsError, ParseTimedeltaError(f"{timedelta=}")):
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
     return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 

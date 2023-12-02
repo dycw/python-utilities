@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from re import compile
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.more_itertools import OneError, one
 
 
@@ -14,7 +14,7 @@ def extract_group(pattern: str, text: str, /) -> str:
     compiled = compile(pattern)
     if compiled.groups == 1:
         results = compiled.findall(text)
-        with redirect_context(OneError, ExtractGroupError(f"{pattern=}, {text=}")):
+        with redirect_error(OneError, ExtractGroupError(f"{pattern=}, {text=}")):
             return one(results)
     msg = f"{pattern=}, {text=}"
     raise ExtractGroupError(msg)

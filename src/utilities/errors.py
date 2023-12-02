@@ -4,11 +4,9 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from functools import wraps
 from re import search
-from typing import NoReturn, TypeVar, cast
+from typing import TypeVar, cast
 
-
-class DirectoryExistsError(Exception):
-    ...
+from more_itertools import one
 
 
 class ImpossibleCaseError(Exception):
@@ -16,34 +14,33 @@ class ImpossibleCaseError(Exception):
 
 
 @contextmanager
-def redirect_context(
+def redirect_error(
     old: type[Exception] | tuple[type[Exception], ...],
     new: Exception | type[Exception],
     /,
+    *,
+    match: str | None = None,
 ) -> Iterator[None]:
-    """Context-manager for redirecting an error."""
+    """Context-manager for redirecting a specific type of error."""
 
     try:
         yield
     except Exception as error:
-        if isinstance(error, old):
+        if not isinstance(error, old):
+            raise
+        if match is None:
+            raise new from error
+        arg = one(
+            error.args,
+            too_short=RedirectErrorError(f"{error.args=}"),
+            too_long=RedirectErrorError(f"{error.args=}"),
+        )
+        if not isinstance(arg, str):
+            msg = f"{arg=}"
+            raise RedirectErrorError(msg) from error
+        if search(match, arg):
             raise new from error
         raise
-
-
-def redirect_error(
-    old: Exception, pattern: str, new: Exception | type[Exception], /
-) -> NoReturn:
-    """Redirect an error if a matching string is found."""
-    args = old.args
-    try:
-        (msg,) = args
-    except ValueError:
-        raise RedirectErrorError(args) from None
-    else:
-        if isinstance(msg, str) and search(pattern, msg):
-            raise new from None
-        raise old
 
 
 class RedirectErrorError(Exception):
@@ -78,10 +75,4 @@ def retry(
     return inner
 
 
-__all__ = [
-    "DirectoryExistsError",
-    "RedirectErrorError",
-    "redirect_context",
-    "redirect_error",
-    "retry",
-]
+__all__ = ["RedirectErrorError", "redirect_error", "retry"]

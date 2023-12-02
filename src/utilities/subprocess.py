@@ -8,7 +8,7 @@ from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.more_itertools import OneError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PathLike
@@ -29,7 +29,7 @@ def get_shell_output(
     """
     cwd = Path(cwd)
     if activate is not None:
-        with redirect_context(OneError, GetShellOutputError(f"{cwd=}")):
+        with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))
         cmd = f"source {activate}; {cmd}"  # pragma: os-ne-windows
 
