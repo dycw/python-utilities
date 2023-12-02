@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from functools import wraps
 from re import search
 from typing import NoReturn, TypeVar, cast
@@ -8,6 +9,26 @@ from typing import NoReturn, TypeVar, cast
 
 class DirectoryExistsError(Exception):
     ...
+
+
+class ImpossibleCaseError(Exception):
+    ...
+
+
+@contextmanager
+def redirect_context(
+    old: type[Exception] | tuple[type[Exception], ...],
+    new: Exception | type[Exception],
+    /,
+) -> Iterator[None]:
+    """Context-manager for redirecting an error."""
+
+    try:
+        yield
+    except Exception as error:
+        if isinstance(error, old):
+            raise new from error
+        raise
 
 
 def redirect_error(
@@ -57,4 +78,10 @@ def retry(
     return inner
 
 
-__all__ = ["DirectoryExistsError", "RedirectErrorError", "redirect_error", "retry"]
+__all__ = [
+    "DirectoryExistsError",
+    "RedirectErrorError",
+    "redirect_context",
+    "redirect_error",
+    "retry",
+]

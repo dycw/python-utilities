@@ -4,7 +4,6 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sequence
 from functools import partial, reduce
 from itertools import permutations
-from math import isclose
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, TypeVar, cast
 
 from numpy import where
@@ -25,8 +24,10 @@ from pandas import (
 from pandas.testing import assert_frame_equal, assert_index_equal
 
 from utilities.datetime import UTC
-from utilities.errors import redirect_error
+from utilities.errors import redirect_context, redirect_error
+from utilities.iterables import CheckLengthError, check_length
 from utilities.numpy import NDArray1, dt64ns, has_dtype
+from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -71,10 +72,53 @@ def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
     return cast(Any, df).astype(dtype)
 
 
+def check_index(
+    index: IndexA,
+    /,
+    *,
+    length: int | tuple[int, float] | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    name: Hashable | Sentinel = sentinel,
+    sorted: bool = False,  # noqa: A002
+    unique: bool = False,
+) -> None:
+    """Check the properties of an Index."""
+    if length is not None:
+        with redirect_context(
+            CheckLengthError, CheckIndexError(f"{index=}, {length=}")
+        ):
+            check_length(index, equal_or_approx=length)
+    if min_length is not None:
+        with redirect_context(
+            CheckLengthError, CheckIndexError(f"{index=}, {min_length=}")
+        ):
+            check_length(index, min=min_length)
+    if max_length is not None:
+        with redirect_context(
+            CheckLengthError, CheckIndexError(f"{index=}, {max_length=}")
+        ):
+            check_length(index, max=max_length)
+    if (not isinstance(name, Sentinel)) and (index.name != name):
+        msg = f"{index=}, {name=}"
+        raise CheckIndexError(msg)
+    if sorted:
+        with redirect_context(AssertionError, CheckIndexError(f"{index=}")):
+            assert_index_equal(index, index.sort_values())
+    if unique and index.has_duplicates:
+        msg = f"{index=}"
+        raise CheckIndexError(msg)
+
+
+class CheckIndexError(Exception):
+    ...
+
+
 def check_pandas_dataframe(
     df: DataFrame,
     /,
     *,
+    standard: bool = False,
     columns: Sequence[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
     length: int | tuple[int, float] | None = None,
@@ -84,13 +128,18 @@ def check_pandas_dataframe(
     unique: Hashable | Sequence[Hashable] | None = None,
 ) -> None:
     """Check the properties of a DataFrame."""
-    check_range_index(df.index)
-    if df.columns.name is not None:
-        msg = f"{df=}"
-        raise CheckPandasDataFrameError(msg)
-    if df.columns.duplicated().any():
-        msg = f"{df=}"
-        raise CheckPandasDataFrameError(msg)
+    if standard:
+        if not isinstance(df.index, RangeIndex):
+            msg = f"{df.index=}"
+            raise CheckPandasDataFrameError(msg)
+        with redirect_context(
+            CheckRangeIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
+        ):
+            check_range_index(df.index, start=0, step=1, name=None)
+        with redirect_context(
+            CheckIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
+        ):
+            check_index(df.columns, name=None, unique=True)
     if (columns is not None) and (list(df.columns) != columns):
         msg = f"{df=}, {columns=}"
         raise CheckPandasDataFrameError(msg)
@@ -98,20 +147,24 @@ def check_pandas_dataframe(
         msg = f"{df=}, {dtypes=}"
         raise CheckPandasDataFrameError(msg)
     if length is not None:
-        check_pandas_dataframe_length(df, length)
-    if (min_length is not None) and (len(df) < min_length):
-        msg = f"{df=}, {min_length=}"
-        raise CheckPandasDataFrameError(msg)
-    if (max_length is not None) and (len(df) > max_length):
-        msg = f"{df=}, {max_length=}"
-        raise CheckPandasDataFrameError(msg)
+        with redirect_context(
+            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {length=}")
+        ):
+            check_length(df, equal_or_approx=length)
+    if min_length is not None:
+        with redirect_context(
+            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {min_length=}")
+        ):
+            check_length(df, min=min_length)
+    if max_length is not None:
+        with redirect_context(
+            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {max_length=}")
+        ):
+            check_length(df, max=max_length)
     if sorted is not None:
         df_sorted: DataFrame = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
-        try:
+        with redirect_context(AssertionError, CheckPandasDataFrameError(f"{df=}")):
             assert_frame_equal(df, df_sorted)
-        except AssertionError:
-            msg = f"{df=}, {sorted=}"
-            raise CheckPandasDataFrameError(msg) from None
     if (unique is not None) and df.duplicated(subset=unique).any():
         msg = f"{df=}, {unique=}"
         raise CheckPandasDataFrameError(msg)
@@ -121,38 +174,48 @@ class CheckPandasDataFrameError(Exception):
     ...
 
 
-def check_pandas_dataframe_length(
-    df: DataFrame, length: int | tuple[int, float], /
+def check_range_index(
+    index: RangeIndex,
+    /,
+    *,
+    start: int | None = None,
+    stop: int | None = None,
+    step: int | None = None,
+    length: int | tuple[int, float] | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    name: Hashable | Sentinel = sentinel,
 ) -> None:
-    """Check the length of a DataFrame."""
-    if isinstance(length, int) and (len(df) != length):
-        msg = f"{df=}, {length=}"
-        raise CheckPandasDataFrameLengthError(msg)
-    if isinstance(length, tuple):
-        length_int, rel_tol = length
-        if not isclose(len(df), length_int, rel_tol=rel_tol):
-            msg = f"{df=}, {length=}"
-            raise CheckPandasDataFrameLengthError(msg)
-
-
-class CheckPandasDataFrameLengthError(Exception):
-    ...
-
-
-def check_range_index(obj: IndexA | SeriesA | DataFrame, /) -> None:
-    """Check if a RangeIndex is the default one."""
-    msg = f"{obj=}"
-    if isinstance(obj, Index):
-        if not isinstance(obj, RangeIndex):
-            raise CheckRangeIndexError(msg)
-        if obj.start != 0:  # type: ignore
-            raise CheckRangeIndexError(msg)
-        if obj.step != 1:  # type: ignore
-            raise CheckRangeIndexError(msg)
-        if obj.name is not None:
-            raise CheckRangeIndexError(msg)
-    else:
-        check_range_index(obj.index)
+    """Check if an RangeIndex is the default one."""
+    if (start is not None) and (cast(int, index.start) != start):
+        msg = f"{index=}, {start=}"
+        raise CheckRangeIndexError(msg)
+    if (stop is not None) and (cast(int, index.stop) != stop):
+        msg = f"{index=}, {stop=}"
+        raise CheckRangeIndexError(msg)
+    if (step is not None) and (cast(int, index.step) != step):
+        msg = f"{index=}, {step=}"
+        raise CheckRangeIndexError(msg)
+    if length is not None:
+        with redirect_context(
+            CheckIndexError, CheckRangeIndexError(f"{index=}, {length=}")
+        ):
+            check_index(index, length=length)
+    if min_length is not None:
+        with redirect_context(
+            CheckIndexError, CheckRangeIndexError(f"{index=}, {min_length=}")
+        ):
+            check_index(index, min_length=min_length)
+    if max_length is not None:
+        with redirect_context(
+            CheckIndexError, CheckRangeIndexError(f"{index=}, {max_length=}")
+        ):
+            check_index(index, max_length=max_length, name=name)
+    if not isinstance(name, Sentinel):
+        with redirect_context(
+            CheckIndexError, CheckRangeIndexError(f"{index=}, {name=}")
+        ):
+            check_index(index, name=name)
 
 
 class CheckRangeIndexError(Exception):
@@ -270,8 +333,8 @@ class ToNumpyError(Exception):
 
 
 __all__ = [
+    "CheckIndexError",
     "CheckPandasDataFrameError",
-    "CheckPandasDataFrameLengthError",
     "CheckRangeIndexError",
     "EmptyPandasConcatError",
     "Int64",
@@ -284,8 +347,8 @@ __all__ = [
     "astype",
     "boolean",
     "category",
+    "check_index",
     "check_pandas_dataframe",
-    "check_pandas_dataframe_length",
     "check_range_index",
     "datetime64nshk",
     "datetime64nsutc",

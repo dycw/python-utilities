@@ -4,8 +4,33 @@ from typing import NoReturn
 
 from pytest import mark, param, raises
 
-from utilities.errors import RedirectErrorError, redirect_error, retry
+from utilities.errors import RedirectErrorError, redirect_context, redirect_error, retry
 from utilities.more_itertools import one
+
+
+class TestRedirectContext:
+    def test_redirect(self) -> None:
+        class FirstError(Exception):
+            ...
+
+        class SecondError(Exception):
+            ...
+
+        with raises(SecondError), redirect_context(FirstError, SecondError):
+            raise FirstError
+
+    def test_did_not_redirect(self) -> None:
+        class FirstError(Exception):
+            ...
+
+        class SecondError(Exception):
+            ...
+
+        class ThirdError(Exception):
+            ...
+
+        with raises(FirstError), redirect_context(SecondError, ThirdError):
+            raise FirstError
 
 
 class TestRedirectError:

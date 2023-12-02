@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from polars import DataFrame, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
-from pytest import mark, param, raises
+from pytest import raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
-    CheckPolarsDataFrameHeightError,
     SetFirstRowAsColumnsError,
     check_polars_dataframe,
-    check_polars_dataframe_height,
     join,
     set_first_row_as_columns,
 )
@@ -38,9 +36,14 @@ class TestCheckPolarsDataFrame:
         with raises(CheckPolarsDataFrameError):
             check_polars_dataframe(df, dtypes=[Float64])
 
-    def test_height(self) -> None:
+    def test_height_pass(self) -> None:
         df = DataFrame({"value": [0.0]})
         check_polars_dataframe(df, height=1)
+
+    def test_height_error(self) -> None:
+        df = DataFrame({"value": [0.0]})
+        with raises(CheckPolarsDataFrameError):
+            check_polars_dataframe(df, height=2)
 
     def test_min_height_pass(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
@@ -104,19 +107,6 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(CheckPolarsDataFrameError):
             check_polars_dataframe(df, width=1)
-
-
-class TestCheckPolarsDataFrameHeight:
-    @mark.parametrize("height", [param(10), param((11, 0.1))])
-    def test_main(self, *, height: int | tuple[int, float]) -> None:
-        df = DataFrame({"value": range(10)})
-        check_polars_dataframe_height(df, height)
-
-    @mark.parametrize("height", [param(0), param((12, 0.1))])
-    def test_error(self, *, height: int | tuple[int, float]) -> None:
-        df = DataFrame({"value": range(10)})
-        with raises(CheckPolarsDataFrameHeightError):
-            check_polars_dataframe_height(df, height)
 
 
 class TestJoin:
