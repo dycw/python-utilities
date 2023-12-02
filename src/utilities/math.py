@@ -8,6 +8,11 @@ from beartype.vale import Is
 # functions
 
 
+def is_equal(x: float, y: float, /) -> bool:
+    """Check if x == y."""
+    return (x == y) or (isnan(x) and isnan(y))
+
+
 def is_at_least(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:

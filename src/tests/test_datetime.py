@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
+    permutations,
     sampled_from,
     timedeltas,
     times,
@@ -50,6 +51,7 @@ from utilities.datetime import (
     ensure_timedelta,
     get_now,
     get_today,
+    is_equal_mod_tz,
     is_weekday,
     local_timezone,
     maybe_sub_pct_y,
@@ -164,9 +166,29 @@ class TestEnsure:
         assert result == value
 
 
+class TestIsEqual:
+    @given(x=datetimes(), y=datetimes())
+    def test_naive(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        assert is_equal_mod_tz(x, y) == (x == y)
+
+    @given(x=datetimes(timezones=just(UTC)), y=datetimes(timezones=just(UTC)))
+    def test_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
+        assert is_equal_mod_tz(x, y) == (x == y)
+
+    @given(data=data(), x=datetimes(), y=datetimes())
+    def test_naive_vs_utc(
+        self, *, data: DataObject, x: dt.datetime, y: dt.datetime
+    ) -> None:
+        expected = x == y
+        naive = x
+        aware = y.replace(tzinfo=UTC)
+        x_use, y_use = data.draw(permutations([naive, aware]))
+        assert is_equal_mod_tz(x_use, y_use) == expected
+
+
 class TestIsWeekday:
     @given(date=dates())
-    def test_is_weekday(self, *, date: dt.date) -> None:
+    def test_main(self, *, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}

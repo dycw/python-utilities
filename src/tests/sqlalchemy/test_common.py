@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from math import floor
-from operator import eq
 from typing import Any
 
 from hypothesis import given
@@ -9,26 +8,19 @@ from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 from sqlalchemy import Column, Connection, Engine, Integer, MetaData, Table, select
 from sqlalchemy import create_engine as _create_engine
-from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.orm import declarative_base
 
 from utilities._sqlalchemy.common import (
     INSERT_ITEMS_CHUNK_SIZE_FRAC,
     Dialect,
     GetTableError,
-    _check_series_against_table_column,
-    _check_series_against_table_schema,
-    _CheckSeriesAgainstTableColumnError,
-    _CheckSeriesAgainstTableSchemaError,
     _insert_items_collect,
     _insert_items_collect_iterable,
     _insert_items_collect_valid,
     _InsertionItem,
     _InsertItemsCollectError,
     _InsertItemsCollectIterableError,
-    check_selectable_for_duplicate_columns,
     chunk_for_engine,
-    get_column_names,
     get_columns,
     get_dialect,
     get_table,
@@ -44,52 +36,6 @@ from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import ensure_tables_created
 
 
-class TestCheckSelectableForDuplicates:
-    def test_error(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table.c.id, table.c.id)
-        with raises(DuplicateColumnError):
-            check_selectable_for_duplicate_columns(sel)
-
-
-class TestCheckSeriesAgainstAgainstTableColumn:
-    def test_main(self) -> None:
-        schema = {"a": int, "b": float, "c": str}
-        result = _check_series_against_table_column("b", schema)
-        expected = ("b", float)
-        assert result == expected
-
-    @mark.parametrize("sr_name", [param("b"), param("B")])
-    def test_snake(self, *, sr_name: str) -> None:
-        schema = {"A": int, "B": float, "C": str}
-        result = _check_series_against_table_column(sr_name, schema, snake=True)
-        expected = ("B", float)
-        assert result == expected
-
-    @mark.parametrize("snake", [param(True), param(False)])
-    def test_error_empty(self, *, snake: bool) -> None:
-        schema = {"a": int, "b": float, "c": str}
-        with raises(_CheckSeriesAgainstTableColumnError):
-            _ = _check_series_against_table_column("value", schema, snake=snake)
-
-    def test_error_non_unique(self) -> None:
-        schema = {"a": int, "b": float, "B": float, "c": str}
-        with raises(_CheckSeriesAgainstTableColumnError):
-            _ = _check_series_against_table_column("b", schema, snake=True)
-
-
-class TestCheckSeriesAgainstAgainstTableSchema:
-    def test_success(self) -> None:
-        table_schema = {"a": int, "b": float, "c": str}
-        result = _check_series_against_table_schema("b", float, table_schema, eq)
-        assert result == "b"
-
-    def test_fail(self) -> None:
-        table_schema = {"a": int, "b": float, "c": str}
-        with raises(_CheckSeriesAgainstTableSchemaError):
-            _ = _check_series_against_table_schema("b", int, table_schema, eq)
-
-
 class TestChunkForEngine:
     @given(engine=sqlite_engines(), n=integers(0, 1000))
     def test_main(self, *, engine: Engine, n: int) -> None:
@@ -103,23 +49,6 @@ class TestDialect:
     @mark.parametrize("dialect", Dialect)
     def test_max_params(self, *, dialect: Dialect) -> None:
         assert isinstance(dialect.max_params, int)
-
-
-class TestGetColumnNames:
-    def test_table(self) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        self._run_test(table)
-
-    def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
-
-            id_ = Column(Integer, primary_key=True)
-
-        self._run_test(Example)
-
-    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
-        assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
 class TestGetColumns:

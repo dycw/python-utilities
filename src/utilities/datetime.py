@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
 from re import sub
+from typing import Any, cast
 
 from typing_extensions import assert_never
 
@@ -99,6 +100,20 @@ def get_today(*, tz: tzinfo | None = UTC) -> dt.date:
 
 
 TODAY_UTC, TODAY_HKG, TODAY_TKY = (get_today(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+
+
+def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
+    """Check if x == y, modulo timezone."""
+    x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
+    match arg := (x_aware, y_aware):
+        case (False, False) | (True, True):
+            return x == y
+        case True, False:
+            return x.astimezone(UTC).replace(tzinfo=None) == y
+        case False, True:
+            return x == y.astimezone(UTC).replace(tzinfo=None)
+        case _:  # pragma: no cover
+            assert_never(cast(Any, arg))
 
 
 def is_weekday(date: dt.date, /) -> bool:

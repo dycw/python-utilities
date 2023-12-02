@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 import typing
 from enum import auto
-from operator import eq
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
@@ -72,6 +71,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
+from utilities._sqlalchemy.common import get_column_names
 from utilities.hypothesis import (
     lists_fixed_length,
     sqlite_engines,
@@ -110,7 +110,6 @@ from utilities.sqlalchemy import (
     _CheckColumnTypesStringEqualError,
     _CheckColumnTypesUuidEqualError,
     _CheckTableOrColumnNamesEqualError,
-    check_dataframe_schema_against_table,
     check_engine,
     check_table_against_reflection,
     columnwise_max,
@@ -600,61 +599,6 @@ class TestCheckColumnTypesUuidEqual:
                 _check_column_types_uuid_equal(x, y)
 
 
-class TestCheckDataFrameSchemaAgainstTable:
-    def test_default(self) -> None:
-        df_schema = {"a": int, "b": float}
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("a", Integer),
-            Column("b", Float),
-        )
-        result = check_dataframe_schema_against_table(df_schema, table, eq)
-        expected = {"a": "a", "b": "b"}
-        assert result == expected
-
-    def test_snake(self) -> None:
-        df_schema = {"a": int, "b": float}
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("A", Integer),
-            Column("B", Float),
-        )
-        result = check_dataframe_schema_against_table(df_schema, table, eq, snake=True)
-        expected = {"a": "A", "b": "B"}
-        assert result == expected
-
-    def test_df_has_extra_columns(self) -> None:
-        df_schema = {"a": int, "b": float, "c": str}
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("a", Integer),
-            Column("b", Float),
-        )
-        result = check_dataframe_schema_against_table(df_schema, table, eq)
-        expected = {"a": "a", "b": "b"}
-        assert result == expected
-
-    def test_table_has_extra_columns(self) -> None:
-        df_schema = {"a": int, "b": float}
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("a", Integer),
-            Column("b", Float),
-            Column("c", String),
-        )
-        result = check_dataframe_schema_against_table(df_schema, table, eq)
-        expected = {"a": "a", "b": "b"}
-        assert result == expected
-
-
 class TestCheckEngine:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
@@ -916,6 +860,23 @@ class TestEnsureTablesDropped:
                 _ = conn.execute(sel).all()
             except DatabaseError as error:
                 redirect_to_no_such_table_error(engine, error)
+
+
+class TestGetColumnNames:
+    def test_table(self) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        self._run_test(table)
+
+    def test_mapped_class(self) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        self._run_test(Example)
+
+    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+        assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
 class TestGetTableName:

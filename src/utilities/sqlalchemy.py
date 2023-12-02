@@ -47,8 +47,6 @@ from utilities._sqlalchemy.common import (
     Dialect,
     GetDialectError,
     GetTableError,
-    check_dataframe_schema_against_table,
-    check_selectable_for_duplicate_columns,
     chunk_for_engine,
     get_column_names,
     get_columns,
@@ -608,9 +606,7 @@ class TablenameMixin:
 
 
 __all__ = [
-    "check_dataframe_schema_against_table",
     "check_engine",
-    "check_selectable_for_duplicate_columns",
     "check_table_against_reflection",
     "CheckEngineError",
     "chunk_for_engine",
@@ -645,54 +641,20 @@ __all__ = [
 
 
 try:
-    from utilities._sqlalchemy.fastparquet import select_to_parquet
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["select_to_parquet"]
-
-
-try:
-    from utilities._sqlalchemy.pandas import (
-        InsertPandasDataFrameError,
-        StreamDataFramesError,
-        TableColumnToDTypeError,
-        insert_pandas_dataframe,
-        select_to_pandas_dataframe,
-        stream_dataframes,
-        table_column_to_dtype,
-    )
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += [
-        "insert_pandas_dataframe",
-        "InsertPandasDataFrameError",
-        "select_to_pandas_dataframe",
-        "stream_dataframes",
-        "StreamDataFramesError",
-        "table_column_to_dtype",
-        "TableColumnToDTypeError",
-    ]
-
-
-try:
     from utilities._sqlalchemy.polars import (
-        InsertPolarsDataFrameError,
-        TableColumnToExprError,
-        insert_polars_dataframe,
-        select_to_polars_dataframe,
-        table_column_to_expr,
+        InsertDataFrameError,
+        _select_to_dataframe_map_table_column_to_dtype,
+        insert_dataframe,
+        select_to_dataframe,
     )
 except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
     __all__ += [
-        "insert_polars_dataframe",
-        "InsertPolarsDataFrameError",
-        "select_to_polars_dataframe",
-        "table_column_to_expr",
-        "TableColumnToExprError",
+        "insert_dataframe",
+        "InsertDataFrameError",
+        "select_to_dataframe",
+        "_select_to_dataframe_map_table_column_to_dtype",
     ]
 
 try:
