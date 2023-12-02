@@ -8,7 +8,7 @@ from pathlib import Path
 from smtplib import SMTP
 from typing import Any
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.pathlib import PathLike
 from utilities.pytest import is_pytest
 from utilities.types import IterableStrs
@@ -39,7 +39,7 @@ def send_email(
         if isinstance(contents, str):
             text = MIMEText(contents, subtype)
         else:
-            with redirect_context(ModuleNotFoundError, SendEmailError(f"{contents=}")):
+            with redirect_error(ModuleNotFoundError, SendEmailError(f"{contents=}")):
                 from airium import Airium
 
                 if not isinstance(contents, Airium):

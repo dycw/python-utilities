@@ -22,7 +22,7 @@ from sqlalchemy.orm import InstrumentedAttribute, class_mapper
 from sqlalchemy.orm.exc import UnmappedClassError
 from typing_extensions import assert_never
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.more_itertools import one
 
@@ -168,7 +168,7 @@ class _InsertionItem:
 def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
     """Collect the insertion items."""
     if isinstance(item, tuple):
-        with redirect_context(ValueError, _InsertItemsCollectError(f"{item=}")):
+        with redirect_error(ValueError, _InsertItemsCollectError(f"{item=}")):
             data, table_or_mapped_class = item
         if not is_table_or_mapped_class(table_or_mapped_class):
             msg = f"{table_or_mapped_class=}"

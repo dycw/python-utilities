@@ -4,10 +4,13 @@ from typing import Any
 
 from luigi import Parameter, Target
 from sqlalchemy import Engine, Select, create_engine
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from typing_extensions import override
 
-from utilities.sqlalchemy import get_table_name, redirect_to_no_such_table_error
+from utilities.sqlalchemy import (
+    TableDoesNotExistError,
+    get_table_name,
+    redirect_table_does_not_exist,
+)
 
 
 class DatabaseTarget(Target):
@@ -20,13 +23,10 @@ class DatabaseTarget(Target):
 
     def exists(self) -> bool:  # type: ignore
         try:
-            with self._engine.begin() as conn:
+            with self._engine.begin() as conn, redirect_table_does_not_exist(conn):
                 res = conn.execute(self._sel).one_or_none()
-        except DatabaseError as error:
-            try:
-                redirect_to_no_such_table_error(self._engine, error)
-            except NoSuchTableError:
-                return False
+        except TableDoesNotExistError:
+            return False
         else:
             return res is not None
 

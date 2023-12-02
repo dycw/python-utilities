@@ -415,7 +415,7 @@ from utilities.numpy import (
     is_zero_or_non_micro_or_nan,
     maximum,
     minimum,
-    redirect_to_empty_numpy_concatenate_error,
+    redirect_empty_numpy_concatenate_error,
     shift_bool,
     year,
 )
@@ -1818,13 +1818,12 @@ class TestNDims:
         die_if_unbearable(arr, Annotated[NDArray[Any], hint])
 
 
-class TestRedirectToEmptyNumpyConcatenateError:
+class TestRedirectEmptyNumpyConcatenateError:
     def test_main(self) -> None:
-        with raises(EmptyNumpyConcatenateError):
-            try:
-                _ = concatenate([])
-            except ValueError as error:
-                redirect_to_empty_numpy_concatenate_error(error)
+        with raises(
+            EmptyNumpyConcatenateError
+        ), redirect_empty_numpy_concatenate_error():
+            _ = concatenate([])
 
 
 class TestShiftBool:

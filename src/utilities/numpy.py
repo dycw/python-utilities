@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from functools import reduce
 from itertools import repeat
-from typing import Annotated, Any, Literal, NoReturn, cast, overload
+from typing import Annotated, Any, Literal, cast, overload
 
 import numpy as np
 from beartype.vale import Is, IsAttr, IsEqual
@@ -45,7 +46,7 @@ from utilities._numpy.common import (
     shift,
 )
 from utilities.datetime import EPOCH_UTC
-from utilities.errors import redirect_context, redirect_error
+from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.re import extract_group
 
@@ -272,7 +273,7 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
 
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == dt64D:
-        with redirect_context(
+        with redirect_error(
             OverflowError, DateTime64ToDateError(f"{datetime=}, {dtype=}")
         ):
             return (EPOCH_UTC + dt.timedelta(days=as_int)).date()
@@ -301,7 +302,7 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
 
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == dt64ms:
-        with redirect_context(
+        with redirect_error(
             OverflowError, DateTime64ToDateTimeError(f"{datetime=}, {dtype=}")
         ):
             return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
@@ -395,12 +396,13 @@ def flatn0(array: NDArrayB1, /) -> int:
     if not array.any():
         msg = f"{array=}"
         raise FlatN0Error(msg)
-    try:
-        return flatnonzero(array).item()
-    except ValueError as error:
-        pattern = "can only convert an array of size 1 to a Python scalar"
-        msg = f"{array=}"
-        redirect_error(error, pattern, FlatN0Error(msg))
+    flattened = flatnonzero(array)
+    with redirect_error(
+        ValueError,
+        FlatN0Error(f"{array=}"),
+        match="can only convert an array of size 1 to a Python scalar",
+    ):
+        return flattened.item()
 
 
 class FlatN0Error(Exception):
@@ -1017,11 +1019,15 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     return reduce(np.minimum, xs)
 
 
-def redirect_to_empty_numpy_concatenate_error(error: ValueError, /) -> NoReturn:
+@contextmanager
+def redirect_empty_numpy_concatenate_error() -> Iterator[None]:
     """Redirect to the `EmptyNumpyConcatenateError`."""
-    redirect_error(
-        error, "need at least one array to concatenate", EmptyNumpyConcatenateError
-    )
+    with redirect_error(
+        ValueError,
+        EmptyNumpyConcatenateError,
+        match="need at least one array to concatenate",
+    ):
+        yield
 
 
 class EmptyNumpyConcatenateError(Exception):
@@ -1741,7 +1747,7 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "maximum",
     "minimum",
-    "redirect_to_empty_numpy_concatenate_error",
+    "redirect_empty_numpy_concatenate_error",
     "shift",
     "shift_bool",
     "year",

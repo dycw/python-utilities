@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import NoReturn
-
 from pytest import mark, param, raises
 
-from utilities.errors import RedirectErrorError, redirect_context, redirect_error, retry
+from utilities.errors import RedirectErrorError, redirect_error, retry
 from utilities.more_itertools import one
 
 
-class TestRedirectContext:
+class TestRedirectError:
     def test_redirect(self) -> None:
         class FirstError(Exception):
             ...
@@ -16,10 +14,10 @@ class TestRedirectContext:
         class SecondError(Exception):
             ...
 
-        with raises(SecondError), redirect_context(FirstError, SecondError):
+        with raises(SecondError), redirect_error(FirstError, SecondError):
             raise FirstError
 
-    def test_did_not_redirect(self) -> None:
+    def test_no_redirect(self) -> None:
         class FirstError(Exception):
             ...
 
@@ -29,35 +27,70 @@ class TestRedirectContext:
         class ThirdError(Exception):
             ...
 
-        with raises(FirstError), redirect_context(SecondError, ThirdError):
+        with raises(FirstError), redirect_error(SecondError, ThirdError):
             raise FirstError
 
+    def test_match_and_redirect(self) -> None:
+        class FirstError(Exception):
+            ...
 
-class TestRedirectError:
-    class _CustomError(Exception):
-        ...
+        class SecondError(Exception):
+            ...
 
-    def test_generic_redirected_to_custom(self) -> None:
-        with raises(self._CustomError):
-            self._raises_custom("generic error")
+        with raises(SecondError), redirect_error(FirstError, SecondError, match="text"):
+            msg = "text"
+            raise FirstError(msg)
 
-    def test_generic_not_redirected_to_custom(self) -> None:
-        with raises(ValueError, match="generic error"):
-            self._raises_custom("something else")
+    def test_match_and_args_empty_error(self) -> None:
+        class FirstError(Exception):
+            ...
 
-    def _raises_custom(self, pattern: str, /) -> NoReturn:
-        try:
-            msg = "generic error"
-            raise ValueError(msg)  # noqa: TRY301
-        except ValueError as error:
-            redirect_error(error, pattern, self._CustomError)
+        class SecondError(Exception):
+            ...
 
-    def test_generic_with_no_unique_arg(self) -> None:
-        with raises(RedirectErrorError):
-            try:
-                raise ValueError(0, 1)  # noqa: TRY301
-            except ValueError as error:
-                redirect_error(error, "error", RuntimeError)
+        with raises(RedirectErrorError), redirect_error(
+            FirstError, SecondError, match="match"
+        ):
+            raise FirstError()  # noqa: RSE102
+
+    def test_match_and_args_non_unique_error(self) -> None:
+        class FirstError(Exception):
+            ...
+
+        class SecondError(Exception):
+            ...
+
+        with raises(RedirectErrorError), redirect_error(
+            FirstError, SecondError, match="match"
+        ):
+            args = "x", "y"
+            raise FirstError(args)
+
+    def test_match_and_arg_not_string_error(self) -> None:
+        class FirstError(Exception):
+            ...
+
+        class SecondError(Exception):
+            ...
+
+        with raises(RedirectErrorError), redirect_error(
+            FirstError, SecondError, match="match"
+        ):
+            arg = 0
+            raise FirstError(arg)
+
+    def test_match_and_no_redirect(self) -> None:
+        class FirstError(Exception):
+            ...
+
+        class SecondError(Exception):
+            ...
+
+        with raises(FirstError), redirect_error(
+            FirstError, SecondError, match="something else"
+        ):
+            msg = "text"
+            raise FirstError(msg)
 
 
 class TestRetry:

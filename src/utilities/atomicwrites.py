@@ -8,9 +8,12 @@ from shutil import move, rmtree
 from atomicwrites import move_atomic, replace_atomic
 from pathvalidate import validate_filepath
 
-from utilities.errors import DirectoryExistsError
 from utilities.pathlib import PathLike
 from utilities.tempfile import TemporaryDirectory
+
+
+class DirectoryExistsError(Exception):
+    ...
 
 
 @contextmanager
@@ -32,18 +35,17 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
                 if overwrite:
                     return replace_atomic(src, dest)
                 return move_atomic(src, dest)
-            elif temp_path.is_dir():
+            if temp_path.is_dir():
                 if (not path.exists()) or overwrite:
                     return move(temp_path, path)
                 msg = f"{temp_dir=}, {path=}"
                 raise DirectoryExistsError(msg)
-            else:
-                msg = f"{temp_path=}"
-                raise WriterError(msg)
+            msg = f"{temp_path=}"
+            raise WriterError(msg)
 
 
 class WriterError(Exception):
     ...
 
 
-__all__ = ["WriterError", "writer"]
+__all__ = ["DirectoryExistsError", "WriterError", "writer"]

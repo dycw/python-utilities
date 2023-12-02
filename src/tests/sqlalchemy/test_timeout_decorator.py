@@ -6,9 +6,8 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import DatabaseError
 
 from utilities._sqlalchemy.timeout_decorator import (
-    NextFromSequenceError,
     next_from_sequence,
-    redirect_to_next_from_sequence_error,
+    redirect_next_from_sequence_error,
 )
 from utilities.hypothesis import sqlite_engines, text_ascii
 
@@ -23,6 +22,5 @@ class TestNextFromSequence:
 class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
-        error = DatabaseError(None, None, ValueError("base"))
-        with raises(NextFromSequenceError):
-            _ = redirect_to_next_from_sequence_error(engine, error)
+        with raises(NotImplementedError), redirect_next_from_sequence_error(engine):
+            raise DatabaseError(None, None, ValueError("base"))

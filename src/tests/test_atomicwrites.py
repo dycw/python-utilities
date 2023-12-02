@@ -6,8 +6,7 @@ from re import escape
 
 from pytest import mark, param, raises
 
-from utilities.atomicwrites import WriterError, writer
-from utilities.errors import DirectoryExistsError
+from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
 from utilities.platform import IS_WINDOWS
 
 

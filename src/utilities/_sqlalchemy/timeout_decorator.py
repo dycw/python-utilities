@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import NoReturn
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import timeout_decorator
 from sqlalchemy import Connection, Engine, Sequence
@@ -24,17 +25,14 @@ def next_from_sequence(
     def inner() -> int:
         seq = Sequence(name)
         try:
-            with yield_connection(engine_or_conn) as conn:  # pragma: no cover
+            with yield_connection(
+                engine_or_conn
+            ) as conn, redirect_next_from_sequence_error(conn):  # pragma: no cover
                 return conn.scalar(seq)
-        except DatabaseError as error:
-            try:  # pragma: no cover
-                redirect_to_next_from_sequence_error(
-                    engine_or_conn, error
-                )  # pragma: no cover
-            except NextFromSequenceError:  # pragma: no cover
-                with yield_connection(engine_or_conn) as conn:  # pragma: no cover
-                    _ = seq.create(conn)  # pragma: no cover
-                return inner()  # pragma: no cover
+        except NextFromSequenceError:
+            with yield_connection(engine_or_conn) as conn:  # pragma: no cover
+                _ = seq.create(conn)  # pragma: no cover
+            return inner()  # pragma: no cover
 
     if timeout is None:
         return inner()
@@ -45,9 +43,10 @@ def next_from_sequence(
         return None  # pragma: no cover
 
 
-def redirect_to_next_from_sequence_error(
-    engine_or_conn: Engine | Connection, error: DatabaseError, /
-) -> NoReturn:
+@contextmanager
+def redirect_next_from_sequence_error(
+    engine_or_conn: Engine | Connection
+) -> Iterator[None]:
     """Redirect to the `NextFromSequenceError`."""
     match dialect := get_dialect(engine_or_conn):
         case (  # pragma: no cover
@@ -57,15 +56,16 @@ def redirect_to_next_from_sequence_error(
         ):
             raise NotImplementedError(dialect)  # pragma: no cover
         case Dialect.oracle:  # pragma: no cover
-            pattern = "ORA-02289: sequence does not exist"
+            match = "ORA-02289: sequence does not exist"
         case Dialect.sqlite:
-            msg = f"{engine_or_conn=}, {error=}"
-            raise NextFromSequenceError(msg)
+            msg = f"{engine_or_conn=}"
+            raise NotImplementedError(msg)
         case _:  # pragma: no cover  # type: ignore
             assert_never(dialect)
-    return redirect_error(
-        error, pattern, NextFromSequenceError(*error.args)
-    )  # pragma: no cover
+    with redirect_error(
+        DatabaseError, NextFromSequenceError, match=match
+    ):  # pragma: no cover
+        yield
 
 
 class NextFromSequenceError(Exception):
@@ -75,5 +75,5 @@ class NextFromSequenceError(Exception):
 __all__ = [
     "NextFromSequenceError",
     "next_from_sequence",
-    "redirect_to_next_from_sequence_error",
+    "redirect_next_from_sequence_error",
 ]

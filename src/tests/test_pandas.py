@@ -41,7 +41,7 @@ from utilities.pandas import (
     check_index,
     check_pandas_dataframe,
     check_range_index,
-    redirect_to_empty_pandas_concat_error,
+    redirect_empty_pandas_concat,
     rename_index,
     series_max,
     series_min,
@@ -269,13 +269,10 @@ class TestDTypes:
         assert isinstance(Series([], dtype=dtype), Series)
 
 
-class TestRedirectToEmptyPandasConcatError:
+class TestRedirectEmptyPandasConcat:
     def test_main(self) -> None:
-        with raises(EmptyPandasConcatError):
-            try:
-                _ = concat([])
-            except ValueError as error:
-                redirect_to_empty_pandas_concat_error(error)
+        with raises(EmptyPandasConcatError), redirect_empty_pandas_concat():
+            _ = concat([])
 
 
 class TestRenameIndex:

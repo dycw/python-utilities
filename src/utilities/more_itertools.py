@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from re import escape
 from typing import Any, TypeVar
 
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import one as _one
-
-from utilities.errors import redirect_error
 
 _T = TypeVar("_T")
 
@@ -24,19 +21,11 @@ def always_iterable(
 
 def one(iterable: Iterable[_T], /) -> _T:
     """Custom version of `one` with separate exceptions."""
-    try:
-        return _one(iterable)
-    except ValueError as error:
-        (msg,) = error.args
-        try:
-            pattern = "too few items in iterable (expected 1)"
-            redirect_error(error, escape(pattern), OneEmptyError(msg))
-        except ValueError:
-            pattern = (
-                "Expected exactly one item in iterable, but got .*, .*, and "
-                "perhaps more"
-            )
-            redirect_error(error, pattern, OneNonUniqueError(msg))
+    return _one(
+        iterable,
+        too_short=OneEmptyError(f"{iterable=}"),
+        too_long=OneNonUniqueError(f"{iterable=}"),
+    )
 
 
 class OneError(Exception):

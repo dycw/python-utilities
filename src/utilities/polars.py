@@ -9,7 +9,7 @@ from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
-from utilities.errors import redirect_context
+from utilities.errors import redirect_error
 from utilities.math import is_equal_or_approx
 from utilities.types import SequenceStrs
 
@@ -61,7 +61,7 @@ def check_polars_dataframe(
         raise CheckPolarsDataFrameError(msg)
     if sorted is not None:
         df_sorted = df.sort(sorted)
-        with redirect_context(AssertionError, CheckPolarsDataFrameError(f"{df=}")):
+        with redirect_error(AssertionError, CheckPolarsDataFrameError(f"{df=}")):
             assert_frame_equal(df, df_sorted)
     if (unique is not None) and df.select(unique).is_duplicated().any():
         msg = f"{df=}, {unique=}"
@@ -91,7 +91,7 @@ def join(
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
 
-    with redirect_context(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
+    with redirect_error(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
         row = df.row(0)
     mapping = dict(zip(df.columns, row, strict=True))
     return df[1:].rename(mapping)

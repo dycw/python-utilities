@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Hashable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from functools import partial, reduce
 from itertools import permutations
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
 from numpy import where
 from pandas import (
@@ -24,7 +25,7 @@ from pandas import (
 from pandas.testing import assert_frame_equal, assert_index_equal
 
 from utilities.datetime import UTC
-from utilities.errors import redirect_context, redirect_error
+from utilities.errors import redirect_error
 from utilities.iterables import CheckLengthError, check_length
 from utilities.numpy import NDArray1, dt64ns, has_dtype
 from utilities.sentinel import Sentinel, sentinel
@@ -85,17 +86,15 @@ def check_index(
 ) -> None:
     """Check the properties of an Index."""
     if length is not None:
-        with redirect_context(
-            CheckLengthError, CheckIndexError(f"{index=}, {length=}")
-        ):
+        with redirect_error(CheckLengthError, CheckIndexError(f"{index=}, {length=}")):
             check_length(index, equal_or_approx=length)
     if min_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckLengthError, CheckIndexError(f"{index=}, {min_length=}")
         ):
             check_length(index, min=min_length)
     if max_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckLengthError, CheckIndexError(f"{index=}, {max_length=}")
         ):
             check_length(index, max=max_length)
@@ -103,7 +102,7 @@ def check_index(
         msg = f"{index=}, {name=}"
         raise CheckIndexError(msg)
     if sorted:
-        with redirect_context(AssertionError, CheckIndexError(f"{index=}")):
+        with redirect_error(AssertionError, CheckIndexError(f"{index=}")):
             assert_index_equal(index, index.sort_values())
     if unique and index.has_duplicates:
         msg = f"{index=}"
@@ -132,11 +131,11 @@ def check_pandas_dataframe(
         if not isinstance(df.index, RangeIndex):
             msg = f"{df.index=}"
             raise CheckPandasDataFrameError(msg)
-        with redirect_context(
+        with redirect_error(
             CheckRangeIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
         ):
             check_range_index(df.index, start=0, step=1, name=None)
-        with redirect_context(
+        with redirect_error(
             CheckIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
         ):
             check_index(df.columns, name=None, unique=True)
@@ -147,23 +146,23 @@ def check_pandas_dataframe(
         msg = f"{df=}, {dtypes=}"
         raise CheckPandasDataFrameError(msg)
     if length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckLengthError, CheckPandasDataFrameError(f"{df=}, {length=}")
         ):
             check_length(df, equal_or_approx=length)
     if min_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckLengthError, CheckPandasDataFrameError(f"{df=}, {min_length=}")
         ):
             check_length(df, min=min_length)
     if max_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckLengthError, CheckPandasDataFrameError(f"{df=}, {max_length=}")
         ):
             check_length(df, max=max_length)
     if sorted is not None:
         df_sorted: DataFrame = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
-        with redirect_context(AssertionError, CheckPandasDataFrameError(f"{df=}")):
+        with redirect_error(AssertionError, CheckPandasDataFrameError(f"{df=}")):
             assert_frame_equal(df, df_sorted)
     if (unique is not None) and df.duplicated(subset=unique).any():
         msg = f"{df=}, {unique=}"
@@ -197,22 +196,22 @@ def check_range_index(
         msg = f"{index=}, {step=}"
         raise CheckRangeIndexError(msg)
     if length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckIndexError, CheckRangeIndexError(f"{index=}, {length=}")
         ):
             check_index(index, length=length)
     if min_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckIndexError, CheckRangeIndexError(f"{index=}, {min_length=}")
         ):
             check_index(index, min_length=min_length)
     if max_length is not None:
-        with redirect_context(
+        with redirect_error(
             CheckIndexError, CheckRangeIndexError(f"{index=}, {max_length=}")
         ):
             check_index(index, max_length=max_length, name=name)
     if not isinstance(name, Sentinel):
-        with redirect_context(
+        with redirect_error(
             CheckIndexError, CheckRangeIndexError(f"{index=}, {name=}")
         ):
             check_index(index, name=name)
@@ -222,9 +221,13 @@ class CheckRangeIndexError(Exception):
     ...
 
 
-def redirect_to_empty_pandas_concat_error(error: ValueError, /) -> NoReturn:
+@contextmanager
+def redirect_empty_pandas_concat() -> Iterator[None]:
     """Redirect to the `EmptyPandasConcatError`."""
-    redirect_error(error, "No objects to concatenate", EmptyPandasConcatError)
+    with redirect_error(
+        ValueError, EmptyPandasConcatError, match="No objects to concatenate"
+    ):
+        yield
 
 
 class EmptyPandasConcatError(Exception):
@@ -352,7 +355,7 @@ __all__ = [
     "check_range_index",
     "datetime64nshk",
     "datetime64nsutc",
-    "redirect_to_empty_pandas_concat_error",
+    "redirect_empty_pandas_concat",
     "rename_index",
     "series_max",
     "series_min",
