@@ -15,6 +15,7 @@ dependencies = [
   "loguru >= 0.7.2",
   "more-itertools >= 10.1.0",
   "pathvalidate >= 3.2.0",
+  "pyhumps >= 3.8.0",
   "semver >= 3.0.2",
   "tqdm >= 4.66.1",
   "typed-settings >= 23.1.1",
