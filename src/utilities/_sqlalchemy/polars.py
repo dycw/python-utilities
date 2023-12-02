@@ -29,6 +29,7 @@ from utilities._sqlalchemy.common import (
     yield_connection,
 )
 from utilities.datetime import UTC
+from utilities.errors import redirect_context
 from utilities.functions import identity
 from utilities.humps import snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
@@ -110,11 +111,13 @@ def _insert_dataframe_map_df_column_to_table_column_and_type(
     items = table_schema.items()
     func = snake_case if snake else identity
     target = func(df_col_name)
-    try:
+    with redirect_context(
+        OneError,
+        _InsertDataFrameMapDFColumnToTableColumnAndTypeError(
+            f"{df_col_name=}, {table_schema=}, {snake=}"
+        ),
+    ):
         return one((n, t) for n, t in items if func(n) == target)
-    except OneError:
-        msg = f"{df_col_name=}, {table_schema=}, {snake=}"
-        raise _InsertDataFrameMapDFColumnToTableColumnAndTypeError(msg) from None
 
 
 class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
@@ -244,21 +247,18 @@ def _select_to_dataframe_map_table_column_to_dtype(
     if issubclass(py_type, str):
         return Utf8
     msg = f"{column=}"
-    raise _TableColumnToExprError(msg)
+    raise _SelectToDataFrameMapTableColumnToDTypeError(msg)
 
 
-class _TableColumnToExprError(Exception):
+class _SelectToDataFrameMapTableColumnToDTypeError(Exception):
     ...
 
 
 def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) -> None:
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
-    try:
+    with redirect_context(CheckDuplicatesError, DuplicateColumnError(f"{names=}")):
         check_duplicates(names)
-    except CheckDuplicatesError:
-        msg = f"{names=}"
-        raise DuplicateColumnError(msg) from None
 
 
 __all__ = ["InsertDataFrameError", "insert_dataframe", "select_to_dataframe"]

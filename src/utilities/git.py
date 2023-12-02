@@ -50,7 +50,7 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise GetRepoRootError(cwd) from None
+            raise GetRepoRootError(cwd) from error
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))

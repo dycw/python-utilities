@@ -46,7 +46,7 @@ from utilities._sqlalchemy.polars import (
     _select_to_dataframe_apply_snake,
     _select_to_dataframe_check_duplicates,
     _select_to_dataframe_map_select_to_df_schema,
-    _TableColumnToExprError,
+    _SelectToDataFrameMapTableColumnToDTypeError,
 )
 from utilities.datetime import UTC, is_equal_mod_tz
 from utilities.hypothesis import sqlite_engines, text_ascii
@@ -363,5 +363,5 @@ class TestSelectToDataFrameMapSelectToDFSchema:
 class TestSelectToDataFrameMapTableColumnToDType:
     def test_error(self) -> None:
         column = Column("value", LargeBinary)
-        with raises(_TableColumnToExprError):
+        with raises(_SelectToDataFrameMapTableColumnToDTypeError):
             _ = _select_to_dataframe_map_table_column_to_dtype(column)

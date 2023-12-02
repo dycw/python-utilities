@@ -45,7 +45,7 @@ from utilities._numpy.common import (
     shift,
 )
 from utilities.datetime import EPOCH_UTC
-from utilities.errors import redirect_error
+from utilities.errors import redirect_context, redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.re import extract_group
 
@@ -272,11 +272,10 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
 
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == dt64D:
-        try:
+        with redirect_context(
+            OverflowError, DateTime64ToDateError(f"{datetime=}, {dtype=}")
+        ):
             return (EPOCH_UTC + dt.timedelta(days=as_int)).date()
-        except OverflowError:
-            msg = f"{datetime=}, {dtype=}"
-            raise DateTime64ToDateError(msg) from None
     msg = f"{datetime=}, {dtype=}"
     raise NotImplementedError(msg)
 
@@ -302,22 +301,20 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
 
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == dt64ms:
-        try:
+        with redirect_context(
+            OverflowError, DateTime64ToDateTimeError(f"{datetime=}, {dtype=}")
+        ):
             return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
-        except OverflowError:
-            msg = f"{datetime=}, {dtype=}"
-            raise DateTime64ToDateTimeError(msg) from None
-    elif dtype == dt64us:
+    if dtype == dt64us:
         return EPOCH_UTC + dt.timedelta(microseconds=as_int)
-    elif dtype == dt64ns:
+    if dtype == dt64ns:
         microseconds, nanoseconds = divmod(as_int, int(1e3))
         if nanoseconds != 0:
             msg = f"{datetime=}, {nanoseconds=}"
             raise DateTime64ToDateTimeError(msg)
         return EPOCH_UTC + dt.timedelta(microseconds=microseconds)
-    else:
-        msg = f"{datetime=}, {dtype=}"
-        raise NotImplementedError(msg)
+    msg = f"{datetime=}, {dtype=}"
+    raise NotImplementedError(msg)
 
 
 class DateTime64ToDateTimeError(Exception):
