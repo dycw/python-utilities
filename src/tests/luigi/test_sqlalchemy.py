@@ -10,7 +10,7 @@ from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import namespace_mixins, sqlite_engines
 from utilities.luigi import DatabaseTarget, EngineParameter, TableParameter
-from utilities.sqlalchemy import ensure_tables_created, insert_items
+from utilities.sqlalchemy import insert_items
 
 
 class TestDatabaseTarget:
@@ -25,7 +25,6 @@ class TestDatabaseTarget:
         sel = select(table).where(table.c["id1"] == 0)
         target = DatabaseTarget(sel, engine)
         assert not target.exists()
-        ensure_tables_created(engine, table)
         insert_items(engine, (rows, table))
         expected = any(first == 0 for first, _ in rows)
         assert target.exists() is expected

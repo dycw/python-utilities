@@ -4,33 +4,29 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 
 import timeout_decorator
-from sqlalchemy import Connection, Engine, Sequence
+from sqlalchemy import Engine, Sequence
 from sqlalchemy.exc import DatabaseError
 from typing_extensions import assert_never
 
-from utilities._sqlalchemy.common import Dialect, get_dialect, yield_connection
+from utilities._sqlalchemy.common import Dialect, get_dialect
 from utilities.errors import redirect_error
 from utilities.math import FloatFinNonNeg, IntNonNeg
 
 
 def next_from_sequence(
-    name: str,
-    engine_or_conn: Engine | Connection,
-    /,
-    *,
-    timeout: FloatFinNonNeg | None = None,
+    name: str, engine: Engine, /, *, timeout: FloatFinNonNeg | None = None
 ) -> IntNonNeg | None:
     """Get the next element from a sequence."""
 
     def inner() -> int:
         seq = Sequence(name)
         try:
-            with yield_connection(
-                engine_or_conn
-            ) as conn, redirect_next_from_sequence_error(conn):  # pragma: no cover
+            with redirect_next_from_sequence_error(
+                engine
+            ), engine.begin() as conn:  # pragma: no cover
                 return conn.scalar(seq)
         except NextFromSequenceError:
-            with yield_connection(engine_or_conn) as conn:  # pragma: no cover
+            with engine.begin() as conn:  # pragma: no cover
                 _ = seq.create(conn)  # pragma: no cover
             return inner()  # pragma: no cover
 
@@ -44,11 +40,9 @@ def next_from_sequence(
 
 
 @contextmanager
-def redirect_next_from_sequence_error(
-    engine_or_conn: Engine | Connection
-) -> Iterator[None]:
+def redirect_next_from_sequence_error(engine: Engine, /) -> Iterator[None]:
     """Redirect to the `NextFromSequenceError`."""
-    match dialect := get_dialect(engine_or_conn):
+    match dialect := get_dialect(engine):
         case (  # pragma: no cover
             Dialect.mssql
             | Dialect.mysql
@@ -58,7 +52,7 @@ def redirect_next_from_sequence_error(
         case Dialect.oracle:  # pragma: no cover
             match = "ORA-02289: sequence does not exist"
         case Dialect.sqlite:
-            msg = f"{engine_or_conn=}"
+            msg = f"{engine=}"
             raise NotImplementedError(msg)
         case _:  # pragma: no cover  # type: ignore
             assert_never(dialect)

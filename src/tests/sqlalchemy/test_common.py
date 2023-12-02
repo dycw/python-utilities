@@ -6,7 +6,7 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
-from sqlalchemy import Column, Connection, Engine, Integer, MetaData, Table, select
+from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.orm import declarative_base
 
@@ -28,7 +28,6 @@ from utilities._sqlalchemy.common import (
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
-    yield_connection,
 )
 from utilities.hypothesis import sqlite_engines
 from utilities.more_itertools import one
@@ -49,6 +48,33 @@ class TestDialect:
     @mark.parametrize("dialect", Dialect)
     def test_max_params(self, *, dialect: Dialect) -> None:
         assert isinstance(dialect.max_params, int)
+
+
+class TestEnsureTablesCreated:
+    @given(engine=sqlite_engines())
+    @mark.parametrize("runs", [param(1), param(2)])
+    def test_table(self, *, engine: Engine, runs: int) -> None:
+        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        self._run_test(table, engine, runs)
+
+    @given(engine=sqlite_engines())
+    @mark.parametrize("runs", [param(1), param(2)])
+    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
+        class Example(declarative_base()):
+            __tablename__ = "example"
+
+            id_ = Column(Integer, primary_key=True)
+
+        self._run_test(Example, engine, runs)
+
+    def _run_test(
+        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+    ) -> None:
+        for _ in range(runs):
+            ensure_tables_created(engine, table_or_mapped_class)
+        sel = get_table(table_or_mapped_class).select()
+        with engine.begin() as conn:
+            _ = conn.execute(sel).all()
 
 
 class TestGetColumns:
@@ -131,25 +157,25 @@ class TestInsertItems:
     def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
         self._run_test(engine, {id_}, ({"id": id_}, self._table))
 
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), max_size=10))
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_tuples_and_table(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, ([((id_,)) for id_ in ids], self._table))
 
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_dicts_and_table(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, ([({"id": id_}) for id_ in ids], self._table))
 
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_tuples_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, [(((id_,), self._table)) for id_ in ids])
 
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10)))
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_dicts_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
@@ -345,15 +371,3 @@ class TestMappedClassToDict:
         result = mapped_class_to_dict(example)
         expected = {"id": id_}
         assert result == expected
-
-
-class TestYieldConnection:
-    @given(engine=sqlite_engines())
-    def test_engine(self, *, engine: Engine) -> None:
-        with yield_connection(engine) as conn:
-            assert isinstance(conn, Connection)
-
-    @given(engine=sqlite_engines())
-    def test_connection(self, *, engine: Engine) -> None:
-        with engine.begin() as conn1, yield_connection(conn1) as conn2:
-            assert isinstance(conn2, Connection)

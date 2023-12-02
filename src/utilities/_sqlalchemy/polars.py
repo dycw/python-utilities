@@ -24,9 +24,9 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities._sqlalchemy.common import (
     INSERT_ITEMS_CHUNK_SIZE_FRAC,
+    ensure_tables_created,
     get_columns,
     insert_items,
-    yield_connection,
 )
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
@@ -37,9 +37,9 @@ from utilities.more_itertools import OneError, one
 
 
 def insert_dataframe(
-    engine_or_conn: Engine | Connection,
     df: DataFrame,
     table_or_mapped_class: Table | type[Any],
+    engine: Engine,
     /,
     *,
     snake: bool = False,
@@ -50,11 +50,13 @@ def insert_dataframe(
         df.schema, table_or_mapped_class, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
-    if (df.height > 0) and (len(items) == 0):
+    if len(items) == 0:
+        if df.height == 0:
+            return ensure_tables_created(engine, table_or_mapped_class)
         msg = f"{df=}, {items=}"
         raise InsertDataFrameError(msg)
     return insert_items(
-        engine_or_conn, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
+        engine, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
     )
 
 
@@ -144,7 +146,7 @@ def _insert_dataframe_check_df_and_db_types(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Connection,
     /,
     *,
     snake: bool = ...,
@@ -160,7 +162,7 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine: Engine,
     /,
     *,
     snake: bool = ...,
@@ -189,20 +191,26 @@ def select_to_dataframe(
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if iter_batches:
-        with yield_connection(engine_or_conn) as conn:
+    if isinstance(engine_or_conn, Engine) and not iter_batches:
+        with engine_or_conn.begin() as conn:
             return read_database(
-                sel,
-                cast(ConnectionOrCursor, conn),
-                iter_batches=True,
-                batch_size=batch_size,
-                schema_overrides=schema,
-                **kwargs,
+                sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
             )
-    with yield_connection(engine_or_conn) as conn:
+    if isinstance(engine_or_conn, Connection) and iter_batches:
         return read_database(
-            sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
+            sel,
+            cast(ConnectionOrCursor, engine_or_conn),
+            iter_batches=True,
+            batch_size=batch_size,
+            schema_overrides=schema,
+            **kwargs,
         )
+    msg = f"{engine_or_conn=}, {iter_batches=}"
+    raise SelectToDataFrameError(msg)
+
+
+class SelectToDataFrameError(Exception):
+    ...
 
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
@@ -261,4 +269,9 @@ def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) 
         check_duplicates(names)
 
 
-__all__ = ["InsertDataFrameError", "insert_dataframe", "select_to_dataframe"]
+__all__ = [
+    "InsertDataFrameError",
+    "SelectToDataFrameError",
+    "insert_dataframe",
+    "select_to_dataframe",
+]

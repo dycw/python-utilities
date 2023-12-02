@@ -692,7 +692,9 @@ class TestCheckTableOrColumnNamesEqual:
 class TestColumnwiseMinMax:
     @given(
         engine=sqlite_engines(),
-        values=sets(tuples(integers(0, 10) | none(), integers(0, 10) | none())),
+        values=sets(
+            tuples(integers(0, 10) | none(), integers(0, 10) | none()), min_size=1
+        ),
     )
     def test_main(
         self, *, engine: Engine, values: set[tuple[int | None, int | None]]
@@ -704,7 +706,6 @@ class TestColumnwiseMinMax:
             Column("x", Integer),
             Column("y", Integer),
         )
-        ensure_tables_created(engine, table)
         insert_items(engine, ([{"x": x, "y": y} for x, y in values], table))
         sel = select(
             table.c["x"],
@@ -767,33 +768,6 @@ class TestEnsureEngine:
         )
         result = ensure_engine(maybe_engine)
         assert result.url == engine.url
-
-
-class TestEnsureTablesCreated:
-    @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_table(self, *, engine: Engine, runs: int) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        self._run_test(table, engine, runs)
-
-    @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
-
-            id_ = Column(Integer, primary_key=True)
-
-        self._run_test(Example, engine, runs)
-
-    def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
-    ) -> None:
-        for _ in range(runs):
-            ensure_tables_created(engine, table_or_mapped_class)
-        sel = get_table(table_or_mapped_class).select()
-        with engine.begin() as conn:
-            _ = conn.execute(sel).all()
 
 
 class TestEnsureTablesDropped:
@@ -885,9 +859,9 @@ class TestRedirectTableDoesNotExist:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(
-            TableDoesNotExistError
-        ), engine.begin() as conn, redirect_table_does_not_exist(conn):
+        with raises(TableDoesNotExistError), redirect_table_does_not_exist(
+            engine
+        ), engine.begin() as conn:
             _ = conn.execute(select(table))
 
 

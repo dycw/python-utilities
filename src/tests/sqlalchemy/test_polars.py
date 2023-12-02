@@ -38,6 +38,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError
 
 from utilities._sqlalchemy.polars import (
+    SelectToDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -55,7 +56,6 @@ from utilities.polars import check_polars_dataframe
 from utilities.sqlalchemy import (
     InsertDataFrameError,
     _select_to_dataframe_map_table_column_to_dtype,
-    ensure_tables_created,
     insert_dataframe,
     select_to_dataframe,
 )
@@ -98,8 +98,7 @@ class TestInsertDataFrame:
             Column("id", Integer, primary_key=True),
             Column("value", col_type),
         )
-        ensure_tables_created(engine, table)
-        insert_dataframe(engine, df, table)
+        insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -118,16 +117,15 @@ class TestInsertDataFrame:
             Column("Id", Integer, primary_key=True),
             Column("Value", sqlalchemy.Boolean),
         )
-        ensure_tables_created(engine, table)
-        insert_dataframe(engine, df, table, snake=True)
+        insert_dataframe(df, table, engine, snake=True)
         sel = select(table.c["Value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         assert res == values
 
-    @given(engine=sqlite_engines(), values=lists(booleans() | none(), min_size=1))
-    def test_polars_data_frame_yields_no_rows_error(
-        self, *, engine: Engine, values: list[bool | None]
+    @given(values=lists(booleans() | none(), min_size=1), engine=sqlite_engines())
+    def test_dataframe_becomes_no_items_error(
+        self, *, values: list[bool | None], engine: Engine
     ) -> None:
         table = Table(
             "example",
@@ -137,7 +135,7 @@ class TestInsertDataFrame:
         )
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
         with raises(InsertDataFrameError):
-            insert_dataframe(engine, df, table)
+            insert_dataframe(df, table, engine)
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
@@ -270,7 +268,7 @@ class TestSelectToDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
     ) -> None:
-        values = data.draw(lists(strategy, min_size=1))
+        values = data.draw(lists(strategy))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = Table(
             "example",
@@ -278,8 +276,7 @@ class TestSelectToDataFrame:
             Column("id", Integer, primary_key=True),
             Column("value", col_type),
         )
-        ensure_tables_created(engine, table)
-        insert_dataframe(engine, df, table)
+        insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
         result = select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
@@ -293,8 +290,7 @@ class TestSelectToDataFrame:
             Column("Id", Integer, primary_key=True),
             Column("Value", sqlalchemy.Boolean),
         )
-        ensure_tables_created(engine, table)
-        insert_dataframe(engine, df, table)
+        insert_dataframe(df, table, engine)
         sel = select(table.c["Value"])
         res = select_to_dataframe(sel, engine, snake=True)
         expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
@@ -315,17 +311,26 @@ class TestSelectToDataFrame:
             Column("id", Integer, primary_key=True),
             Column("value", sqlalchemy.Boolean),
         )
-        ensure_tables_created(engine, table)
-        insert_dataframe(engine, df, table)
+        insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
         with engine.begin() as conn:
-            dfs = list(
-                select_to_dataframe(sel, conn, iter_batches=True, batch_size=batch_size)
+            dfs = select_to_dataframe(
+                sel, conn, iter_batches=True, batch_size=batch_size
             )
-        for df in dfs:
-            check_polars_dataframe(
-                df, min_height=1, max_height=batch_size, schema={"value": pl.Boolean}
-            )
+            for df in dfs:
+                check_polars_dataframe(
+                    df,
+                    min_height=1,
+                    max_height=batch_size,
+                    schema={"value": pl.Boolean},
+                )
+
+    @given(engine=sqlite_engines())
+    def test_error(self, *, engine: Engine) -> None:
+        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        sel = select(table)
+        with raises(SelectToDataFrameError):
+            _ = select_to_dataframe(sel, engine, iter_batches=True)  # type: ignore
 
 
 class TestSelectToDataFrameApplySnake:
