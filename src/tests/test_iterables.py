@@ -10,7 +10,9 @@ from pytest import mark, param, raises
 
 from utilities.iterables import (
     CheckDuplicatesError,
+    CheckLengthError,
     check_duplicates,
+    check_length,
     ensure_hashables,
     is_iterable_not_str,
 )
@@ -27,6 +29,42 @@ class TestCheckDuplicates:
         y = chain(x, [x_i])
         with raises(CheckDuplicatesError):
             check_duplicates(y)
+
+
+class TestCheckLength:
+    def test_equal_pass(self) -> None:
+        check_length(range(0), equal=0)
+
+    def test_equal_fail(self) -> None:
+        with raises(CheckLengthError):
+            check_length(range(0), equal=1)
+
+    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    def test_equal_or_approx_pass(
+        self, *, equal_or_approx: int | tuple[int, float]
+    ) -> None:
+        check_length(range(10), equal_or_approx=equal_or_approx)
+
+    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    def test_equal_or_approx_fail(
+        self, *, equal_or_approx: int | tuple[int, float]
+    ) -> None:
+        with raises(CheckLengthError):
+            check_length(range(0), equal_or_approx=equal_or_approx)
+
+    def test_min_pass(self) -> None:
+        check_length(range(1), min=1)
+
+    def test_min_error(self) -> None:
+        with raises(CheckLengthError):
+            check_length(range(0), min=1)
+
+    def test_max_pass(self) -> None:
+        check_length(range(0), max=1)
+
+    def test_max_error(self) -> None:
+        with raises(CheckLengthError):
+            check_length(range(2), max=1)
 
 
 class TestEnsureHashables:

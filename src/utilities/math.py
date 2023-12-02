@@ -5,6 +5,8 @@ from typing import Annotated, Any, cast
 
 from beartype.vale import Is
 
+from utilities.errors import ImpossibleCaseError
+
 # functions
 
 
@@ -13,10 +15,26 @@ def is_equal(x: float, y: float, /) -> bool:
     return (x == y) or (isnan(x) and isnan(y))
 
 
+def is_equal_or_approx(
+    x: int | tuple[int, float], y: int | tuple[int, float], /
+) -> bool:
+    """Check if x == y, or approximately."""
+    if isinstance(x, int) and isinstance(y, int):
+        return x == y
+    if isinstance(x, int) and isinstance(y, tuple):
+        return isclose(x, y[0], rel_tol=y[1])
+    if isinstance(x, tuple) and isinstance(y, int):
+        return isclose(x[0], y, rel_tol=x[1])
+    if isinstance(x, tuple) and isinstance(y, tuple):
+        return isclose(x[0], y[0], rel_tol=max(x[1], y[1]))
+    msg = f"{x=}, {y=}"  # pragma: no cover
+    raise ImpossibleCaseError(msg)  # pragma: no cover
+
+
 def is_at_least(
     x: float, y: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
 ) -> bool:
-    """Check if -inf < x < inf and x == int(x)."""
+    """Check if x >= y."""
     return (x >= y) or _is_close(x, y, rel_tol=rel_tol, abs_tol=abs_tol)
 
 

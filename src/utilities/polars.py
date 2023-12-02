@@ -3,13 +3,14 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from functools import reduce
 from itertools import chain
-from math import isclose
 
 from polars import DataFrame, Expr, PolarsDataType
 from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
+from utilities.errors import redirect_context
+from utilities.math import is_equal_or_approx
 from utilities.types import SequenceStrs
 
 
@@ -35,8 +36,9 @@ def check_polars_dataframe(
     if (dtypes is not None) and (df.dtypes != dtypes):
         msg = f"{df=}, {dtypes=}"
         raise CheckPolarsDataFrameError(msg)
-    if height is not None:
-        check_polars_dataframe_height(df, height)
+    if (height is not None) and not is_equal_or_approx(df.height, height):
+        msg = f"{df=}, {height=}"
+        raise CheckPolarsDataFrameError(msg)
     if (min_height is not None) and (len(df) < min_height):
         msg = f"{df=}, {min_height=}"
         raise CheckPolarsDataFrameError(msg)
@@ -59,11 +61,8 @@ def check_polars_dataframe(
         raise CheckPolarsDataFrameError(msg)
     if sorted is not None:
         df_sorted = df.sort(sorted)
-        try:
+        with redirect_context(AssertionError, CheckPolarsDataFrameError(f"{df=}")):
             assert_frame_equal(df, df_sorted)
-        except AssertionError:
-            msg = f"{df=}, {sorted=}"
-            raise CheckPolarsDataFrameError(msg) from None
     if (unique is not None) and df.select(unique).is_duplicated().any():
         msg = f"{df=}, {unique=}"
         raise CheckPolarsDataFrameError(msg)
@@ -73,24 +72,6 @@ def check_polars_dataframe(
 
 
 class CheckPolarsDataFrameError(Exception):
-    ...
-
-
-def check_polars_dataframe_height(
-    df: DataFrame, height: int | tuple[int, float], /
-) -> None:
-    """Check the height of a DataFrame."""
-    if isinstance(height, int) and (len(df) != height):
-        msg = f"{df=}, {height=}"
-        raise CheckPolarsDataFrameHeightError(msg)
-    if isinstance(height, tuple):
-        height_int, rel_tol = height
-        if not isclose(len(df), height_int, rel_tol=rel_tol):
-            msg = f"{df=}, {height=}"
-            raise CheckPolarsDataFrameHeightError(msg)
-
-
-class CheckPolarsDataFrameHeightError(Exception):
     ...
 
 
@@ -125,10 +106,8 @@ class SetFirstRowAsColumnsError(Exception):
 
 __all__ = [
     "CheckPolarsDataFrameError",
-    "CheckPolarsDataFrameHeightError",
     "SetFirstRowAsColumnsError",
     "check_polars_dataframe",
-    "check_polars_dataframe_height",
     "join",
     "set_first_row_as_columns",
 ]

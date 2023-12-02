@@ -29,8 +29,8 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    CheckIndexError,
     CheckPandasDataFrameError,
-    CheckPandasDataFrameLengthError,
     CheckRangeIndexError,
     EmptyPandasConcatError,
     Int64,
@@ -38,8 +38,8 @@ from utilities.pandas import (
     TimestampToDateTimeError,
     astype,
     boolean,
+    check_index,
     check_pandas_dataframe,
-    check_pandas_dataframe_length,
     check_range_index,
     redirect_to_empty_pandas_concat_error,
     rename_index,
@@ -64,14 +64,73 @@ class TestAsType:
         check_pandas_dataframe(result, dtypes={"value": float})
 
 
+class TestCheckIndex:
+    def test_main(self) -> None:
+        check_index(RangeIndex(1))
+
+    def test_length_pass(self) -> None:
+        check_index(RangeIndex(1), length=1)
+
+    def test_length_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(RangeIndex(1), length=2)
+
+    def test_min_length_pass(self) -> None:
+        check_index(RangeIndex(2), min_length=1)
+
+    def test_min_length_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(RangeIndex(0), min_length=1)
+
+    def test_max_length_pass(self) -> None:
+        check_index(RangeIndex(0), max_length=1)
+
+    def test_max_length_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(RangeIndex(2), max_length=1)
+
+    def test_name_pass(self) -> None:
+        check_index(RangeIndex(0), name=None)
+
+    def test_name_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(RangeIndex(0), name="name")
+
+    def test_sorted_pass(self) -> None:
+        check_index(Index(["A", "B"]), sorted=True)
+
+    def test_sorted_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(Index(["B", "A"]), sorted=True)
+
+    def test_unique_pass(self) -> None:
+        check_index(Index(["A", "B"]), unique=True)
+
+    def test_unique_error(self) -> None:
+        with raises(CheckIndexError):
+            check_index(Index(["A", "A"]), unique=True)
+
+
 class TestCheckPandasDataFrame:
     def test_main(self) -> None:
-        df = DataFrame(index=RangeIndex(0))
-        check_pandas_dataframe(df)
+        check_pandas_dataframe(DataFrame())
+
+    def test_standard_pass(self) -> None:
+        check_pandas_dataframe(DataFrame(index=RangeIndex(0)), standard=True)
 
     @mark.parametrize(
         "df",
         [
+            param(DataFrame(0.0, index=Index(["A"]), columns=Index(["value"]))),
+            param(DataFrame(0.0, index=RangeIndex(1, 2), columns=Index(["value"]))),
+            param(
+                DataFrame(0.0, index=RangeIndex(1, step=2), columns=Index(["value"]))
+            ),
+            param(
+                DataFrame(
+                    0.0, index=RangeIndex(1, name="name"), columns=Index(["value"])
+                )
+            ),
             param(
                 DataFrame(
                     0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
@@ -82,9 +141,9 @@ class TestCheckPandasDataFrame:
             ),
         ],
     )
-    def test_errors(self, *, df: DataFrame) -> None:
+    def test_standard_errors(self, *, df: DataFrame) -> None:
         with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df)
+            check_pandas_dataframe(df, standard=True)
 
     def test_columns_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
@@ -107,6 +166,11 @@ class TestCheckPandasDataFrame:
     def test_length_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         check_pandas_dataframe(df, length=1)
+
+    def test_length_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        with raises(CheckPandasDataFrameError):
+            check_pandas_dataframe(df, length=2)
 
     def test_min_length_pass(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
@@ -145,43 +209,58 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, unique="value")
 
 
-class TestCheckPandasDataFrameLength:
-    @mark.parametrize("length", [param(10), param((11, 0.1))])
-    def test_main(self, *, length: int | tuple[int, float]) -> None:
-        df = DataFrame(0.0, index=RangeIndex(10), columns=["value"])
-        check_pandas_dataframe_length(df, length)
-
-    @mark.parametrize("length", [param(0), param((12, 0.1))])
-    def test_error(self, *, length: int | tuple[int, float]) -> None:
-        df = DataFrame(0.0, index=RangeIndex(10), columns=["value"])
-        with raises(CheckPandasDataFrameLengthError):
-            check_pandas_dataframe_length(df, length)
-
-
 class TestCheckRangeIndex:
-    @mark.parametrize(
-        "index",
-        [
-            param(RangeIndex(0)),
-            param(Series(index=RangeIndex(0))),
-            param(DataFrame(index=RangeIndex(0))),
-        ],
-    )
-    def test_main(self, *, index: RangeIndex) -> None:
-        check_range_index(index)
+    def test_main(self) -> None:
+        check_range_index(RangeIndex(0))
 
-    @mark.parametrize(
-        "index",
-        [
-            param(Index([], dtype=float)),
-            param(RangeIndex(start=1, stop=2)),
-            param(RangeIndex(start=0, step=2)),
-            param(RangeIndex(start=0, step=1, name="name")),
-        ],
-    )
-    def test_error(self, *, index: Any) -> None:
+    def test_start_pass(self) -> None:
+        check_range_index(RangeIndex(0), start=0)
+
+    def test_start_error(self) -> None:
         with raises(CheckRangeIndexError):
-            check_range_index(index)
+            check_range_index(RangeIndex(0), start=1)
+
+    def test_stop_pass(self) -> None:
+        check_range_index(RangeIndex(0), stop=0)
+
+    def test_stop_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(0), stop=1)
+
+    def test_step_pass(self) -> None:
+        check_range_index(RangeIndex(0), step=1)
+
+    def test_step_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(0), step=2)
+
+    def test_length_pass(self) -> None:
+        check_range_index(RangeIndex(1), length=1)
+
+    def test_length_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(1), length=2)
+
+    def test_min_length_pass(self) -> None:
+        check_range_index(RangeIndex(2), min_length=1)
+
+    def test_min_length_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(0), min_length=1)
+
+    def test_max_length_pass(self) -> None:
+        check_range_index(RangeIndex(0), max_length=1)
+
+    def test_max_length_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(2), max_length=1)
+
+    def test_name_pass(self) -> None:
+        check_range_index(RangeIndex(0), name=None)
+
+    def test_name_error(self) -> None:
+        with raises(CheckRangeIndexError):
+            check_range_index(RangeIndex(0), name="name")
 
 
 class TestDTypes:
