@@ -582,7 +582,7 @@ __all__ = [
 try:
     from utilities._sqlalchemy.polars import (
         InsertDataFrameError,
-        _select_to_dataframe_map_table_column_to_dtype,
+        SelectToDataFrameError,
         insert_dataframe,
         select_to_dataframe,
     )
@@ -590,10 +590,10 @@ except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
     __all__ += [
-        "insert_dataframe",
         "InsertDataFrameError",
+        "SelectToDataFrameError",
+        "insert_dataframe",
         "select_to_dataframe",
-        "_select_to_dataframe_map_table_column_to_dtype",
     ]
 
 try:
