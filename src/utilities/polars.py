@@ -4,14 +4,26 @@ from collections.abc import Iterable, Sequence
 from functools import reduce
 from itertools import chain
 
-from polars import DataFrame, Expr, PolarsDataType
+from polars import DataFrame, Expr, PolarsDataType, col, lit, when
 from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
 from utilities.errors import redirect_error
 from utilities.math import is_equal_or_approx
-from utilities.types import SequenceStrs
+from utilities.more_itertools import always_iterable
+from utilities.types import IterableStrs, SequenceStrs
+
+
+def group_by_nan_sum(
+    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], aggs: str | IterableStrs, /
+) -> DataFrame:
+    """Group-by a column/set of columns and then apply a nan sum."""
+
+    return df.group_by(by).agg(
+        when(col(agg).is_not_null().any()).then(col(agg).sum()).otherwise(lit(None))
+        for agg in always_iterable(aggs)
+    )
 
 
 def check_polars_dataframe(
@@ -105,6 +117,7 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "SetFirstRowAsColumnsError",
     "check_polars_dataframe",
+    "group_by_nan_sum",
     "join",
     "set_first_row_as_columns",
 ]
