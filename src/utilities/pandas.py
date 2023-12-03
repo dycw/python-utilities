@@ -185,7 +185,7 @@ def check_range_index(
     max_length: int | None = None,
     name: Hashable | Sentinel = sentinel,
 ) -> None:
-    """Check if an RangeIndex is the default one."""
+    """Check the properties of a RangeIndex."""
     if (start is not None) and (cast(int, index.start) != start):
         msg = f"{index=}, {start=}"
         raise CheckRangeIndexError(msg)
@@ -241,15 +241,15 @@ def rename_index(index: _Index, name: Hashable, /) -> _Index:
 
 def series_max(*series: SeriesA) -> SeriesA:
     """Compute the maximum of a set of Series."""
-    return reduce(partial(series_minmax, kind="lower"), series)
+    return reduce(partial(_series_minmax, kind="lower"), series)
 
 
 def series_min(*series: SeriesA) -> SeriesA:
     """Compute the minimum of a set of Series."""
-    return reduce(partial(series_minmax, kind="upper"), series)
+    return reduce(partial(_series_minmax, kind="upper"), series)
 
 
-def series_minmax(
+def _series_minmax(
     x: SeriesA, y: SeriesA, /, *, kind: Literal["lower", "upper"]
 ) -> SeriesA:
     """Compute the minimum/maximum of a pair of Series."""
@@ -359,7 +359,6 @@ __all__ = [
     "rename_index",
     "series_max",
     "series_min",
-    "series_minmax",
     "sort_index",
     "string",
     "timestamp_to_date",
