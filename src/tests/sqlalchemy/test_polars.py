@@ -41,7 +41,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError
 
 from utilities._sqlalchemy.polars import (
-    SelectToDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -50,6 +49,7 @@ from utilities._sqlalchemy.polars import (
     _select_to_dataframe_apply_snake,
     _select_to_dataframe_check_duplicates,
     _select_to_dataframe_map_select_to_df_schema,
+    _select_to_dataframe_map_table_column_to_dtype,
     _select_to_dataframe_yield_selects_with_in_clauses,
     _SelectToDataFrameMapTableColumnToDTypeError,
 )
@@ -59,7 +59,7 @@ from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
 from utilities.sqlalchemy import (
     InsertDataFrameError,
-    _select_to_dataframe_map_table_column_to_dtype,
+    SelectToDataFrameError,
     insert_dataframe,
     select_to_dataframe,
 )
