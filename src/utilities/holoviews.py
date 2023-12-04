@@ -2,13 +2,18 @@ from __future__ import annotations
 
 from typing import Any, TypeVar, cast
 
-from holoviews import save
+from holoviews import Layout, save
 
 from utilities._holoviews.common import apply_opts
 from utilities.atomicwrites import writer
 from utilities.pathlib import PathLike
 
 _T = TypeVar("_T")
+
+
+def apply_cols(layout: Layout, ncols: int, /) -> Layout:
+    """Apply the `cols` argument to a layout."""
+    return layout.cols(ncols)
 
 
 def relabel_plot(plot: _T, label: str, /) -> _T:
@@ -22,7 +27,7 @@ def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
         save(plot, temp, backend="bokeh")
 
 
-__all__ = ["apply_opts", "relabel_plot", "save_plot"]
+__all__ = ["apply_cols", "apply_opts", "relabel_plot", "save_plot"]
 
 
 try:
