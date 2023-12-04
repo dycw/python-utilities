@@ -12,6 +12,8 @@ bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
 click==8.1.7
     # via dycw-utilities (pyproject.toml)
+frozendict==2.3.10
+    # via dycw-utilities (pyproject.toml)
 loguru==0.7.2
     # via dycw-utilities (pyproject.toml)
 more-itertools==10.1.0
