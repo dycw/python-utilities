@@ -304,11 +304,47 @@ class TestSelectToDataFrame:
         assert_frame_equal(res, expected)
 
     @given(
+        data=data(),
+        engine=sqlite_engines(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        batch_size=integers(1, 10) | none(),
+        in_clauses_chunk_size=integers(1, 10),
+    )
+    def test_engine_and_in_clauses(
+        self,
+        *,
+        data: DataObject,
+        engine: Engine,
+        values: list[int],
+        batch_size: int | None,
+        in_clauses_chunk_size: int,
+    ) -> None:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("value", Integer),
+        )
+        insert_dataframe(df, table, engine)
+        sel = select(table.c["value"])
+        in_values = data.draw(sets(sampled_from(values)))
+        df = select_to_dataframe(
+            sel,
+            engine,
+            batch_size=batch_size,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        check_polars_dataframe(df, height=len(in_values), schema={"value": Int64})
+        assert set(df["value"].to_list()) == in_values
+
+    @given(
         engine=sqlite_engines(),
         values=lists(booleans() | none(), max_size=100),
         batch_size=integers(1, 10),
     )
-    def test_batch_size(
+    def test_conn_and_batch_size_only(
         self, *, engine: Engine, values: list[bool | None], batch_size: int
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": pl.Boolean})
@@ -337,7 +373,7 @@ class TestSelectToDataFrame:
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_in_clauses(
+    def test_conn_and_in_clauses(
         self,
         *,
         data: DataObject,

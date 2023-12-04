@@ -60,7 +60,7 @@ from utilities.numpy import (
     datetime64_unit_to_dtype,
     datetime64_unit_to_kind,
     datetime_to_datetime64,
-    redirect_empty_numpy_concatenate_error,
+    redirect_empty_numpy_concatenate,
 )
 
 
@@ -98,7 +98,7 @@ def concatenated_arrays(
     arrays = draw(lists_fixed_length(strategy, size_))
     expanded = [expand_dims(array, axis=0) for array in arrays]
     try:
-        with redirect_empty_numpy_concatenate_error():
+        with redirect_empty_numpy_concatenate():
             return concatenate(expanded)
     except EmptyNumpyConcatenateError:
         shape = (size_, fallback) if isinstance(fallback, int) else (size_, *fallback)

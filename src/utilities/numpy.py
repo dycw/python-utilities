@@ -1020,7 +1020,7 @@ def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
 
 
 @contextmanager
-def redirect_empty_numpy_concatenate_error() -> Iterator[None]:
+def redirect_empty_numpy_concatenate() -> Iterator[None]:
     """Redirect to the `EmptyNumpyConcatenateError`."""
     with redirect_error(
         ValueError,
@@ -1747,7 +1747,7 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "maximum",
     "minimum",
-    "redirect_empty_numpy_concatenate_error",
+    "redirect_empty_numpy_concatenate",
     "shift",
     "shift_bool",
     "year",
