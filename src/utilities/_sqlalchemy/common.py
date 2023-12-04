@@ -64,9 +64,9 @@ def ensure_tables_created(
         ...
 
     match dialect := get_dialect(engine):
-        case Dialect.mssql | Dialect.postgresql:  # pragma: no cover
+        case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.mysql:  # pragma: no cover
+        case Dialect.mssql:  # pragma: no cover
             match = "There is already an object named .* in the database"
         case Dialect.oracle:  # pragma: no cover
             match = "ORA-00955: name is already used by an existing object"
