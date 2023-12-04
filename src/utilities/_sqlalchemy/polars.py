@@ -1,21 +1,26 @@
 from __future__ import annotations
 
 import datetime as dt
+import decimal
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import suppress
 from datetime import timezone
 from itertools import chain
 from typing import Any, cast, overload
+from uuid import UUID
 
 import polars as pl
 from more_itertools import chunked
 from polars import (
+    Binary,
     DataFrame,
     Date,
     Datetime,
+    Duration,
     Float64,
     Int64,
     PolarsDataType,
+    Time,
     Utf8,
     concat,
     read_database,
@@ -344,34 +349,42 @@ def _select_to_dataframe_map_select_to_df_schema(
     columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
     _select_to_dataframe_check_duplicates(columns)
     return {
-        col.name: _select_to_dataframe_map_table_column_to_dtype(
-            col, time_zone=time_zone
+        col.name: _select_to_dataframe_map_table_column_type_to_dtype(
+            col.type, time_zone=time_zone
         )
         for col in columns
     }
 
 
-def _select_to_dataframe_map_table_column_to_dtype(
-    column: Column[Any], /, *, time_zone: timezone = UTC
+def _select_to_dataframe_map_table_column_type_to_dtype(  # noqa: PLR0911
+    type_: Any, /, *, time_zone: timezone = UTC
 ) -> PolarsDataType:
-    """Map a table column to a polars type."""
-    db_type = column.type
-    py_type = db_type.python_type
+    """Map a table column type to a polars type."""
+    type_use = type_() if isinstance(type_, type) else type_
+    py_type = type_use.python_type
     if issubclass(py_type, bool):
         return pl.Boolean
+    if issubclass(py_type, bytes):
+        return Binary
+    if issubclass(py_type, decimal.Decimal):
+        return pl.Decimal
     if issubclass(py_type, dt.date) and not issubclass(py_type, dt.datetime):
         return pl.Date
     if issubclass(py_type, dt.datetime):
-        has_tz: bool = cast(Any, db_type).timezone
-        return Datetime(time_zone=time_zone) if has_tz else Datetime
+        has_tz: bool = type_use.timezone
+        return Datetime(time_zone=time_zone) if has_tz else Datetime()
+    if issubclass(py_type, dt.time):
+        return Time
+    if issubclass(py_type, dt.timedelta):
+        return Duration
     if issubclass(py_type, float):
         return Float64
     if issubclass(py_type, int):
         return Int64
-    if issubclass(py_type, str):
+    if issubclass(py_type, UUID | str):
         return Utf8
-    msg = f"{column=}"
-    raise _SelectToDataFrameMapTableColumnToDTypeError(msg)
+    msg = f"{type_=}, {py_type=}"  # pragma: no cover
+    raise _SelectToDataFrameMapTableColumnToDTypeError(msg)  # pragma: no cover
 
 
 class _SelectToDataFrameMapTableColumnToDTypeError(Exception):

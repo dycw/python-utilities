@@ -22,20 +22,64 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
 )
-from polars import DataFrame, Datetime, Float64, Int64, PolarsDataType, Utf8
+from polars import (
+    Binary,
+    DataFrame,
+    Datetime,
+    Decimal,
+    Duration,
+    Float64,
+    Int64,
+    PolarsDataType,
+    Utf8,
+)
+from polars.datatypes import DataTypeClass
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from sqlalchemy import (
+    BIGINT,
+    BINARY,
+    BOOLEAN,
+    CHAR,
+    CLOB,
+    DATE,
+    DATETIME,
+    DECIMAL,
+    DOUBLE,
+    DOUBLE_PRECISION,
+    FLOAT,
+    INT,
+    INTEGER,
+    NCHAR,
+    NUMERIC,
+    NVARCHAR,
+    REAL,
+    SMALLINT,
+    TEXT,
+    TIME,
+    TIMESTAMP,
+    UUID,
+    VARBINARY,
+    VARCHAR,
+    BigInteger,
     Column,
     DateTime,
+    Double,
     Engine,
     Float,
     Integer,
+    Interval,
     LargeBinary,
     MetaData,
+    Numeric,
     Select,
+    SmallInteger,
     String,
     Table,
+    Text,
+    Unicode,
+    UnicodeText,
+    Uuid,
     select,
 )
 from sqlalchemy.exc import DuplicateColumnError
@@ -49,9 +93,8 @@ from utilities._sqlalchemy.polars import (
     _select_to_dataframe_apply_snake,
     _select_to_dataframe_check_duplicates,
     _select_to_dataframe_map_select_to_df_schema,
-    _select_to_dataframe_map_table_column_to_dtype,
+    _select_to_dataframe_map_table_column_type_to_dtype,
     _select_to_dataframe_yield_selects_with_in_clauses,
-    _SelectToDataFrameMapTableColumnToDTypeError,
 )
 from utilities.datetime import UTC, is_equal_mod_tz
 from utilities.hypothesis import sqlite_engines, text_ascii
@@ -418,7 +461,7 @@ class TestSelectToDataFrame:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table)
         with raises(SelectToDataFrameError):
-            _ = select_to_dataframe(sel, engine, batch_size=1)  # type: ignore
+            _ = select_to_dataframe(sel, engine, batch_size=1)
 
 
 class TestSelectToDataFrameApplySnake:
@@ -453,11 +496,70 @@ class TestSelectToDataFrameMapSelectToDFSchema:
         assert schema == expected
 
 
-class TestSelectToDataFrameMapTableColumnToDType:
-    def test_error(self) -> None:
-        column = Column("value", LargeBinary)
-        with raises(_SelectToDataFrameMapTableColumnToDTypeError):
-            _ = _select_to_dataframe_map_table_column_to_dtype(column)
+class TestSelectToDataFrameMapTableColumnTypeToDType:
+    @mark.parametrize(
+        ("col_type", "expected"),
+        [
+            param(BigInteger, Int64),
+            param(BIGINT, Int64),
+            param(BINARY, Binary),
+            param(sqlalchemy.Boolean, pl.Boolean),
+            param(BOOLEAN, pl.Boolean),
+            param(CHAR, Utf8),
+            param(CLOB, Utf8),
+            param(sqlalchemy.Date, pl.Date),
+            param(DATE, pl.Date),
+            param(DATETIME, Datetime),
+            param(DateTime, Datetime),
+            param(DECIMAL, Decimal),
+            param(Double, Float64),
+            param(DOUBLE, Float64),
+            param(DOUBLE_PRECISION, Float64),
+            param(Float, Float64),
+            param(FLOAT, Float64),
+            param(INT, Int64),
+            param(Integer, Int64),
+            param(INTEGER, Int64),
+            param(Interval, Duration),
+            param(LargeBinary, Binary),
+            param(NCHAR, Utf8),
+            param(Numeric, Decimal),
+            param(NUMERIC, Decimal),
+            param(NVARCHAR, Utf8),
+            param(REAL, Float64),
+            param(SMALLINT, Int64),
+            param(SmallInteger, Int64),
+            param(String, Utf8),
+            param(TEXT, Utf8),
+            param(Text, Utf8),
+            param(TIME, pl.Time),
+            param(sqlalchemy.Time, pl.Time),
+            param(TIMESTAMP, Datetime),
+            param(Unicode, Utf8),
+            param(UnicodeText, Utf8),
+            param(Uuid, pl.Utf8),
+            param(UUID, pl.Utf8),
+            param(VARBINARY, Binary),
+            param(VARCHAR, Utf8),
+        ],
+    )
+    @mark.parametrize("use_inst", [param(True), param(False)])
+    def test_main(
+        self, *, col_type: Any, use_inst: bool, expected: DataTypeClass
+    ) -> None:
+        col_type_use = col_type() if use_inst else col_type
+        dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)
+        assert isinstance(dtype, type)
+        assert issubclass(dtype, expected)
+
+    @mark.parametrize("timezone", [param(True), param(False)])
+    def test_datetime(self, *, timezone: bool) -> None:
+        col_type = DateTime(timezone=timezone)
+        dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type)
+        if isinstance(dtype, type):
+            assert issubclass(dtype, Datetime)
+        else:
+            assert isinstance(dtype, Datetime)
 
 
 class TestSelectToDataFrameYieldSelectsWithInClauses:
