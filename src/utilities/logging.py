@@ -6,10 +6,13 @@ from logging import basicConfig
 from utilities.datetime import maybe_sub_pct_y
 
 
-def basic_config() -> None:
+def basic_config(
+    *,
+    format: str = "{asctime} | {name} | {levelname:8} | {message}",  # noqa: A002
+) -> None:
     """Do the basic config."""
     basicConfig(
-        format="{asctime} | {name} | {levelname:8} | {message}",
+        format=format,
         datefmt=maybe_sub_pct_y("%Y-%m-%d %H:%M:%S"),
         style="{",
         level=LogLevel.DEBUG.name,
