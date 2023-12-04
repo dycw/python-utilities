@@ -17,6 +17,7 @@ from polars import (
     Int64,
     PolarsDataType,
     Utf8,
+    concat,
     read_database,
 )
 from polars.type_aliases import ConnectionOrCursor, SchemaDict
@@ -37,6 +38,7 @@ from utilities.functions import identity
 from utilities.humps import snake_case
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.more_itertools import OneError, one
+from utilities.polars import EmptyPolarsConcatError, redirect_empty_polars_concat
 
 
 def insert_dataframe(
@@ -157,7 +159,24 @@ def select_to_dataframe(
     batch_size: None = ...,
     in_clauses: None = ...,
     in_clauses_chunk_size: int | None = ...,
-    schema_overrides: SchemaDict | None = ...,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    **kwargs: Any,
+) -> DataFrame:
+    ...
+
+
+@overload
+def select_to_dataframe(
+    sel: Select[Any],
+    engine: Engine,
+    /,
+    *,
+    snake: bool = ...,
+    time_zone: timezone = ...,
+    batch_size: int | None = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
+    in_clauses_chunk_size: int | None = ...,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> DataFrame:
     ...
@@ -174,7 +193,7 @@ def select_to_dataframe(
     batch_size: int = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
     in_clauses_chunk_size: int | None = ...,
-    schema_overrides: SchemaDict | None = ...,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> Iterator[DataFrame]:
     ...
@@ -191,7 +210,7 @@ def select_to_dataframe(
     batch_size: int | None = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
     in_clauses_chunk_size: int | None = ...,
-    schema_overrides: SchemaDict | None = ...,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> Iterator[DataFrame]:
     ...
@@ -224,6 +243,24 @@ def select_to_dataframe(
             return read_database(
                 sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
             )
+    if isinstance(engine_or_conn, Engine) and (in_clauses is not None):
+        with engine_or_conn.begin() as conn:
+            dfs = select_to_dataframe(
+                sel,
+                conn,
+                snake=snake,
+                time_zone=time_zone,
+                batch_size=batch_size,
+                in_clauses=in_clauses,
+                in_clauses_chunk_size=in_clauses_chunk_size,
+                chunk_size_frac=chunk_size_frac,
+                **kwargs,
+            )
+            try:
+                with redirect_empty_polars_concat():
+                    return concat(dfs)
+            except EmptyPolarsConcatError:
+                return DataFrame(schema=schema)
     if (
         isinstance(engine_or_conn, Connection)
         and (batch_size is not None)
@@ -350,7 +387,7 @@ def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) 
 
 def _select_to_dataframe_yield_selects_with_in_clauses(
     sel: Select[Any],
-    conn: Connection,
+    conn: Engine | Connection,
     in_clauses: tuple[Column[Any], Iterable[Any]],
     /,
     *,

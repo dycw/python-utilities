@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from functools import reduce
 from itertools import chain
 
@@ -13,17 +14,6 @@ from utilities.errors import redirect_error
 from utilities.math import is_equal_or_approx
 from utilities.more_itertools import always_iterable
 from utilities.types import IterableStrs, SequenceStrs
-
-
-def group_by_nan_sum(
-    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], aggs: str | IterableStrs, /
-) -> DataFrame:
-    """Group-by a column/set of columns and then apply a nan sum."""
-
-    return df.group_by(by).agg(
-        when(col(agg).is_not_null().any()).then(col(agg).sum()).otherwise(lit(None))
-        for agg in always_iterable(aggs)
-    )
 
 
 def check_polars_dataframe(
@@ -87,6 +77,17 @@ class CheckPolarsDataFrameError(Exception):
     ...
 
 
+def group_by_nan_sum(
+    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], aggs: str | IterableStrs, /
+) -> DataFrame:
+    """Group-by a column/set of columns and then apply a nan sum."""
+
+    return df.group_by(by).agg(
+        when(col(agg).is_not_null().any()).then(col(agg).sum()).otherwise(lit(None))
+        for agg in always_iterable(aggs)
+    )
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -98,6 +99,19 @@ def join(
         return left.join(right, on=on, how=how, validate=validate)
 
     return reduce(inner, chain([df], dfs))
+
+
+@contextmanager
+def redirect_empty_polars_concat() -> Iterator[None]:
+    """Redirect to the `EmptyPolarsConcatError`."""
+    with redirect_error(
+        ValueError, EmptyPolarsConcatError, match="cannot concat empty list"
+    ):
+        yield
+
+
+class EmptyPolarsConcatError(Exception):
+    ...
 
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
@@ -115,10 +129,12 @@ class SetFirstRowAsColumnsError(Exception):
 
 __all__ = [
     "CheckPolarsDataFrameError",
+    "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
     "check_polars_dataframe",
     "group_by_nan_sum",
     "join",
+    "redirect_empty_polars_concat",
     "set_first_row_as_columns",
 ]
 

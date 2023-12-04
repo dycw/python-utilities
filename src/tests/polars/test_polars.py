@@ -1,61 +1,20 @@
 from __future__ import annotations
 
-from polars import DataFrame, Float64, Int64, Utf8
+from polars import DataFrame, Float64, Int64, Utf8, concat
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType
 from pytest import mark, param, raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
+    EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
     check_polars_dataframe,
     group_by_nan_sum,
     join,
+    redirect_empty_polars_concat,
     set_first_row_as_columns,
 )
-
-
-class TestGroupByNanSum:
-    @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    def test_main(self, *, dtype: PolarsDataType) -> None:
-        df = DataFrame(
-            [
-                ("one None", None),
-                ("two Nones", None),
-                ("two Nones", None),
-                ("one int", 1),
-                ("one int, one None", 1),
-                ("one int, one None", None),
-                ("one int, two Nones", 1),
-                ("one int, two Nones", None),
-                ("one int, two Nones", None),
-                ("two ints", 1),
-                ("two ints", 2),
-                ("two ints, one None", 1),
-                ("two ints, one None", 2),
-                ("two ints, one None", None),
-                ("two ints, two Nones", 1),
-                ("two ints, two Nones", 2),
-                ("two ints, two Nones", None),
-                ("two ints, two Nones", None),
-            ],
-            schema={"id": Utf8, "value": dtype},
-        )
-        result = group_by_nan_sum(df, "id", "value")
-        expected = DataFrame(
-            [
-                ("one None", None),
-                ("two Nones", None),
-                ("one int", 1),
-                ("one int, one None", 1),
-                ("one int, two Nones", 1),
-                ("two ints", 3),
-                ("two ints, one None", 3),
-                ("two ints, two Nones", 3),
-            ],
-            schema={"id": Utf8, "value": dtype},
-        )
-        assert_frame_equal(result.sort("id"), expected.sort("id"))
 
 
 class TestCheckPolarsDataFrame:
@@ -154,6 +113,49 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, width=1)
 
 
+class TestGroupByNanSum:
+    @mark.parametrize("dtype", [param(Int64), param(Float64)])
+    def test_main(self, *, dtype: PolarsDataType) -> None:
+        df = DataFrame(
+            [
+                ("one None", None),
+                ("two Nones", None),
+                ("two Nones", None),
+                ("one int", 1),
+                ("one int, one None", 1),
+                ("one int, one None", None),
+                ("one int, two Nones", 1),
+                ("one int, two Nones", None),
+                ("one int, two Nones", None),
+                ("two ints", 1),
+                ("two ints", 2),
+                ("two ints, one None", 1),
+                ("two ints, one None", 2),
+                ("two ints, one None", None),
+                ("two ints, two Nones", 1),
+                ("two ints, two Nones", 2),
+                ("two ints, two Nones", None),
+                ("two ints, two Nones", None),
+            ],
+            schema={"id": Utf8, "value": dtype},
+        )
+        result = group_by_nan_sum(df, "id", "value")
+        expected = DataFrame(
+            [
+                ("one None", None),
+                ("two Nones", None),
+                ("one int", 1),
+                ("one int, one None", 1),
+                ("one int, two Nones", 1),
+                ("two ints", 3),
+                ("two ints, one None", 3),
+                ("two ints, two Nones", 3),
+            ],
+            schema={"id": Utf8, "value": dtype},
+        )
+        assert_frame_equal(result.sort("id"), expected.sort("id"))
+
+
 class TestJoin:
     def test_main(self) -> None:
         df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
@@ -163,6 +165,12 @@ class TestJoin:
             [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
         )
         assert_frame_equal(result, expected)
+
+
+class TestRedirectEmptyPolarsConcat:
+    def test_main(self) -> None:
+        with raises(EmptyPolarsConcatError), redirect_empty_polars_concat():
+            _ = concat([])
 
 
 class TestSetFirstRowAsColumns:

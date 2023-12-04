@@ -415,7 +415,7 @@ from utilities.numpy import (
     is_zero_or_non_micro_or_nan,
     maximum,
     minimum,
-    redirect_empty_numpy_concatenate_error,
+    redirect_empty_numpy_concatenate,
     shift_bool,
     year,
 )
@@ -1820,9 +1820,7 @@ class TestNDims:
 
 class TestRedirectEmptyNumpyConcatenateError:
     def test_main(self) -> None:
-        with raises(
-            EmptyNumpyConcatenateError
-        ), redirect_empty_numpy_concatenate_error():
+        with raises(EmptyNumpyConcatenateError), redirect_empty_numpy_concatenate():
             _ = concatenate([])
 
 
