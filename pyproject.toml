@@ -87,6 +87,7 @@ dev = [
   "pytest-cov >= 4.1.0",
   "pytest-instafail >= 0.5.0",
   "pytest-randomly >= 3.15.0",
+  "pytest-timeout >= 2.2.0",
   "pytest-xdist >= 3.3.1",
 ]
 fastapi = ["fastapi >= 0.104.1"]
@@ -231,6 +232,7 @@ filterwarnings = [
 ]
 minversion = "7.0"
 testpaths = ["src/tests"]
+timeout = 600
 xfail_strict = true
 
 # ruff

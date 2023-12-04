@@ -339,6 +339,7 @@ pytest==7.4.3
     #   pytest-cov
     #   pytest-instafail
     #   pytest-randomly
+    #   pytest-timeout
     #   pytest-xdist
 pytest-check==2.2.2
     # via dycw-utilities (pyproject.toml)
@@ -347,6 +348,8 @@ pytest-cov==4.1.0
 pytest-instafail==0.5.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
+    # via dycw-utilities (pyproject.toml)
+pytest-timeout==2.2.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.5.0
     # via dycw-utilities (pyproject.toml)
