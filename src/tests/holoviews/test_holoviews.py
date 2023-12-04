@@ -4,14 +4,14 @@ from pathlib import Path
 
 from holoviews import Curve
 
-from utilities.holoviews import apply_opts, relabel_plot, save_plot
+from utilities.holoviews import apply_cols, relabel_plot, save_plot
 from utilities.pytest import skipif_not_linux
 
 
-class TestApplyOpts:
+class TestApplyCols:
     def test_main(self) -> None:
-        curve = Curve([])
-        _ = apply_opts(curve)
+        layout = Curve([]) + Curve([])
+        _ = apply_cols(layout, 1)
 
 
 class TestRelabelPlot:
