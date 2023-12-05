@@ -112,7 +112,7 @@ fonttools==4.46.0
     # via fpdf2
 fpdf2==2.7.6
     # via dycw-utilities (pyproject.toml)
-freezegun==1.3.0
+freezegun==1.3.1
     # via dycw-utilities (pyproject.toml)
 frozendict==2.3.10
     # via dycw-utilities (pyproject.toml)
@@ -199,7 +199,7 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.58.1
     # via numbagg
-numbagg==0.6.4
+numbagg==0.6.5
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
@@ -276,7 +276,7 @@ pillow==10.1.0
     #   streamlit
 pip-tools==7.3.0
     # via dycw-utilities (pyproject.toml)
-platformdirs==4.0.0
+platformdirs==4.1.0
     # via
     #   hatch
     #   virtualenv
