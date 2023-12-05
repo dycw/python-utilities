@@ -37,7 +37,7 @@ except ModuleNotFoundError:  # pragma: no cover
         skipif_windows
     ) = (
         skipif_mac
-    ) = skipif_linux = skipif_not_windows = skipif_not_mac = skipif_linux = None
+    ) = skipif_linux = skipif_not_windows = skipif_not_mac = skipif_not_linux = None
 else:
     skipif_windows = mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
     skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
