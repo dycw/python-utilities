@@ -24,7 +24,6 @@ from utilities._luigi.common import (
     WeekdayParameter,
 )
 from utilities.datetime import UTC, get_now
-from utilities.json import deserialize, serialize
 from utilities.logging import LogLevel
 from utilities.pathlib import PathLike
 from utilities.semver import ensure_version
@@ -36,17 +35,27 @@ from utilities.types import IterableStrs
 class FrozenSetStrsParameter(Parameter):
     """A parameter which takes the value of a frozen set of strings."""
 
+    def __init__(
+        self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
+    ) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__(**kwargs)
+
     @override
     def normalize(self, x: IterableStrs) -> frozenset[str]:
         return frozenset(x)
 
     @override
     def parse(self, x: str) -> frozenset[str]:
-        return deserialize(x)
+        split = [] if x == self._empty else x.split(self._separator)
+        return frozenset(split)
 
     @override
     def serialize(self, x: frozenset[str]) -> str:
-        return serialize(x)
+        if len(x) >= 1:
+            return self._separator.join(sorted(x))
+        return self._empty
 
 
 class VersionParameter(Parameter):
