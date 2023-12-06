@@ -5,7 +5,7 @@ from typing import Any, Literal, cast, overload
 import cvxpy
 import numpy as np
 import numpy.linalg
-from cvxpy import Expression, Problem
+from cvxpy import CLARABEL, Expression, Problem
 from numpy import maximum, minimum, ndarray, where
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_zero
@@ -324,14 +324,36 @@ def solve(
     problem: Problem,
     /,
     *,
-    solver: Literal["ECOS", "MOSEK"] = "ECOS",
+    solver: Literal[
+        "CBC",
+        "CLARABEL",
+        "COPT",
+        "CVXOPT",
+        "ECOS",
+        "GLOP",
+        "GLPK_MI",
+        "GLPK",
+        "GUROBI",
+        "MOSEK",
+        "NAG",
+        "OSQP",
+        "PDLPCPLEX",
+        "PIQP",
+        "PROXQP",
+        "SCIP",
+        "SCIPY",
+        "SCS",
+        "SDPA",
+        "XPRESS",
+    ] = CLARABEL,
     verbose: bool = False,
 ) -> float:
     """Solve a problem."""
-    if solver == "MOSEK":  # pragma: no cover
-        kwargs = {"mosek_params": {"MSK_IPAR_LICENSE_WAIT": True}}
-    else:
-        kwargs = {}
+    match solver:
+        case "MOSEK":  # pragma: no cover
+            kwargs = {"mosek_params": {"MSK_IPAR_LICENSE_WAIT": True}}
+        case _:
+            kwargs = {}
     obj = cast(float, problem.solve(solver=solver, verbose=verbose, **kwargs))
     if (status := problem.status) in {"optimal", "optimal_inaccurate"}:
         return obj
