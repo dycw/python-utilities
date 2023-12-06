@@ -51,8 +51,8 @@ class Dialect(enum.Enum):
                 return 32767
             case Dialect.sqlite:
                 return 100
-            case _:  # pragma: no cover  # type: ignore
-                assert_never(self)
+            case _ as never:  # type: ignore
+                assert_never(never)
 
 
 def ensure_tables_created(
@@ -72,8 +72,8 @@ def ensure_tables_created(
             match = "ORA-00955: name is already used by an existing object"
         case Dialect.sqlite:
             match = "table .* already exists"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)

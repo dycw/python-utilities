@@ -199,7 +199,7 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.58.1
     # via numbagg
-numbagg==0.6.5
+numbagg==0.6.6
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
@@ -398,7 +398,7 @@ scipy==1.11.4
     #   scs
 scs==3.2.4.post1
     # via cvxpy
-selenium==4.15.2
+selenium==4.16.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)

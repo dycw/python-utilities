@@ -49,8 +49,8 @@ from itertools import (
             return _yield_import_nodes_from_text(
                 text, include_suppress=include_suppress
             )
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(method)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
 
 @command()

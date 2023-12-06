@@ -165,8 +165,8 @@ def annotation_date_to_class(
             return DateParameter
         case "weekday":
             return WeekdayParameter
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(kind)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
 
 def annotation_datetime_to_class(
@@ -180,8 +180,8 @@ def annotation_datetime_to_class(
             cls = DateMinuteParameter
         case "second":
             cls = DateSecondParameter
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(kind)
+        case _ as never:  # type: ignore
+            assert_never(never)
     return partial(cls, interval=interval)
 
 

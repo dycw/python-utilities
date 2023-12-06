@@ -215,8 +215,8 @@ def pstarmap(
                 gui=gui,
                 **kwargs,
             )
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(parallelism)
+        case _ as never:  # type: ignore
+            assert_never(never)
     return list(result)
 
 

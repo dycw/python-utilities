@@ -5,9 +5,9 @@ from collections.abc import Iterator
 from contextlib import suppress
 from datetime import tzinfo
 from re import sub
-from typing import Any, cast
+from typing import cast
 
-from typing_extensions import assert_never
+from typing_extensions import Never, assert_never
 
 from utilities.errors import redirect_error
 from utilities.platform import SYSTEM, System
@@ -106,15 +106,15 @@ TODAY_UTC, TODAY_HKG, TODAY_TKY = (get_today(tz=tz) for tz in [UTC, HONG_KONG, T
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    match arg := (x_aware, y_aware):
+    match x_aware, y_aware:
         case (False, False) | (True, True):
             return x == y
         case True, False:
             return x.astimezone(UTC).replace(tzinfo=None) == y
         case False, True:
             return x == y.astimezone(UTC).replace(tzinfo=None)
-        case _:  # pragma: no cover
-            assert_never(cast(Any, arg))
+        case _ as never:
+            assert_never(cast(Never, never))
 
 
 def is_weekday(date: dt.date, /) -> bool:
@@ -145,8 +145,8 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return text
         case System.linux:  # pragma: os-ne-linux
             return sub("%Y", "%4Y", text)
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(SYSTEM)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
 
 def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
