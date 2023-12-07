@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import Enum, auto
-from functools import partial
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -18,7 +17,6 @@ from hypothesis.strategies import (
     times,
 )
 from luigi import BoolParameter, Parameter, Task
-from luigi.notifications import smtp
 from pytest import mark, param
 from semver import VersionInfo
 from typing_extensions import override
@@ -27,7 +25,6 @@ from utilities.datetime import serialize_date, serialize_datetime, serialize_tim
 from utilities.hypothesis import (
     datetimes_utc,
     namespace_mixins,
-    settings_with_reduced_examples,
     temp_paths,
     text_ascii,
     versions,
@@ -47,12 +44,9 @@ from utilities.luigi import (
     TimeParameter,
     VersionParameter,
     WeekdayParameter,
-    _yield_task_classes,
     build,
     clone,
-    get_dependencies_downstream,
-    get_dependencies_upstream,
-    get_task_classes,
+    yield_dependencies,
 )
 from utilities.types import IterableStrs
 
@@ -200,8 +194,7 @@ class TestExternalTask:
 
 class TestGetDependencies:
     @given(namespace_mixin=namespace_mixins())
-    @settings_with_reduced_examples(0.01)
-    def test_main(self, *, namespace_mixin: Any) -> None:
+    def test_recursive(self, *, namespace_mixin: Any) -> None:
         class A(namespace_mixin, Task):
             ...
 
@@ -216,59 +209,29 @@ class TestGetDependencies:
                 return clone(self, B)
 
         a, b, c = A(), B(), C()
-        ((up_a, down_a), (up_b, down_b), (up_c, down_c)) = map(
-            self._get_sets, [a, b, c]
-        )
-        assert up_a == set()
-        assert down_a == {b}
-        assert up_b == {a}
-        assert down_b == {c}
-        assert up_c == {b}
-        assert down_c == set()
-
-        ((up_a_rec, down_a_rec), (up_b_rec, down_b_rec), (up_c_rec, down_c_rec)) = map(
-            partial(self._get_sets, recursive=True), [a, b, c]
-        )
-        assert up_a_rec == set()
-        assert down_a_rec == {b, c}
-        assert up_b_rec == {a}
-        assert down_b_rec == {c}
-        assert up_c_rec == {a, b}
-        assert down_c_rec == set()
-
-    @staticmethod
-    def _get_sets(
-        task: Task, /, *, recursive: bool = False
-    ) -> tuple[set[Task], set[Task]]:
-        return set(get_dependencies_upstream(task, recursive=recursive)), set(
-            get_dependencies_downstream(task, recursive=recursive)
-        )
-
-
-class TestGetTaskClasses:
-    @given(namespace_mixin=namespace_mixins())
-    @settings_with_reduced_examples(0.01)
-    def test_main(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task):
-            ...
-
-        assert Example in get_task_classes()
-
-    def test_notifications(self) -> None:
-        assert smtp not in _yield_task_classes()
+        assert set(yield_dependencies(a, recursive=True)) == set()
+        assert set(yield_dependencies(b, recursive=True)) == {a}
+        assert set(yield_dependencies(c, recursive=True)) == {a, b}
 
     @given(namespace_mixin=namespace_mixins())
-    @settings_with_reduced_examples(0.01)
-    def test_filter(self, *, namespace_mixin: Any) -> None:
-        class Parent(namespace_mixin, Task):
+    def test_non_recursive(self, *, namespace_mixin: Any) -> None:
+        class A(namespace_mixin, Task):
             ...
 
-        class Child(Parent):
-            ...
+        class B(namespace_mixin, Task):
+            @override
+            def requires(self) -> A:
+                return clone(self, A)
 
-        result = get_task_classes(cls=Parent)
-        expected = frozenset([Child])
-        assert result == expected
+        class C(namespace_mixin, Task):
+            @override
+            def requires(self) -> B:
+                return clone(self, B)
+
+        a, b, c = A(), B(), C()
+        assert set(yield_dependencies(a)) == set()
+        assert set(yield_dependencies(b)) == {a}
+        assert set(yield_dependencies(c)) == {b}
 
 
 class TestPathTarget:

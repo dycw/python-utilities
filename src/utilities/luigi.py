@@ -10,9 +10,7 @@ import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
-from luigi.notifications import smtp
-from luigi.parameter import MissingParameterException
-from luigi.task import Register, flatten
+from luigi.task import flatten
 from semver import Version
 from typing_extensions import override
 
@@ -221,87 +219,13 @@ def clone(
     return AwaitTask(cloned) if await_ else cloned
 
 
-@overload
-def get_dependencies_downstream(
-    task: Task, /, *, cls: type[_Task], recursive: bool = False
-) -> frozenset[_Task]:
-    ...
+def yield_dependencies(task: Task, /, *, recursive: bool = False) -> Iterator[Task]:
+    """Yield the upstream dependencies of a task."""
 
-
-@overload
-def get_dependencies_downstream(
-    task: Task, /, *, cls: None = None, recursive: bool = False
-) -> frozenset[Task]:
-    ...
-
-
-def get_dependencies_downstream(
-    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
-) -> frozenset[Task]:
-    """Get the downstream dependencies of a task."""
-    return frozenset(_yield_dependencies_downstream(task, cls=cls, recursive=recursive))
-
-
-def _yield_dependencies_downstream(
-    task: Task, /, *, cls: type[Task] | None = None, recursive: bool = False
-) -> Iterator[Task]:
-    for task_cls in cast(Iterable[type[Task]], get_task_classes(cls=cls)):
-        yield from _yield_dependencies_downstream_1(task, task_cls, recursive=recursive)
-
-
-def _yield_dependencies_downstream_1(
-    task: Task, task_cls: type[Task], /, *, recursive: bool = False
-) -> Iterator[Task]:
-    try:
-        cloned = clone(task, task_cls)
-    except (MissingParameterException, TypeError):
-        pass
-    else:
-        if task in get_dependencies_upstream(cloned, recursive=recursive):
-            yield cloned
-            if recursive:
-                yield from get_dependencies_downstream(cloned, recursive=recursive)
-
-
-def get_dependencies_upstream(
-    task: Task, /, *, recursive: bool = False
-) -> frozenset[Task]:
-    """Get the upstream dependencies of a task."""
-    return frozenset(_yield_dependencies_upstream(task, recursive=recursive))
-
-
-def _yield_dependencies_upstream(
-    task: Task, /, *, recursive: bool = False
-) -> Iterator[Task]:
     for t in cast(Iterable[Task], flatten(task.requires())):
         yield t
         if recursive:
-            yield from get_dependencies_upstream(t, recursive=recursive)
-
-
-@overload
-def get_task_classes(*, cls: type[_Task]) -> frozenset[type[_Task]]:
-    ...
-
-
-@overload
-def get_task_classes(*, cls: None = None) -> frozenset[type[Task]]:
-    ...
-
-
-def get_task_classes(*, cls: type[_Task] | None = None) -> frozenset[type[_Task]]:
-    """Yield the task classes. Optionally filter down."""
-    return frozenset(_yield_task_classes(cls=cls))
-
-
-def _yield_task_classes(*, cls: type[_Task] | None = None) -> Iterator[type[_Task]]:
-    """Yield the task classes. Optionally filter down."""
-    for name in cast(Any, Register).task_names():
-        task_cls = cast(Any, Register).get_task_cls(name)
-        if (
-            (cls is None) or ((cls is not task_cls) and issubclass(task_cls, cls))
-        ) and (task_cls is not smtp):
-            yield cast(type[_Task], task_cls)
+            yield from yield_dependencies(t, recursive=recursive)
 
 
 __all__ = [
@@ -321,9 +245,7 @@ __all__ = [
     "WeekdayParameter",
     "build",
     "clone",
-    "get_dependencies_downstream",
-    "get_dependencies_upstream",
-    "get_task_classes",
+    "yield_dependencies",
 ]
 
 
