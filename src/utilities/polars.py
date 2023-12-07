@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import reduce
 from itertools import chain
+from typing import Any
 
-from polars import DataFrame, Expr, PolarsDataType, col, lit, when
+from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
 from polars.exceptions import OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
@@ -16,7 +17,7 @@ from utilities.more_itertools import always_iterable
 from utilities.types import IterableStrs, SequenceStrs
 
 
-def check_polars_dataframe(
+def check_polars_dataframe(  # noqa: PLR0912
     df: DataFrame,
     /,
     *,
@@ -25,6 +26,7 @@ def check_polars_dataframe(
     height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
     max_height: int | None = None,
+    predicates: Mapping[str, Callable[[Any], bool]] | None = None,
     schema: SchemaDict | None = None,
     shape: tuple[int, int] | None = None,
     sorted: IntoExpr | Iterable[IntoExpr] | None = None,  # noqa: A002
@@ -47,6 +49,12 @@ def check_polars_dataframe(
     if (max_height is not None) and (len(df) > max_height):
         msg = f"{df=}, {max_height=}"
         raise CheckPolarsDataFrameError(msg)
+    if predicates is not None:
+        for column, predicate in predicates.items():
+            result = df[column].map_elements(predicate, return_dtype=Boolean)
+            if not result.all():
+                msg = f"{df=}, {column=}, {predicate=}"
+                raise CheckPolarsDataFrameError(msg)
     if (schema is not None) and (df.schema != schema):
         set_act, set_exp = map(set, [df.schema, schema])
         extra = set_act - set_exp
