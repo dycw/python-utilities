@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from math import isfinite, nan
+
 from polars import DataFrame, Float64, Int64, Utf8, concat
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType
@@ -66,6 +68,15 @@ class TestCheckPolarsDataFrame:
         df = DataFrame({"value": [0.0, 1.0]})
         with raises(CheckPolarsDataFrameError):
             check_polars_dataframe(df, max_height=1)
+
+    def test_predicates_pass(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        check_polars_dataframe(df, predicates={"value": isfinite})
+
+    def test_predicates_error(self) -> None:
+        df = DataFrame({"value": [0.0, nan]})
+        with raises(CheckPolarsDataFrameError):
+            check_polars_dataframe(df, predicates={"value": isfinite})
 
     def test_schema_pass(self) -> None:
         df = DataFrame()
