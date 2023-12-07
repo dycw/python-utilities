@@ -143,14 +143,6 @@ class TestDateTimeParameter:
         assert param.parse(param.serialize(norm)) == norm
 
 
-class TestFrozenSetStrsParameter:
-    @given(text=iterables(text_ascii()))
-    def test_main(self, *, text: IterableStrs) -> None:
-        param = FrozenSetStrsParameter()
-        norm = param.normalize(text)
-        assert param.parse(param.serialize(norm)) == norm
-
-
 class TestEnumParameter:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -190,6 +182,14 @@ class TestExternalTask:
         task = Example(is_complete=is_complete)
         result = task.exists()
         assert result is is_complete
+
+
+class TestFrozenSetStrsParameter:
+    @given(text=iterables(text_ascii()))
+    def test_main(self, *, text: IterableStrs) -> None:
+        param = FrozenSetStrsParameter()
+        norm = param.normalize(text)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestGetDependencies:
