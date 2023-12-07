@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Iterable
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -12,6 +13,7 @@ from hypothesis.strategies import (
     booleans,
     data,
     dates,
+    integers,
     iterables,
     sampled_from,
     times,
@@ -39,6 +41,7 @@ from utilities.luigi import (
     EnumParameter,
     ExternalFile,
     ExternalTask,
+    FrozenSetIntsParameter,
     FrozenSetStrsParameter,
     PathTarget,
     TimeParameter,
@@ -182,6 +185,14 @@ class TestExternalTask:
         task = Example(is_complete=is_complete)
         result = task.exists()
         assert result is is_complete
+
+
+class TestFrozenSetIntsParameter:
+    @given(values=iterables(integers()))
+    def test_main(self, *, values: Iterable[int]) -> None:
+        param = FrozenSetIntsParameter()
+        norm = param.normalize(values)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestFrozenSetStrsParameter:

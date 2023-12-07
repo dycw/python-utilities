@@ -32,6 +32,32 @@ from utilities.types import IterableStrs
 # parameters
 
 
+class FrozenSetIntsParameter(Parameter):
+    """A parameter which takes the value of a frozen set of integers."""
+
+    def __init__(
+        self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
+    ) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__(**kwargs)
+
+    @override
+    def normalize(self, x: Iterable[int]) -> frozenset[int]:
+        return frozenset(x)
+
+    @override
+    def parse(self, x: str) -> frozenset[int]:
+        split = [] if x == self._empty else x.split(self._separator)
+        return frozenset(map(int, split))
+
+    @override
+    def serialize(self, x: frozenset[str]) -> str:
+        if len(x) >= 1:
+            return self._separator.join(sorted(map(str, x)))
+        return self._empty
+
+
 class FrozenSetStrsParameter(Parameter):
     """A parameter which takes the value of a frozen set of strings."""
 
@@ -247,6 +273,7 @@ __all__ = [
     "EnumParameter",
     "ExternalFile",
     "ExternalTask",
+    "FrozenSetIntsParameter",
     "FrozenSetStrsParameter",
     "PathTarget",
     "TimeParameter",
