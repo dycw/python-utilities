@@ -136,7 +136,7 @@ httpx==0.25.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.91.0
+hypothesis==6.91.1
     # via dycw-utilities (pyproject.toml)
 idna==3.6
     # via
@@ -199,7 +199,7 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.58.1
     # via numbagg
-numbagg==0.6.6
+numbagg==0.6.7
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
@@ -371,7 +371,7 @@ pyyaml==6.0.1
     # via bokeh
 qdldl==0.1.7.post0
     # via osqp
-referencing==0.31.1
+referencing==0.32.0
     # via
     #   jsonschema
     #   jsonschema-specifications
