@@ -6,7 +6,7 @@ import cvxpy
 import numpy as np
 import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
-from numpy import maximum, minimum, ndarray, where
+from numpy import ndarray, where
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_zero
 
@@ -26,9 +26,7 @@ def abs_(x: Expression, /) -> Expression:
     ...
 
 
-def abs_(  # pragma: has-cvxpy
-    x: float | NDArrayF | Expression, /
-) -> float | NDArrayF | Expression:
+def abs_(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the absolute value."""
     if isinstance(x, float | ndarray):
         return np.abs(x)
@@ -144,6 +142,148 @@ def divide(
 
 
 @overload
+def max_(x: float | NDArrayF, /) -> float:
+    ...
+
+
+@overload
+def max_(x: Expression, /) -> Expression:
+    ...
+
+
+def max_(x: float | NDArrayF | Expression, /) -> float | Expression:
+    """Compute the maximum of a quantity."""
+    if isinstance(x, float | ndarray):
+        return np.max(x)
+    return cvxpy.max(x)
+
+
+@overload
+def maximum(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def maximum(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def maximum(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
+def maximum(
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
+    """Compute the maximum of two quantities."""
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+        return np.maximum(x, y)
+    return cvxpy.maximum(x, y)
+
+
+@overload
+def min_(x: float | NDArrayF, /) -> float:
+    ...
+
+
+@overload
+def min_(x: Expression, /) -> Expression:
+    ...
+
+
+def min_(x: float | NDArrayF | Expression, /) -> float | Expression:
+    """Compute the minimum of a quantity."""
+    if isinstance(x, float | ndarray):
+        return np.min(x)
+    return cvxpy.min(x)
+
+
+@overload
+def minimum(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def minimum(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def minimum(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
+def minimum(
+    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
+) -> float | NDArrayF | Expression:
+    """Compute the minimum of two quantities."""
+    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+        return np.minimum(x, y)
+    return cvxpy.minimum(x, y)
+
+
+@overload
 def multiply(x: float, y: float, /) -> float:
     ...
 
@@ -198,21 +338,41 @@ def multiply(
 
 
 @overload
-def neg(x: float, /) -> float:
+def negate(x: float, /) -> float:
     ...
 
 
 @overload
-def neg(x: NDArrayF, /) -> NDArrayF:
+def negate(x: NDArrayF, /) -> NDArrayF:
     ...
 
 
 @overload
-def neg(x: Expression, /) -> Expression:
+def negate(x: Expression, /) -> Expression:
     ...
 
 
-def neg(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def negate(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+    """Negate a quantity."""
+    return -x
+
+
+@overload
+def negative(x: float, /) -> float:
+    ...
+
+
+@overload
+def negative(x: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def negative(x: Expression, /) -> Expression:
+    ...
+
+
+def negative(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the negative parts of a quantity."""
     if isinstance(x, float | ndarray):
         result = -minimum(x, 0.0)
@@ -238,21 +398,21 @@ def norm(x: NDArrayF1 | Expression, /) -> float | Expression:
 
 
 @overload
-def pos(x: float, /) -> float:
+def positive(x: float, /) -> float:
     ...
 
 
 @overload
-def pos(x: NDArrayF, /) -> NDArrayF:
+def positive(x: NDArrayF, /) -> NDArrayF:
     ...
 
 
 @overload
-def pos(x: Expression, /) -> Expression:
+def positive(x: Expression, /) -> Expression:
     ...
 
 
-def pos(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def positive(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the positive parts of a quantity."""
     if isinstance(x, float | ndarray):
         result = maximum(x, 0.0)
@@ -347,14 +507,17 @@ def solve(
         "XPRESS",
     ] = CLARABEL,
     verbose: bool = False,
+    **kwargs: Any,
 ) -> float:
     """Solve a problem."""
     match solver:
         case "MOSEK":  # pragma: no cover
-            kwargs = {"mosek_params": {"MSK_IPAR_LICENSE_WAIT": True}}
+            specific = {"mosek_params": {"MSK_IPAR_LICENSE_WAIT": True}}
         case _:
-            kwargs = {}
-    obj = cast(float, problem.solve(solver=solver, verbose=verbose, **kwargs))
+            specific = {}
+    obj = cast(
+        float, problem.solve(solver=solver, verbose=verbose, **kwargs, **specific)
+    )
     if (status := problem.status) in {"optimal", "optimal_inaccurate"}:
         return obj
     if status in {"infeasible", "infeasible_inaccurate"}:
@@ -481,10 +644,14 @@ __all__ = [
     "abs_",
     "add",
     "divide",
+    "max_",
+    "maximum",
+    "min_",
     "multiply",
-    "neg",
+    "negate",
+    "negative",
     "norm",
-    "pos",
+    "positive",
     "power",
     "quad_form",
     "solve",
