@@ -307,15 +307,15 @@ def check_engine(
     Optionally query for the number of tables, or the number of columns in
     such a table.
     """
-    match dialect := get_dialect(engine):
+    match get_dialect(engine):
         case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
             query = "select * from information_schema.tables"
         case Dialect.oracle:  # pragma: no cover
             query = "select * from all_objects"
         case Dialect.sqlite:
             query = "select * from sqlite_master where type='table'"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
+        case _ as never:  # type: ignore
+            assert_never(never)
     statement = text(query)
     with engine.begin() as conn:
         rows = conn.execute(statement).all()
@@ -510,8 +510,8 @@ def redirect_table_does_not_exist(engine: Engine, /) -> Iterator[None]:
             match = "ORA-00942: table or view does not exist"
         case Dialect.sqlite:
             match = "no such table"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
+        case _ as never:  # type: ignore
+            assert_never(never)
     with redirect_error(DatabaseError, TableDoesNotExistError, match=match):
         yield
 

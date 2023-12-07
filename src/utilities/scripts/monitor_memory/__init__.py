@@ -80,8 +80,8 @@ def _get_memory_usage() -> Item:
             virtual_kwargs["virtual_cached"] = virtual.cached
             virtual_kwargs["virtual_shared"] = virtual.shared
             virtual_kwargs["virtual_slab"] = virtual.slab
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(SYSTEM)
+        case _ as never:  # type: ignore
+            assert_never(never)
     swap = swap_memory()
     return Item(
         datetime=get_now(tz=UTC),

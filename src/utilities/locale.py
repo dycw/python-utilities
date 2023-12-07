@@ -20,8 +20,8 @@ def get_locale_for_platform(locale: str, /) -> str:
             return locale
         case System.linux:  # pragma: os-ne-linux
             return f"{locale}.utf8"
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(SYSTEM)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
 
 @contextmanager

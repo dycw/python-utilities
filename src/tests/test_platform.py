@@ -34,8 +34,8 @@ class TestMaybeYieldLowerCase:
                 assert all(text == text.lower() for text in result)
             case System.linux:  # pragma: os-ne-linux
                 assert result == text
-            case _:  # pragma: no cover  # type: ignore
-                assert_never(SYSTEM)
+            case _ as never:  # type: ignore
+                assert_never(never)
 
 
 class TestSystem:

@@ -54,8 +54,8 @@ def redirect_next_from_sequence_error(engine: Engine, /) -> Iterator[None]:
         case Dialect.sqlite:
             msg = f"{engine=}"
             raise NotImplementedError(msg)
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(dialect)
+        case _ as never:  # type: ignore
+            assert_never(never)
     with redirect_error(
         DatabaseError, NextFromSequenceError, match=match
     ):  # pragma: no cover

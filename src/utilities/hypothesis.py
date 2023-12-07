@@ -138,8 +138,8 @@ class _HypothesisProfile(Enum):
                 return 100
             case _HypothesisProfile.ci:
                 return 1000
-            case _:  # pragma: no cover  # type: ignore
-                assert_never(self)
+            case _ as never:  # type: ignore
+                assert_never(never)
 
     @property
     def verbosity(self) -> Verbosity | None:
@@ -152,8 +152,8 @@ class _HypothesisProfile(Enum):
                 return Verbosity.normal
             case _HypothesisProfile.debug:
                 return Verbosity.debug
-            case _:  # pragma: no cover  # type: ignore
-                assert_never(self)
+            case _ as never:  # type: ignore
+                assert_never(never)
 
 
 @dataclass(frozen=True)

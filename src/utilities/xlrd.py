@@ -20,8 +20,8 @@ def get_date_mode() -> Literal[0, 1]:
         case System.linux:  # pragma: no cover
             msg = f"{SYSTEM=}"
             raise GetDateModeError(msg)
-        case _:  # pragma: no cover  # type: ignore
-            assert_never(SYSTEM)
+        case _ as never:  # type: ignore
+            assert_never(never)
 
 
 class GetDateModeError(Exception):
