@@ -54,24 +54,22 @@ def _check_password(
 
 def _password_entered() -> None:
     """Checks whether a password entered by the user is correct."""
-    if (
-        session_state[_USERNAME] in secrets["passwords"]  # pragma: no cover
-    ) and compare_digest(
+    if (session_state[_USERNAME] in secrets["passwords"]) and compare_digest(
         session_state[_PASSWORD], secrets.passwords[session_state[_USERNAME]]
     ):
-        session_state[_PASSWORD_CORRECT] = True  # pragma: no cover
-        del session_state[_PASSWORD]  # pragma: no cover
-        del session_state[_USERNAME]  # pragma: no cover
+        session_state[_PASSWORD_CORRECT] = True
+        del session_state[_PASSWORD]
+        del session_state[_USERNAME]
     else:
-        session_state[_PASSWORD_CORRECT] = False  # pragma: no cover
+        session_state[_PASSWORD_CORRECT] = False
 
 
 def stop() -> NoReturn:
     """Wrapper around `stop`."""
 
     _stop()
-    msg = "Failed to stop the `streamlit` document"  # pragma: no cover
-    raise RuntimeError(msg)  # pragma: no cover
+    msg = "Failed to stop the `streamlit` document"
+    raise RuntimeError(msg)
 
 
 __all__ = ["ensure_logged_in", "stop"]
