@@ -13,8 +13,7 @@ from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDi
 
 from utilities.errors import redirect_error
 from utilities.math import is_equal_or_approx
-from utilities.more_itertools import always_iterable
-from utilities.types import IterableStrs, SequenceStrs
+from utilities.types import SequenceStrs
 
 
 def check_polars_dataframe(
@@ -125,17 +124,6 @@ class CheckPolarsDataFrameError(Exception):
     ...
 
 
-def group_by_nan_sum(
-    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], aggs: str | IterableStrs, /
-) -> DataFrame:
-    """Group-by a column/set of columns and then apply a nan sum."""
-
-    return df.group_by(by).agg(
-        when(col(agg).is_not_null().any()).then(col(agg).sum()).otherwise(lit(None))
-        for agg in always_iterable(aggs)
-    )
-
-
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -147,6 +135,17 @@ def join(
         return left.join(right, on=on, how=how, validate=validate)
 
     return reduce(inner, chain([df], dfs))
+
+
+def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
+    """Nan sum aggregation."""
+
+    col_use = col(column) if isinstance(column, str) else column
+    return (
+        when(col_use.is_not_null().any())
+        .then(col_use.sum())
+        .otherwise(lit(None, dtype=dtype))
+    )
 
 
 @contextmanager
@@ -180,8 +179,8 @@ __all__ = [
     "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
     "check_polars_dataframe",
-    "group_by_nan_sum",
     "join",
+    "nan_sum_agg",
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
 ]
