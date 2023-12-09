@@ -19,6 +19,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
+from utilities.pathvalidate import valid_path
 
 
 class TestGetBranchName:
@@ -55,16 +56,16 @@ class TestGetRepoRootOrCwdSubPath:
     @settings_with_reduced_examples()
     def test_exists(self, *, root: Path) -> None:
         def get_file(root: Path, /) -> Path:
-            return root.joinpath("file.txt")
+            return valid_path(root, "file.txt")
 
         result = get_repo_root_or_cwd_sub_path(get_file, cwd=root)
-        expected = root.joinpath("file.txt").resolve()
+        expected = valid_path(root, "file.txt").resolve()
         assert result == expected
 
     @given(root=temp_paths())
     def test_does_not_exist(self, *, root: Path) -> None:
         def get_file(root: Path, /) -> Path:
-            return root.joinpath("file.txt")
+            return valid_path(root, "file.txt")
 
         result = get_repo_root_or_cwd_sub_path(get_file, cwd=root)
         assert result is None
@@ -72,13 +73,13 @@ class TestGetRepoRootOrCwdSubPath:
     @given(root=temp_paths())
     def test_missing(self, *, root: Path) -> None:
         def get_file_1(root: Path, /) -> Path:
-            return root.joinpath("file_1.txt")
+            return valid_path(root, "file_1.txt")
 
         def get_file_2(root: Path, /) -> Path:
-            return root.joinpath("file_2.txt")
+            return valid_path(root, "file_2.txt")
 
         result = get_repo_root_or_cwd_sub_path(
             get_file_1, cwd=root, if_missing=get_file_2
         )
-        expected = root.joinpath("file_2.txt")
+        expected = valid_path(root, "file_2.txt")
         assert result == expected

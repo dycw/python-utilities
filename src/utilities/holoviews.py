@@ -6,7 +6,7 @@ from holoviews import Layout, save
 
 from utilities._holoviews.common import apply_opts
 from utilities.atomicwrites import writer
-from utilities.pathlib import PathLike
+from utilities.types import PathLike
 
 _T = TypeVar("_T")
 

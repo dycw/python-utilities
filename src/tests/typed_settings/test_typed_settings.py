@@ -34,6 +34,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.hypothesis import temp_paths, text_ascii
+from utilities.pathvalidate import valid_path
 from utilities.typed_settings import (
     _get_loaders,
     _GetLoadersError,
@@ -138,7 +139,7 @@ class TestClickOptions:
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
 
-        file = root.joinpath("file.toml")
+        file = valid_path(root, "file.toml")
         cfg_str = serialize(cfg)
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
@@ -208,7 +209,7 @@ class TestLoadSettings:
         settings_default = load_settings(Settings)
         assert settings_default.value == default
         _ = hash(settings_default)
-        file = root.joinpath("file.toml")
+        file = valid_path(root, "file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
         settings_loaded = load_settings(Settings, appname=appname, config_files=[file])

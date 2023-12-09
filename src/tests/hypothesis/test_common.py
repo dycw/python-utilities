@@ -28,6 +28,7 @@ from utilities._hypothesis.common import (
     text_ascii,
 )
 from utilities.hypothesis import assume_does_not_raise
+from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.tempfile import TemporaryDirectory
 
@@ -165,7 +166,7 @@ class TestTempDirs:
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
         for content in as_set:
-            path.joinpath(content).touch()
+            valid_path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)
 
 
@@ -180,7 +181,7 @@ class TestTempPaths:
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
         for content in as_set:
-            path.joinpath(content).touch()
+            valid_path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)
 
 

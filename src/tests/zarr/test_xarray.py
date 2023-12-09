@@ -30,6 +30,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.numpy import NDArrayI1
+from utilities.pathvalidate import valid_path
 from utilities.warnings import suppress_warnings
 from utilities.xarray import DataArray1
 
@@ -49,7 +50,7 @@ class TestDataArrayOnDisk:
         values = data.draw(float_arrays(shape=shape, allow_nan=True, allow_inf=True))
         dims = list(indexes)
         array = DataArray(values, coords, dims, name)
-        save_data_array_to_disk(array, path := root.joinpath("array"))
+        save_data_array_to_disk(array, path := valid_path(root, "array"))
         view = DataArrayOnDisk(path)
         assert_identical(view.data_array, array)
         assert_identical(view.da, view.data_array)
@@ -101,8 +102,8 @@ class TestDataArrayOnDisk:
             {"x": arange(2), "y": arange(3)},
             ["x", "y"],
         )
-        path = tmp_path.joinpath("array")
-        save_data_array_to_disk(array, path := tmp_path.joinpath("array"))
+        path = valid_path(tmp_path, "array")
+        save_data_array_to_disk(array, path := valid_path(tmp_path, "array"))
         view = DataArrayOnDisk(path)
         assert_identical(view.isel(indexer), expected)
 
@@ -158,8 +159,8 @@ class TestDataArrayOnDisk:
             {"x": ["x0", "x1"], "y": ["y0", "y1", "y2"]},
             ["x", "y"],
         )
-        path = tmp_path.joinpath("array")
-        save_data_array_to_disk(array, path := tmp_path.joinpath("array"))
+        path = valid_path(tmp_path, "array")
+        save_data_array_to_disk(array, path := valid_path(tmp_path, "array"))
         view = DataArrayOnDisk(path)
         with suppress_warnings(category=FutureWarning):  # empty arrays trigger
             assert_identical(view.sel(indexer), expected)
@@ -194,5 +195,5 @@ class TestYieldDataArrayOnDisk:
     @mark.parametrize("length", [param(0), param(1), param(2)])
     def test_main(self, tmp_path: Path, length: int) -> None:
         coords = {"x": RangeIndex(length)}
-        with yield_data_array_on_disk(coords, tmp_path.joinpath("array")):
+        with yield_data_array_on_disk(coords, valid_path(tmp_path, "array")):
             pass

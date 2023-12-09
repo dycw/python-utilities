@@ -9,6 +9,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from, sets
 
 from utilities.hypothesis import temp_paths
+from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.zipfile import yield_zip_file_contents
 
@@ -22,7 +23,7 @@ class TestYieldZipFileContents:
         contents = set(maybe_yield_lower_case(contents))
         assert temp_path.exists()
         assert not list(temp_path.iterdir())
-        path_zip = temp_path.joinpath("zipfile")
+        path_zip = valid_path(temp_path, "zipfile")
         with ZipFile(path_zip, mode="w") as zf:
             for con in contents:
                 zf.writestr(con, con)

@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
-from utilities.pathlib import PathLike
 from utilities.tempfile import TemporaryDirectory
+from utilities.types import PathLike
 
 
 @contextmanager

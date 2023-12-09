@@ -6,10 +6,11 @@ from click import command
 from loguru import logger
 
 from utilities.loguru import setup_loguru
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.scripts.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
+from utilities.types import PathLike
 
 _CONFIG = Config()
 
@@ -31,7 +32,7 @@ def main(config: Config, /) -> None:
 
 
 def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
-    if not Path(path_password).exists():
+    if not valid_path(path_password).exists():
         msg = f"{path_password=!s}"
         raise FileNotFoundError(msg)
 

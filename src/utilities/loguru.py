@@ -14,10 +14,10 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.logging import LogLevel
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path, valid_path_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
-from utilities.types import IterableStrs
+from utilities.types import IterableStrs, PathLike
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
@@ -32,7 +32,7 @@ def setup_loguru(
     enable: IterableStrs | None = None,
     console: LogLevel = LogLevel.INFO,
     files: PathLike | None = None,
-    files_root: PathLike = Path.cwd(),
+    files_root: PathLike = valid_path_cwd(),
     files_env_var: str | None = _FILES_ENV_VAR,
     rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
     retention: str | int | dt.timedelta | None = _RETENTION,
@@ -49,7 +49,7 @@ def setup_loguru(
     _add_sink(stdout, console, all_levels, live=True)
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
-        full_files_path = Path(files_root, files_path)
+        full_files_path = valid_path(files_root, files_path)
         _add_file_sink(full_files_path, "log", LogLevel.DEBUG, all_levels, live=False)
         for level in set(LogLevel) - {LogLevel.CRITICAL}:
             _add_live_file_sink(
@@ -209,7 +209,7 @@ def _add_file_sink(
 ) -> None:
     """Add a file sink."""
     _add_sink(
-        Path(path, name),
+        valid_path(path, name),
         level,
         levels,
         live=live,

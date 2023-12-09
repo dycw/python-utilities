@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from hypothesis import given
@@ -9,6 +8,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
 from utilities._hypothesis.sqlalchemy import sqlite_engines
+from utilities.pathvalidate import valid_path
 from utilities.sqlalchemy import get_table, insert_items
 
 
@@ -17,7 +17,7 @@ class TestSQLiteEngines:
     def test_main(self, *, engine: Engine) -> None:
         assert isinstance(engine, Engine)
         assert (database := engine.url.database) is not None
-        assert not Path(database).exists()
+        assert not valid_path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
     def test_table(self, *, data: DataObject, ids: set[int]) -> None:

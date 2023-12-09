@@ -18,9 +18,9 @@ from utilities._zarr.common import (
     yield_group_and_array,
 )
 from utilities.numpy import NDArray1
-from utilities.pathlib import PathLike
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str
+from utilities.types import PathLike
 
 if TYPE_CHECKING:  # pragma: no cover
     from utilities.pandas import IndexA

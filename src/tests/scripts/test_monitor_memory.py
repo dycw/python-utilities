@@ -5,19 +5,20 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
+from utilities.pathvalidate import valid_path
 from utilities.scripts.monitor_memory import _get_memory_usage, _monitor_memory, main
 
 
 class TestMonitorMemory:
     def test_cli(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("memory.csv")
+        path = valid_path(tmp_path, "memory.csv")
         runner = CliRunner()
         args = ["--path", str(path), "--freq", "1", "--duration", "1"]
         result = runner.invoke(main, args)
         assert result.exit_code == 0
 
     def test_monitor_memory(self, *, tmp_path: Path) -> None:
-        path = tmp_path.joinpath("memory.csv")
+        path = valid_path(tmp_path, "memory.csv")
         _ = _monitor_memory(path=path, freq=1, duration=1)
         assert path.exists()
         with path.open(mode="r") as fh:

@@ -19,7 +19,8 @@ from utilities.loguru import (
     setup_loguru,
 )
 from utilities.os import temp_environ
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
+from utilities.types import PathLike
 
 
 class TestSetupLoguru:
@@ -59,7 +60,7 @@ class TestSetupLoguru:
         results = {path.name for path in files_dir.iterdir()}
         expected = {"debug", "info", "warning", "error", "log"}
         assert results == expected
-        with files_dir.joinpath("log").open() as fh:
+        with valid_path(files_dir, "log").open() as fh:
             (line,) = fh.read().splitlines()
         assert search(
             r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}  INFO  \w+\-\d+  "

@@ -7,6 +7,7 @@ from hypothesis.strategies import integers
 from pydantic import BaseModel
 
 from utilities.hypothesis import temp_paths
+from utilities.pathvalidate import valid_path
 from utilities.pydantic import HashableBaseModel, load_model, save_model
 
 
@@ -23,7 +24,7 @@ class TestHashableBaseModel:
 class TestSaveAndLoadModel:
     @given(x=integers(), root=temp_paths())
     def test_main(self, *, x: int, root: Path) -> None:
-        path = root.joinpath("model.gz")
+        path = valid_path(root, "model.gz")
 
         class Example(BaseModel):
             x: int

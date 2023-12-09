@@ -10,7 +10,7 @@ from utilities.atomicwrites import writer
 from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.git import get_repo_root
 from utilities.hashlib import md5_hash
-from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -19,7 +19,7 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import Duration, IterableStrs
+from utilities.types import Duration, IterableStrs, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -108,9 +108,9 @@ def throttle(
     """Throttle a test. On run by default, by pass otherwise."""
 
     if root is None:
-        root_use = get_repo_root().joinpath(".pytest_cache", "throttle")
+        root_use = valid_path(get_repo_root(), ".pytest_cache", "throttle")
     else:
-        root_use = Path(root)
+        root_use = valid_path(root)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
@@ -119,7 +119,7 @@ def throttle(
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]
-            if (path := root_use.joinpath(_throttle_md5_hash(test))).exists():
+            if (path := valid_path(root_use, _throttle_md5_hash(test))).exists():
                 with path.open(mode="r") as fh:
                     contents = fh.read()
                 prev = float(contents)

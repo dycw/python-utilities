@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Hashable, Mapping, Sized
 from collections.abc import Set as AbstractSet
+from pathlib import Path
 from typing import Any, TypeGuard
 
 Number = int | float
 Duration = Number | dt.timedelta
 SequenceStrs = list[str] | tuple[str, ...]
 IterableStrs = SequenceStrs | AbstractSet[str] | Mapping[str, Any]
+PathLike = Path | str
 
 
 def ensure_class(obj: Any, /) -> type[Any]:
@@ -61,5 +63,6 @@ __all__ = [
     "issubclass_except_bool_int",
     "Number",
     "IterableStrs",
+    "PathLike",
     "SequenceStrs",
 ]

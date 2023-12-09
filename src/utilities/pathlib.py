@@ -6,14 +6,14 @@ from os import chdir
 from os import walk as _walk
 from pathlib import Path
 
+from utilities.pathvalidate import valid_path, valid_path_cwd
 from utilities.re import extract_group
-
-PathLike = Path | str
+from utilities.types import PathLike
 
 
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     """Ensure a path has the required suffix."""
-    as_path = Path(path)
+    as_path = valid_path(path)
     parts = as_path.name.split(".")
     clean_suffix = extract_group(r"^\.(\w+)$", suffix)
     if parts[-1] != clean_suffix:
@@ -24,7 +24,7 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
-    prev = Path.cwd()
+    prev = valid_path_cwd()
     chdir(path)
     try:
         yield
@@ -44,7 +44,11 @@ def walk(
     for dirpath, dirnames, filenames in _walk(
         top, topdown=topdown, onerror=onerror, followlinks=followlinks
     ):
-        yield Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames))
+        yield (
+            valid_path(dirpath),
+            list(map(valid_path, dirnames)),
+            list(map(valid_path, filenames)),
+        )
 
 
-__all__ = ["PathLike", "ensure_suffix", "temp_cwd", "walk"]
+__all__ = ["ensure_suffix", "temp_cwd", "walk"]

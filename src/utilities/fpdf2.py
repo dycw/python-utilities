@@ -10,6 +10,7 @@ from typing_extensions import override
 
 from utilities.datetime import get_now, local_timezone
 from utilities.holoviews import save_plot
+from utilities.pathvalidate import valid_path
 from utilities.tempfile import TemporaryDirectory
 
 
@@ -24,7 +25,7 @@ class _BasePDF(FPDF):
 
     def add_plot(self, plot: Any, /) -> None:  # pragma: no cover
         with TemporaryDirectory() as temp:
-            path = temp.joinpath("image.png")
+            path = valid_path(temp, "image.png")
             save_plot(plot, path)
             _ = self.image(path, w=self.epw)
 

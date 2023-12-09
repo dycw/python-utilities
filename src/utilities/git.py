@@ -7,13 +7,14 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import TypeVar, overload
 
 from utilities.pathlib import PathLike
+from utilities.pathvalidate import valid_path, valid_path_cwd
 
 _GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
-def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
+def get_branch_name(*, cwd: PathLike = valid_path_cwd()) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -25,7 +26,7 @@ def get_branch_name(*, cwd: PathLike = Path.cwd()) -> str:
     return output.strip("\n")
 
 
-def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
+def get_repo_name(*, cwd: PathLike = valid_path_cwd()) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -34,10 +35,10 @@ def get_repo_name(*, cwd: PathLike = Path.cwd()) -> str:
         cwd=root,
         text=True,
     )
-    return Path(output.strip("\n")).stem
+    return Path(output.strip("\n")).stem  # not valid_path
 
 
-def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
+def get_repo_root(*, cwd: PathLike = valid_path_cwd()) -> Path:
     """Get the repo root."""
     try:
         output = check_output(
@@ -53,7 +54,7 @@ def get_repo_root(*, cwd: PathLike = Path.cwd()) -> Path:
             raise GetRepoRootError(cwd) from error
         raise  # pragma: no cover
     else:
-        return Path(output.strip("\n"))
+        return valid_path(output.strip("\n"))
 
 
 class GetRepoRootError(Exception):
@@ -82,7 +83,7 @@ def get_repo_root_or_cwd_sub_path(
     if_exists: Callable[[Path], _T],
     /,
     *,
-    cwd: PathLike = Path.cwd(),
+    cwd: PathLike = valid_path_cwd(),
     if_missing: Callable[[Path], _U] | None = None,
 ) -> _T | _U | None:
     """Get a path under the repo root, if it exists, else under the CWD."""
@@ -91,7 +92,7 @@ def get_repo_root_or_cwd_sub_path(
     except (FileNotFoundError, GetRepoRootError):
         if if_missing is None:
             return None
-        return if_missing(Path(cwd))
+        return if_missing(valid_path(cwd))
     return if_exists(root)
 
 
