@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from math import isfinite, nan
-from typing import Any
+from typing import Any, Literal
 
-from polars import DataFrame, Float64, Int64, Utf8, concat
+from polars import DataFrame, Float64, Int64, Utf8, col, concat
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
 from pytest import mark, param, raises
@@ -19,6 +19,7 @@ from utilities.polars import (
     check_polars_dataframe,
     group_by_nan_sum,
     join,
+    nan_sum_cols,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
 )
@@ -237,6 +238,30 @@ class TestJoin:
             [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
         )
         assert_frame_equal(result, expected)
+
+
+class TestNanSumCols:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+    )
+    @mark.parametrize("x_kind", [param("str"), param("column")])
+    @mark.parametrize("y_kind", [param("str"), param("column")])
+    def test_main(
+        self,
+        *,
+        x: int | None,
+        y: int | None,
+        expected: int | None,
+        x_kind: Literal["str", "column"],
+        y_kind: Literal["str", "column"],
+    ) -> None:
+        x_use = "x" if x_kind == "str" else col("x")
+        y_use = "y" if y_kind == "str" else col("y")
+        df = DataFrame([(x, y)], schema={"x": Int64, "y": Int64}).with_columns(
+            nan_sum_cols(x_use, y_use).alias("z")
+        )
+        assert df["z"].item() == expected
 
 
 class TestRedirectEmptyPolarsConcat:

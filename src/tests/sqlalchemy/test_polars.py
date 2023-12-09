@@ -84,6 +84,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError
 
+from utilities._sqlalchemy.common import ensure_tables_created
 from utilities._sqlalchemy.polars import (
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
@@ -353,7 +354,7 @@ class TestSelectToDataFrame:
         batch_size=integers(1, 10) | none(),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_engine_and_in_clauses(
+    def test_engine_and_in_clauses_non_empty(
         self,
         *,
         data: DataObject,
@@ -381,6 +382,19 @@ class TestSelectToDataFrame:
         )
         check_polars_dataframe(df, height=len(in_values), schema={"value": Int64})
         assert set(df["value"].to_list()) == in_values
+
+    @given(engine=sqlite_engines())
+    def test_engine_and_in_clauses_empty(self, *, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id", Integer, primary_key=True),
+            Column("value", Integer),
+        )
+        ensure_tables_created(engine, table)
+        sel = select(table.c["value"])
+        df = select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
+        check_polars_dataframe(df, height=0, schema={"value": Int64})
 
     @given(
         engine=sqlite_engines(),
