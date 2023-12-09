@@ -7,7 +7,7 @@ from itertools import chain
 from typing import Any
 
 from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
-from polars.exceptions import OutOfBoundsError
+from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
 
@@ -17,7 +17,7 @@ from utilities.more_itertools import always_iterable
 from utilities.types import IterableStrs, SequenceStrs
 
 
-def check_polars_dataframe(  # noqa: PLR0912
+def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
@@ -28,6 +28,7 @@ def check_polars_dataframe(  # noqa: PLR0912
     max_height: int | None = None,
     predicates: Mapping[str, Callable[[Any], bool]] | None = None,
     schema: SchemaDict | None = None,
+    schema_inc: SchemaDict | None = None,
     shape: tuple[int, int] | None = None,
     sorted: IntoExpr | Iterable[IntoExpr] | None = None,  # noqa: A002
     unique: IntoExpr | Iterable[IntoExpr] | None = None,
@@ -50,22 +51,11 @@ def check_polars_dataframe(  # noqa: PLR0912
         msg = f"{df=}, {max_height=}"
         raise CheckPolarsDataFrameError(msg)
     if predicates is not None:
-        for column, predicate in predicates.items():
-            result = df[column].map_elements(predicate, return_dtype=Boolean)
-            if not result.all():
-                msg = f"{df=}, {column=}, {predicate=}"
-                raise CheckPolarsDataFrameError(msg)
-    if (schema is not None) and (df.schema != schema):
-        set_act, set_exp = map(set, [df.schema, schema])
-        extra = set_act - set_exp
-        missing = set_exp - set_act
-        differ = {
-            col: (left, right)
-            for col in set_act & set_exp
-            if (left := df.schema[col]) != (right := schema[col])
-        }
-        msg = f"{df=}, {extra=}, {missing=}, {differ=}"
-        raise CheckPolarsDataFrameError(msg)
+        _check_polars_dataframe_predicates(df, predicates)
+    if schema is not None:
+        _check_polars_dataframe_schema(df, schema)
+    if schema_inc is not None:
+        _check_polars_dataframe_schema_inc(df, schema_inc)
     if (shape is not None) and (df.shape != shape):
         msg = f"{df=}"
         raise CheckPolarsDataFrameError(msg)
@@ -78,6 +68,56 @@ def check_polars_dataframe(  # noqa: PLR0912
         raise CheckPolarsDataFrameError(msg)
     if (width is not None) and (df.width != width):
         msg = f"{df=}"
+        raise CheckPolarsDataFrameError(msg)
+
+
+def _check_polars_dataframe_predicates(
+    df: DataFrame, predicates: Mapping[str, Callable[[Any], bool]], /
+) -> None:
+    missing: set[str] = set()
+    failed: set[str] = set()
+    for column, predicate in predicates.items():
+        try:
+            sr = df[column]
+        except ColumnNotFoundError:  # noqa: PERF203
+            missing.add(column)
+        else:
+            if not sr.map_elements(predicate, return_dtype=Boolean).all():
+                failed.add(column)
+    if (len(missing) >= 1) or (len(failed)) >= 1:
+        msg = f"{missing=}, {failed=}"
+        raise CheckPolarsDataFrameError(msg)
+
+
+def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None:
+    if df.schema != schema:
+        set_act, set_exp = map(set, [df.schema, schema])
+        extra = set_act - set_exp
+        missing = set_exp - set_act
+        differ = {
+            col: (left, right)
+            for col in set_act & set_exp
+            if (left := df.schema[col]) != (right := schema[col])
+        }
+        msg = f"{df=}, {extra=}, {missing=}, {differ=}"
+        raise CheckPolarsDataFrameError(msg)
+
+
+def _check_polars_dataframe_schema_inc(
+    df: DataFrame, schema_inc: SchemaDict, /
+) -> None:
+    missing: set[str] = set()
+    wrong_dtype: set[str] = set()
+    for column, dtype in schema_inc.items():
+        try:
+            sr = df[column]
+        except ColumnNotFoundError:  # noqa: PERF203
+            missing.add(column)
+        else:
+            if sr.dtype != dtype:
+                wrong_dtype.add(column)
+    if (len(missing) >= 1) or (len(wrong_dtype)) >= 1:
+        msg = f"{missing=}, {wrong_dtype=}"
         raise CheckPolarsDataFrameError(msg)
 
 

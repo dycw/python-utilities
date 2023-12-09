@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from math import isfinite, nan
+from typing import Any
 
 from polars import DataFrame, Float64, Int64, Utf8, concat
 from polars.testing import assert_frame_equal
-from polars.type_aliases import PolarsDataType
+from polars.type_aliases import PolarsDataType, SchemaDict
 from pytest import mark, param, raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
+    _check_polars_dataframe_predicates,
+    _check_polars_dataframe_schema,
+    _check_polars_dataframe_schema_inc,
     check_polars_dataframe,
     group_by_nan_sum,
     join,
@@ -79,13 +84,22 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, predicates={"value": isfinite})
 
     def test_schema_pass(self) -> None:
-        df = DataFrame()
-        check_polars_dataframe(df, schema={})
+        df = DataFrame({"value": [0.0]})
+        check_polars_dataframe(df, schema={"value": Float64})
 
     def test_schema_error(self) -> None:
         df = DataFrame()
         with raises(CheckPolarsDataFrameError):
             check_polars_dataframe(df, schema={"value": Float64})
+
+    def test_schema_inc_pass(self) -> None:
+        df = DataFrame({"foo": [0.0], "bar": [0.0]})
+        check_polars_dataframe(df, schema_inc={"foo": Float64})
+
+    def test_schema_inc_error(self) -> None:
+        df = DataFrame({"foo": [0.0]})
+        with raises(CheckPolarsDataFrameError):
+            check_polars_dataframe(df, schema_inc={"bar": Float64})
 
     def test_shape_pass(self) -> None:
         df = DataFrame()
@@ -122,6 +136,53 @@ class TestCheckPolarsDataFrame:
         df = DataFrame()
         with raises(CheckPolarsDataFrameError):
             check_polars_dataframe(df, width=1)
+
+
+class TestCheckPolarsDataFramePredicates:
+    def test_pass(self) -> None:
+        df = DataFrame({"value": [0.0, 1.0]})
+        _check_polars_dataframe_predicates(df, {"value": isfinite})
+
+    @mark.parametrize(
+        "predicates",
+        [
+            param({"other": Float64}, id="missing column"),
+            param({"value": isfinite}, id="failed"),
+        ],
+    )
+    def test_error(self, *, predicates: Mapping[str, Callable[[Any], bool]]) -> None:
+        df = DataFrame({"value": [0.0, nan]})
+        with raises(CheckPolarsDataFrameError):
+            _check_polars_dataframe_predicates(df, predicates)
+
+
+class TestCheckPolarsDataFrameSchema:
+    def test_pass(self) -> None:
+        df = DataFrame({"value": [0.0]})
+        _check_polars_dataframe_schema(df, {"value": Float64})
+
+    def test_error(self) -> None:
+        df = DataFrame()
+        with raises(CheckPolarsDataFrameError):
+            _check_polars_dataframe_schema(df, {"value": Float64})
+
+
+class TestCheckPolarsDataFrameSchemaInc:
+    def test_pass(self) -> None:
+        df = DataFrame({"foo": [0.0], "bar": [0.0]})
+        _check_polars_dataframe_schema_inc(df, {"foo": Float64})
+
+    @mark.parametrize(
+        "schema_inc",
+        [
+            param({"bar": Float64}, id="missing column"),
+            param({"foo": Int64}, id="wrong dtype"),
+        ],
+    )
+    def test_error(self, *, schema_inc: SchemaDict) -> None:
+        df = DataFrame({"foo": [0.0]})
+        with raises(CheckPolarsDataFrameError):
+            _check_polars_dataframe_schema_inc(df, schema_inc)
 
 
 class TestGroupByNanSum:
