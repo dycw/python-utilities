@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from math import isfinite, nan
 from typing import Any, Literal
 
-from polars import DataFrame, Float64, Int64, Utf8, col, concat
+from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
 from pytest import mark, param, raises
@@ -19,6 +19,7 @@ from utilities.polars import (
     check_polars_dataframe,
     join,
     nan_sum_agg,
+    nan_sum_cols,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
 )
@@ -197,33 +198,31 @@ class TestJoin:
 
 
 class TestNanSumAgg:
+    @mark.parametrize(
+        ("data", "expected"),
+        [
+            param([None], None, id="one None"),
+            param([None, None], None, id="two Nones"),
+            param([0], 0, id="one int"),
+            param([0, None], 0, id="one int, one None"),
+            param([0, None, None], 0, id="one int, two Nones"),
+            param([1, 2], 3, id="two ints"),
+            param([1, 2, None], 3, id="two ints, one None"),
+            param([1, 2, None, None], 3, id="two ints, two Nones"),
+        ],
+    )
     @mark.parametrize("dtype", [param(Int64), param(Float64)])
     @mark.parametrize("mode", [param("str"), param("column")])
     def test_main(
-        self, *, dtype: PolarsDataType, mode: Literal["str", "column"]
+        self,
+        *,
+        data: list[Any],
+        expected: int | None,
+        dtype: PolarsDataType,
+        mode: Literal["str", "column"],
     ) -> None:
-        df = DataFrame(
-            [
-                ("one None", None),
-                ("two Nones", None),
-                ("two Nones", None),
-                ("one int", 1),
-                ("one int, one None", 1),
-                ("one int, one None", None),
-                ("one int, two Nones", 1),
-                ("one int, two Nones", None),
-                ("one int, two Nones", None),
-                ("two ints", 1),
-                ("two ints", 2),
-                ("two ints, one None", 1),
-                ("two ints, one None", 2),
-                ("two ints, one None", None),
-                ("two ints, two Nones", 1),
-                ("two ints, two Nones", 2),
-                ("two ints, two Nones", None),
-                ("two ints, two Nones", None),
-            ],
-            schema={"id": Utf8, "value": dtype},
+        df = DataFrame({"value": data}, schema={"value": dtype}).with_columns(
+            lit("id").alias("id")
         )
         match mode:
             case "str":
@@ -231,20 +230,31 @@ class TestNanSumAgg:
             case "column":
                 agg = col("value")
         result = df.group_by("id").agg(nan_sum_agg(agg))
-        expected = DataFrame(
-            [
-                ("one None", None),
-                ("two Nones", None),
-                ("one int", 1),
-                ("one int, one None", 1),
-                ("one int, two Nones", 1),
-                ("two ints", 3),
-                ("two ints, one None", 3),
-                ("two ints, two Nones", 3),
-            ],
-            schema={"id": Utf8, "value": dtype},
+        assert result["value"].item() == expected
+
+
+class TestNanSumCols:
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+    )
+    @mark.parametrize("x_kind", [param("str"), param("column")])
+    @mark.parametrize("y_kind", [param("str"), param("column")])
+    def test_main(
+        self,
+        *,
+        x: int | None,
+        y: int | None,
+        expected: int | None,
+        x_kind: Literal["str", "column"],
+        y_kind: Literal["str", "column"],
+    ) -> None:
+        x_use = "x" if x_kind == "str" else col("x")
+        y_use = "y" if y_kind == "str" else col("y")
+        df = DataFrame([(x, y)], schema={"x": Int64, "y": Int64}).with_columns(
+            nan_sum_cols(x_use, y_use).alias("z")
         )
-        assert_frame_equal(result.sort("id"), expected.sort("id"))
+        assert df["z"].item() == expected
 
 
 class TestRedirectEmptyPolarsConcat:
