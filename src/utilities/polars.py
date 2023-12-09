@@ -148,6 +148,30 @@ def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -
     )
 
 
+def nan_sum_cols(
+    column: str | Expr, *columns: str | Expr, dtype: PolarsDataType | None = None
+) -> Expr:
+    """Nan sum across columns."""
+
+    all_columns = chain([column], columns)
+    all_exprs = (
+        col(column) if isinstance(column, str) else column for column in all_columns
+    )
+
+    def func(x: Expr, y: Expr, /) -> Expr:
+        return (
+            when(x.is_not_null() & y.is_not_null())
+            .then(x + y)
+            .when(x.is_not_null() & y.is_null())
+            .then(x)
+            .when(x.is_null() & y.is_not_null())
+            .then(y)
+            .otherwise(lit(None, dtype=dtype))
+        )
+
+    return reduce(func, all_exprs)
+
+
 @contextmanager
 def redirect_empty_polars_concat() -> Iterator[None]:
     """Redirect to the `EmptyPolarsConcatError`."""
@@ -181,6 +205,7 @@ __all__ = [
     "check_polars_dataframe",
     "join",
     "nan_sum_agg",
+    "nan_sum_cols",
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
 ]
