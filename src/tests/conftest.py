@@ -2,34 +2,37 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from os import getenv
-from typing import TypedDict, cast
 
-import pytest
-from _pytest.logging import LogCaptureFixture
-from hypothesis import Verbosity, settings
+from _pytest.fixtures import SubRequest
 from loguru import logger
+from pytest import LogCaptureFixture, fixture
+
+from utilities.hypothesis import setup_hypothesis_profiles
+from utilities.loguru import setup_loguru
+from utilities.timer import Timer
+
+setup_hypothesis_profiles()
+setup_loguru()
 
 
-class Kwargs(TypedDict, total=False):
-    deadline: None
-    print_blob: bool
-    report_multiple_bugs: bool
-
-
-kwargs = cast(
-    Kwargs, {"deadline": None, "print_blob": True, "report_multiple_bugs": False}
-)
-settings.register_profile("default", max_examples=100, **kwargs)
-settings.register_profile("dev", max_examples=10, **kwargs)
-settings.register_profile("ci", max_examples=1000, **kwargs)
-settings.register_profile(
-    "debug", max_examples=10, verbosity=Verbosity.verbose, **kwargs
-)
-settings.load_profile(getenv("HYPOTHESIS_PROFILE", "default"))
-
-
-@pytest.fixture()
-def caplog(*, caplog: pytest.LogCaptureFixture) -> Iterator[LogCaptureFixture]:
+@fixture()
+def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
     handler_id = logger.add(caplog.handler, format="{message}")
     yield caplog
     logger.remove(handler_id)
+
+
+@fixture(autouse=True)
+def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
+    """Log current test; usage:
+
+    PYTEST_TIMER=1 pytest -s .
+    """
+    if getenv("PYTEST_TIMER") == "1":
+        name = request.node.nodeid
+        logger.info("[S ] {name}", name=name)
+        with Timer() as timer:
+            yield
+        logger.info("[ F] {name} | {timer}", name=name, timer=timer)
+    else:
+        yield
