@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from math import isfinite, nan
-from typing import Any
+from typing import Any, Literal
 
-from polars import DataFrame, Float64, Int64, Utf8, concat
+from polars import DataFrame, Float64, Int64, Utf8, col, concat
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
 from pytest import mark, param, raises
@@ -17,8 +17,8 @@ from utilities.polars import (
     _check_polars_dataframe_schema,
     _check_polars_dataframe_schema_inc,
     check_polars_dataframe,
-    group_by_nan_sum,
     join,
+    nan_sum_agg,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
 )
@@ -185,9 +185,23 @@ class TestCheckPolarsDataFrameSchemaInc:
             _check_polars_dataframe_schema_inc(df, schema_inc)
 
 
-class TestGroupByNanSum:
+class TestJoin:
+    def test_main(self) -> None:
+        df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
+        df2 = DataFrame([{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
+        result = join(df1, df2, on="a")
+        expected = DataFrame(
+            [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
+        )
+        assert_frame_equal(result, expected)
+
+
+class TestNanSumAgg:
     @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    def test_main(self, *, dtype: PolarsDataType) -> None:
+    @mark.parametrize("mode", [param("str"), param("column")])
+    def test_main(
+        self, *, dtype: PolarsDataType, mode: Literal["str", "column"]
+    ) -> None:
         df = DataFrame(
             [
                 ("one None", None),
@@ -211,7 +225,12 @@ class TestGroupByNanSum:
             ],
             schema={"id": Utf8, "value": dtype},
         )
-        result = group_by_nan_sum(df, "id", "value")
+        match mode:
+            case "str":
+                agg = "value"
+            case "column":
+                agg = col("value")
+        result = df.group_by("id").agg(nan_sum_agg(agg))
         expected = DataFrame(
             [
                 ("one None", None),
@@ -226,17 +245,6 @@ class TestGroupByNanSum:
             schema={"id": Utf8, "value": dtype},
         )
         assert_frame_equal(result.sort("id"), expected.sort("id"))
-
-
-class TestJoin:
-    def test_main(self) -> None:
-        df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
-        df2 = DataFrame([{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
-        result = join(df1, df2, on="a")
-        expected = DataFrame(
-            [{"a": 1, "b": 2, "c": 3}], schema={"a": Int64, "b": Int64, "c": Int64}
-        )
-        assert_frame_equal(result, expected)
 
 
 class TestRedirectEmptyPolarsConcat:
