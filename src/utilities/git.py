@@ -96,10 +96,18 @@ def get_repo_root_or_cwd_sub_path(
     return if_exists(root)
 
 
+def valid_path_repo(
+    *parts: PathLike, cwd: PathLike = valid_path_cwd(), sanitize: bool = False
+) -> Path:
+    """Build & validate a path from home."""
+    return valid_path(get_repo_root(cwd=cwd), *parts, sanitize=sanitize)
+
+
 __all__ = [
     "GetRepoRootError",
     "get_branch_name",
     "get_repo_name",
     "get_repo_root",
     "get_repo_root_or_cwd_sub_path",
+    "valid_path_repo",
 ]
