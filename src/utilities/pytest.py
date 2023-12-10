@@ -8,7 +8,7 @@ from typing import Any
 
 from utilities.atomicwrites import writer
 from utilities.datetime import UTC, duration_to_float, get_now
-from utilities.git import get_repo_root
+from utilities.git import valid_path_repo
 from utilities.hashlib import md5_hash
 from utilities.pathvalidate import valid_path
 from utilities.platform import (
@@ -108,7 +108,7 @@ def throttle(
     """Throttle a test. On run by default, by pass otherwise."""
 
     if root is None:
-        root_use = valid_path(get_repo_root(), ".pytest_cache", "throttle")
+        root_use = valid_path_repo(".pytest_cache", "throttle")
     else:
         root_use = valid_path(root)
 

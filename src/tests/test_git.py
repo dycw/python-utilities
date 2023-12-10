@@ -12,6 +12,7 @@ from utilities.git import (
     get_repo_name,
     get_repo_root,
     get_repo_root_or_cwd_sub_path,
+    valid_path_repo,
 )
 from utilities.hypothesis import (
     git_repos,
@@ -82,4 +83,13 @@ class TestGetRepoRootOrCwdSubPath:
             get_file_1, cwd=root, if_missing=get_file_2
         )
         expected = valid_path(root, "file_2.txt")
+        assert result == expected
+
+
+class TestValidRepoPath:
+    @given(root=git_repos(), file_name=text_ascii())
+    @settings_with_reduced_examples()
+    def test_main(self, *, root: Path, file_name: str) -> None:
+        result = valid_path_repo(file_name, cwd=root)
+        expected = valid_path(root.resolve(), file_name)
         assert result == expected
