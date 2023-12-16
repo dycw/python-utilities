@@ -5,9 +5,9 @@ from pathlib import Path
 from time import sleep
 
 from _pytest.legacypath import Testdir
-from pytest import MonkeyPatch, mark, param
+from pytest import mark, param
 
-from utilities.pytest import is_pytest, throttle
+from utilities.pytest import throttle
 from utilities.types import IterableStrs
 
 
@@ -171,15 +171,6 @@ class TestPytestOptions:
         result = testdir.runpytest("-rs", *case, "--randomly-dont-reorganize")
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
-
-
-class TestIsPytest:
-    def test_function(self) -> None:
-        assert is_pytest()
-
-    def test_disable(self, *, monkeypatch: MonkeyPatch) -> None:
-        monkeypatch.delenv("PYTEST_CURRENT_TEST")
-        assert not is_pytest()
 
 
 class TestThrottle:

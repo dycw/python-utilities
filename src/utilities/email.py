@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -9,7 +9,6 @@ from typing import Any
 
 from utilities.errors import redirect_error
 from utilities.pathvalidate import valid_path
-from utilities.pytest import is_pytest
 from utilities.types import IterableStrs, PathLike
 
 
@@ -24,11 +23,8 @@ def send_email(
     host: str = "",
     port: int = 0,
     attachments: Iterable[PathLike] | None = None,
-    disable: Callable[[], bool] | None = is_pytest,
 ) -> None:
     """Send an email."""
-    if (disable is not None) and disable():
-        return
     message = MIMEMultipart()
     message["From"] = from_
     message["To"] = ",".join(to)
@@ -66,4 +62,4 @@ class SendEmailError(Exception):
     ...
 
 
-__all__ = ["SendEmailError", "is_pytest", "send_email"]
+__all__ = ["SendEmailError", "send_email"]

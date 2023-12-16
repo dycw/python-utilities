@@ -14,10 +14,10 @@ from utilities.timer import Timer
 
 class TestTimer:
     def test_context_manager(self) -> None:
-        duration = 1e-3
+        duration = 0.01
         with Timer() as timer:
             assert isinstance(timer, Timer)
-            sleep(duration)
+            sleep(2 * duration)
         assert timer >= duration
 
     @mark.parametrize(

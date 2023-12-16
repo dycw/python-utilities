@@ -266,12 +266,12 @@ class TestDatetime64s:
         assert not isnat(datetime)
         if min_value is not None:
             if isinstance(min_value, datetime64):
-                assert datetime >= min_value
+                assert datetime >= min_value  # type: ignore
             else:
                 assert datetime64_to_int(datetime) >= min_value
         if max_value is not None:
             if isinstance(max_value, datetime64):
-                assert datetime <= max_value
+                assert datetime <= max_value  # type: ignore
             else:
                 assert datetime64_to_int(datetime) <= max_value
 
@@ -302,12 +302,12 @@ class TestDatetime64s:
         date = datetime64_to_date(datetime)
         if min_value is not None:
             if isinstance(min_value, datetime64):
-                assert datetime >= min_value
+                assert datetime >= min_value  # type: ignore
             else:
                 assert date >= min_value
         if max_value is not None:
             if isinstance(max_value, datetime64):
-                assert datetime <= max_value
+                assert datetime <= max_value  # type: ignore
             else:
                 assert date <= max_value
 
@@ -344,12 +344,12 @@ class TestDatetime64s:
         py_datetime = datetime64_to_datetime(np_datetime)
         if min_value is not None:
             if isinstance(min_value, datetime64):
-                assert np_datetime >= min_value
+                assert np_datetime >= min_value  # type: ignore
             else:
                 assert py_datetime >= min_value
         if max_value is not None:
             if isinstance(max_value, datetime64):
-                assert np_datetime <= max_value
+                assert np_datetime <= max_value  # type: ignore
             else:
                 assert py_datetime <= max_value
 

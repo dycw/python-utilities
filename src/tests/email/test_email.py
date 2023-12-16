@@ -7,20 +7,17 @@ from pytest import raises
 
 from utilities.email import SendEmailError, send_email
 from utilities.pathvalidate import valid_path
-from utilities.pytest import is_pytest
 from utilities.sentinel import sentinel
 
 
 class TestSendEmail:
     def test_main(self) -> None:
         with raises(SMTPServerDisconnected):
-            send_email("no-reply@test.com", ["user@test.com"], disable=None)
+            send_email("no-reply@test.com", ["user@test.com"])
 
     def test_subject(self) -> None:
         with raises(SMTPServerDisconnected):
-            send_email(
-                "no-reply@test.com", ["user@test.com"], subject="Subject", disable=None
-            )
+            send_email("no-reply@test.com", ["user@test.com"], subject="Subject")
 
     def test_contents_str(self) -> None:
         with raises(SMTPServerDisconnected):
@@ -29,7 +26,6 @@ class TestSendEmail:
                 ["user@test.com"],
                 subject="Subject",
                 contents="contents",
-                disable=None,
             )
 
     def test_attachment(self, tmp_path: Path) -> None:
@@ -41,7 +37,6 @@ class TestSendEmail:
                 ["user@test.com"],
                 subject="Subject",
                 attachments=[file],
-                disable=None,
             )
 
     def test_contents_error(self) -> None:
@@ -51,8 +46,4 @@ class TestSendEmail:
                 ["user@test.com"],
                 subject="Subject",
                 contents=sentinel,
-                disable=None,
             )
-
-    def test_disable(self) -> None:
-        send_email("no-reply@test.com", ["user@test.com"], disable=is_pytest)

@@ -18,5 +18,4 @@ class TestSendEmail:
                 ["user@test.com"],
                 subject="Subject",
                 contents=airium,
-                disable=None,
             )
