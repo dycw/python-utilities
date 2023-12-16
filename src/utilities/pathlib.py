@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from os import chdir
 from os import walk as _walk
 from pathlib import Path
 
+from utilities.datetime import UTC
 from utilities.pathvalidate import valid_path, valid_path_cwd
 from utilities.re import extract_group
 from utilities.types import PathLike
@@ -19,6 +21,11 @@ def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     if parts[-1] != clean_suffix:
         parts.append(clean_suffix)
     return as_path.with_name(".".join(parts))
+
+
+def get_modified_time(path: PathLike, /) -> dt.datetime:
+    """Get the modified time of a file."""
+    return dt.datetime.fromtimestamp(Path(path).stat().st_mtime, tz=UTC)
 
 
 @contextmanager
@@ -51,4 +58,4 @@ def walk(
         )
 
 
-__all__ = ["ensure_suffix", "temp_cwd", "walk"]
+__all__ = ["ensure_suffix", "get_modified_time", "temp_cwd", "walk"]

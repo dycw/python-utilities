@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from pathlib import Path
 
 from hypothesis import given
@@ -7,7 +8,7 @@ from hypothesis.strategies import booleans
 from pytest import mark, param
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_suffix, temp_cwd, walk
+from utilities.pathlib import ensure_suffix, get_modified_time, temp_cwd, walk
 from utilities.pathvalidate import valid_path, valid_path_cwd
 
 
@@ -29,6 +30,14 @@ class TestEnsureSuffix:
     def test_main(self, *, path: Path, expected: Path) -> None:
         result = ensure_suffix(path, ".txt")
         assert result == valid_path(expected)
+
+
+class TestGetModifiedTime:
+    @given(path=temp_paths())
+    def test_main(self, *, path: Path) -> None:
+        path.touch()
+        mod = get_modified_time(path)
+        assert isinstance(mod, dt.datetime)
 
 
 class TestWalk:

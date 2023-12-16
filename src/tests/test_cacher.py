@@ -54,23 +54,23 @@ class TestCacheToDisk:
         post_old, post_new = (time for _, time in as_list)
         assert pre_old < pre_new == post_old < post_new
 
-    def test_ttl(self, *, tmp_path: Path) -> None:
-        ttl = 0.1
-        func = cache_to_disk(root=tmp_path, ttl=ttl)(identity)
-        assert func(0) == 0
-        path = one(one(tmp_path.iterdir()).iterdir())
-        orig = path.stat().st_mtime
-        assert func(0) == 0
-        assert path.stat().st_mtime == orig
-        sleep(2 * ttl)
-        assert func(1) == 1
-        assert path.stat().st_mtime > orig
-
     def test_skip(self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path, skip=True)(identity)
         assert len(list(tmp_path.iterdir())) == 0
         assert func(0) == 0
         assert len(list(tmp_path.iterdir())) == 0
+
+    def test_max_duration(self, *, tmp_path: Path) -> None:
+        max_duration = 0.1
+        func = cache_to_disk(root=tmp_path, max_duration=max_duration)(identity)
+        assert func(0) == 0
+        path = one(one(tmp_path.iterdir()).iterdir())
+        orig = path.stat().st_mtime
+        assert func(0) == 0
+        assert path.stat().st_mtime == orig
+        sleep(2 * max_duration)
+        assert func(1) == 1
+        assert path.stat().st_mtime > orig
 
     def test_args_and_kwargs_resolved(self, *, tmp_path: Path) -> None:
         @cache_to_disk(root=tmp_path)
