@@ -10,6 +10,8 @@ beartype==0.16.4
     # via dycw-utilities (pyproject.toml)
 bidict==0.22.1
     # via dycw-utilities (pyproject.toml)
+cachetools==5.3.2
+    # via dycw-utilities (pyproject.toml)
 click==8.1.7
     # via dycw-utilities (pyproject.toml)
 frozendict==2.3.10
