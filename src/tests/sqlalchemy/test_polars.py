@@ -523,8 +523,6 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(CLOB, Utf8),
             param(sqlalchemy.Date, pl.Date),
             param(DATE, pl.Date),
-            param(DATETIME, Datetime),
-            param(DateTime, Datetime),
             param(DECIMAL, Decimal),
             param(Double, Float64),
             param(DOUBLE, Float64),
@@ -548,7 +546,6 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             param(Text, Utf8),
             param(TIME, pl.Time),
             param(sqlalchemy.Time, pl.Time),
-            param(TIMESTAMP, Datetime),
             param(Unicode, Utf8),
             param(UnicodeText, Utf8),
             param(Uuid, pl.Utf8),
@@ -566,14 +563,12 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
         assert isinstance(dtype, type)
         assert issubclass(dtype, expected)
 
-    @mark.parametrize("timezone", [param(True), param(False)])
-    def test_datetime(self, *, timezone: bool) -> None:
-        col_type = DateTime(timezone=timezone)
-        dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type)
-        if isinstance(dtype, type):
-            assert issubclass(dtype, Datetime)
-        else:
-            assert isinstance(dtype, Datetime)
+    @mark.parametrize("col_type", [param(DATETIME), param(DateTime), param(TIMESTAMP)])
+    @mark.parametrize("timezone", [param(None), param(True), param(False)])
+    def test_datetime(self, *, col_type: Any, timezone: bool | None) -> None:
+        col_type_use = col_type if timezone is None else col_type(timezone=timezone)
+        dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)
+        assert isinstance(dtype, Datetime)
 
 
 class TestSelectToDataFrameYieldSelectsWithInClauses:

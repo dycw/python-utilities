@@ -48,16 +48,16 @@ dev = [
   "cvxpy >= 1.4.1",
   "fastapi >= 0.105.0",
   "fpdf2 >= 2.7.7",
-  "hatch >= 1.8.1",
+  "hatch >= 1.9.0",
   "holoviews >= 1.18.1",
   "hypothesis >= 6.92.1",
   "luigi >= 3.4.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
-  "numbagg >= 0.6.7",
+  "numbagg >= 0.6.8",
   "numpy >= 1.26.2",
   "pandas >= 2.1.3",
-  "polars >= 0.19.19",
+  "polars >= 0.20.2",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
   "pydantic >= 2.5.2",
@@ -84,7 +84,7 @@ dev = [
   # test
   "coverage-conditional-plugin >= 0.9.0",
   "exceptiongroup >= 1.1.3",
-  "freezegun >= 1.3.1",
+  "freezegun >= 1.4.0",
   "pytest-cov >= 4.1.0",
   "pytest-instafail >= 0.5.0",
   "pytest-randomly >= 3.15.0",
@@ -93,16 +93,16 @@ dev = [
 ]
 fastapi = ["fastapi >= 0.105.0"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.16.0"]
-hatch = ["hatch >= 1.8.1"]
+hatch = ["hatch >= 1.9.0"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.16.0"]
 hypothesis = ["hypothesis >= 6.92.1"]
 luigi = ["luigi >= 3.4.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
-numbagg = ["numbagg >= 0.6.7"]
+numbagg = ["numbagg >= 0.6.8"]
 numpy = ["numpy >= 1.26.2"]
 pandas = ["pandas >= 2.1.3"]
-polars = ["polars >= 0.19.19"]
+polars = ["polars >= 0.20.2"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
 pydantic = ["pydantic >= 2.5.2"]

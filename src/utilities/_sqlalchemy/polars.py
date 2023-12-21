@@ -140,16 +140,16 @@ def _insert_dataframe_check_df_and_db_types(
     dtype: PolarsDataType, db_col_type: type, /
 ) -> bool:
     return (
-        (dtype is pl.Boolean and issubclass(db_col_type, bool))
+        (dtype == pl.Boolean and issubclass(db_col_type, bool))
         or (
-            dtype is Date
+            dtype == Date
             and issubclass(db_col_type, dt.date)
             and not issubclass(db_col_type, dt.datetime)
         )
-        or (isinstance(dtype, Datetime) and issubclass(db_col_type, dt.datetime))
-        or (dtype is Float64 and issubclass(db_col_type, float))
-        or (dtype is Int64 and issubclass(db_col_type, int))
-        or (dtype is Utf8 and issubclass(db_col_type, str))
+        or (dtype == Datetime and issubclass(db_col_type, dt.datetime))
+        or (dtype == Float64 and issubclass(db_col_type, float))
+        or (dtype == Int64 and issubclass(db_col_type, int))
+        or (dtype == Utf8 and issubclass(db_col_type, str))
     )
 
 
