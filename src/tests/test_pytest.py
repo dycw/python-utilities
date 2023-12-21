@@ -175,9 +175,9 @@ class TestPytestOptions:
 
 class TestThrottle:
     @mark.parametrize("as_float", [param(True), param(False)])
-    @mark.parametrize("on_pass", [param(True), param(False)])
+    @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(
-        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_pass: bool
+        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
         root_str = str(tmp_path)
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
@@ -185,7 +185,7 @@ class TestThrottle:
             import datetime as dt
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration={duration}, on_pass={on_pass})
+            @throttle(root={root_str!r}, duration={duration}, on_try={on_try})
             def test_main():
                 assert True
             """
@@ -212,18 +212,52 @@ class TestThrottle:
         contents = f"""
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=1.0, on_pass=True)
+            @throttle(root={root_str!r}, duration=1.0)
             def test_main(is_pass):
                 assert is_pass
             """
         _ = testdir.makepyfile(contents)
-        for _ in range(2):
+        for i in range(2):
+            for _ in range(2):
+                testdir.runpytest().assert_outcomes(failed=1)
+            testdir.runpytest("--pass").assert_outcomes(passed=1)
+            for _ in range(2):
+                testdir.runpytest("--pass").assert_outcomes(skipped=1)
+            if i == 0:
+                sleep(1.0)
+
+    def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
+        _ = testdir.makeconftest(
+            """
+            from pytest import fixture
+
+            def pytest_addoption(parser):
+                parser.addoption("--pass", action="store_true")
+
+            @fixture
+            def is_pass(request):
+                return request.config.getoption("--pass")
+            """
+        )
+        root_str = str(tmp_path)
+        contents = f"""
+            from utilities.pytest import throttle
+
+            @throttle(root={root_str!r}, duration=1.0, on_try=True)
+            def test_main(is_pass):
+                assert is_pass
+            """
+        _ = testdir.makepyfile(contents)
+        for i in range(2):
             testdir.runpytest().assert_outcomes(failed=1)
-        testdir.runpytest("--pass").assert_outcomes(passed=1)
-        testdir.runpytest("--pass").assert_outcomes(skipped=1)
-        sleep(1.0)
-        testdir.runpytest().assert_outcomes(failed=1)
-        testdir.runpytest("--pass").assert_outcomes(passed=1)
+            for _ in range(2):
+                testdir.runpytest().assert_outcomes(skipped=1)
+            sleep(1.0)
+            testdir.runpytest("--pass").assert_outcomes(passed=1)
+            for _ in range(2):
+                testdir.runpytest().assert_outcomes(skipped=1)
+            if i == 0:
+                sleep(1.0)
 
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
