@@ -98,9 +98,9 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 
 def throttle(
-    *, root: PathLike | None = None, duration: Duration = 1.0, on_pass: bool = False
+    *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
 ) -> Any:
-    """Throttle a test. On run by default, by pass otherwise."""
+    """Throttle a test. On success by default, on try otherwise."""
 
     if root is None:
         root_use = valid_path_repo(".pytest_cache", "throttle")
@@ -127,12 +127,12 @@ def throttle(
                 and ((now - prev) < duration_to_float(duration))
             ):
                 skip(reason=f"{test} throttled")
-            if on_pass:
-                out = func(*args, **kwargs)
+            if on_try:
                 _throttle_write(path, now)
-                return out
+                return func(*args, **kwargs)
+            out = func(*args, **kwargs)
             _throttle_write(path, now)
-            return func(*args, **kwargs)
+            return out
 
         return wrapped
 
