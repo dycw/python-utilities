@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import partial as _partial
 from typing import Any, TypeVar
 
 from typing_extensions import override
+
+from utilities.errors import redirect_error
 
 _T = TypeVar("_T")
 
@@ -18,4 +22,19 @@ class partial(_partial[_T]):  # noqa: N801
         return self.func(*head, *iter_args, **{**self.keywords, **kwargs})
 
 
-__all__ = ["partial"]
+@contextmanager
+def redirect_empty_reduce() -> Iterator[None]:
+    """Redirect to the `EmptyReduceError`."""
+    with redirect_error(
+        TypeError,
+        EmptyReduceError,
+        match=r"reduce\(\) of empty iterable with no initial value",
+    ):
+        yield
+
+
+class EmptyReduceError(Exception):
+    ...
+
+
+__all__ = ["EmptyReduceError", "partial", "redirect_empty_reduce"]
