@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable
 from functools import cache, wraps
 from os import environ
 from pathlib import Path
+from sys import modules
 from typing import Any
 
 from utilities.atomicwrites import writer
@@ -97,6 +98,12 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
         _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
 
 
+def is_pytest() -> bool:
+    """Check if `pytest` is running."""
+
+    return "pytest" in modules
+
+
 def throttle(
     *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
 ) -> Any:
@@ -153,6 +160,7 @@ __all__ = [
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
+    "is_pytest",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",

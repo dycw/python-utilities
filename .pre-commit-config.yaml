@@ -4,7 +4,7 @@ default_language_version:
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.8
+    rev: v0.1.11
     hooks:
       - id: ruff
         args: [--fix]
@@ -38,7 +38,7 @@ repos:
       - id: trailing-whitespace
   # linters
   - repo: https://github.com/andreoliwa/nitpick
-    rev: v0.34.0
+    rev: v0.35.0
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
