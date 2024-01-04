@@ -81,7 +81,6 @@ dev = [
   "pyodbc",
   # test
   "coverage-conditional-plugin >= 0.9.0",
-  "exceptiongroup >= 1.1.3",
   "freezegun >= 1.4.0",
   "pytest-cov >= 4.1.0",
   "pytest-instafail >= 0.5.0",
@@ -118,8 +117,7 @@ sqlalchemy = ["sqlalchemy >= 2.0.25"]
 sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
 streamlit = ["streamlit >= 1.29.0"]
 test = [
-  "exceptiongroup >= 1.1.3",
-  "pytest >= 7.4.4",
+  "pytest >= 7.4.0",
   "pytest-instafail >= 0.5.0",
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
@@ -225,7 +223,6 @@ addopts = [
   "--cov-config=pyproject.toml",
   "--cov-report=html",
   "--strict-markers",
-  "--tb=native",
 ]
 filterwarnings = [
   "error",
