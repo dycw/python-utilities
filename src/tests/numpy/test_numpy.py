@@ -1818,7 +1818,7 @@ class TestNDims:
         die_if_unbearable(arr, Annotated[NDArray[Any], hint])
 
 
-class TestRedirectEmptyNumpyConcatenateError:
+class TestRedirectEmptyNumpyConcatenate:
     def test_main(self) -> None:
         with raises(EmptyNumpyConcatenateError), redirect_empty_numpy_concatenate():
             _ = concatenate([])
