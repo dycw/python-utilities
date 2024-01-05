@@ -75,4 +75,4 @@ def retry(
     return inner
 
 
-__all__ = ["RedirectErrorError", "redirect_error", "retry"]
+__all__ = ["ImpossibleCaseError", "RedirectErrorError", "redirect_error", "retry"]
