@@ -5,7 +5,12 @@ from hypothesis.strategies import integers, none
 from pandas import get_option
 from polars import Config
 
-from utilities.jupyter import _DEFAULT_COLS, _DEFAULT_ROWS, show
+from utilities.jupyter import _DEFAULT_COLS, _DEFAULT_ROWS, is_jupyter, show
+
+
+class TestIsJupyter:
+    def test_main(self) -> None:
+        assert not is_jupyter()
 
 
 class TestShow:
