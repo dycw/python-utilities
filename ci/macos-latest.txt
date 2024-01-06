@@ -98,6 +98,8 @@ ecos==2.0.12
     # via cvxpy
 editables==0.5
     # via hatchling
+exceptiongroup==1.2.0
+    # via dycw-utilities (pyproject.toml)
 execnet==2.0.2
     # via pytest-xdist
 fastapi==0.108.0
