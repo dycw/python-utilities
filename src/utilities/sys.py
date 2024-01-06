@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-from sys import version_info
+from sys import modules, version_info
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 
 
-__all__ = ["VERSION_MAJOR_MINOR"]
+def is_pytest() -> bool:
+    """Check if `pytest` is running."""
+
+    return "pytest" in modules
+
+
+__all__ = ["is_pytest", "VERSION_MAJOR_MINOR"]
