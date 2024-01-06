@@ -1,28 +1,33 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from functools import wraps
-from typing import ParamSpec, TypeVar
+from typing import Any, cast, overload
 
-from beartype import beartype
+from beartype import BeartypeConf, BeartypeStrategy, beartype
+from beartype._data.hint.datahinttyping import BeartypeableT, BeartypeConfedDecorator
 
-from utilities.pytest import is_pytest
+from utilities.ipython import is_ipython
+from utilities.jupyter import is_jupyter
+from utilities.sys import is_pytest
 
-_P = ParamSpec("_P")
-_R = TypeVar("_R")
-
-
-def beartype_if_pytest(func: Callable[_P, _R], /) -> Callable[_P, _R]:
-    """Apply `beartype` to a function only if `pytest` is running."""
-
-    safe = beartype(func)
-
-    @wraps(func)
-    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-        func_use = safe if is_pytest() else func
-        return func_use(*args, **kwargs)
-
-    return wrapped
+_STRATEGY = (
+    BeartypeStrategy.O1
+    if is_pytest() or is_jupyter() or is_ipython()
+    else BeartypeStrategy.O0
+)
+_CONF = BeartypeConf(is_color=is_pytest(), strategy=_STRATEGY)
 
 
-__all__ = ["beartype_if_pytest"]
+@overload
+def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT:  # type: ignore
+    ...
+
+
+@overload
+def beartype_if_dev(*, conf: BeartypeConf) -> BeartypeConfedDecorator:
+    ...
+
+
+beartype_if_dev = cast(Any, beartype(conf=_CONF))
+
+
+__all__ = ["beartype_if_dev"]

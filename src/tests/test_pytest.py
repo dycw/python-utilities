@@ -7,13 +7,8 @@ from time import sleep
 from _pytest.legacypath import Testdir
 from pytest import mark, param
 
-from utilities.pytest import is_pytest, throttle
+from utilities.pytest import throttle
 from utilities.types import IterableStrs
-
-
-class TestIsPytest:
-    def test_main(self) -> None:
-        assert is_pytest()
 
 
 class TestPytestOptions:

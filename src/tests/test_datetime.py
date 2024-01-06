@@ -18,7 +18,6 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
-    permutations,
     sampled_from,
     timedeltas,
     times,
@@ -166,7 +165,7 @@ class TestEnsure:
         assert result == value
 
 
-class TestIsEqual:
+class TestIsEqualModTz:
     @given(x=datetimes(), y=datetimes())
     def test_naive(self, *, x: dt.datetime, y: dt.datetime) -> None:
         assert is_equal_mod_tz(x, y) == (x == y)
@@ -175,15 +174,13 @@ class TestIsEqual:
     def test_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
         assert is_equal_mod_tz(x, y) == (x == y)
 
-    @given(data=data(), x=datetimes(), y=datetimes())
-    def test_naive_vs_utc(
-        self, *, data: DataObject, x: dt.datetime, y: dt.datetime
-    ) -> None:
+    @given(x=datetimes(), y=datetimes())
+    def test_naive_vs_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
         expected = x == y
         naive = x
         aware = y.replace(tzinfo=UTC)
-        x_use, y_use = data.draw(permutations([naive, aware]))
-        assert is_equal_mod_tz(x_use, y_use) == expected
+        assert is_equal_mod_tz(naive, aware) == expected
+        assert is_equal_mod_tz(aware, naive) == expected
 
 
 class TestIsWeekday:
