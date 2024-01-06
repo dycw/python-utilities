@@ -6,6 +6,18 @@ from itertools import chain
 from types import TracebackType
 from typing import Any
 
+from utilities.ipython import check_ipython_class
+
+
+def is_jupyter() -> bool:
+    """Check if `jupyter` is running."""
+    try:
+        from ipykernel.zmqshell import ZMQInteractiveShell  # type: ignore
+    except ImportError:
+        return False
+    return check_ipython_class(ZMQInteractiveShell)  # pragma: no cover
+
+
 _DEFAULT_ROWS = 7
 _DEFAULT_COLS = 100
 
@@ -78,4 +90,4 @@ class _Show:
 show = _Show()
 
 
-__all__ = ["show"]
+__all__ = ["is_jupyter", "show"]
