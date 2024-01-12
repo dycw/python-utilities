@@ -11,6 +11,7 @@ from pytest import mark, param, raises
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (
     Duration,
+    EnsureClassError,
     EnsureHashableError,
     IterableStrs,
     Number,
@@ -18,6 +19,8 @@ from utilities.types import (
     SequenceStrs,
     ensure_class,
     ensure_hashable,
+    get_class,
+    get_class_name,
     is_hashable,
     is_sized_not_str,
     issubclass_except_bool_int,
@@ -34,12 +37,33 @@ class TestDuration:
             die_if_unbearable("0", Duration)
 
 
-class TestEnsureClass:
+class TestGetClass:
     @mark.parametrize(
         ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
     )
     def test_main(self, *, obj: Any, expected: type[Any]) -> None:
-        assert ensure_class(obj) is expected
+        assert get_class(obj) is expected
+
+
+class TestGetClassName:
+    def test_main(self) -> None:
+        class Example:
+            ...
+
+        assert get_class_name(Example) == "Example"
+        assert get_class_name(Example()) == "Example"
+
+
+class TestEnsureClass:
+    def test_str(self) -> None:
+        assert isinstance(ensure_class("", str), str)
+
+    def test_not_str(self) -> None:
+        with raises(
+            EnsureClassError,
+            match="Object .* must be an instance of .*; got .* instead",
+        ):
+            _ = ensure_class(None, int)
 
 
 class TestEnsureHashable:
@@ -48,7 +72,7 @@ class TestEnsureHashable:
         assert ensure_hashable(obj) == obj
 
     def test_error(self) -> None:
-        with raises(EnsureHashableError):
+        with raises(EnsureHashableError, match="Object .* must be hashable"):
             _ = ensure_hashable([1, 2, 3])
 
 

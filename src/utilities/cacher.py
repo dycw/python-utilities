@@ -17,7 +17,7 @@ from utilities.pathlib import get_modified_time
 from utilities.pathvalidate import valid_path
 from utilities.pickle import read_pickle, write_pickle
 from utilities.typed_settings import load_settings
-from utilities.types import Duration, PathLike
+from utilities.types import Duration, PathLike, ensure_class
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -108,9 +108,7 @@ def _cache_to_disk(
         """The decorated function."""
         if skip:
             return func(*args, **kwargs)
-        if not isinstance(rerun := kwargs.pop("rerun", False), bool):
-            msg = f"{rerun=}"
-            raise CacheToDiskError(msg)
+        rerun = ensure_class(kwargs.pop("rerun", False), bool)
         ba = sig.bind(*args, **kwargs)
         stem = md5_hash_use((ba.args, tuple(ba.kwargs.items())))
         path = valid_path(root_use, stem) if validate_path else Path(root_use, stem)
@@ -124,10 +122,6 @@ def _cache_to_disk(
         return read_pickle(path)
 
     return wrapped
-
-
-class CacheToDiskError(Exception):
-    ...
 
 
 def _needs_run(
@@ -158,4 +152,4 @@ def _maybe_clean(root: Path, /, *, max_size: int | None = None) -> None:
         path.unlink(missing_ok=True)
 
 
-__all__ = ["CacheToDiskError", "cache_to_disk"]
+__all__ = ["cache_to_disk"]

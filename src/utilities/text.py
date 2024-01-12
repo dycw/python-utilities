@@ -1,19 +1,29 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
+
+from typing_extensions import override
+
+from utilities.types import EnsureClassError, ensure_class
 
 
 def ensure_str(obj: Any, /) -> str:
     """Ensure an object is a string."""
-    if isinstance(obj, str):
-        return obj
-    msg = f"{obj=}"
-    raise EnsureStrError(msg)
+    try:
+        return ensure_class(obj, str)
+    except EnsureClassError as error:
+        raise EnsureStrError(obj=error.obj) from None
 
 
-class EnsureStrError(Exception):
-    ...
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureStrError(EnsureClassError):
+    cls: type[str] = str
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must be a string; got {type(self.obj)} instead"
 
 
 def strip_and_dedent(text: str, /) -> str:

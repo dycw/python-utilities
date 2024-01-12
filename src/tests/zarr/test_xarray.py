@@ -21,7 +21,6 @@ from utilities._zarr.xarray import (
     to_ndarray1,
     yield_data_array_on_disk,
 )
-from utilities.class_name import get_class_name
 from utilities.hypothesis import (
     float_arrays,
     int_arrays,
@@ -31,6 +30,7 @@ from utilities.hypothesis import (
 )
 from utilities.numpy import NDArrayI1
 from utilities.pathvalidate import valid_path
+from utilities.types import get_class_name
 from utilities.warnings import suppress_warnings
 from utilities.xarray import DataArray1
 

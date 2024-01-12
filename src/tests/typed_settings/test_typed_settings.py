@@ -163,7 +163,7 @@ class TestGetLoaders:
         _ = _get_loaders()
 
     def test_error(self) -> None:
-        with raises(_GetLoadersError):
+        with raises(_GetLoadersError, match="App name .* must not contain underscores"):
             _ = _get_loaders(appname="app_name")
 
 

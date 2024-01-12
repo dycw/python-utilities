@@ -51,13 +51,12 @@ from utilities._sqlalchemy.common import (
     is_table_or_mapped_class,
     mapped_class_to_dict,
 )
-from utilities.class_name import get_class_name
 from utilities.errors import redirect_error
 from utilities.humps import snake_case, snake_case_mappings
 from utilities.iterables import CheckLengthError, check_length
 from utilities.math import FloatFinNonNeg, IntNonNeg
 from utilities.text import ensure_str
-from utilities.types import IterableStrs
+from utilities.types import IterableStrs, get_class_name
 
 
 def _check_column_collections_equal(
@@ -544,7 +543,7 @@ class TablenameMixin:
 
     @cast(Any, declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
-        return get_class_name(cls, snake=True)
+        return snake_case(get_class_name(cls))
 
 
 __all__ = [

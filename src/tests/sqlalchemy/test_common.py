@@ -196,7 +196,7 @@ class TestInsertItems:
         class Example(declarative_base()):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)  # noqa: A003
+            id = Column(Integer, primary_key=True)
 
         self._run_test(engine, {id_}, Example(id=id_))
 
