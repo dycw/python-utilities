@@ -6,7 +6,7 @@ from typing import Any
 
 from typing_extensions import override
 
-from utilities.types import EnsureClassError, ensure_class
+from utilities.types import EnsureClassError, ensure_class, get_class_name
 
 
 def ensure_str(obj: Any, /) -> str:
@@ -23,7 +23,9 @@ class EnsureStrError(EnsureClassError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be a string; got {type(self.obj)} instead"
+        return "Object {} must be a string; got {} instead".format(
+            self.obj, get_class_name(self.obj)
+        )
 
 
 def strip_and_dedent(text: str, /) -> str:

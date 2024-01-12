@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
+from dataclasses import dataclass
 from numbers import Number
 from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
 from typing import Any
 
 from typing_extensions import Self, override
+
+from utilities.types import EnsureClassError, ensure_class, get_class_name
 
 
 class Timer:
@@ -64,12 +67,24 @@ class Timer:
         return dt.timedelta(seconds=float(self))
 
     def _compare(self, other: Any, op: Callable[[Any, Any], bool], /) -> bool:
-        if isinstance(other, Number | Timer):
-            return op(float(self), other)
-        if isinstance(other, dt.timedelta):
-            return op(self.timedelta, other)
-        msg = f"Invalid type: {other=}"
-        raise TypeError(msg)
+        try:
+            right = ensure_class(other, (Number, Timer, dt.timedelta))
+        except EnsureClassError:
+            raise TimerError(obj=other) from None
+        left = float(self) if isinstance(right, Number | Timer) else self.timedelta
+        return op(left, right)
 
 
-__all__ = ["Timer"]
+@dataclass(frozen=True, kw_only=True, slots=True)
+class TimerError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return (
+            "Timer must be compared to a number, Timer, or timedelta; "
+            f"got {get_class_name(self.obj)} instead"
+        )
+
+
+__all__ = ["Timer", "TimerError"]
