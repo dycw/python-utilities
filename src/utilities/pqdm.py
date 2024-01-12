@@ -10,8 +10,8 @@ from tqdm import tqdm as tqdm_type
 from tqdm.auto import tqdm as tqdm_auto
 from typing_extensions import assert_never
 
-from utilities.class_name import get_class_name
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import get_class_name
 
 _T = TypeVar("_T")
 

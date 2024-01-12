@@ -13,13 +13,13 @@ from pytest import mark, param
 import utilities
 from tests.modules import package_with, package_without, standalone
 from utilities.ast import yield_dunder_all
-from utilities.class_name import get_class_name
 from utilities.iterables import check_duplicates
 from utilities.modules import (
     yield_module_contents,
     yield_module_subclasses,
     yield_modules,
 )
+from utilities.types import get_class_name
 
 
 class TestYieldModules:

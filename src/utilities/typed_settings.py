@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import MISSING, field
+from dataclasses import MISSING, dataclass, field
 from itertools import starmap
 from operator import attrgetter, itemgetter
 from pathlib import Path
@@ -26,6 +26,7 @@ from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 from typed_settings.converters import TSConverter
 from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
+from typing_extensions import override
 
 import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta
@@ -102,8 +103,7 @@ def _get_loaders(
     env_prefix: None | str | _Auto = AUTO,
 ) -> list[Loader]:
     if search("_", appname):
-        msg = f"{appname=}"
-        raise _GetLoadersError(msg)
+        raise _GetLoadersError(appname=appname)
     return default_loaders(
         appname,
         config_files=config_files,
@@ -113,8 +113,13 @@ def _get_loaders(
     )
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class _GetLoadersError(Exception):
-    ...
+    appname: str
+
+    @override
+    def __str__(self) -> str:
+        return f"App name {self.appname!r} must not contain underscores"
 
 
 def load_settings(

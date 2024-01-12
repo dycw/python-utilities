@@ -13,7 +13,6 @@ from zarr.convenience import open_group
 from zarr.core import Attributes
 
 from utilities.atomicwrites import writer
-from utilities.class_name import get_class_name
 from utilities.datetime import ensure_date, ensure_datetime
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
@@ -32,7 +31,7 @@ from utilities.numpy import (
 from utilities.pathvalidate import valid_path
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import PathLike, is_sized_not_str
+from utilities.types import PathLike, get_class_name, is_sized_not_str
 
 IselIndexer = int | slice | Sequence[int] | NDArrayB1 | NDArrayI1
 

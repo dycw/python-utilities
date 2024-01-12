@@ -7,9 +7,9 @@ from typing import Any, Literal
 
 from pytest import mark, param
 
-from utilities.class_name import get_class_name
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
+from utilities.types import get_class_name
 
 
 class TestGetDesc:

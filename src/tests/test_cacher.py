@@ -6,9 +6,10 @@ from time import sleep
 
 from pytest import raises
 
-from utilities.cacher import CacheToDiskError, cache_to_disk
+from utilities.cacher import cache_to_disk
 from utilities.functions import identity
 from utilities.more_itertools import one
+from utilities.types import EnsureClassError
 
 
 class TestCacheToDisk:
@@ -100,5 +101,5 @@ class TestCacheToDisk:
 
     def test_rerun_not_a_boolean(self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
-        with raises(CacheToDiskError):
+        with raises(EnsureClassError):
             _ = func(0, rerun=None)  # type: ignore

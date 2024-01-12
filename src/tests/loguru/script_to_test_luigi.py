@@ -12,13 +12,13 @@ from numpy.random import default_rng, random
 from typing_extensions import override
 
 from utilities.atomicwrites import writer
-from utilities.class_name import get_class_name
 from utilities.logging import LogLevel
 from utilities.loguru import setup_loguru
 from utilities.luigi import PathTarget, build
 from utilities.os import CPU_COUNT
 from utilities.pathvalidate import valid_path
 from utilities.tempfile import TEMP_DIR
+from utilities.types import get_class_name
 
 
 class Example(Task):

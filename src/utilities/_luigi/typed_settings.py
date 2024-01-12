@@ -33,9 +33,9 @@ from utilities._luigi.common import (
     TimeParameter,
     WeekdayParameter,
 )
-from utilities.class_name import get_class_name
 from utilities.dataclasses import Dataclass
 from utilities.errors import redirect_error
+from utilities.types import get_class_name
 
 _T = TypeVar("_T", bound=Dataclass)
 

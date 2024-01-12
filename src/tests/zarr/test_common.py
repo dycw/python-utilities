@@ -18,10 +18,10 @@ from utilities._zarr.common import (
     NDArrayWithIndexes,
     yield_array_with_indexes,
 )
-from utilities.class_name import get_class_name
 from utilities.hypothesis import float_arrays, temp_paths, text_ascii
 from utilities.numpy import NDArrayI1, NDArrayO1, dt64D, dt64ns
 from utilities.pathvalidate import valid_path
+from utilities.types import get_class_name
 
 indexes_1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 
