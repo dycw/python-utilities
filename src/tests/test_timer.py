@@ -9,7 +9,7 @@ from typing import Any
 
 from pytest import mark, param, raises
 
-from utilities.timer import Timer
+from utilities.timer import Timer, TimerError
 
 
 class TestTimer:
@@ -47,10 +47,11 @@ class TestTimer:
         assert isinstance(timer1 == timer2, bool)
 
     def test_comparison_error(self) -> None:
-        with Timer() as timer:
-            pass
-        with raises(TypeError):
-            _ = timer == "error"
+        match = (
+            "Timer must be compared to a number, Timer, or timedelta; got .* instead"
+        )
+        with raises(TimerError, match=match):
+            _ = Timer() == "error"
 
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:

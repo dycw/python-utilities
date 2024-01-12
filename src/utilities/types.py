@@ -9,6 +9,8 @@ from typing import Any, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
 
+from utilities.more_itertools import always_iterable
+
 Number = int | float
 Duration = Number | dt.timedelta
 SequenceStrs = list[str] | tuple[str, ...]
@@ -39,7 +41,45 @@ def get_class_name(obj: Any, /) -> str:
     return get_class(obj).__name__
 
 
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
+
+
+@overload
 def ensure_class(obj: Any, cls: type[_T], /) -> _T:
+    ...
+
+
+@overload
+def ensure_class(obj: Any, cls: tuple[type[_T1], type[_T2]], /) -> _T1 | _T2:
+    ...
+
+
+@overload
+def ensure_class(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
+) -> _T1 | _T2 | _T3:
+    ...
+
+
+@overload
+def ensure_class(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
+) -> _T1 | _T2 | _T3 | _T4:
+    ...
+
+
+@overload
+def ensure_class(
+    obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
+) -> _T1 | _T2 | _T3 | _T4 | _T5:
+    ...
+
+
+def ensure_class(obj: Any, cls: type[_T] | tuple[type[_T], ...], /) -> _T:  # type: ignore
     """Ensure an object is of the required class."""
     if isinstance(obj, cls):
         return obj
@@ -49,12 +89,14 @@ def ensure_class(obj: Any, cls: type[_T], /) -> _T:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class EnsureClassError(Exception):
     obj: Any
-    cls: type[Any]
+    cls: type[Any] | tuple[type[Any], ...]
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be an instance of {}; got {} instead".format(
-            self.obj, self.cls, type(self.obj)
+        return "Object {} must be an instance of ({}); got {} instead".format(
+            self.obj,
+            ", ".join(map(get_class_name, always_iterable(self.cls))),
+            get_class_name(self.obj),
         )
 
 

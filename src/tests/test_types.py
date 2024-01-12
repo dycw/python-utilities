@@ -55,15 +55,27 @@ class TestGetClassName:
 
 
 class TestEnsureClass:
-    def test_str(self) -> None:
-        assert isinstance(ensure_class("", str), str)
+    def test_single_pass(self) -> None:
+        result = ensure_class(None, NoneType)
+        assert isinstance(result, NoneType)
 
-    def test_not_str(self) -> None:
+    def test_multiple_pass(self) -> None:
+        result = ensure_class(None, (NoneType, int))
+        assert isinstance(result, NoneType)
+
+    def test_single_error(self) -> None:
         with raises(
             EnsureClassError,
             match="Object .* must be an instance of .*; got .* instead",
         ):
             _ = ensure_class(None, int)
+
+    def test_multiple_error(self) -> None:
+        with raises(
+            EnsureClassError,
+            match=r"Object .* must be an instance of \(.*\); got .* instead",
+        ):
+            _ = ensure_class(None, (int, float))
 
 
 class TestEnsureHashable:

@@ -40,7 +40,7 @@ from utilities.datetime import (
 )
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.pathvalidate import valid_path
-from utilities.types import PathLike
+from utilities.types import PathLike, ensure_class
 
 _T = TypeVar("_T")
 
@@ -86,10 +86,7 @@ def _pair_type_and_converter(
     cls: type[Any], func: Callable[[Any], Any], /
 ) -> Callable[[Any, type[Any]], Any]:
     def hook(value: Any, _: type[Any] = Any, /) -> Any:
-        if not isinstance(value, cls | str):
-            msg = f"Could not convert value to {cls.__name__}: {value}"
-            raise TypeError(msg)
-        return func(value)
+        return func(ensure_class(value, (cls, str)))
 
     return hook
 
