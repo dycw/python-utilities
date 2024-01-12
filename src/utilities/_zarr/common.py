@@ -124,13 +124,11 @@ class NDArrayWithIndexes:
 
     @override
     def __repr__(self) -> str:
-        cls = get_class_name(self)
-        return f"{cls}({self._path})"
+        return "{}({})".format(get_class_name(self), self._path)
 
     @override
     def __str__(self) -> str:
-        cls = get_class_name(self)
-        return f"{cls}({self._path})"
+        return "{}({})".format(get_class_name(self), self._path)
 
     @property
     def array(self) -> Array:

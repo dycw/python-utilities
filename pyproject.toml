@@ -250,6 +250,7 @@ ignore = [
   "PLR0913",  # refactor, too-many-arguments
   "PT012",  # flake8-pytest-style, raises-with-multiple-statements
   "PT013",  # flake8-pytest-style, incorrect-pytest-import
+  "UP032",  # pyupgrade, f-string
   # formatter
   "E501",  # pycodestyle, line-too-long
   "ISC001",  # flake8-implicit-str-concat, single-line-implicit-string-concatenation
