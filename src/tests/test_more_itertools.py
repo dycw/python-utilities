@@ -65,9 +65,15 @@ class TestOne:
         assert one([None]) is None
 
     def test_error_empty(self) -> None:
-        with raises(OneEmptyError):
+        with raises(
+            OneEmptyError,
+            match="Iterable .* must contain exactly one item; it was empty instead",
+        ):
             _ = one([])
 
     def test_error_non_unique(self) -> None:
-        with raises(OneNonUniqueError):
+        with raises(
+            OneNonUniqueError,
+            match="Iterable .* must contain exactly one item; it had .*, .* and perhaps more",
+        ):
             _ = one([1, 2])
