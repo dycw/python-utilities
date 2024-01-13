@@ -2,15 +2,24 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import wraps
 from re import search
 from typing import TypeVar, cast
 
 from more_itertools import one
+from typing_extensions import override
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ImpossibleCaseError(Exception):
-    ...
+    case: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return (  # pragma: no cover
+            "Arguments must be possible: {}".format(", ".join(self.case))
+        )
 
 
 @contextmanager
