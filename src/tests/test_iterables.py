@@ -8,14 +8,16 @@ from pytest import mark, param, raises
 
 from utilities.iterables import (
     CheckDuplicatesError,
+    CheckIterablesEqualError,
     CheckLengthError,
     CheckLengthsEqualError,
-    CheckListsEqualError,
+    CheckMappingsEqualError,
     CheckSetsEqualError,
     check_duplicates,
+    check_iterables_equal,
     check_length,
     check_lengths_equal,
-    check_lists_equal,
+    check_mappings_equal,
     check_sets_equal,
     ensure_hashables,
     is_iterable_not_str,
@@ -33,6 +35,46 @@ class TestCheckDuplicates:
             match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)",
         ):
             check_duplicates([None, None])
+
+
+class TestCheckIterablesEqual:
+    def test_pass(self) -> None:
+        check_iterables_equal([], [])
+
+    def test_error_differing_items_and_left_longer(self) -> None:
+        with raises(
+            CheckIterablesEqualError,
+            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\) and left was longer",
+        ):
+            check_iterables_equal([1, 2, 3], [9])
+
+    def test_error_differing_items_and_right_longer(self) -> None:
+        with raises(
+            CheckIterablesEqualError,
+            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\) and right was longer",
+        ):
+            check_iterables_equal([9], [1, 2, 3])
+
+    def test_error_differing_items_and_same_length(self) -> None:
+        with raises(
+            CheckIterablesEqualError,
+            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\)",
+        ):
+            check_iterables_equal([1, 2, 3], [1, 2, 9])
+
+    def test_error_no_differing_items_just_left_longer(self) -> None:
+        with raises(
+            CheckIterablesEqualError,
+            match=r"Iterables .* and .* must be equal; left was longer",
+        ):
+            check_iterables_equal([1, 2, 3], [1])
+
+    def test_error_no_differing_items_just_right_longer(self) -> None:
+        with raises(
+            CheckIterablesEqualError,
+            match=r"Iterables .* and .* must be equal; right was longer",
+        ):
+            check_iterables_equal([1], [1, 2, 3])
 
 
 class TestCheckLength:
@@ -96,44 +138,58 @@ class TestCheckLengthsEqual:
             check_lengths_equal([], [1, 2, 3])
 
 
-class TestCheckListsEqual:
+class TestCheckMappingsEqual:
     def test_pass(self) -> None:
-        check_lists_equal([], [])
+        check_mappings_equal({}, {})
 
-    def test_error_differing_items_and_left_longer(self) -> None:
+    def test_error_extra_and_missing_and_differing_items(self) -> None:
         with raises(
-            CheckListsEqualError,
-            match=r"Lists .* and .* must be equal; items were \(.*, .*, i=.*\), and left was longer",
+            CheckMappingsEqualError,
+            match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and items were \(.*, .*, k=.*\)",
         ):
-            check_lists_equal([1, 2, 3], [9])
+            check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 9, "d": 4})
 
-    def test_error_differing_items_and_right_longer(self) -> None:
+    def test_error_extra_and_missing(self) -> None:
         with raises(
-            CheckListsEqualError,
-            match=r"Lists .* and .* must be equal; items were \(.*, .*, i=.*\), and right was longer",
+            CheckMappingsEqualError,
+            match="Mappings .* and .* must be equal; left had extra keys .* and right had extra keys .*",
         ):
-            check_lists_equal([9], [1, 2, 3])
+            check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 3, "d": 4})
 
-    def test_error_differing_items_and_same_length(self) -> None:
+    def test_error_extra_and_differing_items(self) -> None:
         with raises(
-            CheckListsEqualError,
-            match=r"Lists .* and .* must be equal; items were \(.*, .*, i=.*\)",
+            CheckMappingsEqualError,
+            match=r"Mappings .* and .* must be equal; left had extra keys .* and items were \(.*, .*, k=.*\)",
         ):
-            check_lists_equal([1, 2, 3], [1, 2, 9])
+            check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
-    def test_error_no_differing_items_just_left_longer(self) -> None:
+    def test_error_missing_and_differing_items(self) -> None:
         with raises(
-            CheckListsEqualError,
-            match=r"Lists .* and .* must be equal; left was longer",
+            CheckMappingsEqualError,
+            match=r"Mappings .* and .* must be equal; right had extra keys .* and items were \(.*, .*, k=.*\)",
         ):
-            check_lists_equal([1, 2, 3], [1])
+            check_mappings_equal({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
-    def test_error_no_differing_items_just_right_longer(self) -> None:
+    def test_error_extra_only(self) -> None:
         with raises(
-            CheckListsEqualError,
-            match=r"Lists .* and .* must be equal; right was longer",
+            CheckMappingsEqualError,
+            match="Mappings .* and .* must be equal; left had extra keys .*",
         ):
-            check_lists_equal([1], [1, 2, 3])
+            check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1})
+
+    def test_error_missing_only(self) -> None:
+        with raises(
+            CheckMappingsEqualError,
+            match="Mappings .* and .* must be equal; right had extra keys .*",
+        ):
+            check_mappings_equal({"a": 1}, {"a": 1, "b": 2, "c": 3})
+
+    def test_error_differing_items_only(self) -> None:
+        with raises(
+            CheckMappingsEqualError,
+            match=r"Mappings .* and .* must be equal; items were \(.*, .*, k=.*\)",
+        ):
+            check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
 
 
 class TestCheckSetsEqual:

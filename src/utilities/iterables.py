@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable, Iterable, Sized
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sized
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, TypeGuard
+from typing import Any, TypeGuard, cast
 
-from typing_extensions import assert_never, override
+from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.math import is_equal_or_approx
@@ -32,6 +33,77 @@ class CheckDuplicatesError(Exception):
         return "Iterable {} must not contain duplicates; got {}".format(
             self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
         )
+
+
+class _CheckIterablesEqualState(Enum):
+    left_longer = auto()
+    right_longer = auto()
+
+
+def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
+    """Check that a pair of iterables are equal."""
+
+    errors: list[tuple[int, Any, Any]] = []
+    state: _CheckIterablesEqualState | None
+    try:
+        for i, (lv, rv) in enumerate(zip(left, right, strict=True)):
+            if lv != rv:
+                errors.append((i, lv, rv))
+    except ValueError as error:
+        msg = ensure_str(one(error.args))
+        match msg:
+            case "zip() argument 2 is longer than argument 1":
+                state = _CheckIterablesEqualState.right_longer
+            case "zip() argument 2 is shorter than argument 1":
+                state = _CheckIterablesEqualState.left_longer
+            case _:  # pragma: no cover
+                raise ImpossibleCaseError(  # pragma: no cover
+                    case=[f"{msg=}"]
+                ) from None
+    else:
+        state = None
+    if (len(errors) >= 1) or (state is not None):
+        raise CheckIterablesEqualError(
+            left=left, right=right, errors=errors, state=state
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckIterablesEqualError(Exception):
+    left: Iterable[Any]
+    right: Iterable[Any]
+    errors: list[tuple[int, Any, Any]]
+    state: _CheckIterablesEqualState | None
+
+    @override
+    def __str__(self) -> str:
+        parts = list(self._yield_parts())
+        match parts:
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
+        return "Iterables {} and {} must be equal; {}".format(
+            self.left, self.right, desc
+        )
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.errors) >= 1:
+            error_descs = (
+                "({}, {}, i={})".format(lv, rv, i) for i, lv, rv in self.errors
+            )
+            yield "items were {}".format(", ".join(error_descs))
+        match self.state:
+            case _CheckIterablesEqualState.left_longer:
+                yield "left was longer"
+            case _CheckIterablesEqualState.right_longer:
+                yield "right was longer"
+            case None:
+                pass
+            case _ as never:  # type: ignore
+                assert_never(never)
 
 
 def check_length(
@@ -132,76 +204,67 @@ class CheckLengthsEqualError(Exception):
         )
 
 
-class _CheckListsEqualState(Enum):
-    left_longer = auto()
-    right_longer = auto()
-
-
-def check_lists_equal(left: list[Any], right: list[Any], /) -> None:
-    """Check that a pair of lists are equal."""
-
-    errors: list[tuple[int, Any, Any]] = []
-    state: _CheckListsEqualState | None
+def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
+    """Check that a pair of mappings are equal."""
+    left_keys, right_keys = set(left), set(right)
     try:
-        for i, (lv, rv) in enumerate(zip(left, right, strict=True)):
-            if lv != rv:
-                errors.append((i, lv, rv))
-    except ValueError as error:
-        msg = ensure_str(one(error.args))
-        match msg:
-            case "zip() argument 2 is longer than argument 1":
-                state = _CheckListsEqualState.right_longer
-            case "zip() argument 2 is shorter than argument 1":
-                state = _CheckListsEqualState.left_longer
-            case _:  # pragma: no cover
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{msg=}"]
-                ) from None
+        check_sets_equal(left_keys, right_keys)
+    except CheckSetsEqualError as error:
+        left_extra, right_extra = map(set, [error.left_extra, error.right_extra])
     else:
-        state = None
-    if (len(errors) >= 1) or (state is not None):
-        raise CheckListsEqualError(left=left, right=right, errors=errors, state=state)
+        left_extra = right_extra = set()
+    errors: list[tuple[Any, Any, Any]] = []
+    for key in left_keys & right_keys:
+        lv, rv = left[key], right[key]
+        if lv != rv:
+            errors.append((key, lv, rv))
+    if (len(left_extra) >= 1) or (len(right_extra) >= 1) or (len(errors) >= 1):
+        raise CheckMappingsEqualError(
+            left=left,
+            right=right,
+            left_extra=left_extra,
+            right_extra=right_extra,
+            errors=errors,
+        )
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckListsEqualError(Exception):
-    left: list[Any]
-    right: list[Any]
-    errors: list[tuple[int, Any, Any]]
-    state: _CheckListsEqualState | None
+class CheckMappingsEqualError(Exception):
+    left: Mapping[Any, Any]
+    right: Mapping[Any, Any]
+    left_extra: AbstractSet[Any]
+    right_extra: AbstractSet[Any]
+    errors: list[tuple[Any, Any, Any]]
 
     @override
     def __str__(self) -> str:
+        parts = list(self._yield_parts())
+        match parts:
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case first, second, third:
+                desc = "{}, {} and {}".format(first, second, third)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
+        return "Mappings {} and {} must be equal; {}".format(
+            self.left, self.right, desc
+        )
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.left_extra) >= 1:
+            yield "left had extra keys {}".format(self.left_extra)
+        if len(self.right_extra) >= 1:
+            yield "right had extra keys {}".format(self.right_extra)
         if len(self.errors) >= 1:
             error_descs = (
-                "({}, {}, i={})".format(lv, rv, i) for i, lv, rv in self.errors
+                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
             )
-            error_desc = "items were {}".format(", ".join(error_descs))
-        else:
-            error_desc = None
-        match self.state:
-            case _CheckListsEqualState.left_longer:
-                state_desc = "left was longer"
-            case _CheckListsEqualState.right_longer:
-                state_desc = "right was longer"
-            case None:
-                state_desc = None
-            case _ as never:  # type: ignore
-                assert_never(never)
-        if (error_desc is not None) and (state_desc is not None):
-            desc = "{}, and {}".format(error_desc, state_desc)
-        elif (error_desc is not None) and (state_desc is None):
-            desc = error_desc
-        elif (error_desc is None) and (state_desc is not None):
-            desc = state_desc
-        else:
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{error_desc=}", f"{state_desc=}"]
-            )
-        return "Lists {} and {} must be equal; {}".format(self.left, self.right, desc)
+            yield "items were {}".format(", ".join(error_descs))
 
 
-def check_sets_equal(left: set[Any], right: set[Any], /) -> None:
+def check_sets_equal(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
     """Check that a pair of sets are equal."""
     left_extra = left - right
     right_extra = right - left
@@ -213,32 +276,28 @@ def check_sets_equal(left: set[Any], right: set[Any], /) -> None:
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class CheckSetsEqualError(Exception):
-    left: set[Any]
-    right: set[Any]
-    left_extra: set[Any]
-    right_extra: set[Any]
+    left: AbstractSet[Any]
+    right: AbstractSet[Any]
+    left_extra: AbstractSet[Any]
+    right_extra: AbstractSet[Any]
 
     @override
     def __str__(self) -> str:
-        if len(self.left_extra) >= 1:
-            left_desc = "left had extra items {}".format(self.left_extra)
-        else:
-            left_desc = None
-        if len(self.right_extra) >= 1:
-            right_desc = "right had extra items {}".format(self.right_extra)
-        else:
-            right_desc = None
-        if (left_desc is not None) and (right_desc is not None):
-            desc = "{} and {}".format(left_desc, right_desc)
-        elif (left_desc is not None) and (right_desc is None):
-            desc = left_desc
-        elif (left_desc is None) and (right_desc is not None):
-            desc = right_desc
-        else:
-            raise ImpossibleCaseError(  # pragma: no cover
-                case=[f"{left_desc=}", f"{right_desc=}"]
-            )
+        parts = list(self._yield_parts())
+        match parts:
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
         return "Sets {} and {} must be equal; {}".format(self.left, self.right, desc)
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.left_extra) >= 1:
+            yield "left had extra items {}".format(self.left_extra)
+        if len(self.right_extra) >= 1:
+            yield "right had extra items {}".format(self.right_extra)
 
 
 def ensure_hashables(
@@ -261,12 +320,14 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
 
 __all__ = [
     "CheckDuplicatesError",
+    "CheckIterablesEqualError",
     "CheckLengthsEqualError",
-    "CheckListsEqualError",
+    "CheckMappingsEqualError",
     "CheckSetsEqualError",
     "check_duplicates",
+    "check_iterables_equal",
     "check_lengths_equal",
-    "check_lists_equal",
+    "check_mappings_equal",
     "check_sets_equal",
     "ensure_hashables",
     "is_iterable_not_str",
