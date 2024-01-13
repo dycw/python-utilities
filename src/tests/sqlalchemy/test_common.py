@@ -159,7 +159,7 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test(engine, {id_}, ({"id": id_}, self._table))
+        self._run_test(engine, {id_}, ({"id_": id_}, self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_tuples_and_table(
@@ -171,7 +171,7 @@ class TestInsertItems:
     def test_pair_of_lists_of_dicts_and_table(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, ([({"id": id_}) for id_ in ids], self._table))
+        self._run_test(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_tuples_and_tables(
@@ -183,31 +183,31 @@ class TestInsertItems:
     def test_list_of_pairs_of_dicts_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
+        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
     def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
-        self._run_test(engine, ids, [({"id": id_}, self._table) for id_ in ids])
+        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
-            id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
-        self._run_test(engine, {id_}, Example(id=id_))
+        self._run_test(engine, {id_}, Example(id_=id_))
 
     @property
     def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id", Integer, primary_key=True))
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
     def _run_test(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
         ensure_tables_created(engine, self._table)
         insert_items(engine, *args)
-        sel = select(self._table.c["id"])
+        sel = select(self._table.c["id_"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         assert set(res) == ids

@@ -57,7 +57,7 @@ class TestCheckLength:
             param(10, "Object .* must have length .*; got .*"),
             param(
                 (11, 0.1),
-                r"Object .* must have approximate length .* \(error .*\); " "got .*",
+                r"Object .* must have approximate length .* \(error .*\); got .*",
             ),
         ],
     )
