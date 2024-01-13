@@ -27,8 +27,7 @@ def is_equal_or_approx(
         return isclose(x[0], y, rel_tol=x[1])
     if isinstance(x, tuple) and isinstance(y, tuple):
         return isclose(x[0], y[0], rel_tol=max(x[1], y[1]))
-    msg = f"{x=}, {y=}"  # pragma: no cover
-    raise ImpossibleCaseError(msg)  # pragma: no cover
+    raise ImpossibleCaseError(case=[f"{x=}", f"{y=}"])  # pragma: no cover
 
 
 def is_at_least(

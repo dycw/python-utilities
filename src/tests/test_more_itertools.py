@@ -67,13 +67,13 @@ class TestOne:
     def test_error_empty(self) -> None:
         with raises(
             OneEmptyError,
-            match="Iterable .* must contain exactly one item; it was empty instead",
+            match="Iterable .* must contain exactly one item; it was empty",
         ):
             _ = one([])
 
     def test_error_non_unique(self) -> None:
         with raises(
             OneNonUniqueError,
-            match="Iterable .* must contain exactly one item; it had .*, .* and perhaps more",
+            match="Iterable .* must contain exactly one item; got .*, .* and perhaps more",
         ):
             _ = one([1, 2])

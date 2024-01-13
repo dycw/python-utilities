@@ -43,7 +43,7 @@ class OneError(Exception):
 class OneEmptyError(OneError):
     @override
     def __str__(self) -> str:
-        return "Iterable {} must contain exactly one item; it was empty instead".format(
+        return "Iterable {} must contain exactly one item; it was empty".format(
             self.iterable
         )
 
@@ -55,7 +55,7 @@ class OneNonUniqueError(OneError):
 
     @override
     def __str__(self) -> str:
-        return "Iterable {} must contain exactly one item; it had {}, {} and perhaps more".format(
+        return "Iterable {} must contain exactly one item; got {}, {} and perhaps more".format(
             self.iterable, self.first, self.second
         )
 
