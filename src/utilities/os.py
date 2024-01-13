@@ -2,20 +2,25 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass
 from os import cpu_count, environ, getenv
+
+from typing_extensions import override
 
 
 def get_cpu_count() -> int:
     """Get the CPU count."""
     count = cpu_count()
     if count is None:  # pragma: no cover
-        msg = f"{count=}"
-        raise GetCPUCountError(msg)
+        raise GetCPUCountError
     return count
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class GetCPUCountError(Exception):
-    ...
+    @override
+    def __str__(self) -> str:
+        return "CPU count must not be None"  # pragma: no cover
 
 
 CPU_COUNT = get_cpu_count()

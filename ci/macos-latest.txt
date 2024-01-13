@@ -284,7 +284,7 @@ pluggy==1.3.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.3
+polars==0.20.4
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -381,7 +381,7 @@ rich==13.7.0
     # via
     #   hatch
     #   streamlit
-rpds-py==0.16.2
+rpds-py==0.17.1
     # via
     #   jsonschema
     #   referencing
