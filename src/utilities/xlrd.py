@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 from datetime import tzinfo
 from typing import Literal
 
-from typing_extensions import assert_never
+from typing_extensions import override
 from xlrd import Book, xldate_as_datetime
 
 from utilities.datetime import UTC
@@ -17,15 +18,21 @@ def get_date_mode() -> Literal[0, 1]:
             return 0
         case System.mac:  # pragma: os-ne-macos
             return 1
-        case System.linux:  # pragma: no cover
-            msg = f"{SYSTEM=}"
-            raise GetDateModeError(msg)
-        case _ as never:  # type: ignore
-            assert_never(never)
+        case system:  # pragma: no cover
+            raise GetDateModeError(system=system)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class GetDateModeError(Exception):
-    ...
+    system: System
+
+    @override
+    def __str__(self) -> str:
+        return (  # pragma: no cover
+            "System must be one of Windows or Darwin; got {} instead".format(
+                self.system
+            )
+        )
 
 
 def to_date(
