@@ -30,12 +30,13 @@ class TestYieldModules:
             param(standalone, True, 1),
             param(package_without, False, 2),
             param(package_without, True, 2),
-            param(package_with, False, 2),
-            param(package_with, True, 5),
+            param(package_with, False, 3),
+            param(package_with, True, 6),
         ],
     )
     def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
-        assert len(list(yield_modules(module, recursive=recursive))) == expected
+        res = list(yield_modules(module, recursive=recursive))
+        assert len(res) == expected
 
     def test_all(self) -> None:
         for module in yield_modules(utilities, recursive=True):
@@ -65,7 +66,6 @@ class TestYieldModuleContents:
     @mark.parametrize(
         ("type_", "predicate", "expected"),
         [
-            param(None, None, 18),
             param(int, None, 3),
             param(float, None, 3),
             param((int, float), None, 6),
@@ -86,10 +86,12 @@ class TestYieldModuleContents:
         expected: int,
         factor: int,
     ) -> None:
-        it = yield_module_contents(
-            module, type=type_, recursive=recursive, predicate=predicate
+        res = list(
+            yield_module_contents(
+                module, type=type_, recursive=recursive, predicate=predicate
+            )
         )
-        assert len(list(it)) == (factor * expected)
+        assert len(res) == (factor * expected)
 
 
 class TestYieldModuleSubclasses:

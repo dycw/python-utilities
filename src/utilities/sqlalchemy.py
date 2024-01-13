@@ -547,13 +547,18 @@ class TablenameMixin:
 
 
 __all__ = [
+    "CHUNK_SIZE_FRAC",
+    "CheckEngineError",
+    "Dialect",
+    "GetDialectError",
+    "GetTableError",
+    "ParseEngineError",
+    "TablenameMixin",
     "check_engine",
     "check_table_against_reflection",
-    "CheckEngineError",
     "columnwise_max",
     "columnwise_min",
     "create_engine",
-    "Dialect",
     "ensure_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
@@ -561,20 +566,15 @@ __all__ = [
     "get_column_names",
     "get_columns",
     "get_dialect",
-    "get_table_name",
     "get_table",
-    "GetDialectError",
-    "GetTableError",
-    "CHUNK_SIZE_FRAC",
+    "get_table_name",
     "insert_items",
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "parse_engine",
-    "ParseEngineError",
     "redirect_table_does_not_exist",
     "serialize_engine",
-    "TablenameMixin",
 ]
 
 
@@ -605,7 +605,7 @@ except ModuleNotFoundError:  # pragma: no cover
     pass
 else:
     __all__ += [
-        "next_from_sequence",
         "NextFromSequenceError",
+        "next_from_sequence",
         "redirect_next_from_sequence_error",
     ]

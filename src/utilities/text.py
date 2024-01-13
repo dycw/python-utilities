@@ -33,4 +33,4 @@ def strip_and_dedent(text: str, /) -> str:
     return dedent(text.strip("\n")).strip("\n")
 
 
-__all__ = ["ensure_str", "EnsureStrError", "strip_and_dedent"]
+__all__ = ["EnsureStrError", "ensure_str", "strip_and_dedent"]

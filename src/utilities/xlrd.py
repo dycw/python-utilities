@@ -43,4 +43,4 @@ def to_datetime(
     return xldate_as_datetime(date, date_mode).replace(tzinfo=tzinfo)  # os-eq-linux
 
 
-__all__ = ["get_date_mode", "GetDateModeError", "to_date", "to_datetime"]
+__all__ = ["GetDateModeError", "get_date_mode", "to_date", "to_datetime"]

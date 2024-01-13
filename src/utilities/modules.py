@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from contextlib import suppress
 from importlib import import_module
-from pkgutil import walk_packages
+from pkgutil import iter_modules
 from types import ModuleType
 from typing import Any
 
@@ -15,19 +14,17 @@ def yield_modules(
 
     Optionally, recurse into sub-packages.
     """
-    name = module.__name__
+
     try:
         path = module.__path__
     except AttributeError:
         yield module
     else:
-        with suppress(ModuleNotFoundError):
-            for info in walk_packages(path):
-                imported = import_module(f"{name}.{info.name}")
-                if (is_pkg := info.ispkg) and recursive:
-                    yield from yield_modules(imported, recursive=recursive)
-                elif not is_pkg:
-                    yield imported
+        for _, name, ispkg in iter_modules(path, module.__name__ + "."):
+            mod = import_module(name)
+            yield mod
+            if recursive and ispkg:
+                yield from yield_modules(mod, recursive=True)
 
 
 def yield_module_contents(

@@ -99,8 +99,8 @@ def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
 
 
 __all__ = [
-    "get_shell_output",
     "GetShellOutputError",
+    "get_shell_output",
     "run_accept_address_in_use",
     "tabulate_called_process_error",
 ]

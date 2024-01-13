@@ -27,11 +27,11 @@ def ffill_non_nan_slices(
 
 
 __all__ = [
-    "ffill_non_nan_slices",
     "GetIndexByNameError",
     "GetSelIndexerError",
     "IselIndexer",
     "NDArrayWithIndexes",
+    "ffill_non_nan_slices",
     "yield_array_with_indexes",
     "yield_group_and_array",
 ]
@@ -51,7 +51,7 @@ else:
     __all__ += [
         "DataArrayOnDisk",
         "ToNDArray1Error",
-        "to_ndarray1",
         "save_data_array_to_disk",
+        "to_ndarray1",
         "yield_data_array_on_disk",
     ]
