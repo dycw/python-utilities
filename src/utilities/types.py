@@ -93,9 +93,9 @@ class EnsureClassError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be an instance of ({}); got {} instead".format(
+        return "Object {} must be an instance of {}; got {!r} instead".format(
             self.obj,
-            ", ".join(map(get_class_name, always_iterable(self.cls))),
+            ", ".join(map(repr, map(get_class_name, always_iterable(self.cls)))),
             get_class_name(self.obj),
         )
 
@@ -113,7 +113,7 @@ class EnsureHashableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be hashable"
+        return "Object {} must be hashable".format(self.obj)
 
 
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:

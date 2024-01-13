@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Hashable, Iterable, Sized
+from dataclasses import dataclass
 from typing import Any, TypeGuard
+
+from typing_extensions import override
 
 from utilities.math import is_equal_or_approx
 from utilities.types import ensure_hashable
@@ -31,23 +34,72 @@ def check_length(
 ) -> None:
     """Check the length of an object."""
     if (equal is not None) and (len(obj) != equal):
-        msg = f"{obj=}, {equal=}"
-        raise CheckLengthError(msg)
+        raise _CheckLengthEqualError(obj=obj, equal=equal)
     if (equal_or_approx is not None) and not is_equal_or_approx(
         len(obj), equal_or_approx
     ):
-        msg = f"{obj=}, {equal_or_approx=}"
-        raise CheckLengthError(msg)
+        raise _CheckLengthEqualOrApproxError(obj=obj, equal_or_approx=equal_or_approx)
     if (min is not None) and (len(obj) < min):
-        msg = f"{obj=}, {min=}"
-        raise CheckLengthError(msg)
+        raise _CheckLengthMinError(obj=obj, min_=min)
     if (max is not None) and (len(obj) > max):
-        msg = f"{obj=}, {max=}"
-        raise CheckLengthError(msg)
+        raise _CheckLengthMaxError(obj=obj, max_=max)
 
 
 class CheckLengthError(Exception):
     ...
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckLengthEqualError(CheckLengthError):
+    obj: Sized
+    equal: int
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must have length {}; got {} instead".format(
+            self.obj, self.equal, len(self.obj)
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckLengthEqualOrApproxError(CheckLengthError):
+    obj: Sized
+    equal_or_approx: int | tuple[int, float]
+
+    @override
+    def __str__(self) -> str:
+        match self.equal_or_approx:
+            case target, error:
+                desc = "approximate length {} (error {:%})".format(target, error)
+            case target:
+                desc = "length {}".format(target)
+        return "Object {} must have {}; got {} instead".format(
+            self.obj, desc, len(self.obj)
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckLengthMinError(CheckLengthError):
+    obj: Sized
+    min_: int
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must have minimum length {}; got {} instead".format(
+            self.obj, self.min_, len(self.obj)
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckLengthMaxError(CheckLengthError):
+    obj: Sized
+    max_: int
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must have maximum length {}; got {} instead".format(
+            self.obj, self.max_, len(self.obj)
+        )
 
 
 def ensure_hashables(

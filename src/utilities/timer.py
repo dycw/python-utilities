@@ -82,8 +82,8 @@ class TimerError(Exception):
     @override
     def __str__(self) -> str:
         return (
-            "Timer must be compared to a number, Timer, or timedelta; "
-            f"got {get_class_name(self.obj)} instead"
+            "Timer must be compared to a number, Timer, or timedelta; got "
+            "{} instead".format(get_class_name(self.obj))
         )
 
 
