@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from dataclasses import dataclass
 from enum import Enum, unique
 from platform import system
 
-from typing_extensions import assert_never
+from typing_extensions import assert_never, override
 
 from utilities.types import IterableStrs
 
@@ -20,18 +21,27 @@ class System(str, Enum):
 
 def get_system() -> System:
     """Get the system/OS name."""
-    if (sys := system()) == "Windows":  # pragma: os-ne-windows
+    sys = system()
+    if sys == "Windows":  # pragma: os-ne-windows
         return System.windows
     if sys == "Darwin":  # pragma: os-ne-macos
         return System.mac
     if sys == "Linux":  # pragma: os-ne-linux
         return System.linux
-    msg = f"{sys=}"  # pragma: no cover
-    raise GetSystemError(msg)  # pragma: no cover
+    raise GetSystemError(sys=sys)  # pragma: no cover
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class GetSystemError(Exception):
-    ...
+    sys: str
+
+    @override
+    def __str__(self) -> str:
+        return (  # pragma: no cover
+            "System must be one of Windows, Darwin, Linux; got {!r} instead".format(
+                self.sys
+            )
+        )
 
 
 SYSTEM = get_system()
