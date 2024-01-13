@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from itertools import chain
 from typing import Any
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, lists, sampled_from, sets
+from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
 
 from utilities.iterables import (
@@ -29,12 +27,12 @@ class TestCheckDuplicates:
     def test_main(self, *, x: set[int]) -> None:
         check_duplicates(x)
 
-    @given(data=data(), x=lists(integers(), min_size=1))
-    def test_error(self, *, data: DataObject, x: Sequence[int]) -> None:
-        x_i = data.draw(sampled_from(x))
-        y = chain(x, [x_i])
-        with raises(CheckDuplicatesError):
-            check_duplicates(y)
+    def test_error(self) -> None:
+        with raises(
+            CheckDuplicatesError,
+            match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)",
+        ):
+            check_duplicates([None, None])
 
 
 class TestCheckLength:
@@ -57,7 +55,7 @@ class TestCheckLength:
             param(10, "Object .* must have length .*; got .*"),
             param(
                 (11, 0.1),
-                r"Object .* must have approximate length .* \(error .*\); " "got .*",
+                r"Object .* must have approximate length .* \(error .*\); got .*",
             ),
         ],
     )

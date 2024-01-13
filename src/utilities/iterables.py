@@ -17,14 +17,21 @@ from utilities.types import ensure_hashable
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
     """Check if an iterable contains any duplicates."""
-    dup = {k: v for k, v in Counter(iterable).items() if v > 1}
-    if len(dup) >= 1:
-        msg = f"{dup=}"
-        raise CheckDuplicatesError(msg)
+    counts = {k: v for k, v in Counter(iterable).items() if v > 1}
+    if len(counts) >= 1:
+        raise CheckDuplicatesError(iterable=iterable, counts=counts)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CheckDuplicatesError(Exception):
-    ...
+    iterable: Iterable[Hashable]
+    counts: dict[Hashable, int]
+
+    @override
+    def __str__(self) -> str:
+        return "Iterable {} must not contain duplicates; got {}".format(
+            self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
+        )
 
 
 def check_length(
@@ -49,6 +56,7 @@ def check_length(
         raise _CheckLengthMaxError(obj=obj, max_=max)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CheckLengthError(Exception):
     ...
 
