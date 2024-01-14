@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import DrawFn, SearchStrategy, composite
@@ -20,10 +20,8 @@ from utilities._hypothesis.numpy import (
     str_arrays,
 )
 from utilities._hypothesis.pandas import int_indexes
+from utilities.pandas import IndexA, IndexI
 from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
-
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import IndexA, IndexI
 
 
 @composite
