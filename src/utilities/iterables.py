@@ -10,7 +10,13 @@ from typing import Any, TypeGuard, cast
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
-from utilities.math import is_equal_or_approx
+from utilities.math import (
+    _CheckIntegerEqualError,
+    _CheckIntegerEqualOrApproxError,
+    _CheckIntegerMaxError,
+    _CheckIntegerMinError,
+    check_integer,
+)
 from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import ensure_hashable
@@ -116,26 +122,28 @@ def check_length(
     max: int | None = None,  # noqa: A002
 ) -> None:
     """Check the length of an object."""
-    if (equal is not None) and (len(obj) != equal):
-        raise _CheckLengthEqualError(obj=obj, equal=equal)
-    if (equal_or_approx is not None) and not is_equal_or_approx(
-        len(obj), equal_or_approx
-    ):
-        raise _CheckLengthEqualOrApproxError(obj=obj, equal_or_approx=equal_or_approx)
-    if (min is not None) and (len(obj) < min):
-        raise _CheckLengthMinError(obj=obj, min_=min)
-    if (max is not None) and (len(obj) > max):
-        raise _CheckLengthMaxError(obj=obj, max_=max)
+    n = len(obj)
+    try:
+        check_integer(n, equal=equal, equal_or_approx=equal_or_approx, min=min, max=max)
+    except _CheckIntegerEqualError as error:
+        raise _CheckLengthEqualError(obj=obj, equal=error.equal) from None
+    except _CheckIntegerEqualOrApproxError as error:
+        raise _CheckLengthEqualOrApproxError(
+            obj=obj, equal_or_approx=error.equal_or_approx
+        ) from None
+    except _CheckIntegerMinError as error:
+        raise _CheckLengthMinError(obj=obj, min_=error.min_) from None
+    except _CheckIntegerMaxError as error:
+        raise _CheckLengthMaxError(obj=obj, max_=error.max_) from None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class CheckLengthError(Exception):
-    ...
+    obj: Sized
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _CheckLengthEqualError(CheckLengthError):
-    obj: Sized
     equal: int
 
     @override
@@ -147,7 +155,6 @@ class _CheckLengthEqualError(CheckLengthError):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _CheckLengthEqualOrApproxError(CheckLengthError):
-    obj: Sized
     equal_or_approx: int | tuple[int, float]
 
     @override
@@ -162,7 +169,6 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _CheckLengthMinError(CheckLengthError):
-    obj: Sized
     min_: int
 
     @override
@@ -174,7 +180,6 @@ class _CheckLengthMinError(CheckLengthError):
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _CheckLengthMaxError(CheckLengthError):
-    obj: Sized
     max_: int
 
     @override

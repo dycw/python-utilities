@@ -82,5 +82,5 @@ class TestShift:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(ShiftError):
+        with raises(ShiftError, match="Shift must be non-zero"):
             _ = shift(arr, n=0)

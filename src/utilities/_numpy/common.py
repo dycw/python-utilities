@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from itertools import repeat
 from typing import Any
 
 from numpy import bool_, float64, int64, nan, object_, roll
 from numpy.typing import NDArray
+from typing_extensions import override
 
 # annotations - dtypes
 
@@ -22,8 +24,7 @@ NDArrayO = NDArray[object_]
 def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
     """Shift the elements of an array."""
     if n == 0:
-        msg = f"{n=}"
-        raise ShiftError(msg)
+        raise ShiftError
     as_float = array.astype(float)
     shifted = roll(as_float, n, axis=axis)
     indexer = list(repeat(slice(None), times=array.ndim))
@@ -32,8 +33,11 @@ def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArr
     return shifted
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ShiftError(Exception):
-    ...
+    @override
+    def __str__(self) -> str:
+        return "Shift must be non-zero"
 
 
 __all__ = [

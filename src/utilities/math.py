@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from math import isclose, isfinite, isnan
 from typing import Annotated, Any, cast
 
 from beartype.vale import Is
+from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 
@@ -402,7 +404,77 @@ FloatZrNonMic = Annotated[float, Is[cast(Any, is_zero_or_non_micro)]]
 FloatZrNonMicNan = Annotated[float, Is[cast(Any, is_zero_or_non_micro_or_nan)]]
 
 
+# checks
+
+
+def check_integer(
+    n: int,
+    /,
+    *,
+    equal: int | None = None,
+    equal_or_approx: int | tuple[int, float] | None = None,
+    min: int | None = None,  # noqa: A002
+    max: int | None = None,  # noqa: A002
+) -> None:
+    """Check the properties of an integer."""
+    if (equal is not None) and (n != equal):
+        raise _CheckIntegerEqualError(n=n, equal=equal)
+    if (equal_or_approx is not None) and not is_equal_or_approx(n, equal_or_approx):
+        raise _CheckIntegerEqualOrApproxError(n=n, equal_or_approx=equal_or_approx)
+    if (min is not None) and (n < min):
+        raise _CheckIntegerMinError(n=n, min_=min)
+    if (max is not None) and (n > max):
+        raise _CheckIntegerMaxError(n=n, max_=max)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckIntegerError(Exception):
+    n: int
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIntegerEqualError(CheckIntegerError):
+    equal: int
+
+    @override
+    def __str__(self) -> str:
+        return "Integer must be equal to {}; got {}".format(self.equal, self.n)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIntegerEqualOrApproxError(CheckIntegerError):
+    equal_or_approx: int | tuple[int, float]
+
+    @override
+    def __str__(self) -> str:
+        match self.equal_or_approx:
+            case target, error:
+                desc = "approximately equal to {} (error {:%})".format(target, error)
+            case target:
+                desc = "equal to {}".format(target)
+        return "Integer must be {}; got {}".format(desc, self.n)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIntegerMinError(CheckIntegerError):
+    min_: int
+
+    @override
+    def __str__(self) -> str:
+        return "Integer must be at least {}; got {}".format(self.min_, self.n)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIntegerMaxError(CheckIntegerError):
+    max_: int
+
+    @override
+    def __str__(self) -> str:
+        return "Integer must be at most {}; got {}".format(self.max_, self.n)
+
+
 __all__ = [
+    "CheckIntegerError",
     "FloatFin",
     "FloatFinInt",
     "FloatFinIntNan",
@@ -441,6 +513,7 @@ __all__ = [
     "IntNonZr",
     "IntPos",
     "IntZr",
+    "check_integer",
     "is_at_least",
     "is_at_least_or_nan",
     "is_at_most",
