@@ -5,7 +5,7 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, TypeGuard, cast
+from typing import Any, Generic, TypeGuard, TypeVar, cast
 
 from typing_extensions import Never, assert_never, override
 
@@ -20,6 +20,10 @@ from utilities.math import (
 from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import ensure_hashable
+
+_K = TypeVar("_K")
+_T = TypeVar("_T")
+_V = TypeVar("_V")
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -49,10 +53,12 @@ class _CheckIterablesEqualState(Enum):
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of iterables are equal."""
 
+    left_list, right_list = map(list, [left, right])
     errors: list[tuple[int, Any, Any]] = []
     state: _CheckIterablesEqualState | None
+    it = zip(left_list, right_list, strict=True)
     try:
-        for i, (lv, rv) in enumerate(zip(left, right, strict=True)):
+        for i, (lv, rv) in enumerate(it):
             if lv != rv:
                 errors.append((i, lv, rv))
     except ValueError as error:
@@ -70,21 +76,20 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         state = None
     if (len(errors) >= 1) or (state is not None):
         raise CheckIterablesEqualError(
-            left=left, right=right, errors=errors, state=state
+            left=left_list, right=right_list, errors=errors, state=state
         )
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckIterablesEqualError(Exception):
-    left: Iterable[Any]
-    right: Iterable[Any]
-    errors: list[tuple[int, Any, Any]]
+class CheckIterablesEqualError(Exception, Generic[_T]):
+    left: list[_T]
+    right: list[_T]
+    errors: list[tuple[int, _T, _T]]
     state: _CheckIterablesEqualState | None
 
     @override
     def __str__(self) -> str:
-        parts = list(self._yield_parts())
-        match parts:
+        match list(self._yield_parts()):
             case (desc,):
                 pass
             case first, second:
@@ -100,7 +105,7 @@ class CheckIterablesEqualError(Exception):
             error_descs = (
                 "({}, {}, i={})".format(lv, rv, i) for i, lv, rv in self.errors
             )
-            yield "items were {}".format(", ".join(error_descs))
+            yield "differing items were {}".format(", ".join(error_descs))
         match self.state:
             case _CheckIterablesEqualState.left_longer:
                 yield "left was longer"
@@ -234,17 +239,16 @@ def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckMappingsEqualError(Exception):
-    left: Mapping[Any, Any]
-    right: Mapping[Any, Any]
-    left_extra: AbstractSet[Any]
-    right_extra: AbstractSet[Any]
-    errors: list[tuple[Any, Any, Any]]
+class CheckMappingsEqualError(Exception, Generic[_K, _V]):
+    left: Mapping[_K, _V]
+    right: Mapping[_K, _V]
+    left_extra: AbstractSet[_K]
+    right_extra: AbstractSet[_K]
+    errors: list[tuple[_K, _V, _V]]
 
     @override
     def __str__(self) -> str:
-        parts = list(self._yield_parts())
-        match parts:
+        match list(self._yield_parts()):
             case (desc,):
                 pass
             case first, second:
@@ -266,7 +270,7 @@ class CheckMappingsEqualError(Exception):
             error_descs = (
                 "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
             )
-            yield "items were {}".format(", ".join(error_descs))
+            yield "differing values were {}".format(", ".join(error_descs))
 
 
 def check_sets_equal(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
@@ -280,16 +284,15 @@ def check_sets_equal(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckSetsEqualError(Exception):
-    left: AbstractSet[Any]
-    right: AbstractSet[Any]
-    left_extra: AbstractSet[Any]
-    right_extra: AbstractSet[Any]
+class CheckSetsEqualError(Exception, Generic[_T]):
+    left: AbstractSet[_T]
+    right: AbstractSet[_T]
+    left_extra: AbstractSet[_T]
+    right_extra: AbstractSet[_T]
 
     @override
     def __str__(self) -> str:
-        parts = list(self._yield_parts())
-        match parts:
+        match list(self._yield_parts()):
             case (desc,):
                 pass
             case first, second:
@@ -305,18 +308,66 @@ class CheckSetsEqualError(Exception):
             yield "right had extra items {}".format(self.right_extra)
 
 
+def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
+    """Check that a mapping is a subset of another mapping."""
+    left_keys, right_keys = set(left), set(right)
+    try:
+        check_subset(left_keys, right_keys)
+    except CheckSubSetError as error:
+        extra = set(error.extra)
+    else:
+        extra = set()
+    errors: list[tuple[Any, Any, Any]] = []
+    for key in left_keys & right_keys:
+        lv, rv = left[key], right[key]
+        if lv != rv:
+            errors.append((key, lv, rv))
+    if (len(extra) >= 1) or (len(errors) >= 1):
+        raise CheckSubMappingError(left=left, right=right, extra=extra, errors=errors)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckSubMappingError(Exception, Generic[_K, _V]):
+    left: Mapping[_K, _V]
+    right: Mapping[_K, _V]
+    extra: AbstractSet[_K]
+    errors: list[tuple[_K, _V, _V]]
+
+    @override
+    def __str__(self) -> str:
+        match list(self._yield_parts()):
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
+        return "Mapping {} must be a submapping of {}; {}".format(
+            self.left, self.right, desc
+        )
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.extra) >= 1:
+            yield "left had extra keys {}".format(self.extra)
+        if len(self.errors) >= 1:
+            error_descs = (
+                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
+            )
+            yield "differing values were {}".format(", ".join(error_descs))
+
+
 def check_subset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
     """Check that a set is a subset of another set."""
     extra = left - right
     if len(extra) >= 1:
-        raise CheckSubsetError(left=left, right=right, extra=extra)
+        raise CheckSubSetError(left=left, right=right, extra=extra)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckSubsetError(Exception):
-    left: AbstractSet[Any]
-    right: AbstractSet[Any]
-    extra: AbstractSet[Any]
+class CheckSubSetError(Exception, Generic[_T]):
+    left: AbstractSet[_T]
+    right: AbstractSet[_T]
+    extra: AbstractSet[_T]
 
     @override
     def __str__(self) -> str:
@@ -325,18 +376,66 @@ class CheckSubsetError(Exception):
         )
 
 
+def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
+    """Check that a mapping is a superset of another mapping."""
+    left_keys, right_keys = set(left), set(right)
+    try:
+        check_superset(left_keys, right_keys)
+    except CheckSuperSetError as error:
+        extra = set(error.extra)
+    else:
+        extra = set()
+    errors: list[tuple[Any, Any, Any]] = []
+    for key in left_keys & right_keys:
+        lv, rv = left[key], right[key]
+        if lv != rv:
+            errors.append((key, lv, rv))
+    if (len(extra) >= 1) or (len(errors) >= 1):
+        raise CheckSuperMappingError(left=left, right=right, extra=extra, errors=errors)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckSuperMappingError(Exception, Generic[_K, _V]):
+    left: Mapping[_K, _V]
+    right: Mapping[_K, _V]
+    extra: AbstractSet[_K]
+    errors: list[tuple[_K, _V, _V]]
+
+    @override
+    def __str__(self) -> str:
+        match list(self._yield_parts()):
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
+        return "Mapping {} must be a supermapping of {}; {}".format(
+            self.left, self.right, desc
+        )
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.extra) >= 1:
+            yield "right had extra keys {}".format(self.extra)
+        if len(self.errors) >= 1:
+            error_descs = (
+                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
+            )
+            yield "differing values were {}".format(", ".join(error_descs))
+
+
 def check_superset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
     """Check that a set is a superset of another set."""
     extra = right - left
     if len(extra) >= 1:
-        raise CheckSupersetError(left=left, right=right, extra=extra)
+        raise CheckSuperSetError(left=left, right=right, extra=extra)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckSupersetError(Exception):
-    left: AbstractSet[Any]
-    right: AbstractSet[Any]
-    extra: AbstractSet[Any]
+class CheckSuperSetError(Exception, Generic[_T]):
+    left: AbstractSet[_T]
+    right: AbstractSet[_T]
+    extra: AbstractSet[_T]
 
     @override
     def __str__(self) -> str:
@@ -354,13 +453,18 @@ def ensure_hashables(
     return hash_args, hash_kwargs
 
 
-def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
-    """Check if an object is iterable, but not a string."""
+def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
+    """Check if an object is iterable."""
     try:
         iter(obj)
     except TypeError:
         return False
-    return not isinstance(obj, str)
+    return True
+
+
+def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
+    """Check if an object is iterable, but not a string."""
+    return is_iterable(obj) and not isinstance(obj, str)
 
 
 __all__ = [
@@ -369,15 +473,20 @@ __all__ = [
     "CheckLengthsEqualError",
     "CheckMappingsEqualError",
     "CheckSetsEqualError",
-    "CheckSubsetError",
-    "CheckSupersetError",
+    "CheckSubMappingError",
+    "CheckSubSetError",
+    "CheckSuperMappingError",
+    "CheckSuperSetError",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
     "check_mappings_equal",
     "check_sets_equal",
+    "check_submapping",
     "check_subset",
+    "check_supermapping",
     "check_superset",
     "ensure_hashables",
+    "is_iterable",
     "is_iterable_not_str",
 ]

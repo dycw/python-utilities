@@ -13,17 +13,22 @@ from utilities.iterables import (
     CheckLengthsEqualError,
     CheckMappingsEqualError,
     CheckSetsEqualError,
-    CheckSubsetError,
-    CheckSupersetError,
+    CheckSubMappingError,
+    CheckSubSetError,
+    CheckSuperMappingError,
+    CheckSuperSetError,
     check_duplicates,
     check_iterables_equal,
     check_length,
     check_lengths_equal,
     check_mappings_equal,
     check_sets_equal,
+    check_submapping,
     check_subset,
+    check_supermapping,
     check_superset,
     ensure_hashables,
+    is_iterable,
     is_iterable_not_str,
 )
 
@@ -48,21 +53,21 @@ class TestCheckIterablesEqual:
     def test_error_differing_items_and_left_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\) and left was longer",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
     def test_error_differing_items_and_right_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\) and right was longer",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
     def test_error_differing_items_and_same_length(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; items were \(.*, .*, i=.*\)",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
@@ -146,10 +151,10 @@ class TestCheckMappingsEqual:
     def test_pass(self) -> None:
         check_mappings_equal({}, {})
 
-    def test_error_extra_and_missing_and_differing_items(self) -> None:
+    def test_error_extra_and_missing_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and items were \(.*, .*, k=.*\)",
+            match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and differing values were \(.*, .*, k=.*\)",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 9, "d": 4})
 
@@ -160,17 +165,17 @@ class TestCheckMappingsEqual:
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 3, "d": 4})
 
-    def test_error_extra_and_differing_items(self) -> None:
+    def test_error_extra_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .* and items were \(.*, .*, k=.*\)",
+            match=r"Mappings .* and .* must be equal; left had extra keys .* and differing values were \(.*, .*, k=.*\)",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
-    def test_error_missing_and_differing_items(self) -> None:
+    def test_error_missing_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; right had extra keys .* and items were \(.*, .*, k=.*\)",
+            match=r"Mappings .* and .* must be equal; right had extra keys .* and differing values were \(.*, .*, k=.*\)",
         ):
             check_mappings_equal({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
@@ -188,10 +193,10 @@ class TestCheckMappingsEqual:
         ):
             check_mappings_equal({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
-    def test_error_differing_items_only(self) -> None:
+    def test_error_differing_values_only(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; items were \(.*, .*, k=.*\)",
+            match=r"Mappings .* and .* must be equal; differing values were \(.*, .*, k=.*\)",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
 
@@ -222,25 +227,77 @@ class TestCheckSetsEqual:
             check_sets_equal(set(), {1, 2, 3})
 
 
-class TestCheckSubset:
+class TestCheckSubMapping:
+    def test_pass(self) -> None:
+        check_submapping({}, {})
+
+    def test_error_extra_and_differing_values(self) -> None:
+        with raises(
+            CheckSubMappingError,
+            match=r"Mapping .* must be a submapping of .*; left had extra keys .* and differing values were \(.*, .*., k=.*\)",
+        ):
+            check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 9})
+
+    def test_error_extra_only(self) -> None:
+        with raises(
+            CheckSubMappingError,
+            match="Mapping .* must be a submapping of .*; left had extra keys .*",
+        ):
+            check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1})
+
+    def test_error_differing_values_only(self) -> None:
+        with raises(
+            CheckSubMappingError,
+            match=r"Mapping .* must be a submapping of .*; differing values were \(.*, .*, k=.*\)",
+        ):
+            check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
+
+
+class TestCheckSubSet:
     def test_pass(self) -> None:
         check_subset(set(), set())
 
     def test_error(self) -> None:
         with raises(
-            CheckSubsetError,
+            CheckSubSetError,
             match="Set .* must be a subset of .*; left had extra items .*",
         ):
             check_subset({1, 2, 3}, {1})
 
 
-class TestCheckSuperset:
+class TestCheckSuperMapping:
+    def test_pass(self) -> None:
+        check_supermapping({}, {})
+
+    def test_error_missing_and_differing_values(self) -> None:
+        with raises(
+            CheckSuperMappingError,
+            match=r"Mapping .* must be a supermapping of .*; right had extra keys .* and differing values were \(.*, .*, k=.*\)",
+        ):
+            check_supermapping({"a": 1}, {"a": 9, "b": 2, "c": 3})
+
+    def test_error_extra_only(self) -> None:
+        with raises(
+            CheckSuperMappingError,
+            match="Mapping .* must be a supermapping of .*; right had extra keys .*",
+        ):
+            check_supermapping({"a": 1}, {"a": 1, "b": 2, "c": 3})
+
+    def test_error_differing_values_only(self) -> None:
+        with raises(
+            CheckSuperMappingError,
+            match=r"Mapping .* must be a supermapping of .*; differing values were \(.*, .*, k=.*\)",
+        ):
+            check_supermapping({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
+
+
+class TestCheckSuperSet:
     def test_pass(self) -> None:
         check_superset(set(), set())
 
     def test_error(self) -> None:
         with raises(
-            CheckSupersetError,
+            CheckSuperSetError,
             match="Set .* must be a superset of .*; right had extra items .*",
         ):
             check_superset({1}, {1, 2, 3})
@@ -249,6 +306,15 @@ class TestCheckSuperset:
 class TestEnsureHashables:
     def test_main(self) -> None:
         assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
+
+
+class TestIsIterable:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param([], True), param((), True), param("", True)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_iterable(obj) is expected
 
 
 class TestIsIterableNotStr:

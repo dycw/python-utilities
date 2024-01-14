@@ -1,27 +1,39 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from typing import Any
+from typing import Any, cast
 
 from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
+from typing_extensions import Never, assert_never, override
 
 from utilities.errors import redirect_error
-from utilities.math import is_equal_or_approx
-from utilities.types import SequenceStrs
+from utilities.iterables import (
+    CheckIterablesEqualError,
+    CheckMappingsEqualError,
+    CheckSuperMappingError,
+    check_iterables_equal,
+    check_mappings_equal,
+    check_supermapping,
+    is_iterable_not_str,
+)
+from utilities.math import CheckIntegerError, check_integer
+from utilities.types import IterableStrs
 
 
 def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: SequenceStrs | None = None,
-    dtypes: list[PolarsDataType] | None = None,
+    columns: IterableStrs | None = None,
+    dtypes: Iterable[PolarsDataType] | None = None,
     height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
     max_height: int | None = None,
@@ -34,40 +46,93 @@ def check_polars_dataframe(
     width: int | None = None,
 ) -> None:
     """Check the properties of a DataFrame."""
-    if (columns is not None) and (df.columns != list(columns)):
-        msg = f"{df=}, {columns=}"
-        raise CheckPolarsDataFrameError(msg)
-    if (dtypes is not None) and (df.dtypes != dtypes):
-        msg = f"{df=}, {dtypes=}"
-        raise CheckPolarsDataFrameError(msg)
-    if (height is not None) and not is_equal_or_approx(df.height, height):
-        msg = f"{df=}, {height=}"
-        raise CheckPolarsDataFrameError(msg)
-    if (min_height is not None) and (len(df) < min_height):
-        msg = f"{df=}, {min_height=}"
-        raise CheckPolarsDataFrameError(msg)
-    if (max_height is not None) and (len(df) > max_height):
-        msg = f"{df=}, {max_height=}"
-        raise CheckPolarsDataFrameError(msg)
+    _check_polars_dataframe_height(
+        df, equal_or_approx=height, min=min_height, max=max_height
+    )
+    if columns is not None:
+        _check_polars_dataframe_columns(df, columns)
+    if dtypes is not None:
+        _check_polars_dataframe_dtypes(df, dtypes)
     if predicates is not None:
         _check_polars_dataframe_predicates(df, predicates)
     if schema is not None:
         _check_polars_dataframe_schema(df, schema)
     if schema_inc is not None:
         _check_polars_dataframe_schema_inc(df, schema_inc)
-    if (shape is not None) and (df.shape != shape):
-        msg = f"{df=}"
-        raise CheckPolarsDataFrameError(msg)
+    if shape is not None:
+        _check_polars_dataframe_shape(df, shape)
     if sorted is not None:
-        df_sorted = df.sort(sorted)
-        with redirect_error(AssertionError, CheckPolarsDataFrameError(f"{df=}")):
-            assert_frame_equal(df, df_sorted)
-    if (unique is not None) and df.select(unique).is_duplicated().any():
-        msg = f"{df=}, {unique=}"
-        raise CheckPolarsDataFrameError(msg)
-    if (width is not None) and (df.width != width):
-        msg = f"{df=}"
-        raise CheckPolarsDataFrameError(msg)
+        _check_polars_dataframe_sorted(df, sorted)
+    if unique is not None:
+        _check_polars_dataframe_unique(df, unique)
+    if width is not None:
+        _check_polars_dataframe_width(df, width)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckPolarsDataFrameError(Exception):
+    df: DataFrame
+
+
+def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> None:
+    try:
+        check_iterables_equal(df.columns, columns)
+    except CheckIterablesEqualError as error:
+        raise _CheckPolarsDataFrameColumnsError(df=df, columns=columns) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
+    columns: IterableStrs
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have columns {}; got {}\n\n{}".format(
+            self.columns, self.df.columns, self.df
+        )
+
+
+def _check_polars_dataframe_dtypes(
+    df: DataFrame, dtypes: Iterable[PolarsDataType], /
+) -> None:
+    try:
+        check_iterables_equal(df.columns, dtypes)
+    except CheckIterablesEqualError as error:
+        raise _CheckPolarsDataFrameDTypesError(df=df, dtypes=dtypes) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
+    dtypes: Iterable[PolarsDataType]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have dtypes {}; got {}\n\n{}".format(
+            self.dtypes, self.df.dtypes, self.df
+        )
+
+
+def _check_polars_dataframe_height(
+    df: DataFrame,
+    /,
+    *,
+    equal_or_approx: int | tuple[int, float] | None = None,
+    min: int | None = None,  # noqa: A002
+    max: int | None = None,  # noqa: A002
+) -> None:
+    try:
+        check_integer(df.height, equal_or_approx=equal_or_approx, min=min, max=max)
+    except CheckIntegerError as error:
+        raise _CheckPolarsDataFrameHeightError(df=df) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameHeightError(CheckPolarsDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must satisfy the height requirements; got {}\n\n{}".format(
+            self.df.height, self.df
+        )
 
 
 def _check_polars_dataframe_predicates(
@@ -84,44 +149,142 @@ def _check_polars_dataframe_predicates(
             if not sr.map_elements(predicate, return_dtype=Boolean).all():
                 failed.add(column)
     if (len(missing) >= 1) or (len(failed)) >= 1:
-        msg = f"{missing=}, {failed=}"
-        raise CheckPolarsDataFrameError(msg)
+        raise _CheckPolarsDataFramePredicatesError(
+            df=df, predicates=predicates, missing=missing, failed=failed
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
+    predicates: Mapping[str, Callable[[Any], bool]]
+    missing: AbstractSet[str]
+    failed: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        match list(self._yield_parts()):
+            case (desc,):
+                pass
+            case first, second:
+                desc = "{} and {}".format(first, second)
+            case _ as never:  # pragma: no cover
+                assert_never(cast(Never, never))
+        return "DataFrame must satisfy the predicates; {}\n\n".format(desc)
+
+    def _yield_parts(self) -> Iterator[str]:
+        if len(self.missing) >= 1:
+            yield "missing columns were {}".format(self.missing)
+        if len(self.failed) >= 1:
+            yield "failed predicates were {}".format(self.failed)
 
 
 def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None:
-    if df.schema != schema:
-        set_act, set_exp = map(set, [df.schema, schema])
-        extra = set_act - set_exp
-        missing = set_exp - set_act
-        differ = {
-            col: (left, right)
-            for col in set_act & set_exp
-            if (left := df.schema[col]) != (right := schema[col])
-        }
-        msg = f"{df=}, {extra=}, {missing=}, {differ=}"
-        raise CheckPolarsDataFrameError(msg)
+    try:
+        check_mappings_equal(df.schema, schema)
+    except CheckMappingsEqualError as error:
+        raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
 
 
-def _check_polars_dataframe_schema_inc(
-    df: DataFrame, schema_inc: SchemaDict, /
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
+    schema: SchemaDict
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have schema {}; got {}\n\n{}".format(
+            self.schema, self.df.columns, self.df
+        )
+
+
+def _check_polars_dataframe_schema_inc(df: DataFrame, schema: SchemaDict, /) -> None:
+    try:
+        check_supermapping(df.schema, schema)
+    except CheckSuperMappingError as error:
+        raise _CheckPolarsDataFrameSchemaIncError(df=df, schema=schema) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameSchemaIncError(CheckPolarsDataFrameError):
+    schema: SchemaDict
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame schema must include {}; got {}\n\n{}".format(
+            self.schema, self.df.schema, self.df
+        )
+
+
+def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> None:
+    if df.shape != shape:
+        raise _CheckPolarsDataFrameShapeError(df=df, shape=shape) from None
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
+    shape: tuple[int, int]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have shape {}; got {}\n\n{}".format(
+            self.shape, self.df.shape, self.df
+        )
+
+
+def _check_polars_dataframe_sorted(
+    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], /
 ) -> None:
-    missing: set[str] = set()
-    wrong_dtype: set[str] = set()
-    for column, dtype in schema_inc.items():
-        try:
-            sr = df[column]
-        except ColumnNotFoundError:  # noqa: PERF203
-            missing.add(column)
-        else:
-            if sr.dtype != dtype:
-                wrong_dtype.add(column)
-    if (len(missing) >= 1) or (len(wrong_dtype)) >= 1:
-        msg = f"{missing=}, {wrong_dtype=}"
-        raise CheckPolarsDataFrameError(msg)
+    by_use = cast(
+        IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
+    )
+    df_sorted = df.sort(by_use)
+    try:
+        assert_frame_equal(df, df_sorted)
+    except AssertionError:
+        raise _CheckPolarsDataFrameSortedError(df=df, by=by_use) from None
 
 
-class CheckPolarsDataFrameError(Exception):
-    ...
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
+    by: IntoExpr | list[IntoExpr]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must be sorted on {}\n\n{}".format(self.by, self.df)
+
+
+def _check_polars_dataframe_unique(
+    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], /
+) -> None:
+    by_use = cast(
+        IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
+    )
+    if df.select(by_use).is_duplicated().any():
+        raise _CheckPolarsDataFrameUniqueError(df=df, by=by_use)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
+    by: IntoExpr | list[IntoExpr]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must be unique on {}\n\n{}".format(self.by, self.df)
+
+
+def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
+    if df.width != width:
+        raise _CheckPolarsDataFrameWidthError(df=df, width=width)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
+    width: int
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have width {}; got {}\n\n{}".format(
+            self.width, self.df.width, self.df
+        )
 
 
 def join(
