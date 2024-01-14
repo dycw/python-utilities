@@ -93,7 +93,7 @@ class EnsureClassError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be an instance of {}; got {!r} instead".format(
+        return "Object {} must be an instance of {}; got {!r}".format(
             self.obj,
             ", ".join(map(repr, map(get_class_name, always_iterable(self.cls)))),
             get_class_name(self.obj),
