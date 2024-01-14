@@ -8,10 +8,11 @@ from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import given
 from hypothesis.strategies import floats, integers
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.hypothesis import settings_with_reduced_examples
 from utilities.math import (
+    CheckIntegerError,
     FloatFin,
     FloatFinInt,
     FloatFinIntNan,
@@ -50,6 +51,7 @@ from utilities.math import (
     IntNonZr,
     IntPos,
     IntZr,
+    check_integer,
     is_at_least,
     is_at_least_or_nan,
     is_at_most,
@@ -146,6 +148,51 @@ class TestAnnotations:
     def test_main(self, *, x: float, hint: Any) -> None:
         with suppress(BeartypeDoorHintViolation):
             die_if_unbearable(x, hint)
+
+
+class TestCheckinteger:
+    def test_equal_pass(self) -> None:
+        check_integer(0, equal=0)
+
+    def test_equal_fail(self) -> None:
+        with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
+            check_integer(0, equal=1)
+
+    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    def test_equal_or_approx_pass(
+        self, *, equal_or_approx: int | tuple[int, float]
+    ) -> None:
+        check_integer(10, equal_or_approx=equal_or_approx)
+
+    @mark.parametrize(
+        ("equal_or_approx", "match"),
+        [
+            param(10, "Integer must be equal to .*; got .*"),
+            param(
+                (11, 0.1),
+                r"Integer must be approximately equal to .* \(error .*\); got .*",
+            ),
+        ],
+    )
+    def test_equal_or_approx_fail(
+        self, *, equal_or_approx: int | tuple[int, float], match: str
+    ) -> None:
+        with raises(CheckIntegerError, match=match):
+            check_integer(0, equal_or_approx=equal_or_approx)
+
+    def test_min_pass(self) -> None:
+        check_integer(0, min=0)
+
+    def test_min_error(self) -> None:
+        with raises(CheckIntegerError, match="Integer must be at least .*; got .*"):
+            check_integer(0, min=1)
+
+    def test_max_pass(self) -> None:
+        check_integer(0, max=1)
+
+    def test_max_error(self) -> None:
+        with raises(CheckIntegerError, match="Integer must be at most .*; got .*"):
+            check_integer(1, max=0)
 
 
 class TestIsAtLeast:
