@@ -42,7 +42,8 @@ if TYPE_CHECKING:  # pragma: no cover
     IndexF: TypeAlias = Index[float]
     IndexI: TypeAlias = Index[int]
     IndexI64: TypeAlias = Index[Int64Dtype]
-    IndexS: TypeAlias = Index[StringDtype]
+    IndexS: TypeAlias = Index[str]
+    IndexSt: TypeAlias = Index[StringDtype]
 
     SeriesA: TypeAlias = Series[Any]
     SeriesB: TypeAlias = Series[bool]
@@ -54,7 +55,29 @@ if TYPE_CHECKING:  # pragma: no cover
     SeriesF: TypeAlias = Series[float]
     SeriesI: TypeAlias = Series[int]
     SeriesI64: TypeAlias = Series[Int64Dtype]
-    SeriesS: TypeAlias = Series[StringDtype]
+    SeriesS: TypeAlias = Series[str]
+    SeriesSt: TypeAlias = Series[StringDtype]
+else:
+    IndexA = (
+        IndexB
+    ) = (
+        IndexBn
+    ) = (
+        IndexC
+    ) = (
+        IndexD
+    ) = IndexDhk = IndexDutc = IndexF = IndexI = IndexI64 = IndexS = IndexSt = Index
+    SeriesA = (
+        SeriesB
+    ) = (
+        SeriesBn
+    ) = (
+        SeriesC
+    ) = (
+        SeriesD
+    ) = (
+        SeriesDhk
+    ) = SeriesDutc = SeriesF = SeriesI = SeriesI64 = SeriesS = SeriesSt = Series
 
 
 Int64 = "Int64"

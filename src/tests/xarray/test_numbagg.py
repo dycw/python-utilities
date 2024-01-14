@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, integers, sampled_from
@@ -13,10 +12,8 @@ from utilities.hypothesis import (
     int_indexes,
     text_ascii,
 )
+from utilities.pandas import IndexA
 from utilities.xarray import ewma, exp_moving_sum
-
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import IndexA
 
 
 class TestEwma:

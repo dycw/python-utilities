@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Hashable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from hypothesis import assume
 from hypothesis.extra.pandas import indexes as _indexes
@@ -25,13 +25,13 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    IndexA,
+    IndexI,
+    IndexS,
     rename_index,
     sort_index,
     string,
 )
-
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import IndexA, IndexI, IndexS
 
 
 @composite

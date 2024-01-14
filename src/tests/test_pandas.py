@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, cast
+from contextlib import suppress
+from typing import Any, cast
 
+from beartype.door import die_if_unbearable
+from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import assume, given
 from numpy import array, nan
 from numpy.testing import assert_equal
@@ -33,8 +36,32 @@ from utilities.pandas import (
     CheckPandasDataFrameError,
     CheckRangeIndexError,
     EmptyPandasConcatError,
+    IndexA,
+    IndexB,
+    IndexBn,
+    IndexC,
+    IndexD,
+    IndexDhk,
+    IndexDutc,
+    IndexF,
+    IndexI,
+    IndexI64,
+    IndexS,
+    IndexSt,
     Int64,
+    SeriesA,
+    SeriesB,
+    SeriesBn,
+    SeriesC,
+    SeriesD,
+    SeriesDhk,
+    SeriesDutc,
+    SeriesF,
+    SeriesI,
+    SeriesI64,
     SeriesMinMaxError,
+    SeriesS,
+    SeriesSt,
     TimestampToDateTimeError,
     astype,
     boolean,
@@ -52,9 +79,6 @@ from utilities.pandas import (
     to_numpy,
 )
 
-if TYPE_CHECKING:  # pragma: no cover
-    from utilities.pandas import IndexI, SeriesA
-
 
 class TestAsType:
     def test_main(self) -> None:
@@ -62,6 +86,50 @@ class TestAsType:
         check_pandas_dataframe(df, dtypes={"value": int})
         result = astype(df, float)
         check_pandas_dataframe(result, dtypes={"value": float})
+
+
+class TestBeartype:
+    @mark.parametrize(
+        "hint",
+        [
+            param(IndexA),
+            param(IndexB),
+            param(IndexBn),
+            param(IndexC),
+            param(IndexD),
+            param(IndexDhk),
+            param(IndexDutc),
+            param(IndexF),
+            param(IndexI),
+            param(IndexI64),
+            param(IndexS),
+            param(IndexSt),
+        ],
+    )
+    def test_index(self, *, hint: Any) -> None:
+        with suppress(BeartypeDoorHintViolation):
+            die_if_unbearable(Index([]), hint)
+
+    @mark.parametrize(
+        "hint",
+        [
+            param(SeriesA),
+            param(SeriesB),
+            param(SeriesBn),
+            param(SeriesC),
+            param(SeriesD),
+            param(SeriesDhk),
+            param(SeriesDutc),
+            param(SeriesF),
+            param(SeriesI),
+            param(SeriesI64),
+            param(SeriesS),
+            param(SeriesSt),
+        ],
+    )
+    def test_series(self, *, hint: Any) -> None:
+        with suppress(BeartypeDoorHintViolation):
+            die_if_unbearable(Series([]), hint)
 
 
 class TestCheckIndex:
