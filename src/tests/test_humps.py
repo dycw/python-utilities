@@ -48,10 +48,16 @@ class TestSnakeCaseMappings:
 
     @given(text=text_ascii(min_size=1))
     def test_error_keys(self, *, text: str) -> None:
-        with raises(SnakeCaseMappingsError):
+        with raises(
+            SnakeCaseMappingsError,
+            match="Strings .* must not contain duplicates; got .*",
+        ):
             _ = snake_case_mappings([text, text])
 
     @given(text=text_ascii(min_size=1))
     def test_error_values(self, *, text: str) -> None:
-        with raises(SnakeCaseMappingsError):
+        with raises(
+            SnakeCaseMappingsError,
+            match="Snake-cased strings .* must not contain duplicates; got .*",
+        ):
             _ = snake_case_mappings([text.lower(), text.upper()])

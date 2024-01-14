@@ -48,7 +48,7 @@ dev = [
   "fpdf2 >= 2.7.7",
   "hatch >= 1.9.1",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.92.9",
+  "hypothesis >= 6.93.0",
   "luigi >= 3.4.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
@@ -93,7 +93,7 @@ fastapi = ["fastapi >= 0.109.0"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.16.0"]
 hatch = ["hatch >= 1.9.1"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.16.0"]
-hypothesis = ["hypothesis >= 6.92.9"]
+hypothesis = ["hypothesis >= 6.93.0"]
 luigi = ["luigi >= 3.4.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
