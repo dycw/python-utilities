@@ -36,7 +36,10 @@ class TestCheckPolarsDataFrame:
 
     def test_columns_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have columns .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, columns=["value"])
 
     def test_dtypes_pass(self) -> None:
@@ -45,7 +48,10 @@ class TestCheckPolarsDataFrame:
 
     def test_dtypes_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have dtypes .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, dtypes=[Float64])
 
     def test_height_pass(self) -> None:
@@ -54,7 +60,10 @@ class TestCheckPolarsDataFrame:
 
     def test_height_error(self) -> None:
         df = DataFrame({"value": [0.0]})
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the height requirements; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, height=2)
 
     def test_min_height_pass(self) -> None:
@@ -63,7 +72,10 @@ class TestCheckPolarsDataFrame:
 
     def test_min_height_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the height requirements; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, min_height=1)
 
     def test_max_height_pass(self) -> None:
@@ -72,17 +84,39 @@ class TestCheckPolarsDataFrame:
 
     def test_max_height_error(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the height requirements; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, max_height=1)
 
     def test_predicates_pass(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         check_polars_dataframe(df, predicates={"value": isfinite})
 
-    def test_predicates_error(self) -> None:
-        df = DataFrame({"value": [0.0, nan]})
-        with raises(CheckPolarsDataFrameError):
-            check_polars_dataframe(df, predicates={"value": isfinite})
+    def test_predicates_error_missing_columns_and_failed(self) -> None:
+        df = DataFrame({"a": [0.0, nan], "b": [0.0, nan]})
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the predicates; missing columns were .* and failed predicates were .*\n\n.*",
+        ):
+            check_polars_dataframe(df, predicates={"a": isfinite, "c": isfinite})
+
+    def test_predicates_error_missing_columns_only(self) -> None:
+        df = DataFrame()
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the predicates; missing columns were .*\n\n.*",
+        ):
+            check_polars_dataframe(df, predicates={"a": isfinite})
+
+    def test_predicates_error_failed_only(self) -> None:
+        df = DataFrame({"a": [0.0, nan]})
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must satisfy the predicates; failed predicates were .*\n\n.*",
+        ):
+            check_polars_dataframe(df, predicates={"a": isfinite})
 
     def test_schema_pass(self) -> None:
         df = DataFrame({"value": [0.0]})
@@ -90,7 +124,10 @@ class TestCheckPolarsDataFrame:
 
     def test_schema_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have schema .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, schema={"value": Float64})
 
     def test_schema_inc_pass(self) -> None:
@@ -99,7 +136,10 @@ class TestCheckPolarsDataFrame:
 
     def test_schema_inc_error(self) -> None:
         df = DataFrame({"foo": [0.0]})
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame schema must include .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, schema_inc={"bar": Float64})
 
     def test_shape_pass(self) -> None:
@@ -108,7 +148,10 @@ class TestCheckPolarsDataFrame:
 
     def test_shape_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have shape .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, shape=(1, 1))
 
     def test_sorted_pass(self) -> None:
@@ -117,7 +160,9 @@ class TestCheckPolarsDataFrame:
 
     def test_sorted_error(self) -> None:
         df = DataFrame({"value": [1.0, 0.0]})
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError, match="DataFrame must be sorted on .*\n\n.*"
+        ):
             check_polars_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
@@ -126,7 +171,9 @@ class TestCheckPolarsDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame({"value": [0.0, 0.0]})
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError, match="DataFrame must be unique on .*\n\n.*"
+        ):
             check_polars_dataframe(df, unique="value")
 
     def test_width_pass(self) -> None:
@@ -135,7 +182,10 @@ class TestCheckPolarsDataFrame:
 
     def test_width_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have width .*; got .*\n\n.*",
+        ):
             check_polars_dataframe(df, width=1)
 
 
