@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, TypeVar
+from typing import Any, Generic, TypeVar
 
 from more_itertools import always_iterable as _always_iterable
 from typing_extensions import override
@@ -35,12 +35,12 @@ def one(iterable: Iterable[_T], /) -> _T:
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class OneError(Exception):
-    iterable: Iterable[Any]
+class OneError(Exception, Generic[_T]):
+    iterable: Iterable[_T]
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class OneEmptyError(OneError):
+class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
         return "Iterable {} must contain exactly one item; it was empty".format(
@@ -49,9 +49,9 @@ class OneEmptyError(OneError):
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class OneNonUniqueError(OneError):
-    first: Any
-    second: Any
+class OneNonUniqueError(OneError[_T]):
+    first: _T
+    second: _T
 
     @override
     def __str__(self) -> str:

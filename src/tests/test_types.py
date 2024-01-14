@@ -65,15 +65,13 @@ class TestEnsureClass:
 
     def test_single_error(self) -> None:
         with raises(
-            EnsureClassError,
-            match="Object .* must be an instance of .*; got .* instead",
+            EnsureClassError, match="Object .* must be an instance of .*; got .*"
         ):
             _ = ensure_class(None, int)
 
     def test_multiple_error(self) -> None:
         with raises(
-            EnsureClassError,
-            match=r"Object .* must be an instance of .*, .*; got .* instead",
+            EnsureClassError, match="Object .* must be an instance of .*, .*; got .*"
         ):
             _ = ensure_class(None, (int, float))
 

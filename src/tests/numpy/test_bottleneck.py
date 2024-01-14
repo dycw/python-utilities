@@ -121,5 +121,5 @@ class TestPctChange:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(PctChangeError):
+        with raises(PctChangeError, match="Shift must be non-zero"):
             _ = pct_change(arr, n=0)

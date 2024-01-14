@@ -148,7 +148,9 @@ class TestGetTable:
         assert result is Example.__table__
 
     def test_error(self) -> None:
-        with raises(GetTableError):
+        with raises(
+            GetTableError, match="Object .* must be a Table or mapped class; got .*"
+        ):
             _ = get_table(type(None))
 
 

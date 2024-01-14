@@ -3,8 +3,13 @@ from __future__ import annotations
 from pytest import mark, param, raises
 
 from utilities.re import (
-    ExtractGroupError,
-    ExtractGroupsError,
+    _ExtractGroupMultipleCaptureGroupsError,
+    _ExtractGroupMultipleMatchesError,
+    _ExtractGroupNoCaptureGroupsError,
+    _ExtractGroupNoMatchesError,
+    _ExtractGroupsMultipleMatchesError,
+    _ExtractGroupsNoCaptureGroupsError,
+    _ExtractGroupsNoMatchesError,
     extract_group,
     extract_groups,
 )
@@ -16,16 +21,38 @@ class TestExtractGroup:
         assert extract_group(r"(\d)", "A0A") == "0"
 
     @mark.parametrize(
-        ("pattern", "text"),
+        ("pattern", "text", "error", "match"),
         [
-            param(r"\d", "0", id="no groups"),
-            param(r"(\d)(\w)", "0A", id="multiple groups"),
-            param(r"(\d)", "A", id="no matches"),
-            param(r"(\d)", "0A0", id="multiple matches"),
+            param(
+                r"\d",
+                "0",
+                _ExtractGroupNoCaptureGroupsError,
+                "Pattern .* must contain exactly one capture group; it had none",
+            ),
+            param(
+                r"(\d)(\w)",
+                "0A",
+                _ExtractGroupMultipleCaptureGroupsError,
+                "Pattern .* must contain exactly one capture group; it had multiple",
+            ),
+            param(
+                r"(\d)",
+                "A",
+                _ExtractGroupNoMatchesError,
+                "Pattern .* must match against .*",
+            ),
+            param(
+                r"(\d)",
+                "0A0",
+                _ExtractGroupMultipleMatchesError,
+                "Pattern .* must match against .* exactly once; matches were .*",
+            ),
         ],
     )
-    def test_errors(self, *, pattern: str, text: str) -> None:
-        with raises(ExtractGroupError):
+    def test_errors(
+        self, *, pattern: str, text: str, error: type[Exception], match: str
+    ) -> None:
+        with raises(error, match=match):
             _ = extract_group(pattern, text)
 
 
@@ -38,15 +65,42 @@ class TestExtractGroups:
         assert extract_groups(pattern, text) == expected
 
     @mark.parametrize(
-        ("pattern", "text"),
+        ("pattern", "text", "error", "match"),
         [
-            param(r"\d", "0", id="no groups"),
-            param(r"(\d)", "A", id="one group, no matches"),
-            param(r"(\d)", "0A0", id="one group, multiple matches"),
-            param(r"(\d)(\w)", "A0", id="multiple groups, no matches"),
-            param(r"(\d)(\w)", "0A0A", id="multiple groups, multiple matches"),
+            param(
+                r"\d",
+                "0",
+                _ExtractGroupsNoCaptureGroupsError,
+                "Pattern .* must contain at least one capture group",
+            ),
+            param(
+                r"(\d)",
+                "A",
+                _ExtractGroupsNoMatchesError,
+                "Pattern .* must match against .*",
+            ),
+            param(
+                r"(\d)",
+                "0A0",
+                _ExtractGroupsMultipleMatchesError,
+                r"Pattern .* must match against .* exactly once; matches were \[.*, .*\]",
+            ),
+            param(
+                r"(\d)(\w)",
+                "A0",
+                _ExtractGroupsNoMatchesError,
+                "Pattern .* must match against .*",
+            ),
+            param(
+                r"(\d)(\w)",
+                "0A0A",
+                _ExtractGroupsMultipleMatchesError,
+                r"Pattern .* must match against .* exactly once; matches were \[.*, .*\]",
+            ),
         ],
     )
-    def test_errors(self, *, pattern: str, text: str) -> None:
-        with raises(ExtractGroupsError):
+    def test_errors(
+        self, *, pattern: str, text: str, error: type[Exception], match: str
+    ) -> None:
+        with raises(error, match=match):
             _ = extract_groups(pattern, text)

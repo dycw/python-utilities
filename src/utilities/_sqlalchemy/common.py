@@ -10,6 +10,7 @@ from itertools import chain
 from math import floor
 from typing import Any, TypeGuard, cast
 
+import sqlalchemy
 from more_itertools import chunked
 from sqlalchemy import Column, Connection, Engine, Table, insert
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
@@ -20,11 +21,12 @@ from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper
 from sqlalchemy.orm.exc import UnmappedClassError
-from typing_extensions import assert_never
+from typing_extensions import assert_never, override
 
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.more_itertools import one
+from utilities.types import get_class_name
 
 CHUNK_SIZE_FRAC = 0.95
 
@@ -120,26 +122,40 @@ def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
         return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
         return Dialect.sqlite
-    msg = f"{dialect=}"  # pragma: no cover
-    raise GetDialectError(msg)  # pragma: no cover
+    raise GetDialectError(dialect=dialect)  # pragma: no cover
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class GetDialectError(Exception):
-    ...
+    dialect: sqlalchemy.Dialect
+
+    @override
+    def __str__(self) -> str:
+        return (  # pragma: no cover
+            "Dialect must be one of MS SQL, MySQL, Oracle, PostgreSQL or SQLite; got {} instead".format(
+                self.dialect
+            )
+        )
 
 
-def get_table(table_or_mapped_class: Table | type[Any], /) -> Table:
+def get_table(obj: Table | type[Any], /) -> Table:
     """Get the table from a Table or mapped class."""
-    if isinstance(table_or_mapped_class, Table):
-        return table_or_mapped_class
-    if is_mapped_class(table_or_mapped_class):
-        return cast(Any, table_or_mapped_class).__table__
-    msg = f"{table_or_mapped_class=}"
-    raise GetTableError(msg)
+    if isinstance(obj, Table):
+        return obj
+    if is_mapped_class(obj):
+        return cast(Any, obj).__table__
+    raise GetTableError(obj=obj)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class GetTableError(Exception):
-    ...
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must be a Table or mapped class; got {!r}".format(
+            self.obj, get_class_name(self.obj)
+        )
 
 
 def insert_items(

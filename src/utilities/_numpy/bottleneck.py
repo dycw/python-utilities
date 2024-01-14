@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 
 from bottleneck import push
 from numpy import errstate, flip, isfinite, nan, where
+from typing_extensions import override
 
 from utilities._numpy.common import NDArrayF, NDArrayI, shift
 
@@ -23,8 +25,7 @@ def pct_change(
 ) -> NDArrayF:
     """Compute the percentage change in an array."""
     if n == 0:
-        msg = f"{n=}"
-        raise PctChangeError(msg)
+        raise PctChangeError
     if n > 0:
         filled = ffill(array.astype(float), limit=limit, axis=axis)
         shifted = shift(filled, n=n, axis=axis)
@@ -36,8 +37,11 @@ def pct_change(
     return flip(result, axis=axis)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class PctChangeError(Exception):
-    ...
+    @override
+    def __str__(self) -> str:
+        return "Shift must be non-zero"
 
 
 __all__ = ["PctChangeError", "ffill", "pct_change"]
