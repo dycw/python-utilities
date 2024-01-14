@@ -300,6 +300,46 @@ class CheckSetsEqualError(Exception):
             yield "right had extra items {}".format(self.right_extra)
 
 
+def check_subset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
+    """Check that a set is a subset of another set."""
+    extra = left - right
+    if len(extra) >= 1:
+        raise CheckSubsetError(left=left, right=right, extra=extra)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckSubsetError(Exception):
+    left: AbstractSet[Any]
+    right: AbstractSet[Any]
+    extra: AbstractSet[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "Set {} must be a subset of {}; left had extra items {}".format(
+            self.left, self.right, self.extra
+        )
+
+
+def check_superset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
+    """Check that a set is a superset of another set."""
+    extra = right - left
+    if len(extra) >= 1:
+        raise CheckSupersetError(left=left, right=right, extra=extra)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CheckSupersetError(Exception):
+    left: AbstractSet[Any]
+    right: AbstractSet[Any]
+    extra: AbstractSet[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "Set {} must be a superset of {}; right had extra items {}".format(
+            self.left, self.right, self.extra
+        )
+
+
 def ensure_hashables(
     *args: Any, **kwargs: Any
 ) -> tuple[list[Hashable], dict[str, Hashable]]:
@@ -324,11 +364,15 @@ __all__ = [
     "CheckLengthsEqualError",
     "CheckMappingsEqualError",
     "CheckSetsEqualError",
+    "CheckSubsetError",
+    "CheckSupersetError",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
     "check_mappings_equal",
     "check_sets_equal",
+    "check_subset",
+    "check_superset",
     "ensure_hashables",
     "is_iterable_not_str",
 ]

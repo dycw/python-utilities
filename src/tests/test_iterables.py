@@ -13,12 +13,16 @@ from utilities.iterables import (
     CheckLengthsEqualError,
     CheckMappingsEqualError,
     CheckSetsEqualError,
+    CheckSubsetError,
+    CheckSupersetError,
     check_duplicates,
     check_iterables_equal,
     check_length,
     check_lengths_equal,
     check_mappings_equal,
     check_sets_equal,
+    check_subset,
+    check_superset,
     ensure_hashables,
     is_iterable_not_str,
 )
@@ -216,6 +220,30 @@ class TestCheckSetsEqual:
             match="Sets .* and .* must be equal; right had extra items .*",
         ):
             check_sets_equal(set(), {1, 2, 3})
+
+
+class TestCheckSubset:
+    def test_pass(self) -> None:
+        check_subset(set(), set())
+
+    def test_error(self) -> None:
+        with raises(
+            CheckSubsetError,
+            match="Set .* must be a subset of .*; left had extra items .*",
+        ):
+            check_subset({1, 2, 3}, {1})
+
+
+class TestCheckSuperset:
+    def test_pass(self) -> None:
+        check_superset(set(), set())
+
+    def test_error(self) -> None:
+        with raises(
+            CheckSupersetError,
+            match="Set .* must be a superset of .*; right had extra items .*",
+        ):
+            check_superset({1}, {1, 2, 3})
 
 
 class TestEnsureHashables:
