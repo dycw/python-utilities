@@ -48,8 +48,8 @@ dev = [
   "fpdf2 >= 2.7.7",
   "hatch >= 1.9.1",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.93.0",
-  "luigi >= 3.4.0",
+  "hypothesis >= 6.94.0",
+  "luigi >= 3.5.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
   "numbagg >= 0.6.8",
@@ -93,8 +93,8 @@ fastapi = ["fastapi >= 0.109.0"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.16.0"]
 hatch = ["hatch >= 1.9.1"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.16.0"]
-hypothesis = ["hypothesis >= 6.93.0"]
-luigi = ["luigi >= 3.4.0"]
+hypothesis = ["hypothesis >= 6.94.0"]
+luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 numbagg = ["numbagg >= 0.6.8"]
@@ -111,7 +111,7 @@ pytest-check = ["pytest-check >= 2.2.4"]
 scipy = ["scipy >= 1.11.4"]
 scripts-csv-to-markdown = ["mdutils >= 1.6.0"]
 scripts-generate-snippets = ["ast-comments >= 1.2.1"]
-scripts-luigi = ["luigi >= 3.4.0"]
+scripts-luigi = ["luigi >= 3.5.0"]
 scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.16.0"]
 sqlalchemy = ["sqlalchemy >= 2.0.25"]

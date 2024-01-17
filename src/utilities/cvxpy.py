@@ -7,8 +7,10 @@ import numpy as np
 import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
+from pandas import DataFrame, Series
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_zero
+from utilities.pandas import SeriesF
 
 
 @overload
@@ -22,13 +24,25 @@ def abs_(x: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def abs_(x: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def abs_(x: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
 def abs_(x: Expression, /) -> Expression:
     ...
 
 
-def abs_(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def abs_(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the absolute value."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray | Series | DataFrame):
         return np.abs(x)
     return cvxpy.abs(x)
 
@@ -82,7 +96,7 @@ def add(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the sum of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.add(x, y)
     return cast(Any, x) + cast(Any, y)
 
@@ -136,13 +150,13 @@ def divide(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the quotient of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.divide(x, y)
     return cast(Any, x) / cast(Any, y)
 
 
 @overload
-def max_(x: float | NDArrayF, /) -> float:
+def max_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float:
     ...
 
 
@@ -151,10 +165,14 @@ def max_(x: Expression, /) -> Expression:
     ...
 
 
-def max_(x: float | NDArrayF | Expression, /) -> float | Expression:
+def max_(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | Expression:
     """Compute the maximum of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray):
         return np.max(x)
+    if isinstance(x, Series | DataFrame):
+        return max_(x.to_numpy())
     return cvxpy.max(x)
 
 
@@ -207,13 +225,13 @@ def maximum(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the maximum of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.maximum(x, y)
     return cvxpy.maximum(x, y)
 
 
 @overload
-def min_(x: float | NDArrayF, /) -> float:
+def min_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float:
     ...
 
 
@@ -222,10 +240,14 @@ def min_(x: Expression, /) -> Expression:
     ...
 
 
-def min_(x: float | NDArrayF | Expression, /) -> float | Expression:
+def min_(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | Expression:
     """Compute the minimum of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray):
         return np.min(x)
+    if isinstance(x, Series | DataFrame):
+        return min_(x.to_numpy())
     return cvxpy.min(x)
 
 
@@ -278,7 +300,7 @@ def minimum(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the minimum of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.minimum(x, y)
     return cvxpy.minimum(x, y)
 
@@ -290,6 +312,16 @@ def multiply(x: float, y: float, /) -> float:
 
 @overload
 def multiply(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def multiply(x: SeriesF, y: float, /) -> SeriesF:
+    ...
+
+
+@overload
+def multiply(x: DataFrame, y: float, /) -> DataFrame:
     ...
 
 
@@ -309,7 +341,57 @@ def multiply(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def multiply(x: SeriesF, y: NDArrayF, /) -> SeriesF:
+    ...
+
+
+@overload
+def multiply(x: DataFrame, y: NDArrayF, /) -> DataFrame:
+    ...
+
+
+@overload
 def multiply(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def multiply(x: float, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def multiply(x: NDArrayF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def multiply(x: SeriesF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def multiply(x: Expression, y: SeriesF, /) -> Expression:
+    ...
+
+
+@overload
+def multiply(x: float, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def multiply(x: NDArrayF, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def multiply(x: DataFrame, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def multiply(x: Expression, y: DataFrame, /) -> Expression:
     ...
 
 
@@ -324,17 +406,40 @@ def multiply(x: NDArrayF, y: Expression, /) -> Expression:
 
 
 @overload
+def multiply(x: SeriesF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def multiply(x: DataFrame, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
 def multiply(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
 def multiply(
-    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
-) -> float | NDArrayF | Expression:
-    """Compute the product of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    x: float | NDArrayF | SeriesF | DataFrame | Expression,
+    y: float | NDArrayF | SeriesF | DataFrame | Expression,
+    /,
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
+    """Compute the elementwise product of two quantities."""
+    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
+        isinstance(x, DataFrame) and isinstance(y, Series)
+    ):
+        msg = "Cannot multiply a Series and DataFrame"
+        raise MultiplyError(msg)
+    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+        y, int | float | ndarray | Series | DataFrame
+    ):
         return np.multiply(x, y)
     return cvxpy.multiply(x, y)
+
+
+class MultiplyError(Exception):
+    ...
 
 
 @overload
@@ -348,11 +453,23 @@ def negate(x: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def negate(x: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def negate(x: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
 def negate(x: Expression, /) -> Expression:
     ...
 
 
-def negate(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def negate(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Negate a quantity."""
     return -x
 
@@ -374,14 +491,14 @@ def negative(x: Expression, /) -> Expression:
 
 def negative(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the negative parts of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray):
         result = -minimum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.neg(x)
 
 
 @overload
-def norm(x: NDArrayF1, /) -> float:
+def norm(x: NDArrayF1 | SeriesF, /) -> float:
     ...
 
 
@@ -390,10 +507,12 @@ def norm(x: Expression, /) -> Expression:
     ...
 
 
-def norm(x: NDArrayF1 | Expression, /) -> float | Expression:
-    """Compute the negative parts of a quantity."""
+def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
+    """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
         return cast(float, numpy.linalg.norm(x))
+    if isinstance(x, Series):
+        return norm(x.to_numpy())
     return cvxpy.norm(x)
 
 
@@ -414,7 +533,7 @@ def positive(x: Expression, /) -> Expression:
 
 def positive(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
     """Compute the positive parts of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray):
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
     return cvxpy.pos(x)
@@ -454,7 +573,7 @@ def power(
     x: float | NDArrayF | Expression, p: float | NDArrayF, /
 ) -> float | NDArrayF | Expression:
     """Compute the power of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray):
         return np.power(x, p)
     return cvxpy.power(x, p)
 
@@ -478,6 +597,13 @@ def quad_form(
     if isinstance(x, ndarray):
         return cast(float, x.T @ P @ x)
     return cvxpy.quad_form(x, P)
+
+
+def scalar_product(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, y: float | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
+    """Compute the scalar product of two quantities."""
+    return sum_(multiply(x, y))
 
 
 def solve(
@@ -553,13 +679,25 @@ def sqrt(x: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def sqrt(x: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def sqrt(x: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
 def sqrt(x: Expression, /) -> Expression:
     ...
 
 
-def sqrt(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def sqrt(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the square root of a quantity."""
-    if isinstance(x, float | ndarray):
+    if isinstance(x, int | float | ndarray | Series | DataFrame):
         return np.sqrt(x)
     return cvxpy.sqrt(x)
 
@@ -613,13 +751,13 @@ def subtract(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
     """Compute the difference of two quantities."""
-    if isinstance(x, float | ndarray) and isinstance(y, float | ndarray):
+    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
         return np.subtract(x, y)
     return cast(Any, x) - cast(Any, y)
 
 
 @overload
-def sum_(x: float | NDArrayF, /) -> float:
+def sum_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float:
     ...
 
 
@@ -628,12 +766,16 @@ def sum_(x: Expression, /) -> Expression:
     ...
 
 
-def sum_(x: float | NDArrayF | Expression, /) -> float | Expression:
+def sum_(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | Expression:
     """Compute the sum of a quantity."""
-    if isinstance(x, float):
+    if isinstance(x, int | float):
         return x
     if isinstance(x, ndarray):
-        return float(np.sum(x))
+        return float(np.sum(x, axis=0))
+    if isinstance(x, Series | DataFrame):
+        return sum_(x.to_numpy())
     return cvxpy.sum(x)
 
 
@@ -647,6 +789,7 @@ __all__ = [
     "max_",
     "maximum",
     "min_",
+    "minimum",
     "multiply",
     "negate",
     "negative",
@@ -654,6 +797,7 @@ __all__ = [
     "positive",
     "power",
     "quad_form",
+    "scalar_product",
     "solve",
     "sqrt",
     "subtract",
