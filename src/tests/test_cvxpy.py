@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import cache
 from typing import Any, cast
 
 import cvxpy
@@ -14,6 +13,7 @@ from pytest import mark, param, raises
 
 from utilities.cvxpy import (
     MultiplyError,
+    ScalarProductError,
     SolveInfeasibleError,
     SolveUnboundedError,
     abs_,
@@ -35,24 +35,25 @@ from utilities.cvxpy import (
     sqrt,
     subtract,
     sum_,
+    sum_axis0,
+    sum_axis1,
 )
 from utilities.numpy import NDArrayF
 from utilities.pandas import SeriesF
 
 
-@cache
 def _get_variable(
     objective: type[Maximize] | type[Minimize],  # noqa: PYI055
     /,
     *,
-    array: bool = False,
+    shape: tuple[int, ...] | None = None,
 ) -> Variable:
-    if array:
-        var = Variable(2)
-        scalar = cvxpy.sum(var)
-    else:
+    if shape is None:
         var = Variable()
         scalar = var
+    else:
+        var = Variable(shape=shape)
+        scalar = cvxpy.sum(var)
     threshold = 10.0
     problem = Problem(
         objective(scalar), [cast(Any, var) >= -threshold, cast(Any, var) <= threshold]
@@ -128,8 +129,8 @@ class TestAdd:
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
-        assert isclose(add(x, var).value, add(x, var.value))
-        assert isclose(add(var, x).value, add(var.value, x))
+        assert isclose(add(x, var).value, add(x, var.value))  # type: ignore
+        assert isclose(add(var, x).value, add(var.value, x))  # type: ignore
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
@@ -262,7 +263,7 @@ class TestMin:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
-        var = _get_variable(objective, array=True)
+        var = _get_variable(objective, shape=(2,))
         assert isclose(min_(var).value, min_(var.value))
 
 
@@ -321,20 +322,16 @@ class TestMultiply:
         assert_frame_equal(res, expected)
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @mark.parametrize("array1", [param(True), param(False)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
-    @mark.parametrize("array2", [param(True), param(False)])
     def test_two_expressions(
         self,
         *,
         objective1: type[Maximize | Minimize],
-        array1: bool,
         objective2: type[Maximize | Minimize],
-        array2: bool,
     ) -> None:
-        var1 = _get_variable(objective1, array=array1)
-        var2 = _get_variable(objective2, array=array2)
-        assert_equal(multiply(var1, var2).value, multiply(var1.value, var2.value))
+        var1 = _get_variable(objective1)
+        var2 = _get_variable(objective2)
+        assert isclose(multiply(var1, var2).value, multiply(var1.value, var2.value))
 
     def test_float_and_array(self) -> None:
         x, y, expected = 2.0, array([3.0]), array([6.0])
@@ -352,11 +349,11 @@ class TestMultiply:
         assert_frame_equal(multiply(y, x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    @mark.parametrize("array", [param(True), param(False)])
+    @mark.parametrize("shape", [param(None), param((2, 2))])
     def test_float_and_expr(
-        self, *, objective: type[Maximize | Minimize], array: bool
+        self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...] | None
     ) -> None:
-        x, y = 2.0, _get_variable(objective, array=array)
+        x, y = 2.0, _get_variable(objective, shape=shape)
         assert_equal(multiply(x, y).value, multiply(x, y.value))
         assert_equal(multiply(y, x).value, multiply(y.value, x))
 
@@ -478,8 +475,11 @@ class TestNorm:
         assert isclose(norm(x), np.sqrt(13))
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_expression(self, *, objective: type[Maximize] | type[Minimize]) -> None:  # noqa: PYI055
-        var = _get_variable(objective, array=True)
+    @mark.parametrize("shape", [param((2,)), param((2, 2))])
+    def test_expression(
+        self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...]
+    ) -> None:
+        var = _get_variable(objective, shape=shape)
         assert isclose(norm(var).value, norm(var.value))
 
 
@@ -536,25 +536,76 @@ class TestQuadForm:
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
-        var = _get_variable(objective, array=True)
+        var = _get_variable(objective, shape=(2,))
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
         assert_equal(quad_form(var, P).value, quad_form(var.value, P))
 
 
 class TestScalarProduct:
     @mark.parametrize(
-        ("x", "y", "expected"),
+        "x",
         [
-            param(1.0, 2.0, 2.0),
-            param(1.0, array([2.0]), 2.0),
-            param(array([1.0]), 2.0, 2.0),
-            param(array([1.0]), array([2.0]), 2.0),
+            param(2.0),
+            param(array([2.0])),
+            param(Series([2.0])),
+            param(DataFrame([2.0])),
         ],
     )
-    def test_float_and_array(
-        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
+    @mark.parametrize(
+        "y",
+        [
+            param(3.0),
+            param(array([3.0])),
+            param(Series([3.0])),
+            param(DataFrame([3.0])),
+        ],
+    )
+    def test_two_floats_arrays_and_ndframes(
+        self,
+        *,
+        x: float | NDArrayF | SeriesF | DataFrame,
+        y: float | NDArrayF | SeriesF | DataFrame,
     ) -> None:
-        assert_equal(scalar_product(x, y), expected)
+        if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
+            isinstance(x, DataFrame) and isinstance(y, Series)
+        ):
+            with raises(ScalarProductError):
+                _ = scalar_product(cast(Any, x), cast(Any, y))
+            with raises(ScalarProductError):
+                _ = scalar_product(cast(Any, y), cast(Any, x))
+        else:
+            assert isclose(scalar_product(cast(Any, y), cast(Any, x)), 6.0)
+            assert isclose(scalar_product(cast(Any, x), cast(Any, y)), 6.0)
+
+    @mark.parametrize(
+        ("x", "shape"),
+        [
+            param(2.0, None),
+            param(2.0, (2,)),
+            param(2.0, (2, 2)),
+            param(array([2.0]), None),
+            param(array([2.0]), (1,)),
+            param(array([2.0]), (2,)),
+            param(array([2.0]), (1, 2)),
+            param(array([2.0]), (2, 2)),
+            param(Series([2.0]), None),
+            param(Series([2.0]), (1,)),
+            param(DataFrame([2.0]), None),
+            param(DataFrame([2.0]), (1,)),
+            param(DataFrame([2.0]), (1, 1)),
+        ],
+    )
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_one_float_array_and_ndframe_and_one_expression(
+        self,
+        *,
+        x: float | NDArrayF,
+        objective: type[Maximize | Minimize],
+        shape: tuple[int, ...] | None,
+    ) -> None:
+        y = _get_variable(objective, shape=shape)
+        assert isclose(scalar_product(x, y).value, scalar_product(x, y.value))
+        assert isclose(scalar_product(y, x).value, scalar_product(y.value, x))
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
@@ -564,9 +615,9 @@ class TestScalarProduct:
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
-        var1 = _get_variable(objective1, array=True)
-        var2 = _get_variable(objective2, array=True)
-        assert_equal(
+        var1 = _get_variable(objective1)
+        var2 = _get_variable(objective2)
+        assert isclose(
             scalar_product(var1, var2).value, scalar_product(var1.value, var2.value)
         )
 
@@ -678,6 +729,9 @@ class TestSum:
             param(array([0.0]), 0.0),
             param(array([1.0]), 1.0),
             param(array([-1.0]), -1.0),
+            param(array([[0.0, 0.0]]), 0.0),
+            param(array([[1.0, 1.0]]), 2.0),
+            param(array([[-1.0, -1.0]]), -2.0),
             param(Series([0.0]), 0.0),
             param(Series([1.0]), 1.0),
             param(Series([-1.0]), -1.0),
@@ -689,8 +743,25 @@ class TestSum:
     def test_float_array_and_ndframe(
         self, *, x: float | NDArrayF | SeriesF | DataFrame, expected: float
     ) -> None:
-        assert_equal(sum_(x), expected)
+        assert isclose(sum_(x), expected)
 
     def test_expression(self) -> None:
         var = _get_variable(Maximize)
         assert_equal(sum_(var).value, sum_(var.value))
+
+
+class TestSum0And1:
+    def test_array(self) -> None:
+        x = array([[1.0, 2.0], [3.0, 4.0]])
+        assert_equal(sum_axis0(x), array([4.0, 6.0]))
+        assert_equal(sum_axis1(x), array([3.0, 7.0]))
+
+    def test_dataframe(self) -> None:
+        x = DataFrame([[1.0, 2.0], [3.0, 4.0]])
+        assert_series_equal(sum_axis0(x), Series([4.0, 6.0]))
+        assert_series_equal(sum_axis1(x), Series([3.0, 7.0]))
+
+    def test_expression(self) -> None:
+        var = _get_variable(Maximize, shape=(2, 2))
+        assert_equal(sum_axis0(var).value, sum_axis0(var.value))
+        assert_equal(sum_axis1(var).value, sum_axis1(var.value))
