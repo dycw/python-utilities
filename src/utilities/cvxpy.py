@@ -599,11 +599,137 @@ def quad_form(
     return cvxpy.quad_form(x, P)
 
 
+@overload
+def scalar_product(x: float, y: float, /) -> float:
+    ...
+
+
+@overload
+def scalar_product(x: NDArrayF, y: float, /) -> NDArrayF:
+    ...
+
+
+@overload
+def scalar_product(x: SeriesF, y: float, /) -> SeriesF:
+    ...
+
+
+@overload
+def scalar_product(x: DataFrame, y: float, /) -> DataFrame:
+    ...
+
+
+@overload
+def scalar_product(x: Expression, y: float, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: float, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def scalar_product(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
+    ...
+
+
+@overload
+def scalar_product(x: SeriesF, y: NDArrayF, /) -> SeriesF:
+    ...
+
+
+@overload
+def scalar_product(x: DataFrame, y: NDArrayF, /) -> DataFrame:
+    ...
+
+
+@overload
+def scalar_product(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: float, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def scalar_product(x: NDArrayF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def scalar_product(x: SeriesF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def scalar_product(x: Expression, y: SeriesF, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: float, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def scalar_product(x: NDArrayF, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def scalar_product(x: DataFrame, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def scalar_product(x: Expression, y: DataFrame, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: float, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: NDArrayF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: SeriesF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: DataFrame, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def scalar_product(x: Expression, y: Expression, /) -> Expression:
+    ...
+
+
 def scalar_product(
-    x: float | NDArrayF | SeriesF | DataFrame | Expression, y: float | Expression, /
+    x: float | NDArrayF | SeriesF | DataFrame | Expression,
+    y: float | NDArrayF | SeriesF | DataFrame | Expression,
+    /,
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the scalar product of two quantities."""
-    return sum_(multiply(x, y))
+    try:
+        prod = multiply(cast(Any, x), cast(Any, y))
+    except MultiplyError:
+        msg = "Cannot multiply a Series and DataFrame"
+        raise ScalarProductError(msg) from None
+    return sum_(prod)
+
+
+class ScalarProductError(Exception):
+    ...
 
 
 def solve(
@@ -773,13 +899,67 @@ def sum_(
     if isinstance(x, int | float):
         return x
     if isinstance(x, ndarray):
-        return float(np.sum(x, axis=0))
+        return np.sum(x).item()
     if isinstance(x, Series | DataFrame):
         return sum_(x.to_numpy())
     return cvxpy.sum(x)
 
 
+@overload
+def sum_axis0(x: NDArrayF2, /) -> NDArrayF1:
+    ...
+
+
+@overload
+def sum_axis0(x: DataFrame, /) -> SeriesF:
+    ...
+
+
+@overload
+def sum_axis0(x: Expression, /) -> Expression:
+    ...
+
+
+def sum_axis0(
+    x: NDArrayF2 | DataFrame | Expression, /
+) -> NDArrayF1 | SeriesF | Expression:
+    """Compute the sum along axis 0 of a quantity."""
+    return _sum_axis_0_or_1(x, 0)
+
+
+@overload
+def sum_axis1(x: NDArrayF2, /) -> NDArrayF1:
+    ...
+
+
+@overload
+def sum_axis1(x: DataFrame, /) -> SeriesF:
+    ...
+
+
+@overload
+def sum_axis1(x: Expression, /) -> Expression:
+    ...
+
+
+def sum_axis1(
+    x: NDArrayF2 | DataFrame | Expression, /
+) -> NDArrayF1 | SeriesF | Expression:
+    """Compute the sum along axis 1 of a quantity."""
+    return _sum_axis_0_or_1(x, 1)
+
+
+def _sum_axis_0_or_1(
+    x: NDArrayF2 | DataFrame | Expression, axis: Literal[0, 1], /
+) -> NDArrayF1 | SeriesF | Expression:
+    if isinstance(x, ndarray | DataFrame):
+        return np.sum(x, axis=axis)
+    return cast(Expression, cvxpy.sum(x, axis=axis))
+
+
 __all__ = [
+    "MultiplyError",
+    "ScalarProductError",
     "SolveError",
     "SolveInfeasibleError",
     "SolveUnboundedError",
@@ -802,4 +982,6 @@ __all__ = [
     "sqrt",
     "subtract",
     "sum_",
+    "sum_axis0",
+    "sum_axis1",
 ]
