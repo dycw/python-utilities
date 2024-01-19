@@ -21,6 +21,7 @@ from utilities.types import (
     ensure_hashable,
     get_class,
     get_class_name,
+    if_not_none,
     is_hashable,
     is_sized_not_str,
     issubclass_except_bool_int,
@@ -84,6 +85,16 @@ class TestEnsureHashable:
     def test_error(self) -> None:
         with raises(EnsureHashableError, match="Object .* must be hashable"):
             _ = ensure_hashable([1, 2, 3])
+
+
+class TestIfNotNull:
+    def test_uses_first(self) -> None:
+        result = if_not_none(0, "0")
+        assert result == 0
+
+    def test_uses_second(self) -> None:
+        result = if_not_none(None, 0)
+        assert result == 0
 
 
 class TestIsHashable:
