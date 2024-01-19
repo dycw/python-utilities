@@ -140,42 +140,50 @@ class TestCheckIndex:
         check_index(RangeIndex(1), length=1)
 
     def test_length_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(
+            CheckIndexError, match=r"Index .* must satisfy the length requirements\."
+        ):
             check_index(RangeIndex(1), length=2)
 
     def test_min_length_pass(self) -> None:
         check_index(RangeIndex(2), min_length=1)
 
     def test_min_length_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(
+            CheckIndexError, match=r"Index .* must satisfy the length requirements\."
+        ):
             check_index(RangeIndex(0), min_length=1)
 
     def test_max_length_pass(self) -> None:
         check_index(RangeIndex(0), max_length=1)
 
     def test_max_length_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(
+            CheckIndexError, match=r"Index .* must satisfy the length requirements\."
+        ):
             check_index(RangeIndex(2), max_length=1)
 
     def test_name_pass(self) -> None:
         check_index(RangeIndex(0), name=None)
 
     def test_name_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(
+            CheckIndexError, match=r"Index .* must satisfy the name requirement\."
+        ):
             check_index(RangeIndex(0), name="name")
 
     def test_sorted_pass(self) -> None:
         check_index(Index(["A", "B"]), sorted=True)
 
     def test_sorted_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(CheckIndexError, match=r"Index .* must be sorted\."):
             check_index(Index(["B", "A"]), sorted=True)
 
     def test_unique_pass(self) -> None:
         check_index(Index(["A", "B"]), unique=True)
 
     def test_unique_error(self) -> None:
-        with raises(CheckIndexError):
+        with raises(CheckIndexError, match=r"Index .* must be unique\."):
             check_index(Index(["A", "A"]), unique=True)
 
 

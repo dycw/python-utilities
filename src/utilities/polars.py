@@ -239,8 +239,8 @@ def _check_polars_dataframe_sorted(
     df_sorted = df.sort(by_use)
     try:
         assert_frame_equal(df, df_sorted)
-    except AssertionError:
-        raise _CheckPolarsDataFrameSortedError(df=df, by=by_use) from None
+    except AssertionError as error:
+        raise _CheckPolarsDataFrameSortedError(df=df, by=by_use) from error
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
