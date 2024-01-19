@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Hashable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import partial, reduce
 from itertools import permutations
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
@@ -23,9 +24,11 @@ from pandas import (
     Timestamp,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
+from typing_extensions import override
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
+from utilities.functions import CheckNameError, check_name
 from utilities.iterables import CheckLengthError, check_length
 from utilities.numpy import NDArray1, dt64ns, has_dtype
 from utilities.sentinel import Sentinel, sentinel
@@ -108,32 +111,80 @@ def check_index(
     unique: bool = False,
 ) -> None:
     """Check the properties of an Index."""
-    if length is not None:
-        with redirect_error(CheckLengthError, CheckIndexError(f"{index=}, {length=}")):
-            check_length(index, equal_or_approx=length)
-    if min_length is not None:
-        with redirect_error(
-            CheckLengthError, CheckIndexError(f"{index=}, {min_length=}")
-        ):
-            check_length(index, min=min_length)
-    if max_length is not None:
-        with redirect_error(
-            CheckLengthError, CheckIndexError(f"{index=}, {max_length=}")
-        ):
-            check_length(index, max=max_length)
-    if (not isinstance(name, Sentinel)) and (index.name != name):
-        msg = f"{index=}, {name=}"
-        raise CheckIndexError(msg)
+    _check_index_length(index, equal_or_approx=length, min=min_length, max=max_length)
+    _check_index_name(index, name)
     if sorted:
-        with redirect_error(AssertionError, CheckIndexError(f"{index=}")):
-            assert_index_equal(index, index.sort_values())
-    if unique and index.has_duplicates:
-        msg = f"{index=}"
-        raise CheckIndexError(msg)
+        _check_index_sorted(index)
+    if unique:
+        _check_index_unique(index)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CheckIndexError(Exception):
-    ...
+    index: IndexA
+
+
+def _check_index_length(
+    index: IndexA,
+    /,
+    *,
+    equal_or_approx: int | tuple[int, float] | None = None,
+    min: int | None = None,  # noqa: A002
+    max: int | None = None,  # noqa: A002
+) -> None:
+    try:
+        check_length(index, equal_or_approx=equal_or_approx, min=min, max=max)
+    except CheckLengthError as error:
+        raise _CheckIndexLengthError(index=index) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIndexLengthError(CheckIndexError):
+    @override
+    def __str__(self) -> str:
+        return "Index {} must satisfy the length requirements.".format(self.index)
+
+
+def _check_index_name(index: IndexA, name: Any, /) -> None:
+    if not isinstance(name, Sentinel):
+        try:
+            check_name(index, name)
+        except CheckNameError as error:
+            raise _CheckIndexNameError(index=index) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIndexNameError(CheckIndexError):
+    @override
+    def __str__(self) -> str:
+        return "Index {} must satisfy the name requirement.".format(self.index)
+
+
+def _check_index_sorted(index: IndexA, /) -> None:
+    as_sorted = index.sort_values()
+    try:
+        assert_index_equal(index, as_sorted)
+    except AssertionError as error:
+        raise _CheckIndexSortedError(index=index) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIndexSortedError(CheckIndexError):
+    @override
+    def __str__(self) -> str:
+        return "Index {} must be sorted.".format(self.index)
+
+
+def _check_index_unique(index: IndexA, /) -> None:
+    if index.has_duplicates:
+        raise _CheckIndexUniqueError(index=index)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckIndexUniqueError(CheckIndexError):
+    @override
+    def __str__(self) -> str:
+        return "Index {} must be unique.".format(self.index)
 
 
 def check_pandas_dataframe(

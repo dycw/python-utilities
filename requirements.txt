@@ -28,7 +28,7 @@ semver==3.0.2
     # via dycw-utilities (pyproject.toml)
 tqdm==4.66.1
     # via dycw-utilities (pyproject.toml)
-typed-settings==23.1.1
+typed-settings==24.0.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.9.0
     # via dycw-utilities (pyproject.toml)
