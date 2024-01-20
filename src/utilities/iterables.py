@@ -40,7 +40,7 @@ class CheckDuplicatesError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Iterable {} must not contain duplicates; got {}".format(
+        return "Iterable {} must not contain duplicates; got {}.".format(
             self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
         )
 
@@ -96,7 +96,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 desc = "{} and {}".format(first, second)
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Iterables {} and {} must be equal; {}".format(
+        return "Iterables {} and {} must be equal; {}.".format(
             self.left, self.right, desc
         )
 
@@ -153,7 +153,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have length {}; got {}".format(
+        return "Object {} must have length {}; got {}.".format(
             self.obj, self.equal, len(self.obj)
         )
 
@@ -169,7 +169,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
                 desc = "approximate length {} (error {:%})".format(target, error)
             case target:
                 desc = "length {}".format(target)
-        return "Object {} must have {}; got {}".format(self.obj, desc, len(self.obj))
+        return "Object {} must have {}; got {}.".format(self.obj, desc, len(self.obj))
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -178,7 +178,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have minimum length {}; got {}".format(
+        return "Object {} must have minimum length {}; got {}.".format(
             self.obj, self.min_, len(self.obj)
         )
 
@@ -189,7 +189,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have maximum length {}; got {}".format(
+        return "Object {} must have maximum length {}; got {}.".format(
             self.obj, self.max_, len(self.obj)
         )
 
@@ -208,7 +208,7 @@ class CheckLengthsEqualError(Exception):
     @override
     def __str__(self) -> str:
         return (
-            "Sized objects {} and {} must have the same length; got {} and {}".format(
+            "Sized objects {} and {} must have the same length; got {} and {}.".format(
                 self.left, self.right, len(self.left), len(self.right)
             )
         )
@@ -257,7 +257,7 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
                 desc = "{}, {} and {}".format(first, second, third)
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mappings {} and {} must be equal; {}".format(
+        return "Mappings {} and {} must be equal; {}.".format(
             self.left, self.right, desc
         )
 
@@ -273,13 +273,18 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
             yield "differing values were {}".format(", ".join(error_descs))
 
 
-def check_sets_equal(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
+def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of sets are equal."""
-    left_extra = left - right
-    right_extra = right - left
+    left_as_set = set(left)
+    right_as_set = set(right)
+    left_extra = left_as_set - right_as_set
+    right_extra = right_as_set - left_as_set
     if (len(left_extra) >= 1) or (len(right_extra) >= 1):
         raise CheckSetsEqualError(
-            left=left, right=right, left_extra=left_extra, right_extra=right_extra
+            left=left_as_set,
+            right=right_as_set,
+            left_extra=left_extra,
+            right_extra=right_extra,
         )
 
 
@@ -299,7 +304,7 @@ class CheckSetsEqualError(Exception, Generic[_T]):
                 desc = "{} and {}".format(first, second)
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Sets {} and {} must be equal; {}".format(self.left, self.right, desc)
+        return "Sets {} and {} must be equal; {}.".format(self.left, self.right, desc)
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
@@ -342,7 +347,7 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
                 desc = "{} and {}".format(first, second)
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mapping {} must be a submapping of {}; {}".format(
+        return "Mapping {} must be a submapping of {}; {}.".format(
             self.left, self.right, desc
         )
 
@@ -356,11 +361,13 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
             yield "differing values were {}".format(", ".join(error_descs))
 
 
-def check_subset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
+def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a set is a subset of another set."""
-    extra = left - right
+    left_as_set = set(left)
+    right_as_set = set(right)
+    extra = left_as_set - right_as_set
     if len(extra) >= 1:
-        raise CheckSubSetError(left=left, right=right, extra=extra)
+        raise CheckSubSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -371,7 +378,7 @@ class CheckSubSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return "Set {} must be a subset of {}; left had extra items {}".format(
+        return "Set {} must be a subset of {}; left had extra items {}.".format(
             self.left, self.right, self.extra
         )
 
@@ -410,7 +417,7 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
                 desc = "{} and {}".format(first, second)
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mapping {} must be a supermapping of {}; {}".format(
+        return "Mapping {} must be a supermapping of {}; {}.".format(
             self.left, self.right, desc
         )
 
@@ -424,11 +431,13 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
             yield "differing values were {}".format(", ".join(error_descs))
 
 
-def check_superset(left: AbstractSet[Any], right: AbstractSet[Any], /) -> None:
+def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a set is a superset of another set."""
-    extra = right - left
+    left_as_set = set(left)
+    right_as_set = set(right)
+    extra = right_as_set - left_as_set
     if len(extra) >= 1:
-        raise CheckSuperSetError(left=left, right=right, extra=extra)
+        raise CheckSuperSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -439,7 +448,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return "Set {} must be a superset of {}; right had extra items {}".format(
+        return "Set {} must be a superset of {}; right had extra items {}.".format(
             self.left, self.right, self.extra
         )
 

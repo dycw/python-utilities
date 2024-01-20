@@ -51,6 +51,9 @@ from utilities.pandas import (
     IndexS,
     IndexSt,
     Int64,
+    ReindexToSetError,
+    ReindexToSubSetError,
+    ReindexToSuperSetError,
     SeriesA,
     SeriesB,
     SeriesBn,
@@ -71,6 +74,9 @@ from utilities.pandas import (
     check_pandas_dataframe,
     check_range_index,
     redirect_empty_pandas_concat,
+    reindex_to_set,
+    reindex_to_subset,
+    reindex_to_superset,
     rename_index,
     series_max,
     series_min,
@@ -345,6 +351,53 @@ class TestDTypes:
     @mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
     def test_main(self, *, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
+
+
+class TestReindexToSet:
+    def test_main(self) -> None:
+        index = Index([1, 2, 3])
+        target = [3, 2, 1]
+        result = reindex_to_set(index, target)
+        expected = Index([3, 2, 1])
+        assert_index_equal(result, expected)
+
+    def test_error(self) -> None:
+        index = Index([1, 2, 3])
+        target = [2, 3, 4]
+        with raises(
+            ReindexToSetError, match=r"Index .* and .* must be equal as sets\."
+        ):
+            _ = reindex_to_set(index, target)
+
+
+class TestReindexToSubSet:
+    def test_main(self) -> None:
+        index = Index([1, 2, 3])
+        target = [1]
+        result = reindex_to_subset(index, target)
+        expected = Index([1])
+        assert_index_equal(result, expected)
+
+    def test_error(self) -> None:
+        index = Index([1])
+        target = [1, 2, 3]
+        with raises(ReindexToSubSetError, match=r"Index .* must be a superset of .*\."):
+            _ = reindex_to_subset(index, target)
+
+
+class TestReindexToSuperSet:
+    def test_main(self) -> None:
+        index = Index([1])
+        target = [1, 2, 3]
+        result = reindex_to_superset(index, target)
+        expected = Index([1, 2, 3])
+        assert_index_equal(result, expected)
+
+    def test_error(self) -> None:
+        index = Index([1, 2, 3])
+        target = [1]
+        with raises(ReindexToSuperSetError, match=r"Index .* must be a subset of .*\."):
+            _ = reindex_to_superset(index, target)
 
 
 class TestRedirectEmptyPandasConcat:
