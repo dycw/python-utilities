@@ -1,41 +1,58 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
 from typing import cast
 
 from bs4 import Tag
 from polars import DataFrame
+from typing_extensions import override
 
+from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
 from utilities.text import ensure_str
 
 
 def table_tag_to_dataframe(table: Tag, /) -> DataFrame:
     """Convert a `table` tag into a DataFrame."""
 
-    def get_text(tag: Tag, child: str, /) -> list[str]:
+    def get_text(tag: Tag, child: str, /) -> list[str] | None:
         children = cast(Iterable[Tag], tag.find_all(child))
-        return [ensure_str(x.string) for x in children]
+        results = [ensure_str(x.string) for x in children]
+        return results if len(results) >= 1 else None
 
-    th_rows: list[str] | None = None
-    td_rows: list[list[str]] = []
-    for tr in cast(Iterable[Tag], table.find_all("tr")):
-        if len(th := get_text(tr, "th")) >= 1:
-            if th_rows is None:
-                th_rows = th
-            else:
-                msg = f"{table=}"
-                raise TableTagToDataFrameError(msg)
-        if len(td := get_text(tr, "td")) >= 1:
-            td_rows.append(td)
-    cols = list(zip(*td_rows, strict=True))
+    def yield_th_and_td_rows() -> Iterator[tuple[list[str] | None, list[str] | None]]:
+        for tr in cast(Iterable[Tag], table.find_all("tr")):
+            yield get_text(tr, "th"), get_text(tr, "td")
+
+    ths, tds = zip(*yield_th_and_td_rows(), strict=True)
+    try:
+        th: list[str] | None = one(th for th in ths if th is not None)
+    except OneEmptyError:
+        th = None
+    except OneNonUniqueError as error:
+        error = cast(OneNonUniqueError[list[str]], error)
+        raise TableTagToDataFrameError(
+            table=table, first=error.first, second=error.second
+        ) from None
+    tds_use = (td for td in tds if td is not None)
+    cols = list(zip(*tds_use, strict=True))
     df = DataFrame(cols)
-    if th_rows is None:
+    if th is None:
         return df
-    return df.rename({f"column_{i}": th for i, th in enumerate(th_rows)})
+    return df.rename({f"column_{i}": th for i, th in enumerate(th)})
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TableTagToDataFrameError(Exception):
-    ...
+    table: Tag
+    first: list[str]
+    second: list[str]
+
+    @override
+    def __str__(self) -> str:
+        return "Table {} must contain exactly one `th` tag; got {}, {} and perhaps more.".format(
+            self.table, self.first, self.second
+        )
 
 
 def yield_tables(tag: Tag, /) -> Iterator[DataFrame]:
