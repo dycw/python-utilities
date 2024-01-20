@@ -17,6 +17,8 @@ from utilities.iterables import (
     CheckSubSetError,
     CheckSuperMappingError,
     CheckSuperSetError,
+    EnsureIterableError,
+    EnsureIterableNotStrError,
     check_duplicates,
     check_iterables_equal,
     check_length,
@@ -28,6 +30,8 @@ from utilities.iterables import (
     check_supermapping,
     check_superset,
     ensure_hashables,
+    ensure_iterable,
+    ensure_iterable_not_str,
     is_iterable,
     is_iterable_not_str,
 )
@@ -306,6 +310,30 @@ class TestCheckSuperSet:
 class TestEnsureHashables:
     def test_main(self) -> None:
         assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
+
+
+class TestEnsureIterable:
+    @mark.parametrize("obj", [param([]), param(()), param("")])
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_iterable(obj)
+
+    def test_error(self) -> None:
+        with raises(EnsureIterableError, match=r"Object .* must be iterable\."):
+            _ = ensure_iterable(None)
+
+
+class TestEnsureIterableNotStr:
+    @mark.parametrize("obj", [param([]), param(())])
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_iterable_not_str(obj)
+
+    @mark.parametrize("obj", [param(None), param("")])
+    def test_error(self, *, obj: Any) -> None:
+        with raises(
+            EnsureIterableNotStrError,
+            match=r"Object .* must be iterable, but not a string\.",
+        ):
+            _ = ensure_iterable_not_str(obj)
 
 
 class TestIsIterable:

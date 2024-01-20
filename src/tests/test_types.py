@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from types import NoneType
-from typing import Any
+from typing import Any, cast
 
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeAbbyHintViolation
@@ -13,16 +13,23 @@ from utilities.types import (
     Duration,
     EnsureClassError,
     EnsureHashableError,
+    EnsureNotNoneError,
+    EnsureSizedError,
+    EnsureSizedNotStrError,
     IterableStrs,
     Number,
     PathLike,
     SequenceStrs,
     ensure_class,
     ensure_hashable,
+    ensure_not_none,
+    ensure_sized,
+    ensure_sized_not_str,
     get_class,
     get_class_name,
     if_not_none,
     is_hashable,
+    is_sized,
     is_sized_not_str,
     issubclass_except_bool_int,
 )
@@ -38,23 +45,6 @@ class TestDuration:
             die_if_unbearable("0", Duration)
 
 
-class TestGetClass:
-    @mark.parametrize(
-        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
-    )
-    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
-        assert get_class(obj) is expected
-
-
-class TestGetClassName:
-    def test_main(self) -> None:
-        class Example:
-            ...
-
-        assert get_class_name(Example) == "Example"
-        assert get_class_name(Example()) == "Example"
-
-
 class TestEnsureClass:
     def test_single_pass(self) -> None:
         result = ensure_class(None, NoneType)
@@ -66,13 +56,13 @@ class TestEnsureClass:
 
     def test_single_error(self) -> None:
         with raises(
-            EnsureClassError, match="Object .* must be an instance of .*; got .*"
+            EnsureClassError, match=r"Object .* must be an instance of .*; got .*\."
         ):
             _ = ensure_class(None, int)
 
     def test_multiple_error(self) -> None:
         with raises(
-            EnsureClassError, match="Object .* must be an instance of .*, .*; got .*"
+            EnsureClassError, match=r"Object .* must be an instance of .*, .*; got .*\."
         ):
             _ = ensure_class(None, (int, float))
 
@@ -83,8 +73,64 @@ class TestEnsureHashable:
         assert ensure_hashable(obj) == obj
 
     def test_error(self) -> None:
-        with raises(EnsureHashableError, match="Object .* must be hashable"):
+        with raises(EnsureHashableError, match=r"Object .* must be hashable\."):
             _ = ensure_hashable([1, 2, 3])
+
+
+class TestEnsureNotNone:
+    def test_main(self) -> None:
+        maybe_int = cast(int | None, 0)
+        result = ensure_not_none(maybe_int)
+        assert result == 0
+
+    def test_error(self) -> None:
+        with raises(EnsureNotNoneError, match=r"Object must not be None\."):
+            _ = ensure_not_none(None)
+
+
+class TestEnsureSized:
+    @mark.parametrize("obj", [param([]), param(()), param("")])
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_sized(obj)
+
+    def test_error(self) -> None:
+        with raises(EnsureSizedError, match=r"Object .* must be sized\."):
+            _ = ensure_sized(None)
+
+
+class TestEnsureSizedNotStr:
+    @mark.parametrize("obj", [param([]), param(())])
+    def test_main(self, *, obj: Any) -> None:
+        _ = ensure_sized_not_str(obj)
+
+    @mark.parametrize("obj", [param(None), param("")])
+    def test_error(self, *, obj: Any) -> None:
+        with raises(
+            EnsureSizedNotStrError, match=r"Object .* must be sized, but not a string\."
+        ):
+            _ = ensure_sized_not_str(obj)
+
+
+class TestGetClass:
+    @mark.parametrize(
+        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
+    )
+    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
+        assert get_class(obj) is expected
+
+
+class TestGetClassName:
+    def test_class(self) -> None:
+        class Example:
+            ...
+
+        assert get_class_name(Example) == "Example"
+
+    def test_instance(self) -> None:
+        class Example:
+            ...
+
+        assert get_class_name(Example()) == "Example"
 
 
 class TestIfNotNull:
@@ -104,6 +150,15 @@ class TestIsHashable:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_hashable(obj) is expected
+
+
+class TestIsSized:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param([], True), param((), True), param("", True)],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        assert is_sized(obj) is expected
 
 
 class TestIsSizedNotStr:

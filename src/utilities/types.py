@@ -9,8 +9,6 @@ from typing import Any, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
 
-from utilities.more_itertools import always_iterable
-
 Number = int | float
 Duration = Number | dt.timedelta
 SequenceStrs = list[str] | tuple[str, ...]
@@ -25,26 +23,6 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
-
-
-@overload
-def get_class(obj: type[_T], /) -> type[_T]:
-    ...
-
-
-@overload
-def get_class(obj: _T, /) -> type[_T]:
-    ...
-
-
-def get_class(obj: _T | type[_T], /) -> type[_T]:
-    """Get the class of an object, unless it is already a class."""
-    return obj if isinstance(obj, type) else type(obj)
-
-
-def get_class_name(obj: Any, /) -> str:
-    """Get the name of the class of an object, unless it is already a class."""
-    return get_class(obj).__name__
 
 
 @overload
@@ -92,10 +70,8 @@ class EnsureClassError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be an instance of {}; got {!r}".format(
-            self.obj,
-            ", ".join(map(repr, map(get_class_name, always_iterable(self.cls)))),
-            get_class_name(self.obj),
+        return "Object {} must be an instance of {}; got {}.".format(
+            self.obj, self.cls, type(self.obj)
         )
 
 
@@ -112,7 +88,73 @@ class EnsureHashableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be hashable".format(self.obj)
+        return "Object {} must be hashable.".format(self.obj)
+
+
+def ensure_not_none(obj: _T | None, /) -> _T:
+    """Ensure an object is not None."""
+    if obj is None:
+        raise EnsureNotNoneError
+    return obj
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureNotNoneError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Object must not be None."
+
+
+def ensure_sized(obj: Any, /) -> Sized:
+    """Ensure an object is sized."""
+    if is_sized(obj):
+        return obj
+    raise EnsureSizedError(obj=obj)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureSizedError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must be sized.".format(self.obj)
+
+
+def ensure_sized_not_str(obj: Any, /) -> Sized:
+    """Ensure an object is sized, but not a string."""
+    if is_sized_not_str(obj):
+        return obj
+    raise EnsureSizedNotStrError(obj=obj)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureSizedNotStrError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must be sized, but not a string.".format(self.obj)
+
+
+@overload
+def get_class(obj: type[_T], /) -> type[_T]:
+    ...
+
+
+@overload
+def get_class(obj: _T, /) -> type[_T]:
+    ...
+
+
+def get_class(obj: _T | type[_T], /) -> type[_T]:
+    """Get the class of an object, unless it is already a class."""
+    return obj if isinstance(obj, type) else type(obj)
+
+
+def get_class_name(obj: Any, /) -> str:
+    """Get the name of the class of an object, unless it is already a class."""
+    return get_class(obj).__name__
 
 
 @overload
@@ -144,29 +186,41 @@ def issubclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
     return issubclass(x, y) and not (issubclass(x, bool) and issubclass(int, y))
 
 
-def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
-    """Check if an object is sized, but not a string."""
+def is_sized(obj: Any, /) -> TypeGuard[Sized]:
+    """Check if an object is sized."""
     try:
         _ = len(obj)
     except TypeError:
         return False
-    return not isinstance(obj, str)
+    return True
+
+
+def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
+    """Check if an object is sized, but not a string."""
+    return is_sized(obj) and not isinstance(obj, str)
 
 
 __all__ = [
     "Duration",
     "EnsureClassError",
     "EnsureHashableError",
+    "EnsureNotNoneError",
+    "EnsureSizedError",
+    "EnsureSizedNotStrError",
     "IterableStrs",
     "Number",
     "PathLike",
     "SequenceStrs",
     "ensure_class",
     "ensure_hashable",
+    "ensure_not_none",
+    "ensure_sized",
+    "ensure_sized_not_str",
     "get_class",
     "get_class_name",
     "if_not_none",
     "is_hashable",
+    "is_sized",
     "is_sized_not_str",
     "issubclass_except_bool_int",
 ]
