@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 from collections.abc import Callable
 from contextlib import suppress
+from re import DOTALL
 from typing import Any, cast
 
 from beartype.door import die_if_unbearable
@@ -425,7 +427,13 @@ class TestSeriesMinMax:
     def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore
-        with raises(SeriesMinMaxError):
+        with raises(
+            SeriesMinMaxError,
+            match=re.compile(
+                r"Series .* and .* must have the same dtype; got .* and .*\.",
+                flags=DOTALL,
+            ),
+        ):
             _ = func(x, y)
 
 

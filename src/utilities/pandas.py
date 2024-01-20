@@ -161,9 +161,8 @@ class _CheckIndexNameError(CheckIndexError):
 
 
 def _check_index_sorted(index: IndexA, /) -> None:
-    as_sorted = index.sort_values()
     try:
-        assert_index_equal(index, as_sorted)
+        assert_index_equal(index, sort_index(index))
     except AssertionError as error:
         raise _CheckIndexSortedError(index=index) from error
 
@@ -329,8 +328,7 @@ def _series_minmax(
     """Compute the minimum/maximum of a pair of Series."""
     assert_index_equal(x.index, y.index)
     if not (has_dtype(x, y.dtype) and has_dtype(y, x.dtype)):
-        msg = f"{x.dtype=}, {y.dtype=}"
-        raise SeriesMinMaxError(msg)
+        raise SeriesMinMaxError(x=x, y=y)
     out = x.copy()
     for first, second in permutations([x, y]):
         i = first.notna() & second.isna()
@@ -341,8 +339,16 @@ def _series_minmax(
     return out
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class SeriesMinMaxError(Exception):
-    ...
+    x: SeriesA
+    y: SeriesA
+
+    @override
+    def __str__(self) -> str:
+        return "Series {} and {} must have the same dtype; got {} and {}.".format(
+            self.x, self.y, self.x.dtype, self.y.dtype
+        )
 
 
 def sort_index(index: _Index, /) -> _Index:

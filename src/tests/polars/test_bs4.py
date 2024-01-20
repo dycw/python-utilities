@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from re import DOTALL
+
 from bs4 import BeautifulSoup
 from polars import DataFrame, Utf8
 from polars.testing import assert_frame_equal
@@ -151,6 +154,9 @@ class TestYieldTables:
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
         with raises(
             TableTagToDataFrameError,
-            match=r".* must contain exactly one `th` tag; got .*, .* and perhaps more\.",
+            match=re.compile(
+                r"Table .* must contain exactly one `th` tag; got .*, .* and perhaps more\.",
+                flags=DOTALL,
+            ),
         ):
             _ = list(yield_tables(soup))
