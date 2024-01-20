@@ -8,7 +8,7 @@ from bs4 import Tag
 from polars import DataFrame
 from typing_extensions import override
 
-from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
+from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one, transpose
 from utilities.text import ensure_str
 
 
@@ -24,9 +24,9 @@ def table_tag_to_dataframe(table: Tag, /) -> DataFrame:
         for tr in cast(Iterable[Tag], table.find_all("tr")):
             yield get_text(tr, "th"), get_text(tr, "td")
 
-    ths, tds = zip(*yield_th_and_td_rows(), strict=True)
+    ths, tds = transpose(yield_th_and_td_rows())
     try:
-        th: list[str] | None = one(th for th in ths if th is not None)
+        th = one(th for th in ths if th is not None)
     except OneEmptyError:
         th = None
     except OneNonUniqueError as error:

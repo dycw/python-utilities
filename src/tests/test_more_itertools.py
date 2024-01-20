@@ -11,6 +11,7 @@ from utilities.more_itertools import (
     OneNonUniqueError,
     always_iterable,
     one,
+    transpose,
 )
 
 
@@ -74,3 +75,60 @@ class TestOne:
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
         ):
             _ = one([1, 2])
+
+
+class TestTranspose:
+    @given(n=integers(1, 10))
+    def test_singles(self, *, n: int) -> None:
+        iterable = ((i,) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        (first,) = result
+        assert isinstance(first, tuple)
+        assert len(first) == n
+        for i in first:
+            assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_pairs(self, *, n: int) -> None:
+        iterable = ((i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second = result
+        for part in [first, second]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_triples(self, *, n: int) -> None:
+        iterable = ((i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third = result
+        for part in [first, second, third]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quadruples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth = result
+        for part in [first, second, third, fourth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quintuples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth, fifth = result
+        for part in [first, second, third, fourth, fifth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
