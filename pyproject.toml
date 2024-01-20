@@ -52,9 +52,9 @@ dev = [
   "luigi >= 3.5.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
-  "numbagg >= 0.7.0",
+  "numbagg >= 0.7.1",
   "numpy >= 1.26.3",
-  "pandas >= 2.1.3",
+  "pandas >= 2.2.0",
   "polars >= 0.20.5",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
@@ -97,9 +97,9 @@ hypothesis = ["hypothesis >= 6.96.1"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
-numbagg = ["numbagg >= 0.7.0"]
+numbagg = ["numbagg >= 0.7.1"]
 numpy = ["numpy >= 1.26.3"]
-pandas = ["pandas >= 2.1.3"]
+pandas = ["pandas >= 2.2.0"]
 polars = ["polars >= 0.20.5"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
