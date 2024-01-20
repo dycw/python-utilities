@@ -149,5 +149,8 @@ class TestYieldTables:
             </table>
         """
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
-        with raises(TableTagToDataFrameError):
+        with raises(
+            TableTagToDataFrameError,
+            match=r".* must contain exactly one `th` tag; got .*, .* and perhaps more\.",
+        ):
             _ = list(yield_tables(soup))
