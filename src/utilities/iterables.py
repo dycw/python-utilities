@@ -453,6 +453,38 @@ def ensure_hashables(
     return hash_args, hash_kwargs
 
 
+def ensure_iterable(obj: Any, /) -> Iterable[Any]:
+    """Ensure an object is iterable."""
+    if is_iterable(obj):
+        return obj
+    raise EnsureIterableError(obj=obj)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureIterableError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must be iterable.".format(self.obj)
+
+
+def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
+    """Ensure an object is iterable, but not a string."""
+    if is_iterable_not_str(obj):
+        return obj
+    raise EnsureIterableNotStrError(obj=obj)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class EnsureIterableNotStrError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return "Object {} must be iterable, but not a string.".format(self.obj)
+
+
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -477,6 +509,8 @@ __all__ = [
     "CheckSubSetError",
     "CheckSuperMappingError",
     "CheckSuperSetError",
+    "EnsureIterableError",
+    "EnsureIterableNotStrError",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
@@ -487,6 +521,8 @@ __all__ = [
     "check_supermapping",
     "check_superset",
     "ensure_hashables",
+    "ensure_iterable",
+    "ensure_iterable_not_str",
     "is_iterable",
     "is_iterable_not_str",
 ]
