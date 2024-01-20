@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Hashable, Iterator, Mapping, Sequence
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, reduce
@@ -29,7 +29,16 @@ from typing_extensions import override
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import CheckNameError, check_name
-from utilities.iterables import CheckLengthError, check_length
+from utilities.iterables import (
+    CheckLengthError,
+    CheckSetsEqualError,
+    CheckSubSetError,
+    CheckSuperSetError,
+    check_length,
+    check_sets_equal,
+    check_subset,
+    check_superset,
+)
 from utilities.numpy import NDArray1, dt64ns, has_dtype
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
@@ -312,6 +321,69 @@ def rename_index(index: _Index, name: Hashable, /) -> _Index:
     return cast(_Index, index.rename(name))
 
 
+def reindex_to_set(index: _Index, target: Iterable[Any], /) -> _Index:
+    """Re-index an Index to a strict permutation of its elements."""
+    target_as_list = list(target)
+    try:
+        check_sets_equal(index, target_as_list)
+    except CheckSetsEqualError as error:
+        raise ReindexToSetError(index=index, target=target_as_list) from error
+    new_index, _ = index.reindex(target_as_list)
+    return new_index
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ReindexToSetError(Exception):
+    index: IndexA
+    target: list[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "Index {} and {} must be equal as sets.".format(self.index, self.target)
+
+
+def reindex_to_subset(index: _Index, target: Iterable[Any], /) -> _Index:
+    """Re-index an Index to a strict subset of its elements."""
+    target_as_list = list(target)
+    try:
+        check_superset(index, target_as_list)
+    except CheckSuperSetError as error:
+        raise ReindexToSubSetError(index=index, target=target_as_list) from error
+    new_index, _ = index.reindex(target_as_list)
+    return new_index
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ReindexToSubSetError(Exception):
+    index: IndexA
+    target: list[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "Index {} must be a superset of {}.".format(self.index, self.target)
+
+
+def reindex_to_superset(index: _Index, target: Iterable[Any], /) -> _Index:
+    """Re-index an Index to a strict superset of its elements."""
+    target_as_list = list(target)
+    try:
+        check_subset(index, target_as_list)
+    except CheckSubSetError as error:
+        raise ReindexToSuperSetError(index=index, target=target_as_list) from error
+    new_index, _ = index.reindex(target_as_list)
+    return new_index
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ReindexToSuperSetError(Exception):
+    index: IndexA
+    target: list[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "Index {} must be a subset of {}.".format(self.index, self.target)
+
+
 def series_max(*series: SeriesA) -> SeriesA:
     """Compute the maximum of a set of Series."""
     return reduce(partial(_series_minmax, kind="lower"), series)
@@ -421,6 +493,9 @@ __all__ = [
     "CheckRangeIndexError",
     "EmptyPandasConcatError",
     "Int64",
+    "ReindexToSetError",
+    "ReindexToSubSetError",
+    "ReindexToSuperSetError",
     "SeriesMinMaxError",
     "TIMESTAMP_MAX_AS_DATE",
     "TIMESTAMP_MAX_AS_DATETIME",
@@ -436,6 +511,9 @@ __all__ = [
     "datetime64nshk",
     "datetime64nsutc",
     "redirect_empty_pandas_concat",
+    "reindex_to_set",
+    "reindex_to_subset",
+    "reindex_to_superset",
     "rename_index",
     "series_max",
     "series_min",
