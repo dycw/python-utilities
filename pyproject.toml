@@ -48,7 +48,7 @@ dev = [
   "fpdf2 >= 2.7.7",
   "hatch >= 1.9.1",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.96.1",
+  "hypothesis >= 6.96.2",
   "luigi >= 3.5.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
@@ -63,7 +63,7 @@ dev = [
   "pypiserver[passlib] >= 2.0.1",
   "pytest >= 7.4.4",
   "pytest-check >= 2.3.1",
-  "scipy >= 1.11.4",
+  "scipy >= 1.12.0",
   "selenium >= 4.16.0",
   "sqlalchemy >= 2.0.25",
   "streamlit >= 1.30.0",
@@ -93,7 +93,7 @@ fastapi = ["fastapi >= 0.109.0"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.16.0"]
 hatch = ["hatch >= 1.9.1"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.16.0"]
-hypothesis = ["hypothesis >= 6.96.1"]
+hypothesis = ["hypothesis >= 6.96.2"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
@@ -108,7 +108,7 @@ pyinstrument = ["pyinstrument >= 4.6.1"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 7.4.4"]
 pytest-check = ["pytest-check >= 2.3.1"]
-scipy = ["scipy >= 1.11.4"]
+scipy = ["scipy >= 1.12.0"]
 scripts-csv-to-markdown = ["mdutils >= 1.6.0"]
 scripts-generate-snippets = ["ast-comments >= 1.2.1"]
 scripts-luigi = ["luigi >= 3.5.0"]
