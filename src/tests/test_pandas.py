@@ -10,6 +10,7 @@ from typing import Any, cast
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import assume, given
+from hypothesis.strategies import none
 from numpy import array, nan
 from numpy.testing import assert_equal
 from pandas import (
@@ -354,11 +355,12 @@ class TestDTypes:
 
 
 class TestReindexToSet:
-    def test_main(self) -> None:
-        index = Index([1, 2, 3])
+    @given(name=text_ascii() | none())
+    def test_main(self, *, name: str | None) -> None:
+        index = Index([1, 2, 3], name=name)
         target = [3, 2, 1]
         result = reindex_to_set(index, target)
-        expected = Index([3, 2, 1])
+        expected = Index([3, 2, 1], name=name)
         assert_index_equal(result, expected)
 
     def test_error(self) -> None:
@@ -371,11 +373,12 @@ class TestReindexToSet:
 
 
 class TestReindexToSubSet:
-    def test_main(self) -> None:
-        index = Index([1, 2, 3])
+    @given(name=text_ascii() | none())
+    def test_main(self, *, name: str | None) -> None:
+        index = Index([1, 2, 3], name=name)
         target = [1]
         result = reindex_to_subset(index, target)
-        expected = Index([1])
+        expected = Index([1], name=name)
         assert_index_equal(result, expected)
 
     def test_error(self) -> None:
@@ -386,11 +389,12 @@ class TestReindexToSubSet:
 
 
 class TestReindexToSuperSet:
-    def test_main(self) -> None:
-        index = Index([1])
+    @given(name=text_ascii() | none())
+    def test_main(self, *, name: str | None) -> None:
+        index = Index([1], name=name)
         target = [1, 2, 3]
         result = reindex_to_superset(index, target)
-        expected = Index([1, 2, 3])
+        expected = Index([1, 2, 3], name=name)
         assert_index_equal(result, expected)
 
     def test_error(self) -> None:

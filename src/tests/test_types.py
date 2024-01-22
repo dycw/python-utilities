@@ -133,7 +133,7 @@ class TestGetClassName:
         assert get_class_name(Example()) == "Example"
 
 
-class TestIfNotNull:
+class TestIfNotNone:
     def test_uses_first(self) -> None:
         result = if_not_none(0, "0")
         assert result == 0
