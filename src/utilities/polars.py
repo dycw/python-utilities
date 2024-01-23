@@ -183,6 +183,10 @@ def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None
         check_mappings_equal(df.schema, schema)
     except CheckMappingsEqualError as error:
         raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
+    try:
+        _check_polars_dataframe_columns(df, schema)
+    except _CheckPolarsDataFrameColumnsError as error:
+        raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

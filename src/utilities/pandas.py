@@ -5,7 +5,7 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, reduce
-from itertools import permutations
+from itertools import chain, permutations
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
 from numpy import where
@@ -24,7 +24,7 @@ from pandas import (
     Timestamp,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
-from typing_extensions import override
+from typing_extensions import assert_never, override
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
@@ -487,6 +487,47 @@ class ToNumpyError(Exception):
     ...
 
 
+def union_indexes(
+    index: IndexA,
+    *more_indexes: IndexA,
+    names: Literal["first", "last", "raise"] = "raise",
+) -> IndexA:
+    """Take the union of an arbitrary number of indexes."""
+    indexes = chain([index], more_indexes)
+
+    def func(left: IndexA, right: IndexA, /) -> IndexA:
+        lname, rname = left.name, right.name
+        if (lname == rname) or ((lname is not None) and (rname is None)):
+            name = lname
+        elif (lname is None) and (rname is not None):
+            name = rname
+        else:
+            match names:
+                case "first":
+                    name = lname
+                case "last":
+                    name = rname
+                case "raise":
+                    raise UnionIndexesError(left=left, right=right)
+                case _ as never:  # type: ignore
+                    assert_never(never)
+        return left.union(right).rename(name)
+
+    return reduce(func, indexes)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class UnionIndexesError(Exception):
+    left: IndexA
+    right: IndexA
+
+    @override
+    def __str__(self) -> str:
+        return "Indexes {} and {} must have the same name; got {} and {}.".format(
+            self.left, self.right, self.left.name, self.right.name
+        )
+
+
 __all__ = [
     "CheckIndexError",
     "CheckPandasDataFrameError",
@@ -502,6 +543,7 @@ __all__ = [
     "TIMESTAMP_MIN_AS_DATE",
     "TIMESTAMP_MIN_AS_DATETIME",
     "TimestampToDateTimeError",
+    "UnionIndexesError",
     "astype",
     "boolean",
     "category",
@@ -522,4 +564,5 @@ __all__ = [
     "timestamp_to_date",
     "timestamp_to_datetime",
     "to_numpy",
+    "union_indexes",
 ]

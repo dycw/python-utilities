@@ -122,13 +122,21 @@ class TestCheckPolarsDataFrame:
         df = DataFrame({"value": [0.0]})
         check_polars_dataframe(df, schema={"value": Float64})
 
-    def test_schema_error(self) -> None:
+    def test_schema_error_set_of_columns(self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have schema .*; got .*\n\n.*",
         ):
             check_polars_dataframe(df, schema={"value": Float64})
+
+    def test_schema_error_order_of_columns(self) -> None:
+        df = DataFrame(schema={"a": Float64, "b": Float64})
+        with raises(
+            CheckPolarsDataFrameError,
+            match="DataFrame must have schema .*; got .*\n\n.*",
+        ):
+            check_polars_dataframe(df, schema={"b": Float64, "a": Float64})
 
     def test_schema_inc_pass(self) -> None:
         df = DataFrame({"foo": [0.0], "bar": [0.0]})

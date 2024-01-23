@@ -69,6 +69,7 @@ from utilities.pandas import (
     SeriesS,
     SeriesSt,
     TimestampToDateTimeError,
+    UnionIndexesError,
     astype,
     boolean,
     check_index,
@@ -86,6 +87,7 @@ from utilities.pandas import (
     timestamp_to_date,
     timestamp_to_datetime,
     to_numpy,
+    union_indexes,
 )
 
 
@@ -599,3 +601,42 @@ class TestToNumpy:
         result = to_numpy(series)
         expected = array([array_v], dtype=array_d)
         assert_equal(result, expected)
+
+
+class TestUnionIndexes:
+    @given(name=text_ascii() | none())
+    def test_first_named(self, *, name: str | None) -> None:
+        left = Index([1, 2, 3], name=name)
+        right = Index([2, 3, 4])
+        result1 = union_indexes(left, right)
+        result2 = union_indexes(right, left)
+        expected = Index([1, 2, 3, 4], name=name)
+        assert_index_equal(result1, expected)
+        assert_index_equal(result2, expected)
+
+    @given(lname=text_ascii(), rname=text_ascii())
+    def test_both_named_taking_first(self, *, lname: str, rname: str) -> None:
+        left = Index([1, 2, 3], name=lname)
+        right = Index([2, 3, 4], name=rname)
+        result = union_indexes(left, right, names="first")
+        expected = Index([1, 2, 3, 4], name=lname)
+        assert_index_equal(result, expected)
+
+    @given(lname=text_ascii(), rname=text_ascii())
+    def test_both_named_taking_last(self, *, lname: str, rname: str) -> None:
+        left = Index([1, 2, 3], name=lname)
+        right = Index([2, 3, 4], name=rname)
+        result = union_indexes(left, right, names="last")
+        expected = Index([1, 2, 3, 4], name=rname)
+        assert_index_equal(result, expected)
+
+    @given(lname=text_ascii(), rname=text_ascii())
+    def test_both_named_error(self, *, lname: str, rname: str) -> None:
+        _ = assume(lname != rname)
+        left = Index([1, 2, 3], name=lname)
+        right = Index([2, 3, 4], name=rname)
+        with raises(
+            UnionIndexesError,
+            match=r"Indexes .* and .* must have the same name; got .* and .*\.",
+        ):
+            _ = union_indexes(left, right, names="raise")
