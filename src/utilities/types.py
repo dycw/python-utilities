@@ -157,16 +157,6 @@ def get_class_name(obj: Any, /) -> str:
     return get_class(obj).__name__
 
 
-@overload
-def if_not_none(x: None, y: _U, /) -> _U:
-    ...
-
-
-@overload
-def if_not_none(x: _T, y: Any, /) -> _T:
-    ...
-
-
 def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
     """Return the first value if it is not None, else the second value."""
     return x if x is not None else y
