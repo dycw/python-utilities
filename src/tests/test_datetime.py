@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
-from datetime import tzinfo
 from math import isclose
 from operator import eq, gt, lt
 from re import search
@@ -68,6 +67,7 @@ from utilities.datetime import (
 )
 from utilities.hypothesis import assume_does_not_raise, text_clean
 from utilities.types import Number
+from utilities.zoneinfo import HONG_KONG
 
 
 class TestAddWeekdays:
@@ -147,7 +147,6 @@ class TestEnsure:
         ("strategy", "func"),
         [
             param(dates(), ensure_date),
-            param(datetimes(timezones=just(UTC)), ensure_datetime),
             param(times(), ensure_time),
             param(timedeltas(), ensure_timedelta),
         ],
@@ -160,9 +159,16 @@ class TestEnsure:
         func: Callable[[Any], Any],
     ) -> None:
         value = data.draw(strategy)
-        maybe_value = data.draw(sampled_from([value, str(value)]))
-        result = func(maybe_value)
+        str_or_value = data.draw(sampled_from([value, str(value)]))
+        result = func(str_or_value)
         assert result == value
+
+    @given(data=data(), datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
+    def test_datetime(self, *, data: DataObject, datetime: dt.datetime) -> None:
+        str_or_datetime = data.draw(sampled_from([datetime, str(datetime)]))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = ensure_datetime(str_or_datetime, tzinfo=tzinfo)
+        assert result == datetime
 
 
 class TestIsEqualModTz:
@@ -210,7 +216,7 @@ class TestMaybeSubPctY:
 
 class TestGetNow:
     @given(tz=timezones())
-    def test_function(self, *, tz: tzinfo) -> None:
+    def test_function(self, *, tz: dt.tzinfo) -> None:
         now = get_now(tz=tz)
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is tz
@@ -222,7 +228,7 @@ class TestGetNow:
 
 class TestGetToday:
     @given(tz=timezones())
-    def test_function(self, *, tz: tzinfo) -> None:
+    def test_function(self, *, tz: dt.tzinfo) -> None:
         today = get_today(tz=tz)
         assert isinstance(today, dt.date)
 
@@ -258,76 +264,84 @@ class TestParseDate:
 
 
 class TestParseDateTime:
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_str(self, *, datetime: dt.datetime) -> None:
-        result = parse_datetime(str(datetime))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(str(datetime), tzinfo=tzinfo)
         assert result == datetime
 
-    @given(datetime=datetimes(timezones=just(UTC)))
+    @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_isoformat(self, *, datetime: dt.datetime) -> None:
-        result = parse_datetime(datetime.isoformat())
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.isoformat(), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%dT%H%M%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z"]).map(
             maybe_sub_pct_y
         ),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%dT%H%M%S.%f", "%Y-%m-%d %H:%M:%S.%f"]).map(
             maybe_sub_pct_y
         ),
     )
     def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(
             ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
         ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
             maybe_sub_pct_y
         ),
     )
     def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%dT%H", "%Y-%m-%d %H", "%Y-%m-%dT%H"]).map(
             maybe_sub_pct_y
         ),
     )
     def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=just(UTC)),
+        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%d", "%Y-%m-%d"]).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
-        result = parse_datetime(datetime.strftime(fmt))
+        assert (tzinfo := datetime.tzinfo) is not None
+        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
     def test_error(self) -> None:

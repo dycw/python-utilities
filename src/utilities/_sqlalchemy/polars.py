@@ -28,6 +28,7 @@ from polars import (
 from polars.type_aliases import ConnectionOrCursor, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
+from sqlalchemy.sql import ColumnCollection
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 from utilities._sqlalchemy.common import (
@@ -391,7 +392,9 @@ class _SelectToDataFrameMapTableColumnToDTypeError(Exception):
     ...
 
 
-def _select_to_dataframe_check_duplicates(columns: ReadOnlyColumnCollection, /) -> None:
+def _select_to_dataframe_check_duplicates(
+    columns: ColumnCollection[Any, Any], /
+) -> None:
     """Check a select for duplicate columns."""
     names = [col.name for col in columns]
     with redirect_error(CheckDuplicatesError, DuplicateColumnError(f"{names=}")):

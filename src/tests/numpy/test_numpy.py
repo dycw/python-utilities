@@ -8,7 +8,7 @@ from typing import Annotated, Any, Literal
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, assume, example, given, settings
-from hypothesis.strategies import DataObject, data, dates, integers
+from hypothesis.strategies import DataObject, data, dates, datetimes, integers, just
 from numpy import (
     arange,
     array,
@@ -48,6 +48,7 @@ from utilities.numpy import (
     DateTime64ToDateError,
     DateTime64ToDateTimeError,
     Datetime64Unit,
+    DatetimeToDatetime64Error,
     EmptyNumpyConcatenateError,
     FlatN0Error,
     GetFillValueError,
@@ -419,6 +420,7 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
+from utilities.zoneinfo import HONG_KONG
 
 
 class TestAnnotations:
@@ -847,18 +849,26 @@ class TestDateToDatetime64ns:
         assert result.dtype == dt64D
 
 
-class TestDatetimeToDatetime64ns:
-    def test_example(self) -> None:
+class TestDatetimeToDatetime64:
+    @mark.parametrize("tzinfo", [param(UTC), param(None)])
+    def test_example(self, *, tzinfo: dt.tzinfo) -> None:
         result = datetime_to_datetime64(
-            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
+            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=tzinfo)
         )
         assert result == datetime64("2000-01-01 00:00:00.123456", "us")
         assert result.dtype == dt64us
 
-    @given(datetime=datetimes_utc())
+    @given(datetime=datetimes() | datetimes_utc())
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = datetime_to_datetime64(datetime)
         assert result.dtype == dt64us
+
+    @given(datetime=datetimes(timezones=just(HONG_KONG)))
+    def test_error(self, *, datetime: dt.datetime) -> None:
+        with raises(
+            DatetimeToDatetime64Error, match=r"Timezone must be None or UTC; got .*\."
+        ):
+            _ = datetime_to_datetime64(datetime)
 
 
 class TestDatetime64ToDate:

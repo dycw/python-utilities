@@ -5,7 +5,7 @@ from types import NoneType
 from typing import Any, cast
 
 from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeAbbyHintViolation
+from beartype.roar import BeartypeDoorHintViolation
 from pytest import mark, param, raises
 
 from utilities.pathvalidate import valid_path_home
@@ -41,7 +41,7 @@ class TestDuration:
         die_if_unbearable(x, Duration)
 
     def test_error(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
+        with raises(BeartypeDoorHintViolation):
             die_if_unbearable("0", Duration)
 
 
@@ -199,7 +199,7 @@ class TestIterableStrs:
         die_if_unbearable(x, IterableStrs)
 
     def test_fail(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
+        with raises(BeartypeDoorHintViolation):
             die_if_unbearable("abc", IterableStrs)
 
 
@@ -209,7 +209,7 @@ class TestNumber:
         die_if_unbearable(x, Number)
 
     def test_error(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
+        with raises(BeartypeDoorHintViolation):
             die_if_unbearable("0", Number)
 
 
@@ -219,7 +219,7 @@ class TestPathLike:
         die_if_unbearable(path, PathLike)
 
     def test_error(self) -> None:
-        with raises(BeartypeAbbyHintViolation):
+        with raises(BeartypeDoorHintViolation):
             die_if_unbearable(None, PathLike)
 
 
@@ -232,5 +232,5 @@ class TestSequenceStrs:
         "x", [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")]
     )
     def test_fail(self, *, x: IterableStrs | str) -> None:
-        with raises(BeartypeAbbyHintViolation):
+        with raises(BeartypeDoorHintViolation):
             die_if_unbearable(x, SequenceStrs)
