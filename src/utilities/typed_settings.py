@@ -13,6 +13,8 @@ from typing import Any, TypeVar, cast
 from click import ParamType
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
+from typed_settings.cli_click import ClickHandler
+from typed_settings.cli_click import click_options as _click_options
 from typed_settings.cli_utils import (
     Default,
     StrDict,
@@ -20,8 +22,6 @@ from typed_settings.cli_utils import (
     TypeHandler,
     TypeHandlerFunc,
 )
-from typed_settings.click_utils import ClickHandler
-from typed_settings.click_utils import click_options as _click_options
 from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 from typed_settings.converters import TSConverter
 from typed_settings.loaders import Loader
