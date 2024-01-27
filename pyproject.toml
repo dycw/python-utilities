@@ -228,7 +228,6 @@ addopts = [
 ]
 filterwarnings = [
   "error",
-  "ignore:Autoloading range tasks by default has been deprecated and will be removed in a future version:DeprecationWarning",
   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
 ]
