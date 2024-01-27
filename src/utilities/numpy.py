@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
 from typing import Annotated, Any, Literal, cast, overload
@@ -35,6 +36,7 @@ from numpy import (
 )
 from numpy.linalg import det, eig
 from numpy.random import default_rng
+from typing_extensions import override
 
 from utilities._numpy.common import (
     NDArrayA,
@@ -45,7 +47,7 @@ from utilities._numpy.common import (
     ShiftError,
     shift,
 )
-from utilities.datetime import EPOCH_UTC
+from utilities.datetime import EPOCH_UTC, UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.re import extract_group
@@ -261,7 +263,25 @@ DATE_MAX_AS_DATETIME64 = date_to_datetime64(dt.date.max)
 def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     """Convert a `dt.datetime` to `numpy.datetime64`."""
 
-    return datetime64(datetime, "us")
+    if (tz := datetime.tzinfo) is None:
+        datetime_use = datetime
+    elif tz is UTC:
+        datetime_use = datetime.replace(tzinfo=None)
+    else:
+        raise DatetimeToDatetime64Error(datetime=datetime, tzinfo=tz)
+    return datetime64(datetime_use, "us")
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class DatetimeToDatetime64Error(Exception):
+    datetime: dt.datetime
+    tzinfo: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return (  # pragma: no cover
+            "Timezone must be None or UTC; got {}.".format(self.tzinfo)
+        )
 
 
 DATETIME_MIN_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.min)

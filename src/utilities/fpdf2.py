@@ -20,7 +20,7 @@ class _BasePDF(FPDF):
     def add_fixed_width_text(self, text: str, /) -> None:
         """Add a block of fixed witth text."""
         self.set_font("Courier")
-        _ = self.write(txt=text)
+        _ = self.write(text=text)  # type: ignore
         self.ln()
 
     def add_plot(self, plot: Any, /) -> None:  # pragma: no cover
@@ -43,7 +43,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
                 _ = self.cell(
                     w=30,
                     h=10,
-                    txt=header,
+                    text=header,  # type: ignore
                     border=0,
                     align="C",
                     new_x=XPos.RIGHT,
@@ -56,11 +56,11 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
             page_no, now = self.page_no(), get_now(tz=local_timezone())
-            txt = f"page {page_no}/{{nb}}; {now:%Y-%m-%d %H:%M:%S}"
+            text = "page {}/{{}}; {}".format(page_no, now)
             _ = self.cell(
                 w=0,
                 h=10,
-                txt=txt,
+                text=text,  # type: ignore
                 border=0,
                 align="C",
                 new_x=XPos.RIGHT,

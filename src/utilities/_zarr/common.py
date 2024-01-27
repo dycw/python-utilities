@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
@@ -267,8 +268,11 @@ class NDArrayWithIndexes:
         """Cast a `dt.date` or `dt.datetime` indexer."""
         suffix = extract_group(r"^datetime64\[(\w+)\]$", dtype.name)
 
-        def cast(x: Any, /) -> Any:
-            return datetime64(ensure(x), suffix)
+        def cast(str_or_value: Any, /) -> Any:
+            value = ensure(str_or_value)
+            if isinstance(value, dt.datetime):
+                value = value.replace(tzinfo=None)
+            return datetime64(value, suffix)
 
         if is_iterable_not_str(indexer):
             return list(map(cast, indexer))

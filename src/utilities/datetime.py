@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
-from datetime import tzinfo
 from re import sub
 from typing import cast
 
@@ -41,7 +40,7 @@ class AddWeekdaysError(Exception):
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: tzinfo | None = UTC
+    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: dt.tzinfo | None = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     return dt.datetime.combine(date, time, tzinfo=tzinfo)
@@ -68,11 +67,13 @@ def ensure_date(date: dt.date | str, /) -> dt.date:
     return date if isinstance(date, dt.date) else parse_date(date)
 
 
-def ensure_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+def ensure_datetime(
+    datetime: dt.datetime | str, /, *, tzinfo: dt.tzinfo = UTC
+) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
-    return parse_datetime(datetime)
+    return parse_datetime(datetime, tzinfo=tzinfo)
 
 
 def ensure_time(time: dt.time | str, /) -> dt.time:
@@ -87,7 +88,7 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     return parse_timedelta(timedelta)
 
 
-def get_now(*, tz: tzinfo | None = UTC) -> dt.datetime:
+def get_now(*, tz: dt.tzinfo | None = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     return dt.datetime.now(tz=tz)
 
@@ -95,7 +96,7 @@ def get_now(*, tz: tzinfo | None = UTC) -> dt.datetime:
 NOW_UTC, NOW_HKG, NOW_TKY = (get_now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
 
 
-def get_today(*, tz: tzinfo | None = UTC) -> dt.date:
+def get_today(*, tz: dt.tzinfo | None = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(tz=tz).date()
 
@@ -123,7 +124,7 @@ def is_weekday(date: dt.date, /) -> bool:
     return date.isoweekday() <= friday
 
 
-def local_timezone() -> tzinfo:
+def local_timezone() -> dt.tzinfo:
     """Get the local timezone."""
     tz = get_now(tz=None).astimezone().tzinfo
     if tz is None:  # pragma: no cover
@@ -149,7 +150,7 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def parse_date(date: str, /, *, tzinfo: tzinfo = UTC) -> dt.date:
+def parse_date(date: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
@@ -163,10 +164,10 @@ class ParseDateError(Exception):
     ...
 
 
-def parse_datetime(datetime: str, /, *, tzinfo: tzinfo = UTC) -> dt.datetime:
+def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
     """Parse a string into a datetime."""
     with suppress(ValueError):
-        return dt.datetime.fromisoformat(datetime).replace(tzinfo=UTC)
+        return dt.datetime.fromisoformat(datetime).replace(tzinfo=tzinfo)
     for fmt in [
         "%Y%m%d",
         "%Y%m%dT%H",

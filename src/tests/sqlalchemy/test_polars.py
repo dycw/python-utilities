@@ -489,22 +489,22 @@ class TestSelectToDataFrameApplySnake:
         sel = select(table)
         res = _select_to_dataframe_apply_snake(sel)
         expected = ["id", "value"]
-        for col, exp in zip(res.c, expected, strict=True):
+        for col, exp in zip(res.selected_columns, expected, strict=True):
             assert col.name == exp
 
 
 class TestSelectToDataFrameCheckDuplicates:
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table.c.id, table.c.id)
+        sel = select(table.c["id"], table.c["id"])
         with raises(DuplicateColumnError):
-            _select_to_dataframe_check_duplicates(sel.c)
+            _select_to_dataframe_check_duplicates(sel.selected_columns)
 
 
 class TestSelectToDataFrameMapSelectToDFSchema:
     def test_main(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table.c.id)
+        sel = select(table.c["id"])
         schema = _select_to_dataframe_map_select_to_df_schema(sel)
         expected = {"id": Int64}
         assert schema == expected
@@ -587,7 +587,7 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         chunk_size_frac: float,
     ) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table.c.id)
+        sel = select(table.c["id"])
         with engine.begin() as conn:
             iterator = _select_to_dataframe_yield_selects_with_in_clauses(
                 sel,

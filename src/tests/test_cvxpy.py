@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import cvxpy
 import numpy as np
-from cvxpy import Expression, Maximize, Minimize, Problem, Variable
+from cvxpy import CLARABEL, Expression, Maximize, Minimize, Problem, Variable
 from numpy import array, isclose
 from numpy.testing import assert_equal
 from pandas import DataFrame, Series
@@ -58,7 +58,7 @@ def _get_variable(
     problem = Problem(
         objective(scalar), [cast(Any, var) >= -threshold, cast(Any, var) <= threshold]
     )
-    _ = problem.solve()
+    _ = problem.solve(solver=CLARABEL)
     return var
 
 
@@ -626,7 +626,7 @@ class TestSolve:
     def test_main(self) -> None:
         var = Variable()
         problem = Problem(Minimize(sum_(abs_(var))), [])
-        _ = solve(problem)
+        _ = solve(problem, solver=CLARABEL)
 
     def test_infeasible_problem(self) -> None:
         var = Variable()
@@ -636,13 +636,13 @@ class TestSolve:
             [cast(Any, var) >= threshold, cast(Any, var) <= -threshold],
         )
         with raises(SolveInfeasibleError):
-            _ = solve(problem)
+            _ = solve(problem, solver=CLARABEL)
 
     def test_unbounded_problem(self) -> None:
         var = Variable()
         problem = Problem(Maximize(sum_(var)), [])
         with raises(SolveUnboundedError):
-            _ = solve(problem)
+            _ = solve(problem, solver=CLARABEL)
 
 
 class TestSqrt:
