@@ -202,6 +202,101 @@ class TestCheckPandasDataFrame:
     def test_main(self) -> None:
         check_pandas_dataframe(DataFrame())
 
+    def test_columns_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        check_pandas_dataframe(df, columns=[])
+
+    def test_columns_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have columns .*; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
+            check_pandas_dataframe(df, columns=["other"])
+
+    def test_dtypes_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        check_pandas_dataframe(df, dtypes={})
+
+    def test_dtypes_error_set_of_columns(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
+            check_pandas_dataframe(df, dtypes={"value": int})
+
+    def test_dtypes_error_order_of_columns(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=["a", "b"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
+            check_pandas_dataframe(df, dtypes={"b": float, "a": float})
+
+    def test_length_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        check_pandas_dataframe(df, length=1)
+
+    def test_length_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
+                flags=DOTALL,
+            ),
+        ):
+            check_pandas_dataframe(df, length=2)
+
+    def test_min_length_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        check_pandas_dataframe(df, min_length=1)
+
+    def test_min_length_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
+                flags=DOTALL,
+            ),
+        ):
+            check_pandas_dataframe(df, min_length=1)
+
+    def test_max_length_pass(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        check_pandas_dataframe(df, max_length=1)
+
+    def test_max_length_error(self) -> None:
+        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
+                flags=DOTALL,
+            ),
+        ):
+            check_pandas_dataframe(df, max_length=1)
+
+    def test_sorted_pass(self) -> None:
+        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
+        check_pandas_dataframe(df, sorted="value")
+
+    def test_sorted_error(self) -> None:
+        df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(r"DataFrame must be sorted on .*\n\n.*\.", flags=DOTALL),
+        ):
+            check_pandas_dataframe(df, sorted="value")
+
     def test_standard_pass(self) -> None:
         check_pandas_dataframe(DataFrame(index=RangeIndex(0)), standard=True)
 
@@ -218,6 +313,20 @@ class TestCheckPandasDataFrame:
                     0.0, index=RangeIndex(1, name="name"), columns=Index(["value"])
                 )
             ),
+        ],
+    )
+    def test_standard_errors_index(self, *, df: DataFrame) -> None:
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have a standard index; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
+            check_pandas_dataframe(df, standard=True)
+
+    @mark.parametrize(
+        "df",
+        [
             param(
                 DataFrame(
                     0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
@@ -229,62 +338,13 @@ class TestCheckPandasDataFrame:
         ],
     )
     def test_standard_errors(self, *, df: DataFrame) -> None:
-        with raises(CheckPandasDataFrameError):
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have standard columns; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
             check_pandas_dataframe(df, standard=True)
-
-    def test_columns_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_pandas_dataframe(df, columns=["value"])
-
-    def test_columns_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, columns=["other"])
-
-    def test_dtypes_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_pandas_dataframe(df, dtypes={"value": float})
-
-    def test_dtypes_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, dtypes={"value": int})
-
-    def test_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        check_pandas_dataframe(df, length=1)
-
-    def test_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, length=2)
-
-    def test_min_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        check_pandas_dataframe(df, min_length=1)
-
-    def test_min_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, min_length=1)
-
-    def test_max_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        check_pandas_dataframe(df, max_length=1)
-
-    def test_max_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, max_length=1)
-
-    def test_sorted_pass(self) -> None:
-        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
-        check_pandas_dataframe(df, sorted="value")
-
-    def test_sorted_error(self) -> None:
-        df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
-        with raises(CheckPandasDataFrameError):
-            check_pandas_dataframe(df, sorted="value")
 
     def test_unique_pass(self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
@@ -292,8 +352,25 @@ class TestCheckPandasDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(CheckPandasDataFrameError):
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(r"DataFrame must be unique on .*\n\n.*\.", flags=DOTALL),
+        ):
             check_pandas_dataframe(df, unique="value")
+
+    def test_width_pass(self) -> None:
+        df = DataFrame()
+        check_pandas_dataframe(df, width=0)
+
+    def test_width_error(self) -> None:
+        df = DataFrame()
+        with raises(
+            CheckPandasDataFrameError,
+            match=re.compile(
+                r"DataFrame must have width .*; got .*\n\n.*\.", flags=DOTALL
+            ),
+        ):
+            check_pandas_dataframe(df, width=1)
 
 
 class TestCheckRangeIndex:

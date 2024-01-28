@@ -240,10 +240,11 @@ def as_int(
             msg = f"{array=}"
             raise AsIntError(msg)
         return as_int(where(is_inf, inf, array).astype(float))
-    if (isfinite(array) & (~isclose(array, rint(array)))).any():
+    rounded = rint(array)
+    if (isfinite(array) & (~isclose(array, rounded))).any():
         msg = f"{array=}"
         raise AsIntError(msg)
-    return array.astype(int)
+    return rounded.astype(int)
 
 
 class AsIntError(Exception):

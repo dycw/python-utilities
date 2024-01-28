@@ -96,7 +96,7 @@ def _check_polars_dataframe_dtypes(
     df: DataFrame, dtypes: Iterable[PolarsDataType], /
 ) -> None:
     try:
-        check_iterables_equal(df.columns, dtypes)
+        check_iterables_equal(df.dtypes, dtypes)
     except CheckIterablesEqualError as error:
         raise _CheckPolarsDataFrameDTypesError(df=df, dtypes=dtypes) from error
 

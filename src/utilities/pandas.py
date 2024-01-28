@@ -30,11 +30,15 @@ from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import CheckNameError, check_name
 from utilities.iterables import (
+    CheckIterablesEqualError,
     CheckLengthError,
+    CheckMappingsEqualError,
     CheckSetsEqualError,
     CheckSubSetError,
     CheckSuperSetError,
+    check_iterables_equal,
     check_length,
+    check_mappings_equal,
     check_sets_equal,
     check_subset,
     check_superset,
@@ -200,59 +204,181 @@ def check_pandas_dataframe(
     /,
     *,
     standard: bool = False,
-    columns: Sequence[Hashable] | None = None,
+    columns: Iterable[Hashable] | None = None,
     dtypes: Mapping[Hashable, Any] | None = None,
     length: int | tuple[int, float] | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    sorted: Hashable | Sequence[Hashable] | None = None,  # noqa: A002
+    sorted: str | Sequence[str] | None = None,  # noqa: A002
     unique: Hashable | Sequence[Hashable] | None = None,
+    width: int | None = None,
 ) -> None:
     """Check the properties of a DataFrame."""
+    _check_pandas_dataframe_length(
+        df, equal_or_approx=length, min=min_length, max=max_length
+    )
     if standard:
-        if not isinstance(df.index, RangeIndex):
-            msg = f"{df.index=}"
-            raise CheckPandasDataFrameError(msg)
-        with redirect_error(
-            CheckRangeIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
-        ):
-            check_range_index(df.index, start=0, step=1, name=None)
-        with redirect_error(
-            CheckIndexError, CheckPandasDataFrameError(f"{df.index=}, {length=}")
-        ):
-            check_index(df.columns, name=None, unique=True)
-    if (columns is not None) and (list(df.columns) != columns):
-        msg = f"{df=}, {columns=}"
-        raise CheckPandasDataFrameError(msg)
-    if (dtypes is not None) and (dict(df.dtypes) != dict(dtypes)):
-        msg = f"{df=}, {dtypes=}"
-        raise CheckPandasDataFrameError(msg)
-    if length is not None:
-        with redirect_error(
-            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {length=}")
-        ):
-            check_length(df, equal_or_approx=length)
-    if min_length is not None:
-        with redirect_error(
-            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {min_length=}")
-        ):
-            check_length(df, min=min_length)
-    if max_length is not None:
-        with redirect_error(
-            CheckLengthError, CheckPandasDataFrameError(f"{df=}, {max_length=}")
-        ):
-            check_length(df, max=max_length)
+        _check_pandas_dataframe_standard(df)
+    if columns is not None:
+        _check_pandas_dataframe_columns(df, columns)
+    if dtypes is not None:
+        _check_pandas_dataframe_dtypes(df, dtypes)
     if sorted is not None:
-        df_sorted: DataFrame = df.sort_values(by=sorted).reset_index(drop=True)  # type: ignore
-        with redirect_error(AssertionError, CheckPandasDataFrameError(f"{df=}")):
-            assert_frame_equal(df, df_sorted)
-    if (unique is not None) and df.duplicated(subset=unique).any():
-        msg = f"{df=}, {unique=}"
-        raise CheckPandasDataFrameError(msg)
+        _check_pandas_dataframe_sorted(df, sorted)
+    if unique is not None:
+        _check_pandas_dataframe_unique(df, unique)
+    if width is not None:
+        _check_pandas_dataframe_width(df, width)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CheckPandasDataFrameError(Exception):
-    ...
+    df: DataFrame
+
+
+def _check_pandas_dataframe_columns(
+    df: DataFrame, columns: Iterable[Hashable], /
+) -> None:
+    try:
+        check_iterables_equal(df.columns, columns)
+    except CheckIterablesEqualError as error:
+        raise _CheckPandasDataFrameColumnsError(df=df, columns=columns) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameColumnsError(CheckPandasDataFrameError):
+    columns: Iterable[Hashable]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have columns {}; got {}\n\n{}.".format(
+            self.columns, self.df.columns, self.df
+        )
+
+
+def _check_pandas_dataframe_dtypes(
+    df: DataFrame, dtypes: Mapping[Hashable, Any], /
+) -> None:
+    try:
+        check_mappings_equal(dict(df.dtypes), dtypes)
+    except CheckMappingsEqualError as error:
+        raise _CheckPandasDataFrameDTypesError(df=df, dtypes=dtypes) from error
+    try:
+        _check_pandas_dataframe_columns(df, dtypes)
+    except _CheckPandasDataFrameColumnsError as error:
+        raise _CheckPandasDataFrameDTypesError(df=df, dtypes=dtypes) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameDTypesError(CheckPandasDataFrameError):
+    dtypes: Iterable[Any]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have dtypes {}; got {}\n\n{}.".format(
+            self.dtypes, self.df.dtypes, self.df
+        )
+
+
+def _check_pandas_dataframe_length(
+    df: DataFrame,
+    /,
+    *,
+    equal_or_approx: int | tuple[int, float] | None = None,
+    min: int | None = None,  # noqa: A002
+    max: int | None = None,  # noqa: A002
+) -> None:
+    try:
+        check_length(df, equal_or_approx=equal_or_approx, min=min, max=max)
+    except CheckLengthError as error:
+        raise _CheckPandasDataFrameLengthError(df=df) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameLengthError(CheckPandasDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must satisfy the length requirements; got {}\n\n{}.".format(
+            len(self.df), self.df
+        )
+
+
+def _check_pandas_dataframe_standard(df: DataFrame, /) -> None:
+    if not isinstance(df.index, RangeIndex):
+        raise _CheckPandasDataFrameStandardIndexError(df=df)
+    try:
+        check_range_index(df.index, start=0, step=1, name=None)
+    except CheckRangeIndexError as error:
+        raise _CheckPandasDataFrameStandardIndexError(df=df) from error
+    try:
+        check_index(df.columns, name=None, unique=True)
+    except CheckIndexError as error:
+        raise _CheckPandasDataFrameStandardColumnsError(df=df) from error
+
+
+class _CheckPandasDataFrameStandardIndexError(CheckPandasDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have a standard index; got {}\n\n{}.".format(
+            self.df.index, self.df
+        )
+
+
+class _CheckPandasDataFrameStandardColumnsError(CheckPandasDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have standard columns; got {}\n\n{}.".format(
+            self.df.columns, self.df
+        )
+
+
+def _check_pandas_dataframe_sorted(df: DataFrame, by: str | Sequence[str], /) -> None:
+    df_sorted = df.sort_values(by=by)
+    try:
+        assert_frame_equal(df, df_sorted)
+    except AssertionError as error:
+        raise _CheckPandasDataFrameSortedError(df=df, by=by) from error
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameSortedError(CheckPandasDataFrameError):
+    by: str | Sequence[str]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must be sorted on {}\n\n{}.".format(self.by, self.df)
+
+
+def _check_pandas_dataframe_unique(
+    df: DataFrame, by: Hashable | Sequence[Hashable], /
+) -> None:
+    if df.duplicated(subset=by).any():
+        raise _CheckPandasDataFrameUniqueError(df=df, by=by)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameUniqueError(CheckPandasDataFrameError):
+    by: Hashable | Sequence[Hashable]
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must be unique on {}\n\n{}.".format(self.by, self.df)
+
+
+def _check_pandas_dataframe_width(df: DataFrame, width: int, /) -> None:
+    if len(df.columns) != width:
+        raise _CheckPandasDataFrameWidthError(df=df, width=width)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckPandasDataFrameWidthError(CheckPandasDataFrameError):
+    width: int
+
+    @override
+    def __str__(self) -> str:
+        return "DataFrame must have width {}; got {}\n\n{}.".format(
+            self.width, len(self.df.columns), self.df
+        )
 
 
 def check_range_index(
