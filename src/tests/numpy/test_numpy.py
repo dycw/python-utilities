@@ -8,7 +8,16 @@ from typing import Annotated, Any, Literal
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from hypothesis import Phase, assume, example, given, settings
-from hypothesis.strategies import DataObject, data, dates, datetimes, integers, just
+from hypothesis.strategies import (
+    DataObject,
+    data,
+    dates,
+    datetimes,
+    floats,
+    integers,
+    just,
+    none,
+)
 from numpy import (
     arange,
     array,
@@ -809,9 +818,10 @@ class TestArrayIndexer:
 
 
 class TestAsInt:
-    @given(n=integers(-10, 10))
-    def test_main(self, *, n: int) -> None:
-        arr = array([n], dtype=float)
+    @given(n=integers(-10, 10), fuzz=floats(-1e-8, 1e-8) | none())
+    def test_main(self, *, n: int, fuzz: float | None) -> None:
+        n_use = n if fuzz is None else (n + fuzz)
+        arr = array([n_use], dtype=float)
         result = as_int(arr)
         expected = array([n], dtype=int)
         assert_equal(result, expected)

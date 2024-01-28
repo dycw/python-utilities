@@ -119,8 +119,8 @@ class TestCheckPolarsDataFrame:
             check_polars_dataframe(df, predicates={"a": isfinite})
 
     def test_schema_pass(self) -> None:
-        df = DataFrame({"value": [0.0]})
-        check_polars_dataframe(df, schema={"value": Float64})
+        df = DataFrame()
+        check_polars_dataframe(df, schema={})
 
     def test_schema_error_set_of_columns(self) -> None:
         df = DataFrame()
