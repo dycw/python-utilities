@@ -136,7 +136,7 @@ httpx==0.26.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.97.0
+hypothesis==6.97.1
     # via dycw-utilities (pyproject.toml)
 idna==3.6
     # via
@@ -330,7 +330,7 @@ pyproject-hooks==1.0.0
     # via build
 pysocks==1.7.1
     # via urllib3
-pytest==7.4.4
+pytest==8.0.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-check
@@ -359,7 +359,7 @@ python-dateutil==2.8.2
     #   luigi
     #   pandas
     #   streamlit
-pytz==2023.3.post1
+pytz==2023.4
     # via pandas
 pyviz-comms==3.0.1
     # via
@@ -369,7 +369,7 @@ pyyaml==6.0.1
     # via bokeh
 qdldl==0.1.7.post0
     # via osqp
-referencing==0.32.1
+referencing==0.33.0
     # via
     #   jsonschema
     #   jsonschema-specifications

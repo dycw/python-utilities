@@ -101,7 +101,7 @@ class TestYieldImportNodesDirectly:
 class TestYieldImportNodesFromModuleAll:
     def test_main(self) -> None:
         imports = list(_yield_import_nodes_from_module_all(pytest))
-        assert len(imports) == 77
+        assert len(imports) == 81
         for imp in imports:
             assert imp.module == "pytest"
 

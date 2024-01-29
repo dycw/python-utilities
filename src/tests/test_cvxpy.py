@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from collections.abc import Callable
+from re import DOTALL
 from typing import Any, cast
 
 import cvxpy
@@ -12,6 +15,8 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
 from utilities.cvxpy import (
+    MaximumError,
+    MinimumError,
     MultiplyError,
     ScalarProductError,
     SolveInfeasibleError,
@@ -206,41 +211,113 @@ class TestMax:
         assert isclose(max_(var).value, max_(var.value))
 
 
-class TestMaximum:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(2.0, 3.0, 3.0),
-            param(2.0, array([3.0]), array([3.0])),
-            param(array([2.0]), 3.0, array([3.0])),
-            param(array([2.0]), array([3.0]), array([3.0])),
-        ],
-    )
-    def test_float_and_array(
-        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
-    ) -> None:
-        assert_equal(maximum(x, y), expected)
+class TestMaximumAndMinimum:
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_two_floats(self, *, func: Callable[..., Any], expected: float) -> None:
+        assert isclose(func(2.0, 3.0), expected)
 
-    @mark.parametrize("x", [param(2.0), param(array([2.0]))])
-    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_one_expression(
-        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
-    ) -> None:
-        var = _get_variable(objective)
-        assert_equal(maximum(x, var).value, maximum(x, var.value))
-        assert_equal(maximum(var, x).value, maximum(var.value, x))
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_two_arrays(self, *, func: Callable[..., Any], expected: float) -> None:
+        assert_equal(func(array([2.0]), array([3.0])), array([expected]))
 
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_two_series(self, *, func: Callable[..., Any], expected: float) -> None:
+        res = func(Series([2.0]), Series([3.0]))
+        exp_series = Series([expected])
+        assert_series_equal(res, exp_series)
+
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_two_dataframes(self, *, func: Callable[..., Any], expected: float) -> None:
+        res = func(DataFrame([2.0]), DataFrame([3.0]))
+        exp_df = DataFrame([expected])
+        assert_frame_equal(res, exp_df)
+
+    @mark.parametrize("func", [param(maximum), param(minimum)])
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
     def test_two_expressions(
         self,
         *,
+        func: Callable[..., Any],
         objective1: type[Maximize | Minimize],
         objective2: type[Maximize | Minimize],
     ) -> None:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
-        assert_equal(maximum(var1, var2).value, maximum(var1.value, var2.value))
+        assert isclose(func(var1, var2).value, func(var1.value, var2.value))
+
+    @mark.parametrize("func", [param(maximum), param(minimum)])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @mark.parametrize("shape", [param(None), param((2, 2))])
+    def test_float_and_expr(
+        self,
+        *,
+        func: Callable[..., Any],
+        objective: type[Maximize | Minimize],
+        shape: tuple[int, ...] | None,
+    ) -> None:
+        x, y = 2.0, _get_variable(objective, shape=shape)
+        assert_equal(func(x, y).value, func(x, y.value))
+        assert_equal(func(y, x).value, func(y.value, x))
+
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_array_and_series(
+        self, *, func: Callable[..., Any], expected: float
+    ) -> None:
+        x, y, exp_series = array([2.0]), Series([3.0]), Series([expected])
+        assert_series_equal(func(x, y), exp_series)
+        assert_series_equal(func(y, x), exp_series)
+
+    @mark.parametrize(("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)])
+    def test_array_and_dataframe(
+        self, *, func: Callable[..., Any], expected: float
+    ) -> None:
+        x, y, exp_df = array([2.0]), DataFrame([3.0]), DataFrame([expected])
+        assert_frame_equal(func(x, y), exp_df)
+        assert_frame_equal(func(y, x), exp_df)
+
+    @mark.parametrize("func", [param(maximum), param(minimum)])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_array_and_expr(
+        self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
+    ) -> None:
+        x, y = array([2.0]), _get_variable(objective)
+        assert isclose(func(x, y).value, func(x, y.value))
+        assert isclose(func(y, x).value, func(y.value, x))
+
+    @mark.parametrize(
+        ("func", "error"), [param(maximum, MaximumError), param(minimum, MinimumError)]
+    )
+    def test_series_and_dataframe(
+        self, func: Callable[..., Any], error: type[Exception]
+    ) -> None:
+        x, y = Series([2.0]), DataFrame([3.0])
+        match = re.compile(
+            r".* must not be between a Series and DataFrame; got .* and .*\.",
+            flags=DOTALL,
+        )
+        with raises(error, match=match):
+            _ = func(cast(Any, x), cast(Any, y))
+        with raises(error, match=match):
+            _ = func(cast(Any, y), cast(Any, x))
+
+    @mark.parametrize("func", [param(maximum), param(minimum)])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_series_and_expr(
+        self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
+    ) -> None:
+        x, y = Series([2.0]), _get_variable(objective)
+        assert isclose(func(x, y).value, func(x, y.value))
+        assert isclose(func(y, x).value, func(y.value, x))
+
+    @mark.parametrize("func", [param(maximum), param(minimum)])
+    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    def test_dataframe_and_expr(
+        self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
+    ) -> None:
+        x, y = DataFrame([2.0]), _get_variable(objective)
+        assert isclose(func(x, y).value, func(x, y.value))
+        assert isclose(func(y, x).value, func(y.value, x))
 
 
 class TestMin:
@@ -265,43 +342,6 @@ class TestMin:
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, shape=(2,))
         assert isclose(min_(var).value, min_(var.value))
-
-
-class TestMinimum:
-    @mark.parametrize(
-        ("x", "y", "expected"),
-        [
-            param(2.0, 3.0, 2.0),
-            param(2.0, array([3.0]), array([2.0])),
-            param(array([2.0]), 3.0, array([2.0])),
-            param(array([2.0]), array([3.0]), array([2.0])),
-        ],
-    )
-    def test_float_and_array(
-        self, *, x: float | NDArrayF, y: float | NDArrayF, expected: float | NDArrayF
-    ) -> None:
-        assert_equal(minimum(x, y), expected)
-
-    @mark.parametrize("x", [param(2.0), param(array([2.0]))])
-    @mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    def test_one_expression(
-        self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
-    ) -> None:
-        var = _get_variable(objective)
-        assert_equal(minimum(x, var).value, minimum(x, var.value))
-        assert_equal(minimum(var, x).value, minimum(var.value, x))
-
-    @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @mark.parametrize("objective2", [param(Maximize), param(Minimize)])
-    def test_two_expressions(
-        self,
-        *,
-        objective1: type[Maximize | Minimize],
-        objective2: type[Maximize | Minimize],
-    ) -> None:
-        var1 = _get_variable(objective1)
-        var2 = _get_variable(objective2)
-        assert_equal(minimum(var1, var2).value, minimum(var1.value, var2.value))
 
 
 class TestMultiply:
@@ -375,9 +415,13 @@ class TestMultiply:
 
     def test_series_and_dataframe(self) -> None:
         x, y = Series([2.0]), DataFrame([3.0])
-        with raises(MultiplyError):
+        match = re.compile(
+            r"Multiply must not be between a Series and DataFrame; got .* and .*\.",
+            flags=DOTALL,
+        )
+        with raises(MultiplyError, match=match):
             _ = multiply(cast(Any, x), cast(Any, y))
-        with raises(MultiplyError):
+        with raises(MultiplyError, match=match):
             _ = multiply(cast(Any, y), cast(Any, x))
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
@@ -459,6 +503,28 @@ class TestNegative:
     ) -> None:
         assert_equal(negative(x), expected)
 
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(Series([0.0]), Series([0.0])),
+            param(Series([1.0]), Series([0.0])),
+            param(Series([-1.0]), Series([1.0])),
+        ],
+    )
+    def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
+        assert_series_equal(negative(x), expected)
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(DataFrame([0.0]), DataFrame([0.0])),
+            param(DataFrame([1.0]), DataFrame([0.0])),
+            param(DataFrame([-1.0]), DataFrame([1.0])),
+        ],
+    )
+    def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
+        assert_frame_equal(negative(x), expected)
+
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(
         self,
@@ -499,6 +565,28 @@ class TestPositive:
         self, *, x: float | NDArrayF, expected: float | NDArrayF
     ) -> None:
         assert_equal(positive(x), expected)
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(Series([0.0]), Series([0.0])),
+            param(Series([1.0]), Series([1.0])),
+            param(Series([-1.0]), Series([0.0])),
+        ],
+    )
+    def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
+        assert_series_equal(positive(x), expected)
+
+    @mark.parametrize(
+        ("x", "expected"),
+        [
+            param(DataFrame([0.0]), DataFrame([0.0])),
+            param(DataFrame([1.0]), DataFrame([1.0])),
+            param(DataFrame([-1.0]), DataFrame([0.0])),
+        ],
+    )
+    def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
+        assert_frame_equal(positive(x), expected)
 
     @mark.parametrize("objective", [param(Maximize), param(Minimize)])
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
@@ -569,9 +657,13 @@ class TestScalarProduct:
         if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
             isinstance(x, DataFrame) and isinstance(y, Series)
         ):
-            with raises(ScalarProductError):
+            match = re.compile(
+                r".* must not be between a Series and DataFrame; got .* and .*\.",
+                flags=DOTALL,
+            )
+            with raises(ScalarProductError, match=match):
                 _ = scalar_product(cast(Any, x), cast(Any, y))
-            with raises(ScalarProductError):
+            with raises(ScalarProductError, match=match):
                 _ = scalar_product(cast(Any, y), cast(Any, x))
         else:
             assert isclose(scalar_product(cast(Any, y), cast(Any, x)), 6.0)
