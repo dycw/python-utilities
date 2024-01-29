@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Literal, cast, overload
 
 import cvxpy
@@ -8,8 +9,9 @@ import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
 from pandas import DataFrame, Series
+from typing_extensions import override
 
-from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_zero
+from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
 from utilities.pandas import SeriesF
 
 
@@ -187,6 +189,16 @@ def maximum(x: NDArrayF, y: float, /) -> NDArrayF:
 
 
 @overload
+def maximum(x: SeriesF, y: float, /) -> SeriesF:
+    ...
+
+
+@overload
+def maximum(x: DataFrame, y: float, /) -> DataFrame:
+    ...
+
+
+@overload
 def maximum(x: Expression, y: float, /) -> Expression:
     ...
 
@@ -202,7 +214,57 @@ def maximum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def maximum(x: SeriesF, y: NDArrayF, /) -> SeriesF:
+    ...
+
+
+@overload
+def maximum(x: DataFrame, y: NDArrayF, /) -> DataFrame:
+    ...
+
+
+@overload
 def maximum(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: float, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def maximum(x: NDArrayF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def maximum(x: SeriesF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def maximum(x: Expression, y: SeriesF, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: float, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def maximum(x: NDArrayF, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def maximum(x: DataFrame, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def maximum(x: Expression, y: DataFrame, /) -> Expression:
     ...
 
 
@@ -217,17 +279,49 @@ def maximum(x: NDArrayF, y: Expression, /) -> Expression:
 
 
 @overload
+def maximum(x: SeriesF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def maximum(x: DataFrame, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
 def maximum(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
 def maximum(
-    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
-) -> float | NDArrayF | Expression:
-    """Compute the maximum of two quantities."""
-    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
+    x: float | NDArrayF | SeriesF | DataFrame | Expression,
+    y: float | NDArrayF | SeriesF | DataFrame | Expression,
+    /,
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
+    """Compute the elementwise maximum of two quantities."""
+    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
+        isinstance(x, DataFrame) and isinstance(y, Series)
+    ):
+        raise MaximumError(x=x, y=y)
+    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+        y, int | float | ndarray | Series | DataFrame
+    ):
         return np.maximum(x, y)
     return cvxpy.maximum(x, y)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class MaximumError(Exception):
+    x: SeriesF | DataFrame
+    y: SeriesF | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return (
+            "Maximum must not be between a Series and DataFrame; got {} and {}.".format(
+                self.x, self.y
+            )
+        )
 
 
 @overload
@@ -262,6 +356,16 @@ def minimum(x: NDArrayF, y: float, /) -> NDArrayF:
 
 
 @overload
+def minimum(x: SeriesF, y: float, /) -> SeriesF:
+    ...
+
+
+@overload
+def minimum(x: DataFrame, y: float, /) -> DataFrame:
+    ...
+
+
+@overload
 def minimum(x: Expression, y: float, /) -> Expression:
     ...
 
@@ -277,7 +381,57 @@ def minimum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def minimum(x: SeriesF, y: NDArrayF, /) -> SeriesF:
+    ...
+
+
+@overload
+def minimum(x: DataFrame, y: NDArrayF, /) -> DataFrame:
+    ...
+
+
+@overload
 def minimum(x: Expression, y: NDArrayF, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: float, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def minimum(x: NDArrayF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def minimum(x: SeriesF, y: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def minimum(x: Expression, y: SeriesF, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: float, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def minimum(x: NDArrayF, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def minimum(x: DataFrame, y: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
+def minimum(x: Expression, y: DataFrame, /) -> Expression:
     ...
 
 
@@ -292,17 +446,49 @@ def minimum(x: NDArrayF, y: Expression, /) -> Expression:
 
 
 @overload
+def minimum(x: SeriesF, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
+def minimum(x: DataFrame, y: Expression, /) -> Expression:
+    ...
+
+
+@overload
 def minimum(x: Expression, y: Expression, /) -> Expression:
     ...
 
 
 def minimum(
-    x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
-) -> float | NDArrayF | Expression:
-    """Compute the minimum of two quantities."""
-    if isinstance(x, int | float | ndarray) and isinstance(y, int | float | ndarray):
+    x: float | NDArrayF | SeriesF | DataFrame | Expression,
+    y: float | NDArrayF | SeriesF | DataFrame | Expression,
+    /,
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
+    """Compute the elementwise minimum of two quantities."""
+    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
+        isinstance(x, DataFrame) and isinstance(y, Series)
+    ):
+        raise MinimumError(x=x, y=y)
+    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+        y, int | float | ndarray | Series | DataFrame
+    ):
         return np.minimum(x, y)
     return cvxpy.minimum(x, y)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class MinimumError(Exception):
+    x: SeriesF | DataFrame
+    y: SeriesF | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return (
+            "Minimum must not be between a Series and DataFrame; got {} and {}.".format(
+                self.x, self.y
+            )
+        )
 
 
 @overload
@@ -429,8 +615,7 @@ def multiply(
     if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
         isinstance(x, DataFrame) and isinstance(y, Series)
     ):
-        msg = "Cannot multiply a Series and DataFrame"
-        raise MultiplyError(msg)
+        raise MultiplyError(x=x, y=y)
     if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
         y, int | float | ndarray | Series | DataFrame
     ):
@@ -438,8 +623,16 @@ def multiply(
     return cvxpy.multiply(x, y)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class MultiplyError(Exception):
-    ...
+    x: SeriesF | DataFrame
+    y: SeriesF | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return "Multiply must not be between a Series and DataFrame; got {} and {}.".format(
+            self.x, self.y
+        )
 
 
 @overload
@@ -485,15 +678,30 @@ def negative(x: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def negative(x: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def negative(x: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
 def negative(x: Expression, /) -> Expression:
     ...
 
 
-def negative(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def negative(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the negative parts of a quantity."""
     if isinstance(x, int | float | ndarray):
         result = -minimum(x, 0.0)
         return where(is_zero(result), 0.0, result)
+    if isinstance(x, Series | DataFrame):
+        result = -minimum(x, 0.0)
+        return result.where(is_non_zero(result), 0.0)
     return cvxpy.neg(x)
 
 
@@ -527,15 +735,30 @@ def positive(x: NDArrayF, /) -> NDArrayF:
 
 
 @overload
+def positive(x: SeriesF, /) -> SeriesF:
+    ...
+
+
+@overload
+def positive(x: DataFrame, /) -> DataFrame:
+    ...
+
+
+@overload
 def positive(x: Expression, /) -> Expression:
     ...
 
 
-def positive(x: float | NDArrayF | Expression, /) -> float | NDArrayF | Expression:
+def positive(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression, /
+) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the positive parts of a quantity."""
     if isinstance(x, int | float | ndarray):
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
+    if isinstance(x, Series | DataFrame):
+        result = maximum(x, 0.0)
+        return result.where(is_non_zero(result), 0.0)
     return cvxpy.pos(x)
 
 
@@ -723,13 +946,20 @@ def scalar_product(
     try:
         prod = multiply(cast(Any, x), cast(Any, y))
     except MultiplyError:
-        msg = "Cannot multiply a Series and DataFrame"
-        raise ScalarProductError(msg) from None
+        raise ScalarProductError(x=cast(Any, x), y=cast(Any, y)) from None
     return sum_(prod)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ScalarProductError(Exception):
-    ...
+    x: SeriesF | DataFrame
+    y: SeriesF | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return "Scalar product must not be between a Series and DataFrame; got {} and {}.".format(
+            self.x, self.y
+        )
 
 
 def solve(
@@ -958,6 +1188,8 @@ def _sum_axis_0_or_1(
 
 
 __all__ = [
+    "MaximumError",
+    "MinimumError",
     "MultiplyError",
     "ScalarProductError",
     "SolveError",
