@@ -48,7 +48,7 @@ dev = [
   "fpdf2 >= 2.7.7",
   "hatch >= 1.9.3",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.97.1",
+  "hypothesis >= 6.97.3",
   "luigi >= 3.5.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
@@ -58,7 +58,7 @@ dev = [
   "polars >= 0.20.6",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
-  "pydantic >= 2.5.3",
+  "pydantic >= 2.6.0",
   "pyinstrument >= 4.6.2",
   "pypiserver[passlib] >= 2.0.1",
   "pytest >= 8.0.0",
@@ -93,7 +93,7 @@ fastapi = ["fastapi >= 0.109.0"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.17.2"]
 hatch = ["hatch >= 1.9.3"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.17.2"]
-hypothesis = ["hypothesis >= 6.97.1"]
+hypothesis = ["hypothesis >= 6.97.3"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
@@ -103,7 +103,7 @@ pandas = ["pandas >= 2.2.0"]
 polars = ["polars >= 0.20.6"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
-pydantic = ["pydantic >= 2.5.3"]
+pydantic = ["pydantic >= 2.6.0"]
 pyinstrument = ["pyinstrument >= 4.6.2"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 8.0.0"]
