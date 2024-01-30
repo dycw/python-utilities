@@ -231,7 +231,7 @@ filterwarnings = [
   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
 ]
-minversion = "7.0"
+minversion = "8.0"
 testpaths = ["src/tests"]
 timeout = 600
 xfail_strict = true
