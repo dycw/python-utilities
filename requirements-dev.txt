@@ -136,7 +136,7 @@ httpx==0.26.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.97.1
+hypothesis==6.97.3
     # via dycw-utilities (pyproject.toml)
 idna==3.6
     # via
@@ -308,11 +308,11 @@ pycparser==2.21
     # via cffi
 pyct==0.5.0
     # via colorcet
-pydantic==2.5.3
+pydantic==2.6.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi
-pydantic-core==2.14.6
+pydantic-core==2.16.1
     # via pydantic
 pydeck==0.8.1b0
     # via streamlit
