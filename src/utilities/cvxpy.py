@@ -1005,7 +1005,7 @@ def solve(
     if status in {"infeasible", "infeasible_inaccurate"}:
         msg = f"{problem=}"
         raise SolveInfeasibleError(msg)
-    if status == "unbounded":
+    if status in {"unbounded", "unbounded_inaccurate"}:
         msg = f"{problem=}"
         raise SolveUnboundedError(msg)
     msg = f"{status=}"  # pragma: no cover
