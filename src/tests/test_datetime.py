@@ -166,7 +166,8 @@ class TestEnsure:
     @given(data=data(), datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_datetime(self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_datetime = data.draw(sampled_from([datetime, str(datetime)]))
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = ensure_datetime(str_or_datetime, tzinfo=tzinfo)
         assert result == datetime
 
@@ -266,13 +267,15 @@ class TestParseDate:
 class TestParseDateTime:
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_str(self, *, datetime: dt.datetime) -> None:
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(str(datetime), tzinfo=tzinfo)
         assert result == datetime
 
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_isoformat(self, *, datetime: dt.datetime) -> None:
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.isoformat(), tzinfo=tzinfo)
         assert result == datetime
 
@@ -283,7 +286,8 @@ class TestParseDateTime:
         ),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
@@ -294,7 +298,8 @@ class TestParseDateTime:
         ),
     )
     def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
@@ -306,7 +311,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
@@ -318,7 +324,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
@@ -330,7 +337,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
@@ -340,7 +348,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
-        assert (tzinfo := datetime.tzinfo) is not None
+        tzinfo = datetime.tzinfo
+        assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 

@@ -16,7 +16,8 @@ class TestSQLiteEngines:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         assert isinstance(engine, Engine)
-        assert (database := engine.url.database) is not None
+        database = engine.url.database
+        assert database is not None
         assert not valid_path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
