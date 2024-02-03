@@ -102,7 +102,7 @@ exceptiongroup==1.2.0
     # via dycw-utilities (pyproject.toml)
 execnet==2.0.2
     # via pytest-xdist
-fastapi==0.109.0
+fastapi==0.109.1
     # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
@@ -136,7 +136,7 @@ httpx==0.26.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.97.4
+hypothesis==6.97.5
     # via dycw-utilities (pyproject.toml)
 idna==3.6
     # via
@@ -201,7 +201,7 @@ nox==2023.4.22
     # via dycw-utilities (pyproject.toml)
 numba==0.59.0
     # via numbagg
-numbagg==0.7.2
+numbagg==0.8.0
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
@@ -516,7 +516,7 @@ zstandard==0.22.0
     # via hatch
 
 # The following packages are considered to be unsafe in a requirements file:
-pip==23.3.2
+pip==24.0
     # via
     #   pip-tools
     #   pypiserver
