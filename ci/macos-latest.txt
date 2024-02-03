@@ -51,7 +51,7 @@ cachetools==5.3.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2023.11.17
+certifi==2024.2.2
     # via
     #   httpcore
     #   httpx
@@ -181,7 +181,7 @@ markdown-it-py==3.0.0
     #   mdit-py-plugins
     #   panel
     #   rich
-markupsafe==2.1.4
+markupsafe==2.1.5
     # via jinja2
 mdit-py-plugins==0.4.0
     # via panel
@@ -362,7 +362,7 @@ python-dateutil==2.8.2
     #   luigi
     #   pandas
     #   streamlit
-pytz==2023.4
+pytz==2024.1
     # via pandas
 pyviz-comms==3.0.1
     # via
@@ -426,7 +426,7 @@ sqlalchemy==2.0.25
     # via dycw-utilities (pyproject.toml)
 starlette==0.35.1
     # via fastapi
-streamlit==1.30.0
+streamlit==1.31.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.2.3
     # via

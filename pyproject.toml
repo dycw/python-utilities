@@ -66,7 +66,7 @@ dev = [
   "scipy >= 1.12.0",
   "selenium >= 4.17.2",
   "sqlalchemy >= 2.0.25",
-  "streamlit >= 1.30.0",
+  "streamlit >= 1.31.0",
   "timeout-decorator >= 0.5.0",
   "xarray >= 2024.1.1",
   "xlrd >= 2.0.1",
@@ -117,7 +117,7 @@ scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.17.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.25"]
 sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
-streamlit = ["streamlit >= 1.30.0"]
+streamlit = ["streamlit >= 1.31.0"]
 test = [
   "exceptiongroup >= 1.2.0",
   "pytest >= 7.4.0",
@@ -239,6 +239,10 @@ xfail_strict = true
 
 # ruff
 [tool.ruff]
+src = ["src"]
+target-version = "py310"
+
+[tool.ruff.lint]
 ignore = [
   "ANN101",  # flake8-annotations, missing-type-self
   "ANN102",  # flake8-annotations, missing-type-cls
@@ -306,8 +310,6 @@ select = [
   "W",  # pycodestyle
   "YTT",  # flake8-2020
 ]
-src = ["src"]
-target-version = "py310"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = [
