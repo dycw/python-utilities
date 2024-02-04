@@ -1,12 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Annotated, Any, TypeVar
 
-from pydantic import BaseModel
+from frozendict import frozendict
+from pydantic import BaseModel, GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic_core.core_schema import (
+    CoreSchema,
+    chain_schema,
+    dict_schema,
+    is_instance_schema,
+    json_or_python_schema,
+    no_info_plain_validator_function,
+    plain_serializer_function_ser_schema,
+    union_schema,
+)
 from typing_extensions import override
 
 from utilities.pathlib import ensure_path
+
+if TYPE_CHECKING:
+    from pydantic.json_schema import JsonSchemaValue
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -55,11 +68,52 @@ class _LoadModelIsADirectoryError(LoadModelError):
         return f"Unable to load {self.model  }; path {str(self.path)!r} must not be a directory."  # pragma: os-ne-windows
 
 
-def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:
-    from utilities.atomicwrites import writer
+class _PydanticFrozenDictAnnotation:
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        from_dict_schema = chain_schema(
+            [dict_schema(), no_info_plain_validator_function(frozendict)]
+        )
+        return json_or_python_schema(
+            json_schema=from_dict_schema,
+            python_schema=union_schema(
+                [is_instance_schema(frozendict), from_dict_schema]
+            ),
+            serialization=plain_serializer_function_ser_schema(dict),
+        )
 
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, _: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(dict_schema())
+
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+PydanticFrozenDict = Annotated[frozendict[_K, _V], _PydanticFrozenDictAnnotation]
+
+
+def save_model(
+    model: BaseModel,
+    path: PathLike,
+    /,
+    *,
+    exclude_unset: bool = False,
+    exclude_defaults: bool = False,
+    exclude_none: bool = False,
+    overwrite: bool = False,
+) -> None:
     with writer(path, overwrite=overwrite) as temp, temp.open(mode="w") as fh:
-        _ = fh.write(model.model_dump_json())
+        _ = fh.write(
+            model.model_dump_json(
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+            )
+        )
 
 
 __all__ = ["HashableBaseModel", "LoadModelError", "load_model", "save_model"]

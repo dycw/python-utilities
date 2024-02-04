@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-import pytest
+from frozendict import frozendict
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import dictionaries, integers
 from pydantic import BaseModel
+from pytest import mark
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_path
-from utilities.pydantic import HashableBaseModel, LoadModelError, load_model, save_model
-from utilities.pytest import skipif_windows
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.pydantic import (
+    HashableBaseModel,
+    PydanticFrozenDict,
+    load_model,
+    save_model,
+)
 
 
 class TestHashableBaseModel:
@@ -24,6 +23,23 @@ class TestHashableBaseModel:
 
         example = Example(x=x)
         assert isinstance(hash(example), int)
+
+
+class TestPydanticFrozenDict:
+    @mark.only
+    @given(x=dictionaries(integers(-10, 10), integers(-10, 10)).map(frozendict))
+    def test_main(self, *, x: frozendict[int, int]) -> None:
+        class Example(BaseModel):
+            mapping: PydanticFrozenDict[int, int]
+
+        obj = Example(mapping=x)
+        assert isinstance(obj.mapping, frozendict)
+        assert obj.mapping == x
+        assert obj.model_dump() == {"mapping": x}
+        json = obj.model_dump_json()
+        loaded = Example.model_validate_json(json)
+        assert isinstance(loaded.mapping, frozendict)
+        assert loaded.mapping == x
 
 
 class TestSaveAndLoadModel:
