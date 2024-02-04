@@ -36,6 +36,9 @@ class TestSaveAndLoadModel:
         assert loaded == example
 
     def test_load_model_error_dir(self, *, tmp_path: Path) -> None:
+        path = tmp_path.joinpath("dir")
+        path.mkdir()
+
         class Example(BaseModel):
             x: int
 
@@ -43,7 +46,7 @@ class TestSaveAndLoadModel:
             LoadModelError,
             match=r"Unable to load .*; path .* must not be a directory\.",
         ):
-            _ = load_model(Example, tmp_path)
+            _ = load_model(Example, path)
 
     def test_load_model_error_file(self, *, tmp_path: Path) -> None:
         class Example(BaseModel):
