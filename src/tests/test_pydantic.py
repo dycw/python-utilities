@@ -10,6 +10,7 @@ from pytest import raises
 from utilities.hypothesis import temp_paths
 from utilities.pathvalidate import valid_path
 from utilities.pydantic import HashableBaseModel, LoadModelError, load_model, save_model
+from utilities.pytest import skipif_windows
 
 
 class TestHashableBaseModel:
@@ -35,6 +36,7 @@ class TestSaveAndLoadModel:
         loaded = load_model(Example, path)
         assert loaded == example
 
+    @skipif_windows
     def test_load_model_error_dir(self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
         path.mkdir()
