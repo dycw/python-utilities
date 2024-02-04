@@ -37,64 +37,17 @@ bottleneck = ["bottleneck >= 1.3.7"]
 cryptography = ["cryptography >= 42.0.2"]
 cvxpy = ["cvxpy >= 1.4.2"]
 dev = [
-  # core
-  "airium >= 0.2.6",
-  "ast-comments >= 1.2.1",
-  "beautifulsoup4 >= 4.12.3",
-  "bottleneck >= 1.3.7",
-  "cryptography >= 42.0.2",
-  "cvxpy >= 1.4.2",
-  "fastapi >= 0.109.1",
-  "fpdf2 >= 2.7.7",
-  "hatch >= 1.9.3",
-  "holoviews >= 1.18.1",
-  "hypothesis >= 6.97.3",
-  "luigi >= 3.5.0",
-  "mdutils >= 1.6.0",
-  "memory-profiler >= 0.61.0",
-  "numbagg >= 0.8.0",
-  "numpy >= 1.26.3",
-  "pandas >= 2.2.0",
-  "polars >= 0.20.6",
-  "pqdm >= 0.2.0",
-  "psutil >= 5.9.6",
-  "pydantic >= 2.6.0",
-  "pyinstrument >= 4.6.2",
-  "pypiserver[passlib] >= 2.0.1",
-  "pytest >= 8.0.0",
-  "pytest-check >= 2.3.1",
-  "scipy >= 1.12.0",
-  "selenium >= 4.17.2",
-  "sqlalchemy >= 2.0.25",
-  "streamlit >= 1.31.0",
-  "timeout-decorator >= 0.5.0",
-  "xarray >= 2024.1.1",
-  "xlrd >= 2.0.1",
-  "zarr >= 2.16.1",
-  # dev
   "nox",
-  "pip-tools",
-  # sqlalchemy-dbs
-  "cx-oracle",
-  "mysqlclient",  # ci-mac-disable
-  "psycopg2-binary",
-  "pyodbc",
-  # test
   "coverage-conditional-plugin >= 0.9.0",
-  "exceptiongroup >= 1.2.0",
   "freezegun >= 1.4.0",
   "pytest-cov >= 4.1.0",
-  "pytest-instafail >= 0.5.0",
-  "pytest-only >= 2.0.0",
-  "pytest-randomly >= 3.15.0",
   "pytest-timeout >= 2.2.0",
-  "pytest-xdist >= 3.3.1",
 ]
-fastapi = ["fastapi >= 0.109.1"]
+fastapi = ["fastapi >= 0.109.2"]
 fpdf2 = ["fpdf2 >= 2.7.7", "holoviews >= 1.18.1", "selenium >= 4.17.2"]
 hatch = ["hatch >= 1.9.3"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.17.2"]
-hypothesis = ["hypothesis >= 6.97.3"]
+hypothesis = ["hypothesis >= 6.97.6"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
@@ -116,7 +69,12 @@ scripts-luigi = ["luigi >= 3.5.0"]
 scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.17.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.25"]
-sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
+sqlalchemy-dbs = [
+  "cx-oracle",
+  "mysqlclient",  # ci-mac-disable
+  "psycopg2-binary",
+  "pyodbc",
+]
 streamlit = ["streamlit >= 1.31.0"]
 test = [
   "exceptiongroup >= 1.2.0",
@@ -126,6 +84,7 @@ test = [
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
 ]
+timeout-decorator = ["timeout-decorator >= 0.5.0"]
 xarray = ["xarray >= 2024.1.1"]
 xlrd = ["xlrd >= 2.0.1"]
 zarr = ["zarr >= 2.16.1"]
@@ -188,7 +147,6 @@ path = "src/utilities/__init__.py"
 style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/pip-compile-no-hashes.toml",
 ]
 
 # pyright
@@ -250,6 +208,7 @@ ignore = [
   "ANN401",  # flake8-annotations, dynamically-typed-expression
   "B008",  # flake8-bugbear, function-call-argument-default
   "COM812",  # flake8-commas, trailing-comma-missing
+  "FIX002",  # flake8-fixme, line-contains-todo
   "PGH003",  # pygrep-hooks, blanket-type-ignore
   "PLR0913",  # refactor, too-many-arguments
   "PT012",  # flake8-pytest-style, raises-with-multiple-statements

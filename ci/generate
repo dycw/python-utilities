@@ -3,11 +3,11 @@
 # macos
 gsed -i '/# ci-mac-disable/d' pyproject.toml
 gsed -i 's/polars >=/polars-lts-cpu >=/g' pyproject.toml
-pre-commit run pip-compile --all-files
-cp requirements-dev.txt ci/macos-latest.txt
-git checkout -- pyproject.toml requirements-dev.txt
+pre-commit run run-uv-pip-compile --all-files
+cp requirements.txt ci/macos-latest.txt
+git checkout -- pyproject.toml requirements.txt
 
 # windows/ubuntu
-pre-commit run pip-compile --all-files
-cp requirements-dev.txt ci/windows-latest.txt
-cp requirements-dev.txt ci/ubuntu-latest.txt
+pre-commit run run-uv-pip-compile --all-files
+cp requirements.txt ci/windows-latest.txt
+cp requirements.txt ci/ubuntu-latest.txt

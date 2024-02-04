@@ -104,7 +104,7 @@ class TestEnum:
 
         @command()
         @argument("truth", type=utilities.click.Enum(Truth))
-        def cli(*, truth: Truth) -> None:
+        def cli(*, truth: Truth) -> None:  # type: ignore
             echo(f"truth = {truth}")
 
         result = CliRunner().invoke(cli, [truth.name])
@@ -120,7 +120,7 @@ class TestEnum:
 
         @command()
         @argument("truth", type=utilities.click.Enum(Truth, case_sensitive=False))
-        def cli(*, truth: Truth) -> None:
+        def cli(*, truth: Truth) -> None:  # type: ignore
             echo(f"truth = {truth}")
 
         name = truth.name
@@ -135,7 +135,7 @@ class TestEnum:
 
         @command()
         @option("--truth", type=utilities.click.Enum(Truth), default=truth)
-        def cli(*, truth: Truth) -> None:
+        def cli(*, truth: Truth) -> None:  # type: ignore
             echo(f"truth = {truth}")
 
         result = CliRunner().invoke(cli)

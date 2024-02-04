@@ -259,7 +259,7 @@ def is_mapped_class(obj: type[Any], /) -> bool:
     """Check if an object is a mapped class."""
 
     try:
-        _ = class_mapper(obj)
+        _ = class_mapper(obj)  # type: ignore
     except (ArgumentError, UnmappedClassError):
         return False
     return True
