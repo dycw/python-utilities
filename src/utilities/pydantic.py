@@ -29,7 +29,7 @@ def load_model(model: type[_BM], path: PathLike, /) -> _BM:
             return model.model_validate_json(fh.read())
     except FileNotFoundError:
         raise _LoadModelFileNotFoundError(model=model, path=path) from None
-    except IsADirectoryError:
+    except IsADirectoryError:  # pragma: os-ne-windows
         raise _LoadModelIsADirectoryError(model=model, path=path) from None
 
 
