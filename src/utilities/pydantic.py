@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -21,8 +23,38 @@ class HashableBaseModel(BaseModel):
 
 
 def load_model(model: type[_BM], path: PathLike, /) -> _BM:
-    with valid_path(path).open() as fh:
-        return model.model_validate_json(fh.read())
+    path = valid_path(path)
+    try:
+        with path.open() as fh:
+            return model.model_validate_json(fh.read())
+    except FileNotFoundError:
+        raise _LoadModelFileNotFoundError(model=model, path=path) from None
+    except IsADirectoryError:  # pragma: os-ne-windows
+        raise _LoadModelIsADirectoryError(model=model, path=path) from None
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class LoadModelError(Exception):
+    model: type[BaseModel]
+    path: Path
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _LoadModelFileNotFoundError(LoadModelError):
+    @override
+    def __str__(self) -> str:
+        return "Unable to load {}; path {!r} must exist.".format(
+            self.model, str(self.path)
+        )
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _LoadModelIsADirectoryError(LoadModelError):
+    @override
+    def __str__(self) -> str:
+        return "Unable to load {}; path {!r} must not be a directory.".format(  # pragma: os-ne-windows
+            self.model, str(self.path)
+        )
 
 
 def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:
@@ -30,4 +62,4 @@ def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) 
         _ = fh.write(model.model_dump_json())
 
 
-__all__ = ["HashableBaseModel", "load_model", "save_model"]
+__all__ = ["HashableBaseModel", "LoadModelError", "load_model", "save_model"]
