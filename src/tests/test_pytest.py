@@ -15,7 +15,11 @@ class TestPytestOptions:
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
+            from warnings import filterwarnings
+
             from pytest import mark
+
+            filterwarnings("error")
 
             @mark.unknown
             def test_main():

@@ -89,6 +89,7 @@ from utilities.pandas import (
     to_numpy,
     union_indexes,
 )
+from utilities.warnings import catch_warnings_as_errors
 
 
 class TestAsType:
@@ -645,7 +646,9 @@ class TestTimestampToDateTime:
     @given(timestamp=timestamps(allow_nanoseconds=True))
     def test_warn(self, *, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
+        with catch_warnings_as_errors(), raises(
+            UserWarning, match="Discarding nonzero nanoseconds in conversion"
+        ):
             _ = timestamp_to_datetime(timestamp)
 
     def test_error(self) -> None:
