@@ -93,18 +93,17 @@ class TestParameters:
         assert result.stdout == f"value = {serialize(value)}\n"
 
 
+class _Truth(enum.Enum):
+    true = auto()
+    false = auto()
+
+
 class TestEnum:
-    class Truth(enum.Enum):
-        true = auto()
-        false = auto()
-
-    @given(truth=sampled_from(Truth))
-    def test_command(self, *, truth: Truth) -> None:
-        Truth = self.Truth  # noqa: N806
-
+    @given(truth=sampled_from(_Truth))
+    def test_command(self, *, truth: _Truth) -> None:
         @command()
-        @argument("truth", type=utilities.click.Enum(Truth))
-        def cli(*, truth: Truth) -> None:
+        @argument("truth", type=utilities.click.Enum(_Truth))
+        def cli(*, truth: _Truth) -> None:
             echo(f"truth = {truth}")
 
         result = CliRunner().invoke(cli, [truth.name])
@@ -114,13 +113,11 @@ class TestEnum:
         result = CliRunner().invoke(cli, ["not_an_element"])
         assert result.exit_code == 2
 
-    @given(data=data(), truth=sampled_from(Truth))
-    def test_case_insensitive(self, *, data: DataObject, truth: Truth) -> None:
-        Truth = self.Truth  # noqa: N806
-
+    @given(data=data(), truth=sampled_from(_Truth))
+    def test_case_insensitive(self, *, data: DataObject, truth: _Truth) -> None:
         @command()
-        @argument("truth", type=utilities.click.Enum(Truth, case_sensitive=False))
-        def cli(*, truth: Truth) -> None:
+        @argument("truth", type=utilities.click.Enum(_Truth, case_sensitive=False))
+        def cli(*, truth: _Truth) -> None:
             echo(f"truth = {truth}")
 
         name = truth.name
@@ -129,13 +126,11 @@ class TestEnum:
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
 
-    @given(truth=sampled_from(Truth))
-    def test_option(self, *, truth: Truth) -> None:
-        Truth = self.Truth  # noqa: N806
-
+    @given(truth=sampled_from(_Truth))
+    def test_option(self, *, truth: _Truth) -> None:
         @command()
-        @option("--truth", type=utilities.click.Enum(Truth), default=truth)
-        def cli(*, truth: Truth) -> None:
+        @option("--truth", type=utilities.click.Enum(_Truth), default=truth)
+        def cli(*, truth: _Truth) -> None:
             echo(f"truth = {truth}")
 
         result = CliRunner().invoke(cli)

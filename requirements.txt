@@ -6,9 +6,9 @@
 #
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
-beartype==0.17.0
+beartype==0.17.2
     # via dycw-utilities (pyproject.toml)
-bidict==0.22.1
+bidict==0.23.0
     # via dycw-utilities (pyproject.toml)
 cachetools==5.3.2
     # via dycw-utilities (pyproject.toml)
@@ -26,9 +26,9 @@ pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-tqdm==4.66.1
+tqdm==4.66.2
     # via dycw-utilities (pyproject.toml)
-typed-settings==24.0.0
+typed-settings==24.0.1
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.9.0
     # via dycw-utilities (pyproject.toml)

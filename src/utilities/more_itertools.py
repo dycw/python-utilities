@@ -99,7 +99,7 @@ def transpose(
     ...
 
 
-def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:  # type: ignore
+def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:
     return tuple(_transpose(iterable))
 
 
