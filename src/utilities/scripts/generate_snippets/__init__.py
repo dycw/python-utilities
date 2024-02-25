@@ -35,9 +35,9 @@ def yield_imports(
         case Method.direct:
             return _yield_import_nodes_directly(click, [command, option])
         case Method.module:
-            import utilities.iterables
+            import utilities.pandas
 
-            return _yield_import_nodes_from_module_all(utilities.iterables)
+            return _yield_import_nodes_from_module_all(utilities.pandas)
         case Method.parse:
             text = """
 from itertools import (

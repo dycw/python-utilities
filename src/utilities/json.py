@@ -59,7 +59,7 @@ def _pre_process(obj: Any) -> Any:
 
 
 def _positive_zero(x: float, /) -> float:
-    return abs(x) if x == 0.0 else x  # noqa: PLR2004
+    return abs(x) if x == 0.0 else x
 
 
 def _default(  # noqa: PLR0911, PLR0912
