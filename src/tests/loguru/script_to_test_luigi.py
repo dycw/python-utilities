@@ -8,7 +8,7 @@ from click import command, option
 from loguru import logger
 from luigi import IntParameter, Task
 from numpy import arange, array
-from numpy.random import default_rng, random
+from numpy.random import default_rng
 from typing_extensions import override
 
 from utilities.atomicwrites import writer
@@ -17,6 +17,7 @@ from utilities.loguru import setup_loguru
 from utilities.luigi import PathTarget, build
 from utilities.os import CPU_COUNT
 from utilities.pathvalidate import valid_path
+from utilities.random import SYSTEM_RANDOM
 from utilities.tempfile import TEMP_DIR
 from utilities.types import get_class_name
 
@@ -38,7 +39,7 @@ class Example(Task):
         for i in arange(n := self.messages) + 1:
             level = rng.choice(levels, p=p)
             logger.log(level, "{}, #{}/{}", get_class_name(self), i, n)
-            sleep(1.0 + random())
+            sleep(1.0 + SYSTEM_RANDOM.random())
         with writer(self.output().path) as temp:
             temp.touch()
 
