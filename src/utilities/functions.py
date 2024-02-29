@@ -28,7 +28,7 @@ class CheckNameError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object must have name {}; got {}.".format(self.name, self.obj.name)
+        return f"Object must have name {self.name}; got {self.obj.name}."
 
 
 def identity(obj: _T, /) -> _T:

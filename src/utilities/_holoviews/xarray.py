@@ -72,7 +72,7 @@ class _PlotCurveArrayNameIsEmptyError(PlotCurveError):
 
     @override
     def __str__(self) -> str:
-        return "Array name {!r} must not be empty".format(self.name)
+        return f"Array name {self.name!r} must not be empty"
 
 
 __all__ = ["PlotCurveError", "plot_curve"]

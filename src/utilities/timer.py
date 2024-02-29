@@ -83,7 +83,7 @@ class TimerError(Exception):
     def __str__(self) -> str:
         return (
             "Timer must be compared to a number, Timer, or timedelta; got "
-            "{} instead".format(get_class_name(self.obj))
+            f"{get_class_name(self.obj)} instead"
         )
 
 

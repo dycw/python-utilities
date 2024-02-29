@@ -49,7 +49,7 @@ class OneError(Exception, Generic[_T]):
 class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
-        return "Iterable {} must not be empty.".format(self.iterable)
+        return f"Iterable {self.iterable} must not be empty."
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

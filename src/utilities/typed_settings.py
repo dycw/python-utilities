@@ -116,7 +116,7 @@ class _GetLoadersError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "App name {!r} must not contain underscores".format(self.appname)
+        return f"App name {self.appname!r} must not contain underscores"
 
 
 def load_settings(

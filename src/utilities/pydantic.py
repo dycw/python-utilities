@@ -43,9 +43,7 @@ class LoadModelError(Exception):
 class _LoadModelFileNotFoundError(LoadModelError):
     @override
     def __str__(self) -> str:
-        return "Unable to load {}; path {!r} must exist.".format(
-            self.model, str(self.path)
-        )
+        return f"Unable to load {self.model}; path {str(self.path)!r} must exist."
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
