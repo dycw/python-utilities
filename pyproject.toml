@@ -8,100 +8,94 @@ requires = ["hatchling"]
 # project
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
-dependencies = [
-  "atomicwrites >= 1.4.1",
-  "beartype >= 0.17.2",
-  "bidict >= 0.23.1",
-  "cachetools >= 5.3.3",
-  "click >= 8.1.7",
-  "frozendict >= 2.4.0",
-  "loguru >= 0.7.2",
-  "more-itertools >= 10.2.0",
-  "pathvalidate >= 3.2.0",
-  "pyhumps >= 3.8.0",
-  "semver >= 3.0.2",
-  "tqdm >= 4.66.2",
-  "typed-settings >= 24.1.0",
-  "typing-extensions >= 4.9.0",
-]
+dependencies = ["typing-extensions >= 4.9.0"]
 dynamic = ["version"]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
-ast-comments = ["ast-comments >= 1.2.1"]
+atomicwrites = ["atomicwrites >= 1.4.1"]
+beartype = ["beartype >= 0.17.2"]
 beautifulsoup4 = ["beautifulsoup4 >= 4.12.3"]
+bidict = ["bidict >= 0.23.1"]
 bottleneck = ["bottleneck >= 1.3.8"]
+cachetools = ["cachetools >= 5.3.3"]
+click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 42.0.5"]
 cvxpy = ["cvxpy >= 1.4.2"]
-dev = [
-  # core
-  "ast-comments >= 1.2.1",
-  "beautifulsoup4 >= 4.12.3",
-  "bottleneck >= 1.3.8",
-  "cryptography >= 42.0.5",
-  "cvxpy >= 1.4.2",
-  "fastapi >= 0.110.0",
-  "fpdf2 >= 2.7.8",
-  "hatch >= 1.9.3",
-  "holoviews >= 1.18.1",
-  "hypothesis >= 6.98.15",
-  "luigi >= 3.5.0",
-  "mdutils >= 1.6.0",
-  "memory-profiler >= 0.61.0",
-  "numbagg >= 0.8.0",
-  "numpy >= 1.26.4",
-  "pandas >= 2.2.1",
-  "polars >= 0.20.13",
-  "pqdm >= 0.2.0",
-  "psutil >= 5.9.6",
-  "pydantic >= 2.6.3",
-  "pyinstrument >= 4.6.2",
-  "pypiserver[passlib] >= 2.0.1",
-  "pytest >= 8.0.2",
-  "pytest-check >= 2.3.1",
-  "scipy >= 1.12.0",
-  "selenium >= 4.18.1",
-  "sqlalchemy >= 2.0.27",
-  "streamlit >= 1.31.1",
-  "xarray >= 2024.2.0",
-  "xlrd >= 2.0.1",
-  "zarr >= 2.16.1",
-  # dev
-  "nox",
-  "pip-tools",
-  # sqlalchemy-dbs
-  "cx-oracle",
-  "mysqlclient",  # ci-mac-disable
-  "psycopg2-binary",
-  "pyodbc",
-  # test
-  "coverage-conditional-plugin >= 0.9.0",
-  "exceptiongroup >= 1.2.0",
-  "freezegun >= 1.4.0",
-  "pytest-cov >= 4.1.0",
-  "pytest-instafail >= 0.5.0",
-  "pytest-only >= 2.0.0",
-  "pytest-randomly >= 3.15.0",
-  "pytest-timeout >= 2.2.0",
-  "pytest-xdist >= 3.3.1",
-]
+# dev = [
+# # core
+# "ast-comments >= 1.2.1",
+# "beautifulsoup4 >= 4.12.3",
+# "bottleneck >= 1.3.8",
+# "cryptography >= 42.0.5",
+# "cvxpy >= 1.4.2",
+# "fpdf2 >= 2.7.8",
+# "hatch >= 1.9.3",
+# "holoviews >= 1.18.1",
+# "hypothesis >= 6.98.15",
+# "luigi >= 3.5.0",
+# "mdutils >= 1.6.0",
+# "memory-profiler >= 0.61.0",
+# "numbagg >= 0.8.0",
+# "numpy >= 1.26.4",
+# "pandas >= 2.2.1",
+# "polars >= 0.20.13",
+# "pqdm >= 0.2.0",
+# "psutil >= 5.9.6",
+# "pydantic >= 2.6.3",
+# "pyinstrument >= 4.6.2",
+# "pypiserver[passlib] >= 2.0.1",
+# "pytest >= 8.0.2",
+# "pytest-check >= 2.3.1",
+# "selenium >= 4.18.1",
+# "sqlalchemy >= 2.0.27",
+# "streamlit >= 1.31.1",
+# "timeout-decorator >= 0.5.0",
+# "xarray >= 2024.2.0",
+# "xlrd >= 2.0.1",
+# "zarr >= 2.16.1",
+# # dev
+# "nox",
+# "pip-tools",
+# # sqlalchemy-dbs
+# "cx-oracle",
+# "mysqlclient",     # ci-mac-disable
+# "psycopg2-binary",
+# "pyodbc",
+# # test
+# "coverage-conditional-plugin >= 0.9.0",
+# "exceptiongroup >= 1.2.0",
+# "freezegun >= 1.4.0",
+# "pytest-cov >= 4.1.0",
+# "pytest-instafail >= 0.5.0",
+# "pytest-only >= 2.0.0",
+# "pytest-randomly >= 3.15.0",
+# "pytest-timeout >= 2.2.0",
+# "pytest-xdist >= 3.3.1",
+# ]
 fastapi = ["fastapi >= 0.110.0"]
 fpdf2 = ["fpdf2 >= 2.7.8", "holoviews >= 1.18.1", "selenium >= 4.18.1"]
+frozendict = ["frozendict >= 2.4.0"]
+generate-snippets = ["ast-comments"]
 hatch = ["hatch >= 1.9.3"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.18.1"]
 hypothesis = ["hypothesis >= 6.98.15"]
+loguru = ["loguru >= 0.7.2"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
+more-itertools = ["more-itertools >= 10.2.0"]
 numbagg = ["numbagg >= 0.8.0"]
 numpy = ["numpy >= 1.26.4"]
 pandas = ["pandas >= 2.2.1"]
+pathvalidate = ["pathvalidate >= 3.2.0"]
 polars = ["polars >= 0.20.13"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
 pydantic = ["pydantic >= 2.6.3"]
+pyhumps = ["pyhumps >= 3.8.0"]
 pyinstrument = ["pyinstrument >= 4.6.2"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 8.0.2"]
@@ -112,17 +106,28 @@ scripts-generate-snippets = ["ast-comments >= 1.2.1"]
 scripts-luigi = ["luigi >= 3.5.0"]
 scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.18.1"]
+semver = ["semver >= 3.0.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.27"]
 sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
 streamlit = ["streamlit >= 1.31.1"]
 test = [
   "exceptiongroup >= 1.2.0",
+  "hypothesis >= 6.98.15",
   "pytest >= 8.0.1",
-  "pytest-instafail >= 0.5.0",
-  "pytest-only >= 2.0.0",
+  # "pytest-instafail >= 0.5.0",
+  # "pytest-only >= 2.0.0",
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
 ]
+test-ast = ["more-itertools", "pytest"]
+test-atomicwrites = ["atomicwrites", "pytest"]
+test-beartype = ["beartype", "pytest"]
+test-fastapi = ["fastapi", "pytest"]
+test-more-itertools = ["more-itertools", "pytest"]
+test-scipy = ["hypothesis", "pytest", "scipy"]
+test-xlrd = ["pytest", "xlrd"]
+tqdm = ["tqdm >= 4.66.2"]
+typed-settings = ["typed-settings >= 24.1.0"]
 xarray = ["xarray >= 2024.2.0"]
 xlrd = ["xlrd >= 2.0.1"]
 zarr = ["zarr >= 2.16.1"]
@@ -221,9 +226,9 @@ addopts = [
   "-ra",
   "-vv",
   "--color=auto",
-  "--cov=utilities",
-  "--cov-config=pyproject.toml",
-  "--cov-report=html",
+  # "--cov=utilities",
+  # "--cov-config=pyproject.toml",
+  # "--cov-report=html",
   "--strict-markers",
 ]
 filterwarnings = [
@@ -234,7 +239,6 @@ filterwarnings = [
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
-timeout = 600
 xfail_strict = true
 
 # ruff

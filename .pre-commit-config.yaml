@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.11
+  python: python3.10
 
 repos:
   # fixers
@@ -13,6 +13,8 @@ repos:
     hooks:
       - id: run-hatch-version
       - id: run-ruff-format
+      - id: run-uv-pip-compile
+        args: [--python-version=3.10]
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.12.0
     hooks:
@@ -46,22 +48,10 @@ repos:
     hooks:
       - id: shellcheck
   # compile
-  - repo: https://github.com/jazzband/pip-tools
-    rev: 7.4.0
+  - repo: local
     hooks:
-      - id: pip-compile
-        args:
-          - --allow-unsafe
-          - --quiet
-          - --upgrade
-          - pyproject.toml
-        files: ^pyproject\.toml$
-      - id: pip-compile
-        args:
-          - --allow-unsafe
-          - --extra=dev
-          - --output-file=requirements-dev.txt
-          - --quiet
-          - --upgrade
-          - pyproject.toml
+      - id: uv pip compiles
+        name: uv pip compiles
+        entry: bash requirements/run_uv_pip_compiles.sh
+        language: system
         files: ^pyproject\.toml$
