@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from enum import Enum as _Enum
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
@@ -117,28 +117,64 @@ log_level_option = option(
 )
 
 
-__all__ = ["Date", "DateTime", "Enum", "Time", "Timedelta", "log_level_option"]
+# luigi
 
 
-try:
-    from utilities._click.luigi import (
-        local_scheduler_option_default_central,
-        local_scheduler_option_default_local,
-        workers_option,
+(local_scheduler_option_default_local, local_scheduler_option_default_central) = (
+    option(
+        "-ls/-nls",
+        "--local-scheduler/--no-local-scheduler",
+        is_flag=True,
+        default=default,
+        show_default=True,
+        help=f"Pass {flag!r} to use the {desc} scheduler",
     )
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += [
-        "local_scheduler_option_default_central",
-        "local_scheduler_option_default_local",
-        "workers_option",
-    ]
+    for default, flag, desc in [(True, "-nls", "central"), (False, "-ls", "local")]
+)
+workers_option = option(
+    "-w",
+    "--workers",
+    type=int,
+    default=None,
+    show_default=True,
+    help="The number of workers to use",
+)
 
 
-try:
-    from utilities._click.sqlalchemy import Engine
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["Engine"]
+# sqlalchemy
+
+
+if TYPE_CHECKING:
+    from sqlalchemy import Engine as _Engine
+
+
+class Engine(ParamType):
+    """An engine-valued parameter."""
+
+    name = "engine"
+
+    @override
+    def convert(
+        self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> _Engine:
+        """Convert a value into the `Engine` type."""
+        from utilities.sqlalchemy import ParseEngineError, ensure_engine
+
+        try:
+            return ensure_engine(value)
+        except ParseEngineError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+__all__ = [
+    "Date",
+    "DateTime",
+    "Engine",
+    "Enum",
+    "Time",
+    "Timedelta",
+    "local_scheduler_option_default_central",
+    "local_scheduler_option_default_local",
+    "log_level_option",
+    "workers_option",
+]

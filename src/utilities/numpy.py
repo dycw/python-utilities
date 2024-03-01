@@ -12,11 +12,15 @@ import numpy as np
 from beartype.vale import Is, IsAttr, IsEqual
 from numpy import (
     array,
+    bool_,
     datetime64,
     digitize,
     dtype,
     errstate,
+    exp,
     flatnonzero,
+    flip,
+    float64,
     full_like,
     inf,
     int64,
@@ -29,27 +33,22 @@ from numpy import (
     nan,
     nanquantile,
     ndarray,
+    object_,
     prod,
     rint,
+    roll,
     unravel_index,
     where,
 )
 from numpy.linalg import det, eig
 from numpy.random import default_rng
+from numpy.typing import NDArray
 from typing_extensions import override
 
-from utilities._numpy.common import (
-    NDArrayA,
-    NDArrayB,
-    NDArrayF,
-    NDArrayI,
-    NDArrayO,
-    ShiftError,
-    shift,
-)
 from utilities.datetime import EPOCH_UTC, UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
+from utilities.math import FloatFinPos
 from utilities.re import extract_group
 
 # RNG
@@ -97,6 +96,10 @@ DTypeDns = IsAttr["dtype", IsEqual[dt64ns]]
 DTypeDps = IsAttr["dtype", IsEqual[dt64ps]]
 DTypeDfs = IsAttr["dtype", IsEqual[dt64fs]]
 DTypeDas = IsAttr["dtype", IsEqual[dt64as]]
+NDArrayA = NDArray[Any]
+NDArrayB = NDArray[bool_]
+NDArrayF = NDArray[float64]
+NDArrayI = NDArray[int64]
 NDArrayDY = Annotated[NDArrayA, DTypeDY]
 NDArrayDM = Annotated[NDArrayA, DTypeDM]
 NDArrayDW = Annotated[NDArrayA, DTypeDW]
@@ -125,6 +128,7 @@ NDArrayD = (
     | NDArrayDfs
     | NDArrayDas
 )
+NDArrayO = NDArray[object_]
 
 
 # annotations - ndims
@@ -247,8 +251,7 @@ def as_int(
     return rounded.astype(int)
 
 
-class AsIntError(Exception):
-    ...
+class AsIntError(Exception): ...
 
 
 def date_to_datetime64(date: dt.date, /) -> datetime64:
@@ -302,8 +305,7 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     raise NotImplementedError(msg)
 
 
-class DateTime64ToDateError(Exception):
-    ...
+class DateTime64ToDateError(Exception): ...
 
 
 def datetime64_to_int(datetime: datetime64, /) -> int:
@@ -339,8 +341,7 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     raise NotImplementedError(msg)
 
 
-class DateTime64ToDateTimeError(Exception):
-    ...
+class DateTime64ToDateTimeError(Exception): ...
 
 
 def datetime64_dtype_to_unit(dtype: Any, /) -> Datetime64Unit:
@@ -376,6 +377,38 @@ def discretize(x: NDArrayF1, bins: int | Iterable[float], /) -> NDArrayF1:
     out = full_like(x, nan, dtype=float)
     out[is_fin] = discretize(x[is_fin], bins)
     return out
+
+
+def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArrayF:
+    """Compute the EWMA of an array."""
+    from numbagg import move_exp_nanmean
+
+    alpha = _exp_weighted_alpha(halflife)
+    return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
+
+
+def exp_moving_sum(
+    array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1
+) -> NDArrayF:
+    """Compute the exponentially-weighted moving sum of an array."""
+    from numbagg import move_exp_nansum
+
+    alpha = _exp_weighted_alpha(halflife)
+    return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
+
+
+def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
+    """Get the alpha."""
+    decay = 1.0 - exp(log(0.5) / halflife)
+    com = 1.0 / decay - 1.0
+    return 1.0 / (1.0 + com)
+
+
+def ffill(array: NDArrayF, /, *, limit: int | None = None, axis: int = -1) -> NDArrayF:
+    """Forward fill the elements in an array."""
+    from bottleneck import push
+
+    return push(array, n=limit, axis=axis)
 
 
 def ffill_non_nan_slices(
@@ -426,8 +459,7 @@ def flatn0(array: NDArrayB1, /) -> int:
         return flattened.item()
 
 
-class FlatN0Error(Exception):
-    ...
+class FlatN0Error(Exception): ...
 
 
 def get_fill_value(dtype: Any, /) -> Any:
@@ -446,8 +478,7 @@ def get_fill_value(dtype: Any, /) -> Any:
     raise GetFillValueError(msg)
 
 
-class GetFillValueError(Exception):
-    ...
+class GetFillValueError(Exception): ...
 
 
 def has_dtype(x: Any, dtype: Any, /) -> bool:
@@ -901,68 +932,55 @@ def is_zero_or_non_micro_or_nan(
 
 
 @overload
-def maximum(x: float, /) -> float:
-    ...
+def maximum(x: float, /) -> float: ...
 
 
 @overload
-def maximum(x0: float, x1: float, /) -> float:
-    ...
+def maximum(x0: float, x1: float, /) -> float: ...
 
 
 @overload
-def maximum(x0: float, x1: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: float, x1: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: float, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: float, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: float, x1: float, x2: float, /) -> float:
-    ...
+def maximum(x0: float, x1: float, x2: float, /) -> float: ...
 
 
 @overload
-def maximum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF:
-    ...
+def maximum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 def maximum(*xs: float | NDArrayF) -> float | NDArrayF:
@@ -971,73 +989,89 @@ def maximum(*xs: float | NDArrayF) -> float | NDArrayF:
 
 
 @overload
-def minimum(x: float, /) -> float:
-    ...
+def minimum(x: float, /) -> float: ...
 
 
 @overload
-def minimum(x0: float, x1: float, /) -> float:
-    ...
+def minimum(x0: float, x1: float, /) -> float: ...
 
 
 @overload
-def minimum(x0: float, x1: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: float, x1: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: float, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: float, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: float, x1: float, x2: float, /) -> float:
-    ...
+def minimum(x0: float, x1: float, x2: float, /) -> float: ...
 
 
 @overload
-def minimum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF:
-    ...
+def minimum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
 
 
 @overload
-def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF:
-    ...
+def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
 
 
 def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     """Compute the minimum of a number of quantities."""
     return reduce(np.minimum, xs)
+
+
+def pct_change(
+    array: NDArrayF | NDArrayI,
+    /,
+    *,
+    limit: int | None = None,
+    n: int = 1,
+    axis: int = -1,
+) -> NDArrayF:
+    """Compute the percentage change in an array."""
+    if n == 0:
+        raise PctChangeError
+    if n > 0:
+        filled = ffill(array.astype(float), limit=limit, axis=axis)
+        shifted = shift(filled, n=n, axis=axis)
+        with errstate(all="ignore"):
+            ratio = (filled / shifted) if n >= 0 else (shifted / filled)
+        return where(isfinite(array), ratio - 1.0, nan)
+    flipped = cast(NDArrayF | NDArrayI, flip(array, axis=axis))
+    result = pct_change(flipped, limit=limit, n=-n, axis=axis)
+    return flip(result, axis=axis)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class PctChangeError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Shift must be non-zero"
 
 
 @contextmanager
@@ -1051,8 +1085,26 @@ def redirect_empty_numpy_concatenate() -> Iterator[None]:
         yield
 
 
-class EmptyNumpyConcatenateError(Exception):
-    ...
+class EmptyNumpyConcatenateError(Exception): ...
+
+
+def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
+    """Shift the elements of an array."""
+    if n == 0:
+        raise ShiftError
+    as_float = array.astype(float)
+    shifted = roll(as_float, n, axis=axis)
+    indexer = list(repeat(slice(None), times=array.ndim))
+    indexer[axis] = slice(n) if n >= 0 else slice(n, None)
+    shifted[tuple(indexer)] = nan
+    return shifted
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ShiftError(Exception):
+    @override
+    def __str__(self) -> str:
+        return "Shift must be non-zero"
 
 
 def shift_bool(
@@ -1064,13 +1116,11 @@ def shift_bool(
 
 
 @overload
-def year(date: datetime64, /) -> int:
-    ...
+def year(date: datetime64, /) -> int: ...
 
 
 @overload
-def year(date: NDArrayDD, /) -> NDArrayI:
-    ...
+def year(date: NDArrayDD, /) -> NDArrayI: ...
 
 
 def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
@@ -1690,6 +1740,7 @@ __all__ = [
     "NDim1",
     "NDim2",
     "NDim3",
+    "PctChangeError",
     "ShiftError",
     "array_indexer",
     "as_int",
@@ -1715,6 +1766,9 @@ __all__ = [
     "dt64ps",
     "dt64s",
     "dt64us",
+    "ewma",
+    "exp_moving_sum",
+    "ffill",
     "ffill_non_nan_slices",
     "fillna",
     "flatn0",
@@ -1768,24 +1822,9 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "maximum",
     "minimum",
+    "pct_change",
     "redirect_empty_numpy_concatenate",
     "shift",
     "shift_bool",
     "year",
 ]
-
-
-try:
-    from utilities._numpy.bottleneck import PctChangeError, ffill, pct_change
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["PctChangeError", "ffill", "pct_change"]
-
-
-try:
-    from utilities._numpy.numbagg import ewma, exp_moving_sum
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["ewma", "exp_moving_sum"]

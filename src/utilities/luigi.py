@@ -3,33 +3,143 @@ from __future__ import annotations
 import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
+from contextlib import suppress
+from enum import Enum
 from pathlib import Path
-from typing import Any, Generic, Literal, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.task import flatten
-from semver import Version
 from typing_extensions import override
 
-from utilities._luigi.common import (
-    DateHourParameter,
-    DateMinuteParameter,
-    DateParameter,
-    DateSecondParameter,
-    EnumParameter,
-    TimeParameter,
-    WeekdayParameter,
+from utilities.datetime import (
+    EPOCH_UTC,
+    UTC,
+    ensure_date,
+    ensure_datetime,
+    ensure_time,
+    get_now,
+    parse_date,
+    parse_datetime,
+    parse_time,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+    serialize_date,
+    serialize_datetime,
+    serialize_time,
 )
-from utilities.datetime import UTC, get_now
+from utilities.enum import ensure_enum, parse_enum
 from utilities.logging import LogLevel
-from utilities.pathvalidate import valid_path
-from utilities.semver import ensure_version
 from utilities.types import IterableStrs, PathLike
 
+if TYPE_CHECKING:
+    from semver import Version
+    from sqlalchemy import Engine, Select
+
+
 # parameters
+
+
+class DateParameter(luigi.DateParameter):
+    """A parameter which takes the value of a `dt.date`."""
+
+    @override
+    def normalize(self, value: dt.date | str) -> dt.date:
+        return ensure_date(value)
+
+    @override
+    def parse(self, s: str) -> dt.date:
+        return parse_date(s)
+
+    @override
+    def serialize(self, dt: dt.date) -> str:
+        return serialize_date(dt)
+
+
+class DateHourParameter(luigi.DateHourParameter):
+    """A parameter which takes the value of an hourly `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
+
+
+class DateMinuteParameter(luigi.DateMinuteParameter):
+    """A parameter which takes the value of a minutely `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
+
+
+class DateSecondParameter(luigi.DateSecondParameter):
+    """A parameter which takes the value of a secondly `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        return ensure_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        return parse_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        return serialize_datetime(dt)
+
+
+_E = TypeVar("_E", bound=Enum)
+
+
+class EnumParameter(Parameter, Generic[_E]):
+    """A parameter which takes the value of an Enum."""
+
+    def __init__(
+        self, enum: type[_E], /, *args: Any, case_sensitive: bool = True, **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._enum = enum
+        self._case_sensitive = case_sensitive
+
+    @override
+    def normalize(self, x: _E | str) -> _E:
+        return ensure_enum(self._enum, x, case_sensitive=self._case_sensitive)
+
+    @override
+    def parse(self, x: str) -> _E:
+        return parse_enum(self._enum, x, case_sensitive=self._case_sensitive)
+
+    @override
+    def serialize(self, x: _E) -> str:
+        return x.name
 
 
 class FrozenSetIntsParameter(Parameter):
@@ -84,23 +194,89 @@ class FrozenSetStrsParameter(Parameter):
         return self._empty
 
 
+class TableParameter(Parameter):
+    """Parameter taking the value of a SQLAlchemy table."""
+
+    @override
+    def normalize(self, x: Any) -> Any:
+        """Normalize a `Table` or model argument."""
+        return x
+
+    @override
+    def serialize(self, x: Any) -> str:
+        """Serialize a `Table` or model argument."""
+
+        from utilities.sqlalchemy import get_table_name
+
+        return get_table_name(x)
+
+
+class TimeParameter(Parameter):
+    """A parameter which takes the value of a `dt.time`."""
+
+    @override
+    def normalize(self, x: dt.time | str) -> dt.time:
+        return ensure_time(x)
+
+    @override
+    def parse(self, x: str) -> dt.time:
+        return parse_time(x)
+
+    @override
+    def serialize(self, x: dt.time) -> str:
+        return serialize_time(x)
+
+
 class VersionParameter(Parameter):
     """Parameter taking the value of a `Version`."""
 
     @override
     def normalize(self, x: Version | str) -> Version:
         """Normalize a `Version` argument."""
+        from utilities.semver import ensure_version
+
         return ensure_version(x)
 
     @override
     def parse(self, x: str) -> Version:
         """Parse a `Version` argument."""
+        from semver import Version
+
         return Version.parse(x)
 
     @override
     def serialize(self, x: Version) -> str:
         """Serialize a `Version` argument."""
         return str(x)
+
+
+class WeekdayParameter(Parameter):
+    """A parameter which takes the valeu of the previous/next weekday."""
+
+    def __init__(
+        self, *args: Any, rounding: Literal["prev", "next"] = "prev", **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        if rounding == "prev":
+            self._rounder = round_to_prev_weekday
+        else:
+            self._rounder = round_to_next_weekday
+
+    @override
+    def normalize(self, x: dt.date | str) -> dt.date:
+        with suppress(AttributeError, ModuleNotFoundError):
+            from utilities.pandas import timestamp_to_date
+
+            x = timestamp_to_date(x)
+        return self._rounder(ensure_date(x))
+
+    @override
+    def parse(self, x: str) -> dt.date:
+        return parse_date(x)
+
+    @override
+    def serialize(self, x: dt.date) -> str:
+        return serialize_date(x)
 
 
 # targets
@@ -111,12 +287,57 @@ class PathTarget(Target):
 
     def __init__(self, path: PathLike, /) -> None:
         super().__init__()
-        self.path = valid_path(path)
+        self.path = Path(path)
 
     @override
     def exists(self) -> bool:  # type: ignore
         """Check if the target exists."""
         return self.path.exists()
+
+
+class DatabaseTarget(Target):
+    """A target point to a set of rows in a database."""
+
+    def __init__(self, sel: Select[Any], engine: Engine, /) -> None:
+        super().__init__()
+        self._sel = sel.limit(1)
+        self._engine = engine
+
+    def exists(self) -> bool:  # type: ignore
+        from utilities.sqlalchemy import (
+            TableDoesNotExistError,
+            redirect_table_does_not_exist,
+        )
+
+        engine = self._engine
+        try:
+            with redirect_table_does_not_exist(engine), engine.begin() as conn:
+                res = conn.execute(self._sel).one_or_none()
+        except TableDoesNotExistError:
+            return False
+        else:
+            return res is not None
+
+
+class EngineParameter(Parameter):
+    """Parameter taking the value of a SQLAlchemy engine."""
+
+    @override
+    def normalize(self, x: Engine) -> Engine:
+        """Normalize an `Engine` argument."""
+        return x
+
+    @override
+    def parse(self, x: str) -> Engine:
+        """Parse an `Engine` argument."""
+        from sqlalchemy import create_engine
+
+        return create_engine(x)
+
+    @override
+    def serialize(self, x: Engine) -> str:
+        """Serialize an `Engine` argument."""
+        return x.url.render_as_string()
 
 
 # tasks
@@ -181,7 +402,7 @@ class ExternalFile(ExternalTask):
         return self.path.exists()
 
 
-# fucntions
+# functions
 
 
 @overload
@@ -266,16 +487,19 @@ def yield_dependencies(task: Task, /, *, recursive: bool = False) -> Iterator[Ta
 __all__ = [
     "AwaitTask",
     "AwaitTime",
+    "DatabaseTarget",
     "DateHourParameter",
     "DateMinuteParameter",
     "DateParameter",
     "DateSecondParameter",
+    "EngineParameter",
     "EnumParameter",
     "ExternalFile",
     "ExternalTask",
     "FrozenSetIntsParameter",
     "FrozenSetStrsParameter",
     "PathTarget",
+    "TableParameter",
     "TimeParameter",
     "VersionParameter",
     "WeekdayParameter",
@@ -283,45 +507,3 @@ __all__ = [
     "clone",
     "yield_dependencies",
 ]
-
-
-try:
-    from utilities._luigi.sqlalchemy import (
-        DatabaseTarget,
-        EngineParameter,
-        TableParameter,
-    )
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["DatabaseTarget", "EngineParameter", "TableParameter"]
-
-
-try:
-    from utilities._luigi.typed_settings import (
-        AnnotationAndKeywordsToDictError,
-        AnnotationIterableToClassError,
-        AnnotationToClassError,
-        annotation_and_keywords_to_dict,
-        annotation_date_to_class,
-        annotation_datetime_to_class,
-        annotation_iterable_to_class,
-        annotation_to_class,
-        annotation_union_to_class,
-        build_params_mixin,
-    )
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += [
-        "AnnotationAndKeywordsToDictError",
-        "AnnotationIterableToClassError",
-        "AnnotationToClassError",
-        "annotation_and_keywords_to_dict",
-        "annotation_date_to_class",
-        "annotation_datetime_to_class",
-        "annotation_iterable_to_class",
-        "annotation_to_class",
-        "annotation_union_to_class",
-        "build_params_mixin",
-    ]

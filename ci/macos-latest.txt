@@ -4,8 +4,6 @@
 #
 #    pip-compile --allow-unsafe --extra=dev --output-file=requirements-dev.txt pyproject.toml
 #
-airium==0.2.6
-    # via dycw-utilities (pyproject.toml)
 altair==5.2.0
     # via streamlit
 annotated-types==0.6.0
@@ -61,7 +59,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-clarabel==0.7.0
+clarabel==0.7.1
     # via cvxpy
 click==8.1.7
     # via
@@ -353,7 +351,7 @@ pytest-xdist==3.5.0
     # via dycw-utilities (pyproject.toml)
 python-daemon==3.0.1
     # via luigi
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   freezegun
     #   luigi
@@ -429,8 +427,6 @@ tenacity==8.2.3
     # via
     #   luigi
     #   streamlit
-timeout-decorator==0.5.0
-    # via dycw-utilities (pyproject.toml)
 toml==0.10.2
     # via streamlit
 tomli-w==1.0.0

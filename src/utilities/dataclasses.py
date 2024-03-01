@@ -68,11 +68,3 @@ __all__ = [
     "replace_non_sentinel",
     "yield_field_names",
 ]
-
-
-try:
-    from utilities._dataclasses.xarray import rename_data_arrays
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["rename_data_arrays"]
