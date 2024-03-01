@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar, overload
+from typing import Any, Generic, TypeVar, cast, overload
 
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import transpose as _transpose
+from more_itertools import windowed_complete as _windowed_complete
 from typing_extensions import override
 
 _T = TypeVar("_T")
@@ -100,7 +101,18 @@ def transpose(
 
 
 def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:
+    """Typed verison of `transpose`."""
     return tuple(_transpose(iterable))
+
+
+def windowed_complete(
+    iterable: Iterable[_T], n: int, /
+) -> Iterator[tuple[tuple[_T, ...], tuple[_T, ...], tuple[_T, ...]]]:
+    """Typed version of `windowed_complete`."""
+    return cast(
+        Iterator[tuple[tuple[_T, ...], tuple[_T, ...], tuple[_T, ...]]],
+        _windowed_complete(iterable, n),
+    )
 
 
 __all__ = [
@@ -110,4 +122,5 @@ __all__ = [
     "always_iterable",
     "one",
     "transpose",
+    "windowed_complete",
 ]
