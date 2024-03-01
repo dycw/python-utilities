@@ -12,6 +12,7 @@ from utilities.more_itertools import (
     always_iterable,
     one,
     transpose,
+    windowed_complete,
 )
 
 
@@ -132,3 +133,24 @@ class TestTranspose:
             assert len(part) == n
             for i in part:
                 assert isinstance(i, int)
+
+
+class TestWindowedComplete:
+    def test_main(self) -> None:
+        result = list(windowed_complete([1, 2, 3, 4, 5], 3))
+        expected = [
+            ((), (1, 2, 3), (4, 5)),
+            ((1,), (2, 3, 4), (5,)),
+            ((1, 2), (3, 4, 5), ()),
+        ]
+        assert result == expected
+
+    def test_zero_length(self) -> None:
+        result = list(windowed_complete([1, 2, 3], 0))
+        expected = [
+            ((), (), (1, 2, 3)),
+            ((1,), (), (2, 3)),
+            ((1, 2), (), (3,)),
+            ((1, 2, 3), (), ()),
+        ]
+        assert result == expected
