@@ -45,9 +45,9 @@ bottleneck==1.3.8
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-build==1.0.3
+build==1.1.1
     # via pip-tools
-cachetools==5.3.2
+cachetools==5.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
@@ -61,7 +61,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-clarabel==0.6.0
+clarabel==0.7.0
     # via cvxpy
 click==8.1.7
     # via
@@ -70,7 +70,7 @@ click==8.1.7
     #   pip-tools
     #   streamlit
     #   userpath
-colorcet==3.0.1
+colorcet==3.1.0
     # via holoviews
 colorlog==6.8.2
     # via nox
@@ -136,7 +136,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.98.11
+hypothesis==6.98.15
     # via dycw-utilities (pyproject.toml)
 idna==3.6
     # via
@@ -162,7 +162,7 @@ jsonschema==4.21.1
     # via altair
 jsonschema-specifications==2023.12.1
     # via jsonschema
-keyring==24.3.0
+keyring==24.3.1
     # via hatch
 linkify-it-py==2.0.3
     # via panel
@@ -259,7 +259,6 @@ param==2.0.2
     # via
     #   holoviews
     #   panel
-    #   pyct
     #   pyviz-comms
 passlib==1.7.4
     # via pypiserver
@@ -284,7 +283,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.10
+polars-lts-cpu==0.20.13
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -304,9 +303,7 @@ pybind11==2.11.1
     # via cvxpy
 pycparser==2.21
     # via cffi
-pyct==0.5.0
-    # via colorcet
-pydantic==2.6.2
+pydantic==2.6.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi
@@ -380,7 +377,7 @@ requests==2.31.0
     # via
     #   panel
     #   streamlit
-rich==13.7.0
+rich==13.7.1
     # via
     #   hatch
     #   streamlit
@@ -411,7 +408,7 @@ six==1.16.0
     #   python-dateutil
 smmap==5.0.1
     # via gitdb
-sniffio==1.3.0
+sniffio==1.3.1
     # via
     #   anyio
     #   httpx
@@ -438,7 +435,7 @@ toml==0.10.2
     # via streamlit
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.3
+tomlkit==0.12.4
     # via hatch
 toolz==0.12.1
     # via altair
@@ -462,7 +459,7 @@ trove-classifiers==2024.2.23
     # via hatchling
 typed-settings==24.1.0
     # via dycw-utilities (pyproject.toml)
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi
@@ -483,7 +480,7 @@ urllib3[socks]==2.2.1
     # via
     #   requests
     #   selenium
-userpath==1.9.1
+userpath==1.9.2
     # via hatch
 validators==0.22.0
     # via streamlit

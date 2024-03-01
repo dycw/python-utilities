@@ -56,7 +56,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
             page_no, now = self.page_no(), get_now(tz=local_timezone())
-            text = "page {}/{{}}; {}".format(page_no, now)
+            text = f"page {page_no}/{{}}; {now}"
             _ = self.cell(
                 w=0,
                 h=10,

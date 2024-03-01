@@ -155,7 +155,7 @@ def _check_index_length(
 class _CheckIndexLengthError(CheckIndexError):
     @override
     def __str__(self) -> str:
-        return "Index {} must satisfy the length requirements.".format(self.index)
+        return f"Index {self.index} must satisfy the length requirements."
 
 
 def _check_index_name(index: IndexA, name: Any, /) -> None:
@@ -170,7 +170,7 @@ def _check_index_name(index: IndexA, name: Any, /) -> None:
 class _CheckIndexNameError(CheckIndexError):
     @override
     def __str__(self) -> str:
-        return "Index {} must satisfy the name requirement.".format(self.index)
+        return f"Index {self.index} must satisfy the name requirement."
 
 
 def _check_index_sorted(index: IndexA, /) -> None:
@@ -184,7 +184,7 @@ def _check_index_sorted(index: IndexA, /) -> None:
 class _CheckIndexSortedError(CheckIndexError):
     @override
     def __str__(self) -> str:
-        return "Index {} must be sorted.".format(self.index)
+        return f"Index {self.index} must be sorted."
 
 
 def _check_index_unique(index: IndexA, /) -> None:
@@ -196,7 +196,7 @@ def _check_index_unique(index: IndexA, /) -> None:
 class _CheckIndexUniqueError(CheckIndexError):
     @override
     def __str__(self) -> str:
-        return "Index {} must be unique.".format(self.index)
+        return f"Index {self.index} must be unique."
 
 
 def check_pandas_dataframe(
@@ -346,7 +346,7 @@ class _CheckPandasDataFrameSortedError(CheckPandasDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must be sorted on {}\n\n{}.".format(self.by, self.df)
+        return f"DataFrame must be sorted on {self.by}\n\n{self.df}."
 
 
 def _check_pandas_dataframe_unique(
@@ -362,7 +362,7 @@ class _CheckPandasDataFrameUniqueError(CheckPandasDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must be unique on {}\n\n{}.".format(self.by, self.df)
+        return f"DataFrame must be unique on {self.by}\n\n{self.df}."
 
 
 def _check_pandas_dataframe_width(df: DataFrame, width: int, /) -> None:
@@ -465,7 +465,7 @@ class ReindexToSetError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Index {} and {} must be equal as sets.".format(self.index, self.target)
+        return f"Index {self.index} and {self.target} must be equal as sets."
 
 
 def reindex_to_subset(index: _Index, target: Iterable[Any], /) -> _Index:
@@ -486,7 +486,7 @@ class ReindexToSubSetError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Index {} must be a superset of {}.".format(self.index, self.target)
+        return f"Index {self.index} must be a superset of {self.target}."
 
 
 def reindex_to_superset(index: _Index, target: Iterable[Any], /) -> _Index:
@@ -507,7 +507,7 @@ class ReindexToSuperSetError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Index {} must be a subset of {}.".format(self.index, self.target)
+        return f"Index {self.index} must be a subset of {self.target}."
 
 
 def series_max(*series: SeriesA) -> SeriesA:

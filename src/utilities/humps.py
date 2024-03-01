@@ -51,9 +51,7 @@ class SnakeCaseMappingsError(Exception):
 class _SnakeCaseMappingsDuplicateKeysError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:
-        return "Strings {} must not contain duplicates; got {}".format(
-            self.text, self.counts
-        )
+        return f"Strings {self.text} must not contain duplicates; got {self.counts}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

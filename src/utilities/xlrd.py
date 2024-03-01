@@ -29,9 +29,7 @@ class GetDateModeError(Exception):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "System must be one of Windows or Darwin; got {} instead".format(
-                self.system
-            )
+            f"System must be one of Windows or Darwin; got {self.system} instead"
         )
 
 

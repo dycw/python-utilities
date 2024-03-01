@@ -438,7 +438,7 @@ class _CheckIntegerEqualError(CheckIntegerError):
 
     @override
     def __str__(self) -> str:
-        return "Integer must be equal to {}; got {}".format(self.equal, self.n)
+        return f"Integer must be equal to {self.equal}; got {self.n}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -449,10 +449,10 @@ class _CheckIntegerEqualOrApproxError(CheckIntegerError):
     def __str__(self) -> str:
         match self.equal_or_approx:
             case target, error:
-                desc = "approximately equal to {} (error {:%})".format(target, error)
+                desc = f"approximately equal to {target} (error {error:%})"
             case target:
-                desc = "equal to {}".format(target)
-        return "Integer must be {}; got {}".format(desc, self.n)
+                desc = f"equal to {target}"
+        return f"Integer must be {desc}; got {self.n}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -461,7 +461,7 @@ class _CheckIntegerMinError(CheckIntegerError):
 
     @override
     def __str__(self) -> str:
-        return "Integer must be at least {}; got {}".format(self.min_, self.n)
+        return f"Integer must be at least {self.min_}; got {self.n}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -470,7 +470,7 @@ class _CheckIntegerMaxError(CheckIntegerError):
 
     @override
     def __str__(self) -> str:
-        return "Integer must be at most {}; got {}".format(self.max_, self.n)
+        return f"Integer must be at most {self.max_}; got {self.n}"
 
 
 __all__ = [

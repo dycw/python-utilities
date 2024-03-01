@@ -166,16 +166,16 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "DataFrame must satisfy the predicates; {}\n\n".format(desc)
+        return f"DataFrame must satisfy the predicates; {desc}\n\n"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.missing) >= 1:
-            yield "missing columns were {}".format(self.missing)
+            yield f"missing columns were {self.missing}"
         if len(self.failed) >= 1:
-            yield "failed predicates were {}".format(self.failed)
+            yield f"failed predicates were {self.failed}"
 
 
 def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -253,7 +253,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must be sorted on {}\n\n{}".format(self.by, self.df)
+        return f"DataFrame must be sorted on {self.by}\n\n{self.df}"
 
 
 def _check_polars_dataframe_unique(
@@ -272,7 +272,7 @@ class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must be unique on {}\n\n{}".format(self.by, self.df)
+        return f"DataFrame must be unique on {self.by}\n\n{self.df}"
 
 
 def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:

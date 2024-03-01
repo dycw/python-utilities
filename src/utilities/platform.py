@@ -38,9 +38,7 @@ class GetSystemError(Exception):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "System must be one of Windows, Darwin, Linux; got {!r} instead".format(
-                self.sys
-            )
+            f"System must be one of Windows, Darwin, Linux; got {self.sys!r} instead"
         )
 
 

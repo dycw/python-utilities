@@ -281,7 +281,7 @@ class DatetimeToDatetime64Error(Exception):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "Timezone must be None or UTC; got {}.".format(self.tzinfo)
+            f"Timezone must be None or UTC; got {self.tzinfo}."
         )
 
 

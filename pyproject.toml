@@ -12,7 +12,7 @@ dependencies = [
   "atomicwrites >= 1.4.1",
   "beartype >= 0.17.2",
   "bidict >= 0.23.1",
-  "cachetools >= 5.3.2",
+  "cachetools >= 5.3.3",
   "click >= 8.1.7",
   "frozendict >= 2.4.0",
   "loguru >= 0.7.2",
@@ -48,17 +48,17 @@ dev = [
   "fpdf2 >= 2.7.8",
   "hatch >= 1.9.3",
   "holoviews >= 1.18.1",
-  "hypothesis >= 6.98.11",
+  "hypothesis >= 6.98.15",
   "luigi >= 3.5.0",
   "mdutils >= 1.6.0",
   "memory-profiler >= 0.61.0",
   "numbagg >= 0.8.0",
   "numpy >= 1.26.4",
   "pandas >= 2.2.1",
-  "polars >= 0.20.10",
+  "polars >= 0.20.13",
   "pqdm >= 0.2.0",
   "psutil >= 5.9.6",
-  "pydantic >= 2.6.2",
+  "pydantic >= 2.6.3",
   "pyinstrument >= 4.6.2",
   "pypiserver[passlib] >= 2.0.1",
   "pytest >= 8.0.2",
@@ -94,17 +94,17 @@ fastapi = ["fastapi >= 0.110.0"]
 fpdf2 = ["fpdf2 >= 2.7.8", "holoviews >= 1.18.1", "selenium >= 4.18.1"]
 hatch = ["hatch >= 1.9.3"]
 holoviews = ["holoviews >= 1.18.1", "selenium >= 4.18.1"]
-hypothesis = ["hypothesis >= 6.98.11"]
+hypothesis = ["hypothesis >= 6.98.15"]
 luigi = ["luigi >= 3.5.0"]
 mdutils = ["mdutils >= 1.6.0"]
 memory-profiler = ["memory-profiler >= 0.61.0"]
 numbagg = ["numbagg >= 0.8.0"]
 numpy = ["numpy >= 1.26.4"]
 pandas = ["pandas >= 2.2.1"]
-polars = ["polars >= 0.20.10"]
+polars = ["polars >= 0.20.13"]
 pqdm = ["pqdm >= 0.2.0"]
 psutil = ["psutil >= 5.9.6"]
-pydantic = ["pydantic >= 2.6.2"]
+pydantic = ["pydantic >= 2.6.3"]
 pyinstrument = ["pyinstrument >= 4.6.2"]
 pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 8.0.2"]
@@ -255,7 +255,6 @@ ignore = [
   "PLR0913",  # refactor, too-many-arguments
   "PT012",  # flake8-pytest-style, raises-with-multiple-statements
   "PT013",  # flake8-pytest-style, incorrect-pytest-import
-  "UP032",  # pyupgrade, f-string
   # formatter
   "E501",  # pycodestyle, line-too-long
   "ISC001",  # flake8-implicit-str-concat, single-line-implicit-string-concatenation

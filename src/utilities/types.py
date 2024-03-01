@@ -88,7 +88,7 @@ class EnsureHashableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be hashable.".format(self.obj)
+        return f"Object {self.obj} must be hashable."
 
 
 def ensure_not_none(obj: _T | None, /) -> _T:
@@ -118,7 +118,7 @@ class EnsureSizedError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be sized.".format(self.obj)
+        return f"Object {self.obj} must be sized."
 
 
 def ensure_sized_not_str(obj: Any, /) -> Sized:
@@ -134,7 +134,7 @@ class EnsureSizedNotStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be sized, but not a string.".format(self.obj)
+        return f"Object {self.obj} must be sized, but not a string."
 
 
 @overload

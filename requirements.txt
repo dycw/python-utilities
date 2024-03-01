@@ -10,7 +10,7 @@ beartype==0.17.2
     # via dycw-utilities (pyproject.toml)
 bidict==0.23.1
     # via dycw-utilities (pyproject.toml)
-cachetools==5.3.2
+cachetools==5.3.3
     # via dycw-utilities (pyproject.toml)
 click==8.1.7
     # via dycw-utilities (pyproject.toml)
@@ -30,5 +30,5 @@ tqdm==4.66.2
     # via dycw-utilities (pyproject.toml)
 typed-settings==24.1.0
     # via dycw-utilities (pyproject.toml)
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via dycw-utilities (pyproject.toml)

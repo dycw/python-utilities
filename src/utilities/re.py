@@ -77,7 +77,7 @@ class _ExtractGroupNoMatchesError(ExtractGroupError):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "Pattern {} must match against {}".format(self.pattern, self.text)
+            f"Pattern {self.pattern} must match against {self.text}"
         )
 
 
@@ -131,7 +131,7 @@ class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "Pattern {} must contain at least one capture group".format(self.pattern)
+            f"Pattern {self.pattern} must contain at least one capture group"
         )
 
 
@@ -140,7 +140,7 @@ class _ExtractGroupsNoMatchesError(ExtractGroupsError):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "Pattern {} must match against {}".format(self.pattern, self.text)
+            f"Pattern {self.pattern} must match against {self.text}"
         )
 
 

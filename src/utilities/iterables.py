@@ -93,18 +93,14 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Iterables {} and {} must be equal; {}.".format(
-            self.left, self.right, desc
-        )
+        return f"Iterables {self.left} and {self.right} must be equal; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
-            error_descs = (
-                "({}, {}, i={})".format(lv, rv, i) for i, lv, rv in self.errors
-            )
+            error_descs = (f"({lv}, {rv}, i={i})" for i, lv, rv in self.errors)
             yield "differing items were {}".format(", ".join(error_descs))
         match self.state:
             case _CheckIterablesEqualState.left_longer:
@@ -153,9 +149,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have length {}; got {}.".format(
-            self.obj, self.equal, len(self.obj)
-        )
+        return f"Object {self.obj} must have length {self.equal}; got {len(self.obj)}."
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -166,10 +160,10 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
     def __str__(self) -> str:
         match self.equal_or_approx:
             case target, error:
-                desc = "approximate length {} (error {:%})".format(target, error)
+                desc = f"approximate length {target} (error {error:%})"
             case target:
-                desc = "length {}".format(target)
-        return "Object {} must have {}; got {}.".format(self.obj, desc, len(self.obj))
+                desc = f"length {target}"
+        return f"Object {self.obj} must have {desc}; got {len(self.obj)}."
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -252,24 +246,20 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case first, second, third:
-                desc = "{}, {} and {}".format(first, second, third)
+                desc = f"{first}, {second} and {third}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mappings {} and {} must be equal; {}.".format(
-            self.left, self.right, desc
-        )
+        return f"Mappings {self.left} and {self.right} must be equal; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield "left had extra keys {}".format(self.left_extra)
+            yield f"left had extra keys {self.left_extra}"
         if len(self.right_extra) >= 1:
-            yield "right had extra keys {}".format(self.right_extra)
+            yield f"right had extra keys {self.right_extra}"
         if len(self.errors) >= 1:
-            error_descs = (
-                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
-            )
+            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
             yield "differing values were {}".format(", ".join(error_descs))
 
 
@@ -301,16 +291,16 @@ class CheckSetsEqualError(Exception, Generic[_T]):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Sets {} and {} must be equal; {}.".format(self.left, self.right, desc)
+        return f"Sets {self.left} and {self.right} must be equal; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield "left had extra items {}".format(self.left_extra)
+            yield f"left had extra items {self.left_extra}"
         if len(self.right_extra) >= 1:
-            yield "right had extra items {}".format(self.right_extra)
+            yield f"right had extra items {self.right_extra}"
 
 
 def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -344,20 +334,16 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mapping {} must be a submapping of {}; {}.".format(
-            self.left, self.right, desc
-        )
+        return f"Mapping {self.left} must be a submapping of {self.right}; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield "left had extra keys {}".format(self.extra)
+            yield f"left had extra keys {self.extra}"
         if len(self.errors) >= 1:
-            error_descs = (
-                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
-            )
+            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
             yield "differing values were {}".format(", ".join(error_descs))
 
 
@@ -414,20 +400,16 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
             case (desc,):
                 pass
             case first, second:
-                desc = "{} and {}".format(first, second)
+                desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return "Mapping {} must be a supermapping of {}; {}.".format(
-            self.left, self.right, desc
-        )
+        return f"Mapping {self.left} must be a supermapping of {self.right}; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield "right had extra keys {}".format(self.extra)
+            yield f"right had extra keys {self.extra}"
         if len(self.errors) >= 1:
-            error_descs = (
-                "({}, {}, k={})".format(lv, rv, k) for k, lv, rv in self.errors
-            )
+            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
             yield "differing values were {}".format(", ".join(error_descs))
 
 
@@ -475,7 +457,7 @@ class EnsureIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be iterable.".format(self.obj)
+        return f"Object {self.obj} must be iterable."
 
 
 def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
@@ -491,7 +473,7 @@ class EnsureIterableNotStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be iterable, but not a string.".format(self.obj)
+        return f"Object {self.obj} must be iterable, but not a string."
 
 
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
