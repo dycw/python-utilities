@@ -94,7 +94,7 @@ zzz-test-loguru = []
 zzz-test-luigi = ["freezegun", "semver", "sqlalchemy"]
 zzz-test-memory_profiler = []
 zzz-test-more-itertools = []
-zzz-test-numpy = []
+zzz-test-numpy = ["pandas"]
 zzz-test-scipy = []
 zzz-test-xlrd = []
 
