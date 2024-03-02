@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-
-from typing_extensions import Self, override
-
 import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
@@ -50,7 +47,7 @@ from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.base import ReadOnlyColumnCollection
-from typing_extensions import assert_never, override
+from typing_extensions import Self, assert_never, override
 
 from utilities.errors import redirect_error
 from utilities.iterables import (
