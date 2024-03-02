@@ -155,6 +155,7 @@ zzz-test-modules = [
   "scipy",
   "semver",
   "sqlalchemy",
+  "streamlit",
   "typed-settings",
   "xarray",
   "xlrd",
