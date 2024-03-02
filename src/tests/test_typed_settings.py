@@ -83,11 +83,15 @@ class TestClickOptions:
     @pytest.mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
-            param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
-            param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
+            pytest.param(dt.date, dates(), serialize_date),
+            pytest.param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
+            pytest.param(dt.time, times(), serialize_time),
+            pytest.param(dt.timedelta, timedeltas(), serialize_timedelta),
+            pytest.param(
+                Engine, sqlite_engines(), serialize_engine, marks=skipif_windows
+            ),
         ],
     )
     def test_main(
@@ -176,10 +180,12 @@ class TestLoadSettings:
     @pytest.mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
-            param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
-            param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas(), serialize_timedelta),
+            pytest.param(dt.date, dates(), serialize_date),
+            pytest.param(
+                dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            ),
+            pytest.param(dt.time, times(), serialize_time),
+            pytest.param(dt.timedelta, timedeltas(), serialize_timedelta),
         ],
     )
     def test_main(

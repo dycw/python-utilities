@@ -30,10 +30,10 @@ class TestMD5Hash:
     @pytest.mark.parametrize(
         "strategy",
         [
-            param(dictionaries(integers(), integers(), max_size=3)),
-            param(frozensets(integers(), max_size=3)),
-            param(lists(integers(), max_size=3)),
-            param(sets(integers(), max_size=3)),
+            pytest.param(dictionaries(integers(), integers(), max_size=3)),
+            pytest.param(frozensets(integers(), max_size=3)),
+            pytest.param(lists(integers(), max_size=3)),
+            pytest.param(sets(integers(), max_size=3)),
         ],
     )
     def test_main(self, *, data: DataObject, strategy: SearchStrategy[Any]) -> None:

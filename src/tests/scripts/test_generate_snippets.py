@@ -117,13 +117,13 @@ class TestYieldImportNodesFromText:
     @pytest.mark.parametrize(
         "text",
         [
-            param(
+            pytest.param(
                 """
                 from abc import ABC
                 from abc import ABCMeta
                 """
             ),
-            param(
+            pytest.param(
                 """
                 from abc import (
                     ABC,
@@ -167,7 +167,7 @@ class TestYieldImportNodesFromText:
     @pytest.mark.parametrize(
         "text",
         [
-            param(
+            pytest.param(
                 """
                 from contextlib import suppress
 
@@ -177,7 +177,7 @@ class TestYieldImportNodesFromText:
                         from abc import ABCMeta
                 """
             ),
-            param(
+            pytest.param(
                 """
                 from contextlib import suppress
 

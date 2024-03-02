@@ -205,8 +205,8 @@ class TestCheckPolarsDataFramePredicates:
     @pytest.mark.parametrize(
         "predicates",
         [
-            param({"other": Float64}, id="missing column"),
-            param({"value": isfinite}, id="failed"),
+            pytest.param({"other": Float64}, id="missing column"),
+            pytest.param({"value": isfinite}, id="failed"),
         ],
     )
     def test_error(self, *, predicates: Mapping[str, Callable[[Any], bool]]) -> None:
@@ -234,8 +234,8 @@ class TestCheckPolarsDataFrameSchemaInc:
     @pytest.mark.parametrize(
         "schema_inc",
         [
-            param({"bar": Float64}, id="missing column"),
-            param({"foo": Int64}, id="wrong dtype"),
+            pytest.param({"bar": Float64}, id="missing column"),
+            pytest.param({"foo": Int64}, id="wrong dtype"),
         ],
     )
     def test_error(self, *, schema_inc: SchemaDict) -> None:
@@ -259,14 +259,14 @@ class TestNanSumAgg:
     @pytest.mark.parametrize(
         ("data", "expected"),
         [
-            param([None], None, id="one None"),
-            param([None, None], None, id="two Nones"),
-            param([0], 0, id="one int"),
-            param([0, None], 0, id="one int, one None"),
-            param([0, None, None], 0, id="one int, two Nones"),
-            param([1, 2], 3, id="two ints"),
-            param([1, 2, None], 3, id="two ints, one None"),
-            param([1, 2, None, None], 3, id="two ints, two Nones"),
+            pytest.param([None], None, id="one None"),
+            pytest.param([None, None], None, id="two Nones"),
+            pytest.param([0], 0, id="one int"),
+            pytest.param([0, None], 0, id="one int, one None"),
+            pytest.param([0, None, None], 0, id="one int, two Nones"),
+            pytest.param([1, 2], 3, id="two ints"),
+            pytest.param([1, 2, None], 3, id="two ints, one None"),
+            pytest.param([1, 2, None, None], 3, id="two ints, two Nones"),
         ],
     )
     @pytest.mark.parametrize("dtype", [param(Int64), param(Float64)])

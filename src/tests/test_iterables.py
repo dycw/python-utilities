@@ -114,8 +114,8 @@ class TestCheckLength:
     @pytest.mark.parametrize(
         ("equal_or_approx", "match"),
         [
-            param(10, r"Object .* must have length .*; got .*\."),
-            param(
+            pytest.param(10, r"Object .* must have length .*; got .*\."),
+            pytest.param(
                 (11, 0.1),
                 r"Object .* must have approximate length .* \(error .*\); got .*\.",
             ),
@@ -327,8 +327,8 @@ class TestChunked:
     @pytest.mark.parametrize(
         ("iterable", "expected"),
         [
-            param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
-            param("ABCDE", [["A", "B", "C"], ["D", "E"]]),
+            pytest.param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
+            pytest.param("ABCDE", [["A", "B", "C"], ["D", "E"]]),
         ],
     )
     def test_main(

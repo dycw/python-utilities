@@ -189,7 +189,7 @@ class TestCheckColumnCollectionsEqual:
     @pytest.mark.parametrize(
         ("x", "y"),
         [
-            param(
+            pytest.param(
                 Table("x", MetaData(), Column("id", Integer, primary_key=True)),
                 Table(
                     "y",
@@ -198,7 +198,7 @@ class TestCheckColumnCollectionsEqual:
                     Column("value", Integer),
                 ),
             ),
-            param(
+            pytest.param(
                 Table("x", MetaData(), Column("id1", Integer, primary_key=True)),
                 Table("y", MetaData(), Column("id2", Integer, primary_key=True)),
             ),
@@ -227,8 +227,10 @@ class TestCheckColumnsEqual:
     @pytest.mark.parametrize(
         ("x", "y"),
         [
-            param(Column("id", Integer, primary_key=True), Column("id", Integer)),
-            param(Column("id", Integer), Column("id", Integer, nullable=False)),
+            pytest.param(
+                Column("id", Integer, primary_key=True), Column("id", Integer)
+            ),
+            pytest.param(Column("id", Integer), Column("id", Integer, nullable=False)),
         ],
     )
     def test_errors(self, *, x: Any, y: Any) -> None:
@@ -275,16 +277,16 @@ class TestCheckColumnTypesEqual:
     @pytest.mark.parametrize(
         "cls",
         [
-            param(Boolean),
-            param(DateTime),
-            param(Float),
-            param(Interval),
-            param(LargeBinary),
-            param(Numeric),
-            param(String),
-            param(Unicode),
-            param(UnicodeText),
-            param(Uuid),
+            pytest.param(Boolean),
+            pytest.param(DateTime),
+            pytest.param(Float),
+            pytest.param(Interval),
+            pytest.param(LargeBinary),
+            pytest.param(Numeric),
+            pytest.param(String),
+            pytest.param(Unicode),
+            pytest.param(UnicodeText),
+            pytest.param(Uuid),
         ],
     )
     def test_equal_for_primaries(self, *, cls: type[Any]) -> None:
@@ -673,12 +675,12 @@ class TestCheckTableOrColumnNamesEqual:
     @pytest.mark.parametrize(
         ("x", "y", "snake", "success"),
         [
-            param("x", "x", False, True),
-            param("x", "x", True, True),
-            param("x", "X", False, False),
-            param("x", "X", True, True),
-            param("x", "y", False, False),
-            param("x", "y", True, False),
+            pytest.param("x", "x", False, True),
+            pytest.param("x", "x", True, True),
+            pytest.param("x", "X", False, False),
+            pytest.param("x", "X", True, True),
+            pytest.param("x", "y", False, False),
+            pytest.param("x", "y", True, False),
         ],
     )
     def test_main(self, *, x: str, y: str, snake: bool, success: bool) -> None:
@@ -1066,9 +1068,11 @@ class TestInsertItemsCollect:
     @pytest.mark.parametrize(
         "item",
         [
-            param((None,), id="tuple length"),
-            param((None, None), id="second argument not a table or mapped class"),
-            param(None, id="outright invalid"),
+            pytest.param((None,), id="tuple length"),
+            pytest.param(
+                (None, None), id="second argument not a table or mapped class"
+            ),
+            pytest.param(None, id="outright invalid"),
         ],
     )
     def test_errors(self, *, item: Any) -> None:
@@ -1108,10 +1112,10 @@ class TestInsertItemsCollectValid:
     @pytest.mark.parametrize(
         ("obj", "expected"),
         [
-            param(None, False),
-            param((1, 2, 3), True),
-            param({"a": 1, "b": 2, "c": 3}, True),
-            param({1: "a", 2: "b", 3: "c"}, False),
+            pytest.param(None, False),
+            pytest.param((1, 2, 3), True),
+            pytest.param({"a": 1, "b": 2, "c": 3}, True),
+            pytest.param({1: "a", 2: "b", 3: "c"}, False),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:

@@ -12,11 +12,11 @@ class TestAToF:
     @pytest.mark.parametrize(
         ("text", "expected"),
         [
-            param("0.00", 0.0),
-            param("1.23", 1.23),
-            param("12.34", 12.34),
-            param("123.45", 123.45),
-            param("1,234.56", 1234.56),
+            pytest.param("0.00", 0.0),
+            pytest.param("1.23", 1.23),
+            pytest.param("12.34", 12.34),
+            pytest.param("123.45", 123.45),
+            pytest.param("1,234.56", 1234.56),
         ],
     )
     def test_main(self, *, text: str, expected: float) -> None:
@@ -28,11 +28,11 @@ class TestAToI:
     @pytest.mark.parametrize(
         ("text", "expected"),
         [
-            param("0", 0),
-            param("12", 12),
-            param("123", 123),
-            param("1,234", 1234),
-            param("12,345", 12345),
+            pytest.param("0", 0),
+            pytest.param("12", 12),
+            pytest.param("123", 123),
+            pytest.param("1,234", 1234),
+            pytest.param("12,345", 12345),
         ],
     )
     def test_main(self, *, text: str, expected: int) -> None:

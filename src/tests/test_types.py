@@ -186,10 +186,10 @@ class TestIterableStrs:
     @pytest.mark.parametrize(
         "x",
         [
-            param(["a", "b", "c"]),
-            param(("a", "b", "c")),
-            param({"a", "b", "c"}),
-            param({"a": 1, "b": 2, "c": 3}),
+            pytest.param(["a", "b", "c"]),
+            pytest.param(("a", "b", "c")),
+            pytest.param({"a", "b", "c"}),
+            pytest.param({"a": 1, "b": 2, "c": 3}),
         ],
     )
     def test_pass(self, *, x: IterableStrs) -> None:

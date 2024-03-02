@@ -94,7 +94,7 @@ class TestPytestOptions:
     @pytest.mark.parametrize(
         ("case", "passed", "skipped", "matches"),
         [
-            param(
+            pytest.param(
                 [],
                 1,
                 3,
@@ -104,19 +104,19 @@ class TestPytestOptions:
                     "SKIPPED.*: pass --slow --fast",
                 ],
             ),
-            param(
+            pytest.param(
                 ["--slow"],
                 2,
                 2,
                 ["SKIPPED.*: pass --fast", "SKIPPED.*: pass --slow --fast"],
             ),
-            param(
+            pytest.param(
                 ["--fast"],
                 2,
                 2,
                 ["SKIPPED.*: pass --slow", "SKIPPED.*: pass --slow --fast"],
             ),
-            param(["--slow", "--fast"], 4, 0, []),
+            pytest.param(["--slow", "--fast"], 4, 0, []),
         ],
     )
     def test_two_marks_and_options(

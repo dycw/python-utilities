@@ -158,9 +158,9 @@ class TestDateTimeParameter:
     @pytest.mark.parametrize(
         "param_cls",
         [
-            param(DateHourParameter),
-            param(DateMinuteParameter),
-            param(DateSecondParameter),
+            pytest.param(DateHourParameter),
+            pytest.param(DateMinuteParameter),
+            pytest.param(DateSecondParameter),
         ],
     )
     def test_main(

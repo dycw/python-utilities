@@ -23,12 +23,12 @@ class TestToDate:
     @pytest.mark.parametrize(
         ("date", "expected"),
         [
-            param(0.0, dt.date(1899, 12, 31), marks=skipif_not_windows),
-            param(0.5, dt.date(1899, 12, 31), marks=skipif_not_windows),
-            param(1.0, dt.date(1900, 1, 1), marks=skipif_not_windows),
-            param(0.0, dt.date(1904, 1, 1), marks=skipif_not_mac),
-            param(0.5, dt.date(1904, 1, 1), marks=skipif_not_mac),
-            param(1.0, dt.date(1904, 1, 2), marks=skipif_not_mac),
+            pytest.param(0.0, dt.date(1899, 12, 31), marks=skipif_not_windows),
+            pytest.param(0.5, dt.date(1899, 12, 31), marks=skipif_not_windows),
+            pytest.param(1.0, dt.date(1900, 1, 1), marks=skipif_not_windows),
+            pytest.param(0.0, dt.date(1904, 1, 1), marks=skipif_not_mac),
+            pytest.param(0.5, dt.date(1904, 1, 1), marks=skipif_not_mac),
+            pytest.param(1.0, dt.date(1904, 1, 2), marks=skipif_not_mac),
         ],
     )
     def test_main(self, *, date: float, expected: dt.date) -> None:
@@ -39,14 +39,24 @@ class TestToDatetime:
     @pytest.mark.parametrize(
         ("date", "expected"),
         [
-            param(0.0, dt.datetime(1899, 12, 31, tzinfo=UTC), marks=skipif_not_windows),
-            param(
+            pytest.param(
+                0.0, dt.datetime(1899, 12, 31, tzinfo=UTC), marks=skipif_not_windows
+            ),
+            pytest.param(
                 0.5, dt.datetime(1899, 12, 31, 12, tzinfo=UTC), marks=skipif_not_windows
             ),
-            param(1.0, dt.datetime(1900, 1, 1, tzinfo=UTC), marks=skipif_not_windows),
-            param(0.0, dt.datetime(1904, 1, 1, tzinfo=UTC), marks=skipif_not_mac),
-            param(0.5, dt.datetime(1904, 1, 1, 12, tzinfo=UTC), marks=skipif_not_mac),
-            param(1.0, dt.datetime(1904, 1, 2, tzinfo=UTC), marks=skipif_not_mac),
+            pytest.param(
+                1.0, dt.datetime(1900, 1, 1, tzinfo=UTC), marks=skipif_not_windows
+            ),
+            pytest.param(
+                0.0, dt.datetime(1904, 1, 1, tzinfo=UTC), marks=skipif_not_mac
+            ),
+            pytest.param(
+                0.5, dt.datetime(1904, 1, 1, 12, tzinfo=UTC), marks=skipif_not_mac
+            ),
+            pytest.param(
+                1.0, dt.datetime(1904, 1, 2, tzinfo=UTC), marks=skipif_not_mac
+            ),
         ],
     )
     def test_main(self, *, date: float, expected: dt.datetime) -> None:

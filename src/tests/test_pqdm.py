@@ -16,10 +16,10 @@ class TestGetDesc:
     @pytest.mark.parametrize(
         ("desc", "func", "expected"),
         [
-            param(sentinel, neg, {"desc": "neg"}),
-            param(sentinel, partial(neg), {"desc": "neg"}),
-            param(None, neg, {}),
-            param("custom", neg, {"desc": "custom"}),
+            pytest.param(sentinel, neg, {"desc": "neg"}),
+            pytest.param(sentinel, partial(neg), {"desc": "neg"}),
+            pytest.param(None, neg, {}),
+            pytest.param("custom", neg, {"desc": "custom"}),
         ],
     )
     def test_main(

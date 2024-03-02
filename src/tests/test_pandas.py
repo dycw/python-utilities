@@ -234,12 +234,14 @@ class TestCheckPandasDataFrame:
     @pytest.mark.parametrize(
         "df",
         [
-            param(DataFrame(0.0, index=Index(["A"]), columns=Index(["value"]))),
-            param(DataFrame(0.0, index=RangeIndex(1, 2), columns=Index(["value"]))),
-            param(
+            pytest.param(DataFrame(0.0, index=Index(["A"]), columns=Index(["value"]))),
+            pytest.param(
+                DataFrame(0.0, index=RangeIndex(1, 2), columns=Index(["value"]))
+            ),
+            pytest.param(
                 DataFrame(0.0, index=RangeIndex(1, step=2), columns=Index(["value"]))
             ),
-            param(
+            pytest.param(
                 DataFrame(
                     0.0, index=RangeIndex(1, name="name"), columns=Index(["value"])
                 )
@@ -258,12 +260,12 @@ class TestCheckPandasDataFrame:
     @pytest.mark.parametrize(
         "df",
         [
-            param(
+            pytest.param(
                 DataFrame(
                     0.0, index=RangeIndex(1), columns=Index(["value"], name="name")
                 )
             ),
-            param(
+            pytest.param(
                 DataFrame(0.0, index=RangeIndex(1), columns=Index(["value", "value"]))
             ),
         ],
@@ -431,36 +433,36 @@ class TestSeriesMinMax:
     @pytest.mark.parametrize(
         ("x_v", "y_v", "dtype", "expected_min_v", "expected_max_v"),
         [
-            param(0.0, 1.0, float, 0.0, 1.0),
-            param(0.0, nan, float, 0.0, 0.0),
-            param(nan, 1.0, float, 1.0, 1.0),
-            param(nan, nan, float, nan, nan),
-            param(0, 1, Int64, 0, 1),
-            param(0, NA, Int64, 0, 0),
-            param(NA, 1, Int64, 1, 1),
-            param(NA, NA, Int64, NA, NA),
-            param(
+            pytest.param(0.0, 1.0, float, 0.0, 1.0),
+            pytest.param(0.0, nan, float, 0.0, 0.0),
+            pytest.param(nan, 1.0, float, 1.0, 1.0),
+            pytest.param(nan, nan, float, nan, nan),
+            pytest.param(0, 1, Int64, 0, 1),
+            pytest.param(0, NA, Int64, 0, 0),
+            pytest.param(NA, 1, Int64, 1, 1),
+            pytest.param(NA, NA, Int64, NA, NA),
+            pytest.param(
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
                 datetime64ns,
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
             ),
-            param(
+            pytest.param(
                 TIMESTAMP_MIN_AS_DATE,
                 NaT,
                 datetime64ns,
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MIN_AS_DATE,
             ),
-            param(
+            pytest.param(
                 NaT,
                 TIMESTAMP_MAX_AS_DATE,
                 datetime64ns,
                 TIMESTAMP_MAX_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
             ),
-            param(NaT, NaT, datetime64ns, NaT, NaT),
+            pytest.param(NaT, NaT, datetime64ns, NaT, NaT),
         ],
     )
     def test_main(
@@ -543,8 +545,8 @@ class TestTimestampToDate:
     @pytest.mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(to_datetime("2000-01-01"), dt.date(2000, 1, 1)),
-            param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
+            pytest.param(to_datetime("2000-01-01"), dt.date(2000, 1, 1)),
+            pytest.param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
         ],
     )
     def test_main(self, *, timestamp: Any, expected: dt.date) -> None:
@@ -559,12 +561,14 @@ class TestTimestampToDateTime:
     @pytest.mark.parametrize(
         ("timestamp", "expected"),
         [
-            param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
-            param(
+            pytest.param(
+                to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)
+            ),
+            pytest.param(
                 to_datetime("2000-01-01 12:00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
             ),
-            param(
+            pytest.param(
                 to_datetime("2000-01-01 12:00:00+00:00"),
                 dt.datetime(2000, 1, 1, 12, tzinfo=UTC),
             ),
@@ -588,18 +592,18 @@ class TestToNumpy:
     @pytest.mark.parametrize(
         ("series_v", "series_d", "array_v", "array_d"),
         [
-            param(True, bool, True, bool),
-            param(False, bool, False, bool),
-            param(True, boolean, True, object),
-            param(False, boolean, False, object),
-            param(NA, boolean, None, object),
-            param(TODAY_UTC, datetime64ns, TODAY_UTC, datetime64ns),
-            param(0, int, 0, int),
-            param(0, Int64, 0, object),
-            param(NA, Int64, None, object),
-            param(nan, float, nan, float),
-            param("", string, "", object),
-            param(NA, string, None, object),
+            pytest.param(True, bool, True, bool),
+            pytest.param(False, bool, False, bool),
+            pytest.param(True, boolean, True, object),
+            pytest.param(False, boolean, False, object),
+            pytest.param(NA, boolean, None, object),
+            pytest.param(TODAY_UTC, datetime64ns, TODAY_UTC, datetime64ns),
+            pytest.param(0, int, 0, int),
+            pytest.param(0, Int64, 0, object),
+            pytest.param(NA, Int64, None, object),
+            pytest.param(nan, float, nan, float),
+            pytest.param("", string, "", object),
+            pytest.param(NA, string, None, object),
         ],
     )
     def test_main(

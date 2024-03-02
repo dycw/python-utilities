@@ -45,13 +45,13 @@ class TestSystem:
     @pytest.mark.parametrize(
         ("constant", "cls"),
         [
-            param(SYSTEM, System),
-            param(IS_WINDOWS, bool),
-            param(IS_MAC, bool),
-            param(IS_LINUX, bool),
-            param(IS_NOT_WINDOWS, bool),
-            param(IS_NOT_MAC, bool),
-            param(IS_NOT_LINUX, bool),
+            pytest.param(SYSTEM, System),
+            pytest.param(IS_WINDOWS, bool),
+            pytest.param(IS_MAC, bool),
+            pytest.param(IS_LINUX, bool),
+            pytest.param(IS_NOT_WINDOWS, bool),
+            pytest.param(IS_NOT_MAC, bool),
+            pytest.param(IS_NOT_LINUX, bool),
         ],
     )
     def test_constants(self, *, constant: Any, cls: type) -> None:

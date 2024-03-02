@@ -147,12 +147,12 @@ class TestArrayIndexer:
     @pytest.mark.parametrize(
         ("i", "ndim", "expected"),
         [
-            param(0, 1, (0,)),
-            param(0, 2, (slice(None), 0)),
-            param(1, 2, (slice(None), 1)),
-            param(0, 3, (slice(None), slice(None), 0)),
-            param(1, 3, (slice(None), slice(None), 1)),
-            param(2, 3, (slice(None), slice(None), 2)),
+            pytest.param(0, 1, (0,)),
+            pytest.param(0, 2, (slice(None), 0)),
+            pytest.param(1, 2, (slice(None), 1)),
+            pytest.param(0, 3, (slice(None), slice(None), 0)),
+            pytest.param(1, 3, (slice(None), slice(None), 1)),
+            pytest.param(2, 3, (slice(None), slice(None), 2)),
         ],
     )
     def test_main(
@@ -163,20 +163,20 @@ class TestArrayIndexer:
     @pytest.mark.parametrize(
         ("i", "ndim", "axis", "expected"),
         [
-            param(0, 1, 0, (0,)),
-            param(0, 2, 0, (0, slice(None))),
-            param(0, 2, 1, (slice(None), 0)),
-            param(1, 2, 0, (1, slice(None))),
-            param(1, 2, 1, (slice(None), 1)),
-            param(0, 3, 0, (0, slice(None), slice(None))),
-            param(0, 3, 1, (slice(None), 0, slice(None))),
-            param(0, 3, 2, (slice(None), slice(None), 0)),
-            param(1, 3, 0, (1, slice(None), slice(None))),
-            param(1, 3, 1, (slice(None), 1, slice(None))),
-            param(1, 3, 2, (slice(None), slice(None), 1)),
-            param(2, 3, 0, (2, slice(None), slice(None))),
-            param(2, 3, 1, (slice(None), 2, slice(None))),
-            param(2, 3, 2, (slice(None), slice(None), 2)),
+            pytest.param(0, 1, 0, (0,)),
+            pytest.param(0, 2, 0, (0, slice(None))),
+            pytest.param(0, 2, 1, (slice(None), 0)),
+            pytest.param(1, 2, 0, (1, slice(None))),
+            pytest.param(1, 2, 1, (slice(None), 1)),
+            pytest.param(0, 3, 0, (0, slice(None), slice(None))),
+            pytest.param(0, 3, 1, (slice(None), 0, slice(None))),
+            pytest.param(0, 3, 2, (slice(None), slice(None), 0)),
+            pytest.param(1, 3, 0, (1, slice(None), slice(None))),
+            pytest.param(1, 3, 1, (slice(None), 1, slice(None))),
+            pytest.param(1, 3, 2, (slice(None), slice(None), 1)),
+            pytest.param(2, 3, 0, (2, slice(None), slice(None))),
+            pytest.param(2, 3, 1, (slice(None), 2, slice(None))),
+            pytest.param(2, 3, 2, (slice(None), slice(None), 2)),
         ],
     )
     def test_axis(
@@ -260,8 +260,8 @@ class TestDatetime64ToDate:
     @pytest.mark.parametrize(
         ("datetime", "dtype", "error"),
         [
-            param("10000-01-01", "D", DateTime64ToDateError),
-            param("2000-01-01", "ns", NotImplementedError),
+            pytest.param("10000-01-01", "D", DateTime64ToDateError),
+            pytest.param("2000-01-01", "ns", NotImplementedError),
         ],
     )
     def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
@@ -304,10 +304,12 @@ class TestDatetime64ToDatetime:
     @pytest.mark.parametrize(
         ("datetime", "dtype", "error"),
         [
-            param("0000-12-31", "ms", DateTime64ToDateTimeError),
-            param("10000-01-01", "ms", DateTime64ToDateTimeError),
-            param("1970-01-01 00:00:00.000000001", "ns", DateTime64ToDateTimeError),
-            param("2000-01-01", "D", NotImplementedError),
+            pytest.param("0000-12-31", "ms", DateTime64ToDateTimeError),
+            pytest.param("10000-01-01", "ms", DateTime64ToDateTimeError),
+            pytest.param(
+                "1970-01-01 00:00:00.000000001", "ns", DateTime64ToDateTimeError
+            ),
+            pytest.param("2000-01-01", "D", NotImplementedError),
         ],
     )
     def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
@@ -391,25 +393,25 @@ class TestDiscretize:
     @pytest.mark.parametrize(
         ("arr_v", "bins", "expected_v"),
         [
-            param(
+            pytest.param(
                 [1.0, 2.0, 3.0, 4.0],
                 [0.0, 0.25, 0.5, 0.75, 1.0],
                 [0.0, 1.0, 2.0, 3.0],
                 id="equally spaced",
             ),
-            param(
+            pytest.param(
                 [1.0, 2.0, 3.0, 4.0],
                 [0.0, 0.1, 0.9, 1.0],
                 [0.0, 1.0, 1.0, 2.0],
                 id="unequally spaced",
             ),
-            param(
+            pytest.param(
                 [1.0, 2.0, 3.0],
                 [0.0, 0.33, 1.0],
                 [0.0, 1.0, 1.0],
                 id="equally spaced 1 to 2",
             ),
-            param(
+            pytest.param(
                 [1.0, 2.0, 3.0, nan],
                 [0.0, 0.33, 1.0],
                 [0.0, 1.0, 1.0, nan],
@@ -459,16 +461,18 @@ class TestFFillNonNanSlices:
     @pytest.mark.parametrize(
         ("limit", "axis", "expected_v"),
         [
-            param(
+            pytest.param(
                 None,
                 0,
                 [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]],
             ),
-            param(None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]),
-            param(
+            pytest.param(
+                None, 1, [[0.1, 0.1, 0.1, 0.2], 4 * [nan], [0.3, 0.3, 0.3, nan]]
+            ),
+            pytest.param(
                 1, 0, [[0.1, nan, nan, 0.2], [0.1, nan, nan, 0.2], [0.3, nan, nan, nan]]
             ),
-            param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
+            pytest.param(1, 1, [[0.1, 0.1, nan, 0.2], 4 * [nan], [0.3, 0.3, nan, nan]]),
         ],
     )
     def test_main(
@@ -484,8 +488,8 @@ class TestFFillNonNanSlices:
     @pytest.mark.parametrize(
         ("axis", "expected_v"),
         [
-            param(0, [4 * [nan], [nan, 0.1, nan, nan], [nan, 0.1, nan, nan]]),
-            param(1, [4 * [nan], [nan, 0.1, 0.1, 0.1], 4 * [nan]]),
+            pytest.param(0, [4 * [nan], [nan, 0.1, nan, nan], [nan, 0.1, nan, nan]]),
+            pytest.param(1, [4 * [nan], [nan, 0.1, 0.1, 0.1], 4 * [nan]]),
         ],
     )
     def test_initial_all_nan(
@@ -501,15 +505,15 @@ class TestFillNa:
     @pytest.mark.parametrize(
         ("init", "value", "expected_v"),
         [
-            param(0.0, 0.0, 0.0),
-            param(0.0, nan, 0.0),
-            param(0.0, inf, 0.0),
-            param(nan, 0.0, 0.0),
-            param(nan, nan, nan),
-            param(nan, inf, inf),
-            param(inf, 0.0, inf),
-            param(inf, nan, inf),
-            param(inf, inf, inf),
+            pytest.param(0.0, 0.0, 0.0),
+            pytest.param(0.0, nan, 0.0),
+            pytest.param(0.0, inf, 0.0),
+            pytest.param(nan, 0.0, 0.0),
+            pytest.param(nan, nan, nan),
+            pytest.param(nan, inf, inf),
+            pytest.param(inf, 0.0, inf),
+            pytest.param(inf, nan, inf),
+            pytest.param(inf, inf, inf),
         ],
     )
     def test_main(self, *, init: float, value: float, expected_v: float) -> None:
@@ -539,13 +543,13 @@ class TestGetFillValue:
     @pytest.mark.parametrize(
         "dtype",
         [
-            param(bool),
-            param(datetime64D),
-            param(datetime64Y),
-            param(datetime64ns),
-            param(float),
-            param(int),
-            param(object),
+            pytest.param(bool),
+            pytest.param(datetime64D),
+            pytest.param(datetime64Y),
+            pytest.param(datetime64ns),
+            pytest.param(float),
+            pytest.param(int),
+            pytest.param(object),
         ],
     )
     def test_main(self, *, dtype: Any) -> None:
@@ -571,11 +575,11 @@ class TestHasDtype:
     @pytest.mark.parametrize(
         ("dtype", "against", "expected"),
         [
-            param("Int64", "Int64", True),
-            param("Int64", ("Int64",), True),
-            param("Int64", int, False),
-            param(DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="UTC"), True),
-            param(
+            pytest.param("Int64", "Int64", True),
+            pytest.param("Int64", ("Int64",), True),
+            pytest.param("Int64", int, False),
+            pytest.param(DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="UTC"), True),
+            pytest.param(
                 DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="Asia/Hong_Kong"), False
             ),
         ],
@@ -589,19 +593,19 @@ class TestIsAtLeast:
     @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
-            param(0.0, -inf, False, True),
-            param(0.0, -1.0, False, True),
-            param(0.0, -1e-6, False, True),
-            param(0.0, -1e-7, False, True),
-            param(0.0, -1e-8, False, True),
-            param(0.0, 0.0, False, True),
-            param(0.0, 1e-8, False, True),
-            param(0.0, 1e-7, False, False),
-            param(0.0, 1e-6, False, False),
-            param(0.0, 1.0, False, False),
-            param(0.0, inf, False, False),
-            param(0.0, nan, False, False),
-            param(nan, nan, True, True),
+            pytest.param(0.0, -inf, False, True),
+            pytest.param(0.0, -1.0, False, True),
+            pytest.param(0.0, -1e-6, False, True),
+            pytest.param(0.0, -1e-7, False, True),
+            pytest.param(0.0, -1e-8, False, True),
+            pytest.param(0.0, 0.0, False, True),
+            pytest.param(0.0, 1e-8, False, True),
+            pytest.param(0.0, 1e-7, False, False),
+            pytest.param(0.0, 1e-6, False, False),
+            pytest.param(0.0, 1.0, False, False),
+            pytest.param(0.0, inf, False, False),
+            pytest.param(0.0, nan, False, False),
+            pytest.param(nan, nan, True, True),
         ],
     )
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
@@ -618,19 +622,19 @@ class TestIsAtMost:
     @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
-            param(0.0, -inf, False, False),
-            param(0.0, -1.0, False, False),
-            param(0.0, -1e-6, False, False),
-            param(0.0, -1e-7, False, False),
-            param(0.0, -1e-8, False, True),
-            param(0.0, 0.0, False, True),
-            param(0.0, 1e-8, False, True),
-            param(0.0, 1e-7, False, True),
-            param(0.0, 1e-6, False, True),
-            param(0.0, 1.0, False, True),
-            param(0.0, inf, False, True),
-            param(0.0, nan, False, False),
-            param(nan, nan, True, True),
+            pytest.param(0.0, -inf, False, False),
+            pytest.param(0.0, -1.0, False, False),
+            pytest.param(0.0, -1e-6, False, False),
+            pytest.param(0.0, -1e-7, False, False),
+            pytest.param(0.0, -1e-8, False, True),
+            pytest.param(0.0, 0.0, False, True),
+            pytest.param(0.0, 1e-8, False, True),
+            pytest.param(0.0, 1e-7, False, True),
+            pytest.param(0.0, 1e-6, False, True),
+            pytest.param(0.0, 1.0, False, True),
+            pytest.param(0.0, inf, False, True),
+            pytest.param(0.0, nan, False, False),
+            pytest.param(nan, nan, True, True),
         ],
     )
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
@@ -647,16 +651,16 @@ class TestIsBetween:
     @pytest.mark.parametrize(
         ("x", "low", "high", "equal_nan", "expected"),
         [
-            param(0.0, -1.0, -1.0, False, False),
-            param(0.0, -1.0, 0.0, False, True),
-            param(0.0, -1.0, 1.0, False, True),
-            param(0.0, 0.0, -1.0, False, False),
-            param(0.0, 0.0, 0.0, False, True),
-            param(0.0, 0.0, 1.0, False, True),
-            param(0.0, 1.0, -1.0, False, False),
-            param(0.0, 1.0, 0.0, False, False),
-            param(0.0, 1.0, 1.0, False, False),
-            param(nan, -1.0, 1.0, False, False),
+            pytest.param(0.0, -1.0, -1.0, False, False),
+            pytest.param(0.0, -1.0, 0.0, False, True),
+            pytest.param(0.0, -1.0, 1.0, False, True),
+            pytest.param(0.0, 0.0, -1.0, False, False),
+            pytest.param(0.0, 0.0, 0.0, False, True),
+            pytest.param(0.0, 0.0, 1.0, False, True),
+            pytest.param(0.0, 1.0, -1.0, False, False),
+            pytest.param(0.0, 1.0, 0.0, False, False),
+            pytest.param(0.0, 1.0, 1.0, False, False),
+            pytest.param(nan, -1.0, 1.0, False, False),
         ],
     )
     def test_main(
@@ -680,22 +684,22 @@ class TestIsEmptyAndIsNotEmpty:
     @pytest.mark.parametrize(
         ("shape", "expected"),
         [
-            param(0, "empty"),
-            param(1, "non-empty"),
-            param(2, "non-empty"),
-            param((), "empty"),
-            param((0,), "empty"),
-            param((1,), "non-empty"),
-            param((2,), "non-empty"),
-            param((0, 0), "empty"),
-            param((0, 1), "empty"),
-            param((0, 2), "empty"),
-            param((1, 0), "empty"),
-            param((1, 1), "non-empty"),
-            param((1, 2), "non-empty"),
-            param((2, 0), "empty"),
-            param((2, 1), "non-empty"),
-            param((2, 2), "non-empty"),
+            pytest.param(0, "empty"),
+            pytest.param(1, "non-empty"),
+            pytest.param(2, "non-empty"),
+            pytest.param((), "empty"),
+            pytest.param((0,), "empty"),
+            pytest.param((1,), "non-empty"),
+            pytest.param((2,), "non-empty"),
+            pytest.param((0, 0), "empty"),
+            pytest.param((0, 1), "empty"),
+            pytest.param((0, 2), "empty"),
+            pytest.param((1, 0), "empty"),
+            pytest.param((1, 1), "non-empty"),
+            pytest.param((1, 2), "non-empty"),
+            pytest.param((2, 0), "empty"),
+            pytest.param((2, 1), "non-empty"),
+            pytest.param((2, 2), "non-empty"),
         ],
     )
     @pytest.mark.parametrize("kind", [param("shape"), param("array")])
@@ -715,24 +719,24 @@ class TestIsFiniteAndIntegral:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-2.0, True),
-            param(-1.5, False),
-            param(-1.0, True),
-            param(-0.5, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(0.5, False),
-            param(1.0, True),
-            param(1.5, False),
-            param(2.0, True),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-2.0, True),
+            pytest.param(-1.5, False),
+            pytest.param(-1.0, True),
+            pytest.param(-0.5, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(0.5, False),
+            pytest.param(1.0, True),
+            pytest.param(1.5, False),
+            pytest.param(2.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -746,12 +750,12 @@ class TestIsFiniteOrNan:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, True),
-            param(0.0, True),
-            param(1.0, True),
-            param(inf, False),
-            param(nan, True),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, True),
+            pytest.param(0.0, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, True),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -762,18 +766,18 @@ class TestIsFiniteAndNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(1.0, False),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -787,18 +791,18 @@ class TestIsFiniteAndNonNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -812,18 +816,18 @@ class TestIsFiniteAndNonPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(1.0, False),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -837,18 +841,18 @@ class TestIsFiniteAndNonZero:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -862,18 +866,18 @@ class TestIsFiniteAndPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -887,19 +891,19 @@ class TestIsGreaterThan:
     @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
-            param(0.0, -inf, False, True),
-            param(0.0, -1.0, False, True),
-            param(0.0, -1e-6, False, True),
-            param(0.0, -1e-7, False, True),
-            param(0.0, -1e-8, False, False),
-            param(0.0, 0.0, False, False),
-            param(0.0, 1e-8, False, False),
-            param(0.0, 1e-7, False, False),
-            param(0.0, 1e-6, False, False),
-            param(0.0, 1.0, False, False),
-            param(0.0, inf, False, False),
-            param(0.0, nan, False, False),
-            param(nan, nan, True, True),
+            pytest.param(0.0, -inf, False, True),
+            pytest.param(0.0, -1.0, False, True),
+            pytest.param(0.0, -1e-6, False, True),
+            pytest.param(0.0, -1e-7, False, True),
+            pytest.param(0.0, -1e-8, False, False),
+            pytest.param(0.0, 0.0, False, False),
+            pytest.param(0.0, 1e-8, False, False),
+            pytest.param(0.0, 1e-7, False, False),
+            pytest.param(0.0, 1e-6, False, False),
+            pytest.param(0.0, 1.0, False, False),
+            pytest.param(0.0, inf, False, False),
+            pytest.param(0.0, nan, False, False),
+            pytest.param(nan, nan, True, True),
         ],
     )
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
@@ -916,24 +920,24 @@ class TestIsIntegral:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, True),
-            param(-2.0, True),
-            param(-1.5, False),
-            param(-1.0, True),
-            param(-0.5, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(0.5, False),
-            param(1.0, True),
-            param(1.5, False),
-            param(2.0, True),
-            param(inf, True),
-            param(nan, False),
+            pytest.param(-inf, True),
+            pytest.param(-2.0, True),
+            pytest.param(-1.5, False),
+            pytest.param(-1.0, True),
+            pytest.param(-0.5, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(0.5, False),
+            pytest.param(1.0, True),
+            pytest.param(1.5, False),
+            pytest.param(2.0, True),
+            pytest.param(inf, True),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -947,19 +951,19 @@ class TestIsLessThan:
     @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
-            param(0.0, -inf, False, False),
-            param(0.0, -1.0, False, False),
-            param(0.0, -1e-6, False, False),
-            param(0.0, -1e-7, False, False),
-            param(0.0, -1e-8, False, False),
-            param(0.0, 0.0, False, False),
-            param(0.0, 1e-8, False, False),
-            param(0.0, 1e-7, False, True),
-            param(0.0, 1e-6, False, True),
-            param(0.0, 1.0, False, True),
-            param(0.0, inf, False, True),
-            param(0.0, nan, False, False),
-            param(nan, nan, True, True),
+            pytest.param(0.0, -inf, False, False),
+            pytest.param(0.0, -1.0, False, False),
+            pytest.param(0.0, -1e-6, False, False),
+            pytest.param(0.0, -1e-7, False, False),
+            pytest.param(0.0, -1e-8, False, False),
+            pytest.param(0.0, 0.0, False, False),
+            pytest.param(0.0, 1e-8, False, False),
+            pytest.param(0.0, 1e-7, False, True),
+            pytest.param(0.0, 1e-6, False, True),
+            pytest.param(0.0, 1.0, False, True),
+            pytest.param(0.0, inf, False, True),
+            pytest.param(0.0, nan, False, False),
+            pytest.param(nan, nan, True, True),
         ],
     )
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
@@ -976,18 +980,18 @@ class TestIsNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, True),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(1.0, False),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1001,18 +1005,18 @@ class TestIsNonNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, True),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1026,18 +1030,18 @@ class TestIsNonPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, True),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(1.0, False),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1064,18 +1068,18 @@ class TestIsNonZero:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, True),
+            pytest.param(-inf, True),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, True),
+            pytest.param(nan, True),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1089,18 +1093,18 @@ class TestIsPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, False),
-            param(0.0, False),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, False),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, True),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1114,9 +1118,9 @@ class TestIsPositiveSemiDefinite:
     @pytest.mark.parametrize(
         ("array", "expected"),
         [
-            param(eye(2), True),
-            param(zeros((1, 2), dtype=float), False),
-            param(arange(4).reshape((2, 2)), False),
+            pytest.param(eye(2), True),
+            pytest.param(zeros((1, 2), dtype=float), False),
+            pytest.param(arange(4).reshape((2, 2)), False),
         ],
     )
     @pytest.mark.parametrize("dtype", [param(float), param(int)])
@@ -1134,9 +1138,9 @@ class TestIsSymmetric:
     @pytest.mark.parametrize(
         ("array", "expected"),
         [
-            param(eye(2), True),
-            param(zeros((1, 2), dtype=float), False),
-            param(arange(4).reshape((2, 2)), False),
+            pytest.param(eye(2), True),
+            pytest.param(zeros((1, 2), dtype=float), False),
+            pytest.param(arange(4).reshape((2, 2)), False),
         ],
     )
     @pytest.mark.parametrize("dtype", [param(float), param(int)])
@@ -1150,18 +1154,18 @@ class TestIsZero:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, False),
-            param(-1e-6, False),
-            param(-1e-7, False),
-            param(-1e-8, True),
-            param(0.0, True),
-            param(1e-8, True),
-            param(1e-7, False),
-            param(1e-6, False),
-            param(1.0, False),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, False),
+            pytest.param(-1e-6, False),
+            pytest.param(-1e-7, False),
+            pytest.param(-1e-8, True),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, True),
+            pytest.param(1e-7, False),
+            pytest.param(1e-6, False),
+            pytest.param(1.0, False),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1175,18 +1179,18 @@ class TestIsZeroOrFiniteAndMicro:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, False),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, True),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, False),
-            param(nan, False),
+            pytest.param(-inf, False),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, False),
+            pytest.param(nan, False),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1200,18 +1204,18 @@ class TestIsZeroOrNonMicro:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(-inf, True),
-            param(-1.0, True),
-            param(-1e-6, True),
-            param(-1e-7, True),
-            param(-1e-8, False),
-            param(0.0, True),
-            param(1e-8, False),
-            param(1e-7, True),
-            param(1e-6, True),
-            param(1.0, True),
-            param(inf, True),
-            param(nan, True),
+            pytest.param(-inf, True),
+            pytest.param(-1.0, True),
+            pytest.param(-1e-6, True),
+            pytest.param(-1e-7, True),
+            pytest.param(-1e-8, False),
+            pytest.param(0.0, True),
+            pytest.param(1e-8, False),
+            pytest.param(1e-7, True),
+            pytest.param(1e-6, True),
+            pytest.param(1.0, True),
+            pytest.param(inf, True),
+            pytest.param(nan, True),
         ],
     )
     def test_main(self, *, x: float, expected: bool) -> None:
@@ -1243,10 +1247,10 @@ class TestPctChange:
     @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
-            param(1, [nan, 0.1, 0.090909]),
-            param(2, [nan, nan, 0.2]),
-            param(-1, [-0.090909, -0.083333, nan]),
-            param(-2, [-0.166667, nan, nan]),
+            pytest.param(1, [nan, 0.1, 0.090909]),
+            pytest.param(2, [nan, nan, 0.2]),
+            pytest.param(-1, [-0.090909, -0.083333, nan]),
+            pytest.param(-2, [-0.166667, nan, nan]),
         ],
     )
     @pytest.mark.parametrize("dtype", [param(float), param(int)])
@@ -1259,7 +1263,7 @@ class TestPctChange:
     @pytest.mark.parametrize(
         ("axis", "n", "expected_v"),
         [
-            param(
+            pytest.param(
                 0,
                 1,
                 [
@@ -1269,13 +1273,13 @@ class TestPctChange:
                 ],
                 id="axis=0, n=1",
             ),
-            param(
+            pytest.param(
                 0,
                 2,
                 [4 * [nan], 4 * [nan], [0.8, 0.727272, 0.666667, 0.615385]],
                 id="axis=0, n=2",
             ),
-            param(
+            pytest.param(
                 0,
                 -1,
                 [
@@ -1285,13 +1289,13 @@ class TestPctChange:
                 ],
                 id="axis=0, n=-1",
             ),
-            param(
+            pytest.param(
                 0,
                 -2,
                 [[-0.444444, -0.421053, -0.4, -0.380952], 4 * [nan], 4 * [nan]],
                 id="axis=0, n=-2",
             ),
-            param(
+            pytest.param(
                 1,
                 1,
                 [
@@ -1301,7 +1305,7 @@ class TestPctChange:
                 ],
                 id="axis=1, n=1",
             ),
-            param(
+            pytest.param(
                 1,
                 2,
                 [
@@ -1311,7 +1315,7 @@ class TestPctChange:
                 ],
                 id="axis=1, n=1",
             ),
-            param(
+            pytest.param(
                 1,
                 -1,
                 [
@@ -1321,7 +1325,7 @@ class TestPctChange:
                 ],
                 id="axis=1, n=-1",
             ),
-            param(
+            pytest.param(
                 1,
                 -2,
                 [
@@ -1355,10 +1359,10 @@ class TestShift:
     @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
-            param(1, [nan, 0.0, 1.0]),
-            param(2, [nan, nan, 0.0]),
-            param(-1, [1.0, 2.0, nan]),
-            param(-2, [2.0, nan, nan]),
+            pytest.param(1, [nan, 0.0, 1.0]),
+            pytest.param(2, [nan, nan, 0.0]),
+            pytest.param(-1, [1.0, 2.0, nan]),
+            pytest.param(-2, [2.0, nan, nan]),
         ],
     )
     @pytest.mark.parametrize("dtype", [param(float), param(int)])
@@ -1371,41 +1375,43 @@ class TestShift:
     @pytest.mark.parametrize(
         ("axis", "n", "expected_v"),
         [
-            param(
+            pytest.param(
                 0,
                 1,
                 [4 * [nan], [0.0, 1.0, 2.0, 3.0], [4.0, 5.0, 6.0, 7.0]],
                 id="axis=0, n=1",
             ),
-            param(0, 2, [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]], id="axis=0, n=2"),
-            param(
+            pytest.param(
+                0, 2, [4 * [nan], 4 * [nan], [0.0, 1.0, 2.0, 3.0]], id="axis=0, n=2"
+            ),
+            pytest.param(
                 0,
                 -1,
                 [[4.0, 5.0, 6.0, 7.0], [8.0, 9.0, 10.0, 11.0], 4 * [nan]],
                 id="axis=0, n=-1",
             ),
-            param(
+            pytest.param(
                 0, -2, [[8.0, 9.0, 10.0, 11.0], 4 * [nan], 4 * [nan]], id="axis=0, n=-2"
             ),
-            param(
+            pytest.param(
                 1,
                 1,
                 [[nan, 0.0, 1.0, 2.0], [nan, 4.0, 5.0, 6.0], [nan, 8.0, 9.0, 10.0]],
                 id="axis=1, n=1",
             ),
-            param(
+            pytest.param(
                 1,
                 2,
                 [[nan, nan, 0.0, 1.0], [nan, nan, 4.0, 5.0], [nan, nan, 8.0, 9.0]],
                 id="axis=1, n=1",
             ),
-            param(
+            pytest.param(
                 1,
                 -1,
                 [[1.0, 2.0, 3.0, nan], [5.0, 6.0, 7.0, nan], [9.0, 10.0, 11.0, nan]],
                 id="axis=1, n=-1",
             ),
-            param(
+            pytest.param(
                 1,
                 -2,
                 [[2.0, 3.0, nan, nan], [6.0, 7.0, nan, nan], [10.0, 11.0, nan, nan]],
@@ -1431,10 +1437,10 @@ class TestShiftBool:
     @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
-            param(1, [None, True, False], id="n=1"),
-            param(2, [None, None, True], id="n=2"),
-            param(-1, [False, True, None], id="n=-1"),
-            param(-2, [True, None, None], id="n=-2"),
+            pytest.param(1, [None, True, False], id="n=1"),
+            pytest.param(2, [None, None, True], id="n=2"),
+            pytest.param(-1, [False, True, None], id="n=-1"),
+            pytest.param(-2, [True, None, None], id="n=-2"),
         ],
     )
     @pytest.mark.parametrize("fill_value", [param(True), param(False)])

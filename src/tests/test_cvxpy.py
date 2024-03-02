@@ -79,9 +79,9 @@ class TestAbs:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(array([0.0]), array([0.0])),
-            param(array([1.0]), array([1.0])),
-            param(array([-1.0]), array([1.0])),
+            pytest.param(array([0.0]), array([0.0])),
+            pytest.param(array([1.0]), array([1.0])),
+            pytest.param(array([-1.0]), array([1.0])),
         ],
     )
     def test_array(self, *, x: NDArrayF, expected: NDArrayF) -> None:
@@ -90,9 +90,9 @@ class TestAbs:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(Series([0.0]), Series([0.0])),
-            param(Series([1.0]), Series([1.0])),
-            param(Series([-1.0]), Series([1.0])),
+            pytest.param(Series([0.0]), Series([0.0])),
+            pytest.param(Series([1.0]), Series([1.0])),
+            pytest.param(Series([-1.0]), Series([1.0])),
         ],
     )
     def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
@@ -101,9 +101,9 @@ class TestAbs:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(DataFrame([0.0]), DataFrame([0.0])),
-            param(DataFrame([1.0]), DataFrame([1.0])),
-            param(DataFrame([-1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([0.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([-1.0]), DataFrame([1.0])),
         ],
     )
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
@@ -119,10 +119,10 @@ class TestAdd:
     @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(1.0, 2.0, 3.0),
-            param(1.0, array([2.0]), array([3.0])),
-            param(array([1.0]), 2.0, array([3.0])),
-            param(array([1.0]), array([2.0]), array([3.0])),
+            pytest.param(1.0, 2.0, 3.0),
+            pytest.param(1.0, array([2.0]), array([3.0])),
+            pytest.param(array([1.0]), 2.0, array([3.0])),
+            pytest.param(array([1.0]), array([2.0]), array([3.0])),
         ],
     )
     def test_float_and_array(
@@ -169,10 +169,10 @@ class TestDivide:
     @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(1.0, 2.0, 0.5),
-            param(1.0, array([2.0]), array([0.5])),
-            param(array([1.0]), 2.0, array([0.5])),
-            param(array([1.0]), array([2.0]), array([0.5])),
+            pytest.param(1.0, 2.0, 0.5),
+            pytest.param(1.0, array([2.0]), array([0.5])),
+            pytest.param(array([1.0]), 2.0, array([0.5])),
+            pytest.param(array([1.0]), array([2.0]), array([0.5])),
         ],
     )
     def test_float_and_array(
@@ -206,13 +206,13 @@ class TestMax:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(array([1.0, 2.0]), 2.0),
-            param(array([-1.0, -2.0]), -1.0),
-            param(Series([1.0, 2.0]), 2.0),
-            param(Series([-1.0, -2.0]), -1.0),
-            param(DataFrame([1.0, 2.0]), 2.0),
-            param(DataFrame([-1.0, -2.0]), -1.0),
+            pytest.param(0.0, 0.0),
+            pytest.param(array([1.0, 2.0]), 2.0),
+            pytest.param(array([-1.0, -2.0]), -1.0),
+            pytest.param(Series([1.0, 2.0]), 2.0),
+            pytest.param(Series([-1.0, -2.0]), -1.0),
+            pytest.param(DataFrame([1.0, 2.0]), 2.0),
+            pytest.param(DataFrame([-1.0, -2.0]), -1.0),
         ],
     )
     def test_float_array_and_ndframe(
@@ -351,13 +351,13 @@ class TestMin:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(array([1.0, 2.0]), 1.0),
-            param(array([-1.0, -2.0]), -2.0),
-            param(Series([1.0, 2.0]), 1.0),
-            param(Series([-1.0, -2.0]), -2.0),
-            param(DataFrame([1.0, 2.0]), 1.0),
-            param(DataFrame([-1.0, -2.0]), -2.0),
+            pytest.param(0.0, 0.0),
+            pytest.param(array([1.0, 2.0]), 1.0),
+            pytest.param(array([-1.0, -2.0]), -2.0),
+            pytest.param(Series([1.0, 2.0]), 1.0),
+            pytest.param(Series([-1.0, -2.0]), -2.0),
+            pytest.param(DataFrame([1.0, 2.0]), 1.0),
+            pytest.param(DataFrame([-1.0, -2.0]), -2.0),
         ],
     )
     def test_float_array_and_ndframe(
@@ -468,12 +468,12 @@ class TestNegate:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, -0.0),
-            param(1.0, -1.0),
-            param(-1.0, 1.0),
-            param(array([0.0]), array([-0.0])),
-            param(array([1.0]), array([-1.0])),
-            param(array([-1.0]), array([1.0])),
+            pytest.param(0.0, -0.0),
+            pytest.param(1.0, -1.0),
+            pytest.param(-1.0, 1.0),
+            pytest.param(array([0.0]), array([-0.0])),
+            pytest.param(array([1.0]), array([-1.0])),
+            pytest.param(array([-1.0]), array([1.0])),
         ],
     )
     def test_float_and_array(
@@ -484,9 +484,9 @@ class TestNegate:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(Series([0.0]), Series([0.0])),
-            param(Series([1.0]), Series([-1.0])),
-            param(Series([-1.0]), Series([1.0])),
+            pytest.param(Series([0.0]), Series([0.0])),
+            pytest.param(Series([1.0]), Series([-1.0])),
+            pytest.param(Series([-1.0]), Series([1.0])),
         ],
     )
     def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
@@ -495,9 +495,9 @@ class TestNegate:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(DataFrame([0.0]), DataFrame([0.0])),
-            param(DataFrame([1.0]), DataFrame([-1.0])),
-            param(DataFrame([-1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([0.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([1.0]), DataFrame([-1.0])),
+            pytest.param(DataFrame([-1.0]), DataFrame([1.0])),
         ],
     )
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
@@ -517,12 +517,12 @@ class TestNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(1.0, 0.0),
-            param(-1.0, 1.0),
-            param(array([0.0]), array([0.0])),
-            param(array([1.0]), array([0.0])),
-            param(array([-1.0]), array([1.0])),
+            pytest.param(0.0, 0.0),
+            pytest.param(1.0, 0.0),
+            pytest.param(-1.0, 1.0),
+            pytest.param(array([0.0]), array([0.0])),
+            pytest.param(array([1.0]), array([0.0])),
+            pytest.param(array([-1.0]), array([1.0])),
         ],
     )
     def test_float_and_array(
@@ -533,9 +533,9 @@ class TestNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(Series([0.0]), Series([0.0])),
-            param(Series([1.0]), Series([0.0])),
-            param(Series([-1.0]), Series([1.0])),
+            pytest.param(Series([0.0]), Series([0.0])),
+            pytest.param(Series([1.0]), Series([0.0])),
+            pytest.param(Series([-1.0]), Series([1.0])),
         ],
     )
     def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
@@ -544,9 +544,9 @@ class TestNegative:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(DataFrame([0.0]), DataFrame([0.0])),
-            param(DataFrame([1.0]), DataFrame([0.0])),
-            param(DataFrame([-1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([0.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([1.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([-1.0]), DataFrame([1.0])),
         ],
     )
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
@@ -580,12 +580,12 @@ class TestPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(1.0, 1.0),
-            param(-1.0, 0.0),
-            param(array([0.0]), array([0.0])),
-            param(array([1.0]), array([1.0])),
-            param(array([-1.0]), array([0.0])),
+            pytest.param(0.0, 0.0),
+            pytest.param(1.0, 1.0),
+            pytest.param(-1.0, 0.0),
+            pytest.param(array([0.0]), array([0.0])),
+            pytest.param(array([1.0]), array([1.0])),
+            pytest.param(array([-1.0]), array([0.0])),
         ],
     )
     def test_float_and_array(
@@ -596,9 +596,9 @@ class TestPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(Series([0.0]), Series([0.0])),
-            param(Series([1.0]), Series([1.0])),
-            param(Series([-1.0]), Series([0.0])),
+            pytest.param(Series([0.0]), Series([0.0])),
+            pytest.param(Series([1.0]), Series([1.0])),
+            pytest.param(Series([-1.0]), Series([0.0])),
         ],
     )
     def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
@@ -607,9 +607,9 @@ class TestPositive:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(DataFrame([0.0]), DataFrame([0.0])),
-            param(DataFrame([1.0]), DataFrame([1.0])),
-            param(DataFrame([-1.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([0.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([-1.0]), DataFrame([0.0])),
         ],
     )
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
@@ -625,11 +625,11 @@ class TestPower:
     @pytest.mark.parametrize(
         ("x", "p", "expected"),
         [
-            param(0.0, 0.0, 1.0),
-            param(2.0, 3.0, 8.0),
-            param(2.0, array([3.0]), array([8.0])),
-            param(array([2.0]), 3.0, array([8.0])),
-            param(array([2.0]), array([3.0]), array([8.0])),
+            pytest.param(0.0, 0.0, 1.0),
+            pytest.param(2.0, 3.0, 8.0),
+            pytest.param(2.0, array([3.0]), array([8.0])),
+            pytest.param(array([2.0]), 3.0, array([8.0])),
+            pytest.param(array([2.0]), array([3.0]), array([8.0])),
         ],
     )
     def test_float_and_array(
@@ -660,19 +660,19 @@ class TestScalarProduct:
     @pytest.mark.parametrize(
         "x",
         [
-            param(2.0),
-            param(array([2.0])),
-            param(Series([2.0])),
-            param(DataFrame([2.0])),
+            pytest.param(2.0),
+            pytest.param(array([2.0])),
+            pytest.param(Series([2.0])),
+            pytest.param(DataFrame([2.0])),
         ],
     )
     @pytest.mark.parametrize(
         "y",
         [
-            param(3.0),
-            param(array([3.0])),
-            param(Series([3.0])),
-            param(DataFrame([3.0])),
+            pytest.param(3.0),
+            pytest.param(array([3.0])),
+            pytest.param(Series([3.0])),
+            pytest.param(DataFrame([3.0])),
         ],
     )
     def test_two_floats_arrays_and_ndframes(
@@ -699,19 +699,19 @@ class TestScalarProduct:
     @pytest.mark.parametrize(
         ("x", "shape"),
         [
-            param(2.0, None),
-            param(2.0, (2,)),
-            param(2.0, (2, 2)),
-            param(array([2.0]), None),
-            param(array([2.0]), (1,)),
-            param(array([2.0]), (2,)),
-            param(array([2.0]), (1, 2)),
-            param(array([2.0]), (2, 2)),
-            param(Series([2.0]), None),
-            param(Series([2.0]), (1,)),
-            param(DataFrame([2.0]), None),
-            param(DataFrame([2.0]), (1,)),
-            param(DataFrame([2.0]), (1, 1)),
+            pytest.param(2.0, None),
+            pytest.param(2.0, (2,)),
+            pytest.param(2.0, (2, 2)),
+            pytest.param(array([2.0]), None),
+            pytest.param(array([2.0]), (1,)),
+            pytest.param(array([2.0]), (2,)),
+            pytest.param(array([2.0]), (1, 2)),
+            pytest.param(array([2.0]), (2, 2)),
+            pytest.param(Series([2.0]), None),
+            pytest.param(Series([2.0]), (1,)),
+            pytest.param(DataFrame([2.0]), None),
+            pytest.param(DataFrame([2.0]), (1,)),
+            pytest.param(DataFrame([2.0]), (1, 1)),
         ],
     )
     @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
@@ -768,10 +768,10 @@ class TestSqrt:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(1.0, 1.0),
-            param(array([0.0]), array([0.0])),
-            param(array([1.0]), array([1.0])),
+            pytest.param(0.0, 0.0),
+            pytest.param(1.0, 1.0),
+            pytest.param(array([0.0]), array([0.0])),
+            pytest.param(array([1.0]), array([1.0])),
         ],
     )
     def test_float_and_array(
@@ -789,8 +789,8 @@ class TestSqrt:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(DataFrame([0.0]), DataFrame([0.0])),
-            param(DataFrame([1.0]), DataFrame([1.0])),
+            pytest.param(DataFrame([0.0]), DataFrame([0.0])),
+            pytest.param(DataFrame([1.0]), DataFrame([1.0])),
         ],
     )
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
@@ -805,10 +805,10 @@ class TestSubtract:
     @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
-            param(1.0, 2.0, -1.0),
-            param(1.0, array([2.0]), array([-1.0])),
-            param(array([1.0]), 2.0, array([-1.0])),
-            param(array([1.0]), array([2.0]), array([-1.0])),
+            pytest.param(1.0, 2.0, -1.0),
+            pytest.param(1.0, array([2.0]), array([-1.0])),
+            pytest.param(array([1.0]), 2.0, array([-1.0])),
+            pytest.param(array([1.0]), array([2.0]), array([-1.0])),
         ],
     )
     def test_float_and_array(
@@ -842,21 +842,21 @@ class TestSum:
     @pytest.mark.parametrize(
         ("x", "expected"),
         [
-            param(0.0, 0.0),
-            param(1.0, 1.0),
-            param(-1.0, -1.0),
-            param(array([0.0]), 0.0),
-            param(array([1.0]), 1.0),
-            param(array([-1.0]), -1.0),
-            param(array([[0.0, 0.0]]), 0.0),
-            param(array([[1.0, 1.0]]), 2.0),
-            param(array([[-1.0, -1.0]]), -2.0),
-            param(Series([0.0]), 0.0),
-            param(Series([1.0]), 1.0),
-            param(Series([-1.0]), -1.0),
-            param(DataFrame([0.0]), 0.0),
-            param(DataFrame([1.0]), 1.0),
-            param(DataFrame([-1.0]), -1.0),
+            pytest.param(0.0, 0.0),
+            pytest.param(1.0, 1.0),
+            pytest.param(-1.0, -1.0),
+            pytest.param(array([0.0]), 0.0),
+            pytest.param(array([1.0]), 1.0),
+            pytest.param(array([-1.0]), -1.0),
+            pytest.param(array([[0.0, 0.0]]), 0.0),
+            pytest.param(array([[1.0, 1.0]]), 2.0),
+            pytest.param(array([[-1.0, -1.0]]), -2.0),
+            pytest.param(Series([0.0]), 0.0),
+            pytest.param(Series([1.0]), 1.0),
+            pytest.param(Series([-1.0]), -1.0),
+            pytest.param(DataFrame([0.0]), 0.0),
+            pytest.param(DataFrame([1.0]), 1.0),
+            pytest.param(DataFrame([-1.0]), -1.0),
         ],
     )
     def test_float_array_and_ndframe(

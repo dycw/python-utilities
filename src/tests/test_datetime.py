@@ -150,9 +150,9 @@ class TestEnsure:
     @pytest.mark.parametrize(
         ("strategy", "func"),
         [
-            param(dates(), ensure_date),
-            param(times(), ensure_time),
-            param(timedeltas(), ensure_timedelta),
+            pytest.param(dates(), ensure_date),
+            pytest.param(times(), ensure_time),
+            pytest.param(timedeltas(), ensure_timedelta),
         ],
     )
     def test_main(
@@ -431,11 +431,13 @@ class TestSerialize:
     @pytest.mark.parametrize(
         ("strategy", "serialize", "parse"),
         [
-            param(dates(), serialize_date, parse_date),
-            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
-            param(times(), serialize_time, parse_time),
-            param(timedeltas(), str, parse_timedelta),
-            param(timedeltas(), serialize_timedelta, parse_timedelta),
+            pytest.param(dates(), serialize_date, parse_date),
+            pytest.param(
+                datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime
+            ),
+            pytest.param(times(), serialize_time, parse_time),
+            pytest.param(timedeltas(), str, parse_timedelta),
+            pytest.param(timedeltas(), serialize_timedelta, parse_timedelta),
         ],
     )
     def test_main(
@@ -462,10 +464,10 @@ class TestRoundToWeekday:
     @pytest.mark.parametrize(
         ("func", "predicate", "operator"),
         [
-            param(round_to_next_weekday, True, eq),
-            param(round_to_next_weekday, False, gt),
-            param(round_to_prev_weekday, True, eq),
-            param(round_to_prev_weekday, False, lt),
+            pytest.param(round_to_next_weekday, True, eq),
+            pytest.param(round_to_next_weekday, False, gt),
+            pytest.param(round_to_prev_weekday, True, eq),
+            pytest.param(round_to_prev_weekday, False, lt),
         ],
     )
     def test_main(

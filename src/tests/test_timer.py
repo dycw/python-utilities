@@ -23,12 +23,12 @@ class TestTimer:
     @pytest.mark.parametrize(
         ("op", "expected"),
         [
-            param(eq, False),
-            param(ne, True),
-            param(ge, False),
-            param(gt, False),
-            param(le, True),
-            param(lt, True),
+            pytest.param(eq, False),
+            pytest.param(ne, True),
+            pytest.param(ge, False),
+            pytest.param(gt, False),
+            pytest.param(le, True),
+            pytest.param(lt, True),
         ],
     )
     @pytest.mark.parametrize(
