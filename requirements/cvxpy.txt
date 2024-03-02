@@ -2,6 +2,11 @@
 #    uv pip compile --extra=zzz-test-cvxpy --extra=test --prerelease=disallow --output-file=requirements/cvxpy.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+clarabel==0.7.1
+    # via cvxpy
+cvxpy==1.4.2
+ecos==2.0.13
+    # via cvxpy
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -12,7 +17,17 @@ hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
 numpy==1.26.4
-    # via pandas
+    # via
+    #   clarabel
+    #   cvxpy
+    #   ecos
+    #   osqp
+    #   pandas
+    #   qdldl
+    #   scipy
+    #   scs
+osqp==0.6.5
+    # via cvxpy
 packaging==23.2
     # via
     #   pytest
@@ -20,6 +35,8 @@ packaging==23.2
 pandas==2.2.1
 pluggy==1.4.0
     # via pytest
+pybind11==2.11.1
+    # via cvxpy
 pytest==8.0.2
     # via
     #   pytest-randomly
@@ -32,6 +49,18 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
+qdldl==0.1.7.post0
+    # via osqp
+scipy==1.11.4
+    # via
+    #   clarabel
+    #   cvxpy
+    #   ecos
+    #   osqp
+    #   qdldl
+    #   scs
+scs==3.2.4.post1
+    # via cvxpy
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0

@@ -25,6 +25,7 @@ pytest==8.0.2
 pytest-randomly==3.15.0
 pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
+semver==3.0.2
 sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.0.1

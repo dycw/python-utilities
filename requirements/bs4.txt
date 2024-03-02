@@ -2,6 +2,7 @@
 #    uv pip compile --extra=zzz-test-bs4 --extra=test --prerelease=disallow --output-file=requirements/bs4.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+beautifulsoup4==4.12.3
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -28,6 +29,8 @@ pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
 sortedcontainers==2.4.0
     # via hypothesis
+soupsieve==2.5
+    # via beautifulsoup4
 tomli==2.0.1
     # via pytest
 typing-extensions==4.10.0

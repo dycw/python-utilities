@@ -18,6 +18,7 @@ packaging==23.2
     #   pytest-rerunfailures
 pluggy==1.4.0
     # via pytest
+pyinstrument==4.6.2
 pytest==8.0.2
     # via
     #   pytest-randomly

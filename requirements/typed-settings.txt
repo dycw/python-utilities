@@ -29,6 +29,9 @@ sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.27
 tomli==2.0.1
-    # via pytest
+    # via
+    #   pytest
+    #   typed-settings
+typed-settings==24.1.0
 typing-extensions==4.10.0
     # via sqlalchemy

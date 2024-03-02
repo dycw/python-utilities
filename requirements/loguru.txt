@@ -11,6 +11,7 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
+loguru==0.7.2
 packaging==23.2
     # via
     #   pytest

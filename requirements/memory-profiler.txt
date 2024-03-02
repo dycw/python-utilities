@@ -11,12 +11,15 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
+memory-profiler==0.61.0
 packaging==23.2
     # via
     #   pytest
     #   pytest-rerunfailures
 pluggy==1.4.0
     # via pytest
+psutil==5.9.8
+    # via memory-profiler
 pytest==8.0.2
     # via
     #   pytest-randomly

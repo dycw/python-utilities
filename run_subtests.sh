@@ -21,17 +21,17 @@ packages=(
     # modules
     # os
     # pathlib
-    pickle
-    platform
-    random
-    re
-    sentinel
-    socket
-    subprocess
-    sys
-    tempfile
-    text
-    timer
+    # pickle
+    # platform
+    # random
+    # re
+    # sentinel
+    # socket
+    # subprocess
+    # sys
+    # tempfile
+    # text
+    # timer
     # third-party
     atomicwrites
     beartype
