@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
 
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.types import IterableStrs, PathLike
 
 
@@ -21,6 +21,7 @@ def send_email(
     host: str = "",
     port: int = 0,
     attachments: Iterable[PathLike] | None = None,
+    validate: bool = False,
 ) -> None:
     """Send an email."""
     message = MIMEMultipart()
@@ -33,14 +34,16 @@ def send_email(
         message.attach(text)
     if attachments is not None:
         for attachment in attachments:
-            _add_attachment(attachment, message)
+            _add_attachment(attachment, message, validate=validate)
     with SMTP(host=host, port=port) as smtp:
         _ = smtp.send_message(message)
 
 
-def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
+def _add_attachment(
+    path: PathLike, message: MIMEMultipart, /, *, validate: bool = False
+) -> None:
     """Add an attachment to an email."""
-    path = valid_path(path)
+    path = ensure_path(path, validate=validate)
     name = path.name
     with path.open(mode="rb") as fh:
         part = MIMEApplication(fh.read(), Name=name)
