@@ -3,7 +3,7 @@ from __future__ import annotations
 from pytest import mark, param, raises
 
 from utilities.errors import RedirectErrorError, redirect_error, retry
-from utilities.more_itertools import one
+from utilities.iterables import one
 
 
 class TestRedirectError:

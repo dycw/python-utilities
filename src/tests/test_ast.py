@@ -3,7 +3,7 @@ from __future__ import annotations
 from ast import Assign, Try, parse
 
 from utilities.ast import _yield_from_assign, _yield_from_try, yield_dunder_all
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.text import strip_and_dedent
 
 

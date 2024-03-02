@@ -8,7 +8,7 @@ from subprocess import PIPE, CalledProcessError, check_output
 from typing import Any
 
 from utilities.errors import redirect_error
-from utilities.more_itertools import OneError, one
+from utilities.iterables import OneError, one
 from utilities.os import temp_environ
 from utilities.pathvalidate import valid_path, valid_path_cwd
 from utilities.types import IterableStrs, PathLike

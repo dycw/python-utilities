@@ -6,14 +6,8 @@ from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
 from pytest import raises
 
-from utilities.more_itertools import (
-    OneEmptyError,
-    OneNonUniqueError,
-    always_iterable,
-    one,
-    transpose,
-    windowed_complete,
-)
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
+from utilities.more_itertools import always_iterable, transpose, windowed_complete
 
 
 class TestAlwaysIterable:

@@ -8,7 +8,7 @@ from pytest import raises
 
 from utilities.cacher import cache_to_disk
 from utilities.functions import identity
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.types import EnsureClassError
 
 

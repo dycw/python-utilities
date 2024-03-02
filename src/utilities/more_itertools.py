@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
-from typing import Any, Generic, TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import transpose as _transpose
 from more_itertools import windowed_complete as _windowed_complete
-from typing_extensions import override
 
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")
@@ -25,44 +23,6 @@ def always_iterable(
 ) -> Iterator[_T]:
     """Typed version of `always_iterable`."""
     return _always_iterable(obj, base_type=base_type)
-
-
-def one(iterable: Iterable[_T], /) -> _T:
-    """Custom version of `one` with separate exceptions."""
-    it = iter(iterable)
-    try:
-        first = next(it)
-    except StopIteration:
-        raise OneEmptyError(iterable=iterable) from None
-    try:
-        second = next(it)
-    except StopIteration:
-        return first
-    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class OneError(Exception, Generic[_T]):
-    iterable: Iterable[_T]
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class OneEmptyError(OneError[_T]):
-    @override
-    def __str__(self) -> str:
-        return f"Iterable {self.iterable} must not be empty."
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class OneNonUniqueError(OneError[_T]):
-    first: _T
-    second: _T
-
-    @override
-    def __str__(self) -> str:
-        return "Iterable {} must contain exactly one item; got {}, {} and perhaps more.".format(
-            self.iterable, self.first, self.second
-        )
 
 
 @overload
@@ -110,12 +70,4 @@ def windowed_complete(
     )
 
 
-__all__ = [
-    "OneEmptyError",
-    "OneError",
-    "OneNonUniqueError",
-    "always_iterable",
-    "one",
-    "transpose",
-    "windowed_complete",
-]
+__all__ = ["always_iterable", "transpose", "windowed_complete"]

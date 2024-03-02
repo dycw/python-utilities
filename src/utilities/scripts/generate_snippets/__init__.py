@@ -16,7 +16,7 @@ from loguru import logger
 from typing_extensions import assert_never
 
 from utilities.humps import snake_case
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.text import ensure_str, strip_and_dedent
 
 

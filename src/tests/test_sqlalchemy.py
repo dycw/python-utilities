@@ -79,7 +79,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.pytest import skipif_not_linux
 from utilities.sqlalchemy import (
     CheckEngineError,

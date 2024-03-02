@@ -26,57 +26,6 @@ cachetools = ["cachetools >= 5.3.3"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 42.0.5"]
 cvxpy = ["cvxpy >= 1.4.2"]
-# dev = [
-# # core
-# "ast-comments >= 1.2.1",
-# "beautifulsoup4 >= 4.12.3",
-# "bottleneck >= 1.3.8",
-# "cryptography >= 42.0.5",
-# "cvxpy >= 1.4.2",
-# "fpdf2 >= 2.7.8",
-# "hatch >= 1.9.3",
-# "holoviews >= 1.18.1",
-# "hypothesis >= 6.98.15",
-# "luigi >= 3.5.0",
-# "mdutils >= 1.6.0",
-# "memory-profiler >= 0.61.0",
-# "numbagg >= 0.8.0",
-# "numpy >= 1.26.4",
-# "pandas >= 2.2.1",
-# "polars >= 0.20.13",
-# "pqdm >= 0.2.0",
-# "psutil >= 5.9.6",
-# "pydantic >= 2.6.3",
-# "pyinstrument >= 4.6.2",
-# "pypiserver[passlib] >= 2.0.1",
-# "pytest >= 8.0.2",
-# "pytest-check >= 2.3.1",
-# "selenium >= 4.18.1",
-# "sqlalchemy >= 2.0.27",
-# "streamlit >= 1.31.1",
-# "timeout-decorator >= 0.5.0",
-# "xarray >= 2024.2.0",
-# "xlrd >= 2.0.1",
-# "zarr >= 2.16.1",
-# # dev
-# "nox",
-# "pip-tools",
-# # sqlalchemy-dbs
-# "cx-oracle",
-# "mysqlclient",     # ci-mac-disable
-# "psycopg2-binary",
-# "pyodbc",
-# # test
-# "coverage-conditional-plugin >= 0.9.0",
-# "exceptiongroup >= 1.2.0",
-# "freezegun >= 1.4.0",
-# "pytest-cov >= 4.1.0",
-# "pytest-instafail >= 0.5.0",
-# "pytest-only >= 2.0.0",
-# "pytest-randomly >= 3.15.0",
-# "pytest-timeout >= 2.2.0",
-# "pytest-xdist >= 3.3.1",
-# ]
 fastapi = ["fastapi >= 0.110.0"]
 fpdf2 = ["fpdf2 >= 2.7.8", "holoviews >= 1.18.1", "selenium >= 4.18.1"]
 frozendict = ["frozendict >= 2.4.0"]
@@ -132,7 +81,8 @@ zzz-test-beartype = ["beartype", "pytest"]
 zzz-test-bs4 = ["beautifulsoup4", "more-itertools", "polars", "pytest"]
 zzz-test-cacher = ["atomicwrites", "cachetools", "more-itertools", "pytest"]
 zzz-test-cachetools = ["cachetools", "hypothesis", "pytest"]
-zzz-test-click = ["sqlalchemy"]
+zzz-test-click = ["more-itertools", "sqlalchemy"]
+zzz-test-cryptography = []
 zzz-test-fastapi = ["fastapi", "pytest"]
 zzz-test-more-itertools = ["more-itertools", "pytest"]
 zzz-test-scipy = ["hypothesis", "pytest", "scipy"]

@@ -51,10 +51,8 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never, override
 
 from utilities.errors import redirect_error
-from utilities.humps import snake_case, snake_case_mappings
-from utilities.iterables import CheckLengthError, check_length, is_iterable_not_str
+from utilities.iterables import CheckLengthError, check_length, is_iterable_not_str, one
 from utilities.math import FloatFinNonNeg, IntNonNeg
-from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
 
@@ -71,6 +69,8 @@ def _check_column_collections_equal(
     primary_key: bool = True,
 ) -> None:
     """Check that a pair of column collections are equal."""
+    from utilities.humps import snake_case_mappings
+
     cols_x, cols_y = (list(cast(Iterable[Column[Any]], i)) for i in [x, y])
     name_to_col_x, name_to_col_y = (
         {ensure_str(col.name): col for col in i} for i in [cols_x, cols_y]
@@ -367,6 +367,8 @@ def _check_table_or_column_names_equal(
     x: str | quoted_name, y: str | quoted_name, /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
+    from utilities.humps import snake_case
+
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
     msg = f"{x=}, {y=}"
     if (not snake) and (x != y):
@@ -789,6 +791,8 @@ class TablenameMixin:
 
     @cast(Any, declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
+        from utilities.humps import snake_case
+
         return snake_case(get_class_name(cls))
 
 

@@ -8,7 +8,7 @@ import pytest
 from click.testing import CliRunner
 from pytest import LogCaptureFixture, mark, param
 
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.scripts.generate_snippets import (
     Method,
     _generate_ipython_imports,

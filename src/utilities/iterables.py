@@ -17,7 +17,6 @@ from utilities.math import (
     _CheckIntegerMinError,
     check_integer,
 )
-from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import ensure_hashable
 
@@ -490,6 +489,44 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return is_iterable(obj) and not isinstance(obj, str)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneError(Exception, Generic[_T]):
+    iterable: Iterable[_T]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneEmptyError(OneError[_T]):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} must not be empty."
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneNonUniqueError(OneError[_T]):
+    first: _T
+    second: _T
+
+    @override
+    def __str__(self) -> str:
+        return "Iterable {} must contain exactly one item; got {}, {} and perhaps more.".format(
+            self.iterable, self.first, self.second
+        )
+
+
+def one(iterable: Iterable[_T], /) -> _T:
+    """Custom version of `one` with separate exceptions."""
+    it = iter(iterable)
+    try:
+        first = next(it)
+    except StopIteration:
+        raise OneEmptyError(iterable=iterable) from None
+    try:
+        second = next(it)
+    except StopIteration:
+        return first
+    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+
+
 __all__ = [
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
@@ -502,6 +539,9 @@ __all__ = [
     "CheckSuperSetError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
+    "OneEmptyError",
+    "OneError",
+    "OneNonUniqueError",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
@@ -516,4 +556,5 @@ __all__ = [
     "ensure_iterable_not_str",
     "is_iterable",
     "is_iterable_not_str",
+    "one",
 ]

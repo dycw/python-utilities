@@ -8,6 +8,7 @@ packages=(
     cacher
     cachetools
     click
+    cryptography
     fastapi
     more-itertools
     scipy
