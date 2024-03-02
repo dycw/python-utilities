@@ -241,7 +241,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.13
+polars-lts-cpu==0.20.13
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit

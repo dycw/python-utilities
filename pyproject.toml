@@ -51,7 +51,7 @@ dev = [
   "numpy",
   "pandas",
   "pathvalidate",
-  "polars",
+  "polars-lts-cpu",  # for CI
   "pqdm",
   "psutil",
   "pydantic",

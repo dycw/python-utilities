@@ -1039,8 +1039,9 @@ class TestTempDirs:
         path = temp_dir.path
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
-        for content in as_set:
-            Path(path, content).touch()
+        with assume_does_not_raise(FileNotFoundError):
+            for content in as_set:
+                Path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)
 
 
