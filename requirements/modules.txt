@@ -8,6 +8,7 @@ anyio==4.3.0
     #   starlette
 asciitree==0.3.3
     # via zarr
+ast-comments==1.2.1
 atomicwrites==1.4.1
 attrs==23.2.0
     # via hypothesis
