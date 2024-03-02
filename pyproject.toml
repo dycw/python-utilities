@@ -68,13 +68,20 @@ dev = [
   "xarray",
   "xlrd",
   "zarr",
+  # sqlalchemy
+  "cx-oracle",
+  "mysqlclient",
+  "psycopg2-binary",
+  "pyodbc",
   # test
+  "coverage-conditional-plugin",
   "exceptiongroup",
+  "freezegun",
   "hypothesis",
-  "pytest",
   "pytest-cov",
   "pytest-instafail",
   "pytest-only",
+  "pytest",
   "pytest-randomly",
   "pytest-xdist",
 ]
