@@ -323,7 +323,7 @@ class TestCheckSuperSet:
             check_superset({1}, {1, 2, 3})
 
 
-class ChunkedTests:
+class TestChunked:
     def test_even(self) -> None:
         result = list(chunked("ABCDEF", 3))
         expected = [["A", "B", "C"], ["D", "E", "F"]]
