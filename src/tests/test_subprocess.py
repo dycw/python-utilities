@@ -6,7 +6,6 @@ from subprocess import CalledProcessError, check_call
 
 from pytest import raises
 
-from utilities.pathvalidate import valid_path
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (
     GetShellOutputError,
@@ -32,14 +31,14 @@ class TestGetShellOutput:
 
     @skipif_windows
     def test_activate(self, *, tmp_path: Path) -> None:
-        venv = valid_path(tmp_path, ".venv")
-        activate = valid_path(venv, "activate")
+        venv = Path(tmp_path, ".venv")
+        activate = Path(venv, "activate")
         activate.parent.mkdir(parents=True)
         activate.touch()
         _ = get_shell_output("ls", cwd=venv, activate=venv)
 
     def test_no_activate(self, *, tmp_path: Path) -> None:
-        venv = valid_path(tmp_path, ".venv")
+        venv = Path(tmp_path, ".venv")
         with raises(GetShellOutputError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 

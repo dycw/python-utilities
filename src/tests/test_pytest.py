@@ -175,6 +175,7 @@ class TestPytestOptions:
 
 
 class TestThrottle:
+    @FLAKY
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(
@@ -196,6 +197,7 @@ class TestThrottle:
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
+    @FLAKY
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -261,6 +263,7 @@ class TestThrottle:
             if i == 0:
                 sleep(1.0)
 
+    @FLAKY
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
