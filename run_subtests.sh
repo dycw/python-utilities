@@ -1,7 +1,42 @@
 #!/usr/bin/env bash
 
-# for package in ast atomicwrites beartype fastapi more-itertools scipy xlrd; do
 packages=(
+    zarr
+)
+packages=(
+    ast
+    atomicwrites
+    beartype
+    bs4
+    cacher
+    cachetools
+    click
+    cryptography
+    cvxpy
+    fastapi
+    fpdf2
+    holoviews
+    ipython
+    jupyter
+    loguru
+    luigi
+    memory-profiler
+    more-itertools
+    numpy
+    pandas
+    pathvalidate
+    polars
+    pqdm
+    pydantic
+    pyinstrument
+    pytest-check
+    scipy
+    semver
+    sqlalchemy
+    sqlalchemy-polars
+    typed-settings
+    xarray
+    xlrd
     zarr
 )
 for package in "${packages[@]}"; do

@@ -6,7 +6,7 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
 from itertools import islice
-from typing import Any, Generic, TypeGuard, TypeVar, cast
+from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
@@ -25,6 +25,11 @@ from utilities.types import ensure_hashable
 _K = TypeVar("_K")
 _T = TypeVar("_T")
 _V = TypeVar("_V")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -537,6 +542,41 @@ def one(iterable: Iterable[_T], /) -> _T:
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
+
+
+@overload
+def transpose(iterable: Iterable[tuple[_T1]], /) -> tuple[tuple[_T1, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3, _T4]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3, _T4, _T5]], /
+) -> tuple[
+    tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...], tuple[_T5, ...]
+]: ...
+
+
+def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:
+    """Typed verison of `transpose`."""
+    return tuple(zip(*iterable, strict=True))
 
 
 __all__ = [
