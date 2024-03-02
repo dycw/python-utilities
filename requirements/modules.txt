@@ -116,6 +116,7 @@ mdit-py-plugins==0.4.0
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
+mdutils==1.6.0
 memory-profiler==0.61.0
 more-itertools==10.2.0
     # via jaraco-classes

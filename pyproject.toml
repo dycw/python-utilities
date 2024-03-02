@@ -141,6 +141,7 @@ zzz-test-modules = [
   "loguru",
   "luigi",
   "memory-profiler",
+  "mdutils",
   "more-itertools",
   "numpy",
   "pathvalidate",
