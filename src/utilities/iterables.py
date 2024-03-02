@@ -5,13 +5,13 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Siz
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import partial
 from itertools import islice
 from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
-from utilities.functools import partial
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -429,7 +429,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
         return f"Set {self.left} must be a superset of {self.right}; right had extra items {self.extra}."
 
 
-def chunked(iterable: Iterable[_T], n: int | None, /) -> Iterable[Sequence[_T]]:
+def chunked(iterable: Iterable[_T], n: int, /) -> Iterable[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return cast(Iterable[Sequence[_T]], iter(partial(take, n, iter(iterable)), []))
 

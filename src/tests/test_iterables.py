@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Any
 
 from hypothesis import given
@@ -324,19 +324,22 @@ class TestCheckSuperSet:
 
 
 class TestChunked:
-    def test_even(self) -> None:
-        result = list(chunked("ABCDEF", 3))
-        expected = [["A", "B", "C"], ["D", "E", "F"]]
+    @mark.parametrize(
+        ("iterable", "expected"),
+        [
+            param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
+            param("ABCDE", [["A", "B", "C"], ["D", "E"]]),
+        ],
+    )
+    def test_main(
+        self, *, iterable: Iterable[str], expected: Sequence[Sequence[str]]
+    ) -> None:
+        result = list(chunked(iterable, 3))
         assert result == expected
 
     def test_odd(self) -> None:
         result = list(chunked("ABCDE", 3))
         expected = [["A", "B", "C"], ["D", "E"]]
-        assert result == expected
-
-    def test_none(self) -> None:
-        result = list(chunked("ABCDE", None))
-        expected = [["A", "B", "C", "D", "E"]]
         assert result == expected
 
 

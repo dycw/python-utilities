@@ -7,7 +7,7 @@ from math import isnan
 from operator import eq, neg
 from typing import Any
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -84,6 +84,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y)
 
     @given(x=binary(), y=binary())
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
     def test_binary(self, *, x: bytes, y: bytes) -> None:
         with assume_does_not_raise(UnicodeDecodeError):
             _ = list(map(serialize, [x, y]))

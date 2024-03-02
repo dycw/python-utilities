@@ -9,7 +9,7 @@ from typing import cast
 
 from typing_extensions import Never, assert_never, override
 
-from utilities.errors import ImpossibleCaseError, redirect_error
+from utilities.errors import ImpossibleCaseError
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.types import Duration

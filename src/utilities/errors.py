@@ -17,7 +17,7 @@ class ImpossibleCaseError(Exception):
     @override
     def __str__(self) -> str:
         desc = ", ".join(self.case)
-        return f"Arguments must be possible: {desc}"
+        return f"Case must be possible: {desc}."
 
 
 @contextmanager
