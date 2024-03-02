@@ -109,6 +109,15 @@ zzz-test-cryptography = ["cryptography"]
 zzz-test-cvxpy = ["cvxpy", "pandas"]
 zzz-test-dataclasses = []
 zzz-test-datetime = []
+zzz-test-defaults = [
+  "coverage-conditional-plugin",
+  "exceptiongroup",
+  "hypothesis",
+  "pytest",
+  "pytest-cov",
+  "pytest-randomly",
+  "pytest-rerunfailures",
+]
 zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []

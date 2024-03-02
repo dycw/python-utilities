@@ -78,8 +78,8 @@ packages=(
 )
 for package in "${packages[@]}"; do
     uv pip compile \
+        "--extra=zzz-test-defaults" \
         "--extra=zzz-test-${package}" \
-        "--extra=test" \
         --quiet \
         --prerelease=disallow \
         "--output-file=requirements/${package}.txt" \
