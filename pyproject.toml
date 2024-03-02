@@ -30,7 +30,6 @@ readme = "README.md"
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
-airium = ["airium >= 0.2.6"]
 ast-comments = ["ast-comments >= 1.2.1"]
 beautifulsoup4 = ["beautifulsoup4 >= 4.12.3"]
 bottleneck = ["bottleneck >= 1.3.8"]
@@ -38,7 +37,6 @@ cryptography = ["cryptography >= 42.0.5"]
 cvxpy = ["cvxpy >= 1.4.2"]
 dev = [
   # core
-  "airium >= 0.2.6",
   "ast-comments >= 1.2.1",
   "beautifulsoup4 >= 4.12.3",
   "bottleneck >= 1.3.8",
@@ -67,7 +65,6 @@ dev = [
   "selenium >= 4.18.1",
   "sqlalchemy >= 2.0.27",
   "streamlit >= 1.31.1",
-  "timeout-decorator >= 0.5.0",
   "xarray >= 2024.2.0",
   "xlrd >= 2.0.1",
   "zarr >= 2.16.1",
@@ -156,9 +153,10 @@ directory = ".coverage/html"
 [tool.coverage.report]
 exclude_lines = [
   "@overload",
-  "# pragma: no cover",
   "assert_never",
   "case _ as never:",
+  "if TYPE_CHECKING:",
+  "# pragma: no cover",
 ]
 fail_under = 100.0
 skip_covered = true
@@ -230,6 +228,7 @@ addopts = [
 ]
 filterwarnings = [
   "error",
+  "ignore:invalid escape sequence:DeprecationWarning",
   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
 ]
@@ -319,8 +318,7 @@ select = [
   "PLR2004",  # refactor, magic-value-comparison
   "S101",  # flake8-bandit, assert-used
 ]
-"src/tests/luigi/test_*.py" = ["I002"]  # isort, missing-required-import
-"src/tests/typed_settings/test_*.py" = ["I002"]  # isort, missing-required-import
+"src/tests/test_typed_settings.py" = ["I002"]  # isort, missing-required-import
 "src/utilities/_luigi/typed_settings.py" = [
   "I002",
 ]  # isort, missing-required-import

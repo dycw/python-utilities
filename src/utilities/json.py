@@ -139,8 +139,7 @@ def _default(  # noqa: PLR0911, PLR0912
     raise JsonSerializationError(msg)
 
 
-class JsonSerializationError(Exception):
-    ...
+class JsonSerializationError(Exception): ...
 
 
 def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
@@ -229,8 +228,7 @@ def _object_hook(  # noqa: PLR0911
             raise JsonDeserializationError(msg)
 
 
-class JsonDeserializationError(Exception):
-    ...
+class JsonDeserializationError(Exception): ...
 
 
 __all__ = ["deserialize", "serialize"]

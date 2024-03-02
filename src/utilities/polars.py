@@ -348,8 +348,7 @@ def redirect_empty_polars_concat() -> Iterator[None]:
         yield
 
 
-class EmptyPolarsConcatError(Exception):
-    ...
+class EmptyPolarsConcatError(Exception): ...
 
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
@@ -361,8 +360,7 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     return df[1:].rename(mapping)
 
 
-class SetFirstRowAsColumnsError(Exception):
-    ...
+class SetFirstRowAsColumnsError(Exception): ...
 
 
 __all__ = [
@@ -376,15 +374,3 @@ __all__ = [
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
 ]
-
-
-try:
-    from utilities._polars.bs4 import (
-        TableTagToDataFrameError,
-        table_tag_to_dataframe,
-        yield_tables,
-    )
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["TableTagToDataFrameError", "table_tag_to_dataframe", "yield_tables"]

@@ -52,8 +52,7 @@ def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -
     raise ParseEnumError(msg)
 
 
-class ParseEnumError(Exception):
-    ...
+class ParseEnumError(Exception): ...
 
 
 __all__ = ["ParseEnumError", "StrEnum", "ensure_enum", "parse_enum"]

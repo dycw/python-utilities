@@ -33,8 +33,7 @@ def redirect_empty_reduce() -> Iterator[None]:
         yield
 
 
-class EmptyReduceError(Exception):
-    ...
+class EmptyReduceError(Exception): ...
 
 
 __all__ = ["EmptyReduceError", "partial", "redirect_empty_reduce"]

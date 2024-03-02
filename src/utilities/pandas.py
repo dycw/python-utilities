@@ -74,26 +74,12 @@ if TYPE_CHECKING:  # pragma: no cover
     SeriesS: TypeAlias = Series[str]
     SeriesSt: TypeAlias = Series[StringDtype]
 else:
-    IndexA = (
-        IndexB
-    ) = (
-        IndexBn
-    ) = (
-        IndexC
-    ) = (
-        IndexD
-    ) = IndexDhk = IndexDutc = IndexF = IndexI = IndexI64 = IndexS = IndexSt = Index
-    SeriesA = (
-        SeriesB
-    ) = (
-        SeriesBn
-    ) = (
-        SeriesC
-    ) = (
-        SeriesD
-    ) = (
-        SeriesDhk
-    ) = SeriesDutc = SeriesF = SeriesI = SeriesI64 = SeriesS = SeriesSt = Series
+    IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = IndexDutc = IndexF = (
+        IndexI
+    ) = IndexI64 = IndexS = IndexSt = Index
+    SeriesA = SeriesB = SeriesBn = SeriesC = SeriesD = SeriesDhk = SeriesDutc = (
+        SeriesF
+    ) = SeriesI = SeriesI64 = SeriesS = SeriesSt = Series
 
 
 Int64 = "Int64"
@@ -425,8 +411,7 @@ def check_range_index(
             check_index(index, name=name)
 
 
-class CheckRangeIndexError(Exception):
-    ...
+class CheckRangeIndexError(Exception): ...
 
 
 @contextmanager
@@ -438,8 +423,7 @@ def redirect_empty_pandas_concat() -> Iterator[None]:
         yield
 
 
-class EmptyPandasConcatError(Exception):
-    ...
+class EmptyPandasConcatError(Exception): ...
 
 
 def rename_index(index: _Index, name: Hashable, /) -> _Index:
@@ -569,8 +553,7 @@ def timestamp_to_datetime(timestamp: Any, /, *, warn: bool = True) -> dt.datetim
     return datetime
 
 
-class TimestampToDateTimeError(Exception):
-    ...
+class TimestampToDateTimeError(Exception): ...
 
 
 def _timestamp_minmax_to_date(timestamp: Timestamp, method_name: str, /) -> dt.date:
@@ -609,8 +592,7 @@ def to_numpy(series: SeriesA, /) -> NDArray1:
     raise ToNumpyError(msg)  # pragma: no cover
 
 
-class ToNumpyError(Exception):
-    ...
+class ToNumpyError(Exception): ...
 
 
 def union_indexes(

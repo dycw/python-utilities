@@ -23,8 +23,7 @@ def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT:  # type: ignore
 
 
 @overload
-def beartype_if_dev(*, conf: BeartypeConf) -> BeartypeConfedDecorator:
-    ...
+def beartype_if_dev(*, conf: BeartypeConf) -> BeartypeConfedDecorator: ...
 
 
 beartype_if_dev = cast(Any, beartype(conf=_CONF))

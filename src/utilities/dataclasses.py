@@ -26,8 +26,7 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     raise GetDataClassClassError(msg)
 
 
-class GetDataClassClassError(Exception):
-    ...
+class GetDataClassClassError(Exception): ...
 
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
@@ -68,11 +67,3 @@ __all__ = [
     "replace_non_sentinel",
     "yield_field_names",
 ]
-
-
-try:
-    from utilities._dataclasses.xarray import rename_data_arrays
-except ModuleNotFoundError:  # pragma: no cover
-    pass
-else:
-    __all__ += ["rename_data_arrays"]

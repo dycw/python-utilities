@@ -10,8 +10,7 @@ _T = TypeVar("_T")
 
 class _HasName(Protocol):
     @property
-    def name(self) -> Any:
-        ...  # pragma: no cover
+    def name(self) -> Any: ...  # pragma: no cover
 
 
 def check_name(obj: _HasName, name: Any, /) -> None:

@@ -121,14 +121,12 @@ class TestGetClass:
 
 class TestGetClassName:
     def test_class(self) -> None:
-        class Example:
-            ...
+        class Example: ...
 
         assert get_class_name(Example) == "Example"
 
     def test_instance(self) -> None:
-        class Example:
-            ...
+        class Example: ...
 
         assert get_class_name(Example()) == "Example"
 
@@ -179,8 +177,7 @@ class TestIsSubclassExceptBoolInt:
         assert issubclass_except_bool_int(x, y) is expected
 
     def test_subclass_of_int(self) -> None:
-        class MyInt(int):
-            ...
+        class MyInt(int): ...
 
         assert not issubclass_except_bool_int(bool, MyInt)
 
