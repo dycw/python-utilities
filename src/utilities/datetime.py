@@ -92,7 +92,23 @@ def get_now(*, tz: dt.tzinfo | None = UTC) -> dt.datetime:
     return dt.datetime.now(tz=tz)
 
 
-NOW_UTC, NOW_HKG, NOW_TKY = (get_now(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+NOW_UTC = get_now()
+
+
+def get_now_hk() -> dt.datetime:
+    """Get the current time in Hong Kong."""
+    return dt.datetime.now(tz=HONG_KONG)
+
+
+NOW_HKG = get_now_hk()
+
+
+def get_now_tokyo() -> dt.datetime:
+    """Get the current time in Tokyo."""
+    return dt.datetime.now(tz=TOKYO)
+
+
+NOW_TOKYO = get_now_tokyo()
 
 
 def get_today(*, tz: dt.tzinfo | None = UTC) -> dt.date:
@@ -100,7 +116,23 @@ def get_today(*, tz: dt.tzinfo | None = UTC) -> dt.date:
     return get_now(tz=tz).date()
 
 
-TODAY_UTC, TODAY_HKG, TODAY_TKY = (get_today(tz=tz) for tz in [UTC, HONG_KONG, TOKYO])
+TODAY_UTC = get_today()
+
+
+def get_today_hk() -> dt.date:
+    """Get the current date in Hong Kong."""
+    return get_now_hk().date()
+
+
+TODAY_HK = get_today_hk()
+
+
+def get_today_tokyo() -> dt.date:
+    """Get the current date in Tokyo."""
+    return get_now_tokyo().date()
+
+
+TODAY_TOKYO = get_today_tokyo()
 
 
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
@@ -303,14 +335,14 @@ __all__ = [
     "EPOCH_UTC",
     "LocalTimeZoneError",
     "NOW_HKG",
-    "NOW_TKY",
+    "NOW_TOKYO",
     "NOW_UTC",
     "ParseDateError",
     "ParseDateTimeError",
     "ParseTimeError",
     "ParseTimedeltaError",
-    "TODAY_HKG",
-    "TODAY_TKY",
+    "TODAY_HK",
+    "TODAY_TOKYO",
     "TODAY_UTC",
     "UTC",
     "YieldWeekdaysError",
@@ -323,7 +355,11 @@ __all__ = [
     "ensure_time",
     "ensure_timedelta",
     "get_now",
+    "get_now_hk",
+    "get_now_tokyo",
     "get_today",
+    "get_today_hk",
+    "get_today_tokyo",
     "is_weekday",
     "local_timezone",
     "maybe_sub_pct_y",

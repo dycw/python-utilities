@@ -27,10 +27,10 @@ from pytest import mark, param, raises
 from utilities.datetime import (
     EPOCH_UTC,
     NOW_HKG,
-    NOW_TKY,
+    NOW_TOKYO,
     NOW_UTC,
-    TODAY_HKG,
-    TODAY_TKY,
+    TODAY_HK,
+    TODAY_TOKYO,
     TODAY_UTC,
     UTC,
     AddWeekdaysError,
@@ -48,7 +48,11 @@ from utilities.datetime import (
     ensure_time,
     ensure_timedelta,
     get_now,
+    get_now_hk,
+    get_now_tokyo,
     get_today,
+    get_today_hk,
+    get_today_tokyo,
     is_equal_mod_tz,
     is_weekday,
     local_timezone,
@@ -172,6 +176,41 @@ class TestEnsure:
         assert result == datetime
 
 
+class TestGetNow:
+    @given(tz=timezones())
+    def test_main(self, *, tz: dt.tzinfo) -> None:
+        now = get_now(tz=tz)
+        assert isinstance(now, dt.datetime)
+        assert now.tzinfo is tz
+
+    @mark.parametrize(
+        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
+    )
+    def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
+        assert isinstance(get_now(), dt.date)
+
+    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TOKYO)])
+    def test_constants(self, *, now: dt.datetime) -> None:
+        assert isinstance(now, dt.date)
+
+
+class TestGetToday:
+    @given(tz=timezones())
+    def test_main(self, *, tz: dt.tzinfo) -> None:
+        today = get_today(tz=tz)
+        assert isinstance(today, dt.date)
+
+    @mark.parametrize(
+        "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
+    )
+    def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
+        assert isinstance(get_today(), dt.date)
+
+    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
+    def test_constants(self, *, today: dt.date) -> None:
+        assert isinstance(today, dt.date)
+
+
 class TestIsEqualModTz:
     @given(x=datetimes(), y=datetimes())
     def test_naive(self, *, x: dt.datetime, y: dt.datetime) -> None:
@@ -213,29 +252,6 @@ class TestMaybeSubPctY:
     def test_main(self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
         assert not search("%Y", result)
-
-
-class TestGetNow:
-    @given(tz=timezones())
-    def test_function(self, *, tz: dt.tzinfo) -> None:
-        now = get_now(tz=tz)
-        assert isinstance(now, dt.datetime)
-        assert now.tzinfo is tz
-
-    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TKY)])
-    def test_constants(self, *, now: dt.datetime) -> None:
-        assert isinstance(now, dt.date)
-
-
-class TestGetToday:
-    @given(tz=timezones())
-    def test_function(self, *, tz: dt.tzinfo) -> None:
-        today = get_today(tz=tz)
-        assert isinstance(today, dt.date)
-
-    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HKG), param(TODAY_TKY)])
-    def test_main(self, *, today: dt.date) -> None:
-        assert isinstance(today, dt.date)
 
 
 class TestParseDate:
