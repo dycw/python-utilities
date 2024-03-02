@@ -2,15 +2,15 @@
 
 packages=(
     # standard library
-    ast
-    dataclasses
-    datetime
-    email
-    enum
-    errors
-    functions
-    functools
-    getpass
+    # ast
+    # dataclasses
+    # datetime
+    # email
+    # enum
+    # errors
+    # functions
+    # functools
+    # getpass
     git
     hashlib
     iterables
