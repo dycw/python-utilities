@@ -6,6 +6,7 @@ from typing import cast
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from smtplib import SMTPServerDisconnected
 
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.email import send_email
 

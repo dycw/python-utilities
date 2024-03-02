@@ -5,6 +5,7 @@ from types import NoneType
 from typing import Any
 
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.dataclasses import (
     GetDataClassClassError,

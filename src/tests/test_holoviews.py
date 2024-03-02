@@ -6,6 +6,7 @@ from holoviews import Curve
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.holoviews import (
     PlotCurveError,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from locale import LC_CTYPE, LC_TIME, setlocale
 
 from pytest import mark, param
+from typing_extensions import Self
 
 from utilities.locale import atof, atoi, get_locale_for_platform, override_locale
 from utilities.pytest import skipif_windows

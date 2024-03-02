@@ -38,7 +38,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 from sqlalchemy import Engine
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import NOW_HKG, UTC
 from utilities.hypothesis import (

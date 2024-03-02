@@ -23,6 +23,7 @@ from hypothesis.strategies import (
     timezones,
 )
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.datetime import (
     EPOCH_UTC,

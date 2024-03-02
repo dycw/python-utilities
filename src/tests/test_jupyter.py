@@ -4,6 +4,7 @@ from hypothesis import given
 from hypothesis.strategies import integers, none
 from pandas import get_option
 from polars import Config
+from typing_extensions import Self
 
 from utilities.jupyter import _DEFAULT_COLS, _DEFAULT_ROWS, is_jupyter, show
 

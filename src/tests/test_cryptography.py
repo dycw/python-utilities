@@ -4,6 +4,7 @@ from cryptography.fernet import Fernet
 from hypothesis import given
 from hypothesis.strategies import text
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.cryptography import (
     _ENV_VAR,

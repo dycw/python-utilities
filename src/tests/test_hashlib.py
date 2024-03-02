@@ -16,6 +16,7 @@ from hypothesis.strategies import (
     tuples,
 )
 from pytest import mark, param
+from typing_extensions import Self
 
 from utilities.hashlib import md5_hash
 

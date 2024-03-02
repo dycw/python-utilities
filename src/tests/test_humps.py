@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hypothesis import given
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.humps import SnakeCaseMappingsError, snake_case, snake_case_mappings
 from utilities.hypothesis import text_ascii

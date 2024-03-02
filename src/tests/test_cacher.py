@@ -5,6 +5,7 @@ from pathlib import Path
 from time import sleep
 
 from pytest import raises
+from typing_extensions import Self
 
 from tests.conftest import FLAKY
 from utilities.cacher import cache_to_disk

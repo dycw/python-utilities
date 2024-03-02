@@ -24,6 +24,7 @@ from hypothesis.strategies import (
     times,
 )
 from pytest import mark, param
+from typing_extensions import Self
 
 import utilities.click
 from utilities.click import (

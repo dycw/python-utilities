@@ -6,6 +6,7 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import integers, sets
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.iterables import (
     CheckDuplicatesError,

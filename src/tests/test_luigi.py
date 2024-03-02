@@ -25,7 +25,7 @@ from pytest import mark, param
 from semver import VersionInfo
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import serialize_date, serialize_datetime, serialize_time
 from utilities.hypothesis import (

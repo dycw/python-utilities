@@ -49,6 +49,7 @@ from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
+from typing_extensions import Self
 
 from tests.conftest import FLAKY
 from utilities.datetime import UTC

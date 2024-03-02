@@ -9,6 +9,7 @@ from time import sleep
 from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
+from typing_extensions import Self
 
 from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
 from utilities.logging import LogLevel

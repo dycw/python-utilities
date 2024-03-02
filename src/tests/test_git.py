@@ -5,6 +5,7 @@ from pathlib import Path
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.git import (
     GetRepoRootError,
