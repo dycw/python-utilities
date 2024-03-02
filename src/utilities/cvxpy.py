@@ -13,7 +13,7 @@ from typing_extensions import override
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
 
 if TYPE_CHECKING:
-    from pandas import DataFrame, Series
+    from pandas import DataFrame
 
     from utilities.pandas import SeriesF
 

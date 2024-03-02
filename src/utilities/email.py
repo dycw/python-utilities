@@ -5,7 +5,6 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
-from typing import Any
 
 from utilities.pathvalidate import valid_path
 from utilities.types import IterableStrs, PathLike
@@ -17,7 +16,7 @@ def send_email(
     /,
     *,
     subject: str | None = None,
-    contents: Any = None,
+    contents: str | None = None,
     subtype: str = "plain",
     host: str = "",
     port: int = 0,
@@ -30,19 +29,7 @@ def send_email(
     if subject is not None:
         message["Subject"] = subject
     if contents is not None:
-        if isinstance(contents, str):
-            text = MIMEText(contents, subtype)
-        else:  # pragma: no cover
-            try:
-                from airium import Airium
-            except ModuleNotFoundError:
-                msg = "'airium' must be installed"
-                raise SendEmailError(msg) from None
-            else:
-                if not isinstance(contents, Airium):
-                    msg = "Contents must be an instance of `Airium`"
-                    raise SendEmailError(contents)
-                text = MIMEText(str(contents), "html")
+        text = MIMEText(contents, subtype)
         message.attach(text)
     if attachments is not None:
         for attachment in attachments:
