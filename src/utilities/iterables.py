@@ -441,7 +441,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
         )
 
 
-def chunked(iterable: Iterable[_T], n: int, /) -> Iterable[Sequence[_T]]:
+def chunked(iterable: Iterable[_T], n: int | None, /) -> Iterable[Sequence[_T]]:
     """Break an iterable into lists of length n."""
     return cast(Iterable[Sequence[_T]], iter(partial(take, n, iter(iterable)), []))
 

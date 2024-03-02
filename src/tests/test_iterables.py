@@ -32,12 +32,14 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
+    chunked,
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
     is_iterable,
     is_iterable_not_str,
     one,
+    take,
     transpose,
 )
 
@@ -321,6 +323,23 @@ class TestCheckSuperSet:
             check_superset({1}, {1, 2, 3})
 
 
+class ChunkedTests:
+    def test_even(self) -> None:
+        result = list(chunked("ABCDEF", 3))
+        expected = [["A", "B", "C"], ["D", "E", "F"]]
+        assert result == expected
+
+    def test_odd(self) -> None:
+        result = list(chunked("ABCDE", 3))
+        expected = [["A", "B", "C"], ["D", "E"]]
+        assert result == expected
+
+    def test_none(self) -> None:
+        result = list(chunked("ABCDE", None))
+        expected = [["A", "B", "C", "D", "E"]]
+        assert result == expected
+
+
 class TestEnsureHashables:
     def test_main(self) -> None:
         assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
@@ -382,6 +401,30 @@ class TestOne:
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
         ):
             _ = one([1, 2])
+
+
+class TestTake:
+    def test_simple(self) -> None:
+        result = take(5, range(10))
+        expected = list(range(5))
+        assert result == expected
+
+    def test_null(self) -> None:
+        result = take(0, range(10))
+        expected = []
+        assert result == expected
+
+    def test_negative(self) -> None:
+        with raises(
+            ValueError,
+            match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
+        ):
+            _ = take(-3, range(10))
+
+    def test_too_much(self) -> None:
+        result = take(10, range(5))
+        expected = list(range(5))
+        assert result == expected
 
 
 class TestTranspose:
