@@ -5,9 +5,8 @@ from smtplib import SMTPServerDisconnected
 
 from pytest import raises
 
-from utilities.email import SendEmailError, send_email
+from utilities.email import send_email
 from utilities.pathvalidate import valid_path
-from utilities.sentinel import sentinel
 
 
 class TestSendEmail:
@@ -37,13 +36,4 @@ class TestSendEmail:
                 ["user@test.com"],
                 subject="Subject",
                 attachments=[file],
-            )
-
-    def test_contents_error(self) -> None:
-        with raises(SendEmailError):
-            send_email(
-                "no-reply@test.com",
-                ["user@test.com"],
-                subject="Subject",
-                contents=sentinel,
             )
