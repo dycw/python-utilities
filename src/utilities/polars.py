@@ -12,7 +12,7 @@ from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
-from typing_extensions import Never, assert_never, override
+from typing_extensions import Never, Self, assert_never, override
 
 from utilities.errors import redirect_error
 from utilities.iterables import (

@@ -71,6 +71,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
+from typing_extensions import Self
 
 from utilities.hypothesis import (
     lists_fixed_length,

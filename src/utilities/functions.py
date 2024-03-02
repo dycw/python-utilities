@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol, TypeVar
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 _T = TypeVar("_T")
 

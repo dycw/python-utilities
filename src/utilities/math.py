@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from math import isclose, isfinite, isnan
 from typing import Annotated
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.errors import ImpossibleCaseError
 

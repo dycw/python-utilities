@@ -7,6 +7,7 @@ from typing import Any, cast
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (

@@ -9,7 +9,7 @@ from functools import partial
 from itertools import islice
 from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
-from typing_extensions import Never, assert_never, override
+from typing_extensions import Never, Self, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.math import (

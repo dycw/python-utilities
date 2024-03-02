@@ -12,6 +12,7 @@ from hypothesis.strategies import (
     none,
     sampled_from,
 )
+from typing_extensions import Self
 from xarray import DataArray
 
 from utilities.hypothesis import (

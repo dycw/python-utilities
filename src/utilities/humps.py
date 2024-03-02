@@ -6,7 +6,7 @@ from re import search
 from typing import TYPE_CHECKING
 
 from humps import decamelize
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.types import IterableStrs

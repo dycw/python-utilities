@@ -13,7 +13,7 @@ from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.interface import LuigiRunResult
 from luigi.task import flatten
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import (
     EPOCH_UTC,

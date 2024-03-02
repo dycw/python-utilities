@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from re import compile
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 

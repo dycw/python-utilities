@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from textwrap import dedent
 from typing import Any
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.types import EnsureClassError, ensure_class, get_class_name
 

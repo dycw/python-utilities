@@ -32,7 +32,7 @@ from hypothesis.strategies import (
     text,
     uuids,
 )
-from typing_extensions import assert_never
+from typing_extensions import Self, assert_never
 
 from utilities.datetime import UTC
 from utilities.math import FloatFinPos, IntNonNeg
