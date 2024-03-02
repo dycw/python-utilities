@@ -46,7 +46,7 @@ def abs_(
         return np.abs(x)
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -160,7 +160,7 @@ def max_(
         return np.max(x)
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -268,11 +268,11 @@ def maximum(
     """Compute the elementwise maximum of two quantities."""
     try:
         _check_series_and_dataframe(x, y)
-    except CheckSeriesAndDataFrameError as error:
+    except _CheckSeriesAndDataFrameError as error:
         raise MaximumError(x=error.x, y=error.y) from None
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         if isinstance(x, int | float | ndarray) and isinstance(
             y, int | float | ndarray
         ):
@@ -315,7 +315,7 @@ def min_(
         return np.min(x)
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -423,11 +423,11 @@ def minimum(
     """Compute the elementwise minimum of two quantities."""
     try:
         _check_series_and_dataframe(x, y)
-    except CheckSeriesAndDataFrameError as error:
+    except _CheckSeriesAndDataFrameError as error:
         raise MinimumError(x=error.x, y=error.y) from None
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         if isinstance(x, int | float | ndarray) and isinstance(
             y, int | float | ndarray
         ):
@@ -554,11 +554,11 @@ def multiply(
     """Compute the elementwise product of two quantities."""
     try:
         _check_series_and_dataframe(x, y)
-    except CheckSeriesAndDataFrameError as error:
+    except _CheckSeriesAndDataFrameError as error:
         raise MultiplyError(x=error.x, y=error.y) from None
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         if isinstance(x, int | float | ndarray) and isinstance(
             y, int | float | ndarray
         ):
@@ -639,7 +639,7 @@ def negative(
         return where(is_zero(result), 0.0, result)
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -662,7 +662,7 @@ def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
         return cast(float, numpy.linalg.norm(x))
     try:
         from pandas import Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series):
@@ -699,7 +699,7 @@ def positive(
         return where(is_zero(result), 0.0, result)
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -964,7 +964,7 @@ def sqrt(
     """Compute the square root of a quantity."""
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         if isinstance(x, int | float | ndarray):
             return np.sqrt(x)
     else:
@@ -1036,7 +1036,7 @@ def sum_(
         return np.sum(x).item()
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
     else:
         if isinstance(x, Series | DataFrame):
@@ -1087,7 +1087,7 @@ def _sum_axis_0_or_1(
 ) -> NDArrayF1 | SeriesF | Expression:
     try:
         from pandas import DataFrame
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         if isinstance(x, ndarray):
             return np.sum(x, axis=axis)
     else:
@@ -1103,16 +1103,16 @@ def _check_series_and_dataframe(
 ) -> None:
     try:
         from pandas import DataFrame, Series
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         return
     if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
         isinstance(x, DataFrame) and isinstance(y, Series)
     ):
-        raise CheckSeriesAndDataFrameError(x=x, y=y)
+        raise _CheckSeriesAndDataFrameError(x=x, y=y)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class CheckSeriesAndDataFrameError(Exception):
+class _CheckSeriesAndDataFrameError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame
 

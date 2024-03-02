@@ -21,6 +21,8 @@ from utilities.cvxpy import (
     ScalarProductError,
     SolveInfeasibleError,
     SolveUnboundedError,
+    _check_series_and_dataframe,
+    _CheckSeriesAndDataFrameError,
     abs_,
     add,
     divide,
@@ -148,6 +150,19 @@ class TestAdd:
         var1 = _get_variable(objective1)
         var2 = _get_variable(objective2)
         assert_equal(add(var1, var2).value, add(var1.value, var2.value))
+
+
+class TestCheckSeriesAndDataFrame:
+    def test_main(self) -> None:
+        x, y = Series([2.0]), DataFrame([3.0])
+        match = re.compile(
+            r"Function must not be between a Series and DataFrame; got .* and .*\.",
+            flags=DOTALL,
+        )
+        with raises(_CheckSeriesAndDataFrameError, match=match):
+            _ = _check_series_and_dataframe(cast(Any, x), cast(Any, y))
+        with raises(_CheckSeriesAndDataFrameError, match=match):
+            _ = _check_series_and_dataframe(cast(Any, y), cast(Any, x))
 
 
 class TestDivide:
