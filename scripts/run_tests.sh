@@ -84,7 +84,7 @@ for package in "${packages[@]}"; do
     else
         path_test="test_${package//-/_}.py"
     fi
-    pytest "src/tests/${path_test}"
+    pytest --no-cov "src/tests/${path_test}"
     exit_code=$?
     if [ $exit_code -ne 0 ]; then
         break
