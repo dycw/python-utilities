@@ -315,7 +315,15 @@ typeCheckingMode = "strict"
 [tool.pytest]
 
 [tool.pytest.ini_options]
-addopts = ["-ra", "-vv", "--color=auto", "--strict-markers"]
+addopts = [
+  "-ra",
+  "-vv",
+  "--color=auto",
+  "--cov=utilities",
+  "--cov-config=pyproject.toml",
+  "--cov-report=html",
+  "--strict-markers",
+]
 filterwarnings = [
   "error",
   "ignore:invalid escape sequence:DeprecationWarning",
