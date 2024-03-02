@@ -19,7 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.version }}
-      - run: python -m pip install --upgrade pip-tools
-      - run: pip-sync requirements.txt "ci/${{ matrix.os }}.txt"
+      - run: python -m pip install "uv==0.1.13"
+      - run: uv venv
+      - run: uv pip sync --python=${{ matrix.version }} requirements.txt
       - run: pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60

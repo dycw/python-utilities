@@ -4,8 +4,6 @@ from ast import Assign, AugAssign, Constant, List, Name, Try, expr, parse
 from collections.abc import Iterator
 from typing import cast
 
-from utilities.more_itertools import OneError, one
-
 
 def yield_dunder_all(text: str, /) -> Iterator[list[str]]:
     """Yield all the `__all__` terms in a source file."""
@@ -21,11 +19,11 @@ def yield_dunder_all(text: str, /) -> Iterator[list[str]]:
 def _yield_from_assign(assign: Assign, /) -> Iterator[list[str]]:
     """Yield the `__all__` terms from an `Assign`."""
 
-    try:
-        target = one(assign.targets)
-    except OneError:
-        return
-    yield from _yield_from_target_and_value(target, assign.value)
+    match assign.targets:
+        case [target]:
+            yield from _yield_from_target_and_value(target, assign.value)
+        case _:
+            pass
 
 
 def _yield_from_try(try_: Try, /) -> Iterator[list[str]]:

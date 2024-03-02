@@ -13,7 +13,6 @@ from operator import ge, itemgetter, le
 from typing import Any, TypeGuard, cast
 
 import sqlalchemy
-from more_itertools import chunked
 from sqlalchemy import (
     URL,
     Boolean,
@@ -51,10 +50,14 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never, override
 
 from utilities.errors import redirect_error
-from utilities.humps import snake_case, snake_case_mappings
-from utilities.iterables import CheckLengthError, check_length, is_iterable_not_str
+from utilities.iterables import (
+    CheckLengthError,
+    check_length,
+    chunked,
+    is_iterable_not_str,
+    one,
+)
 from utilities.math import FloatFinNonNeg, IntNonNeg
-from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
 
@@ -71,6 +74,8 @@ def _check_column_collections_equal(
     primary_key: bool = True,
 ) -> None:
     """Check that a pair of column collections are equal."""
+    from utilities.humps import snake_case_mappings
+
     cols_x, cols_y = (list(cast(Iterable[Column[Any]], i)) for i in [x, y])
     name_to_col_x, name_to_col_y = (
         {ensure_str(col.name): col for col in i} for i in [cols_x, cols_y]
@@ -367,6 +372,8 @@ def _check_table_or_column_names_equal(
     x: str | quoted_name, y: str | quoted_name, /, *, snake: bool = False
 ) -> None:
     """Check that a pair of table/columns' names are equal."""
+    from utilities.humps import snake_case
+
     x, y = (str(i) if isinstance(i, quoted_name) else i for i in [x, y])
     msg = f"{x=}, {y=}"
     if (not snake) and (x != y):
@@ -551,13 +558,13 @@ def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]
 def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
-    if isinstance(dialect, mssql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, mssql_dialect):  # pragma: no cover
         return Dialect.mssql
-    if isinstance(dialect, mysql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, mysql_dialect):  # pragma: no cover
         return Dialect.mysql
-    if isinstance(dialect, oracle_dialect):
+    if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return Dialect.oracle
-    if isinstance(dialect, postgresql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, postgresql_dialect):  # pragma: no cover
         return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
         return Dialect.sqlite
@@ -630,7 +637,7 @@ def insert_items(
         ensure_tables_created(engine, table)
         ins = insert(table)
         with engine.begin() as conn:
-            for chunk in chunked(values, n=chunk_size):
+            for chunk in chunked(values, chunk_size):
                 if dialect is Dialect.oracle:  # pragma: no cover
                     _ = conn.execute(ins, cast(Any, chunk))
                 else:
@@ -789,6 +796,8 @@ class TablenameMixin:
 
     @cast(Any, declared_attr)
     def __tablename__(cls) -> str:  # noqa: N805
+        from utilities.humps import snake_case
+
         return snake_case(get_class_name(cls))
 
 

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sized
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Generic, TypeGuard, TypeVar, cast
+from itertools import islice
+from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
+from utilities.functools import partial
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -17,13 +19,17 @@ from utilities.math import (
     _CheckIntegerMinError,
     check_integer,
 )
-from utilities.more_itertools import one
 from utilities.text import ensure_str
 from utilities.types import ensure_hashable
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
 _V = TypeVar("_V")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -435,6 +441,11 @@ class CheckSuperSetError(Exception, Generic[_T]):
         )
 
 
+def chunked(iterable: Iterable[_T], n: int | None, /) -> Iterable[Sequence[_T]]:
+    """Break an iterable into lists of length n."""
+    return cast(Iterable[Sequence[_T]], iter(partial(take, n, iter(iterable)), []))
+
+
 def ensure_hashables(
     *args: Any, **kwargs: Any
 ) -> tuple[list[Hashable], dict[str, Hashable]]:
@@ -490,6 +501,84 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return is_iterable(obj) and not isinstance(obj, str)
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneError(Exception, Generic[_T]):
+    iterable: Iterable[_T]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneEmptyError(OneError[_T]):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} must not be empty."
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OneNonUniqueError(OneError[_T]):
+    first: _T
+    second: _T
+
+    @override
+    def __str__(self) -> str:
+        return "Iterable {} must contain exactly one item; got {}, {} and perhaps more.".format(
+            self.iterable, self.first, self.second
+        )
+
+
+def one(iterable: Iterable[_T], /) -> _T:
+    """Custom version of `one` with separate exceptions."""
+    it = iter(iterable)
+    try:
+        first = next(it)
+    except StopIteration:
+        raise OneEmptyError(iterable=iterable) from None
+    try:
+        second = next(it)
+    except StopIteration:
+        return first
+    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+
+
+def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
+    """Return first n items of the iterable as a list."""
+    return list(islice(iterable, n))
+
+
+@overload
+def transpose(iterable: Iterable[tuple[_T1]], /) -> tuple[tuple[_T1, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3, _T4]], /
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...]]: ...
+
+
+@overload
+def transpose(
+    iterable: Iterable[tuple[_T1, _T2, _T3, _T4, _T5]], /
+) -> tuple[
+    tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...], tuple[_T5, ...]
+]: ...
+
+
+def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:
+    """Typed verison of `transpose`."""
+    return tuple(zip(*iterable, strict=True))
+
+
 __all__ = [
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
@@ -502,6 +591,9 @@ __all__ = [
     "CheckSuperSetError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
+    "OneEmptyError",
+    "OneError",
+    "OneNonUniqueError",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",
@@ -511,9 +603,13 @@ __all__ = [
     "check_subset",
     "check_supermapping",
     "check_superset",
+    "chunked",
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
     "is_iterable",
     "is_iterable_not_str",
+    "one",
+    "take",
+    "transpose",
 ]

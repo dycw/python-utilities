@@ -6,11 +6,9 @@ from os import environ
 from pathlib import Path
 from typing import Any
 
-from utilities.atomicwrites import writer
 from utilities.datetime import UTC, duration_to_float, get_now
-from utilities.git import valid_path_repo
 from utilities.hashlib import md5_hash
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -94,14 +92,18 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 
 def throttle(
-    *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
+    *,
+    root: PathLike | None = None,
+    duration: Duration = 1.0,
+    on_try: bool = False,
+    validate: bool = False,
 ) -> Any:
     """Throttle a test. On success by default, on try otherwise."""
 
     if root is None:
-        root_use = valid_path_repo(".pytest_cache", "throttle")
+        root_use = ensure_path(".pytest_cache", "throttle", validate=validate)
     else:
-        root_use = valid_path(root)
+        root_use = ensure_path(root, validate=validate)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
@@ -110,7 +112,8 @@ def throttle(
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             """The throttled test function/method."""
             test = environ["PYTEST_CURRENT_TEST"]
-            if (path := valid_path(root_use, _throttle_md5_hash(test))).exists():
+            path = ensure_path(root_use, _throttle_md5_hash(test), validate=validate)
+            if path.exists():
                 with path.open(mode="r") as fh:
                     contents = fh.read()
                 prev = float(contents)
@@ -141,6 +144,8 @@ def _throttle_md5_hash(text: str, /) -> str:
 
 
 def _throttle_write(path: Path, now: float, /) -> None:
+    from utilities.atomicwrites import writer
+
     with writer(path, overwrite=True) as temp, temp.open(mode="w") as fh:
         _ = fh.write(str(now))
 

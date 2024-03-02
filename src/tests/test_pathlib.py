@@ -5,11 +5,30 @@ from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import booleans
-from pytest import mark, param
+from pathvalidate import ValidationError
+from pytest import mark, param, raises
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_suffix, get_modified_time, temp_cwd, walk
+from utilities.pathlib import (
+    ensure_path,
+    ensure_suffix,
+    get_modified_time,
+    temp_cwd,
+    walk,
+)
 from utilities.pathvalidate import valid_path, valid_path_cwd
+
+
+class TestEnsurePath:
+    def test_main(self) -> None:
+        assert isinstance(ensure_path(Path("abc")), Path)
+
+    def test_error_validation(self) -> None:
+        with raises(ValidationError):
+            _ = ensure_path("\0", validate=True)
+
+    def test_error_sanitized(self) -> None:
+        assert ensure_path("a\0b", sanitize=True) == Path("ab")
 
 
 class TestEnsureSuffix:

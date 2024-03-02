@@ -5,7 +5,7 @@ from re import compile
 
 from typing_extensions import override
 
-from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 
 
 def extract_group(pattern: str, text: str, /) -> str:

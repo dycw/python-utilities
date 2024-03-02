@@ -59,7 +59,7 @@ from utilities.luigi import (
     clone,
     yield_dependencies,
 )
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.sqlalchemy import insert_items
 from utilities.types import IterableStrs
 
@@ -196,7 +196,7 @@ class TestEnumParameter:
 class TestExternalFile:
     @given(namespace_mixin=namespace_mixins(), root=temp_paths())
     def test_main(self, *, namespace_mixin: Any, root: Path) -> None:
-        path = valid_path(root, "file")
+        path = ensure_path(root, "file")
 
         class Example(namespace_mixin, ExternalFile): ...
 
@@ -279,7 +279,7 @@ class TestGetDependencies:
 
 class TestPathTarget:
     def test_main(self, *, tmp_path: Path) -> None:
-        target = PathTarget(path := valid_path(tmp_path, "file"))
+        target = PathTarget(path := ensure_path(tmp_path, "file"))
         assert isinstance(target.path, Path)
         assert not target.exists()
         path.touch()

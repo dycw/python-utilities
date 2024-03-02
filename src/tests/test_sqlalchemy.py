@@ -69,7 +69,6 @@ from sqlalchemy import (
     Uuid,
     select,
 )
-from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
@@ -79,8 +78,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
-from utilities.more_itertools import one
-from utilities.pytest import skipif_not_linux
+from utilities.iterables import one
 from utilities.sqlalchemy import (
     CheckEngineError,
     Dialect,
@@ -905,32 +903,8 @@ class TestGetColumns:
 
 class TestGetDialect:
     @given(engine=sqlite_engines())
-    def test_sqlite(self, *, engine: Engine) -> None:
+    def test_main(self, *, engine: Engine) -> None:
         assert get_dialect(engine) is Dialect.sqlite
-
-    @mark.parametrize(
-        ("url", "expected"),
-        [
-            param(
-                "mssql+pyodbc://scott:tiger@mydsn",
-                Dialect.mssql,
-                marks=skipif_not_linux,
-            ),
-            param(
-                "mysql://scott:tiger@localhost/foo",
-                Dialect.mysql,
-                marks=skipif_not_linux,
-            ),
-            param("oracle://scott:tiger@127.0.0.1:1521/sidname", Dialect.oracle),
-            param(
-                "postgresql://scott:tiger@localhost/mydatabase",
-                Dialect.postgresql,
-                marks=skipif_not_linux,
-            ),
-        ],
-    )
-    def test_non_sqlite(self, *, url: str, expected: Dialect) -> None:
-        assert get_dialect(_create_engine(url)) is expected
 
 
 class TestGetTable:

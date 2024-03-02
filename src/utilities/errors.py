@@ -7,7 +7,6 @@ from functools import wraps
 from re import search
 from typing import TypeVar, cast
 
-from more_itertools import one
 from typing_extensions import override
 
 
@@ -39,11 +38,11 @@ def redirect_error(
             raise
         if match is None:
             raise new from error
-        arg = one(
-            error.args,
-            too_short=RedirectErrorError(f"{error.args=}"),
-            too_long=RedirectErrorError(f"{error.args=}"),
-        )
+        try:
+            (arg,) = error.args
+        except ValueError:
+            msg = f"{error.args=}"
+            raise RedirectErrorError(msg) from None
         if not isinstance(arg, str):
             msg = f"{arg=}"
             raise RedirectErrorError(msg) from error

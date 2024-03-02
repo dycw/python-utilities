@@ -20,6 +20,8 @@ from utilities.iterables import (
     CheckSuperSetError,
     EnsureIterableError,
     EnsureIterableNotStrError,
+    OneEmptyError,
+    OneNonUniqueError,
     check_duplicates,
     check_iterables_equal,
     check_length,
@@ -30,11 +32,15 @@ from utilities.iterables import (
     check_subset,
     check_supermapping,
     check_superset,
+    chunked,
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
     is_iterable,
     is_iterable_not_str,
+    one,
+    take,
+    transpose,
 )
 
 
@@ -317,6 +323,23 @@ class TestCheckSuperSet:
             check_superset({1}, {1, 2, 3})
 
 
+class TestChunked:
+    def test_even(self) -> None:
+        result = list(chunked("ABCDEF", 3))
+        expected = [["A", "B", "C"], ["D", "E", "F"]]
+        assert result == expected
+
+    def test_odd(self) -> None:
+        result = list(chunked("ABCDE", 3))
+        expected = [["A", "B", "C"], ["D", "E"]]
+        assert result == expected
+
+    def test_none(self) -> None:
+        result = list(chunked("ABCDE", None))
+        expected = [["A", "B", "C", "D", "E"]]
+        assert result == expected
+
+
 class TestEnsureHashables:
     def test_main(self) -> None:
         assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
@@ -362,3 +385,100 @@ class TestIsIterableNotStr:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable_not_str(obj) is expected
+
+
+class TestOne:
+    def test_main(self) -> None:
+        assert one([None]) is None
+
+    def test_error_empty(self) -> None:
+        with raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
+            _ = one([])
+
+    def test_error_non_unique(self) -> None:
+        with raises(
+            OneNonUniqueError,
+            match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
+        ):
+            _ = one([1, 2])
+
+
+class TestTake:
+    def test_simple(self) -> None:
+        result = take(5, range(10))
+        expected = list(range(5))
+        assert result == expected
+
+    def test_null(self) -> None:
+        result = take(0, range(10))
+        expected = []
+        assert result == expected
+
+    def test_negative(self) -> None:
+        with raises(
+            ValueError,
+            match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
+        ):
+            _ = take(-3, range(10))
+
+    def test_too_much(self) -> None:
+        result = take(10, range(5))
+        expected = list(range(5))
+        assert result == expected
+
+
+class TestTranspose:
+    @given(n=integers(1, 10))
+    def test_singles(self, *, n: int) -> None:
+        iterable = ((i,) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        (first,) = result
+        assert isinstance(first, tuple)
+        assert len(first) == n
+        for i in first:
+            assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_pairs(self, *, n: int) -> None:
+        iterable = ((i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second = result
+        for part in [first, second]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_triples(self, *, n: int) -> None:
+        iterable = ((i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third = result
+        for part in [first, second, third]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quadruples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth = result
+        for part in [first, second, third, fourth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quintuples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth, fifth = result
+        for part in [first, second, third, fourth, fifth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)

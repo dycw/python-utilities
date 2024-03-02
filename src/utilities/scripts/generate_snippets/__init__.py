@@ -16,7 +16,7 @@ from loguru import logger
 from typing_extensions import assert_never
 
 from utilities.humps import snake_case
-from utilities.more_itertools import one
+from utilities.iterables import one
 from utilities.text import ensure_str, strip_and_dedent
 
 
@@ -35,9 +35,9 @@ def yield_imports(
         case Method.direct:
             return _yield_import_nodes_directly(click, [command, option])
         case Method.module:
-            import utilities.pandas
+            import utilities.iterables
 
-            return _yield_import_nodes_from_module_all(utilities.pandas)
+            return _yield_import_nodes_from_module_all(utilities.iterables)
         case Method.parse:
             text = """
 from itertools import (

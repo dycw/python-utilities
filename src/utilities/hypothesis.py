@@ -4,9 +4,9 @@ import builtins
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
+from os import environ
 from pathlib import Path
 from re import search
 from string import ascii_letters, printable
@@ -695,41 +695,6 @@ def int64s(
     return _fixed_width_ints(int64, min_value=min_value, max_value=max_value)
 
 
-class _HypothesisProfile(Enum):
-    """An enumeration of the profiles."""
-
-    dev = auto()
-    default = auto()
-    ci = auto()
-    debug = auto()
-
-    @property
-    def max_examples(self) -> int:
-        match self:
-            case _HypothesisProfile.dev | _HypothesisProfile.debug:
-                return 10
-            case _HypothesisProfile.default:
-                return 100
-            case _HypothesisProfile.ci:
-                return 1000
-            case _ as never:  # type: ignore
-                assert_never(never)
-
-    @property
-    def verbosity(self) -> Verbosity | None:
-        match self:
-            case (
-                _HypothesisProfile.dev
-                | _HypothesisProfile.default
-                | _HypothesisProfile.ci
-            ):
-                return Verbosity.normal
-            case _HypothesisProfile.debug:
-                return Verbosity.debug
-            case _ as never:  # type: ignore
-                assert_never(never)
-
-
 _MDF = TypeVar("_MDF")
 
 
@@ -791,25 +756,42 @@ def setup_hypothesis_profiles(
 ) -> None:
     """Set up the hypothesis profiles."""
 
-    from utilities.typed_settings import load_settings
+    class Profile(Enum):
+        dev = auto()
+        default = auto()
+        ci = auto()
+        debug = auto()
 
-    @dataclass(frozen=True, kw_only=True)
-    class Config:
-        profile: _HypothesisProfile = _HypothesisProfile.default
-        max_examples: int | None = None
-        verbosity: Verbosity | None = None
-        no_shrink: bool = False
+        @property
+        def max_examples(self) -> int:
+            match self:
+                case Profile.dev | Profile.debug:
+                    return 10
+                case Profile.default:
+                    return 100
+                case Profile.ci:
+                    return 1000
+                case _ as never:  # type: ignore
+                    assert_never(never)
 
-    config = load_settings(Config, appname="hypothesis")
-    phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target} | (
-        set() if config.no_shrink else {Phase.shrink}
-    )
-    for profile in _HypothesisProfile:
-        if config.max_examples is None:
+        @property
+        def verbosity(self) -> Verbosity | None:
+            match self:
+                case Profile.dev | Profile.default | Profile.ci:
+                    return Verbosity.normal
+                case Profile.debug:
+                    return Verbosity.debug
+                case _ as never:  # type: ignore
+                    assert_never(never)
+
+    phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
+    if "HYPOTHESIS_NO_SHRINK" not in environ:
+        phases.add(Phase.shrink)
+    for profile in Profile:
+        try:
+            max_examples = int(environ["HYPOTHESIS_MAX_EXAMPLES"])
+        except KeyError:
             max_examples = profile.max_examples
-        else:
-            max_examples = config.max_examples
-        verbosity = profile.verbosity if config.verbosity is None else config.verbosity
         settings.register_profile(
             profile.name,
             max_examples=max_examples,
@@ -818,9 +800,9 @@ def setup_hypothesis_profiles(
             deadline=None,
             print_blob=True,
             suppress_health_check=suppress_health_check,
-            verbosity=verbosity,
+            verbosity=profile.verbosity,
         )
-    settings.load_profile(config.profile.name)
+    settings.load_profile(Profile.default.name)
 
 
 def settings_with_reduced_examples(

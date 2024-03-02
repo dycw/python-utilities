@@ -39,14 +39,14 @@ from utilities.datetime import (
     serialize_time,
 )
 from utilities.git import get_repo_root_or_cwd_sub_path
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.types import PathLike, ensure_class
 
 _T = TypeVar("_T")
 
 
 def _config_toml(root: Path, /) -> Path | None:
-    return path if (path := valid_path(root, "config.toml")).exists() else None
+    return path if (path := ensure_path(root, "config.toml")).exists() else None
 
 
 _CONFIG_FILES = [

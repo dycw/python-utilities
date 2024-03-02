@@ -8,19 +8,31 @@ from os import walk as _walk
 from pathlib import Path
 
 from utilities.datetime import UTC
-from utilities.pathvalidate import valid_path, valid_path_cwd
 from utilities.re import extract_group
 from utilities.types import PathLike
+
+PWD = Path.cwd()
+
+
+def ensure_path(
+    *parts: PathLike, validate: bool = False, sanitize: bool = False
+) -> Path:
+    """Ensure a path-like object is a path."""
+    if validate or sanitize:
+        from utilities.pathvalidate import valid_path
+
+        return valid_path(*parts, sanitize=sanitize)
+    return Path(*parts)
 
 
 def ensure_suffix(path: PathLike, suffix: str, /) -> Path:
     """Ensure a path has the required suffix."""
-    as_path = valid_path(path)
-    parts = as_path.name.split(".")
+    path = Path(path)
+    parts = path.name.split(".")
     clean_suffix = extract_group(r"^\.(\w+)$", suffix)
     if parts[-1] != clean_suffix:
         parts.append(clean_suffix)
-    return as_path.with_name(".".join(parts))
+    return path.with_name(".".join(parts))
 
 
 def get_modified_time(path: PathLike, /) -> dt.datetime:
@@ -31,7 +43,7 @@ def get_modified_time(path: PathLike, /) -> dt.datetime:
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
-    prev = valid_path_cwd()
+    prev = Path.cwd()
     chdir(path)
     try:
         yield
@@ -51,11 +63,7 @@ def walk(
     for dirpath, dirnames, filenames in _walk(
         top, topdown=topdown, onerror=onerror, followlinks=followlinks
     ):
-        yield (
-            valid_path(dirpath),
-            list(map(valid_path, dirnames)),
-            list(map(valid_path, filenames)),
-        )
+        yield (Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames)))
 
 
-__all__ = ["ensure_suffix", "get_modified_time", "temp_cwd", "walk"]
+__all__ = ["ensure_path", "ensure_suffix", "get_modified_time", "temp_cwd", "walk"]

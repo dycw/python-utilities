@@ -3,13 +3,16 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from re import search
+from typing import TYPE_CHECKING
 
-from bidict import bidict
 from humps import decamelize
 from typing_extensions import override
 
 from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.types import IterableStrs
+
+if TYPE_CHECKING:
+    from bidict import bidict
 
 
 def snake_case(text: str, /) -> str:
@@ -23,6 +26,8 @@ def snake_case(text: str, /) -> str:
 
 def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
     """Map a set of text into their snake cases."""
+
+    from bidict import bidict
 
     keys = list(text)
     try:

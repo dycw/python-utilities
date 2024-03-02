@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import cvxpy
 import numpy as np
 import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
-from pandas import DataFrame, Series
 from typing_extensions import override
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
-from utilities.pandas import SeriesF
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
+    from utilities.pandas import SeriesF
 
 
 @overload
@@ -39,8 +42,15 @@ def abs_(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the absolute value."""
-    if isinstance(x, int | float | ndarray | Series | DataFrame):
+    if isinstance(x, int | float | ndarray):
         return np.abs(x)
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            return np.abs(x)
     return cvxpy.abs(x)
 
 
@@ -148,8 +158,13 @@ def max_(
     """Compute the maximum of a quantity."""
     if isinstance(x, int | float | ndarray):
         return np.max(x)
-    if isinstance(x, Series | DataFrame):
-        return max_(x.to_numpy())
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            return max_(x.to_numpy())
     return cvxpy.max(x)
 
 
@@ -251,14 +266,22 @@ def maximum(
     /,
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the elementwise maximum of two quantities."""
-    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
-        isinstance(x, DataFrame) and isinstance(y, Series)
-    ):
-        raise MaximumError(x=x, y=y)
-    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
-        y, int | float | ndarray | Series | DataFrame
-    ):
-        return np.maximum(x, y)
+    try:
+        _check_series_and_dataframe(x, y)
+    except _CheckSeriesAndDataFrameError as error:
+        raise MaximumError(x=error.x, y=error.y) from None
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        if isinstance(x, int | float | ndarray) and isinstance(
+            y, int | float | ndarray
+        ):
+            return np.maximum(x, y)
+    else:
+        if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+            y, int | float | ndarray | Series | DataFrame
+        ):
+            return np.maximum(x, y)
     return cvxpy.maximum(x, y)
 
 
@@ -290,8 +313,13 @@ def min_(
     """Compute the minimum of a quantity."""
     if isinstance(x, int | float | ndarray):
         return np.min(x)
-    if isinstance(x, Series | DataFrame):
-        return min_(x.to_numpy())
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            return min_(x.to_numpy())
     return cvxpy.min(x)
 
 
@@ -393,14 +421,22 @@ def minimum(
     /,
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the elementwise minimum of two quantities."""
-    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
-        isinstance(x, DataFrame) and isinstance(y, Series)
-    ):
-        raise MinimumError(x=x, y=y)
-    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
-        y, int | float | ndarray | Series | DataFrame
-    ):
-        return np.minimum(x, y)
+    try:
+        _check_series_and_dataframe(x, y)
+    except _CheckSeriesAndDataFrameError as error:
+        raise MinimumError(x=error.x, y=error.y) from None
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        if isinstance(x, int | float | ndarray) and isinstance(
+            y, int | float | ndarray
+        ):
+            return np.minimum(x, y)
+    else:
+        if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+            y, int | float | ndarray | Series | DataFrame
+        ):
+            return np.minimum(x, y)
     return cvxpy.minimum(x, y)
 
 
@@ -516,14 +552,22 @@ def multiply(
     /,
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the elementwise product of two quantities."""
-    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
-        isinstance(x, DataFrame) and isinstance(y, Series)
-    ):
-        raise MultiplyError(x=x, y=y)
-    if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
-        y, int | float | ndarray | Series | DataFrame
-    ):
-        return np.multiply(x, y)
+    try:
+        _check_series_and_dataframe(x, y)
+    except _CheckSeriesAndDataFrameError as error:
+        raise MultiplyError(x=error.x, y=error.y) from None
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        if isinstance(x, int | float | ndarray) and isinstance(
+            y, int | float | ndarray
+        ):
+            return np.multiply(x, y)
+    else:
+        if isinstance(x, int | float | ndarray | Series | DataFrame) and isinstance(
+            y, int | float | ndarray | Series | DataFrame
+        ):
+            return np.multiply(x, y)
     return cvxpy.multiply(x, y)
 
 
@@ -593,9 +637,14 @@ def negative(
     if isinstance(x, int | float | ndarray):
         result = -minimum(x, 0.0)
         return where(is_zero(result), 0.0, result)
-    if isinstance(x, Series | DataFrame):
-        result = -minimum(x, 0.0)
-        return result.where(is_non_zero(result), 0.0)
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            result = -minimum(x, 0.0)
+            return result.where(is_non_zero(result), 0.0)
     return cvxpy.neg(x)
 
 
@@ -611,8 +660,13 @@ def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
     """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
         return cast(float, numpy.linalg.norm(x))
-    if isinstance(x, Series):
-        return norm(x.to_numpy())
+    try:
+        from pandas import Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series):
+            return norm(x.to_numpy())
     return cvxpy.norm(x)
 
 
@@ -643,9 +697,14 @@ def positive(
     if isinstance(x, int | float | ndarray):
         result = maximum(x, 0.0)
         return where(is_zero(result), 0.0, result)
-    if isinstance(x, Series | DataFrame):
-        result = maximum(x, 0.0)
-        return result.where(is_non_zero(result), 0.0)
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            result = maximum(x, 0.0)
+            return result.where(is_non_zero(result), 0.0)
     return cvxpy.pos(x)
 
 
@@ -803,8 +862,8 @@ def scalar_product(
     """Compute the scalar product of two quantities."""
     try:
         prod = multiply(cast(Any, x), cast(Any, y))
-    except MultiplyError:
-        raise ScalarProductError(x=cast(Any, x), y=cast(Any, y)) from None
+    except MultiplyError as error:
+        raise ScalarProductError(x=error.x, y=error.y) from None
     return sum_(prod)
 
 
@@ -903,8 +962,14 @@ def sqrt(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
     """Compute the square root of a quantity."""
-    if isinstance(x, int | float | ndarray | Series | DataFrame):
-        return np.sqrt(x)
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        if isinstance(x, int | float | ndarray):
+            return np.sqrt(x)
+    else:
+        if isinstance(x, int | float | ndarray | Series | DataFrame):
+            return np.sqrt(x)
     return cvxpy.sqrt(x)
 
 
@@ -969,8 +1034,13 @@ def sum_(
         return x
     if isinstance(x, ndarray):
         return np.sum(x).item()
-    if isinstance(x, Series | DataFrame):
-        return sum_(x.to_numpy())
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            return sum_(x.to_numpy())
     return cvxpy.sum(x)
 
 
@@ -1015,9 +1085,42 @@ def sum_axis1(
 def _sum_axis_0_or_1(
     x: NDArrayF2 | DataFrame | Expression, axis: Literal[0, 1], /
 ) -> NDArrayF1 | SeriesF | Expression:
-    if isinstance(x, ndarray | DataFrame):
-        return np.sum(x, axis=axis)
+    try:
+        from pandas import DataFrame
+    except ModuleNotFoundError:  # pragma: no cover
+        if isinstance(x, ndarray):
+            return np.sum(x, axis=axis)
+    else:
+        if isinstance(x, ndarray | DataFrame):
+            return np.sum(x, axis=axis)
     return cast(Expression, cvxpy.sum(x, axis=axis))
+
+
+def _check_series_and_dataframe(
+    x: float | NDArrayF | SeriesF | DataFrame | Expression,
+    y: float | NDArrayF | SeriesF | DataFrame | Expression,
+    /,
+) -> None:
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:  # pragma: no cover
+        return
+    if (isinstance(x, Series) and isinstance(y, DataFrame)) or (
+        isinstance(x, DataFrame) and isinstance(y, Series)
+    ):
+        raise _CheckSeriesAndDataFrameError(x=x, y=y)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _CheckSeriesAndDataFrameError(Exception):
+    x: SeriesF | DataFrame
+    y: SeriesF | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return "Function must not be between a Series and DataFrame; got {} and {}.".format(
+            self.x, self.y
+        )
 
 
 __all__ = [

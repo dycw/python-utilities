@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
 from types import TracebackType
 
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.types import PathLike
 
 
@@ -19,6 +19,7 @@ class TemporaryDirectory:
         prefix: str | None = None,
         dir: PathLike | None = None,  # noqa: A002
         ignore_cleanup_errors: bool = False,
+        validate: bool = False,
     ) -> None:
         super().__init__()
         self._temp_dir = _TemporaryDirectory(
@@ -27,10 +28,11 @@ class TemporaryDirectory:
             dir=dir,
             ignore_cleanup_errors=ignore_cleanup_errors,
         )
-        self.path = valid_path(self._temp_dir.name)
+        self._validate = validate
+        self.path = ensure_path(self._temp_dir.name, validate=self._validate)
 
     def __enter__(self) -> Path:
-        return valid_path(self._temp_dir.__enter__())
+        return ensure_path(self._temp_dir.__enter__(), validate=self._validate)
 
     def __exit__(
         self,
@@ -41,9 +43,9 @@ class TemporaryDirectory:
         self._temp_dir.__exit__(exc, val, tb)
 
 
-def gettempdir() -> Path:
+def gettempdir(*, validate: bool = False) -> Path:
     """Get the name of the directory used for temporary files."""
-    return valid_path(_gettempdir())
+    return ensure_path(_gettempdir(), validate=validate)
 
 
 TEMP_DIR = gettempdir()
