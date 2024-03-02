@@ -26,6 +26,7 @@ cachetools = ["cachetools >= 5.3.3"]
 click = ["click >= 8.1.7"]
 cryptography = ["cryptography >= 42.0.5"]
 cvxpy = ["cvxpy >= 1.4.2"]
+dev = ["pytest-instafail >= 0.5.0", "pytest-only >= 2.0.0"]
 fastapi = ["fastapi >= 0.110.0"]
 fpdf2 = ["fpdf2 >= 2.7.8", "holoviews >= 1.18.1", "selenium >= 4.18.1"]
 frozendict = ["frozendict >= 2.4.0"]
@@ -67,8 +68,6 @@ test = [
   "exceptiongroup >= 1.2.0",
   "hypothesis >= 6.98.15",
   "pytest >= 8.0.1",
-  # "pytest-instafail >= 0.5.0",
-  # "pytest-only >= 2.0.0",
   "pytest-randomly >= 3.15.0",
   "pytest-xdist >= 3.3.1",
 ]
@@ -92,7 +91,10 @@ zzz-test-holoviews = ["numbagg", "xarray"]
 zzz-test-ipython = []
 zzz-test-jupyter = ["pandas", "polars"]
 zzz-test-loguru = []
+zzz-test-luigi = ["freezegun", "semver", "sqlalchemy"]
+zzz-test-memory_profiler = []
 zzz-test-more-itertools = []
+zzz-test-numpy = []
 zzz-test-scipy = []
 zzz-test-xlrd = []
 

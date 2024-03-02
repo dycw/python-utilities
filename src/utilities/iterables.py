@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sized
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
+from itertools import islice
 from typing import Any, Generic, TypeGuard, TypeVar, cast
 
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
+from utilities.functools import partial
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -434,6 +436,11 @@ class CheckSuperSetError(Exception, Generic[_T]):
         )
 
 
+def chunked(iterable: Iterable[_T], n: int, /) -> Iterable[Sequence[_T]]:
+    """Break an iterable into lists of length n."""
+    return iter(partial(take, n, iter(iterable)), [])
+
+
 def ensure_hashables(
     *args: Any, **kwargs: Any
 ) -> tuple[list[Hashable], dict[str, Hashable]]:
@@ -527,6 +534,11 @@ def one(iterable: Iterable[_T], /) -> _T:
     raise OneNonUniqueError(iterable=iterable, first=first, second=second)
 
 
+def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
+    """Return first n items of the iterable as a list."""
+    return list(islice(iterable, n))
+
+
 __all__ = [
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
@@ -551,10 +563,12 @@ __all__ = [
     "check_subset",
     "check_supermapping",
     "check_superset",
+    "chunked",
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
     "is_iterable",
     "is_iterable_not_str",
     "one",
+    "take",
 ]

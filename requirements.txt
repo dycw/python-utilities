@@ -119,6 +119,7 @@ fonttools==4.49.0
 fpdf2==2.7.8
 fqdn==1.5.1
     # via jsonschema
+freezegun==1.4.0
 frozendict==2.4.0
 gitdb==4.0.11
     # via gitpython
@@ -406,9 +407,13 @@ pysocks==1.7.1
 pytest==8.0.2
     # via
     #   pytest-check
+    #   pytest-instafail
+    #   pytest-only
     #   pytest-randomly
     #   pytest-xdist
 pytest-check==2.3.1
+pytest-instafail==0.5.0
+pytest-only==2.0.0
 pytest-randomly==3.15.0
 pytest-xdist==3.5.0
 python-daemon==3.0.1
@@ -416,6 +421,7 @@ python-daemon==3.0.1
 python-dateutil==2.9.0.post0
     # via
     #   arrow
+    #   freezegun
     #   jupyter-client
     #   luigi
     #   pandas

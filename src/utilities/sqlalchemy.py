@@ -13,7 +13,6 @@ from operator import ge, itemgetter, le
 from typing import Any, TypeGuard, cast
 
 import sqlalchemy
-from more_itertools import chunked
 from sqlalchemy import (
     URL,
     Boolean,
@@ -51,7 +50,13 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from typing_extensions import assert_never, override
 
 from utilities.errors import redirect_error
-from utilities.iterables import CheckLengthError, check_length, is_iterable_not_str, one
+from utilities.iterables import (
+    CheckLengthError,
+    check_length,
+    chunked,
+    is_iterable_not_str,
+    one,
+)
 from utilities.math import FloatFinNonNeg, IntNonNeg
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
@@ -632,7 +637,7 @@ def insert_items(
         ensure_tables_created(engine, table)
         ins = insert(table)
         with engine.begin() as conn:
-            for chunk in chunked(values, n=chunk_size):
+            for chunk in chunked(values, chunk_size):
                 if dialect is Dialect.oracle:  # pragma: no cover
                     _ = conn.execute(ins, cast(Any, chunk))
                 else:

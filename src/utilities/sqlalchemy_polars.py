@@ -10,7 +10,6 @@ from typing import Any, cast, overload
 from uuid import UUID
 
 import polars as pl
-from more_itertools import chunked
 from polars import (
     Binary,
     DataFrame,
@@ -35,7 +34,13 @@ from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import identity
 from utilities.humps import snake_case
-from utilities.iterables import CheckDuplicatesError, OneError, check_duplicates, one
+from utilities.iterables import (
+    CheckDuplicatesError,
+    OneError,
+    check_duplicates,
+    chunked,
+    one,
+)
 from utilities.polars import EmptyPolarsConcatError, redirect_empty_polars_concat
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,

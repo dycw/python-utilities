@@ -16,7 +16,10 @@ packages=(
     ipython
     jupyter
     loguru
-    more-itertools
+    luigi
+    memory_profiler
+    more_itertools
+    numpy
     scipy
     xlrd
 )
