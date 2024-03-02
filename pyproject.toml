@@ -148,12 +148,11 @@ version-ge-311 = "sys_version_info >= (3, 11)"
 directory = ".coverage/html"
 
 [tool.coverage.report]
-exclude_lines = [
+exclude_also = [
   "@overload",
   "assert_never",
   "case _ as never:",
   "if TYPE_CHECKING:",
-  "# pragma: no cover",
 ]
 fail_under = 100.0
 skip_covered = true
