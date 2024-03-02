@@ -6,13 +6,14 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
+from os import environ
 from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
 
-from hypothesis import HealthCheck, Verbosity, assume, settings
+from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DrawFn,
@@ -783,10 +784,18 @@ def setup_hypothesis_profiles(
                 case _ as never:  # type: ignore
                     assert_never(never)
 
+    phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
+    if "HYPOTHESIS_NO_SHRINK" not in environ:
+        phases.add(Phase.shrink)
     for profile in Profile:
+        try:
+            max_examples = int(environ["HYPOTHESIS_MAX_EXAMPLES"])
+        except KeyError:
+            max_examples = profile.max_examples
         settings.register_profile(
             profile.name,
-            max_examples=profile.max_examples,
+            max_examples=max_examples,
+            phases=phases,
             report_multiple_bugs=True,
             deadline=None,
             print_blob=True,
