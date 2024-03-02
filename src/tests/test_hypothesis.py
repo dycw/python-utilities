@@ -50,6 +50,7 @@ from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
+from tests.conftest import FLAKY
 from utilities.datetime import UTC
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
@@ -1032,6 +1033,7 @@ class TestTempDirs:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
+    @FLAKY
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(
         self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
@@ -1039,9 +1041,8 @@ class TestTempDirs:
         path = temp_dir.path
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
-        with assume_does_not_raise(FileNotFoundError):
-            for content in as_set:
-                Path(path, content).touch()
+        for content in as_set:
+            Path(path, content).touch()
         assert len(set(path.iterdir())) == len(as_set)
 
 

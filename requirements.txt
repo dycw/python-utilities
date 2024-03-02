@@ -202,6 +202,7 @@ packaging==23.2
     #   hatchling
     #   holoviews
     #   pytest
+    #   pytest-rerunfailures
     #   streamlit
     #   xarray
 pandas==2.2.1
@@ -275,12 +276,14 @@ pytest==8.0.2
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
+    #   pytest-rerunfailures
     #   pytest-xdist
 pytest-check==2.3.1
 pytest-cov==4.1.0
 pytest-instafail==0.5.0
 pytest-only==2.0.0
 pytest-randomly==3.15.0
+pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
 python-daemon==3.0.1
     # via luigi
