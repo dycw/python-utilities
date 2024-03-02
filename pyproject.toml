@@ -126,7 +126,24 @@ zzz-test-loguru = []
 zzz-test-luigi = ["freezegun", "semver", "sqlalchemy"]
 zzz-test-math = []
 zzz-test-memory-profiler = []
-zzz-test-modules = []
+zzz-test-modules = [
+  "atomicwrites",
+  "beartype",
+  "bs4",
+  "cachetools",
+  "click",
+  "cryptography",
+  "cvxpy",
+  "fastapi",
+  "holoviews",
+  "loguru",
+  "luigi",
+  "numpy",
+  "polars",
+  "semver",
+  "sqlalchemy",
+  "typed-settings",
+]
 zzz-test-more-itertools = []
 zzz-test-numpy = ["bottleneck", "numbagg", "pandas"]
 zzz-test-os = []

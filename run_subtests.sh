@@ -17,7 +17,7 @@ packages=(
     # json
     # locale
     # logging
-    math
+    # math
     modules
     os
     pathlib
