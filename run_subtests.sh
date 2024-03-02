@@ -1,6 +1,38 @@
 #!/usr/bin/env bash
 
 packages=(
+    # standard library
+    ast
+    dataclasses
+    datetime
+    email
+    enum
+    errors
+    functions
+    functools
+    getpass
+    git
+    hashlib
+    iterables
+    json
+    locale
+    logging
+    math
+    modules
+    os
+    pathlib
+    pickle
+    platform
+    random
+    re
+    sentinel
+    socket
+    subprocess
+    sys
+    tempfile
+    text
+    timer
+    # third-party
     atomicwrites
     beartype
     bs4
@@ -13,6 +45,7 @@ packages=(
     fpdf2
     hatch
     holoviews
+    humps
     ipython
     jupyter
     loguru
@@ -26,6 +59,7 @@ packages=(
     pqdm
     pydantic
     pyinstrument
+    pytest
     pytest-check
     scipy
     scripts-clean-dir
