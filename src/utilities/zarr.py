@@ -31,7 +31,7 @@ from utilities.numpy import (
     get_fill_value,
     has_dtype,
 )
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import PathLike, get_class_name, is_sized_not_str
@@ -49,10 +49,15 @@ class NDArrayWithIndexes:
     """An `ndarray` with indexes stored on disk."""
 
     def __init__(
-        self, path: PathLike, /, *, mode: Literal["r", "r+", "a", "w", "w-"] = "a"
+        self,
+        path: PathLike,
+        /,
+        *,
+        validate: bool = False,
+        mode: Literal["r", "r+", "a", "w", "w-"] = "a",
     ) -> None:
         super().__init__()
-        self._path = valid_path(path)
+        self._path = ensure_path(path, validate=validate)
         if not self._path.exists():
             msg = f"{self._path}"
             raise FileNotFoundError(msg)
