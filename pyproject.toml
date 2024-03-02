@@ -55,10 +55,16 @@ pypiserver = ["pypiserver[passlib] >= 2.0.1"]
 pytest = ["pytest >= 8.0.2"]
 pytest-check = ["pytest-check >= 2.3.1"]
 scipy = ["scipy >= 1.12.0"]
-scripts-csv-to-markdown = ["mdutils >= 1.6.0"]
+scripts-clean-dir = ["loguru >= 0.7.2", "typed-settings[click] >= 24.1.0"]
+scripts-csv-to-markdown = [
+  "loguru >= 0.7.2",
+  "mdutils >= 1.6.0",
+  "typed-settings[click] >= 24.1.0",
+]
 scripts-generate-snippets = ["ast-comments >= 1.2.1"]
-scripts-luigi = ["luigi >= 3.5.0"]
-scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
+scripts-luigi-server = ["luigi >= 3.5.0"]
+scripts-monitor-memory = []
+scripts-pypi-server = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.18.1"]
 semver = ["semver >= 3.0.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.27"]
@@ -103,6 +109,12 @@ zzz-test-pydantic = ["atomicwrites"]
 zzz-test-pyinstrument = ["atomicwrites"]
 zzz-test-pytest-check = ["atomicwrites"]
 zzz-test-scipy = []
+zzz-test-scripts-clean-dir = ["freezegun"]
+zzz-test-scripts-csv-to-markdown = []
+zzz-test-scripts-generate-snippets = []
+zzz-test-scripts-luigi-server = []
+zzz-test-scripts-monitor-memory = []
+zzz-test-scripts-pypi-server = []
 zzz-test-semver = []
 zzz-test-sqlalchemy = [
   "bidict",

@@ -10,7 +10,7 @@ from mdutils import MdUtils
 
 from utilities.iterables import one
 from utilities.loguru import setup_loguru
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.scripts.csv_to_markdown.classes import Config
 from utilities.tempfile import TemporaryDirectory
 from utilities.typed_settings import click_options
@@ -35,7 +35,7 @@ def _csv_to_markdown(*, path: Path = _CONFIG.path) -> str:
     n_columns = one(set(map(len, rows)))
     flattened = list(chain(*rows))
     with TemporaryDirectory() as temp_dir:
-        temp_file = valid_path(temp_dir, "temp.md")
+        temp_file = ensure_path(temp_dir, "temp.md")
         md_file = MdUtils(file_name=str(temp_file))
         _ = md_file.new_table(n_columns, n_rows, flattened)
         _ = md_file.create_md_file()

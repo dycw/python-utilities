@@ -6,7 +6,7 @@ from pathlib import Path
 from click.testing import CliRunner
 from pytest import fixture
 
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path
 from utilities.platform import IS_WINDOWS
 from utilities.scripts.csv_to_markdown import _csv_to_markdown, main
 from utilities.text import strip_and_dedent
@@ -14,7 +14,7 @@ from utilities.text import strip_and_dedent
 
 @fixture()
 def path_csv(*, tmp_path: Path) -> Path:
-    path = valid_path(tmp_path, "input.csv")
+    path = ensure_path(tmp_path, "input.csv")
     with path.open(mode="w", newline="" if IS_WINDOWS else None) as fh:
         csv_writer = writer(fh)
         csv_writer.writerow(["Foo", "Bar"])

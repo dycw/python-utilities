@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
 packages=(
-    zarr
-)
-packages=(
     ast
     atomicwrites
     beartype
@@ -39,8 +36,21 @@ packages=(
     xlrd
     zarr
 )
+packages=(
+    scripts-clean-dir
+    scripts-csv-to-markdown
+    # scripts-generate-snippets
+    # scripts-luigi-server
+    # scripts-monitor-memory
+    # scripts-pypi-server
+)
 for package in "${packages[@]}"; do
     uv pip sync "requirements/${package}.txt"
-
-    pytest "src/tests/test_${package//-/_}.py" -x
+    if [[ "${package}" == scripts-* ]]; then
+        name="${package#scripts-}"
+        path_test="scripts/test_${name//-/_}.py"
+    else
+        path_test="test_${package//-/_}.py"
+    fi
+    pytest "src/tests/${path_test}" -x
 done

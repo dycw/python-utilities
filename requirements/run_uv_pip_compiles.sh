@@ -28,6 +28,12 @@ packages=(
     pyinstrument
     pytest-check
     scipy
+    scripts-clean-dir
+    scripts-csv-to-markdown
+    scripts-generate-snippets
+    scripts-luigi-server
+    scripts-monitor-memory
+    scripts-pypi-server
     semver
     sqlalchemy
     sqlalchemy-polars
