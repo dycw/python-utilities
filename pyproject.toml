@@ -56,7 +56,7 @@ dev = [
   "semver",
   "sqlalchemy",
   "streamlit",
-  "typed-settings[click]",
+  "typed-settings",
   "xarray",
   "xlrd",
   "zarr",
@@ -73,17 +73,23 @@ dev = [
   # CI
   "win32_setctime",  # https://github.com/Delgan/loguru/issues/147
 ]
-scripts-clean-dir = ["loguru", "typed-settings[click]"]
-scripts-csv-to-markdown = ["loguru", "mdutils", "typed-settings[click]"]
+scripts-clean-dir = ["click", "loguru", "typed-settings"]
+scripts-csv-to-markdown = ["click", "loguru", "mdutils", "typed-settings"]
 scripts-generate-snippets = [
   "ast-comments",
+  "click",
   "loguru",
   "pyhumps",
-  "typed-settings[click]",
+  "typed-settings",
 ]
-scripts-luigi-server = ["loguru", "luigi", "typed-settings[click]"]
-scripts-monitor-memory = ["loguru", "psutil", "typed-settings[click]"]
-scripts-pypi-server = ["loguru", "pypiserver[passlib]", "typed-settings[click]"]
+scripts-luigi-server = ["click", "loguru", "luigi", "typed-settings"]
+scripts-monitor-memory = ["click", "loguru", "psutil", "typed-settings"]
+scripts-pypi-server = [
+  "click",
+  "loguru",
+  "pypiserver[passlib]",
+  "typed-settings",
+]
 test = [
   "exceptiongroup",
   "hypothesis",
@@ -115,7 +121,7 @@ zzz-test-git = []
 zzz-test-hashlib = []
 zzz-test-hatch = ["hatch"]
 zzz-test-holoviews = ["holoviews", "numbagg", "xarray"]
-zzz-test-humps = ["pyhumps"]
+zzz-test-humps = ["bidict", "pyhumps"]
 zzz-test-ipython = ["ipython"]
 zzz-test-iterables = []
 zzz-test-json = ["sqlalchemy"]
@@ -173,17 +179,38 @@ zzz-test-polars = ["polars"]
 zzz-test-pqdm = ["pqdm"]
 zzz-test-pydantic = ["atomicwrites", "pydantic"]
 zzz-test-pyinstrument = ["atomicwrites", "pyinstrument"]
-zzz-test-pytest = []
-zzz-test-pytest-check = []
+zzz-test-pytest = ["atomicwrites"]
+zzz-test-pytest-check = ["pytest-check"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-scipy = ["scipy"]
-zzz-test-scripts-clean-dir = ["freezegun"]
-zzz-test-scripts-csv-to-markdown = []
-zzz-test-scripts-generate-snippets = []
-zzz-test-scripts-luigi-server = []
-zzz-test-scripts-monitor-memory = []
-zzz-test-scripts-pypi-server = []
+zzz-test-scripts-clean-dir = ["click", "freezegun", "loguru", "typed-settings"]
+zzz-test-scripts-csv-to-markdown = [
+  "click",
+  "loguru",
+  "mdutils",
+  "typed-settings",
+]
+zzz-test-scripts-generate-snippets = [
+  "ast-comments",
+  "click",
+  "loguru",
+  "pyhumps",
+  "typed-settings",
+]
+zzz-test-scripts-luigi-server = ["click", "loguru", "luigi", "typed-settings"]
+zzz-test-scripts-monitor-memory = [
+  "click",
+  "loguru",
+  "psutil",
+  "typed-settings",
+]
+zzz-test-scripts-pypi-server = [
+  "click",
+  "loguru",
+  "pypiserver[passlib]",
+  "typed-settings",
+]
 zzz-test-semver = ["semver"]
 zzz-test-sentinel = []
 zzz-test-socket = []

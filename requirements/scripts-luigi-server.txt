@@ -2,6 +2,9 @@
 #    uv pip compile --extra=zzz-test-scripts-luigi-server --extra=test --prerelease=disallow --output-file=requirements/scripts-luigi-server.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+click==8.1.7
+docutils==0.20.1
+    # via python-daemon
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -11,6 +14,10 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
+lockfile==0.12.2
+    # via python-daemon
+loguru==0.7.2
+luigi==3.5.0
 packaging==23.2
     # via
     #   pytest
@@ -25,8 +32,23 @@ pytest==8.0.2
 pytest-randomly==3.15.0
 pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
+python-daemon==3.0.1
+    # via luigi
+python-dateutil==2.9.0.post0
+    # via luigi
+setuptools==69.1.1
+    # via python-daemon
+six==1.16.0
+    # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
+tenacity==8.2.3
+    # via luigi
 tomli==2.0.1
-    # via pytest
+    # via
+    #   pytest
+    #   typed-settings
+tornado==6.4
+    # via luigi
+typed-settings==24.1.0
 typing-extensions==4.10.0

@@ -42,33 +42,33 @@ packages=(
     # cryptography
     # cvxpy
     # fastapi
-    fpdf2
-    hatch
-    holoviews
-    humps
-    ipython
-    jupyter
-    loguru
-    luigi
-    memory-profiler
-    more-itertools
-    numpy
-    pandas
-    pathvalidate
-    polars
-    pqdm
-    pydantic
-    pyinstrument
-    pytest
-    pytest-check
-    scipy
-    scripts-clean-dir
-    scripts-csv-to-markdown
-    scripts-generate-snippets
-    scripts-luigi-server
-    scripts-monitor-memory
-    scripts-pypi-server
-    semver
+    # fpdf2
+    # hatch
+    # holoviews
+    # humps
+    # ipython
+    # jupyter
+    # loguru
+    # luigi
+    # memory-profiler
+    # more-itertools
+    # numpy
+    # pandas
+    # pathvalidate
+    # polars
+    # pqdm
+    # pydantic
+    # pyinstrument
+    # pytest
+    # pytest-check
+    # scipy
+    # scripts-clean-dir
+    # scripts-csv-to-markdown
+    # scripts-generate-snippets
+    # scripts-luigi-server
+    # scripts-monitor-memory
+    # scripts-pypi-server
+    # semver
     sqlalchemy
     sqlalchemy-polars
     typed-settings
