@@ -244,7 +244,8 @@ class TestLoadSettings:
 
     @given(appname=app_names)
     @pytest.mark.parametrize(
-        "cls", [param(dt.date), param(dt.time), param(dt.timedelta)]
+        "cls",
+        [pytest.param(dt.date), pytest.param(dt.time), pytest.param(dt.timedelta)],
     )
     def test_errors(self, *, appname: str, cls: Any) -> None:
         @dataclass(frozen=True)

@@ -152,7 +152,7 @@ class TestInsertDataFrame:
             assert ((r is None) == (v is None)) or check(r, v)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    @pytest.mark.parametrize("sr_name", [param("Value"), param("value")])
+    @pytest.mark.parametrize("sr_name", [pytest.param("Value"), pytest.param("value")])
     def test_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
@@ -194,7 +194,7 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         expected = ("b", float)
         assert result == expected
 
-    @pytest.mark.parametrize("sr_name", [param("b"), param("B")])
+    @pytest.mark.parametrize("sr_name", [pytest.param("b"), pytest.param("B")])
     def test_snake(self, *, sr_name: str) -> None:
         schema = {"A": int, "B": float, "C": str}
         result = _insert_dataframe_map_df_column_to_table_column_and_type(
@@ -203,7 +203,7 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         expected = ("B", float)
         assert result == expected
 
-    @pytest.mark.parametrize("snake", [param(True), param(False)])
+    @pytest.mark.parametrize("snake", [pytest.param(True), pytest.param(False)])
     def test_error_empty(self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
         with pytest.raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
@@ -552,7 +552,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
             pytest.param(VARCHAR, Utf8),
         ],
     )
-    @pytest.mark.parametrize("use_inst", [param(True), param(False)])
+    @pytest.mark.parametrize("use_inst", [pytest.param(True), pytest.param(False)])
     def test_main(
         self, *, col_type: Any, use_inst: bool, expected: DataTypeClass
     ) -> None:
@@ -562,9 +562,12 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
         assert issubclass(dtype, expected)
 
     @pytest.mark.parametrize(
-        "col_type", [param(DATETIME), param(DateTime), param(TIMESTAMP)]
+        "col_type",
+        [pytest.param(DATETIME), pytest.param(DateTime), pytest.param(TIMESTAMP)],
     )
-    @pytest.mark.parametrize("timezone", [param(None), param(True), param(False)])
+    @pytest.mark.parametrize(
+        "timezone", [pytest.param(None), pytest.param(True), pytest.param(False)]
+    )
     def test_datetime(self, *, col_type: Any, timezone: bool | None) -> None:
         col_type_use = col_type if timezone is None else col_type(timezone=timezone)
         dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)

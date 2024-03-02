@@ -27,7 +27,7 @@ class TestPytestOptions:
         result.assert_outcomes(errors=1)
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
-    @pytest.mark.parametrize("configure", [param(True), param(False)])
+    @pytest.mark.parametrize("configure", [pytest.param(True), pytest.param(False)])
     def test_unknown_option(self, *, configure: bool, testdir: Testdir) -> None:
         if configure:
             _ = testdir.makeconftest(
@@ -51,7 +51,10 @@ class TestPytestOptions:
 
     @pytest.mark.parametrize(
         ("case", "passed", "skipped", "matches"),
-        [param([], 0, 1, [".*3: pass --slow"]), param(["--slow"], 1, 0, [])],
+        [
+            pytest.param([], 0, 1, [".*3: pass --slow"]),
+            pytest.param(["--slow"], 1, 0, []),
+        ],
     )
     def test_one_mark_and_option(
         self,
@@ -176,8 +179,8 @@ class TestPytestOptions:
 
 class TestThrottle:
     @FLAKY
-    @pytest.mark.parametrize("as_float", [param(True), param(False)])
-    @pytest.mark.parametrize("on_try", [param(True), param(False)])
+    @pytest.mark.parametrize("as_float", [pytest.param(True), pytest.param(False)])
+    @pytest.mark.parametrize("on_try", [pytest.param(True), pytest.param(False)])
     def test_basic(
         self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:

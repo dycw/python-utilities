@@ -129,7 +129,9 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.isel(indexer), expected)
 
-    @pytest.mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
+    @pytest.mark.parametrize(
+        "indexer", [pytest.param({"x": 2}), pytest.param({"x": [2]})]
+    )
     def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
@@ -139,7 +141,7 @@ class TestNDArrayWithIndexes:
         with pytest.raises(BoundsCheckError):
             _ = view.isel(indexer)
 
-    @pytest.mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [pytest.param(repr), pytest.param(str)])
     def test_repr_and_str(self, *, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)

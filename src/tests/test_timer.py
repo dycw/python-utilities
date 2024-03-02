@@ -32,7 +32,8 @@ class TestTimer:
         ],
     )
     @pytest.mark.parametrize(
-        "dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))]
+        "dur",
+        [pytest.param(1), pytest.param(1.0), pytest.param(dt.timedelta(seconds=1))],
     )
     def test_comparison(
         self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
@@ -55,7 +56,7 @@ class TestTimer:
         with pytest.raises(TimerError, match=match):
             _ = Timer() == "error"
 
-    @pytest.mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [pytest.param(repr), pytest.param(str)])
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             sleep(0.01)

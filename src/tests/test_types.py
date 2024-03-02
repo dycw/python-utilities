@@ -36,7 +36,9 @@ from utilities.types import (
 
 
 class TestDuration:
-    @pytest.mark.parametrize("x", [param(0), param(0.0), param(dt.timedelta(0))])
+    @pytest.mark.parametrize(
+        "x", [pytest.param(0), pytest.param(0.0), pytest.param(dt.timedelta(0))]
+    )
     def test_success(self, *, x: Duration) -> None:
         die_if_unbearable(x, Duration)
 
@@ -68,7 +70,7 @@ class TestEnsureClass:
 
 
 class TestEnsureHashable:
-    @pytest.mark.parametrize("obj", [param(0), param((1, 2, 3))])
+    @pytest.mark.parametrize("obj", [pytest.param(0), pytest.param((1, 2, 3))])
     def test_main(self, *, obj: Any) -> None:
         assert ensure_hashable(obj) == obj
 
@@ -89,7 +91,9 @@ class TestEnsureNotNone:
 
 
 class TestEnsureSized:
-    @pytest.mark.parametrize("obj", [param([]), param(()), param("")])
+    @pytest.mark.parametrize(
+        "obj", [pytest.param([]), pytest.param(()), pytest.param("")]
+    )
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized(obj)
 
@@ -99,11 +103,11 @@ class TestEnsureSized:
 
 
 class TestEnsureSizedNotStr:
-    @pytest.mark.parametrize("obj", [param([]), param(())])
+    @pytest.mark.parametrize("obj", [pytest.param([]), pytest.param(())])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized_not_str(obj)
 
-    @pytest.mark.parametrize("obj", [param(None), param("")])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param("")])
     def test_error(self, *, obj: Any) -> None:
         with pytest.raises(
             EnsureSizedNotStrError, match=r"Object .* must be sized, but not a string\."
@@ -113,7 +117,8 @@ class TestEnsureSizedNotStr:
 
 class TestGetClass:
     @pytest.mark.parametrize(
-        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
+        ("obj", "expected"),
+        [pytest.param(None, NoneType), pytest.param(NoneType, NoneType)],
     )
     def test_main(self, *, obj: Any, expected: type[Any]) -> None:
         assert get_class(obj) is expected
@@ -144,7 +149,11 @@ class TestIfNotNone:
 class TestIsHashable:
     @pytest.mark.parametrize(
         ("obj", "expected"),
-        [param(0, True), param((1, 2, 3), True), param([1, 2, 3], False)],
+        [
+            pytest.param(0, True),
+            pytest.param((1, 2, 3), True),
+            pytest.param([1, 2, 3], False),
+        ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_hashable(obj) is expected
@@ -153,7 +162,12 @@ class TestIsHashable:
 class TestIsSized:
     @pytest.mark.parametrize(
         ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", True)],
+        [
+            pytest.param(None, False),
+            pytest.param([], True),
+            pytest.param((), True),
+            pytest.param("", True),
+        ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_sized(obj) is expected
@@ -162,7 +176,12 @@ class TestIsSized:
 class TestIsSizedNotStr:
     @pytest.mark.parametrize(
         ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", False)],
+        [
+            pytest.param(None, False),
+            pytest.param([], True),
+            pytest.param((), True),
+            pytest.param("", False),
+        ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_sized_not_str(obj) is expected
@@ -171,7 +190,11 @@ class TestIsSizedNotStr:
 class TestIsSubclassExceptBoolInt:
     @pytest.mark.parametrize(
         ("x", "y", "expected"),
-        [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
+        [
+            pytest.param(bool, bool, True),
+            pytest.param(bool, int, False),
+            pytest.param(int, int, True),
+        ],
     )
     def test_main(self, *, x: type[Any], y: type[Any], expected: bool) -> None:
         assert issubclass_except_bool_int(x, y) is expected
@@ -201,7 +224,7 @@ class TestIterableStrs:
 
 
 class TestNumber:
-    @pytest.mark.parametrize("x", [param(0), param(0.0)])
+    @pytest.mark.parametrize("x", [pytest.param(0), pytest.param(0.0)])
     def test_ok(self, *, x: Number) -> None:
         die_if_unbearable(x, Number)
 
@@ -211,7 +234,9 @@ class TestNumber:
 
 
 class TestPathLike:
-    @pytest.mark.parametrize("path", [param(valid_path_home()), param("~")])
+    @pytest.mark.parametrize(
+        "path", [pytest.param(valid_path_home()), pytest.param("~")]
+    )
     def test_main(self, *, path: PathLike) -> None:
         die_if_unbearable(path, PathLike)
 
@@ -221,12 +246,19 @@ class TestPathLike:
 
 
 class TestSequenceStrs:
-    @pytest.mark.parametrize("x", [param(["a", "b", "c"]), param(("a", "b", "c"))])
+    @pytest.mark.parametrize(
+        "x", [pytest.param(["a", "b", "c"]), pytest.param(("a", "b", "c"))]
+    )
     def test_pass(self, *, x: SequenceStrs) -> None:
         die_if_unbearable(x, SequenceStrs)
 
     @pytest.mark.parametrize(
-        "x", [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")]
+        "x",
+        [
+            pytest.param({"a", "b", "c"}),
+            pytest.param({"a": 1, "b": 2, "c": 3}),
+            pytest.param("abc"),
+        ],
     )
     def test_fail(self, *, x: IterableStrs | str) -> None:
         with pytest.raises(BeartypeDoorHintViolation):

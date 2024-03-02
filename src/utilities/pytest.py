@@ -33,12 +33,14 @@ except ModuleNotFoundError:  # pragma: no cover
         skipif_not_mac
     ) = skipif_not_linux = None
 else:
-    skipif_windows = mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
-    skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
-    skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
-    skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
-    skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
-    skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
+    skipif_windows = pytest.mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
+    skipif_mac = pytest.mark.skipif(IS_MAC, reason="Skipped for Mac")
+    skipif_linux = pytest.mark.skipif(IS_LINUX, reason="Skipped for Linux")
+    skipif_not_windows = pytest.mark.skipif(
+        IS_NOT_WINDOWS, reason="Skipped for non-Windows"
+    )
+    skipif_not_mac = pytest.mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
+    skipif_not_linux = pytest.mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
 def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:

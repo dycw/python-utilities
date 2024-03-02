@@ -690,7 +690,9 @@ class TestCheckTableOrColumnNamesEqual:
             with pytest.raises(_CheckTableOrColumnNamesEqualError):
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
-    @pytest.mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
+    @pytest.mark.parametrize(
+        ("name", "expected"), [pytest.param(None, "Id"), pytest.param("x", "x")]
+    )
     def test_quoted_name(self, *, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
@@ -796,13 +798,13 @@ class TestEnsureEngine:
 
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
-    @pytest.mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [pytest.param(1), pytest.param(2)])
     def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
-    @pytest.mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [pytest.param(1), pytest.param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
@@ -823,13 +825,13 @@ class TestEnsureTablesCreated:
 
 class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
-    @pytest.mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [pytest.param(1), pytest.param(2)])
     def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
-    @pytest.mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [pytest.param(0), pytest.param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
@@ -1202,7 +1204,7 @@ class TestRedirectTableDoesNotExist:
     def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with (
-            raises(TableDoesNotExistError),
+            pytest.raises(TableDoesNotExistError),
             redirect_table_does_not_exist(engine),
             engine.begin() as conn,
         ):

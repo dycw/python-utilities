@@ -3,7 +3,6 @@ from __future__ import annotations
 from warnings import warn
 
 import pytest
-import warns
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 
@@ -23,7 +22,7 @@ class TestCatchWarningsAsErrors:
     def test_one_warning(self) -> None:
         class CustomWarning(UserWarning): ...
 
-        with warns(CustomWarning):
+        with pytest.warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
         with (
             pytest.raises(CustomWarning),
@@ -38,10 +37,10 @@ class TestCatchWarningsAsErrors:
         class SecondWarning(UserWarning): ...
 
         category = data.draw(sampled_from([FirstWarning, SecondWarning]))
-        with warns(category):
+        with pytest.warns(category):
             warn("", category=category, stacklevel=2)
         with (
-            raises(category),
+            pytest.raises(category),
             catch_warnings_as_errors(category=(FirstWarning, SecondWarning)),
         ):
             warn("", category=category, stacklevel=2)
@@ -60,7 +59,7 @@ class TestSuppressWarnings:
     def test_one_warning(self) -> None:
         class CustomWarning(UserWarning): ...
 
-        with warns(CustomWarning):
+        with pytest.warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
         with suppress_warnings(category=CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
@@ -72,7 +71,7 @@ class TestSuppressWarnings:
         class SecondWarning(UserWarning): ...
 
         category = data.draw(sampled_from([FirstWarning, SecondWarning]))
-        with warns(category):
+        with pytest.warns(category):
             warn("", category=category, stacklevel=2)
         with suppress_warnings(category=(FirstWarning, SecondWarning)):
             warn("", category=category, stacklevel=2)
