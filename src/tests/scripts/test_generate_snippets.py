@@ -7,6 +7,7 @@ from ast import ImportFrom, alias
 import pytest
 from click.testing import CliRunner
 from pytest import LogCaptureFixture, mark, param
+from typing_extensions import Self
 
 from utilities.iterables import one
 from utilities.scripts.generate_snippets import (
@@ -24,14 +25,14 @@ from utilities.scripts.generate_snippets import (
 
 
 class TestCLI:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         runner = CliRunner()
         result = runner.invoke(main)
         assert result.exit_code == 0
 
 
 class TestGenerateIPythonImports:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         imp = ImportFrom(module="abc", names=[alias(name="ABC")])
         result = _generate_ipython_imports([imp])
         expected = "from abc import ABC  # noqa: F401"
@@ -39,14 +40,14 @@ class TestGenerateIPythonImports:
 
 
 class TestGenerateSnippet:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         imp = ImportFrom(module="abc", names=[alias(name="ABC")])
         template = "{key}: {value}"
         result = _generate_snippet(imp, template)
         expected = "fab-abc: from abc import ABC"
         assert result == expected
 
-    def test_as(self) -> None:
+    def test_as(self: Self) -> None:
         imp = ImportFrom(
             module="collections.abc", names=[alias(name="Set", asname="AbstractSet")]
         )
@@ -57,7 +58,7 @@ class TestGenerateSnippet:
 
 
 class TestGenerateSnippets:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         imports = {
             ImportFrom(module="abc", names=[alias(name=name)])
             for name in ["ABC", "ABCMeta"]
@@ -67,7 +68,7 @@ class TestGenerateSnippets:
         expected = "fab-abc: from abc import ABC,fab-abc-meta: from abc import ABCMeta,"
         assert result == expected
 
-    def test_duplicated_keys(self, *, caplog: LogCaptureFixture) -> None:
+    def test_duplicated_keys(self: Self, *, caplog: LogCaptureFixture) -> None:
         imports = {
             ImportFrom(module="dataclasses", names=[alias(name=name)])
             for name in ["field", "Field"]
@@ -83,14 +84,14 @@ class TestNodeToKey:
         ("module", "name", "expected"),
         [param("abc", "ABC", "fab-abc"), param("abc", "ABCMeta", "fab-abc-meta")],
     )
-    def test_main(self, *, module: str, name: str, expected: str) -> None:
+    def test_main(self: Self, *, module: str, name: str, expected: str) -> None:
         node = ImportFrom(module=module, names=[alias(name=name)])
         key = _node_to_key(node)
         assert key == expected
 
 
 class TestYieldImportNodesDirectly:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         imp1, imp2 = _yield_import_nodes_directly(abc, [ABC, ABCMeta])
         assert imp1.module == "abc"
         assert one(imp1.names).name == "ABC"
@@ -99,7 +100,7 @@ class TestYieldImportNodesDirectly:
 
 
 class TestYieldImportNodesFromModuleAll:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         imports = list(_yield_import_nodes_from_module_all(pytest))
         assert len(imports) == 81
         for imp in imports:
@@ -107,7 +108,7 @@ class TestYieldImportNodesFromModuleAll:
 
 
 class TestYieldImportNodesFromText:
-    def test_single(self) -> None:
+    def test_single(self: Self) -> None:
         text = """
             from abc import ABC
         """
@@ -134,14 +135,14 @@ class TestYieldImportNodesFromText:
             ),
         ],
     )
-    def test_two(self, *, text: str) -> None:
+    def test_two(self: Self, *, text: str) -> None:
         imp1, imp2 = _yield_import_nodes_from_text(text)
         assert imp1.module == "abc"
         assert one(imp1.names).name == "ABC"
         assert imp2.module == "abc"
         assert one(imp2.names).name == "ABCMeta"
 
-    def test_suppress_include(self) -> None:
+    def test_suppress_include(self: Self) -> None:
         text = """
             from contextlib import suppress
 
@@ -154,7 +155,7 @@ class TestYieldImportNodesFromText:
         assert imp2.module == "abc"
         assert one(imp2.names).name == "ABC"
 
-    def test_suppress_do_not_include(self) -> None:
+    def test_suppress_do_not_include(self: Self) -> None:
         text = """
             from contextlib import suppress
 
@@ -190,7 +191,7 @@ class TestYieldImportNodesFromText:
             ),
         ],
     )
-    def test_nested_suppress(self, *, text: str) -> None:
+    def test_nested_suppress(self: Self, *, text: str) -> None:
         imp1, imp2 = _yield_import_nodes_from_text(text)
         assert imp1.module == "abc"
         assert one(imp1.names).name == "ABC"
@@ -200,6 +201,6 @@ class TestYieldImportNodesFromText:
 
 class TestYieldImports:
     @mark.parametrize("method", [param(Method.direct), param(Method.parse)])
-    def test_yield_imports(self, *, method: Method) -> None:
+    def test_yield_imports(self: Self, *, method: Method) -> None:
         for imp in yield_imports(method=method):
             assert isinstance(imp, ImportFrom)

@@ -45,7 +45,7 @@ class CheckDuplicatesError(Exception):
     counts: dict[Hashable, int]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "Iterable {} must not contain duplicates; got {}.".format(
             self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
         )
@@ -94,7 +94,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
     state: _CheckIterablesEqualState | None
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -104,7 +104,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 assert_never(cast(Never, never))
         return f"Iterables {self.left} and {self.right} must be equal; {desc}."
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.errors) >= 1:
             error_descs = (f"({lv}, {rv}, i={i})" for i, lv, rv in self.errors)
             yield "differing items were {}".format(", ".join(error_descs))
@@ -154,7 +154,7 @@ class _CheckLengthEqualError(CheckLengthError):
     equal: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must have length {self.equal}; got {len(self.obj)}."
 
 
@@ -163,7 +163,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
     equal_or_approx: int | tuple[int, float]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match self.equal_or_approx:
             case target, error:
                 desc = f"approximate length {target} (error {error:%})"
@@ -177,7 +177,7 @@ class _CheckLengthMinError(CheckLengthError):
     min_: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must have minimum length {self.min_}; got {len(self.obj)}."
 
 
@@ -186,7 +186,7 @@ class _CheckLengthMaxError(CheckLengthError):
     max_: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must have maximum length {self.max_}; got {len(self.obj)}."
 
 
@@ -202,7 +202,7 @@ class CheckLengthsEqualError(Exception):
     right: Sized
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Sized objects {self.left} and {self.right} must have the same length; got {len(self.left)} and {len(self.right)}."
 
 
@@ -239,7 +239,7 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
     errors: list[tuple[_K, _V, _V]]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -251,7 +251,7 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
                 assert_never(cast(Never, never))
         return f"Mappings {self.left} and {self.right} must be equal; {desc}."
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
             yield f"left had extra keys {self.left_extra}"
         if len(self.right_extra) >= 1:
@@ -284,7 +284,7 @@ class CheckSetsEqualError(Exception, Generic[_T]):
     right_extra: AbstractSet[_T]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -294,7 +294,7 @@ class CheckSetsEqualError(Exception, Generic[_T]):
                 assert_never(cast(Never, never))
         return f"Sets {self.left} and {self.right} must be equal; {desc}."
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
             yield f"left had extra items {self.left_extra}"
         if len(self.right_extra) >= 1:
@@ -327,7 +327,7 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
     errors: list[tuple[_K, _V, _V]]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -337,7 +337,7 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
                 assert_never(cast(Never, never))
         return f"Mapping {self.left} must be a submapping of {self.right}; {desc}."
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.extra) >= 1:
             yield f"left had extra keys {self.extra}"
         if len(self.errors) >= 1:
@@ -361,7 +361,7 @@ class CheckSubSetError(Exception, Generic[_T]):
     extra: AbstractSet[_T]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Set {self.left} must be a subset of {self.right}; left had extra items {self.extra}."
 
 
@@ -391,7 +391,7 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
     errors: list[tuple[_K, _V, _V]]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -401,7 +401,7 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
                 assert_never(cast(Never, never))
         return f"Mapping {self.left} must be a supermapping of {self.right}; {desc}."
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.extra) >= 1:
             yield f"right had extra keys {self.extra}"
         if len(self.errors) >= 1:
@@ -425,7 +425,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
     extra: AbstractSet[_T]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Set {self.left} must be a superset of {self.right}; right had extra items {self.extra}."
 
 
@@ -455,7 +455,7 @@ class EnsureIterableError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be iterable."
 
 
@@ -471,7 +471,7 @@ class EnsureIterableNotStrError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be iterable, but not a string."
 
 
@@ -497,7 +497,7 @@ class OneError(Exception, Generic[_T]):
 @dataclass(frozen=True, kw_only=True)
 class OneEmptyError(OneError[_T]):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Iterable {self.iterable} must not be empty."
 
 
@@ -507,7 +507,7 @@ class OneNonUniqueError(OneError[_T]):
     second: _T
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
 
 

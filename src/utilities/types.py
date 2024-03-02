@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeGuard, TypeVar, overload
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 Number = int | float
 Duration = Number | dt.timedelta
@@ -64,7 +64,7 @@ class EnsureClassError(Exception):
     cls: type[Any] | tuple[type[Any], ...]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be an instance of {self.cls}; got {type(self.obj)}."
 
 
@@ -80,7 +80,7 @@ class EnsureHashableError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be hashable."
 
 
@@ -94,7 +94,7 @@ def ensure_not_none(obj: _T | None, /) -> _T:
 @dataclass(frozen=True, kw_only=True)
 class EnsureNotNoneError(Exception):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "Object must not be None."
 
 
@@ -110,7 +110,7 @@ class EnsureSizedError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be sized."
 
 
@@ -126,7 +126,7 @@ class EnsureSizedNotStrError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be sized, but not a string."
 
 

@@ -9,12 +9,12 @@ from utilities.jupyter import _DEFAULT_COLS, _DEFAULT_ROWS, is_jupyter, show
 
 
 class TestIsJupyter:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert not is_jupyter()
 
 
 class TestShow:
-    def test_direct(self) -> None:
+    def test_direct(self: Self) -> None:
         expected = {
             "set_fmt_float": "mixed",
             "set_float_precision": None,

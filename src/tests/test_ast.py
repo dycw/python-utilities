@@ -8,7 +8,7 @@ from utilities.text import strip_and_dedent
 
 
 class TestYieldDunderAll:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         text = strip_and_dedent(
             """
             __all__ = ["A", "B"]
@@ -27,7 +27,7 @@ class TestYieldDunderAll:
 
 
 class TestYieldFromAssign:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         text = strip_and_dedent(
             """
             __all__ = ["A", "B"]
@@ -39,7 +39,7 @@ class TestYieldFromAssign:
         expected = [["A", "B"]]
         assert result == expected
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         text = strip_and_dedent(
             """
             a = b = ["A", "B"]
@@ -52,7 +52,7 @@ class TestYieldFromAssign:
 
 
 class TestYieldFromTry:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         text = strip_and_dedent(
             """
             try:
@@ -69,7 +69,7 @@ class TestYieldFromTry:
         expected = [["A", "B"]]
         assert result == expected
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         text = strip_and_dedent(
             """
             try:

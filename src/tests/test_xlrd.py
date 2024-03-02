@@ -11,7 +11,7 @@ from utilities.xlrd import GetDateModeError, get_date_mode, to_date, to_datetime
 
 
 class TestGetDateMode:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         if SYSTEM is System.linux:
             with raises(GetDateModeError):
                 _ = get_date_mode()
@@ -31,7 +31,7 @@ class TestToDate:
             param(1.0, dt.date(1904, 1, 2), marks=skipif_not_mac),
         ],
     )
-    def test_main(self, *, date: float, expected: dt.date) -> None:
+    def test_main(self: Self, *, date: float, expected: dt.date) -> None:
         assert to_date(date) == expected
 
 
@@ -49,5 +49,5 @@ class TestToDatetime:
             param(1.0, dt.datetime(1904, 1, 2, tzinfo=UTC), marks=skipif_not_mac),
         ],
     )
-    def test_main(self, *, date: float, expected: dt.datetime) -> None:
+    def test_main(self: Self, *, date: float, expected: dt.datetime) -> None:
         assert to_datetime(date) == expected

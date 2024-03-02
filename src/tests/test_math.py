@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import inf, nan
 
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.math import (
     CheckIntegerError,
@@ -55,10 +56,10 @@ from utilities.math import (
 
 
 class TestCheckInteger:
-    def test_equal_pass(self) -> None:
+    def test_equal_pass(self: Self) -> None:
         check_integer(0, equal=0)
 
-    def test_equal_fail(self) -> None:
+    def test_equal_fail(self: Self) -> None:
         with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
             check_integer(0, equal=1)
 
@@ -84,17 +85,17 @@ class TestCheckInteger:
         with raises(CheckIntegerError, match=match):
             check_integer(0, equal_or_approx=equal_or_approx)
 
-    def test_min_pass(self) -> None:
+    def test_min_pass(self: Self) -> None:
         check_integer(0, min=0)
 
-    def test_min_error(self) -> None:
+    def test_min_error(self: Self) -> None:
         with raises(CheckIntegerError, match="Integer must be at least .*; got .*"):
             check_integer(0, min=1)
 
-    def test_max_pass(self) -> None:
+    def test_max_pass(self: Self) -> None:
         check_integer(0, max=1)
 
-    def test_max_error(self) -> None:
+    def test_max_error(self: Self) -> None:
         with raises(CheckIntegerError, match="Integer must be at most .*; got .*"):
             check_integer(1, max=0)
 
@@ -117,13 +118,13 @@ class TestIsAtLeast:
             param(0.0, nan, False),
         ],
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
 
 
@@ -145,13 +146,13 @@ class TestIsAtMost:
             param(0.0, nan, False),
         ],
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
 
 
@@ -171,7 +172,9 @@ class TestIsBetween:
             param(nan, -1.0, 1.0, False),
         ],
     )
-    def test_main(self, *, x: float, low: float, high: float, expected: bool) -> None:
+    def test_main(
+        self: Self, *, x: float, low: float, high: float, expected: bool
+    ) -> None:
         assert is_between(x, low, high, abs_tol=1e-8) is expected
 
     @mark.parametrize(
@@ -182,7 +185,7 @@ class TestIsBetween:
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
-    def test_nan(self, *, low: float, high: float) -> None:
+    def test_nan(self: Self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
 
 
@@ -204,7 +207,7 @@ class TestIsEqual:
             param(0.0, nan, False),
         ],
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, y: float, expected: bool) -> None:
         assert is_equal(x, y) is expected
         assert is_equal(y, x) is expected
 
@@ -247,7 +250,7 @@ class TestIsFinite:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite(x) is expected
         assert is_finite_or_nan(x) is expected_nan
 
@@ -276,7 +279,7 @@ class TestIsFiniteAndIntegral:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_integral(x, abs_tol=1e-8) is expected
         assert is_finite_and_integral_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -299,7 +302,7 @@ class TestIsFiniteAndNegative:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_negative(x, abs_tol=1e-8) is expected
         assert is_finite_and_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -322,7 +325,7 @@ class TestIsFiniteAndNonNegative:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_negative(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -345,7 +348,7 @@ class TestIsFiniteAndNonPositive:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_positive(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -368,7 +371,7 @@ class TestIsFiniteAndNonZero:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_zero(x, abs_tol=1e-8) is expected
         assert is_finite_and_non_zero_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -391,7 +394,7 @@ class TestIsFiniteAndPositive:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_positive(x, abs_tol=1e-8) is expected
         assert is_finite_and_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -414,13 +417,13 @@ class TestIsGreaterThan:
             param(0.0, nan, False),
         ],
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, y: float, expected: bool) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
 
 
@@ -448,7 +451,9 @@ class TestIsIntegral:
             param(nan, False, True),
         ],
     )
-    def test_is_integral(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_is_integral(
+        self: Self, *, x: float, expected: bool, expected_nan: bool
+    ) -> None:
         assert is_integral(x, abs_tol=1e-8) is expected
         assert is_integral_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -471,13 +476,13 @@ class TestIsLessThan:
             param(0.0, nan, False),
         ],
     )
-    def test_main(self, *, x: float, y: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
 
 
@@ -499,7 +504,7 @@ class TestIsNegative:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_negative(x, abs_tol=1e-8) is expected
         assert is_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -522,7 +527,7 @@ class TestIsNonNegative:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_negative(x, abs_tol=1e-8) is expected
         assert is_non_negative_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -545,7 +550,7 @@ class TestIsNonPositive:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_positive(x, abs_tol=1e-8) is expected
         assert is_non_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -568,7 +573,7 @@ class TestIsNonZero:
             param(nan, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x, abs_tol=1e-8) is expected
         assert is_non_zero_or_nan(x, abs_tol=1e-8) is expected
 
@@ -591,7 +596,7 @@ class TestIsPositive:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_positive(x, abs_tol=1e-8) is expected
         assert is_positive_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -614,7 +619,7 @@ class TestIsZero:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero(x, abs_tol=1e-8) is expected
         assert is_zero_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -637,7 +642,7 @@ class TestIsZeroOrFiniteAndNonMicro:
             param(nan, False, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
         assert is_zero_or_finite_and_non_micro_or_nan(x, abs_tol=1e-8) is expected_nan
 
@@ -660,6 +665,6 @@ class TestIsZeroOrNonMicro:
             param(nan, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
         assert is_zero_or_non_micro_or_nan(x, abs_tol=1e-8) is expected

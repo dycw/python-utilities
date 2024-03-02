@@ -13,7 +13,7 @@ from utilities.types import IterableStrs
 
 
 class TestPytestOptions:
-    def test_unknown_mark(self, *, testdir: Testdir) -> None:
+    def test_unknown_mark(self: Self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
             from pytest import mark
@@ -28,7 +28,7 @@ class TestPytestOptions:
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
     @mark.parametrize("configure", [param(True), param(False)])
-    def test_unknown_option(self, *, configure: bool, testdir: Testdir) -> None:
+    def test_unknown_option(self: Self, *, configure: bool, testdir: Testdir) -> None:
         if configure:
             _ = testdir.makeconftest(
                 """
@@ -198,7 +198,7 @@ class TestThrottle:
         testdir.runpytest().assert_outcomes(passed=1)
 
     @FLAKY
-    def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    def test_on_pass(self: Self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
             from pytest import fixture
@@ -230,7 +230,7 @@ class TestThrottle:
                 sleep(1.0)
 
     @FLAKY
-    def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    def test_on_try(self: Self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
             from pytest import fixture
@@ -264,7 +264,7 @@ class TestThrottle:
                 sleep(1.0)
 
     @FLAKY
-    def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
+    def test_long_name(self: Self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
             from pytest import mark
@@ -282,7 +282,7 @@ class TestThrottle:
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
-    def test_signature(self) -> None:
+    def test_signature(self: Self) -> None:
         @throttle()
         def func(*, fix: bool) -> None:
             assert fix

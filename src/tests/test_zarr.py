@@ -28,7 +28,7 @@ indexes_1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 
 
 class TestFFillNonNanSlices:
-    def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self: Self, *, tmp_path: Path) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
         )
@@ -80,7 +80,7 @@ class TestNDArrayWithIndexes:
         assert view.sizes == dict(zip(indexes, shape, strict=True))
 
     @given(root=temp_paths())
-    def test_dtype(self, *, root: Path) -> None:
+    def test_dtype(self: Self, *, root: Path) -> None:
         path = ensure_path(root, "array")
         with yield_array_with_indexes({}, path, dtype=int):
             pass
@@ -130,7 +130,9 @@ class TestNDArrayWithIndexes:
         assert_equal(view.isel(indexer), expected)
 
     @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
-    def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
+    def test_isel_error(
+        self: Self, *, tmp_path: Path, indexer: Mapping[str, Any]
+    ) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
@@ -140,7 +142,9 @@ class TestNDArrayWithIndexes:
             _ = view.isel(indexer)
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, *, func: Callable[[Any], str], tmp_path: Path) -> None:
+    def test_repr_and_str(
+        self: Self, *, func: Callable[[Any], str], tmp_path: Path
+    ) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
         assert func(view) == f"{cls}({tmp_path})"
@@ -187,7 +191,7 @@ class TestNDArrayWithIndexes:
         with raises(GetSelIndexerError):
             _ = view.sel(indexer)
 
-    def test_missing(self, *, tmp_path: Path) -> None:
+    def test_missing(self: Self, *, tmp_path: Path) -> None:
         with raises(FileNotFoundError):
             _ = NDArrayWithIndexes(ensure_path(tmp_path, "array"))
 

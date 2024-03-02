@@ -66,12 +66,12 @@ from utilities.types import IterableStrs
 
 class TestAwaitTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
-    def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
+    def test_main(self: Self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, Task):
             is_complete = cast(bool, BoolParameter())
 
             @override
-            def complete(self) -> bool:
+            def complete(self: Self) -> bool:
                 return self.is_complete
 
         example = Example(is_complete=is_complete)
@@ -82,7 +82,9 @@ class TestAwaitTask:
 
 class TestAwaitTime:
     @given(time_start=datetimes_utc(), time_now=datetimes_utc())
-    def test_main(self, *, time_start: dt.datetime, time_now: dt.datetime) -> None:
+    def test_main(
+        self: Self, *, time_start: dt.datetime, time_now: dt.datetime
+    ) -> None:
         _ = assume(time_start.microsecond == 0)
         task: AwaitTime = cast(Any, AwaitTime)(time_start)
         with freeze_time(time_now):
@@ -93,7 +95,7 @@ class TestAwaitTime:
 
 class TestBuild:
     @given(namespace_mixin=namespace_mixins())
-    def test_main(self, *, namespace_mixin: Any) -> None:
+    def test_main(self: Self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task): ...
 
         _ = build([Example()], local_scheduler=True)
@@ -101,7 +103,7 @@ class TestBuild:
 
 class TestClone:
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
-    def test_main(self, *, namespace_mixin: Any, truth: bool) -> None:
+    def test_main(self: Self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
@@ -114,7 +116,7 @@ class TestClone:
         assert result is expected
 
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
-    def test_await(self, *, namespace_mixin: Any, truth: bool) -> None:
+    def test_await(self: Self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
             truth = cast(bool, BoolParameter())
 
@@ -129,7 +131,7 @@ class TestClone:
 
 class TestDatabaseTarget:
     @given(engine=sqlite_engines(), rows=sets(tuples(integers(0, 10), integers(0, 10))))
-    def test_main(self, *, engine: Engine, rows: set[tuple[int, int]]) -> None:
+    def test_main(self: Self, *, engine: Engine, rows: set[tuple[int, int]]) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -146,7 +148,7 @@ class TestDatabaseTarget:
 
 class TestDateParameter:
     @given(data=data(), date=dates())
-    def test_main(self, *, data: DataObject, date: dt.date) -> None:
+    def test_main(self: Self, *, data: DataObject, date: dt.date) -> None:
         param = DateParameter()
         input_ = data.draw(sampled_from([date, serialize_date(date)]))
         norm = param.normalize(input_)
@@ -174,7 +176,7 @@ class TestDateTimeParameter:
 
 class TestEngineParameter:
     @given(engine=sqlite_engines())
-    def test_main(self, engine: Engine) -> None:
+    def test_main(self: Self, engine: Engine) -> None:
         param = EngineParameter()
         norm = param.normalize(engine)
         new_engine = param.parse(param.serialize(norm))
@@ -183,7 +185,7 @@ class TestEngineParameter:
 
 class TestEnumParameter:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
 
@@ -195,7 +197,7 @@ class TestEnumParameter:
 
 class TestExternalFile:
     @given(namespace_mixin=namespace_mixins(), root=temp_paths())
-    def test_main(self, *, namespace_mixin: Any, root: Path) -> None:
+    def test_main(self: Self, *, namespace_mixin: Any, root: Path) -> None:
         path = ensure_path(root, "file")
 
         class Example(namespace_mixin, ExternalFile): ...
@@ -208,12 +210,12 @@ class TestExternalFile:
 
 class TestExternalTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
-    def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
+    def test_main(self: Self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, ExternalTask):
             is_complete = cast(bool, BoolParameter())
 
             @override
-            def exists(self) -> bool:
+            def exists(self: Self) -> bool:
                 return self.is_complete
 
         task = Example(is_complete=is_complete)
@@ -223,7 +225,7 @@ class TestExternalTask:
 
 class TestFrozenSetIntsParameter:
     @given(values=iterables(integers()))
-    def test_main(self, *, values: Iterable[int]) -> None:
+    def test_main(self: Self, *, values: Iterable[int]) -> None:
         param = FrozenSetIntsParameter()
         norm = param.normalize(values)
         assert param.parse(param.serialize(norm)) == norm
@@ -231,7 +233,7 @@ class TestFrozenSetIntsParameter:
 
 class TestFrozenSetStrsParameter:
     @given(text=iterables(text_ascii()))
-    def test_main(self, *, text: IterableStrs) -> None:
+    def test_main(self: Self, *, text: IterableStrs) -> None:
         param = FrozenSetStrsParameter()
         norm = param.normalize(text)
         assert param.parse(param.serialize(norm)) == norm
@@ -239,17 +241,17 @@ class TestFrozenSetStrsParameter:
 
 class TestGetDependencies:
     @given(namespace_mixin=namespace_mixins())
-    def test_recursive(self, *, namespace_mixin: Any) -> None:
+    def test_recursive(self: Self, *, namespace_mixin: Any) -> None:
         class A(namespace_mixin, Task): ...
 
         class B(namespace_mixin, Task):
             @override
-            def requires(self) -> A:
+            def requires(self: Self) -> A:
                 return clone(self, A)
 
         class C(namespace_mixin, Task):
             @override
-            def requires(self) -> B:
+            def requires(self: Self) -> B:
                 return clone(self, B)
 
         a, b, c = A(), B(), C()
@@ -258,17 +260,17 @@ class TestGetDependencies:
         assert set(yield_dependencies(c, recursive=True)) == {a, b}
 
     @given(namespace_mixin=namespace_mixins())
-    def test_non_recursive(self, *, namespace_mixin: Any) -> None:
+    def test_non_recursive(self: Self, *, namespace_mixin: Any) -> None:
         class A(namespace_mixin, Task): ...
 
         class B(namespace_mixin, Task):
             @override
-            def requires(self) -> A:
+            def requires(self: Self) -> A:
                 return clone(self, A)
 
         class C(namespace_mixin, Task):
             @override
-            def requires(self) -> B:
+            def requires(self: Self) -> B:
                 return clone(self, B)
 
         a, b, c = A(), B(), C()
@@ -278,7 +280,7 @@ class TestGetDependencies:
 
 
 class TestPathTarget:
-    def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self: Self, *, tmp_path: Path) -> None:
         target = PathTarget(path := ensure_path(tmp_path, "file"))
         assert isinstance(target.path, Path)
         assert not target.exists()
@@ -288,7 +290,7 @@ class TestPathTarget:
 
 class TestTableParameter:
     @given(namespace_mixin=namespace_mixins())
-    def test_main(self, namespace_mixin: Any) -> None:
+    def test_main(self: Self, namespace_mixin: Any) -> None:
         class ExampleTask(namespace_mixin, Task):
             table = TableParameter()
 
@@ -302,7 +304,7 @@ class TestTableParameter:
 
 class TestTimeParameter:
     @given(data=data(), time=times())
-    def test_main(self, *, data: DataObject, time: dt.time) -> None:
+    def test_main(self: Self, *, data: DataObject, time: dt.time) -> None:
         param = TimeParameter()
         input_ = data.draw(sampled_from([time, serialize_time(time)]))
         norm = param.normalize(input_)
@@ -311,7 +313,7 @@ class TestTimeParameter:
 
 class TestVersionParameter:
     @given(version=versions())
-    def test_main(self, version: VersionInfo) -> None:
+    def test_main(self: Self, version: VersionInfo) -> None:
         param = VersionParameter()
         norm = param.normalize(version)
         assert param.parse(param.serialize(norm)) == norm

@@ -67,7 +67,7 @@ from utilities.pandas import (
 
 
 class TestAsType:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         df = DataFrame(0, index=RangeIndex(1), columns=["value"], dtype=int)
         check_pandas_dataframe(df, dtypes={"value": int})
         result = astype(df, float)
@@ -75,69 +75,69 @@ class TestAsType:
 
 
 class TestCheckIndex:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         check_index(RangeIndex(1))
 
-    def test_length_pass(self) -> None:
+    def test_length_pass(self: Self) -> None:
         check_index(RangeIndex(1), length=1)
 
-    def test_length_error(self) -> None:
+    def test_length_error(self: Self) -> None:
         with raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(1), length=2)
 
-    def test_min_length_pass(self) -> None:
+    def test_min_length_pass(self: Self) -> None:
         check_index(RangeIndex(2), min_length=1)
 
-    def test_min_length_error(self) -> None:
+    def test_min_length_error(self: Self) -> None:
         with raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(0), min_length=1)
 
-    def test_max_length_pass(self) -> None:
+    def test_max_length_pass(self: Self) -> None:
         check_index(RangeIndex(0), max_length=1)
 
-    def test_max_length_error(self) -> None:
+    def test_max_length_error(self: Self) -> None:
         with raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(2), max_length=1)
 
-    def test_name_pass(self) -> None:
+    def test_name_pass(self: Self) -> None:
         check_index(RangeIndex(0), name=None)
 
-    def test_name_error(self) -> None:
+    def test_name_error(self: Self) -> None:
         with raises(
             CheckIndexError, match=r"Index .* must satisfy the name requirement\."
         ):
             check_index(RangeIndex(0), name="name")
 
-    def test_sorted_pass(self) -> None:
+    def test_sorted_pass(self: Self) -> None:
         check_index(Index(["A", "B"]), sorted=True)
 
-    def test_sorted_error(self) -> None:
+    def test_sorted_error(self: Self) -> None:
         with raises(CheckIndexError, match=r"Index .* must be sorted\."):
             check_index(Index(["B", "A"]), sorted=True)
 
-    def test_unique_pass(self) -> None:
+    def test_unique_pass(self: Self) -> None:
         check_index(Index(["A", "B"]), unique=True)
 
-    def test_unique_error(self) -> None:
+    def test_unique_error(self: Self) -> None:
         with raises(CheckIndexError, match=r"Index .* must be unique\."):
             check_index(Index(["A", "A"]), unique=True)
 
 
 class TestCheckPandasDataFrame:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         check_pandas_dataframe(DataFrame())
 
-    def test_columns_pass(self) -> None:
+    def test_columns_pass(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=[])
         check_pandas_dataframe(df, columns=[])
 
-    def test_columns_error(self) -> None:
+    def test_columns_error(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -147,11 +147,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, columns=["other"])
 
-    def test_dtypes_pass(self) -> None:
+    def test_dtypes_pass(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=[])
         check_pandas_dataframe(df, dtypes={})
 
-    def test_dtypes_error_set_of_columns(self) -> None:
+    def test_dtypes_error_set_of_columns(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=[])
         with raises(
             CheckPandasDataFrameError,
@@ -161,7 +161,7 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, dtypes={"value": int})
 
-    def test_dtypes_error_order_of_columns(self) -> None:
+    def test_dtypes_error_order_of_columns(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["a", "b"])
         with raises(
             CheckPandasDataFrameError,
@@ -171,11 +171,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, dtypes={"b": float, "a": float})
 
-    def test_length_pass(self) -> None:
+    def test_length_pass(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         check_pandas_dataframe(df, length=1)
 
-    def test_length_error(self) -> None:
+    def test_length_error(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -186,11 +186,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, length=2)
 
-    def test_min_length_pass(self) -> None:
+    def test_min_length_pass(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         check_pandas_dataframe(df, min_length=1)
 
-    def test_min_length_error(self) -> None:
+    def test_min_length_error(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -201,11 +201,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, min_length=1)
 
-    def test_max_length_pass(self) -> None:
+    def test_max_length_pass(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
         check_pandas_dataframe(df, max_length=1)
 
-    def test_max_length_error(self) -> None:
+    def test_max_length_error(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -216,11 +216,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, max_length=1)
 
-    def test_sorted_pass(self) -> None:
+    def test_sorted_pass(self: Self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
         check_pandas_dataframe(df, sorted="value")
 
-    def test_sorted_error(self) -> None:
+    def test_sorted_error(self: Self) -> None:
         df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -228,7 +228,7 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, sorted="value")
 
-    def test_standard_pass(self) -> None:
+    def test_standard_pass(self: Self) -> None:
         check_pandas_dataframe(DataFrame(index=RangeIndex(0)), standard=True)
 
     @mark.parametrize(
@@ -246,7 +246,7 @@ class TestCheckPandasDataFrame:
             ),
         ],
     )
-    def test_standard_errors_index(self, *, df: DataFrame) -> None:
+    def test_standard_errors_index(self: Self, *, df: DataFrame) -> None:
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -268,7 +268,7 @@ class TestCheckPandasDataFrame:
             ),
         ],
     )
-    def test_standard_errors(self, *, df: DataFrame) -> None:
+    def test_standard_errors(self: Self, *, df: DataFrame) -> None:
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -277,11 +277,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, standard=True)
 
-    def test_unique_pass(self) -> None:
+    def test_unique_pass(self: Self) -> None:
         df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
         check_pandas_dataframe(df, unique="value")
 
-    def test_unique_error(self) -> None:
+    def test_unique_error(self: Self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
         with raises(
             CheckPandasDataFrameError,
@@ -289,11 +289,11 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, unique="value")
 
-    def test_width_pass(self) -> None:
+    def test_width_pass(self: Self) -> None:
         df = DataFrame()
         check_pandas_dataframe(df, width=0)
 
-    def test_width_error(self) -> None:
+    def test_width_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPandasDataFrameError,
@@ -305,75 +305,75 @@ class TestCheckPandasDataFrame:
 
 
 class TestCheckRangeIndex:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         check_range_index(RangeIndex(0))
 
-    def test_start_pass(self) -> None:
+    def test_start_pass(self: Self) -> None:
         check_range_index(RangeIndex(0), start=0)
 
-    def test_start_error(self) -> None:
+    def test_start_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), start=1)
 
-    def test_stop_pass(self) -> None:
+    def test_stop_pass(self: Self) -> None:
         check_range_index(RangeIndex(0), stop=0)
 
-    def test_stop_error(self) -> None:
+    def test_stop_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), stop=1)
 
-    def test_step_pass(self) -> None:
+    def test_step_pass(self: Self) -> None:
         check_range_index(RangeIndex(0), step=1)
 
-    def test_step_error(self) -> None:
+    def test_step_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), step=2)
 
-    def test_length_pass(self) -> None:
+    def test_length_pass(self: Self) -> None:
         check_range_index(RangeIndex(1), length=1)
 
-    def test_length_error(self) -> None:
+    def test_length_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(1), length=2)
 
-    def test_min_length_pass(self) -> None:
+    def test_min_length_pass(self: Self) -> None:
         check_range_index(RangeIndex(2), min_length=1)
 
-    def test_min_length_error(self) -> None:
+    def test_min_length_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), min_length=1)
 
-    def test_max_length_pass(self) -> None:
+    def test_max_length_pass(self: Self) -> None:
         check_range_index(RangeIndex(0), max_length=1)
 
-    def test_max_length_error(self) -> None:
+    def test_max_length_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(2), max_length=1)
 
-    def test_name_pass(self) -> None:
+    def test_name_pass(self: Self) -> None:
         check_range_index(RangeIndex(0), name=None)
 
-    def test_name_error(self) -> None:
+    def test_name_error(self: Self) -> None:
         with raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), name="name")
 
 
 class TestDTypes:
     @mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
-    def test_main(self, *, dtype: Any) -> None:
+    def test_main(self: Self, *, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
 
 
 class TestReindexToSet:
     @given(name=text_ascii() | none())
-    def test_main(self, *, name: str | None) -> None:
+    def test_main(self: Self, *, name: str | None) -> None:
         index = Index([1, 2, 3], name=name)
         target = [3, 2, 1]
         result = reindex_to_set(index, target)
         expected = Index([3, 2, 1], name=name)
         assert_index_equal(result, expected)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         index = Index([1, 2, 3])
         target = [2, 3, 4]
         with raises(
@@ -384,14 +384,14 @@ class TestReindexToSet:
 
 class TestReindexToSubSet:
     @given(name=text_ascii() | none())
-    def test_main(self, *, name: str | None) -> None:
+    def test_main(self: Self, *, name: str | None) -> None:
         index = Index([1, 2, 3], name=name)
         target = [1]
         result = reindex_to_subset(index, target)
         expected = Index([1], name=name)
         assert_index_equal(result, expected)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         index = Index([1])
         target = [1, 2, 3]
         with raises(ReindexToSubSetError, match=r"Index .* must be a superset of .*\."):
@@ -400,14 +400,14 @@ class TestReindexToSubSet:
 
 class TestReindexToSuperSet:
     @given(name=text_ascii() | none())
-    def test_main(self, *, name: str | None) -> None:
+    def test_main(self: Self, *, name: str | None) -> None:
         index = Index([1], name=name)
         target = [1, 2, 3]
         result = reindex_to_superset(index, target)
         expected = Index([1, 2, 3], name=name)
         assert_index_equal(result, expected)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         index = Index([1, 2, 3])
         target = [1]
         with raises(ReindexToSuperSetError, match=r"Index .* must be a subset of .*\."):
@@ -415,14 +415,14 @@ class TestReindexToSuperSet:
 
 
 class TestRedirectEmptyPandasConcat:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with raises(EmptyPandasConcatError), redirect_empty_pandas_concat():
             _ = concat([])
 
 
 class TestRenameIndex:
     @given(index=int_indexes(), name=text_ascii())
-    def test_main(self, *, index: IndexI, name: str) -> None:
+    def test_main(self: Self, *, index: IndexI, name: str) -> None:
         renamed = rename_index(index, name)
         assert renamed.name == name
 
@@ -491,7 +491,7 @@ class TestSeriesMinMax:
             _ = func(x, y)
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
-    def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
+    def test_error(self: Self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore
         with raises(
@@ -506,19 +506,19 @@ class TestSeriesMinMax:
 
 class TestSortIndex:
     @given(index=int_indexes())
-    def test_main(self, *, index: IndexI) -> None:
+    def test_main(self: Self, *, index: IndexI) -> None:
         sorted_ = sort_index(index)
         assert_index_equal(sorted_, cast(Any, index.sort_values()))
 
 
 class TestTimestampMinMaxAsDate:
-    def test_min(self) -> None:
+    def test_min(self: Self) -> None:
         date = TIMESTAMP_MIN_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(cast(Timestamp, date - dt.timedelta(days=1)))
 
-    def test_max(self) -> None:
+    def test_max(self: Self) -> None:
         date = TIMESTAMP_MAX_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
@@ -526,13 +526,13 @@ class TestTimestampMinMaxAsDate:
 
 
 class TestTimestampMinMaxAsDateTime:
-    def test_min(self) -> None:
+    def test_min(self: Self) -> None:
         date = TIMESTAMP_MIN_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(date - dt.timedelta(microseconds=1))
 
-    def test_max(self) -> None:
+    def test_max(self: Self) -> None:
         date = TIMESTAMP_MAX_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
         with raises(ValueError, match="Out of bounds nanosecond timestamp"):
@@ -547,10 +547,10 @@ class TestTimestampToDate:
             param(to_datetime("2000-01-01 12:00:00"), dt.date(2000, 1, 1)),
         ],
     )
-    def test_main(self, *, timestamp: Any, expected: dt.date) -> None:
+    def test_main(self: Self, *, timestamp: Any, expected: dt.date) -> None:
         assert timestamp_to_date(timestamp) == expected
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(TimestampToDateTimeError):
             _ = timestamp_to_date(NaT)
 
@@ -570,16 +570,16 @@ class TestTimestampToDateTime:
             ),
         ],
     )
-    def test_main(self, *, timestamp: Any, expected: dt.datetime) -> None:
+    def test_main(self: Self, *, timestamp: Any, expected: dt.datetime) -> None:
         assert timestamp_to_datetime(timestamp) == expected
 
     @given(timestamp=timestamps(allow_nanoseconds=True))
-    def test_warn(self, *, timestamp: Timestamp) -> None:
+    def test_warn(self: Self, *, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
         with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
             _ = timestamp_to_datetime(timestamp)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(TimestampToDateTimeError):
             _ = timestamp_to_datetime(NaT)
 
@@ -613,7 +613,7 @@ class TestToNumpy:
 
 class TestUnionIndexes:
     @given(name=text_ascii() | none())
-    def test_first_named(self, *, name: str | None) -> None:
+    def test_first_named(self: Self, *, name: str | None) -> None:
         left = Index([1, 2, 3], name=name)
         right = Index([2, 3, 4])
         result1 = union_indexes(left, right)
@@ -623,7 +623,7 @@ class TestUnionIndexes:
         assert_index_equal(result2, expected)
 
     @given(lname=text_ascii(), rname=text_ascii())
-    def test_both_named_taking_first(self, *, lname: str, rname: str) -> None:
+    def test_both_named_taking_first(self: Self, *, lname: str, rname: str) -> None:
         left = Index([1, 2, 3], name=lname)
         right = Index([2, 3, 4], name=rname)
         result = union_indexes(left, right, names="first")
@@ -631,7 +631,7 @@ class TestUnionIndexes:
         assert_index_equal(result, expected)
 
     @given(lname=text_ascii(), rname=text_ascii())
-    def test_both_named_taking_last(self, *, lname: str, rname: str) -> None:
+    def test_both_named_taking_last(self: Self, *, lname: str, rname: str) -> None:
         left = Index([1, 2, 3], name=lname)
         right = Index([2, 3, 4], name=rname)
         result = union_indexes(left, right, names="last")
@@ -639,7 +639,7 @@ class TestUnionIndexes:
         assert_index_equal(result, expected)
 
     @given(lname=text_ascii(), rname=text_ascii())
-    def test_both_named_error(self, *, lname: str, rname: str) -> None:
+    def test_both_named_error(self: Self, *, lname: str, rname: str) -> None:
         _ = assume(lname != rname)
         left = Index([1, 2, 3], name=lname)
         right = Index([2, 3, 4], name=rname)

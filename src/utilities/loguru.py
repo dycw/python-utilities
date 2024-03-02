@@ -77,7 +77,7 @@ class _InterceptHandler(Handler):
     """
 
     @override
-    def emit(self, record: LogRecord) -> None:
+    def emit(self: Self, record: LogRecord) -> None:
         # Get corresponding Loguru level if it exists.
         try:
             level = logger.level(record.levelname).name

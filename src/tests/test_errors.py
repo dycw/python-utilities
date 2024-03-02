@@ -12,14 +12,14 @@ from utilities.iterables import one
 
 
 class TestImpossibleCaseError:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         x = None
         with raises(ImpossibleCaseError, match=r"Case must be possible: x=None\."):
             raise ImpossibleCaseError(case=[f"{x=}"])
 
 
 class TestRedirectError:
-    def test_redirect(self) -> None:
+    def test_redirect(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -27,7 +27,7 @@ class TestRedirectError:
         with raises(SecondError), redirect_error(FirstError, SecondError):
             raise FirstError
 
-    def test_no_redirect(self) -> None:
+    def test_no_redirect(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -37,7 +37,7 @@ class TestRedirectError:
         with raises(FirstError), redirect_error(SecondError, ThirdError):
             raise FirstError
 
-    def test_match_and_redirect(self) -> None:
+    def test_match_and_redirect(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -46,7 +46,7 @@ class TestRedirectError:
             msg = "text"
             raise FirstError(msg)
 
-    def test_match_and_args_empty_error(self) -> None:
+    def test_match_and_args_empty_error(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -57,7 +57,7 @@ class TestRedirectError:
         ):
             raise FirstError()  # noqa: RSE102
 
-    def test_match_and_args_non_unique_error(self) -> None:
+    def test_match_and_args_non_unique_error(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -69,7 +69,7 @@ class TestRedirectError:
             args = "x", "y"
             raise FirstError(args)
 
-    def test_match_and_arg_not_string_error(self) -> None:
+    def test_match_and_arg_not_string_error(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -81,7 +81,7 @@ class TestRedirectError:
             arg = 0
             raise FirstError(arg)
 
-    def test_match_and_no_redirect(self) -> None:
+    def test_match_and_no_redirect(self: Self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
@@ -96,7 +96,7 @@ class TestRedirectError:
 
 class TestRetry:
     @mark.parametrize("use_predicate", [param(None), param(True), param(False)])
-    def test_main(self, *, use_predicate: bool | None) -> None:
+    def test_main(self: Self, *, use_predicate: bool | None) -> None:
         class TooLargeError(Exception): ...
 
         def increment() -> int:

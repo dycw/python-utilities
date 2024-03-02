@@ -434,7 +434,7 @@ class _CheckIntegerEqualError(CheckIntegerError):
     equal: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Integer must be equal to {self.equal}; got {self.n}"
 
 
@@ -443,7 +443,7 @@ class _CheckIntegerEqualOrApproxError(CheckIntegerError):
     equal_or_approx: int | tuple[int, float]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match self.equal_or_approx:
             case target, error:
                 desc = f"approximately equal to {target} (error {error:%})"
@@ -457,7 +457,7 @@ class _CheckIntegerMinError(CheckIntegerError):
     min_: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Integer must be at least {self.min_}; got {self.n}"
 
 
@@ -466,7 +466,7 @@ class _CheckIntegerMaxError(CheckIntegerError):
     max_: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Integer must be at most {self.max_}; got {self.n}"
 
 

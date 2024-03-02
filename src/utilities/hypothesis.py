@@ -700,12 +700,12 @@ _MDF = TypeVar("_MDF")
 
 class _MaybeDrawFn(Protocol):
     @overload
-    def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
+    def __call__(self: Self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
 
     @overload
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
+    def __call__(self: Self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
 
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+    def __call__(self: Self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
         raise NotImplementedError(obj)  # pragma: no cover
 
 
@@ -763,7 +763,7 @@ def setup_hypothesis_profiles(
         debug = auto()
 
         @property
-        def max_examples(self) -> int:
+        def max_examples(self: Self) -> int:
             match self:
                 case Profile.dev | Profile.debug:
                     return 10
@@ -775,7 +775,7 @@ def setup_hypothesis_profiles(
                     assert_never(never)
 
         @property
-        def verbosity(self) -> Verbosity | None:
+        def verbosity(self: Self) -> Verbosity | None:
             match self:
                 case Profile.dev | Profile.default | Profile.ci:
                     return Verbosity.normal

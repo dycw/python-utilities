@@ -8,7 +8,7 @@ from utilities.pyinstrument import profile
 
 
 class TestProfile:
-    def test_main(self, tmp_path: Path) -> None:
+    def test_main(self: Self, tmp_path: Path) -> None:
         with profile(path=tmp_path):
             sleep(1e-3)
 

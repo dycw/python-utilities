@@ -46,10 +46,10 @@ from utilities.iterables import (
 
 class TestCheckDuplicates:
     @given(x=sets(integers()))
-    def test_main(self, *, x: set[int]) -> None:
+    def test_main(self: Self, *, x: set[int]) -> None:
         check_duplicates(x)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(
             CheckDuplicatesError,
             match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)\.",
@@ -58,38 +58,38 @@ class TestCheckDuplicates:
 
 
 class TestCheckIterablesEqual:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         check_iterables_equal([], [])
 
-    def test_error_differing_items_and_left_longer(self) -> None:
+    def test_error_differing_items_and_left_longer(self: Self) -> None:
         with raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer\.",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
-    def test_error_differing_items_and_right_longer(self) -> None:
+    def test_error_differing_items_and_right_longer(self: Self) -> None:
         with raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer\.",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
-    def test_error_differing_items_and_same_length(self) -> None:
+    def test_error_differing_items_and_same_length(self: Self) -> None:
         with raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)\.",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
-    def test_error_no_differing_items_just_left_longer(self) -> None:
+    def test_error_no_differing_items_just_left_longer(self: Self) -> None:
         with raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; left was longer\.",
         ):
             check_iterables_equal([1, 2, 3], [1])
 
-    def test_error_no_differing_items_just_right_longer(self) -> None:
+    def test_error_no_differing_items_just_right_longer(self: Self) -> None:
         with raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; right was longer\.",
@@ -98,10 +98,10 @@ class TestCheckIterablesEqual:
 
 
 class TestCheckLength:
-    def test_equal_pass(self) -> None:
+    def test_equal_pass(self: Self) -> None:
         check_length([], equal=0)
 
-    def test_equal_fail(self) -> None:
+    def test_equal_fail(self: Self) -> None:
         with raises(CheckLengthError, match=r"Object .* must have length .*; got .*\."):
             check_length([], equal=1)
 
@@ -127,19 +127,19 @@ class TestCheckLength:
         with raises(CheckLengthError, match=match):
             check_length([], equal_or_approx=equal_or_approx)
 
-    def test_min_pass(self) -> None:
+    def test_min_pass(self: Self) -> None:
         check_length([], min=0)
 
-    def test_min_error(self) -> None:
+    def test_min_error(self: Self) -> None:
         with raises(
             CheckLengthError, match=r"Object .* must have minimum length .*; got .*\."
         ):
             check_length([], min=1)
 
-    def test_max_pass(self) -> None:
+    def test_max_pass(self: Self) -> None:
         check_length([], max=0)
 
-    def test_max_error(self) -> None:
+    def test_max_error(self: Self) -> None:
         with raises(
             CheckLengthError, match=r"Object .* must have maximum length .*; got .*\."
         ):
@@ -147,10 +147,10 @@ class TestCheckLength:
 
 
 class TestCheckLengthsEqual:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         check_lengths_equal([], [])
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(
             CheckLengthsEqualError,
             match=r"Sized objects .* and .* must have the same length; got .* and .*\.",
@@ -159,52 +159,52 @@ class TestCheckLengthsEqual:
 
 
 class TestCheckMappingsEqual:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         check_mappings_equal({}, {})
 
-    def test_error_extra_and_missing_and_differing_values(self) -> None:
+    def test_error_extra_and_missing_and_differing_values(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 9, "d": 4})
 
-    def test_error_extra_and_missing(self) -> None:
+    def test_error_extra_and_missing(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .* and right had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 3, "d": 4})
 
-    def test_error_extra_and_differing_values(self) -> None:
+    def test_error_extra_and_differing_values(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
-    def test_error_missing_and_differing_values(self) -> None:
+    def test_error_missing_and_differing_values(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
-    def test_error_extra_only(self) -> None:
+    def test_error_extra_only(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
-    def test_error_missing_only(self) -> None:
+    def test_error_missing_only(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; right had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
-    def test_error_differing_values_only(self) -> None:
+    def test_error_differing_values_only(self: Self) -> None:
         with raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; differing values were \(.*, .*, k=.*\)\.",
@@ -216,24 +216,24 @@ class TestCheckSetsEqual:
     @mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
-    def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
+    def test_pass(self: Self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_sets_equal(left, right)
 
-    def test_error_extra_and_missing(self) -> None:
+    def test_error_extra_and_missing(self: Self) -> None:
         with raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; left had extra items .* and right had extra items .*\.",
         ):
             check_sets_equal({1, 2, 3}, {2, 3, 4})
 
-    def test_error_extra(self) -> None:
+    def test_error_extra(self: Self) -> None:
         with raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; left had extra items .*\.",
         ):
             check_sets_equal({1, 2, 3}, set())
 
-    def test_error_missing(self) -> None:
+    def test_error_missing(self: Self) -> None:
         with raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; right had extra items .*\.",
@@ -242,24 +242,24 @@ class TestCheckSetsEqual:
 
 
 class TestCheckSubMapping:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         check_submapping({}, {})
 
-    def test_error_extra_and_differing_values(self) -> None:
+    def test_error_extra_and_differing_values(self: Self) -> None:
         with raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; left had extra keys .* and differing values were \(.*, .*., k=.*\)\.",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
-    def test_error_extra_only(self) -> None:
+    def test_error_extra_only(self: Self) -> None:
         with raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; left had extra keys .*\.",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
-    def test_error_differing_values_only(self) -> None:
+    def test_error_differing_values_only(self: Self) -> None:
         with raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; differing values were \(.*, .*, k=.*\)\.",
@@ -271,10 +271,10 @@ class TestCheckSubSet:
     @mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
-    def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
+    def test_pass(self: Self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_subset(left, right)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(
             CheckSubSetError,
             match=r"Set .* must be a subset of .*; left had extra items .*\.",
@@ -283,24 +283,24 @@ class TestCheckSubSet:
 
 
 class TestCheckSuperMapping:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         check_supermapping({}, {})
 
-    def test_error_missing_and_differing_values(self) -> None:
+    def test_error_missing_and_differing_values(self: Self) -> None:
         with raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_supermapping({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
-    def test_error_extra_only(self) -> None:
+    def test_error_extra_only(self: Self) -> None:
         with raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; right had extra keys .*\.",
         ):
             check_supermapping({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
-    def test_error_differing_values_only(self) -> None:
+    def test_error_differing_values_only(self: Self) -> None:
         with raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; differing values were \(.*, .*, k=.*\)\.",
@@ -312,10 +312,10 @@ class TestCheckSuperSet:
     @mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
-    def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
+    def test_pass(self: Self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_superset(left, right)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(
             CheckSuperSetError,
             match=r"Set .* must be a superset of .*; right had extra items .*\.",
@@ -337,34 +337,34 @@ class TestChunked:
         result = list(chunked(iterable, 3))
         assert result == expected
 
-    def test_odd(self) -> None:
+    def test_odd(self: Self) -> None:
         result = list(chunked("ABCDE", 3))
         expected = [["A", "B", "C"], ["D", "E"]]
         assert result == expected
 
 
 class TestEnsureHashables:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert ensure_hashables(1, 2, a=3, b=4) == ([1, 2], {"a": 3, "b": 4})
 
 
 class TestEnsureIterable:
     @mark.parametrize("obj", [param([]), param(()), param("")])
-    def test_main(self, *, obj: Any) -> None:
+    def test_main(self: Self, *, obj: Any) -> None:
         _ = ensure_iterable(obj)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(EnsureIterableError, match=r"Object .* must be iterable\."):
             _ = ensure_iterable(None)
 
 
 class TestEnsureIterableNotStr:
     @mark.parametrize("obj", [param([]), param(())])
-    def test_main(self, *, obj: Any) -> None:
+    def test_main(self: Self, *, obj: Any) -> None:
         _ = ensure_iterable_not_str(obj)
 
     @mark.parametrize("obj", [param(None), param("")])
-    def test_error(self, *, obj: Any) -> None:
+    def test_error(self: Self, *, obj: Any) -> None:
         with raises(
             EnsureIterableNotStrError,
             match=r"Object .* must be iterable, but not a string\.",
@@ -377,7 +377,7 @@ class TestIsIterable:
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", True)],
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self: Self, *, obj: Any, expected: bool) -> None:
         assert is_iterable(obj) is expected
 
 
@@ -386,19 +386,19 @@ class TestIsIterableNotStr:
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", False)],
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self: Self, *, obj: Any, expected: bool) -> None:
         assert is_iterable_not_str(obj) is expected
 
 
 class TestOne:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert one([None]) is None
 
-    def test_error_empty(self) -> None:
+    def test_error_empty(self: Self) -> None:
         with raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
             _ = one([])
 
-    def test_error_non_unique(self) -> None:
+    def test_error_non_unique(self: Self) -> None:
         with raises(
             OneNonUniqueError,
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
@@ -407,24 +407,24 @@ class TestOne:
 
 
 class TestTake:
-    def test_simple(self) -> None:
+    def test_simple(self: Self) -> None:
         result = take(5, range(10))
         expected = list(range(5))
         assert result == expected
 
-    def test_null(self) -> None:
+    def test_null(self: Self) -> None:
         result = take(0, range(10))
         expected = []
         assert result == expected
 
-    def test_negative(self) -> None:
+    def test_negative(self: Self) -> None:
         with raises(
             ValueError,
             match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
         ):
             _ = take(-3, range(10))
 
-    def test_too_much(self) -> None:
+    def test_too_much(self: Self) -> None:
         result = take(10, range(5))
         expected = list(range(5))
         assert result == expected
@@ -432,7 +432,7 @@ class TestTake:
 
 class TestTranspose:
     @given(n=integers(1, 10))
-    def test_singles(self, *, n: int) -> None:
+    def test_singles(self: Self, *, n: int) -> None:
         iterable = ((i,) for i in range(n))
         result = transpose(iterable)
         assert isinstance(result, tuple)
@@ -443,7 +443,7 @@ class TestTranspose:
             assert isinstance(i, int)
 
     @given(n=integers(1, 10))
-    def test_pairs(self, *, n: int) -> None:
+    def test_pairs(self: Self, *, n: int) -> None:
         iterable = ((i, i) for i in range(n))
         result = transpose(iterable)
         assert isinstance(result, tuple)
@@ -454,7 +454,7 @@ class TestTranspose:
                 assert isinstance(i, int)
 
     @given(n=integers(1, 10))
-    def test_triples(self, *, n: int) -> None:
+    def test_triples(self: Self, *, n: int) -> None:
         iterable = ((i, i, i) for i in range(n))
         result = transpose(iterable)
         assert isinstance(result, tuple)
@@ -465,7 +465,7 @@ class TestTranspose:
                 assert isinstance(i, int)
 
     @given(n=integers(1, 10))
-    def test_quadruples(self, *, n: int) -> None:
+    def test_quadruples(self: Self, *, n: int) -> None:
         iterable = ((i, i, i, i) for i in range(n))
         result = transpose(iterable)
         assert isinstance(result, tuple)
@@ -476,7 +476,7 @@ class TestTranspose:
                 assert isinstance(i, int)
 
     @given(n=integers(1, 10))
-    def test_quintuples(self, *, n: int) -> None:
+    def test_quintuples(self: Self, *, n: int) -> None:
         iterable = ((i, i, i, i, i) for i in range(n))
         result = transpose(iterable)
         assert isinstance(result, tuple)

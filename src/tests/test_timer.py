@@ -13,7 +13,7 @@ from utilities.timer import Timer, TimerError
 
 
 class TestTimer:
-    def test_context_manager(self) -> None:
+    def test_context_manager(self: Self) -> None:
         duration = 0.01
         with Timer() as timer:
             assert isinstance(timer, Timer)
@@ -39,14 +39,14 @@ class TestTimer:
             pass
         assert op(timer, dur) is expected
 
-    def test_comparison_between_timers(self) -> None:
+    def test_comparison_between_timers(self: Self) -> None:
         with Timer() as timer1:
             pass
         with Timer() as timer2:
             pass
         assert isinstance(timer1 == timer2, bool)
 
-    def test_comparison_error(self) -> None:
+    def test_comparison_error(self: Self) -> None:
         match = (
             "Timer must be compared to a number, Timer, or timedelta; got .* instead"
         )
@@ -54,13 +54,13 @@ class TestTimer:
             _ = Timer() == "error"
 
     @mark.parametrize("func", [param(repr), param(str)])
-    def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
+    def test_repr_and_str(self: Self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             sleep(0.01)
         as_str = func(timer)
         assert search(r"^\d+:\d{2}:\d{2}\.\d{6}$", as_str)
 
-    def test_running(self) -> None:
+    def test_running(self: Self) -> None:
         duration = 0.01
         timer = Timer()
         sleep(2 * duration)
@@ -68,6 +68,6 @@ class TestTimer:
         sleep(2 * duration)
         assert timer >= 2 * duration
 
-    def test_timedelta(self) -> None:
+    def test_timedelta(self: Self) -> None:
         timer = Timer()
         assert isinstance(timer.timedelta, dt.timedelta)

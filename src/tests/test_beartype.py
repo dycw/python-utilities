@@ -20,12 +20,12 @@ class Example:
 
 
 class TestBeartypeIfDev:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert identity(0) == 0
         with raises(BeartypeCallHintParamViolation):
             _ = identity(0.0)  # type: ignore
 
-    def test_dataclass(self) -> None:
+    def test_dataclass(self: Self) -> None:
         assert Example(0).x == 0
         with raises(BeartypeCallHintParamViolation):
             _ = Example(0.0)  # type: ignore

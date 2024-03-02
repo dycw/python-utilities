@@ -24,14 +24,14 @@ from utilities.hypothesis import (
 class TestGetBranchName:
     @given(data=data(), branch=text_ascii(min_size=1))
     @settings_with_reduced_examples()
-    def test_main(self, *, data: DataObject, branch: str) -> None:
+    def test_main(self: Self, *, data: DataObject, branch: str) -> None:
         root = data.draw(git_repos(branch=branch))
         result = get_branch_name(cwd=root)
         assert result == branch
 
 
 class TestGetRepoName:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         result = get_repo_name()
         expected = "python-utilities"
         assert result == expected
@@ -40,12 +40,12 @@ class TestGetRepoName:
 class TestGetRepoRoot:
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_main(self, *, root: Path) -> None:
+    def test_main(self: Self, *, root: Path) -> None:
         result = get_repo_root(cwd=root)
         expected = root.resolve()
         assert result == expected
 
-    def test_error(self, *, tmp_path: Path) -> None:
+    def test_error(self: Self, *, tmp_path: Path) -> None:
         with raises(GetRepoRootError):
             _ = get_repo_root(cwd=tmp_path)
 
@@ -53,7 +53,7 @@ class TestGetRepoRoot:
 class TestGetRepoRootOrCwdSubPath:
     @given(root=git_repos())
     @settings_with_reduced_examples()
-    def test_exists(self, *, root: Path) -> None:
+    def test_exists(self: Self, *, root: Path) -> None:
         def get_file(root: Path, /) -> Path:
             return Path(root, "file.txt")
 
@@ -62,7 +62,7 @@ class TestGetRepoRootOrCwdSubPath:
         assert result == expected
 
     @given(root=temp_paths())
-    def test_does_not_exist(self, *, root: Path) -> None:
+    def test_does_not_exist(self: Self, *, root: Path) -> None:
         def get_file(root: Path, /) -> Path:
             return Path(root, "file.txt")
 
@@ -70,7 +70,7 @@ class TestGetRepoRootOrCwdSubPath:
         assert result is None
 
     @given(root=temp_paths())
-    def test_missing(self, *, root: Path) -> None:
+    def test_missing(self: Self, *, root: Path) -> None:
         def get_file_1(root: Path, /) -> Path:
             return Path(root, "file_1.txt")
 
@@ -87,7 +87,7 @@ class TestGetRepoRootOrCwdSubPath:
 class TestValidRepoPath:
     @given(root=git_repos(), file_name=text_ascii())
     @settings_with_reduced_examples()
-    def test_main(self, *, root: Path, file_name: str) -> None:
+    def test_main(self: Self, *, root: Path, file_name: str) -> None:
         result = get_repo_root(cwd=root).joinpath(file_name)
         expected = Path(root.resolve(), file_name)
         assert result == expected

@@ -22,7 +22,7 @@ class EnsureStrError(EnsureClassError):
     cls: type[str] = str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be a string; got {get_class_name(self.obj)} instead"
 
 

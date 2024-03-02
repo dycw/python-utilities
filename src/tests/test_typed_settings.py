@@ -54,7 +54,7 @@ _T = TypeVar("_T")
 
 class TestClickField:
     @given(default=integers(), appname=app_names, value=integers())
-    def test_main(self, *, default: int, appname: str, value: int) -> None:
+    def test_main(self: Self, *, default: int, appname: str, value: int) -> None:
         @dataclass(frozen=True)
         class Config:
             num: int = click_field(default=default, param_decls=("-n", "--num"))
@@ -104,7 +104,7 @@ class TestClickOptions:
         self._run_test(test_cls, default, appname, serialize, root, value, cfg)
 
     @given(data=data(), appname=app_names, root=temp_paths())
-    def test_enum(self, *, data: DataObject, appname: str, root: Path) -> None:
+    def test_enum(self: Self, *, data: DataObject, appname: str, root: Path) -> None:
         class Truth(enum.Enum):
             true = auto()
             false = auto()
@@ -163,10 +163,10 @@ class TestClickOptions:
 
 
 class TestGetLoaders:
-    def test_success(self) -> None:
+    def test_success(self: Self) -> None:
         _ = _get_loaders()
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(_GetLoadersError, match="App name .* must not contain underscores"):
             _ = _get_loaders(appname="app_name")
 
@@ -236,7 +236,7 @@ class TestLoadSettings:
 
     @given(appname=app_names)
     @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
-    def test_errors(self, *, appname: str, cls: Any) -> None:
+    def test_errors(self: Self, *, appname: str, cls: Any) -> None:
         @dataclass(frozen=True)
         class Settings:
             value: cls = None

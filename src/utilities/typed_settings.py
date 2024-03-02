@@ -26,7 +26,7 @@ from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 from typed_settings.converters import TSConverter
 from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
-from typing_extensions import override
+from typing_extensions import Self, override
 
 import utilities.click
 from utilities.click import Date, DateTime, Time, Timedelta
@@ -115,7 +115,7 @@ class _GetLoadersError(Exception):
     appname: str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"App name {self.appname!r} must not contain underscores"
 
 

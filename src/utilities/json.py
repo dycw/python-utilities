@@ -152,14 +152,14 @@ class _JsonSerializationTimeZoneError(JsonSerializationError):
     tzinfo: dt.tzinfo
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Invalid timezone: {self.tzinfo}."
 
 
 @dataclass(frozen=True, kw_only=True)
 class _JsonSerializationTypeError(JsonSerializationError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Unsupported type: {get_class_name(self.obj)}."
 
 

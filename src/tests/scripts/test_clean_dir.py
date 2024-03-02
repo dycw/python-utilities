@@ -7,6 +7,7 @@ from click.testing import CliRunner
 from freezegun import freeze_time
 from hypothesis import given
 from hypothesis.strategies import integers
+from typing_extensions import Self
 
 from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import temp_paths
@@ -19,7 +20,7 @@ class TestCleanDir:
     timedelta = dt.timedelta(days=Config().days + 1)
 
     @skipif_windows
-    def test_file(self, *, tmp_path: Path) -> None:
+    def test_file(self: Self, *, tmp_path: Path) -> None:
         Path(tmp_path, "file").touch()
         runner = CliRunner()
         args = ["--path", str(tmp_path)]
@@ -28,7 +29,7 @@ class TestCleanDir:
         assert result.exit_code == 0
 
     @skipif_windows
-    def test_dir_to_remove(self, *, tmp_path: Path) -> None:
+    def test_dir_to_remove(self: Self, *, tmp_path: Path) -> None:
         Path(tmp_path, "dir").mkdir()
         runner = CliRunner()
         args = ["--path", str(tmp_path)]
@@ -36,7 +37,7 @@ class TestCleanDir:
         assert result.exit_code == 0
 
     @skipif_windows
-    def test_dir_to_retain(self, *, tmp_path: Path) -> None:
+    def test_dir_to_retain(self: Self, *, tmp_path: Path) -> None:
         dir_ = Path(tmp_path, "dir")
         dir_.mkdir()
         Path(dir_, "file").touch()
@@ -46,7 +47,7 @@ class TestCleanDir:
         assert result.exit_code == 0
 
     @skipif_windows
-    def test_symlink(self, *, tmp_path: Path) -> None:
+    def test_symlink(self: Self, *, tmp_path: Path) -> None:
         file = Path(tmp_path, "file")
         file.touch()
         Path(tmp_path, "second").symlink_to(file)
@@ -58,7 +59,7 @@ class TestCleanDir:
 
     @skipif_windows
     @given(root=temp_paths(), chunk_size=integers(1, 10))
-    def test_chunk_size(self, *, root: Path, chunk_size: int) -> None:
+    def test_chunk_size(self: Self, *, root: Path, chunk_size: int) -> None:
         Path(root, "file").touch()
         runner = CliRunner()
         args = ["--path", str(root), "--chunk-size", str(chunk_size)]
@@ -67,7 +68,7 @@ class TestCleanDir:
         assert result.exit_code == 0
 
     @skipif_windows
-    def test_dry_run(self, *, tmp_path: Path) -> None:
+    def test_dry_run(self: Self, *, tmp_path: Path) -> None:
         Path(tmp_path, "file").touch()
         runner = CliRunner()
         args = ["--path", str(tmp_path), "--dry-run"]

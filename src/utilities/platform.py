@@ -36,7 +36,7 @@ class GetSystemError(Exception):
     sys: str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (  # pragma: no cover
             f"System must be one of Windows, Darwin, Linux; got {self.sys!r} instead"
         )

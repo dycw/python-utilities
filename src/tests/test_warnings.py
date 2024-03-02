@@ -10,16 +10,16 @@ from utilities.warnings import catch_warnings_as_errors, suppress_warnings
 
 
 class TestCatchWarningsAsErrors:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with raises(UserWarning), catch_warnings_as_errors():
             warn("", stacklevel=2)
 
-    def test_unbound_variables(self) -> None:
+    def test_unbound_variables(self: Self) -> None:
         with catch_warnings_as_errors():
             x = None
         assert x is None
 
-    def test_one_warning(self) -> None:
+    def test_one_warning(self: Self) -> None:
         class CustomWarning(UserWarning): ...
 
         with warns(CustomWarning):
@@ -28,7 +28,7 @@ class TestCatchWarningsAsErrors:
             warn("", category=CustomWarning, stacklevel=2)
 
     @given(data=data())
-    def test_multiple_warnings(self, data: DataObject) -> None:
+    def test_multiple_warnings(self: Self, data: DataObject) -> None:
         class FirstWarning(UserWarning): ...
 
         class SecondWarning(UserWarning): ...
@@ -44,16 +44,16 @@ class TestCatchWarningsAsErrors:
 
 
 class TestSuppressWarnings:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with suppress_warnings():
             warn("", stacklevel=2)
 
-    def test_unbound_variables(self) -> None:
+    def test_unbound_variables(self: Self) -> None:
         with suppress_warnings():
             x = None
         assert x is None
 
-    def test_one_warning(self) -> None:
+    def test_one_warning(self: Self) -> None:
         class CustomWarning(UserWarning): ...
 
         with warns(CustomWarning):
@@ -62,7 +62,7 @@ class TestSuppressWarnings:
             warn("", category=CustomWarning, stacklevel=2)
 
     @given(data=data())
-    def test_multiple_warnings(self, data: DataObject) -> None:
+    def test_multiple_warnings(self: Self, data: DataObject) -> None:
         class FirstWarning(UserWarning): ...
 
         class SecondWarning(UserWarning): ...

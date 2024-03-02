@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+
+from typing_extensions import Self, override
+
 import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
@@ -465,7 +468,7 @@ class Dialect(enum.Enum):
     sqlite = auto()
 
     @property
-    def max_params(self, /) -> int:
+    def max_params(self: Self, /) -> int:
         match self:
             case Dialect.mssql:  # pragma: no cover
                 return 2100
@@ -576,7 +579,7 @@ class GetDialectError(Exception):
     dialect: sqlalchemy.Dialect
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (  # pragma: no cover
             f"Dialect must be one of MS SQL, MySQL, Oracle, PostgreSQL or SQLite; got {self.dialect} instead"
         )
@@ -596,7 +599,7 @@ class GetTableError(Exception):
     obj: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 

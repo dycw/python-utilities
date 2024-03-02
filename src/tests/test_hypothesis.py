@@ -125,7 +125,7 @@ from utilities.tempfile import TemporaryDirectory
 
 class TestAssumeDoesNotRaise:
     @given(x=booleans())
-    def test_no_match_and_suppressed(self, *, x: bool) -> None:
+    def test_no_match_and_suppressed(self: Self, *, x: bool) -> None:
         with assume_does_not_raise(ValueError):
             if x is True:
                 msg = "x is True"
@@ -133,14 +133,14 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=booleans())
-    def test_no_match_and_not_suppressed(self, *, x: bool) -> None:
+    def test_no_match_and_not_suppressed(self: Self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
                 raise ValueError(msg)
 
     @given(x=booleans())
-    def test_with_match_and_suppressed(self, *, x: bool) -> None:
+    def test_with_match_and_suppressed(self: Self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with assume_does_not_raise(ValueError, match=msg):
@@ -148,7 +148,7 @@ class TestAssumeDoesNotRaise:
         assert x is False
 
     @given(x=just(True))
-    def test_with_match_and_not_suppressed(self, *, x: bool) -> None:
+    def test_with_match_and_not_suppressed(self: Self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
             with (
@@ -160,7 +160,7 @@ class TestAssumeDoesNotRaise:
 
 class TestBoolArrays:
     @given(data=data(), shape=array_shapes())
-    def test_main(self, *, data: DataObject, shape: Shape) -> None:
+    def test_main(self: Self, *, data: DataObject, shape: Shape) -> None:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
@@ -182,13 +182,13 @@ class TestBoolDataArrays:
 
 class TestConcatenatedArrays:
     @given(data=data(), m=integers(0, 10), n=integers(0, 10))
-    def test_1d(self, *, data: DataObject, m: int, n: int) -> None:
+    def test_1d(self: Self, *, data: DataObject, m: int, n: int) -> None:
         arrays = just(zeros(n, dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, n))
         assert array.shape == (m, n)
 
     @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
-    def test_2d(self, *, data: DataObject, m: int, n: int, p: int) -> None:
+    def test_2d(self: Self, *, data: DataObject, m: int, n: int, p: int) -> None:
         arrays = just(zeros((n, p), dtype=float))
         array = data.draw(concatenated_arrays(arrays, m, (n, p)))
         assert array.shape == (m, n, p)
@@ -228,19 +228,19 @@ class TestDatetimesPd:
 
 class TestDatetime64DTypes:
     @given(dtype=datetime64_dtypes())
-    def test_main(self, *, dtype: Any) -> None:
+    def test_main(self: Self, *, dtype: Any) -> None:
         _ = dtype
 
 
 class TestDatetime64Kinds:
     @given(kind=datetime64_kinds())
-    def test_main(self, *, kind: Datetime64Kind) -> None:
+    def test_main(self: Self, *, kind: Datetime64Kind) -> None:
         _ = kind
 
 
 class TestDatetime64Units:
     @given(data=data(), kind=datetime64_kinds() | none())
-    def test_main(self, *, data: DataObject, kind: Datetime64Kind | None) -> None:
+    def test_main(self: Self, *, data: DataObject, kind: Datetime64Kind | None) -> None:
         unit = data.draw(datetime64_units(kind=kind))
         if kind is not None:
             assert datetime64_unit_to_kind(unit) == kind
@@ -248,7 +248,7 @@ class TestDatetime64Units:
 
 class TestDatetime64s:
     @given(data=data(), unit=datetime64_units())
-    def test_main(self, *, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_main(self: Self, *, data: DataObject, unit: Datetime64Unit) -> None:
         min_value = data.draw(datetime64s(unit=unit) | int64s() | none())
         max_value = data.draw(datetime64s(unit=unit) | int64s() | none())
         with assume_does_not_raise(InvalidArgument):
@@ -305,7 +305,9 @@ class TestDatetime64s:
                 assert date <= max_value
 
     @given(data=data(), unit=datetime64_units())
-    def test_valid_dates_error(self, *, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_valid_dates_error(
+        self: Self, *, data: DataObject, unit: Datetime64Unit
+    ) -> None:
         _ = assume(unit != "D")
         with raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_dates=True))
@@ -596,7 +598,7 @@ class TestFloatsExtra:
 class TestGitRepos:
     @given(data=data())
     @settings_with_reduced_examples(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         branch = data.draw(text_ascii(min_size=1) | none())
         path = data.draw(git_repos(branch=branch))
         assert set(path.iterdir()) == {Path(path, ".git")}
@@ -612,7 +614,7 @@ class TestGitRepos:
 
 class TestHashables:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         x = data.draw(hashables())
         _ = hash(x)
 
@@ -778,7 +780,7 @@ class TestIntDataArrays:
 
 class TestLiftDraw:
     @given(data=data(), x=booleans())
-    def test_fixed(self, *, data: DataObject, x: bool) -> None:
+    def test_fixed(self: Self, *, data: DataObject, x: bool) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
             _ = _draw(booleans())
@@ -788,7 +790,7 @@ class TestLiftDraw:
         assert result is x
 
     @given(data=data())
-    def test_strategy(self, *, data: DataObject) -> None:
+    def test_strategy(self: Self, *, data: DataObject) -> None:
         @composite
         def func(_draw: DrawFn, /) -> bool:
             return _draw(booleans())
@@ -821,17 +823,17 @@ class TestListsFixedLength:
 
 class TestNamespaceMixins:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         _ = data.draw(namespace_mixins())
 
     @given(namespace_mixin=namespace_mixins())
-    def test_first(self, *, namespace_mixin: Any) -> None:
+    def test_first(self: Self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task): ...
 
         _ = Example()
 
     @given(namespace_mixin=namespace_mixins())
-    def test_second(self, *, namespace_mixin: Any) -> None:
+    def test_second(self: Self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task): ...
 
         _ = Example()
@@ -839,7 +841,7 @@ class TestNamespaceMixins:
 
 class TestReducedExamples:
     @given(frac=floats(0.0, 10.0))
-    def test_main(self, *, frac: float) -> None:
+    def test_main(self: Self, *, frac: float) -> None:
         @settings_with_reduced_examples(frac)
         def test() -> None:
             pass
@@ -851,7 +853,7 @@ class TestReducedExamples:
 
 class TestSlices:
     @given(data=data(), iter_len=integers(0, 10))
-    def test_main(self, *, data: DataObject, iter_len: int) -> None:
+    def test_main(self: Self, *, data: DataObject, iter_len: int) -> None:
         slice_len = data.draw(integers(0, iter_len) | none())
         slice_ = data.draw(slices(iter_len, slice_len=slice_len))
         range_slice = range(iter_len)[slice_]
@@ -860,7 +862,7 @@ class TestSlices:
             assert len(range_slice) == slice_len
 
     @given(data=data(), iter_len=integers(0, 10))
-    def test_error(self, *, data: DataObject, iter_len: int) -> None:
+    def test_error(self: Self, *, data: DataObject, iter_len: int) -> None:
         with raises(
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
@@ -869,7 +871,7 @@ class TestSlices:
 
 class TestMergeIntoDictOfIndexes:
     @given(data=data())
-    def test_empty(self, *, data: DataObject) -> None:
+    def test_empty(self: Self, *, data: DataObject) -> None:
         _ = data.draw(_merge_into_dict_of_indexes())
 
     @given(
@@ -888,19 +890,19 @@ class TestMergeIntoDictOfIndexes:
 
 
 class TestSetupHypothesisProfiles:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         setup_hypothesis_profiles()
         curr = settings()
         assert Phase.shrink in curr.phases
         assert curr.max_examples in {10, 100, 1000}
 
-    def test_no_shrink(self) -> None:
+    def test_no_shrink(self: Self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
             setup_hypothesis_profiles()
         assert Phase.shrink not in settings().phases
 
     @given(max_examples=integers(1, 100))
-    def test_max_examples(self, *, max_examples: int) -> None:
+    def test_max_examples(self: Self, *, max_examples: int) -> None:
         with temp_environ({"HYPOTHESIS_MAX_EXAMPLES": str(max_examples)}):
             setup_hypothesis_profiles()
         assert settings().max_examples == max_examples
@@ -908,21 +910,21 @@ class TestSetupHypothesisProfiles:
 
 class TestSQLiteEngines:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_main(self: Self, *, engine: Engine) -> None:
         assert isinstance(engine, Engine)
         database = engine.url.database
         assert database is not None
         assert not valid_path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
-    def test_table(self, *, data: DataObject, ids: set[int]) -> None:
+    def test_table(self: Self, *, data: DataObject, ids: set[int]) -> None:
         metadata = MetaData()
         table = Table("example", metadata, Column("id_", Integer, primary_key=True))
         engine = data.draw(sqlite_engines(metadata=metadata))
         self._run_test(engine, table, ids)
 
     @given(data=data(), ids=sets(integers(0, 10)))
-    def test_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
+    def test_mapped_class(self: Self, *, data: DataObject, ids: set[int]) -> None:
         Base = declarative_base()  # noqa: N806
 
         class Example(Base):
@@ -1028,7 +1030,7 @@ class TestStrDataArrays:
 
 class TestTempDirs:
     @given(temp_dir=temp_dirs())
-    def test_main(self, *, temp_dir: TemporaryDirectory) -> None:
+    def test_main(self: Self, *, temp_dir: TemporaryDirectory) -> None:
         path = temp_dir.path
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
@@ -1048,12 +1050,14 @@ class TestTempDirs:
 
 class TestTempPaths:
     @given(path=temp_paths())
-    def test_main(self, *, path: Path) -> None:
+    def test_main(self: Self, *, path: Path) -> None:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
     @given(path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
-    def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
+    def test_writing_files(
+        self: Self, *, path: Path, contents: AbstractSet[str]
+    ) -> None:
         assert len(set(path.iterdir())) == 0
         as_set = set(maybe_yield_lower_case(contents))
         for content in as_set:
@@ -1209,24 +1213,24 @@ class TestUInt64s:
 
 class TestVersions:
     @given(data=data())
-    def test_main(self, data: DataObject) -> None:
+    def test_main(self: Self, data: DataObject) -> None:
         version = data.draw(versions())
         assert isinstance(version, Version)
 
     @given(data=data())
-    def test_min_version(self, data: DataObject) -> None:
+    def test_min_version(self: Self, data: DataObject) -> None:
         min_version = data.draw(versions())
         version = data.draw(versions(min_version=min_version))
         assert version >= min_version
 
     @given(data=data())
-    def test_max_version(self, data: DataObject) -> None:
+    def test_max_version(self: Self, data: DataObject) -> None:
         max_version = data.draw(versions())
         version = data.draw(versions(max_version=max_version))
         assert version <= max_version
 
     @given(data=data())
-    def test_min_and_max_version(self, data: DataObject) -> None:
+    def test_min_and_max_version(self: Self, data: DataObject) -> None:
         version1, version2 = data.draw(lists_fixed_length(versions(), 2))
         min_version = min(version1, version2)
         max_version = max(version1, version2)
@@ -1234,7 +1238,7 @@ class TestVersions:
         assert min_version <= version <= max_version
 
     @given(data=data())
-    def test_error(self, data: DataObject) -> None:
+    def test_error(self: Self, data: DataObject) -> None:
         version1, version2 = data.draw(lists_fixed_length(versions(), 2))
         _ = assume(version1 != version2)
         with raises(InvalidArgument):

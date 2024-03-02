@@ -38,7 +38,7 @@ class TestPPF:
         ),
         cutoff=floats(0.0, 10.0),
     )
-    def test_main(self, *, array: NDArrayF1, cutoff: float) -> None:
+    def test_main(self: Self, *, array: NDArrayF1, cutoff: float) -> None:
         result = ppf(array, cutoff)
         assert_equal(isfinite(result), isfinite(array))
         assert_equal(isnan(result), isnan(array))

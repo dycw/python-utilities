@@ -86,7 +86,7 @@ class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
     columns: IterableStrs
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have columns {self.columns}; got {self.df.columns}\n\n{self.df}"
 
 
@@ -104,7 +104,7 @@ class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
     dtypes: Iterable[PolarsDataType]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have dtypes {self.dtypes}; got {self.df.dtypes}\n\n{self.df}"
 
 
@@ -125,7 +125,7 @@ def _check_polars_dataframe_height(
 @dataclass(frozen=True, kw_only=True)
 class _CheckPolarsDataFrameHeightError(CheckPolarsDataFrameError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must satisfy the height requirements; got {self.df.height}\n\n{self.df}"
 
 
@@ -155,7 +155,7 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
     failed: AbstractSet[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         match list(self._yield_parts()):
             case (desc,):
                 pass
@@ -165,7 +165,7 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
                 assert_never(cast(Never, never))
         return f"DataFrame must satisfy the predicates; {desc}\n\n"
 
-    def _yield_parts(self) -> Iterator[str]:
+    def _yield_parts(self: Self) -> Iterator[str]:
         if len(self.missing) >= 1:
             yield f"missing columns were {self.missing}"
         if len(self.failed) >= 1:
@@ -188,7 +188,7 @@ class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have schema {self.schema}; got {self.df.columns}\n\n{self.df}"
 
 
@@ -204,7 +204,7 @@ class _CheckPolarsDataFrameSchemaIncError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame schema must include {self.schema}; got {self.df.schema}\n\n{self.df}"
 
 
@@ -218,7 +218,7 @@ class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
     shape: tuple[int, int]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (
             f"DataFrame must have shape {self.shape}; got {self.df.shape}\n\n{self.df}"
         )
@@ -242,7 +242,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must be sorted on {self.by}\n\n{self.df}"
 
 
@@ -261,7 +261,7 @@ class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must be unique on {self.by}\n\n{self.df}"
 
 
@@ -275,7 +275,7 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
     width: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (
             f"DataFrame must have width {self.width}; got {self.df.width}\n\n{self.df}"
         )

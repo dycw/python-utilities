@@ -5,6 +5,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 from pytest import fixture
+from typing_extensions import Self
 
 from utilities.pathlib import ensure_path
 from utilities.platform import IS_WINDOWS
@@ -24,7 +25,7 @@ def path_csv(*, tmp_path: Path) -> Path:
 
 
 class TestCSVToMarkdown:
-    def test_main(self, *, path_csv: Path) -> None:
+    def test_main(self: Self, *, path_csv: Path) -> None:
         result = _csv_to_markdown(path=path_csv)
         expected = """
             |Foo|Bar|
@@ -34,7 +35,7 @@ class TestCSVToMarkdown:
         """
         assert result == strip_and_dedent(expected)
 
-    def test_stdout(self, *, path_csv: Path) -> None:
+    def test_stdout(self: Self, *, path_csv: Path) -> None:
         runner = CliRunner()
         args = ["--path", str(path_csv)]
         result = runner.invoke(main, args)

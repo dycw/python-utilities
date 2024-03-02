@@ -36,14 +36,16 @@ class TestMD5Hash:
             param(sets(integers(), max_size=3)),
         ],
     )
-    def test_main(self, *, data: DataObject, strategy: SearchStrategy[Any]) -> None:
+    def test_main(
+        self: Self, *, data: DataObject, strategy: SearchStrategy[Any]
+    ) -> None:
         x, y = data.draw(tuples(strategy, strategy))
         res = md5_hash(x) == md5_hash(y)
         expected = x == y
         assert res is expected
 
     @given(x=integers(), y=integers())
-    def test_non_json_serializable(self, *, x: int, y: int) -> None:
+    def test_non_json_serializable(self: Self, *, x: int, y: int) -> None:
         res = md5_hash(_Example(x)) == md5_hash(_Example(y))
         expected = x == y
         assert res is expected

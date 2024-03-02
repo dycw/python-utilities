@@ -26,15 +26,15 @@ from utilities.polars import (
 
 
 class TestCheckPolarsDataFrame:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df)
 
-    def test_columns_pass(self) -> None:
+    def test_columns_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, columns=[])
 
-    def test_columns_error(self) -> None:
+    def test_columns_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -42,11 +42,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, columns=["value"])
 
-    def test_dtypes_pass(self) -> None:
+    def test_dtypes_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, dtypes=[])
 
-    def test_dtypes_error(self) -> None:
+    def test_dtypes_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -54,11 +54,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, dtypes=[Float64])
 
-    def test_height_pass(self) -> None:
+    def test_height_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0]})
         check_polars_dataframe(df, height=1)
 
-    def test_height_error(self) -> None:
+    def test_height_error(self: Self) -> None:
         df = DataFrame({"value": [0.0]})
         with raises(
             CheckPolarsDataFrameError,
@@ -66,11 +66,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, height=2)
 
-    def test_min_height_pass(self) -> None:
+    def test_min_height_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         check_polars_dataframe(df, min_height=1)
 
-    def test_min_height_error(self) -> None:
+    def test_min_height_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -78,11 +78,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, min_height=1)
 
-    def test_max_height_pass(self) -> None:
+    def test_max_height_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, max_height=1)
 
-    def test_max_height_error(self) -> None:
+    def test_max_height_error(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         with raises(
             CheckPolarsDataFrameError,
@@ -90,11 +90,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, max_height=1)
 
-    def test_predicates_pass(self) -> None:
+    def test_predicates_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         check_polars_dataframe(df, predicates={"value": isfinite})
 
-    def test_predicates_error_missing_columns_and_failed(self) -> None:
+    def test_predicates_error_missing_columns_and_failed(self: Self) -> None:
         df = DataFrame({"a": [0.0, nan], "b": [0.0, nan]})
         with raises(
             CheckPolarsDataFrameError,
@@ -102,7 +102,7 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, predicates={"a": isfinite, "c": isfinite})
 
-    def test_predicates_error_missing_columns_only(self) -> None:
+    def test_predicates_error_missing_columns_only(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -110,7 +110,7 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, predicates={"a": isfinite})
 
-    def test_predicates_error_failed_only(self) -> None:
+    def test_predicates_error_failed_only(self: Self) -> None:
         df = DataFrame({"a": [0.0, nan]})
         with raises(
             CheckPolarsDataFrameError,
@@ -118,11 +118,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, predicates={"a": isfinite})
 
-    def test_schema_pass(self) -> None:
+    def test_schema_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, schema={})
 
-    def test_schema_error_set_of_columns(self) -> None:
+    def test_schema_error_set_of_columns(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -130,7 +130,7 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, schema={"value": Float64})
 
-    def test_schema_error_order_of_columns(self) -> None:
+    def test_schema_error_order_of_columns(self: Self) -> None:
         df = DataFrame(schema={"a": Float64, "b": Float64})
         with raises(
             CheckPolarsDataFrameError,
@@ -138,11 +138,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, schema={"b": Float64, "a": Float64})
 
-    def test_schema_inc_pass(self) -> None:
+    def test_schema_inc_pass(self: Self) -> None:
         df = DataFrame({"foo": [0.0], "bar": [0.0]})
         check_polars_dataframe(df, schema_inc={"foo": Float64})
 
-    def test_schema_inc_error(self) -> None:
+    def test_schema_inc_error(self: Self) -> None:
         df = DataFrame({"foo": [0.0]})
         with raises(
             CheckPolarsDataFrameError,
@@ -150,11 +150,11 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, schema_inc={"bar": Float64})
 
-    def test_shape_pass(self) -> None:
+    def test_shape_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, shape=(0, 0))
 
-    def test_shape_error(self) -> None:
+    def test_shape_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -162,33 +162,33 @@ class TestCheckPolarsDataFrame:
         ):
             check_polars_dataframe(df, shape=(1, 1))
 
-    def test_sorted_pass(self) -> None:
+    def test_sorted_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         check_polars_dataframe(df, sorted="value")
 
-    def test_sorted_error(self) -> None:
+    def test_sorted_error(self: Self) -> None:
         df = DataFrame({"value": [1.0, 0.0]})
         with raises(
             CheckPolarsDataFrameError, match="DataFrame must be sorted on .*\n\n.*"
         ):
             check_polars_dataframe(df, sorted="value")
 
-    def test_unique_pass(self) -> None:
+    def test_unique_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         check_polars_dataframe(df, unique="value")
 
-    def test_unique_error(self) -> None:
+    def test_unique_error(self: Self) -> None:
         df = DataFrame({"value": [0.0, 0.0]})
         with raises(
             CheckPolarsDataFrameError, match="DataFrame must be unique on .*\n\n.*"
         ):
             check_polars_dataframe(df, unique="value")
 
-    def test_width_pass(self) -> None:
+    def test_width_pass(self: Self) -> None:
         df = DataFrame()
         check_polars_dataframe(df, width=0)
 
-    def test_width_error(self) -> None:
+    def test_width_error(self: Self) -> None:
         df = DataFrame()
         with raises(
             CheckPolarsDataFrameError,
@@ -198,7 +198,7 @@ class TestCheckPolarsDataFrame:
 
 
 class TestCheckPolarsDataFramePredicates:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
         _check_polars_dataframe_predicates(df, {"value": isfinite})
 
@@ -209,25 +209,27 @@ class TestCheckPolarsDataFramePredicates:
             param({"value": isfinite}, id="failed"),
         ],
     )
-    def test_error(self, *, predicates: Mapping[str, Callable[[Any], bool]]) -> None:
+    def test_error(
+        self: Self, *, predicates: Mapping[str, Callable[[Any], bool]]
+    ) -> None:
         df = DataFrame({"value": [0.0, nan]})
         with raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_predicates(df, predicates)
 
 
 class TestCheckPolarsDataFrameSchema:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         df = DataFrame({"value": [0.0]})
         _check_polars_dataframe_schema(df, {"value": Float64})
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         df = DataFrame()
         with raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema(df, {"value": Float64})
 
 
 class TestCheckPolarsDataFrameSchemaInc:
-    def test_pass(self) -> None:
+    def test_pass(self: Self) -> None:
         df = DataFrame({"foo": [0.0], "bar": [0.0]})
         _check_polars_dataframe_schema_inc(df, {"foo": Float64})
 
@@ -238,14 +240,14 @@ class TestCheckPolarsDataFrameSchemaInc:
             param({"foo": Int64}, id="wrong dtype"),
         ],
     )
-    def test_error(self, *, schema_inc: SchemaDict) -> None:
+    def test_error(self: Self, *, schema_inc: SchemaDict) -> None:
         df = DataFrame({"foo": [0.0]})
         with raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema_inc(df, schema_inc)
 
 
 class TestJoin:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         df1 = DataFrame([{"a": 1, "b": 2}], schema={"a": Int64, "b": Int64})
         df2 = DataFrame([{"a": 1, "c": 3}], schema={"a": Int64, "c": Int64})
         result = join(df1, df2, on="a")
@@ -316,24 +318,24 @@ class TestNanSumCols:
 
 
 class TestRedirectEmptyPolarsConcat:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with raises(EmptyPolarsConcatError), redirect_empty_polars_concat():
             _ = concat([])
 
 
 class TestSetFirstRowAsColumns:
-    def test_empty(self) -> None:
+    def test_empty(self: Self) -> None:
         df = DataFrame()
         with raises(SetFirstRowAsColumnsError):
             _ = set_first_row_as_columns(df)
 
-    def test_one_row(self) -> None:
+    def test_one_row(self: Self) -> None:
         df = DataFrame(["value"])
         check_polars_dataframe(df, height=1, schema={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=0, schema={"value": Utf8})
 
-    def test_multiple_rows(self) -> None:
+    def test_multiple_rows(self: Self) -> None:
         df = DataFrame(["foo", "bar", "baz"])
         check_polars_dataframe(df, height=3, schema={"column_0": Utf8})
         result = set_first_row_as_columns(df)

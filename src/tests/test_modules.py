@@ -9,6 +9,7 @@ from types import ModuleType
 from typing import Any
 
 from pytest import mark, param
+from typing_extensions import Self
 
 import utilities
 from tests.modules import package_with, package_without, standalone
@@ -34,11 +35,13 @@ class TestYieldModules:
             param(package_with, True, 6),
         ],
     )
-    def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
+    def test_main(
+        self: Self, *, module: ModuleType, recursive: bool, expected: int
+    ) -> None:
         res = list(yield_modules(module, recursive=recursive))
         assert len(res) == expected
 
-    def test_all(self) -> None:
+    def test_all(self: Self) -> None:
         for module in yield_modules(utilities, recursive=True):
             source = getsource(module)
             for dunder_all in yield_dunder_all(source):
@@ -95,7 +98,7 @@ class TestYieldModuleContents:
 
 
 class TestYieldModuleSubclasses:
-    def predicate(self: Any, /) -> bool:
+    def predicate(self: Self, /) -> bool:
         return bool(search("1", get_class_name(self)))
 
     @mark.parametrize(

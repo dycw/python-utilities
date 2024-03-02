@@ -31,9 +31,9 @@ class TestGetDesc:
     ) -> None:
         assert _get_desc(desc, func) == expected
 
-    def test_class(self) -> None:
+    def test_class(self: Self) -> None:
         class Example:
-            def __call__(self) -> None:
+            def __call__(self: Self) -> None:
                 return
 
         assert _get_desc(sentinel, Example()) == {"desc": get_class_name(Example)}

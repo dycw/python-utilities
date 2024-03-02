@@ -17,7 +17,7 @@ class HashableBaseModel(BaseModel):
     """Subclass of BaseModel which is hashable."""
 
     @override
-    def __hash__(self) -> int:
+    def __hash__(self: Self) -> int:
         return hash((type(self), *self.__dict__.values()))
 
 
@@ -41,14 +41,14 @@ class LoadModelError(Exception):
 @dataclass(frozen=True, kw_only=True)
 class _LoadModelFileNotFoundError(LoadModelError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Unable to load {self.model}; path {str(self.path)!r} must exist."
 
 
 @dataclass(frozen=True, kw_only=True)
 class _LoadModelIsADirectoryError(LoadModelError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Unable to load {self.model  }; path {str(self.path)!r} must not be a directory."  # pragma: os-ne-windows
 
 

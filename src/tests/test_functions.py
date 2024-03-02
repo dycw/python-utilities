@@ -10,14 +10,14 @@ from utilities.functions import CheckNameError, check_name, identity
 
 
 class TestCheckName:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass(frozen=True, kw_only=True)
         class Example:
             name: str
 
         check_name(Example(name="name"), "name")
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         @dataclass(frozen=True, kw_only=True)
         class Example:
             name: str
@@ -28,5 +28,5 @@ class TestCheckName:
 
 class TestIdentity:
     @given(x=integers())
-    def test_main(self, *, x: int) -> None:
+    def test_main(self: Self, *, x: int) -> None:
         assert identity(x) == x

@@ -17,7 +17,7 @@ from utilities.types import IterableStrs
 
 
 class TestExtractGroup:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert extract_group(r"(\d)", "A0A") == "0"
 
     @mark.parametrize(
@@ -61,7 +61,9 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
+    def test_main(
+        self: Self, *, pattern: str, text: str, expected: IterableStrs
+    ) -> None:
         assert extract_groups(pattern, text) == expected
 
     @mark.parametrize(

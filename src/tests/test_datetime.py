@@ -87,20 +87,20 @@ class TestAddWeekdays:
         assert predicate(result, date)
 
     @given(date=dates())
-    def test_zero(self, *, date: dt.date) -> None:
+    def test_zero(self: Self, *, date: dt.date) -> None:
         _ = assume(is_weekday(date))
         result = add_weekdays(date, n=0)
         assert result == date
 
     @given(date=dates())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_error(self, *, date: dt.date) -> None:
+    def test_error(self: Self, *, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
         with raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
-    def test_two(self, *, date: dt.date, n1: int, n2: int) -> None:
+    def test_two(self: Self, *, date: dt.date, n1: int, n2: int) -> None:
         with assume_does_not_raise(AddWeekdaysError, OverflowError):
             weekday1, weekday2 = (add_weekdays(date, n=n) for n in [n1, n2])
         result = weekday1 <= weekday2
@@ -110,37 +110,37 @@ class TestAddWeekdays:
 
 class TestDateToDatetime:
     @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
+    def test_main(self: Self, *, date: dt.date) -> None:
         result = date_to_datetime(date).date()
         assert result == date
 
 
 class TestDurationToFloat:
     @given(duration=integers(0, 10) | floats(0.0, 10.0))
-    def test_number(self, *, duration: Number) -> None:
+    def test_number(self: Self, *, duration: Number) -> None:
         result = duration_to_float(duration)
         assert result == duration
 
     @given(duration=timedeltas())
-    def test_timedelta(self, *, duration: dt.timedelta) -> None:
+    def test_timedelta(self: Self, *, duration: dt.timedelta) -> None:
         result = duration_to_float(duration)
         assert result == duration.total_seconds()
 
 
 class TestDurationToTimedelta:
     @given(duration=integers(0, 10))
-    def test_int(self, *, duration: int) -> None:
+    def test_int(self: Self, *, duration: int) -> None:
         result = duration_to_timedelta(duration)
         assert result.total_seconds() == duration
 
     @given(duration=floats(0.0, 10.0))
-    def test_float(self, *, duration: float) -> None:
+    def test_float(self: Self, *, duration: float) -> None:
         duration = round(10 * duration) / 10
         result = duration_to_timedelta(duration)
         assert isclose(result.total_seconds(), duration)
 
     @given(duration=timedeltas())
-    def test_timedelta(self, *, duration: dt.timedelta) -> None:
+    def test_timedelta(self: Self, *, duration: dt.timedelta) -> None:
         result = duration_to_timedelta(duration)
         assert result == duration
 
@@ -168,7 +168,7 @@ class TestEnsure:
         assert result == value
 
     @given(data=data(), datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_datetime(self, *, data: DataObject, datetime: dt.datetime) -> None:
+    def test_datetime(self: Self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_datetime = data.draw(sampled_from([datetime, str(datetime)]))
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
@@ -178,7 +178,7 @@ class TestEnsure:
 
 class TestGetNow:
     @given(tz=timezones())
-    def test_main(self, *, tz: dt.tzinfo) -> None:
+    def test_main(self: Self, *, tz: dt.tzinfo) -> None:
         now = get_now(tz=tz)
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is tz
@@ -186,42 +186,42 @@ class TestGetNow:
     @mark.parametrize(
         "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
     )
-    def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
+    def test_getters(self: Self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
     @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TOKYO)])
-    def test_constants(self, *, now: dt.datetime) -> None:
+    def test_constants(self: Self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
 
 class TestGetToday:
     @given(tz=timezones())
-    def test_main(self, *, tz: dt.tzinfo) -> None:
+    def test_main(self: Self, *, tz: dt.tzinfo) -> None:
         today = get_today(tz=tz)
         assert isinstance(today, dt.date)
 
     @mark.parametrize(
         "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
     )
-    def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
+    def test_getters(self: Self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
     @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
-    def test_constants(self, *, today: dt.date) -> None:
+    def test_constants(self: Self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 
 
 class TestIsEqualModTz:
     @given(x=datetimes(), y=datetimes())
-    def test_naive(self, *, x: dt.datetime, y: dt.datetime) -> None:
+    def test_naive(self: Self, *, x: dt.datetime, y: dt.datetime) -> None:
         assert is_equal_mod_tz(x, y) == (x == y)
 
     @given(x=datetimes(timezones=just(UTC)), y=datetimes(timezones=just(UTC)))
-    def test_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
+    def test_utc(self: Self, *, x: dt.datetime, y: dt.datetime) -> None:
         assert is_equal_mod_tz(x, y) == (x == y)
 
     @given(x=datetimes(), y=datetimes())
-    def test_naive_vs_utc(self, *, x: dt.datetime, y: dt.datetime) -> None:
+    def test_naive_vs_utc(self: Self, *, x: dt.datetime, y: dt.datetime) -> None:
         expected = x == y
         naive = x
         aware = y.replace(tzinfo=UTC)
@@ -231,7 +231,7 @@ class TestIsEqualModTz:
 
 class TestIsWeekday:
     @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
+    def test_main(self: Self, *, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
@@ -239,7 +239,7 @@ class TestIsWeekday:
 
 
 class TestLocalTimeZone:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         tz = local_timezone()
         now = get_now(tz=UTC)
         result = tz.tzname(now)
@@ -249,19 +249,19 @@ class TestLocalTimeZone:
 
 class TestMaybeSubPctY:
     @given(text=text_clean())
-    def test_main(self, *, text: str) -> None:
+    def test_main(self: Self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
         assert not search("%Y", result)
 
 
 class TestParseDate:
     @given(date=dates())
-    def test_str(self, *, date: dt.date) -> None:
+    def test_str(self: Self, *, date: dt.date) -> None:
         result = parse_date(str(date))
         assert result == date
 
     @given(date=dates())
-    def test_isoformat(self, *, date: dt.date) -> None:
+    def test_isoformat(self: Self, *, date: dt.date) -> None:
         result = parse_date(date.isoformat())
         assert result == date
 
@@ -271,25 +271,25 @@ class TestParseDate:
             maybe_sub_pct_y
         ),
     )
-    def test_various_formats(self, *, date: dt.date, fmt: str) -> None:
+    def test_various_formats(self: Self, *, date: dt.date, fmt: str) -> None:
         result = parse_date(date.strftime(fmt))
         assert result == date
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(ParseDateError):
             _ = parse_date("error")
 
 
 class TestParseDateTime:
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_str(self, *, datetime: dt.datetime) -> None:
+    def test_str(self: Self, *, datetime: dt.datetime) -> None:
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
         result = parse_datetime(str(datetime), tzinfo=tzinfo)
         assert result == datetime
 
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_isoformat(self, *, datetime: dt.datetime) -> None:
+    def test_isoformat(self: Self, *, datetime: dt.datetime) -> None:
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
         result = parse_datetime(datetime.isoformat(), tzinfo=tzinfo)
@@ -301,7 +301,9 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss_fff_zzzz(
+        self: Self, *, datetime: dt.datetime, fmt: str
+    ) -> None:
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
@@ -313,7 +315,9 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss_fff(
+        self: Self, *, datetime: dt.datetime, fmt: str
+    ) -> None:
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
@@ -325,7 +329,7 @@ class TestParseDateTime:
             ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
         ).map(maybe_sub_pct_y),
     )
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmmss(self: Self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
@@ -338,7 +342,7 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hhmm(self: Self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
@@ -351,7 +355,7 @@ class TestParseDateTime:
             maybe_sub_pct_y
         ),
     )
-    def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd_hh(self: Self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
@@ -362,64 +366,64 @@ class TestParseDateTime:
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(["%Y%m%d", "%Y-%m-%d"]).map(maybe_sub_pct_y),
     )
-    def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
+    def test_yyyymmdd(self: Self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
         tzinfo = datetime.tzinfo
         assert tzinfo is not None
         result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
         assert result == datetime
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(ParseDateTimeError):
             _ = parse_datetime("error")
 
 
 class TestParseTime:
     @given(time=times())
-    def test_str(self, *, time: dt.time) -> None:
+    def test_str(self: Self, *, time: dt.time) -> None:
         result = parse_time(str(time))
         assert result == time
 
     @given(time=times())
-    def test_isoformat(self, *, time: dt.time) -> None:
+    def test_isoformat(self: Self, *, time: dt.time) -> None:
         result = parse_time(time.isoformat())
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M%S.%f", "%H:%M:%S.%f"]))
-    def test_hhmmss_fff(self, *, time: dt.time, fmt: str) -> None:
+    def test_hhmmss_fff(self: Self, *, time: dt.time, fmt: str) -> None:
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M%S", "%H:%M:%S"]))
-    def test_hhmmss(self, *, time: dt.time, fmt: str) -> None:
+    def test_hhmmss(self: Self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H%M", "%H:%M"]))
-    def test_hhmm(self, *, time: dt.time, fmt: str) -> None:
+    def test_hhmm(self: Self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(second=0, microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
 
     @given(time=times(), fmt=sampled_from(["%H", "%H"]))
-    def test_hh(self, *, time: dt.time, fmt: str) -> None:
+    def test_hh(self: Self, *, time: dt.time, fmt: str) -> None:
         time = time.replace(minute=0, second=0, microsecond=0)
         result = parse_time(time.strftime(fmt))
         assert result == time
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(ParseTimeError):
             _ = parse_time("error")
 
 
 class TestParseTimedelta:
     @given(timedelta=timedeltas())
-    def test_main(self, *, timedelta: dt.timedelta) -> None:
+    def test_main(self: Self, *, timedelta: dt.timedelta) -> None:
         result = parse_timedelta(str(timedelta))
         assert result == timedelta
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
             _ = parse_timedelta("error")
 
@@ -449,7 +453,7 @@ class TestSerialize:
         assert result == value
 
     @given(datetime=datetimes())
-    def test_serialize_date(self, *, datetime: dt.datetime) -> None:
+    def test_serialize_date(self: Self, *, datetime: dt.datetime) -> None:
         result = parse_date(serialize_date(datetime))
         assert result == datetime.date()
 
@@ -481,19 +485,19 @@ class TestRoundToWeekday:
 
 
 class TestTimes:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
         assert EPOCH_UTC.tzinfo is UTC
 
 
 class TestTimeZones:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(UTC, dt.tzinfo)
 
 
 class TestYieldWeekdays:
     @given(start=dates(), days=integers(0, 365))
-    def test_start_and_end(self, *, start: dt.date, days: int) -> None:
+    def test_start_and_end(self: Self, *, start: dt.date, days: int) -> None:
         with assume_does_not_raise(OverflowError):
             end = start + dt.timedelta(days=days)
         dates = list(yield_weekdays(start=start, end=end))
@@ -505,19 +509,19 @@ class TestYieldWeekdays:
             assert end in dates
 
     @given(start=dates(), days=integers(0, 10))
-    def test_start_and_days(self, *, start: dt.date, days: int) -> None:
+    def test_start_and_days(self: Self, *, start: dt.date, days: int) -> None:
         dates = list(yield_weekdays(start=start, days=days))
         assert len(dates) == days
         assert all(d >= start for d in dates)
         assert all(map(is_weekday, dates))
 
     @given(end=dates(), days=integers(0, 10))
-    def test_end_and_days(self, *, end: dt.date, days: int) -> None:
+    def test_end_and_days(self: Self, *, end: dt.date, days: int) -> None:
         dates = list(yield_weekdays(end=end, days=days))
         assert len(dates) == days
         assert all(d <= end for d in dates)
         assert all(map(is_weekday, dates))
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(YieldWeekdaysError):
             _ = list(yield_weekdays())

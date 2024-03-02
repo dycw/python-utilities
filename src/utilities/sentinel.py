@@ -24,11 +24,11 @@ class Sentinel(metaclass=_Meta):
     """Base class for the sentinel object."""
 
     @override
-    def __repr__(self) -> str:
+    def __repr__(self: Self) -> str:
         return _REPR
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return repr(self)
 
 

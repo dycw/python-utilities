@@ -17,7 +17,7 @@ from utilities.text import strip_and_dedent
 
 
 class TestAddressAlreadyInUsePattern:
-    def test_pattern(self) -> None:
+    def test_pattern(self: Self) -> None:
         pattern = _address_already_in_use_pattern()
         text = "OSError: [Errno 98] Address already in use"
         assert search(pattern, text) is not None
@@ -25,19 +25,19 @@ class TestAddressAlreadyInUsePattern:
 
 class TestGetShellOutput:
     @skipif_windows
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         output = get_shell_output("ls")
         assert any(line == "pyproject.toml" for line in output.splitlines())
 
     @skipif_windows
-    def test_activate(self, *, tmp_path: Path) -> None:
+    def test_activate(self: Self, *, tmp_path: Path) -> None:
         venv = Path(tmp_path, ".venv")
         activate = Path(venv, "activate")
         activate.parent.mkdir(parents=True)
         activate.touch()
         _ = get_shell_output("ls", cwd=venv, activate=venv)
 
-    def test_no_activate(self, *, tmp_path: Path) -> None:
+    def test_no_activate(self: Self, *, tmp_path: Path) -> None:
         venv = Path(tmp_path, ".venv")
         with raises(GetShellOutputError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
@@ -45,7 +45,7 @@ class TestGetShellOutput:
 
 class TestTabulateCalledProcessError:
     @skipif_windows
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         def which() -> None:
             _ = check_call(["which"], text=True)  # noqa: S603, S607
 

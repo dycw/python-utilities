@@ -40,12 +40,12 @@ class _Show:
     ) -> _Show:
         return _Show(dp=dp, rows=rows, columns=columns)
 
-    def __enter__(self) -> None:
+    def __enter__(self: Self) -> None:
         self._enter_pandas()
         self._enter_polars()
         _ = self.stack.__enter__()
 
-    def _enter_pandas(self) -> None:
+    def _enter_pandas(self: Self) -> None:
         try:
             from pandas import option_context
         except ModuleNotFoundError:  # pragma: no cover
@@ -62,7 +62,7 @@ class _Show:
                 context = option_context(*chain(*kwargs.items()))
                 self.stack.enter_context(context)
 
-    def _enter_polars(self) -> None:
+    def _enter_polars(self: Self) -> None:
         try:
             from polars import Config
         except ModuleNotFoundError:  # pragma: no cover

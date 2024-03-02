@@ -40,7 +40,7 @@ class ExtractGroupError(Exception):
 @dataclass(frozen=True, kw_only=True)
 class _ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must contain exactly one capture group; it had multiple"
 
 
@@ -49,14 +49,14 @@ class _ExtractGroupMultipleMatchesError(ExtractGroupError):
     matches: list[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
 @dataclass(frozen=True, kw_only=True)
 class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must contain exactly one capture group; it had none".format(
             self.pattern
         )
@@ -65,7 +65,7 @@ class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
 @dataclass(frozen=True, kw_only=True)
 class _ExtractGroupNoMatchesError(ExtractGroupError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must match against {self.text}"
 
 
@@ -103,7 +103,7 @@ class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
     matches: list[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
@@ -113,14 +113,14 @@ class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
     text: str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must contain at least one capture group"
 
 
 @dataclass(frozen=True, kw_only=True)
 class _ExtractGroupsNoMatchesError(ExtractGroupsError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must match against {self.text}"
 
 

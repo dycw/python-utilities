@@ -4,5 +4,5 @@ from utilities.getpass import USER
 
 
 class TestUser:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(USER, str)

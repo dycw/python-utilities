@@ -12,7 +12,7 @@ from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 
 class TestParseEnum:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -22,7 +22,7 @@ class TestParseEnum:
         assert result is truth
 
     @given(data=data())
-    def test_case_insensitive(self, *, data: DataObject) -> None:
+    def test_case_insensitive(self: Self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -33,7 +33,7 @@ class TestParseEnum:
         result = parse_enum(Truth, input_, case_sensitive=False)
         assert result is truth
 
-    def test_error_empty(self) -> None:
+    def test_error_empty(self: Self) -> None:
         class Example(Enum):
             pass
 
@@ -41,7 +41,7 @@ class TestParseEnum:
             _ = parse_enum(Example, "not-a-member")
 
     @given(data=data())
-    def test_error_non_unique(self, *, data: DataObject) -> None:
+    def test_error_non_unique(self: Self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
             MEMBER = auto()
@@ -53,7 +53,7 @@ class TestParseEnum:
 
 class TestEnsureEnum:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -66,7 +66,7 @@ class TestEnsureEnum:
 
 class TestStrEnum:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         class Truth(cast(type[Enum], StrEnum)):
             true = auto()
             false = auto()

@@ -9,5 +9,5 @@ from utilities.zoneinfo import HONG_KONG, TOKYO
 
 class TestTimeZones:
     @mark.parametrize("timezone", [param(HONG_KONG), param(TOKYO)])
-    def test_main(self, *, timezone: ZoneInfo) -> None:
+    def test_main(self: Self, *, timezone: ZoneInfo) -> None:
         assert isinstance(timezone, ZoneInfo)

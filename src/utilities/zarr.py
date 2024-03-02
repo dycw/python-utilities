@@ -8,7 +8,7 @@ from typing import Any, Literal, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import override
+from typing_extensions import Self, override
 from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
 from zarr.core import Attributes
@@ -49,7 +49,7 @@ class NDArrayWithIndexes:
     """An `ndarray` with indexes stored on disk."""
 
     def __init__(
-        self,
+        self: Self,
         path: PathLike,
         /,
         *,
@@ -64,55 +64,55 @@ class NDArrayWithIndexes:
         self._mode = mode
 
     @override
-    def __repr__(self) -> str:
+    def __repr__(self: Self) -> str:
         return f"{get_class_name(self)}({self._path})"
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"{get_class_name(self)}({self._path})"
 
     @property
-    def array(self) -> Array:
+    def array(self: Self) -> Array:
         """The underlying `zarr.Array`."""
         return cast(Array, self.group["values"])
 
     @property
-    def attrs(self) -> Attributes:
+    def attrs(self: Self) -> Attributes:
         """The underlying attributes."""
         return self.group.attrs
 
     @property
-    def dims(self) -> tuple[str, ...]:
+    def dims(self: Self) -> tuple[str, ...]:
         """The dimensions of the underlying array."""
         return tuple(self.attrs["dims"])
 
     @property
-    def dtype(self) -> Any:
+    def dtype(self: Self) -> Any:
         """The type of the underlying array."""
         return self.array.dtype
 
     @property
-    def group(self) -> Group:
+    def group(self: Self) -> Group:
         """The dimensions of the underlying array."""
         return open_group(self._path, mode=self._mode)
 
     @property
-    def indexes(self) -> dict[str, NDArray1]:
+    def indexes(self: Self) -> dict[str, NDArray1]:
         """The indexes of the underlying array."""
         return {dim: self._get_index_by_int(i) for i, dim in enumerate(self.dims)}
 
     @property
-    def is_scalar(self) -> bool:
+    def is_scalar(self: Self) -> bool:
         """Whether the underlying array is scalar or not."""
         return self.shape == ()
 
     @property
-    def is_non_scalar(self) -> bool:
+    def is_non_scalar(self: Self) -> bool:
         """Whether the underlying array is empty or not."""
         return self.shape != ()
 
     def isel(
-        self,
+        self: Self,
         indexers: Mapping[str, IselIndexer] | None = None,
         /,
         **indexer_kwargs: IselIndexer,
@@ -124,7 +124,7 @@ class NDArrayWithIndexes:
         return self.array.oindex[i]
 
     @property
-    def ndarray(self) -> NDArray[Any]:
+    def ndarray(self: Self) -> NDArray[Any]:
         """The underlying `numpy.ndarray`."""
         arr = self.array[:]
         if self.is_scalar:
@@ -132,12 +132,12 @@ class NDArrayWithIndexes:
         return arr
 
     @property
-    def ndim(self) -> int:
+    def ndim(self: Self) -> int:
         """The number of dimensions of the underlying array."""
         return len(self.shape)
 
     def sel(
-        self, indexers: Mapping[str, Any] | None = None, /, **indexer_kwargs: Any
+        self: Self, indexers: Mapping[str, Any] | None = None, /, **indexer_kwargs: Any
     ) -> Any:
         """Select orthogonally using index values."""
         merged = ({} if indexers is None else dict(indexers)) | indexer_kwargs
@@ -146,32 +146,32 @@ class NDArrayWithIndexes:
         return self.array.oindex[i]
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self: Self) -> tuple[int, ...]:
         """The shape of the underlying array."""
         return tuple(self.attrs["shape"])
 
     @property
-    def size(self) -> int:
+    def size(self: Self) -> int:
         """The size of the underlying array."""
         return 0 if self.is_scalar else int(prod(self.shape).item())
 
     @property
-    def sizes(self) -> dict[str, int]:
+    def sizes(self: Self) -> dict[str, int]:
         """The sizes of the underlying array."""
         return {dim: len(index) for dim, index in self.indexes.items()}
 
-    def _get_index_by_int(self, i: int, /) -> NDArray1:
+    def _get_index_by_int(self: Self, i: int, /) -> NDArray1:
         """Get the index of a given dimension, by its integer index."""
         return cast(NDArray1, self.group[f"index_{i}"][:])
 
-    def _get_index_by_name(self, dim: str, /) -> NDArray1:
+    def _get_index_by_name(self: Self, dim: str, /) -> NDArray1:
         """Get the index of a given dimension, by its dimension name."""
         with redirect_error(ValueError, GetIndexByNameError(f"{dim=}")):
             i = self.dims.index(dim)
         return self._get_index_by_int(i)
 
     def _get_isel_indexer(
-        self, dim: str, /, *, indexers: Mapping[str, IselIndexer]
+        self: Self, dim: str, /, *, indexers: Mapping[str, IselIndexer]
     ) -> Any:
         """Get the integer-indexer for a given dimension."""
         try:
@@ -182,7 +182,9 @@ class NDArrayWithIndexes:
             return indexer
         return array(indexer, dtype=int)
 
-    def _get_sel_indexer(self, dim: str, /, *, indexers: Mapping[str, Any]) -> Any:
+    def _get_sel_indexer(
+        self: Self, dim: str, /, *, indexers: Mapping[str, Any]
+    ) -> Any:
         """Get the value-indexer for a given dimension."""
         try:
             indexer = indexers[dim]
@@ -203,7 +205,7 @@ class NDArrayWithIndexes:
             return flatn0(index == indexer)
 
     def _cast_date_indexer(
-        self, indexer: Any, dtype: Any, ensure: Callable[[Any], Any], /
+        self: Self, indexer: Any, dtype: Any, ensure: Callable[[Any], Any], /
     ) -> Any:
         """Cast a `dt.date` or `dt.datetime` indexer."""
         suffix = extract_group(r"^datetime64\[(\w+)\]$", dtype.name)

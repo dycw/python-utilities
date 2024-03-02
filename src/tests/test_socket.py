@@ -4,5 +4,5 @@ from utilities.socket import HOSTNAME
 
 
 class TestHostname:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(HOSTNAME, str)

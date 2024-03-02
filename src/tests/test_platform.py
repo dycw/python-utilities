@@ -25,7 +25,7 @@ from utilities.platform import (
 
 class TestMaybeYieldLowerCase:
     @given(text=sets(text_ascii()))
-    def test_main(self, *, text: AbstractSet[str]) -> None:
+    def test_main(self: Self, *, text: AbstractSet[str]) -> None:
         result = set(maybe_yield_lower_case(text))
         match SYSTEM:
             case System.windows:  # pragma: os-ne-windows
@@ -39,7 +39,7 @@ class TestMaybeYieldLowerCase:
 
 
 class TestSystem:
-    def test_function(self) -> None:
+    def test_function(self: Self) -> None:
         assert isinstance(get_system(), System)
 
     @mark.parametrize(
@@ -54,5 +54,5 @@ class TestSystem:
             param(IS_NOT_LINUX, bool),
         ],
     )
-    def test_constants(self, *, constant: Any, cls: type) -> None:
+    def test_constants(self: Self, *, constant: Any, cls: type) -> None:
         assert isinstance(constant, cls)

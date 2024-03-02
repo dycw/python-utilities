@@ -25,7 +25,7 @@ class TestWriter:
         with path.open(mode="rb" if is_binary else "r") as fh2:
             assert fh2.read() == contents
 
-    def test_file_exists_error(self, *, tmp_path: Path) -> None:
+    def test_file_exists_error(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
@@ -41,7 +41,7 @@ class TestWriter:
         ):
             _ = fh2.write("new contents")
 
-    def test_file_overwrite(self, *, tmp_path: Path) -> None:
+    def test_file_overwrite(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "file.txt")
         with writer(path) as temp1, temp1.open(mode="w") as fh1:
             _ = fh1.write("contents")
@@ -50,7 +50,7 @@ class TestWriter:
         with path.open() as fh3:
             assert fh3.read() == "new contents"
 
-    def test_dir_writing(self, *, tmp_path: Path) -> None:
+    def test_dir_writing(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "dir")
         with writer(path) as temp:
             temp.mkdir()
@@ -58,14 +58,14 @@ class TestWriter:
                 ensure_path(temp, f"file{i}").touch()
         assert len(list(path.iterdir())) == 2
 
-    def test_dir_exists_error(self, *, tmp_path: Path) -> None:
+    def test_dir_exists_error(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
         with raises(DirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
-    def test_dir_overwrite(self, *, tmp_path: Path) -> None:
+    def test_dir_overwrite(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
@@ -92,7 +92,7 @@ class TestWriter:
         expected = int(not issubclass(error, KeyboardInterrupt))
         assert len(list(tmp_path.iterdir())) == expected
 
-    def test_writer(self, *, tmp_path: Path) -> None:
+    def test_writer(self: Self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "file.txt")
         with raises(WriterError), writer(path):
             pass

@@ -13,11 +13,11 @@ from utilities.scripts.pypi_server import _check_password_file, _get_args, main
 
 
 class TestPypiServer:
-    def test_check_password_file_success(self, *, tmp_path: Path) -> None:
+    def test_check_password_file_success(self: Self, *, tmp_path: Path) -> None:
         (path_password := ensure_path(tmp_path, "password")).touch()
         _check_password_file(path_password=path_password)
 
-    def test_check_password_file_error(self, *, tmp_path: Path) -> None:
+    def test_check_password_file_error(self: Self, *, tmp_path: Path) -> None:
         with raises(FileNotFoundError):
             _check_password_file(path_password=ensure_path(tmp_path, "password"))
 
@@ -36,7 +36,7 @@ class TestPypiServer:
             path_packages=ensure_path(root, packages),
         )
 
-    def test_dry_run(self, *, tmp_path: Path) -> None:
+    def test_dry_run(self: Self, *, tmp_path: Path) -> None:
         with temp_cwd(tmp_path):
             path = ensure_path("password")
             path.touch()

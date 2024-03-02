@@ -16,7 +16,7 @@ from utilities.tempfile import TemporaryDirectory
 class _BasePDF(FPDF):
     """Base class for PDFs."""
 
-    def add_fixed_width_text(self, text: str, /) -> None:
+    def add_fixed_width_text(self: Self, text: str, /) -> None:
         """Add a block of fixed witth text."""
         self.set_font("Courier")
         _ = self.write(text=text)
@@ -39,7 +39,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
 
     class OutputPDF(_BasePDF):
         @override
-        def header(self) -> None:
+        def header(self: Self) -> None:
             if header is not None:
                 self.set_font(family="Helvetica", style="B", size=15)
                 _ = self.cell(w=80)
@@ -55,7 +55,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
                 self.ln(20)
 
         @override
-        def footer(self) -> None:
+        def footer(self: Self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
             page_no, now = self.page_no(), get_now(tz=local_timezone())

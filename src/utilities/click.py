@@ -96,13 +96,15 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+    def __init__(self: Self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
         super().__init__()
         self._enum = enum
         self._case_sensitive = case_sensitive
 
     @override
-    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
+    def convert(
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)

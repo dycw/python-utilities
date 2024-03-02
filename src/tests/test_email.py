@@ -9,15 +9,15 @@ from utilities.email import send_email
 
 
 class TestSendEmail:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with raises(SMTPServerDisconnected):
             send_email("no-reply@test.com", ["user@test.com"])
 
-    def test_subject(self) -> None:
+    def test_subject(self: Self) -> None:
         with raises(SMTPServerDisconnected):
             send_email("no-reply@test.com", ["user@test.com"], subject="Subject")
 
-    def test_contents_str(self) -> None:
+    def test_contents_str(self: Self) -> None:
         with raises(SMTPServerDisconnected):
             send_email(
                 "no-reply@test.com",
@@ -26,7 +26,7 @@ class TestSendEmail:
                 contents="contents",
             )
 
-    def test_attachment(self, tmp_path: Path) -> None:
+    def test_attachment(self: Self, tmp_path: Path) -> None:
         file = Path(tmp_path, "file")
         file.touch()
         with raises(SMTPServerDisconnected):

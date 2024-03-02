@@ -6,5 +6,5 @@ from utilities.random import SYSTEM_RANDOM
 
 
 class TestSystemRandom:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(SYSTEM_RANDOM, SystemRandom)

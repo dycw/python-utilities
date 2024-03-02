@@ -15,7 +15,7 @@ class ImpossibleCaseError(Exception):
     case: list[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         desc = ", ".join(self.case)
         return f"Case must be possible: {desc}."
 

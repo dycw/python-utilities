@@ -291,7 +291,7 @@ class MaximumError(Exception):
     y: SeriesF | DataFrame
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Maximum must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
@@ -442,7 +442,7 @@ class MinimumError(Exception):
     y: SeriesF | DataFrame
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Minimum must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
@@ -569,7 +569,7 @@ class MultiplyError(Exception):
     y: SeriesF | DataFrame
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Multiply must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
@@ -863,7 +863,7 @@ class ScalarProductError(Exception):
     y: SeriesF | DataFrame
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Scalar product must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
@@ -1105,7 +1105,7 @@ class _CheckSeriesAndDataFrameError(Exception):
     y: SeriesF | DataFrame
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Function must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 

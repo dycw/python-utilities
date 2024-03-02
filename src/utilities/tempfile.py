@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
 from types import TracebackType
 
+from typing_extensions import Self
+
 from utilities.pathlib import ensure_path
 from utilities.types import PathLike
 
@@ -31,7 +33,7 @@ class TemporaryDirectory:
         self._validate = validate
         self.path = ensure_path(self._temp_dir.name, validate=self._validate)
 
-    def __enter__(self) -> Path:
+    def __enter__(self: Self) -> Path:
         return ensure_path(self._temp_dir.__enter__(), validate=self._validate)
 
     def __exit__(

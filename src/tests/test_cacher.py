@@ -14,7 +14,7 @@ from utilities.types import EnsureClassError
 
 
 class TestCacheToDisk:
-    def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self: Self, *, tmp_path: Path) -> None:
         counter = 0
 
         @cache_to_disk(root=tmp_path)
@@ -37,7 +37,7 @@ class TestCacheToDisk:
             assert func(2) == 2
             assert len(list(path.iterdir())) == 3
 
-    def test_max_size(self, *, tmp_path: Path) -> None:
+    def test_max_size(self: Self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path, max_size=2)(identity)
         assert func(0) == 0
         path = one(one(tmp_path.iterdir()).iterdir())
@@ -56,14 +56,14 @@ class TestCacheToDisk:
         post_old, post_new = (time for _, time in as_list)
         assert pre_old < pre_new == post_old < post_new
 
-    def test_skip(self, *, tmp_path: Path) -> None:
+    def test_skip(self: Self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path, skip=True)(identity)
         assert len(list(tmp_path.iterdir())) == 0
         assert func(0) == 0
         assert len(list(tmp_path.iterdir())) == 0
 
     @FLAKY
-    def test_max_duration(self, *, tmp_path: Path) -> None:
+    def test_max_duration(self: Self, *, tmp_path: Path) -> None:
         max_duration = 0.1
         func = cache_to_disk(root=tmp_path, max_duration=max_duration)(identity)
         assert func(0) == 0
@@ -75,7 +75,7 @@ class TestCacheToDisk:
         assert func(1) == 1
         assert path.stat().st_mtime > orig
 
-    def test_args_and_kwargs_resolved(self, *, tmp_path: Path) -> None:
+    def test_args_and_kwargs_resolved(self: Self, *, tmp_path: Path) -> None:
         @cache_to_disk(root=tmp_path)
         def add(x: int, y: int) -> int:
             return x + y
@@ -90,7 +90,7 @@ class TestCacheToDisk:
         assert add(x=1, y=1) == 2
         assert len(list(path.iterdir())) == 2
 
-    def test_rerun(self, *, tmp_path: Path) -> None:
+    def test_rerun(self: Self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
         assert func(0) == 0
         path = one(one(tmp_path.iterdir()).iterdir())
@@ -101,7 +101,7 @@ class TestCacheToDisk:
         post = path.stat().st_mtime
         assert pre < post
 
-    def test_rerun_not_a_boolean(self, *, tmp_path: Path) -> None:
+    def test_rerun_not_a_boolean(self: Self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
         with raises(EnsureClassError):
             _ = func(0, rerun=None)  # type: ignore

@@ -262,7 +262,7 @@ class ParseTimedeltaError(Exception):
     timedelta: str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Pattern {self.pattern} must match against {self.timedelta}."
 
 

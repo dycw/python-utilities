@@ -4,7 +4,7 @@ from _pytest.legacypath import Testdir
 
 
 class TestCheck:
-    def test_regular(self, *, testdir: Testdir) -> None:
+    def test_regular(self: Self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
             from utilities.pytest_check import check
@@ -22,7 +22,7 @@ class TestCheck:
             ["FAILURE: first", "FAILURE: second", "Failed Checks: 2"]
         )
 
-    def test_fail_on_first(self, *, testdir: Testdir) -> None:
+    def test_fail_on_first(self: Self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
             from utilities.os import temp_environ

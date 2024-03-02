@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+
+from typing_extensions import Self, override
+
 import datetime as dt
 from dataclasses import dataclass
 from datetime import tzinfo
@@ -27,7 +30,7 @@ class GetDateModeError(Exception):
     system: System
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (  # pragma: no cover
             f"System must be one of Windows or Darwin; got {self.system} instead"
         )

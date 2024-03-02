@@ -15,7 +15,7 @@ from utilities.pytest import skipif_windows
 
 class TestHashableBaseModel:
     @given(x=integers())
-    def test_main(self, *, x: int) -> None:
+    def test_main(self: Self, *, x: int) -> None:
         class Example(HashableBaseModel):
             x: int
 
@@ -25,7 +25,7 @@ class TestHashableBaseModel:
 
 class TestSaveAndLoadModel:
     @given(x=integers(), root=temp_paths())
-    def test_main(self, *, x: int, root: Path) -> None:
+    def test_main(self: Self, *, x: int, root: Path) -> None:
         path = ensure_path(root, "model.json")
 
         class Example(BaseModel):
@@ -37,7 +37,7 @@ class TestSaveAndLoadModel:
         assert loaded == example
 
     @skipif_windows
-    def test_load_model_error_dir(self, *, tmp_path: Path) -> None:
+    def test_load_model_error_dir(self: Self, *, tmp_path: Path) -> None:
         path = tmp_path.joinpath("dir")
         path.mkdir()
 
@@ -50,7 +50,7 @@ class TestSaveAndLoadModel:
         ):
             _ = load_model(Example, path)
 
-    def test_load_model_error_file(self, *, tmp_path: Path) -> None:
+    def test_load_model_error_file(self: Self, *, tmp_path: Path) -> None:
         class Example(BaseModel):
             x: int
 

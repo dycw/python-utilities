@@ -18,7 +18,7 @@ from utilities.sentinel import sentinel
 
 
 class TestGetDataClassClass:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass
         class Example:
             x: None = None
@@ -26,13 +26,13 @@ class TestGetDataClassClass:
         for obj in [Example(), Example]:
             assert get_dataclass_class(obj) is Example
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(GetDataClassClassError):
             _ = get_dataclass_class(None)  # type: ignore
 
 
 class TestIsDataClassClass:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass
         class Example:
             x: None = None
@@ -41,12 +41,12 @@ class TestIsDataClassClass:
         assert not is_dataclass_class(Example())
 
     @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
+    def test_others(self: Self, *, obj: Any) -> None:
         assert not is_dataclass_class(obj)
 
 
 class TestIsDataClassInstance:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass
         class Example:
             x: None = None
@@ -55,12 +55,12 @@ class TestIsDataClassInstance:
         assert is_dataclass_instance(Example())
 
     @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
+    def test_others(self: Self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 
 
 class TestReplaceNonSentinel:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass
         class Example:
             x: int = 0
@@ -70,12 +70,12 @@ class TestReplaceNonSentinel:
         assert replace_non_sentinel(curr, x=sentinel).x == 0
 
     @mark.parametrize("obj", [param(None), param(NoneType)])
-    def test_others(self, *, obj: Any) -> None:
+    def test_others(self: Self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 
 
 class TestYieldDataClassFieldNames:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         @dataclass
         class Example:
             x: None = None

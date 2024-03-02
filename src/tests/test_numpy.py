@@ -35,6 +35,7 @@ from numpy.random import Generator
 from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.datetime import UTC
 from utilities.hypothesis import (
@@ -187,7 +188,7 @@ class TestArrayIndexer:
 
 class TestAsInt:
     @given(n=integers(-10, 10), fuzz=floats(-1e-8, 1e-8) | none())
-    def test_main(self, *, n: int, fuzz: float | None) -> None:
+    def test_main(self: Self, *, n: int, fuzz: float | None) -> None:
         n_use = n if fuzz is None else (n + fuzz)
         arr = array([n_use], dtype=float)
         result = as_int(arr)
@@ -195,41 +196,41 @@ class TestAsInt:
         assert_equal(result, expected)
 
     @given(n=integers(-10, 10))
-    def test_nan_elements_filled(self, *, n: int) -> None:
+    def test_nan_elements_filled(self: Self, *, n: int) -> None:
         arr = array([nan], dtype=float)
         result = as_int(arr, nan=n)
         expected = array([n], dtype=int)
         assert_equal(result, expected)
 
     @given(n=integers(-10, 10))
-    def test_inf_elements_filled(self, *, n: int) -> None:
+    def test_inf_elements_filled(self: Self, *, n: int) -> None:
         arr = array([inf], dtype=float)
         result = as_int(arr, inf=n)
         expected = array([n], dtype=int)
         assert_equal(result, expected)
 
     @mark.parametrize("value", [param(inf), param(nan), param(0.5)])
-    def test_errors(self, *, value: float) -> None:
+    def test_errors(self: Self, *, value: float) -> None:
         arr = array([value], dtype=float)
         with raises(AsIntError):
             _ = as_int(arr)
 
 
 class TestDateToDatetime64ns:
-    def test_example(self) -> None:
+    def test_example(self: Self) -> None:
         result = date_to_datetime64(dt.date(2000, 1, 1))
         assert result == datetime64("2000-01-01", "D")
         assert result.dtype == datetime64D
 
     @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
+    def test_main(self: Self, *, date: dt.date) -> None:
         result = date_to_datetime64(date)
         assert result.dtype == datetime64D
 
 
 class TestDatetimeToDatetime64:
     @mark.parametrize("tzinfo", [param(UTC), param(None)])
-    def test_example(self, *, tzinfo: dt.tzinfo) -> None:
+    def test_example(self: Self, *, tzinfo: dt.tzinfo) -> None:
         result = datetime_to_datetime64(
             dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=tzinfo)
         )
@@ -237,12 +238,12 @@ class TestDatetimeToDatetime64:
         assert result.dtype == datetime64us
 
     @given(datetime=datetimes() | datetimes_utc())
-    def test_main(self, *, datetime: dt.datetime) -> None:
+    def test_main(self: Self, *, datetime: dt.datetime) -> None:
         result = datetime_to_datetime64(datetime)
         assert result.dtype == datetime64us
 
     @given(datetime=datetimes(timezones=just(HONG_KONG)))
-    def test_error(self, *, datetime: dt.datetime) -> None:
+    def test_error(self: Self, *, datetime: dt.datetime) -> None:
         with raises(
             DatetimeToDatetime64Error, match=r"Timezone must be None or UTC; got .*\."
         ):
@@ -250,11 +251,11 @@ class TestDatetimeToDatetime64:
 
 
 class TestDatetime64ToDate:
-    def test_example(self) -> None:
+    def test_example(self: Self) -> None:
         assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
 
     @given(date=dates())
-    def test_round_trip(self, *, date: dt.date) -> None:
+    def test_round_trip(self: Self, *, date: dt.date) -> None:
         assert datetime64_to_date(date_to_datetime64(date)) == date
 
     @mark.parametrize(
@@ -264,41 +265,43 @@ class TestDatetime64ToDate:
             param("2000-01-01", "ns", NotImplementedError),
         ],
     )
-    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
+    def test_error(
+        self: Self, *, datetime: str, dtype: str, error: type[Exception]
+    ) -> None:
         with raises(error):
             _ = datetime64_to_date(datetime64(datetime, dtype))
 
 
 class TestDatetime64ToInt:
-    def test_example(self) -> None:
+    def test_example(self: Self) -> None:
         expected = 10957
         assert datetime64_to_int(datetime64("2000-01-01", "D")) == expected
 
     @given(datetime=datetime64s())
-    def test_main(self, *, datetime: datetime64) -> None:
+    def test_main(self: Self, *, datetime: datetime64) -> None:
         _ = datetime64_to_int(datetime)
 
     @given(data=data(), unit=datetime64_units())
-    def test_round_trip(self, *, data: DataObject, unit: Datetime64Unit) -> None:
+    def test_round_trip(self: Self, *, data: DataObject, unit: Datetime64Unit) -> None:
         datetime = data.draw(datetime64s(unit=unit))
         result = datetime64(datetime64_to_int(datetime), unit)
         assert result == datetime
 
 
 class TestDatetime64ToDatetime:
-    def test_example_ms(self) -> None:
+    def test_example_ms(self: Self) -> None:
         assert datetime64_to_datetime(
             datetime64("2000-01-01 00:00:00.123", "ms")
         ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123000, tzinfo=UTC)
 
     @mark.parametrize("dtype", [param("us"), param("ns")])
-    def test_examples_us_ns(self, *, dtype: str) -> None:
+    def test_examples_us_ns(self: Self, *, dtype: str) -> None:
         assert datetime64_to_datetime(
             datetime64("2000-01-01 00:00:00.123456", dtype)
         ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
 
     @given(datetime=datetimes_utc())
-    def test_round_trip(self, *, datetime: dt.datetime) -> None:
+    def test_round_trip(self: Self, *, datetime: dt.datetime) -> None:
         assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
 
     @mark.parametrize(
@@ -310,7 +313,9 @@ class TestDatetime64ToDatetime:
             param("2000-01-01", "D", NotImplementedError),
         ],
     )
-    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
+    def test_error(
+        self: Self, *, datetime: str, dtype: str, error: type[Exception]
+    ) -> None:
         with raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
@@ -320,11 +325,11 @@ class TestDatetime64DTypeToUnit:
         ("dtype", "expected"),
         [param(datetime64D, "D"), param(datetime64Y, "Y"), param(datetime64ns, "ns")],
     )
-    def test_example(self, *, dtype: Any, expected: Datetime64Unit) -> None:
+    def test_example(self: Self, *, dtype: Any, expected: Datetime64Unit) -> None:
         assert datetime64_dtype_to_unit(dtype) == expected
 
     @given(dtype=datetime64_dtypes())
-    def test_round_trip(self, *, dtype: Any) -> None:
+    def test_round_trip(self: Self, *, dtype: Any) -> None:
         assert datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
 
 
@@ -333,11 +338,11 @@ class TestDatetime64DUnitToDType:
         ("unit", "expected"),
         [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
     )
-    def test_example(self, *, unit: Datetime64Unit, expected: Any) -> None:
+    def test_example(self: Self, *, unit: Datetime64Unit, expected: Any) -> None:
         assert datetime64_unit_to_dtype(unit) == expected
 
     @given(unit=datetime64_units())
-    def test_round_trip(self, *, unit: Datetime64Unit) -> None:
+    def test_round_trip(self: Self, *, unit: Datetime64Unit) -> None:
         assert datetime64_dtype_to_unit(datetime64_unit_to_dtype(unit)) == unit
 
 
@@ -346,18 +351,20 @@ class TestDatetime64DUnitToKind:
         ("unit", "expected"),
         [param("D", "date"), param("Y", "date"), param("ns", "time")],
     )
-    def test_example(self, *, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
+    def test_example(
+        self: Self, *, unit: Datetime64Unit, expected: Datetime64Kind
+    ) -> None:
         assert datetime64_unit_to_kind(unit) == expected
 
 
 class TestDefaultRng:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(DEFAULT_RNG, Generator)
 
 
 class TestDiscretize:
     @given(arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0))
-    def test_1_bin(self, *, arr: NDArrayF1) -> None:
+    def test_1_bin(self: Self, *, arr: NDArrayF1) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
         assert_equal(result, expected)
@@ -367,7 +374,7 @@ class TestDiscretize:
             shape=integers(1, 10), min_value=-1.0, max_value=1.0, unique=True
         )
     )
-    def test_2_bins(self, *, arr: NDArrayF1) -> None:
+    def test_2_bins(self: Self, *, arr: NDArrayF1) -> None:
         _ = assume(len(arr) % 2 == 0)
         result = discretize(arr, 2)
         med = median(arr)
@@ -377,13 +384,13 @@ class TestDiscretize:
         assert isclose(result[is_above], 1.0).all()
 
     @given(bins=integers(1, 10))
-    def test_empty(self, *, bins: int) -> None:
+    def test_empty(self: Self, *, bins: int) -> None:
         arr = array([], dtype=float)
         result = discretize(arr, bins)
         assert_equal(result, arr)
 
     @given(n=integers(0, 10), bins=integers(1, 10))
-    def test_all_nan(self, *, n: int, bins: int) -> None:
+    def test_all_nan(self: Self, *, n: int, bins: int) -> None:
         arr = full(n, nan, dtype=float)
         result = discretize(arr, bins)
         assert_equal(result, arr)
@@ -432,7 +439,9 @@ class TestDiscretize:
 
 class TestEwma:
     @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+    def test_main(
+        self: Self, data: DataObject, array: NDArrayF, halflife: float
+    ) -> None:
         axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
         with assume_does_not_raise(RuntimeWarning):
             _ = ewma(array, halflife, axis=axis)
@@ -440,7 +449,9 @@ class TestEwma:
 
 class TestExpMovingSum:
     @given(data=data(), array=float_arrays(), halflife=floats(0.1, 10.0))
-    def test_main(self, data: DataObject, array: NDArrayF, halflife: float) -> None:
+    def test_main(
+        self: Self, data: DataObject, array: NDArrayF, halflife: float
+    ) -> None:
         axis = data.draw(integers(0, array.ndim - 1)) if array.ndim >= 1 else -1
         with assume_does_not_raise(RuntimeWarning):
             _ = exp_moving_sum(array, halflife, axis=axis)
@@ -448,7 +459,7 @@ class TestExpMovingSum:
 
 class TestFFill:
     @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
-    def test_main(self, limit: int | None, expected_v: float) -> None:
+    def test_main(self: Self, limit: int | None, expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
         expected = array([0.1, 0.1, 0.2, 0.2, expected_v, 0.3], dtype=float)
@@ -512,7 +523,7 @@ class TestFillNa:
             param(inf, inf, inf),
         ],
     )
-    def test_main(self, *, init: float, value: float, expected_v: float) -> None:
+    def test_main(self: Self, *, init: float, value: float, expected_v: float) -> None:
         arr = array([init], dtype=float)
         result = fillna(arr, value=value)
         expected = array([expected_v], dtype=float)
@@ -521,7 +532,7 @@ class TestFillNa:
 
 class TestFlatN0:
     @given(data=data(), n=integers(1, 10))
-    def test_main(self, *, data: DataObject, n: int) -> None:
+    def test_main(self: Self, *, data: DataObject, n: int) -> None:
         i = data.draw(integers(0, n - 1))
         arr = arange(n) == i
         result = flatn0(arr)
@@ -530,7 +541,7 @@ class TestFlatN0:
     @mark.parametrize(
         "array", [param(zeros(0, dtype=bool)), param(ones(2, dtype=bool))]
     )
-    def test_errors(self, *, array: NDArrayB1) -> None:
+    def test_errors(self: Self, *, array: NDArrayB1) -> None:
         with raises(FlatN0Error):
             _ = flatn0(array)
 
@@ -548,12 +559,12 @@ class TestGetFillValue:
             param(object),
         ],
     )
-    def test_main(self, *, dtype: Any) -> None:
+    def test_main(self: Self, *, dtype: Any) -> None:
         fill_value = get_fill_value(dtype)
         array = full(0, fill_value, dtype=dtype)
         assert has_dtype(array, dtype)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(GetFillValueError):
             _ = get_fill_value(None)
 
@@ -561,7 +572,7 @@ class TestGetFillValue:
 class TestHasDtype:
     @mark.parametrize(("dtype", "expected"), [param(float, True), param(int, False)])
     @mark.parametrize("is_tuple", [param(True), param(False)])
-    def test_main(self, *, dtype: Any, is_tuple: bool, expected: bool) -> None:
+    def test_main(self: Self, *, dtype: Any, is_tuple: bool, expected: bool) -> None:
         against = (dtype,) if is_tuple else dtype
         result = has_dtype(array([], dtype=float), against)
         assert result is expected
@@ -578,7 +589,7 @@ class TestHasDtype:
             ),
         ],
     )
-    def test_pandas(self, *, dtype: Any, against: Any, expected: bool) -> None:
+    def test_pandas(self: Self, *, dtype: Any, against: Any, expected: bool) -> None:
         result = has_dtype(Series([], dtype=dtype), against)
         assert result is expected
 
@@ -602,13 +613,15 @@ class TestIsAtLeast:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
+    def test_main(
+        self: Self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
 
 
@@ -631,13 +644,15 @@ class TestIsAtMost:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
+    def test_main(
+        self: Self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
 
 
@@ -670,7 +685,7 @@ class TestIsBetween:
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
-    def test_nan(self, *, low: float, high: float) -> None:
+    def test_nan(self: Self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
 
 
@@ -733,10 +748,10 @@ class TestIsFiniteAndIntegral:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_integral(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_integral_or_nan(nan)
 
 
@@ -752,7 +767,7 @@ class TestIsFiniteOrNan:
             param(nan, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_or_nan(x).item() is expected
 
 
@@ -774,10 +789,10 @@ class TestIsFiniteAndNegative:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_negative(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_negative_or_nan(nan)
 
 
@@ -799,10 +814,10 @@ class TestIsFiniteAndNonNegative:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_non_negative(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_non_negative_or_nan(nan)
 
 
@@ -824,10 +839,10 @@ class TestIsFiniteAndNonPositive:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_non_positive(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_non_positive_or_nan(nan)
 
 
@@ -849,10 +864,10 @@ class TestIsFiniteAndNonZero:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_non_zero(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_non_zero_or_nan(nan)
 
 
@@ -874,10 +889,10 @@ class TestIsFiniteAndPositive:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_finite_and_positive(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_finite_and_positive_or_nan(nan)
 
 
@@ -900,13 +915,15 @@ class TestIsGreaterThan:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
+    def test_main(
+        self: Self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
 
 
@@ -934,10 +951,10 @@ class TestIsIntegral:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_integral(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_integral_or_nan(nan)
 
 
@@ -960,13 +977,15 @@ class TestIsLessThan:
             param(nan, nan, True, True),
         ],
     )
-    def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
+    def test_main(
+        self: Self, *, x: float, y: float, equal_nan: bool, expected: bool
+    ) -> None:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
     @mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
-    def test_nan(self, *, y: float) -> None:
+    def test_nan(self: Self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
 
 
@@ -988,10 +1007,10 @@ class TestIsNegative:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_negative(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_negative_or_nan(nan)
 
 
@@ -1013,10 +1032,10 @@ class TestIsNonNegative:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_non_negative(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_non_negative_or_nan(nan)
 
 
@@ -1038,10 +1057,10 @@ class TestIsNonPositive:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_non_positive(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_non_positive_or_nan(nan)
 
 
@@ -1050,10 +1069,10 @@ class TestIsNonSingular:
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_main(self, *, array: NDArrayF2, dtype: Any, expected: bool) -> None:
+    def test_main(self: Self, *, array: NDArrayF2, dtype: Any, expected: bool) -> None:
         assert is_non_singular(array.astype(dtype)) is expected
 
-    def test_overflow(self) -> None:
+    def test_overflow(self: Self) -> None:
         arr = array([[0.0, 0.0], [5e-323, 0.0]], dtype=float)
         assert not is_non_singular(arr)
 
@@ -1076,10 +1095,10 @@ class TestIsNonZero:
             param(nan, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_non_zero_or_nan(nan)
 
 
@@ -1101,10 +1120,10 @@ class TestIsPositive:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_positive(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_positive_or_nan(nan)
 
 
@@ -1124,7 +1143,7 @@ class TestIsPositiveSemiDefinite:
         assert is_positive_semidefinite(array.astype(dtype)) is expected
 
     @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
-    def test_overflow(self, *, array: NDArrayF2) -> None:
+    def test_overflow(self: Self, *, array: NDArrayF2) -> None:
         _ = is_positive_semidefinite(array)
 
 
@@ -1162,10 +1181,10 @@ class TestIsZero:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_zero(x).item() is expected
 
-    def test_is_zero_or_nan(self) -> None:
+    def test_is_zero_or_nan(self: Self) -> None:
         assert is_zero_or_nan(nan)
 
 
@@ -1187,10 +1206,10 @@ class TestIsZeroOrFiniteAndMicro:
             param(nan, False),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_zero_or_finite_and_non_micro(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_zero_or_finite_and_non_micro_or_nan(nan)
 
 
@@ -1212,27 +1231,27 @@ class TestIsZeroOrNonMicro:
             param(nan, True),
         ],
     )
-    def test_main(self, *, x: float, expected: bool) -> None:
+    def test_main(self: Self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x).item() is expected
 
-    def test_nan(self) -> None:
+    def test_nan(self: Self) -> None:
         assert is_zero_or_non_micro_or_nan(nan)
 
 
 class TestMaximumMinimum:
-    def test_maximum_floats(self) -> None:
+    def test_maximum_floats(self: Self) -> None:
         result = maximum(1.0, 2.0)
         assert isinstance(result, float)
 
-    def test_maximum_arrays(self) -> None:
+    def test_maximum_arrays(self: Self) -> None:
         result = maximum(array([1.0], dtype=float), array([2.0], dtype=float))
         assert isinstance(result, ndarray)
 
-    def test_minimum_floats(self) -> None:
+    def test_minimum_floats(self: Self) -> None:
         result = minimum(1.0, 2.0)
         assert isinstance(result, float)
 
-    def test_minimum_arrays(self) -> None:
+    def test_minimum_arrays(self: Self) -> None:
         result = minimum(array([1.0], dtype=float), array([2.0], dtype=float))
         assert isinstance(result, ndarray)
 
@@ -1248,7 +1267,9 @@ class TestPctChange:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(self, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
+    def test_1d(
+        self: Self, n: int, expected_v: Sequence[float], dtype: type[Any]
+    ) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
         expected = array(expected_v, dtype=float)
@@ -1331,20 +1352,22 @@ class TestPctChange:
             ),
         ],
     )
-    def test_2d(self, axis: int, n: int, expected_v: Sequence[Sequence[float]]) -> None:
+    def test_2d(
+        self: Self, axis: int, n: int, expected_v: Sequence[Sequence[float]]
+    ) -> None:
         arr = arange(10, 22, dtype=float).reshape((3, 4))
         result = pct_change(arr, axis=axis, n=n)
         expected = array(expected_v, dtype=float)
         assert_allclose(result, expected, atol=1e-4, equal_nan=True)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         arr = array([], dtype=float)
         with raises(PctChangeError, match="Shift must be non-zero"):
             _ = pct_change(arr, n=0)
 
 
 class TestRedirectEmptyNumpyConcatenate:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         with raises(EmptyNumpyConcatenateError), redirect_empty_numpy_concatenate():
             _ = concatenate([])
 
@@ -1360,7 +1383,9 @@ class TestShift:
         ],
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_1d(self, *, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
+    def test_1d(
+        self: Self, *, n: int, expected_v: Sequence[float], dtype: type[Any]
+    ) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
         expected = array(expected_v, dtype=float)
@@ -1419,7 +1444,7 @@ class TestShift:
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         arr = array([], dtype=float)
         with raises(ShiftError, match="Shift must be non-zero"):
             _ = shift(arr, n=0)
@@ -1449,13 +1474,13 @@ class TestShiftBool:
 
 class TestYear:
     @given(date=dates())
-    def test_scalar(self, *, date: dt.date) -> None:
+    def test_scalar(self: Self, *, date: dt.date) -> None:
         date64 = datetime64(date, "D")
         yr = year(date64)
         assert yr == date.year
 
     @given(date=dates())
-    def test_array(self, *, date: dt.date) -> None:
+    def test_array(self: Self, *, date: dt.date) -> None:
         dates = array([date], dtype=datetime64D)
         years = year(dates)
         assert years.item() == date.year

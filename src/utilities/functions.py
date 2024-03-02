@@ -10,7 +10,7 @@ _T = TypeVar("_T")
 
 class _HasName(Protocol):
     @property
-    def name(self) -> Any: ...  # pragma: no cover
+    def name(self: Self) -> Any: ...  # pragma: no cover
 
 
 def check_name(obj: _HasName, name: Any, /) -> None:
@@ -26,7 +26,7 @@ class CheckNameError(Exception):
     name: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Object must have name {self.name}; got {self.obj.name}."
 
 

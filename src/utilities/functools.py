@@ -18,7 +18,7 @@ class partial(_partial[_T]):  # noqa: N801
     """Partial which accepts Ellipsis for positional arguments."""
 
     @override
-    def __call__(self, *args: Any, **kwargs: Any) -> _T:
+    def __call__(self: Self, *args: Any, **kwargs: Any) -> _T:
         iter_args = iter(args)
         head = (next(iter_args) if arg is ... else arg for arg in self.args)
         return self.func(*head, *iter_args, **{**self.keywords, **kwargs})
@@ -39,7 +39,7 @@ def redirect_empty_reduce() -> Iterator[None]:
 @dataclass(frozen=True, kw_only=True)
 class EmptyReduceError(Exception):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "reduce() must not be called over an empty iterable, or must have an initial value."
 
 

@@ -19,7 +19,7 @@ def get_cpu_count() -> int:
 @dataclass(frozen=True, kw_only=True)
 class GetCPUCountError(Exception):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "CPU count must not be None"  # pragma: no cover
 
 

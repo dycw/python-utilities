@@ -145,16 +145,16 @@ from utilities.sqlalchemy import (
 
 
 class TestCheckColumnCollectionsEqual:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         _check_column_collections_equal(x.columns, x.columns)
 
-    def test_snake(self) -> None:
+    def test_snake(self: Self) -> None:
         x = Table("x", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("y", MetaData(), Column("Id", Integer, primary_key=True))
         _check_column_collections_equal(x.columns, y.columns, snake=True)
 
-    def test_allow_permutations(self) -> None:
+    def test_allow_permutations(self: Self) -> None:
         x = Table(
             "x",
             MetaData(),
@@ -169,7 +169,7 @@ class TestCheckColumnCollectionsEqual:
         )
         _check_column_collections_equal(x.columns, y.columns, allow_permutations=True)
 
-    def test_snake_and_allow_permutations(self) -> None:
+    def test_snake_and_allow_permutations(self: Self) -> None:
         x = Table(
             "x",
             MetaData(),
@@ -204,22 +204,22 @@ class TestCheckColumnCollectionsEqual:
             ),
         ],
     )
-    def test_errors(self, *, x: Table, y: Table) -> None:
+    def test_errors(self: Self, *, x: Table, y: Table) -> None:
         with raises(_CheckColumnCollectionsEqualError):
             _check_column_collections_equal(x.columns, y.columns)
 
 
 class TestCheckColumnsEqual:
-    def test_equal(self) -> None:
+    def test_equal(self: Self) -> None:
         x = Column("id", Integer)
         _check_columns_equal(x, x)
 
-    def test_snake(self) -> None:
+    def test_snake(self: Self) -> None:
         x = Column("id", Integer)
         y = Column("Id", Integer)
         _check_columns_equal(x, y, snake=True)
 
-    def test_primary_key_off(self) -> None:
+    def test_primary_key_off(self: Self) -> None:
         x = Column("id", Integer, primary_key=True)
         y = Column("id", Integer, nullable=False)
         _check_columns_equal(x, y, primary_key=False)
@@ -231,7 +231,7 @@ class TestCheckColumnsEqual:
             param(Column("id", Integer), Column("id", Integer, nullable=False)),
         ],
     )
-    def test_errors(self, *, x: Any, y: Any) -> None:
+    def test_errors(self: Self, *, x: Any, y: Any) -> None:
         with raises(_CheckColumnsEqualError):
             _check_columns_equal(x, y)
 
@@ -287,17 +287,17 @@ class TestCheckColumnTypesEqual:
             param(Uuid),
         ],
     )
-    def test_equal_for_primaries(self, *, cls: type[Any]) -> None:
+    def test_equal_for_primaries(self: Self, *, cls: type[Any]) -> None:
         _check_column_types_equal(cls(), cls())
 
-    def test_equal_for_primaries_enum(self) -> None:
+    def test_equal_for_primaries_enum(self: Self) -> None:
         class Example(enum.Enum):
             member = auto()
 
         _check_column_types_equal(sqlalchemy.Enum(Example), sqlalchemy.Enum(Example))
 
     @given(data=data())
-    def test_equal_across_groups(self, *, data: DataObject) -> None:
+    def test_equal_across_groups(self: Self, *, data: DataObject) -> None:
         group = data.draw(sampled_from(self.groups))
         cls = data.draw(sampled_from(group))
         elements = sampled_from([cls, cls()])
@@ -305,7 +305,7 @@ class TestCheckColumnTypesEqual:
         _check_column_types_equal(x, y)
 
     @given(data=data())
-    def test_unequal(self, *, data: DataObject) -> None:
+    def test_unequal(self: Self, *, data: DataObject) -> None:
         groups = self.groups
         i, j = data.draw(lists_fixed_length(integers(0, len(groups) - 1), 2))
         _ = assume(i != j)
@@ -330,7 +330,7 @@ class TestCheckColumnTypesBooleanEqual:
                 _check_column_types_boolean_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_name(self, *, names: typing.Sequence[str | None]) -> None:
+    def test_name(self: Self, *, names: typing.Sequence[str | None]) -> None:
         name_x, name_y = names
         x, y = (Boolean(name=n) for n in names)
         if name_x == name_y:
@@ -342,7 +342,7 @@ class TestCheckColumnTypesBooleanEqual:
 
 class TestCheckColumnTypesDateTimeEqual:
     @given(timezones=lists_fixed_length(booleans(), 2))
-    def test_main(self, *, timezones: typing.Sequence[bool]) -> None:
+    def test_main(self: Self, *, timezones: typing.Sequence[bool]) -> None:
         timezone_x, timezone_y = timezones
         x, y = (DateTime(timezone=tz) for tz in timezones)
         if timezone_x is timezone_y:
@@ -353,12 +353,12 @@ class TestCheckColumnTypesDateTimeEqual:
 
 
 class TestCheckColumnTypesEnumEqual:
-    def test_no_enum_classes(self) -> None:
+    def test_no_enum_classes(self: Self) -> None:
         x = sqlalchemy.Enum()
         _check_column_types_enum_equal(x, x)
 
     @given(data=data())
-    def test_one_enum_class(self, *, data: DataObject) -> None:
+    def test_one_enum_class(self: Self, *, data: DataObject) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -368,7 +368,7 @@ class TestCheckColumnTypesEnumEqual:
         with raises(_CheckColumnTypesEnumEqualError):
             _check_column_types_enum_equal(x, y)
 
-    def test_two_enum_classes(self) -> None:
+    def test_two_enum_classes(self: Self) -> None:
         class EnumX(enum.Enum):
             member = auto()
 
@@ -397,7 +397,7 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
-    def test_native_enum(self, *, native_enums: typing.Sequence[bool]) -> None:
+    def test_native_enum(self: Self, *, native_enums: typing.Sequence[bool]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -410,7 +410,7 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
-    def test_length(self, *, lengths: typing.Sequence[int]) -> None:
+    def test_length(self: Self, *, lengths: typing.Sequence[int]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -423,7 +423,9 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
-    def test_inherit_schema(self, *, inherit_schemas: typing.Sequence[bool]) -> None:
+    def test_inherit_schema(
+        self: Self, *, inherit_schemas: typing.Sequence[bool]
+    ) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -438,7 +440,7 @@ class TestCheckColumnTypesEnumEqual:
 
 class TestCheckColumnTypesFloatEqual:
     @given(precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_precision(self, *, precisions: typing.Sequence[int | None]) -> None:
+    def test_precision(self: Self, *, precisions: typing.Sequence[int | None]) -> None:
         precision_x, precision_y = precisions
         x, y = (Float(precision=p) for p in precisions)
         if precision_x == precision_y:
@@ -448,7 +450,7 @@ class TestCheckColumnTypesFloatEqual:
                 _check_column_types_float_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
-    def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
+    def test_asdecimal(self: Self, *, asdecimals: typing.Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Float(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
@@ -472,7 +474,7 @@ class TestCheckColumnTypesFloatEqual:
 
 class TestCheckColumnTypesIntervalEqual:
     @given(natives=lists_fixed_length(booleans(), 2))
-    def test_native(self, *, natives: typing.Sequence[bool]) -> None:
+    def test_native(self: Self, *, natives: typing.Sequence[bool]) -> None:
         native_x, native_y = natives
         x, y = (Interval(native=n) for n in natives)
         if native_x is native_y:
@@ -508,7 +510,7 @@ class TestCheckColumnTypesIntervalEqual:
 
 class TestCheckColumnTypesLargeBinaryEqual:
     @given(lengths=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_main(self, *, lengths: typing.Sequence[int | None]) -> None:
+    def test_main(self: Self, *, lengths: typing.Sequence[int | None]) -> None:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
@@ -520,7 +522,7 @@ class TestCheckColumnTypesLargeBinaryEqual:
 
 class TestCheckColumnTypesNumericEqual:
     @given(precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_precision(self, *, precisions: typing.Sequence[int | None]) -> None:
+    def test_precision(self: Self, *, precisions: typing.Sequence[int | None]) -> None:
         precision_x, precision_y = precisions
         x, y = (Numeric(precision=p) for p in precisions)
         if precision_x == precision_y:
@@ -530,7 +532,7 @@ class TestCheckColumnTypesNumericEqual:
                 _check_column_types_numeric_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
-    def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
+    def test_asdecimal(self: Self, *, asdecimals: typing.Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Numeric(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
@@ -540,7 +542,7 @@ class TestCheckColumnTypesNumericEqual:
                 _check_column_types_numeric_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_numeric_scale(self, *, scales: typing.Sequence[int | None]) -> None:
+    def test_numeric_scale(self: Self, *, scales: typing.Sequence[int | None]) -> None:
         scale_x, scale_y = scales
         x, y = (Numeric(scale=s) for s in scales)
         if scale_x == scale_y:
@@ -582,7 +584,7 @@ class TestCheckColumnTypesStringEqual:
                 _check_column_types_string_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_collation(self, *, collations: typing.Sequence[str | None]) -> None:
+    def test_collation(self: Self, *, collations: typing.Sequence[str | None]) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
@@ -594,7 +596,7 @@ class TestCheckColumnTypesStringEqual:
 
 class TestCheckColumnTypesUuidEqual:
     @given(as_uuids=lists_fixed_length(booleans(), 2))
-    def test_as_uuid(self, *, as_uuids: typing.Sequence[bool]) -> None:
+    def test_as_uuid(self: Self, *, as_uuids: typing.Sequence[bool]) -> None:
         as_uuid_x, as_uuid_y = as_uuids
         x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
         if as_uuid_x is as_uuid_y:
@@ -604,7 +606,7 @@ class TestCheckColumnTypesUuidEqual:
                 _check_column_types_uuid_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
-    def test_native_uuid(self, *, native_uuids: typing.Sequence[bool]) -> None:
+    def test_native_uuid(self: Self, *, native_uuids: typing.Sequence[bool]) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
@@ -616,51 +618,51 @@ class TestCheckColumnTypesUuidEqual:
 
 class TestCheckEngine:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_main(self: Self, *, engine: Engine) -> None:
         check_engine(engine)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_pass(self, *, engine: Engine) -> None:
+    def test_num_tables_pass(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         ensure_tables_created(engine, table)
         check_engine(engine, num_tables=1)
 
     @given(engine=sqlite_engines())
-    def test_num_tables_error(self, *, engine: Engine) -> None:
+    def test_num_tables_error(self: Self, *, engine: Engine) -> None:
         with raises(CheckEngineError):
             check_engine(engine, num_tables=1)
 
 
 class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
-    def test_reflected(self, *, engine: Engine) -> None:
+    def test_reflected(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         ensure_tables_created(engine, table)
         check_table_against_reflection(table, engine)
 
     @given(engine=sqlite_engines())
-    def test_error_no_such_table(self, *, engine: Engine) -> None:
+    def test_error_no_such_table(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = check_table_against_reflection(table, engine)
 
 
 class TestCheckTablesEqual:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         _check_tables_equal(table, table)
 
-    def test_snake_table(self) -> None:
+    def test_snake_table(self: Self) -> None:
         x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("Example", MetaData(), Column("id", Integer, primary_key=True))
         _check_tables_equal(x, y, snake_table=True)
 
-    def test_snake_columns(self) -> None:
+    def test_snake_columns(self: Self) -> None:
         x = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         y = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         _check_tables_equal(x, y, snake_columns=True)
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -681,7 +683,7 @@ class TestCheckTableOrColumnNamesEqual:
             param("x", "y", True, False),
         ],
     )
-    def test_main(self, *, x: str, y: str, snake: bool, success: bool) -> None:
+    def test_main(self: Self, *, x: str, y: str, snake: bool, success: bool) -> None:
         if success:
             _check_table_or_column_names_equal(x, y, snake=snake)
         else:
@@ -689,7 +691,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
-    def test_quoted_name(self, *, name: str | None, expected: str) -> None:
+    def test_quoted_name(self: Self, *, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
 
@@ -747,7 +749,7 @@ class TestColumnwiseMinMax:
                 assert max_xy == max(x, y)
 
     @given(engine=sqlite_engines())
-    def test_label(self, *, engine: Engine) -> None:
+    def test_label(self: Self, *, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -762,12 +764,12 @@ class TestColumnwiseMinMax:
 
 class TestCreateEngine:
     @given(temp_path=temp_paths())
-    def test_main(self, *, temp_path: Path) -> None:
+    def test_main(self: Self, *, temp_path: Path) -> None:
         engine = create_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
 
     @given(temp_path=temp_paths())
-    def test_query(self, *, temp_path: Path) -> None:
+    def test_query(self: Self, *, temp_path: Path) -> None:
         engine = create_engine(
             "sqlite",
             database=temp_path.name,
@@ -778,13 +780,13 @@ class TestCreateEngine:
 
 class TestDialect:
     @mark.parametrize("dialect", Dialect)
-    def test_max_params(self, *, dialect: Dialect) -> None:
+    def test_max_params(self: Self, *, dialect: Dialect) -> None:
         assert isinstance(dialect.max_params, int)
 
 
 class TestEnsureEngine:
     @given(data=data(), engine=sqlite_engines())
-    def test_main(self, *, data: DataObject, engine: Engine) -> None:
+    def test_main(self: Self, *, data: DataObject, engine: Engine) -> None:
         maybe_engine = data.draw(
             sampled_from([engine, engine.url.render_as_string(hide_password=False)])
         )
@@ -795,13 +797,13 @@ class TestEnsureEngine:
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_table(self, *, engine: Engine, runs: int) -> None:
+    def test_table(self: Self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
+    def test_mapped_class(self: Self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -822,13 +824,13 @@ class TestEnsureTablesCreated:
 class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_table(self, *, engine: Engine, runs: int) -> None:
+    def test_table(self: Self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
-    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
+    def test_mapped_class(self: Self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -865,11 +867,11 @@ class TestGetChunkSize:
 
 
 class TestGetColumnNames:
-    def test_table(self) -> None:
+    def test_table(self: Self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table)
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -877,16 +879,16 @@ class TestGetColumnNames:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+    def _run_test(self: Self, table_or_mapped_class: Table | type[Any], /) -> None:
         assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
 class TestGetColumns:
-    def test_table(self) -> None:
+    def test_table(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         self._run_test(table)
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -894,7 +896,7 @@ class TestGetColumns:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+    def _run_test(self: Self, table_or_mapped_class: Table | type[Any], /) -> None:
         columns = get_columns(table_or_mapped_class)
         assert isinstance(columns, list)
         assert len(columns) == 1
@@ -903,17 +905,17 @@ class TestGetColumns:
 
 class TestGetDialect:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_main(self: Self, *, engine: Engine) -> None:
         assert get_dialect(engine) is Dialect.sqlite
 
 
 class TestGetTable:
-    def test_table(self) -> None:
+    def test_table(self: Self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table(table)
         assert result is table
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -923,7 +925,7 @@ class TestGetTable:
         result = get_table(table)
         assert result is Example.__table__
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(
             GetTableError, match="Object .* must be a Table or mapped class; got .*"
         ):
@@ -931,13 +933,13 @@ class TestGetTable:
 
 
 class TestGetTableName:
-    def test_table(self) -> None:
+    def test_table(self: Self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         result = get_table_name(table)
         expected = "example"
         assert result == expected
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -950,11 +952,11 @@ class TestGetTableName:
 
 class TestInsertItems:
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
+    def test_pair_of_tuple_and_table(self: Self, *, engine: Engine, id_: int) -> None:
         self._run_test(engine, {id_}, ((id_,), self._table))
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
+    def test_pair_of_dict_and_table(self: Self, *, engine: Engine, id_: int) -> None:
         self._run_test(engine, {id_}, ({"id_": id_}, self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
@@ -984,11 +986,11 @@ class TestInsertItems:
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
-    def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
+    def test_many_items(self: Self, *, engine: Engine, ids: set[int]) -> None:
         self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
+    def test_mapped_class(self: Self, *, engine: Engine, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -997,10 +999,10 @@ class TestInsertItems:
         self._run_test(engine, {id_}, Example(id_=id_))
 
     @property
-    def _table(self) -> Table:
+    def _table(self: Self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
-    def _run_test(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
+    def _run_test(self: Self, engine: Engine, ids: set[int], /, *args: Any) -> None:
         ensure_tables_created(engine, self._table)
         insert_items(engine, *args)
         sel = select(self._table.c["id_"])
@@ -1011,48 +1013,48 @@ class TestInsertItems:
 
 class TestInsertItemsCollect:
     @given(id_=integers())
-    def test_pair_with_tuple_data(self, *, id_: int) -> None:
+    def test_pair_with_tuple_data(self: Self, *, id_: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect(((id_,), table)))
         expected = [_InsertionItem(values=(id_,), table=table)]
         assert result == expected
 
     @given(id_=integers())
-    def test_pair_with_dict_data(self, *, id_: int) -> None:
+    def test_pair_with_dict_data(self: Self, *, id_: int) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect(({"id": id_}, table)))
         expected = [_InsertionItem(values={"id": id_}, table=table)]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_pair_with_list_of_tuple_data(self, *, ids: set[int]) -> None:
+    def test_pair_with_list_of_tuple_data(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect(([(id_,) for id_ in ids], table)))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_pair_with_list_of_dict_data(self, *, ids: set[int]) -> None:
+    def test_pair_with_list_of_dict_data(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect(([{"id": id_} for id_ in ids], table)))
         expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_list(self, *, ids: set[int]) -> None:
+    def test_list(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect([((id_,), table) for id_ in ids]))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_set(self, *, ids: set[int]) -> None:
+    def test_set(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect({((id_,), table) for id_ in ids}))
         assert {one(r.values) for r in result} == ids
 
     @given(id_=integers())
-    def test_mapped_class(self, *, id_: int) -> None:
+    def test_mapped_class(self: Self, *, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -1071,11 +1073,11 @@ class TestInsertItemsCollect:
             param(None, id="outright invalid"),
         ],
     )
-    def test_errors(self, *, item: Any) -> None:
+    def test_errors(self: Self, *, item: Any) -> None:
         with raises(_InsertItemsCollectError):
             _ = list(_insert_items_collect(item))
 
-    def test_error_tuple_but_first_argument_invalid(self) -> None:
+    def test_error_tuple_but_first_argument_invalid(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(_InsertItemsCollectError):
             _ = list(_insert_items_collect((None, table)))
@@ -1083,14 +1085,14 @@ class TestInsertItemsCollect:
 
 class TestInsertItemsCollectIterable:
     @given(ids=sets(integers()))
-    def test_list_of_tuples(self, *, ids: set[int]) -> None:
+    def test_list_of_tuples(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(_insert_items_collect_iterable([(id_,) for id_ in ids], table))
         expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_list_of_dicts(self, *, ids: set[int]) -> None:
+    def test_list_of_dicts(self: Self, *, ids: set[int]) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         result = list(
             _insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
@@ -1098,7 +1100,7 @@ class TestInsertItemsCollectIterable:
         expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
         assert result == expected
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with raises(_InsertItemsCollectIterableError):
             _ = list(_insert_items_collect_iterable([None], table))
@@ -1114,13 +1116,13 @@ class TestInsertItemsCollectValid:
             param({1: "a", 2: "b", 3: "c"}, False),
         ],
     )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
+    def test_main(self: Self, *, obj: Any, expected: bool) -> None:
         result = _insert_items_collect_valid(obj)
         assert result is expected
 
 
 class TestIsMappedClass:
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -1128,16 +1130,16 @@ class TestIsMappedClass:
 
         assert is_mapped_class(Example)
 
-    def test_other(self) -> None:
+    def test_other(self: Self) -> None:
         assert not is_mapped_class(int)
 
 
 class TestIsTableOrMappedClass:
-    def test_table(self) -> None:
+    def test_table(self: Self) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         assert is_table_or_mapped_class(table)
 
-    def test_mapped_class(self) -> None:
+    def test_mapped_class(self: Self) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
 
@@ -1145,13 +1147,13 @@ class TestIsTableOrMappedClass:
 
         assert is_table_or_mapped_class(Example)
 
-    def test_other(self) -> None:
+    def test_other(self: Self) -> None:
         assert not is_table_or_mapped_class(int)
 
 
 class TestMappedClassToDict:
     @given(id_=integers())
-    def test_main(self, *, id_: int) -> None:
+    def test_main(self: Self, *, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
             id_ = Column(Integer, primary_key=True)
@@ -1162,7 +1164,7 @@ class TestMappedClassToDict:
         assert result == expected
 
     @given(id_=integers())
-    def test_explicitly_named_column(self, *, id_: int) -> None:
+    def test_explicitly_named_column(self: Self, *, id_: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
             ID = Column(Integer, primary_key=True, name="id")
@@ -1175,19 +1177,19 @@ class TestMappedClassToDict:
 
 class TestParseEngine:
     @given(engine=sqlite_engines())
-    def test_str(self, *, engine: Engine) -> None:
+    def test_str(self: Self, *, engine: Engine) -> None:
         url = engine.url
         result = parse_engine(url.render_as_string(hide_password=False))
         assert result.url == url
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with raises(ParseEngineError):
             _ = parse_engine("error")
 
 
 class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_main(self: Self, *, engine: Engine) -> None:
         seq = sqlalchemy.Sequence("example")
         with raises(NotImplementedError), engine.begin() as conn:
             _ = conn.scalar(seq)
@@ -1195,7 +1197,7 @@ class TestRedirectToNoSuchSequenceError:
 
 class TestRedirectTableDoesNotExist:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_main(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         with (
             raises(TableDoesNotExistError),
@@ -1223,14 +1225,14 @@ class TestReflectTable:
             ]
         ),
     )
-    def test_main(self, *, engine: Engine, col_type: Any) -> None:
+    def test_main(self: Self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
         ensure_tables_created(engine, table)
         reflected = reflect_table(table, engine)
         _check_tables_equal(reflected, table)
 
     @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
+    def test_error(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = reflect_table(table, engine)
@@ -1238,14 +1240,14 @@ class TestReflectTable:
 
 class TestSerializeEngine:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_main(self: Self, *, data: DataObject) -> None:
         engine = data.draw(sqlite_engines())
         result = parse_engine(serialize_engine(engine))
         assert result.url == engine.url
 
 
 class TestTablenameMixin:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         class Example(declarative_base(cls=TablenameMixin)):
             Id = Column(Integer, primary_key=True)
 

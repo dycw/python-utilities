@@ -34,20 +34,20 @@ class TestSnakeCase:
             param("HTMLVersion", "html_version"),
         ],
     )
-    def test_main(self, *, text: str, expected: str) -> None:
+    def test_main(self: Self, *, text: str, expected: str) -> None:
         result = snake_case(text)
         assert result == expected
 
 
 class TestSnakeCaseMappings:
     @given(text=text_ascii())
-    def test_main(self, *, text: str) -> None:
+    def test_main(self: Self, *, text: str) -> None:
         result = snake_case_mappings([text])
         expected = {text: snake_case(text)}
         assert result == expected
 
     @given(text=text_ascii(min_size=1))
-    def test_error_keys(self, *, text: str) -> None:
+    def test_error_keys(self: Self, *, text: str) -> None:
         with raises(
             SnakeCaseMappingsError,
             match="Strings .* must not contain duplicates; got .*",
@@ -55,7 +55,7 @@ class TestSnakeCaseMappings:
             _ = snake_case_mappings([text, text])
 
     @given(text=text_ascii(min_size=1))
-    def test_error_values(self, *, text: str) -> None:
+    def test_error_values(self: Self, *, text: str) -> None:
         with raises(
             SnakeCaseMappingsError,
             match="Snake-cased strings .* must not contain duplicates; got .*",

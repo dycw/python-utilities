@@ -25,7 +25,7 @@ class TestLuigiServer:
             pid_file=pid_file, log_dir=log_dir, state_path=state_path, port=port
         )
 
-    def test_dry_run(self, *, tmp_path: Path) -> None:
+    def test_dry_run(self: Self, *, tmp_path: Path) -> None:
         runner = CliRunner()
         args = ["--dry-run"]
         with temp_cwd(tmp_path):

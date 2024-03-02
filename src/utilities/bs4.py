@@ -49,7 +49,7 @@ class TableTagToDataFrameError(Exception):
     second: list[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Table {self.table} must contain exactly one `th` tag; got {self.first}, {self.second} and perhaps more."
 
 

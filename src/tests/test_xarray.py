@@ -25,7 +25,7 @@ from utilities.xarray import ewma, exp_moving_sum, rename_data_arrays
 
 
 class TestBottleNeckInstalled:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         array = DataArray([], {"dim": []}, ["dim"])
         _ = array.ffill(dim="dim")
 
@@ -61,14 +61,16 @@ class TestExpMovingSum:
 
 
 class TestNumbaggInstalled:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         array = DataArray([], {"dim": []}, ["dim"])
         _ = array.rolling_exp(dim=1.0).sum()
 
 
 class TestRenameDataArrays:
     @given(name_array=text_ascii() | none(), name_other=text_ascii() | none())
-    def test_main(self, *, name_array: str | None, name_other: str | None) -> None:
+    def test_main(
+        self: Self, *, name_array: str | None, name_other: str | None
+    ) -> None:
         @dataclass
         class Other:
             name: str | None
@@ -78,7 +80,7 @@ class TestRenameDataArrays:
             array: DataArray
             other: Other
 
-            def __post_init__(self) -> None:
+            def __post_init__(self: Self) -> None:
                 rename_data_arrays(self)
 
         array = DataArray(name=name_array)

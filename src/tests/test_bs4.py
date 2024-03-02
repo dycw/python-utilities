@@ -13,7 +13,7 @@ from utilities.text import strip_and_dedent
 
 
 class TestYieldTables:
-    def test_with_header(self) -> None:
+    def test_with_header(self: Self) -> None:
         html = """
             <table>
                 <tr>
@@ -65,7 +65,7 @@ class TestYieldTables:
         )
         assert_frame_equal(df, expected)
 
-    def test_without_header(self) -> None:
+    def test_without_header(self: Self) -> None:
         html = """
             <table>
                 <tr>
@@ -106,7 +106,7 @@ class TestYieldTables:
         )
         assert_frame_equal(df, expected)
 
-    def test_multiple_th_rows_error(self) -> None:
+    def test_multiple_th_rows_error(self: Self) -> None:
         html = """
             <table>
                 <tr>

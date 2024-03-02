@@ -19,7 +19,7 @@ class TestAToF:
             param("1,234.56", 1234.56),
         ],
     )
-    def test_main(self, *, text: str, expected: float) -> None:
+    def test_main(self: Self, *, text: str, expected: float) -> None:
         plat_locale = get_locale_for_platform("en_US")
         assert atof(text, locale=plat_locale) == expected
 
@@ -35,20 +35,20 @@ class TestAToI:
             param("12,345", 12345),
         ],
     )
-    def test_main(self, *, text: str, expected: int) -> None:
+    def test_main(self: Self, *, text: str, expected: int) -> None:
         plat_locale = get_locale_for_platform("en_US")
         assert atoi(text, locale=plat_locale) == expected
 
 
 class TestGetLocaleForPlatform:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         plat_locale = get_locale_for_platform("en_US")
         _ = setlocale(LC_CTYPE, locale=plat_locale)
 
 
 class TestOverrideLocale:
     @skipif_windows
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         plat_locale = get_locale_for_platform("en_US")
         with override_locale(locale=plat_locale):
             assert LC_TIME in {2, 5}

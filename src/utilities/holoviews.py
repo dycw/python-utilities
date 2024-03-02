@@ -73,7 +73,7 @@ class _PlotCurveArrayNameNotAStringError(PlotCurveError):
     name: Any
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Array name {self.name} must be a string; got {get_class_name(self.name)!r} instead"
 
 
@@ -82,7 +82,7 @@ class _PlotCurveArrayNameIsEmptyError(PlotCurveError):
     name: str
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Array name {self.name!r} must not be empty"
 
 

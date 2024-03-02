@@ -24,7 +24,7 @@ from pandas import (
     Timestamp,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
-from typing_extensions import assert_never, override
+from typing_extensions import Self, assert_never, override
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
@@ -140,7 +140,7 @@ def _check_index_length(
 @dataclass(frozen=True, kw_only=True)
 class _CheckIndexLengthError(CheckIndexError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must satisfy the length requirements."
 
 
@@ -155,7 +155,7 @@ def _check_index_name(index: IndexA, name: Any, /) -> None:
 @dataclass(frozen=True, kw_only=True)
 class _CheckIndexNameError(CheckIndexError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must satisfy the name requirement."
 
 
@@ -169,7 +169,7 @@ def _check_index_sorted(index: IndexA, /) -> None:
 @dataclass(frozen=True, kw_only=True)
 class _CheckIndexSortedError(CheckIndexError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must be sorted."
 
 
@@ -181,7 +181,7 @@ def _check_index_unique(index: IndexA, /) -> None:
 @dataclass(frozen=True, kw_only=True)
 class _CheckIndexUniqueError(CheckIndexError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must be unique."
 
 
@@ -236,7 +236,7 @@ class _CheckPandasDataFrameColumnsError(CheckPandasDataFrameError):
     columns: Iterable[Hashable]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have columns {self.columns}; got {self.df.columns}\n\n{self.df}."
 
 
@@ -258,7 +258,7 @@ class _CheckPandasDataFrameDTypesError(CheckPandasDataFrameError):
     dtypes: Iterable[Any]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have dtypes {self.dtypes}; got {self.df.dtypes}\n\n{self.df}."
 
 
@@ -279,7 +279,7 @@ def _check_pandas_dataframe_length(
 @dataclass(frozen=True, kw_only=True)
 class _CheckPandasDataFrameLengthError(CheckPandasDataFrameError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must satisfy the length requirements; got {len(self.df)}\n\n{self.df}."
 
 
@@ -298,7 +298,7 @@ def _check_pandas_dataframe_standard(df: DataFrame, /) -> None:
 
 class _CheckPandasDataFrameStandardIndexError(CheckPandasDataFrameError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (
             f"DataFrame must have a standard index; got {self.df.index}\n\n{self.df}."
         )
@@ -306,7 +306,7 @@ class _CheckPandasDataFrameStandardIndexError(CheckPandasDataFrameError):
 
 class _CheckPandasDataFrameStandardColumnsError(CheckPandasDataFrameError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (
             f"DataFrame must have standard columns; got {self.df.columns}\n\n{self.df}."
         )
@@ -325,7 +325,7 @@ class _CheckPandasDataFrameSortedError(CheckPandasDataFrameError):
     by: str | Sequence[str]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must be sorted on {self.by}\n\n{self.df}."
 
 
@@ -341,7 +341,7 @@ class _CheckPandasDataFrameUniqueError(CheckPandasDataFrameError):
     by: Hashable | Sequence[Hashable]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must be unique on {self.by}\n\n{self.df}."
 
 
@@ -355,7 +355,7 @@ class _CheckPandasDataFrameWidthError(CheckPandasDataFrameError):
     width: int
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"DataFrame must have width {self.width}; got {len(self.df.columns)}\n\n{self.df}."
 
 
@@ -440,7 +440,7 @@ class ReindexToSetError(Exception):
     target: list[Any]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} and {self.target} must be equal as sets."
 
 
@@ -461,7 +461,7 @@ class ReindexToSubSetError(Exception):
     target: list[Any]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must be a superset of {self.target}."
 
 
@@ -482,7 +482,7 @@ class ReindexToSuperSetError(Exception):
     target: list[Any]
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Index {self.index} must be a subset of {self.target}."
 
 
@@ -519,7 +519,7 @@ class SeriesMinMaxError(Exception):
     y: SeriesA
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Series {self.x} and {self.y} must have the same dtype; got {self.x.dtype} and {self.y.dtype}."
 
 
@@ -620,7 +620,7 @@ class UnionIndexesError(Exception):
     right: IndexA
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Indexes {self.left} and {self.right} must have the same name; got {self.left.name} and {self.right.name}."
 
 

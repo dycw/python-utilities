@@ -55,14 +55,14 @@ class SnakeCaseMappingsError(Exception):
 @dataclass(frozen=True, kw_only=True)
 class _SnakeCaseMappingsDuplicateKeysError(SnakeCaseMappingsError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Strings {self.text} must not contain duplicates; got {self.counts}"
 
 
 @dataclass(frozen=True, kw_only=True)
 class _SnakeCaseMappingsDuplicateValuesError(SnakeCaseMappingsError):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return f"Snake-cased strings {self.text} must not contain duplicates; got {self.counts}"
 
 

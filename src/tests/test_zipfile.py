@@ -19,7 +19,7 @@ class TestYieldZipFileContents:
         temp_path=temp_paths(),
         contents=sets(sampled_from(ascii_letters), min_size=1, max_size=10),
     )
-    def test_main(self, temp_path: Path, contents: AbstractSet[str]) -> None:
+    def test_main(self: Self, temp_path: Path, contents: AbstractSet[str]) -> None:
         contents = set(maybe_yield_lower_case(contents))
         assert temp_path.exists()
         assert not list(temp_path.iterdir())

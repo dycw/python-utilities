@@ -188,14 +188,14 @@ class TestInsertDataFrame:
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         schema = {"a": int, "b": float, "c": str}
         result = _insert_dataframe_map_df_column_to_table_column_and_type("b", schema)
         expected = ("b", float)
         assert result == expected
 
     @mark.parametrize("sr_name", [param("b"), param("B")])
-    def test_snake(self, *, sr_name: str) -> None:
+    def test_snake(self: Self, *, sr_name: str) -> None:
         schema = {"A": int, "B": float, "C": str}
         result = _insert_dataframe_map_df_column_to_table_column_and_type(
             sr_name, schema, snake=True
@@ -204,14 +204,14 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         assert result == expected
 
     @mark.parametrize("snake", [param(True), param(False)])
-    def test_error_empty(self, *, snake: bool) -> None:
+    def test_error_empty(self: Self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
         with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "value", schema, snake=snake
             )
 
-    def test_error_non_unique(self) -> None:
+    def test_error_non_unique(self: Self) -> None:
         schema = {"a": int, "b": float, "B": float, "c": str}
         with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
@@ -220,14 +220,14 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
 
 
 class TestInsertDataFrameMapDFColumnToTableSchema:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
         result = _insert_dataframe_map_df_column_to_table_schema(
             "b", Float64, table_schema
         )
         assert result == "b"
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
         with raises(_InsertDataFrameMapDFColumnToTableSchemaError):
             _ = _insert_dataframe_map_df_column_to_table_schema(
@@ -236,7 +236,7 @@ class TestInsertDataFrameMapDFColumnToTableSchema:
 
 
 class TestInsertDataFrameMapDFSchemaToTable:
-    def test_default(self) -> None:
+    def test_default(self: Self) -> None:
         df_schema = {"a": Int64, "b": Float64}
         table = Table(
             "example",
@@ -249,7 +249,7 @@ class TestInsertDataFrameMapDFSchemaToTable:
         expected = {"a": "a", "b": "b"}
         assert result == expected
 
-    def test_snake(self) -> None:
+    def test_snake(self: Self) -> None:
         df_schema = {"a": Int64, "b": Float64}
         table = Table(
             "example",
@@ -262,7 +262,7 @@ class TestInsertDataFrameMapDFSchemaToTable:
         expected = {"a": "A", "b": "B"}
         assert result == expected
 
-    def test_df_schema_has_extra_columns(self) -> None:
+    def test_df_schema_has_extra_columns(self: Self) -> None:
         df_schema = {"a": Int64, "b": Float64, "c": Utf8}
         table = Table(
             "example",
@@ -275,7 +275,7 @@ class TestInsertDataFrameMapDFSchemaToTable:
         expected = {"a": "a", "b": "b"}
         assert result == expected
 
-    def test_table_has_extra_columns(self) -> None:
+    def test_table_has_extra_columns(self: Self) -> None:
         df_schema = {"a": Int64, "b": Float64}
         table = Table(
             "example",
@@ -331,7 +331,7 @@ class TestSelectToDataFrame:
         assert_frame_equal(result, df)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    def test_snake(self, *, engine: Engine, values: list[bool | None]) -> None:
+    def test_snake(self: Self, *, engine: Engine, values: list[bool | None]) -> None:
         df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
         table = Table(
             "example",
@@ -382,7 +382,7 @@ class TestSelectToDataFrame:
         assert set(df["value"].to_list()) == in_values
 
     @given(engine=sqlite_engines())
-    def test_engine_and_in_clauses_empty(self, *, engine: Engine) -> None:
+    def test_engine_and_in_clauses_empty(self: Self, *, engine: Engine) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -469,7 +469,7 @@ class TestSelectToDataFrame:
         assert seen == in_values
 
     @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
+    def test_error(self: Self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table)
         with raises(SelectToDataFrameError):
@@ -477,7 +477,7 @@ class TestSelectToDataFrame:
 
 
 class TestSelectToDataFrameApplySnake:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         table = Table(
             "example",
             MetaData(),
@@ -492,7 +492,7 @@ class TestSelectToDataFrameApplySnake:
 
 
 class TestSelectToDataFrameCheckDuplicates:
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c["id"], table.c["id"])
         with raises(DuplicateColumnError):
@@ -500,7 +500,7 @@ class TestSelectToDataFrameCheckDuplicates:
 
 
 class TestSelectToDataFrameMapSelectToDFSchema:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c["id"])
         schema = _select_to_dataframe_map_select_to_df_schema(sel)
@@ -563,7 +563,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
 
     @mark.parametrize("col_type", [param(DATETIME), param(DateTime), param(TIMESTAMP)])
     @mark.parametrize("timezone", [param(None), param(True), param(False)])
-    def test_datetime(self, *, col_type: Any, timezone: bool | None) -> None:
+    def test_datetime(self: Self, *, col_type: Any, timezone: bool | None) -> None:
         col_type_use = col_type if timezone is None else col_type(timezone=timezone)
         dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)
         assert isinstance(dtype, Datetime)

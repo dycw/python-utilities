@@ -12,7 +12,7 @@ class TestCache:
     @example(max_size=1, max_duration=None)
     @example(max_size=1, max_duration=1.0)
     @given(max_size=integers(1, 10) | none(), max_duration=floats(0.1, 10.0) | none())
-    def test_main(self, *, max_size: int, max_duration: float) -> None:
+    def test_main(self: Self, *, max_size: int, max_duration: float) -> None:
         counter = 0
 
         @cache(max_size=max_size, max_duration=max_duration)

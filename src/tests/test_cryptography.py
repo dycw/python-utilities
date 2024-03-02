@@ -17,19 +17,19 @@ from utilities.os import temp_environ
 
 class TestEncryptAndDecrypt:
     @given(text=text())
-    def test_round_trip(self, text: str) -> None:
+    def test_round_trip(self: Self, text: str) -> None:
         key = Fernet.generate_key()
         with temp_environ({_ENV_VAR: key.decode()}):
             assert decrypt(encrypt(text)) == text
 
 
 class TestGetFernet:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         key = Fernet.generate_key()
         with temp_environ({_ENV_VAR: key.decode()}):
             fernet = get_fernet()
         assert isinstance(fernet, Fernet)
 
-    def test_error(self) -> None:
+    def test_error(self: Self) -> None:
         with temp_environ({_ENV_VAR: None}), raises(GetFernetError):
             _ = get_fernet()

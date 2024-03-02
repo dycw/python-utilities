@@ -6,10 +6,10 @@ from utilities.ipython import check_ipython_class, is_ipython
 
 
 class TestCheckIPythonClass:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert not check_ipython_class(NoneType)
 
 
 class TestIsIPython:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert not is_ipython()

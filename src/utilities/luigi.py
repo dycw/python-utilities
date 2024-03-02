@@ -47,72 +47,72 @@ class DateParameter(luigi.DateParameter):
     """A parameter which takes the value of a `dt.date`."""
 
     @override
-    def normalize(self, value: dt.date | str) -> dt.date:
+    def normalize(self: Self, value: dt.date | str) -> dt.date:
         return ensure_date(value)
 
     @override
-    def parse(self, s: str) -> dt.date:
+    def parse(self: Self, s: str) -> dt.date:
         return parse_date(s)
 
     @override
-    def serialize(self, dt: dt.date) -> str:
+    def serialize(self: Self, dt: dt.date) -> str:
         return serialize_date(dt)
 
 
 class DateHourParameter(luigi.DateHourParameter):
     """A parameter which takes the value of an hourly `dt.datetime`."""
 
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+    def __init__(self: Self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self: Self, dt: dt.datetime | str) -> dt.datetime:
         return ensure_datetime(dt)
 
     @override
-    def parse(self, s: str) -> dt.datetime:
+    def parse(self: Self, s: str) -> dt.datetime:
         return parse_datetime(s)
 
     @override
-    def serialize(self, dt: dt.datetime) -> str:
+    def serialize(self: Self, dt: dt.datetime) -> str:
         return serialize_datetime(dt)
 
 
 class DateMinuteParameter(luigi.DateMinuteParameter):
     """A parameter which takes the value of a minutely `dt.datetime`."""
 
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+    def __init__(self: Self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self: Self, dt: dt.datetime | str) -> dt.datetime:
         return ensure_datetime(dt)
 
     @override
-    def parse(self, s: str) -> dt.datetime:
+    def parse(self: Self, s: str) -> dt.datetime:
         return parse_datetime(s)
 
     @override
-    def serialize(self, dt: dt.datetime) -> str:
+    def serialize(self: Self, dt: dt.datetime) -> str:
         return serialize_datetime(dt)
 
 
 class DateSecondParameter(luigi.DateSecondParameter):
     """A parameter which takes the value of a secondly `dt.datetime`."""
 
-    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+    def __init__(self: Self, interval: int = 1, **kwargs: Any) -> None:
         super().__init__(interval, EPOCH_UTC, **kwargs)
 
     @override
-    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+    def normalize(self: Self, dt: dt.datetime | str) -> dt.datetime:
         return ensure_datetime(dt)
 
     @override
-    def parse(self, s: str) -> dt.datetime:
+    def parse(self: Self, s: str) -> dt.datetime:
         return parse_datetime(s)
 
     @override
-    def serialize(self, dt: dt.datetime) -> str:
+    def serialize(self: Self, dt: dt.datetime) -> str:
         return serialize_datetime(dt)
 
 
@@ -130,15 +130,15 @@ class EnumParameter(Parameter, Generic[_E]):
         self._case_sensitive = case_sensitive
 
     @override
-    def normalize(self, x: _E | str) -> _E:
+    def normalize(self: Self, x: _E | str) -> _E:
         return ensure_enum(self._enum, x, case_sensitive=self._case_sensitive)
 
     @override
-    def parse(self, x: str) -> _E:
+    def parse(self: Self, x: str) -> _E:
         return parse_enum(self._enum, x, case_sensitive=self._case_sensitive)
 
     @override
-    def serialize(self, x: _E) -> str:
+    def serialize(self: Self, x: _E) -> str:
         return x.name
 
 
@@ -153,16 +153,16 @@ class FrozenSetIntsParameter(Parameter):
         super().__init__(**kwargs)
 
     @override
-    def normalize(self, x: Iterable[int]) -> frozenset[int]:
+    def normalize(self: Self, x: Iterable[int]) -> frozenset[int]:
         return frozenset(x)
 
     @override
-    def parse(self, x: str) -> frozenset[int]:
+    def parse(self: Self, x: str) -> frozenset[int]:
         split = [] if x == self._empty else x.split(self._separator)
         return frozenset(map(int, split))
 
     @override
-    def serialize(self, x: frozenset[int]) -> str:
+    def serialize(self: Self, x: frozenset[int]) -> str:
         if len(x) >= 1:
             return self._separator.join(sorted(map(str, x)))
         return self._empty
@@ -179,16 +179,16 @@ class FrozenSetStrsParameter(Parameter):
         super().__init__(**kwargs)
 
     @override
-    def normalize(self, x: IterableStrs) -> frozenset[str]:
+    def normalize(self: Self, x: IterableStrs) -> frozenset[str]:
         return frozenset(x)
 
     @override
-    def parse(self, x: str) -> frozenset[str]:
+    def parse(self: Self, x: str) -> frozenset[str]:
         split = [] if x == self._empty else x.split(self._separator)
         return frozenset(split)
 
     @override
-    def serialize(self, x: frozenset[str]) -> str:
+    def serialize(self: Self, x: frozenset[str]) -> str:
         if len(x) >= 1:
             return self._separator.join(sorted(x))
         return self._empty
@@ -198,12 +198,12 @@ class TableParameter(Parameter):
     """Parameter taking the value of a SQLAlchemy table."""
 
     @override
-    def normalize(self, x: Any) -> Any:
+    def normalize(self: Self, x: Any) -> Any:
         """Normalize a `Table` or model argument."""
         return x
 
     @override
-    def serialize(self, x: Any) -> str:
+    def serialize(self: Self, x: Any) -> str:
         """Serialize a `Table` or model argument."""
 
         from utilities.sqlalchemy import get_table_name
@@ -215,15 +215,15 @@ class TimeParameter(Parameter):
     """A parameter which takes the value of a `dt.time`."""
 
     @override
-    def normalize(self, x: dt.time | str) -> dt.time:
+    def normalize(self: Self, x: dt.time | str) -> dt.time:
         return ensure_time(x)
 
     @override
-    def parse(self, x: str) -> dt.time:
+    def parse(self: Self, x: str) -> dt.time:
         return parse_time(x)
 
     @override
-    def serialize(self, x: dt.time) -> str:
+    def serialize(self: Self, x: dt.time) -> str:
         return serialize_time(x)
 
 
@@ -231,21 +231,21 @@ class VersionParameter(Parameter):
     """Parameter taking the value of a `Version`."""
 
     @override
-    def normalize(self, x: Version | str) -> Version:
+    def normalize(self: Self, x: Version | str) -> Version:
         """Normalize a `Version` argument."""
         from utilities.semver import ensure_version
 
         return ensure_version(x)
 
     @override
-    def parse(self, x: str) -> Version:
+    def parse(self: Self, x: str) -> Version:
         """Parse a `Version` argument."""
         from semver import Version
 
         return Version.parse(x)
 
     @override
-    def serialize(self, x: Version) -> str:
+    def serialize(self: Self, x: Version) -> str:
         """Serialize a `Version` argument."""
         return str(x)
 
@@ -263,7 +263,7 @@ class WeekdayParameter(Parameter):
             self._rounder = round_to_next_weekday
 
     @override
-    def normalize(self, x: dt.date | str) -> dt.date:
+    def normalize(self: Self, x: dt.date | str) -> dt.date:
         with suppress(AttributeError, ModuleNotFoundError):
             from utilities.pandas import timestamp_to_date
 
@@ -271,11 +271,11 @@ class WeekdayParameter(Parameter):
         return self._rounder(ensure_date(x))
 
     @override
-    def parse(self, x: str) -> dt.date:
+    def parse(self: Self, x: str) -> dt.date:
         return parse_date(x)
 
     @override
-    def serialize(self, x: dt.date) -> str:
+    def serialize(self: Self, x: dt.date) -> str:
         return serialize_date(x)
 
 
@@ -285,12 +285,12 @@ class WeekdayParameter(Parameter):
 class PathTarget(Target):
     """A local target whose `path` attribute is a Pathlib instance."""
 
-    def __init__(self, path: PathLike, /) -> None:
+    def __init__(self: Self, path: PathLike, /) -> None:
         super().__init__()
         self.path = Path(path)
 
     @override
-    def exists(self) -> bool:  # type: ignore
+    def exists(self: Self) -> bool:  # type: ignore
         """Check if the target exists."""
         return self.path.exists()
 
@@ -298,12 +298,12 @@ class PathTarget(Target):
 class DatabaseTarget(Target):
     """A target point to a set of rows in a database."""
 
-    def __init__(self, sel: Select[Any], engine: Engine, /) -> None:
+    def __init__(self: Self, sel: Select[Any], engine: Engine, /) -> None:
         super().__init__()
         self._sel = sel.limit(1)
         self._engine = engine
 
-    def exists(self) -> bool:  # type: ignore
+    def exists(self: Self) -> bool:  # type: ignore
         from utilities.sqlalchemy import (
             TableDoesNotExistError,
             redirect_table_does_not_exist,
@@ -323,19 +323,19 @@ class EngineParameter(Parameter):
     """Parameter taking the value of a SQLAlchemy engine."""
 
     @override
-    def normalize(self, x: Engine) -> Engine:
+    def normalize(self: Self, x: Engine) -> Engine:
         """Normalize an `Engine` argument."""
         return x
 
     @override
-    def parse(self, x: str) -> Engine:
+    def parse(self: Self, x: str) -> Engine:
         """Parse an `Engine` argument."""
         from sqlalchemy import create_engine
 
         return create_engine(x)
 
     @override
-    def serialize(self, x: Engine) -> str:
+    def serialize(self: Self, x: Engine) -> str:
         """Serialize an `Engine` argument."""
         return x.url.render_as_string()
 
@@ -347,25 +347,25 @@ class ExternalTask(ABC, luigi.ExternalTask):
     """An external task with `exists()` defined here."""
 
     @abstractmethod
-    def exists(self) -> bool:
+    def exists(self: Self) -> bool:
         """Predicate on which the external task is deemed to exist."""
         msg = f"{self=}"  # pragma: no cover
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore
+    def output(self: Self) -> _ExternalTaskDummyTarget:  # type: ignore
         return _ExternalTaskDummyTarget(self)
 
 
 class _ExternalTaskDummyTarget(Target):
     """Dummy target for `ExternalTask`."""
 
-    def __init__(self, task: ExternalTask, /) -> None:
+    def __init__(self: Self, task: ExternalTask, /) -> None:
         super().__init__()
         self._task = task
 
     @override
-    def exists(self) -> bool:  # type: ignore
+    def exists(self: Self) -> bool:  # type: ignore
         return self._task.exists()
 
 
@@ -378,7 +378,7 @@ class AwaitTask(ExternalTask, Generic[_Task]):
     task = cast(_Task, TaskParameter())
 
     @override
-    def exists(self) -> bool:
+    def exists(self: Self) -> bool:
         return self.task.complete()
 
 
@@ -388,7 +388,7 @@ class AwaitTime(ExternalTask):
     datetime = cast(dt.datetime, DateSecondParameter())
 
     @override
-    def exists(self) -> bool:
+    def exists(self: Self) -> bool:
         return get_now(tz=UTC) >= self.datetime
 
 
@@ -398,7 +398,7 @@ class ExternalFile(ExternalTask):
     path = cast(Path, PathParameter())
 
     @override
-    def exists(self) -> bool:
+    def exists(self: Self) -> bool:
         return self.path.exists()
 
 

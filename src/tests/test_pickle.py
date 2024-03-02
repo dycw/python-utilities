@@ -15,7 +15,7 @@ class TestReadAndWritePickle:
         obj=booleans() | integers() | floats(allow_nan=False) | text() | none(),
         root=temp_paths(),
     )
-    def test_main(self, *, obj: Any, root: Path) -> None:
+    def test_main(self: Self, *, obj: Any, root: Path) -> None:
         write_pickle(obj, path := Path(root, "file"))
         result = read_pickle(path)
         assert result == obj

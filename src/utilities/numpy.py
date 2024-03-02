@@ -274,7 +274,7 @@ class DatetimeToDatetime64Error(Exception):
     tzinfo: dt.tzinfo
 
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return (  # pragma: no cover
             f"Timezone must be None or UTC; got {self.tzinfo}."
         )
@@ -1062,7 +1062,7 @@ def pct_change(
 @dataclass(frozen=True, kw_only=True)
 class PctChangeError(Exception):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "Shift must be non-zero"
 
 
@@ -1095,7 +1095,7 @@ def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArr
 @dataclass(frozen=True, kw_only=True)
 class ShiftError(Exception):
     @override
-    def __str__(self) -> str:
+    def __str__(self: Self) -> str:
         return "Shift must be non-zero"
 
 

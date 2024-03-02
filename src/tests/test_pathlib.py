@@ -20,14 +20,14 @@ from utilities.pathvalidate import valid_path, valid_path_cwd
 
 
 class TestEnsurePath:
-    def test_main(self) -> None:
+    def test_main(self: Self) -> None:
         assert isinstance(ensure_path(Path("abc")), Path)
 
-    def test_error_validation(self) -> None:
+    def test_error_validation(self: Self) -> None:
         with raises(ValidationError):
             _ = ensure_path("\0", validate=True)
 
-    def test_error_sanitized(self) -> None:
+    def test_error_sanitized(self: Self) -> None:
         assert ensure_path("a\0b", sanitize=True) == Path("ab")
 
 
@@ -46,14 +46,14 @@ class TestEnsureSuffix:
             param("hello.txt.1.2.jpg", "hello.txt.1.2.jpg.txt"),
         ],
     )
-    def test_main(self, *, path: Path, expected: Path) -> None:
+    def test_main(self: Self, *, path: Path, expected: Path) -> None:
         result = ensure_suffix(path, ".txt")
         assert result == valid_path(expected)
 
 
 class TestGetModifiedTime:
     @given(path=temp_paths())
-    def test_main(self, *, path: Path) -> None:
+    def test_main(self: Self, *, path: Path) -> None:
         path.touch()
         mod = get_modified_time(path)
         assert isinstance(mod, dt.datetime)
@@ -89,7 +89,7 @@ class TestWalk:
 
 
 class TestTempCWD:
-    def test_main(self, *, tmp_path: Path) -> None:
+    def test_main(self: Self, *, tmp_path: Path) -> None:
         assert valid_path_cwd() != tmp_path
         with temp_cwd(tmp_path):
             assert valid_path_cwd() == tmp_path

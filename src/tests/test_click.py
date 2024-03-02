@@ -56,7 +56,7 @@ class _Truth(enum.Enum):
 
 class TestEnum:
     @given(truth=sampled_from(_Truth))
-    def test_command(self, *, truth: _Truth) -> None:
+    def test_command(self: Self, *, truth: _Truth) -> None:
         @command()
         @argument("truth", type=utilities.click.Enum(_Truth))
         def cli(*, truth: _Truth) -> None:
@@ -70,7 +70,7 @@ class TestEnum:
         assert result.exit_code == 2
 
     @given(data=data(), truth=sampled_from(_Truth))
-    def test_case_insensitive(self, *, data: DataObject, truth: _Truth) -> None:
+    def test_case_insensitive(self: Self, *, data: DataObject, truth: _Truth) -> None:
         @command()
         @argument("truth", type=utilities.click.Enum(_Truth, case_sensitive=False))
         def cli(*, truth: _Truth) -> None:
@@ -83,7 +83,7 @@ class TestEnum:
         assert result.stdout == f"truth = {truth}\n"
 
     @given(truth=sampled_from(_Truth))
-    def test_option(self, *, truth: _Truth) -> None:
+    def test_option(self: Self, *, truth: _Truth) -> None:
         @command()
         @option("--truth", type=utilities.click.Enum(_Truth), default=truth)
         def cli(*, truth: _Truth) -> None:
@@ -99,7 +99,7 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], True), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_local(self, *, args: SequenceStrs, expected: bool) -> None:
+    def test_default_local(self: Self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
         @local_scheduler_option_default_local
         def cli(*, local_scheduler: bool) -> None:
@@ -113,7 +113,7 @@ class TestLocalSchedulerOption:
         ("args", "expected"),
         [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
-    def test_default_central(self, *, args: SequenceStrs, expected: bool) -> None:
+    def test_default_central(self: Self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
         @local_scheduler_option_default_central
         def cli(*, local_scheduler: bool) -> None:
@@ -126,7 +126,7 @@ class TestLocalSchedulerOption:
 
 class TestLogLevelOption:
     @given(log_level=sampled_from(LogLevel))
-    def test_main(self, *, log_level: LogLevel) -> None:
+    def test_main(self: Self, *, log_level: LogLevel) -> None:
         @command()
         @log_level_option
         def cli(*, log_level: LogLevel) -> None:
@@ -204,7 +204,7 @@ class TestParameters:
 
 class TestWorkersOption:
     @given(workers=integers() | none())
-    def test_main(self, workers: int | None) -> None:
+    def test_main(self: Self, workers: int | None) -> None:
         @command()
         @workers_option
         def cli(*, workers: int | None) -> None:
