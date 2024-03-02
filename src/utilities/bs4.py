@@ -8,12 +8,18 @@ from bs4 import Tag
 from polars import DataFrame
 from typing_extensions import override
 
-from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one, transpose
 from utilities.text import ensure_str
 
 
 def table_tag_to_dataframe(table: Tag, /) -> DataFrame:
     """Convert a `table` tag into a DataFrame."""
+
+    from utilities.more_itertools import (
+        OneEmptyError,
+        OneNonUniqueError,
+        one,
+        transpose,
+    )
 
     def get_text(tag: Tag, child: str, /) -> list[str] | None:
         children = cast(Iterable[Tag], tag.find_all(child))

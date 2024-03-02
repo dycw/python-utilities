@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-for package in ast atomicwrites beartype fastapi more-itertools scipy xlrd; do
+packages=(
+    ast
+    atomicwrites
+    beartype
+    bs4
+    cacher
+    fastapi
+    more-itertools
+    scipy
+    xlrd
+)
+for package in "${packages[@]}"; do
     uv pip compile \
         "--extra=test-${package}" \
         --quiet \

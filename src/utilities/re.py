@@ -5,8 +5,6 @@ from re import compile
 
 from typing_extensions import override
 
-from utilities.more_itertools import OneEmptyError, OneNonUniqueError, one
-
 
 def extract_group(pattern: str, text: str, /) -> str:
     """Extract a group.
@@ -19,14 +17,15 @@ def extract_group(pattern: str, text: str, /) -> str:
             raise _ExtractGroupNoCaptureGroupsError(pattern=pattern, text=text)
         case 1:
             matches: list[str] = compiled.findall(text)
-            try:
-                return one(matches)
-            except OneEmptyError:
-                raise _ExtractGroupNoMatchesError(pattern=pattern, text=text) from None
-            except OneNonUniqueError:
-                raise _ExtractGroupMultipleMatchesError(
-                    pattern=pattern, text=text, matches=matches
-                ) from None
+            match matches:
+                case []:
+                    raise _ExtractGroupNoMatchesError(pattern=pattern, text=text)
+                case [match]:
+                    return match
+                case _:
+                    raise _ExtractGroupMultipleMatchesError(
+                        pattern=pattern, text=text, matches=matches
+                    )
         case _:
             raise _ExtractGroupMultipleCaptureGroupsError(pattern=pattern, text=text)
 

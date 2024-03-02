@@ -6,15 +6,14 @@ from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TypeVar, overload
 
-from utilities.pathlib import PathLike
-from utilities.pathvalidate import valid_path, valid_path_cwd
+from utilities.pathlib import PWD, PathLike
 
 _GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
-def get_branch_name(*, cwd: PathLike = valid_path_cwd()) -> str:
+def get_branch_name(*, cwd: PathLike = PWD) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -26,7 +25,7 @@ def get_branch_name(*, cwd: PathLike = valid_path_cwd()) -> str:
     return output.strip("\n")
 
 
-def get_repo_name(*, cwd: PathLike = valid_path_cwd()) -> str:
+def get_repo_name(*, cwd: PathLike = PWD) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
@@ -38,7 +37,7 @@ def get_repo_name(*, cwd: PathLike = valid_path_cwd()) -> str:
     return Path(output.strip("\n")).stem  # not valid_path
 
 
-def get_repo_root(*, cwd: PathLike = valid_path_cwd()) -> Path:
+def get_repo_root(*, cwd: PathLike = PWD) -> Path:
     """Get the repo root."""
     try:
         output = check_output(
@@ -54,7 +53,7 @@ def get_repo_root(*, cwd: PathLike = valid_path_cwd()) -> Path:
             raise GetRepoRootError(cwd) from error
         raise  # pragma: no cover
     else:
-        return valid_path(output.strip("\n"))
+        return Path(output.strip("\n"))
 
 
 class GetRepoRootError(Exception): ...
@@ -80,7 +79,7 @@ def get_repo_root_or_cwd_sub_path(
     if_exists: Callable[[Path], _T],
     /,
     *,
-    cwd: PathLike = valid_path_cwd(),
+    cwd: PathLike = PWD,
     if_missing: Callable[[Path], _U] | None = None,
 ) -> _T | _U | None:
     """Get a path under the repo root, if it exists, else under the CWD."""
@@ -89,15 +88,15 @@ def get_repo_root_or_cwd_sub_path(
     except (FileNotFoundError, GetRepoRootError):
         if if_missing is None:
             return None
-        return if_missing(valid_path(cwd))
+        return if_missing(Path(cwd))
     return if_exists(root)
 
 
 def valid_path_repo(
-    *parts: PathLike, cwd: PathLike = valid_path_cwd(), sanitize: bool = False
+    *parts: PathLike, cwd: PathLike = PWD, sanitize: bool = False
 ) -> Path:
     """Build & validate a path from home."""
-    return valid_path(get_repo_root(cwd=cwd), *parts, sanitize=sanitize)
+    return Path(get_repo_root(cwd=cwd), *parts, sanitize=sanitize)
 
 
 __all__ = [

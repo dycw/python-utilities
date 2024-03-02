@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from collections.abc import Callable
-from dataclasses import dataclass
 from functools import partial, wraps
 from inspect import signature
 from operator import itemgetter
@@ -13,10 +12,8 @@ from utilities.cachetools import cache
 from utilities.datetime import duration_to_timedelta, get_now
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.hashlib import md5_hash
-from utilities.pathlib import get_modified_time
-from utilities.pathvalidate import valid_path
+from utilities.pathlib import ensure_path, get_modified_time
 from utilities.pickle import read_pickle, write_pickle
-from utilities.typed_settings import load_settings
 from utilities.types import Duration, PathLike, ensure_class
 
 _P = ParamSpec("_P")
@@ -24,33 +21,23 @@ _R = TypeVar("_R")
 
 
 def _caches(path: Path, /) -> Path:
-    return valid_path(path, ".caches")
+    return Path(path, ".caches")
 
 
-@dataclass(frozen=True)
-class _CacheToDiskConfig:
-    root: Path = get_repo_root_or_cwd_sub_path(  # noqa: RUF009
-        _caches, if_missing=_caches
-    )
-    md5_hash_max_size: int | None = 128
-    md5_hash_max_duration: dt.timedelta | None = dt.timedelta(minutes=10)
-    get_modified_max_size: int | None = 128
-    get_modified_max_duration: dt.timedelta | None = dt.timedelta(minutes=10)
-
-
-_CACHE_TO_DISK_CONFIG = load_settings(_CacheToDiskConfig)
+_ROOT = get_repo_root_or_cwd_sub_path(_caches, if_missing=_caches)
+_MD5_HASH_MAX_SIZE = 128
+_MD5_HASH_MAX_DURATION = dt.timedelta(minutes=10)
+_GET_MODIFIED_MAX_SIZE = 128
+_GET_MODIFIED_MAX_DURATION = dt.timedelta(minutes=10)
 
 
 def cache_to_disk(
     *,
-    root: PathLike = _CACHE_TO_DISK_CONFIG.root,
-    md5_hash_max_size: int | None = _CACHE_TO_DISK_CONFIG.md5_hash_max_size,
-    md5_hash_max_duration: Duration
-    | None = _CACHE_TO_DISK_CONFIG.md5_hash_max_duration,
-    get_modified_time_max_size: int
-    | None = _CACHE_TO_DISK_CONFIG.get_modified_max_size,
-    get_modified_time_max_duration: Duration
-    | None = _CACHE_TO_DISK_CONFIG.get_modified_max_duration,
+    root: PathLike = _ROOT,
+    md5_hash_max_size: int | None = _MD5_HASH_MAX_SIZE,
+    md5_hash_max_duration: Duration | None = _MD5_HASH_MAX_DURATION,
+    get_modified_time_max_size: int | None = _GET_MODIFIED_MAX_SIZE,
+    get_modified_time_max_duration: Duration | None = _GET_MODIFIED_MAX_DURATION,
     skip: bool = False,
     validate_path: bool = False,
     max_size: int | None = None,
@@ -76,14 +63,11 @@ def _cache_to_disk(
     func: Callable[_P, _R],
     /,
     *,
-    root: PathLike = _CACHE_TO_DISK_CONFIG.root,
-    md5_hash_max_size: int | None = _CACHE_TO_DISK_CONFIG.md5_hash_max_size,
-    md5_hash_max_duration: Duration
-    | None = _CACHE_TO_DISK_CONFIG.md5_hash_max_duration,
-    get_modified_time_max_size: int
-    | None = _CACHE_TO_DISK_CONFIG.get_modified_max_size,
-    get_modified_time_max_duration: Duration
-    | None = _CACHE_TO_DISK_CONFIG.get_modified_max_duration,
+    root: PathLike = _ROOT,
+    md5_hash_max_size: int | None = _MD5_HASH_MAX_SIZE,
+    md5_hash_max_duration: Duration | None = _MD5_HASH_MAX_DURATION,
+    get_modified_time_max_size: int | None = _GET_MODIFIED_MAX_SIZE,
+    get_modified_time_max_duration: Duration | None = _GET_MODIFIED_MAX_DURATION,
     skip: bool = False,
     validate_path: bool = False,
     max_size: int | None = None,
@@ -91,7 +75,7 @@ def _cache_to_disk(
 ) -> Callable[_P, _R]:
     """Decorator which caches locally using pickles."""
 
-    root_use = valid_path(root, func.__module__, func.__name__)
+    root_use = Path(root, func.__module__, func.__name__)
     sig = signature(func)
     md5_hash_use = cache(
         max_size=md5_hash_max_size, max_duration=md5_hash_max_duration
@@ -111,7 +95,7 @@ def _cache_to_disk(
         rerun = ensure_class(kwargs.pop("rerun", False), bool)
         ba = sig.bind(*args, **kwargs)
         stem = md5_hash_use((ba.args, tuple(ba.kwargs.items())))
-        path = valid_path(root_use, stem) if validate_path else Path(root_use, stem)
+        path = ensure_path(root_use, stem, validate=validate_path)
         if _needs_run(
             path, get_modified_time_use, rerun=rerun, max_duration=max_duration_use
         ):

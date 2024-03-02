@@ -4,7 +4,6 @@ import gzip
 from pickle import dump, load
 from typing import Any
 
-from utilities.atomicwrites import writer
 from utilities.types import PathLike
 
 
@@ -16,6 +15,8 @@ def read_pickle(path: PathLike, /) -> Any:
 
 def write_pickle(obj: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Write an object to disk."""
+    from utilities.atomicwrites import writer
+
     with writer(path, overwrite=overwrite) as temp, gzip.open(temp, mode="wb") as gz:
         dump(obj, gz)
 
