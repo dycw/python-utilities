@@ -8,7 +8,7 @@ import numpy as np
 import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
 

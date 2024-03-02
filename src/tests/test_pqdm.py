@@ -6,6 +6,7 @@ from operator import neg, pow
 from typing import Any, Literal
 
 from pytest import mark, param
+from typing_extensions import Self
 
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel

@@ -5,7 +5,7 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 
 def get_cpu_count() -> int:

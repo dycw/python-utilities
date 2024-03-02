@@ -5,6 +5,7 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import booleans, floats, integers, none, text
+from typing_extensions import Self
 
 from utilities.hypothesis import temp_paths
 from utilities.pickle import read_pickle, write_pickle

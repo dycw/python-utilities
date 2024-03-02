@@ -4,6 +4,7 @@ from pathlib import Path
 
 from pathvalidate import ValidationError
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.pathvalidate import valid_path, valid_path_cwd, valid_path_home
 

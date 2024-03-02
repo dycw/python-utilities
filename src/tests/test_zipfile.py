@@ -7,6 +7,7 @@ from zipfile import ZipFile
 
 from hypothesis import given
 from hypothesis.strategies import sampled_from, sets
+from typing_extensions import Self
 
 from utilities.hypothesis import temp_paths
 from utilities.pathvalidate import valid_path

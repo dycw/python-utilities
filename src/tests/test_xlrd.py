@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.datetime import UTC
 from utilities.platform import SYSTEM, System

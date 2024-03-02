@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from re import sub
 from typing import cast
 
-from typing_extensions import Never, assert_never, override
+from typing_extensions import Never, Self, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.platform import SYSTEM, System

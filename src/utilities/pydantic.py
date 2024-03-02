@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from pydantic import BaseModel
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.pathlib import ensure_path
 from utilities.types import PathLike

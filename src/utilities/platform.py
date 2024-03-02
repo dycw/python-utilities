@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from platform import system
 
-from typing_extensions import assert_never, override
+from typing_extensions import Self, assert_never, override
 
 from utilities.types import IterableStrs
 

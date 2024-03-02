@@ -6,7 +6,7 @@ from typing import cast
 
 from bs4 import Tag
 from polars import DataFrame
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one, transpose
 from utilities.text import ensure_str

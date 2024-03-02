@@ -7,6 +7,7 @@ from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan
 from numpy.testing import assert_allclose, assert_equal
 from pytest import mark, param
+from typing_extensions import Self
 
 from utilities.hypothesis import float_arrays
 from utilities.numpy import NDArrayF1, is_between_or_nan

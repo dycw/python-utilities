@@ -4,6 +4,7 @@ from collections.abc import Iterator
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
+from typing_extensions import Self
 
 from utilities.more_itertools import always_iterable, windowed_complete
 

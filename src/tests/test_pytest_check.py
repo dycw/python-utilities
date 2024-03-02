@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from _pytest.legacypath import Testdir
+from typing_extensions import Self
 
 
 class TestCheck:

@@ -7,6 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import booleans
 from pathvalidate import ValidationError
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import (

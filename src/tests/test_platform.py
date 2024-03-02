@@ -6,7 +6,7 @@ from typing import Any
 from hypothesis import given
 from hypothesis.strategies import sets
 from pytest import mark, param
-from typing_extensions import assert_never
+from typing_extensions import Self, assert_never
 
 from utilities.hypothesis import text_ascii
 from utilities.platform import (

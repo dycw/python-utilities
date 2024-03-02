@@ -8,6 +8,7 @@ from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.polars import (
     CheckPolarsDataFrameError,

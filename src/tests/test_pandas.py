@@ -23,6 +23,7 @@ from pandas import (
 )
 from pandas.testing import assert_index_equal, assert_series_equal
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.datetime import TODAY_UTC, UTC
 from utilities.hypothesis import int_indexes, text_ascii, timestamps

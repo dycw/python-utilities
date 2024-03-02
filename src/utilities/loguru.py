@@ -11,7 +11,7 @@ from sys import _getframe, stdout
 from typing import Any, TypedDict, cast
 
 from loguru import logger
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PWD, ensure_path

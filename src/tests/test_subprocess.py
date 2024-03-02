@@ -5,6 +5,7 @@ from re import search
 from subprocess import CalledProcessError, check_call
 
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (

@@ -3,6 +3,7 @@ from __future__ import annotations
 from zoneinfo import ZoneInfo
 
 from pytest import mark, param
+from typing_extensions import Self
 
 from utilities.zoneinfo import HONG_KONG, TOKYO
 

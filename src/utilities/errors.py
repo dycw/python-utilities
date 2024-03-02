@@ -7,7 +7,7 @@ from functools import wraps
 from re import search
 from typing import TypeVar, cast
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 
 @dataclass(frozen=True, kw_only=True)
