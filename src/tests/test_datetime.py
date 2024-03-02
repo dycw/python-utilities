@@ -420,7 +420,7 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(ParseTimedeltaError):
+        with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
             _ = parse_timedelta("error")
 
 

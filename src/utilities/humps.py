@@ -63,9 +63,7 @@ class _SnakeCaseMappingsDuplicateKeysError(SnakeCaseMappingsError):
 class _SnakeCaseMappingsDuplicateValuesError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:
-        return "Snake-cased strings {} must not contain duplicates; got {}".format(
-            self.text, self.counts
-        )
+        return f"Snake-cased strings {self.text} must not contain duplicates; got {self.counts}"
 
 
 __all__ = ["SnakeCaseMappingsError", "snake_case", "snake_case_mappings"]

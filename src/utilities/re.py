@@ -41,11 +41,7 @@ class ExtractGroupError(Exception):
 class _ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            "Pattern {} must contain exactly one capture group; it had multiple".format(
-                self.pattern
-            )
-        )
+        return f"Pattern {self.pattern} must contain exactly one capture group; it had multiple"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -54,21 +50,15 @@ class _ExtractGroupMultipleMatchesError(ExtractGroupError):
 
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            "Pattern {} must match against {} exactly once; matches were {}".format(
-                self.pattern, self.text, self.matches
-            )
-        )
+        return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            "Pattern {} must contain exactly one capture group; it had none".format(
-                self.pattern
-            )
+        return f"Pattern {self.pattern} must contain exactly one capture group; it had none".format(
+            self.pattern
         )
 
 
@@ -76,9 +66,7 @@ class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
 class _ExtractGroupNoMatchesError(ExtractGroupError):
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            f"Pattern {self.pattern} must match against {self.text}"
-        )
+        return f"Pattern {self.pattern} must match against {self.text}"
 
 
 def extract_groups(pattern: str, text: str, /) -> list[str]:
@@ -116,11 +104,7 @@ class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
 
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            "Pattern {} must match against {} exactly once; matches were {}".format(
-                self.pattern, self.text, self.matches
-            )
-        )
+        return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -130,18 +114,14 @@ class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
 
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            f"Pattern {self.pattern} must contain at least one capture group"
-        )
+        return f"Pattern {self.pattern} must contain at least one capture group"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _ExtractGroupsNoMatchesError(ExtractGroupsError):
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            f"Pattern {self.pattern} must match against {self.text}"
-        )
+        return f"Pattern {self.pattern} must match against {self.text}"
 
 
 __all__ = ["ExtractGroupError", "ExtractGroupsError", "extract_group", "extract_groups"]

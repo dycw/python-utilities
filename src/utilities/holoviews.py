@@ -74,9 +74,7 @@ class _PlotCurveArrayNameNotAStringError(PlotCurveError):
 
     @override
     def __str__(self) -> str:
-        return "Array name {} must be a string; got {!r} instead".format(
-            self.name, get_class_name(self.name)
-        )
+        return f"Array name {self.name} must be a string; got {get_class_name(self.name)!r} instead"
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

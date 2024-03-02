@@ -578,9 +578,7 @@ class GetDialectError(Exception):
     @override
     def __str__(self) -> str:
         return (  # pragma: no cover
-            "Dialect must be one of MS SQL, MySQL, Oracle, PostgreSQL or SQLite; got {} instead".format(
-                self.dialect
-            )
+            f"Dialect must be one of MS SQL, MySQL, Oracle, PostgreSQL or SQLite; got {self.dialect} instead"
         )
 
 
@@ -599,9 +597,7 @@ class GetTableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be a Table or mapped class; got {!r}".format(
-            self.obj, get_class_name(self.obj)
-        )
+        return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 
 def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:

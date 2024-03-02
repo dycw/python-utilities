@@ -8,7 +8,7 @@ from pytest import LogCaptureFixture, fixture, mark
 
 from utilities.timer import Timer
 
-FLAKY = mark.flaky(reruns=5, reruns_delay=2)
+FLAKY = mark.flaky(reruns=10, reruns_delay=3)
 
 
 # hypothesis

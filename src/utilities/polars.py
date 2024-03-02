@@ -87,9 +87,7 @@ class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have columns {}; got {}\n\n{}".format(
-            self.columns, self.df.columns, self.df
-        )
+        return f"DataFrame must have columns {self.columns}; got {self.df.columns}\n\n{self.df}"
 
 
 def _check_polars_dataframe_dtypes(
@@ -107,9 +105,7 @@ class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have dtypes {}; got {}\n\n{}".format(
-            self.dtypes, self.df.dtypes, self.df
-        )
+        return f"DataFrame must have dtypes {self.dtypes}; got {self.df.dtypes}\n\n{self.df}"
 
 
 def _check_polars_dataframe_height(
@@ -130,9 +126,7 @@ def _check_polars_dataframe_height(
 class _CheckPolarsDataFrameHeightError(CheckPolarsDataFrameError):
     @override
     def __str__(self) -> str:
-        return "DataFrame must satisfy the height requirements; got {}\n\n{}".format(
-            self.df.height, self.df
-        )
+        return f"DataFrame must satisfy the height requirements; got {self.df.height}\n\n{self.df}"
 
 
 def _check_polars_dataframe_predicates(
@@ -195,9 +189,7 @@ class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have schema {}; got {}\n\n{}".format(
-            self.schema, self.df.columns, self.df
-        )
+        return f"DataFrame must have schema {self.schema}; got {self.df.columns}\n\n{self.df}"
 
 
 def _check_polars_dataframe_schema_inc(df: DataFrame, schema: SchemaDict, /) -> None:
@@ -213,9 +205,7 @@ class _CheckPolarsDataFrameSchemaIncError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame schema must include {}; got {}\n\n{}".format(
-            self.schema, self.df.schema, self.df
-        )
+        return f"DataFrame schema must include {self.schema}; got {self.df.schema}\n\n{self.df}"
 
 
 def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> None:
@@ -229,8 +219,8 @@ class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have shape {}; got {}\n\n{}".format(
-            self.shape, self.df.shape, self.df
+        return (
+            f"DataFrame must have shape {self.shape}; got {self.df.shape}\n\n{self.df}"
         )
 
 
@@ -286,8 +276,8 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have width {}; got {}\n\n{}".format(
-            self.width, self.df.width, self.df
+        return (
+            f"DataFrame must have width {self.width}; got {self.df.width}\n\n{self.df}"
         )
 
 
