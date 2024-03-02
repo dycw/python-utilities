@@ -9,7 +9,6 @@ from fpdf.enums import XPos, YPos
 from typing_extensions import override
 
 from utilities.datetime import get_now, local_timezone
-from utilities.holoviews import save_plot
 from utilities.pathlib import ensure_path
 from utilities.tempfile import TemporaryDirectory
 
@@ -26,6 +25,8 @@ class _BasePDF(FPDF):
     def add_plot(
         self, plot: Any, /, *, validate: bool = False
     ) -> None:  # pragma: no cover
+        from utilities.holoviews import save_plot
+
         with TemporaryDirectory() as temp:
             path = ensure_path(temp, "image.png", validate=validate)
             save_plot(plot, path)

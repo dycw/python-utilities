@@ -33,15 +33,15 @@ packages=(
     # text
     # timer
     # third-party
-    atomicwrites
-    beartype
-    bs4
-    cacher
-    cachetools
-    click
-    cryptography
-    cvxpy
-    fastapi
+    # atomicwrites
+    # beartype
+    # bs4
+    # cacher
+    # cachetools
+    # click
+    # cryptography
+    # cvxpy
+    # fastapi
     fpdf2
     hatch
     holoviews
