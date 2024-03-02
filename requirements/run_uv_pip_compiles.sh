@@ -11,6 +11,8 @@ packages=(
     cryptography
     cvxpy
     fastapi
+    fpdf2
+    holoviews
     more-itertools
     scipy
     xlrd
