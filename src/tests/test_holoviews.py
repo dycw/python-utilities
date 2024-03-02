@@ -21,7 +21,6 @@ from utilities.hypothesis import (
     int_indexes,
     text_ascii,
 )
-from utilities.pathvalidate import valid_path
 from utilities.pytest import skipif_not_linux
 from utilities.xarray import DataArrayB1, DataArrayF1
 
@@ -119,4 +118,4 @@ class TestSavePlot:
     @skipif_not_linux
     def test_main(self, *, tmp_path: Path) -> None:
         curve = Curve([])
-        save_plot(curve, valid_path(tmp_path, "plot.png"))
+        save_plot(curve, Path(tmp_path, "plot.png"))

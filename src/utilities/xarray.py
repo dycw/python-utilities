@@ -2,60 +2,51 @@ from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
 from dataclasses import asdict
-from typing import Annotated, Any, TypeAlias, cast
+from typing import Annotated, Any, cast
 
+from numpy import bool_, float64, int64, object_
 from xarray import DataArray
 
 from utilities.dataclasses import Dataclass
-from utilities.numpy import (
-    DTypeB,
-    DTypeDns,
-    DTypeF,
-    DTypeI,
-    DTypeO,
-    NDim0,
-    NDim1,
-    NDim2,
-    NDim3,
-)
+from utilities.numpy import datetime64ns
 
 # annotations - dtype
-DataArrayB: TypeAlias = Annotated[DataArray, DTypeB]
-DataArrayDns: TypeAlias = Annotated[DataArray, DTypeDns]
-DataArrayF: TypeAlias = Annotated[DataArray, DTypeF]
-DataArrayI: TypeAlias = Annotated[DataArray, DTypeI]
-DataArrayO: TypeAlias = Annotated[DataArray, DTypeO]
+DataArrayB = Annotated[DataArray, bool_]
+DataArrayDns = Annotated[DataArray, datetime64ns]
+DataArrayF = Annotated[DataArray, float64]
+DataArrayI = Annotated[DataArray, int64]
+DataArrayO = Annotated[DataArray, object_]
 
 # annotations - ndim
-DataArray0: TypeAlias = Annotated[DataArray, NDim0]
-DataArray1: TypeAlias = Annotated[DataArray, NDim1]
-DataArray2: TypeAlias = Annotated[DataArray, NDim2]
-DataArray3: TypeAlias = Annotated[DataArray, NDim3]
+DataArray0 = Annotated[DataArray, 0]
+DataArray1 = Annotated[DataArray, 1]
+DataArray2 = Annotated[DataArray, 2]
+DataArray3 = Annotated[DataArray, 3]
 
 # annotated; dtype & ndim
-DataArrayB0: TypeAlias = Annotated[DataArray, DTypeB, NDim0]
-DataArrayDns0: TypeAlias = Annotated[DataArray, DTypeDns, NDim0]
-DataArrayF0: TypeAlias = Annotated[DataArray, DTypeF, NDim0]
-DataArrayI0: TypeAlias = Annotated[DataArray, DTypeI, NDim0]
-DataArrayO0: TypeAlias = Annotated[DataArray, DTypeO, NDim0]
+DataArrayB0 = Annotated[DataArrayB, 0]
+DataArrayDns0 = Annotated[DataArrayDns, 0]
+DataArrayF0 = Annotated[DataArrayF, 0]
+DataArrayI0 = Annotated[DataArrayI, 0]
+DataArrayO0 = Annotated[DataArrayO, 0]
 
-DataArrayB1: TypeAlias = Annotated[DataArray, DTypeB, NDim1]
-DataArrayDns1: TypeAlias = Annotated[DataArray, DTypeDns, NDim1]
-DataArrayF1: TypeAlias = Annotated[DataArray, DTypeF, NDim1]
-DataArrayI1: TypeAlias = Annotated[DataArray, DTypeI, NDim1]
-DataArrayO1: TypeAlias = Annotated[DataArray, DTypeO, NDim1]
+DataArrayB1 = Annotated[DataArrayB, 1]
+DataArrayDns1 = Annotated[DataArrayDns, 1]
+DataArrayF1 = Annotated[DataArrayF, 1]
+DataArrayI1 = Annotated[DataArrayI, 1]
+DataArrayO1 = Annotated[DataArrayO, 1]
 
-DataArrayB2: TypeAlias = Annotated[DataArray, DTypeB, NDim2]
-DataArrayDns2: TypeAlias = Annotated[DataArray, DTypeDns, NDim2]
-DataArrayF2: TypeAlias = Annotated[DataArray, DTypeF, NDim2]
-DataArrayI2: TypeAlias = Annotated[DataArray, DTypeI, NDim2]
-DataArrayO2: TypeAlias = Annotated[DataArray, DTypeO, NDim2]
+DataArrayB2 = Annotated[DataArrayB, 2]
+DataArrayDns2 = Annotated[DataArrayDns, 2]
+DataArrayF2 = Annotated[DataArrayF, 2]
+DataArrayI2 = Annotated[DataArrayI, 2]
+DataArrayO2 = Annotated[DataArrayO, 2]
 
-DataArrayB3: TypeAlias = Annotated[DataArray, DTypeB, NDim3]
-DataArrayDns3: TypeAlias = Annotated[DataArray, DTypeDns, NDim3]
-DataArrayF3: TypeAlias = Annotated[DataArray, DTypeF, NDim3]
-DataArrayI3: TypeAlias = Annotated[DataArray, DTypeI, NDim3]
-DataArrayO3: TypeAlias = Annotated[DataArray, DTypeO, NDim3]
+DataArrayB3 = Annotated[DataArrayB, 3]
+DataArrayDns3 = Annotated[DataArrayDns, 3]
+DataArrayF3 = Annotated[DataArrayF, 3]
+DataArrayI3 = Annotated[DataArrayI, 3]
+DataArrayO3 = Annotated[DataArrayO, 3]
 
 
 def ewma(
