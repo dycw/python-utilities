@@ -7,7 +7,6 @@ from time import sleep
 from _pytest.legacypath import Testdir
 from pytest import mark, param
 
-from tests.conftest import FLAKY
 from utilities.pytest import throttle
 from utilities.types import IterableStrs
 
@@ -227,7 +226,7 @@ class TestThrottle:
             if i == 0:
                 sleep(1.0)
 
-    @FLAKY
+    @mark.flaky(retries=3, delay=1)
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
