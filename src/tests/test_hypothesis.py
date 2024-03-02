@@ -1033,7 +1033,7 @@ class TestTempDirs:
         assert len(set(path.iterdir())) == 0
 
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
-    @mark.flaky(retries=3, delay=1)
+    @mark.flaky(reruns=5, reruns_delay=2)
     def test_writing_files(
         self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:

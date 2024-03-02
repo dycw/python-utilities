@@ -74,10 +74,10 @@ dev = [
   "exceptiongroup",
   "freezegun",
   "pytest-cov",
-  "pytest-retry",
   "pytest-instafail",
   "pytest-only",
   "pytest-randomly",
+  "pytest-rerunfailures",
   "pytest-xdist",
   # CI
   "win32_setctime",  # https://github.com/Delgan/loguru/issues/147

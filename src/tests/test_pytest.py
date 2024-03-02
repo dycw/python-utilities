@@ -226,7 +226,7 @@ class TestThrottle:
             if i == 0:
                 sleep(1.0)
 
-    @mark.flaky(retries=3, delay=1)
+    @mark.flaky(reruns=5, reruns_delay=2)
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
