@@ -117,14 +117,7 @@ zzz-test-scripts-luigi-server = []
 zzz-test-scripts-monitor-memory = []
 zzz-test-scripts-pypi-server = []
 zzz-test-semver = []
-zzz-test-sqlalchemy = [
-  "bidict",
-  "cx-oracle",
-  "mysqlclient",
-  "psycopg2-binary",
-  "pyhumps",
-  "pyodbc",
-]
+zzz-test-sqlalchemy = ["bidict", "pyhumps"]
 zzz-test-sqlalchemy-polars = ["pyhumps"]
 zzz-test-typed-settings = ["sqlalchemy"]
 zzz-test-xarray = ["bottleneck", "numbagg"]

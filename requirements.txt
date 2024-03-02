@@ -84,7 +84,6 @@ coverage==7.4.3
 coverage-conditional-plugin==0.9.0
 cryptography==42.0.5
 cvxpy==1.4.2
-cx-oracle==8.3.0
 debugpy==1.8.1
     # via ipykernel
 decorator==5.1.1
@@ -261,7 +260,6 @@ mistune==3.0.2
     # via nbconvert
 more-itertools==10.2.0
     # via jaraco-classes
-mysqlclient==2.2.4
 nbclient==0.9.0
     # via nbconvert
 nbconvert==7.16.1
@@ -381,7 +379,6 @@ psutil==5.9.8
     # via
     #   ipykernel
     #   memory-profiler
-psycopg2-binary==2.9.9
 ptyprocess==0.7.0
     # via
     #   pexpect
@@ -407,7 +404,6 @@ pygments==2.17.2
     #   rich
 pyhumps==3.8.0
 pyinstrument==4.6.2
-pyodbc==5.1.0
 pypiserver==2.0.1
 pysocks==1.7.1
     # via urllib3

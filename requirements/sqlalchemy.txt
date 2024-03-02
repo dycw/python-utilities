@@ -3,7 +3,6 @@
 attrs==23.2.0
     # via hypothesis
 bidict==0.23.1
-cx-oracle==8.3.0
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -13,14 +12,11 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
-mysqlclient==2.2.4
 packaging==23.2
     # via pytest
 pluggy==1.4.0
     # via pytest
-psycopg2-binary==2.9.9
 pyhumps==3.8.0
-pyodbc==5.1.0
 pytest==8.0.2
     # via
     #   pytest-randomly
