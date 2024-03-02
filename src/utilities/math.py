@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import isclose, isfinite, isnan
-from typing import Annotated, Any, cast
+from typing import Annotated
 
-from beartype.vale import Is
 from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
@@ -360,48 +359,46 @@ def _is_close(
 
 
 # int
-IntNeg = Annotated[int, Is[cast(Any, is_negative)]]
-IntNonNeg = Annotated[int, Is[cast(Any, is_non_negative)]]
-IntNonPos = Annotated[int, Is[cast(Any, is_non_positive)]]
-IntNonZr = Annotated[int, Is[cast(Any, is_non_zero)]]
-IntPos = Annotated[int, Is[cast(Any, is_positive)]]
-IntZr = Annotated[int, Is[cast(Any, is_zero)]]
+IntNeg = Annotated[int, is_negative]
+IntNonNeg = Annotated[int, is_non_negative]
+IntNonPos = Annotated[int, is_non_positive]
+IntNonZr = Annotated[int, is_non_zero]
+IntPos = Annotated[int, is_positive]
+IntZr = Annotated[int, is_zero]
 
 # float
-FloatFin = Annotated[float, Is[cast(Any, is_finite)]]
-FloatFinInt = Annotated[float, Is[cast(Any, is_finite_and_integral)]]
-FloatFinIntNan = Annotated[float, Is[cast(Any, is_finite_and_integral_or_nan)]]
-FloatFinNeg = Annotated[float, Is[cast(Any, is_finite_and_negative)]]
-FloatFinNegNan = Annotated[float, Is[cast(Any, is_finite_and_negative_or_nan)]]
-FloatFinNonNeg = Annotated[float, Is[cast(Any, is_finite_and_non_negative)]]
-FloatFinNonNegNan = Annotated[float, Is[cast(Any, is_finite_and_non_negative_or_nan)]]
-FloatFinNonPos = Annotated[float, Is[cast(Any, is_finite_and_non_positive)]]
-FloatFinNonPosNan = Annotated[float, Is[cast(Any, is_finite_and_non_positive_or_nan)]]
-FloatFinNonZr = Annotated[float, Is[cast(Any, is_finite_and_non_zero)]]
-FloatFinNonZrNan = Annotated[float, Is[cast(Any, is_finite_and_non_zero_or_nan)]]
-FloatFinPos = Annotated[float, Is[cast(Any, is_finite_and_positive)]]
-FloatFinPosNan = Annotated[float, Is[cast(Any, is_finite_and_positive_or_nan)]]
-FloatFinNan = Annotated[float, Is[cast(Any, is_finite_or_nan)]]
-FloatInt = Annotated[float, Is[cast(Any, is_integral)]]
-FloatIntNan = Annotated[float, Is[cast(Any, is_integral_or_nan)]]
-FloatNeg = Annotated[float, Is[cast(Any, is_negative)]]
-FloatNegNan = Annotated[float, Is[cast(Any, is_negative_or_nan)]]
-FloatNonNeg = Annotated[float, Is[cast(Any, is_non_negative)]]
-FloatNonNegNan = Annotated[float, Is[cast(Any, is_non_negative_or_nan)]]
-FloatNonPos = Annotated[float, Is[cast(Any, is_non_positive)]]
-FloatNonPosNan = Annotated[float, Is[cast(Any, is_non_positive_or_nan)]]
-FloatNonZr = Annotated[float, Is[cast(Any, is_non_zero)]]
-FloatNonZrNan = Annotated[float, Is[cast(Any, is_non_zero_or_nan)]]
-FloatPos = Annotated[float, Is[cast(Any, is_positive)]]
-FloatPosNan = Annotated[float, Is[cast(Any, is_positive_or_nan)]]
-FloatZr = Annotated[float, Is[cast(Any, is_zero)]]
-FloatZrFinNonMic = Annotated[float, Is[cast(Any, is_zero_or_finite_and_non_micro)]]
-FloatZrFinNonMicNan = Annotated[
-    float, Is[cast(Any, is_zero_or_finite_and_non_micro_or_nan)]
-]
-FloatZrNan = Annotated[float, Is[cast(Any, is_zero_or_nan)]]
-FloatZrNonMic = Annotated[float, Is[cast(Any, is_zero_or_non_micro)]]
-FloatZrNonMicNan = Annotated[float, Is[cast(Any, is_zero_or_non_micro_or_nan)]]
+FloatFin = Annotated[float, is_finite]
+FloatFinInt = Annotated[float, is_finite_and_integral]
+FloatFinIntNan = Annotated[float, is_finite_and_integral_or_nan]
+FloatFinNeg = Annotated[float, is_finite_and_negative]
+FloatFinNegNan = Annotated[float, is_finite_and_negative_or_nan]
+FloatFinNonNeg = Annotated[float, is_finite_and_non_negative]
+FloatFinNonNegNan = Annotated[float, is_finite_and_non_negative_or_nan]
+FloatFinNonPos = Annotated[float, is_finite_and_non_positive]
+FloatFinNonPosNan = Annotated[float, is_finite_and_non_positive_or_nan]
+FloatFinNonZr = Annotated[float, is_finite_and_non_zero]
+FloatFinNonZrNan = Annotated[float, is_finite_and_non_zero_or_nan]
+FloatFinPos = Annotated[float, is_finite_and_positive]
+FloatFinPosNan = Annotated[float, is_finite_and_positive_or_nan]
+FloatFinNan = Annotated[float, is_finite_or_nan]
+FloatInt = Annotated[float, is_integral]
+FloatIntNan = Annotated[float, is_integral_or_nan]
+FloatNeg = Annotated[float, is_negative]
+FloatNegNan = Annotated[float, is_negative_or_nan]
+FloatNonNeg = Annotated[float, is_non_negative]
+FloatNonNegNan = Annotated[float, is_non_negative_or_nan]
+FloatNonPos = Annotated[float, is_non_positive]
+FloatNonPosNan = Annotated[float, is_non_positive_or_nan]
+FloatNonZr = Annotated[float, is_non_zero]
+FloatNonZrNan = Annotated[float, is_non_zero_or_nan]
+FloatPos = Annotated[float, is_positive]
+FloatPosNan = Annotated[float, is_positive_or_nan]
+FloatZr = Annotated[float, is_zero]
+FloatZrFinNonMic = Annotated[float, is_zero_or_finite_and_non_micro]
+FloatZrFinNonMicNan = Annotated[float, is_zero_or_finite_and_non_micro_or_nan]
+FloatZrNan = Annotated[float, is_zero_or_nan]
+FloatZrNonMic = Annotated[float, is_zero_or_non_micro]
+FloatZrNonMicNan = Annotated[float, is_zero_or_non_micro_or_nan]
 
 
 # checks

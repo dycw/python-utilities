@@ -2,7 +2,7 @@
 
 # for package in ast atomicwrites beartype fastapi more-itertools scipy xlrd; do
 packages=(
-    cachetools
+    click
 )
 for package in "${packages[@]}"; do
     uv pip sync "requirements/${package}.txt"

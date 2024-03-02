@@ -7,6 +7,7 @@ packages=(
     bs4
     cacher
     cachetools
+    click
     fastapi
     more-itertools
     scipy
@@ -14,7 +15,9 @@ packages=(
 )
 for package in "${packages[@]}"; do
     uv pip compile \
+        "--extra=${package}" \
         "--extra=zzz-test-${package}" \
+        "--extra=test" \
         --quiet \
         --prerelease=disallow \
         "--output-file=requirements/${package}.txt" \
