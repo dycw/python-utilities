@@ -9,7 +9,7 @@ def check_ipython_class(cls: type[Any], /) -> bool:
         func = get_ipython  # type: ignore
     except NameError:
         return False
-    return issubclass(func().__class__, cls)
+    return issubclass(func().__class__, cls)  # pragma: no cover
 
 
 def is_ipython() -> bool:
