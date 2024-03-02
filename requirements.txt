@@ -89,6 +89,7 @@ filelock==3.13.1
 fonttools==4.49.0
     # via fpdf2
 fpdf2==2.7.8
+freezegun==1.4.0
 frozendict==2.4.0
 gitdb==4.0.11
     # via gitpython
@@ -285,6 +286,7 @@ python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
     # via
+    #   freezegun
     #   luigi
     #   pandas
     #   streamlit

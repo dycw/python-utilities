@@ -36,7 +36,6 @@ dev = [
   "click",
   "cryptography",
   "cvxpy",
-  "exceptiongroup",
   "fastapi",
   "fpdf2",
   "frozendict",
@@ -59,10 +58,8 @@ dev = [
   "pyhumps",
   "pyinstrument",
   "pypiserver[passlib]",
-  "pytest-check",
-  "pytest-randomly",
-  "pytest-xdist",
   "pytest",
+  "pytest-check",
   "scipy",
   "selenium",
   "semver",
@@ -74,9 +71,13 @@ dev = [
   "zarr",
   # test
   "coverage-conditional-plugin",
+  "exceptiongroup",
+  "freezegun",
   "pytest-cov",
   "pytest-instafail",
   "pytest-only",
+  "pytest-randomly",
+  "pytest-xdist",
 ]
 fastapi = ["fastapi"]
 fpdf2 = ["fpdf2", "holoviews", "selenium"]
