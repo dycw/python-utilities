@@ -14,7 +14,9 @@ iniconfig==2.0.0
 numpy==1.26.4
     # via pandas
 packaging==23.2
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-rerunfailures
 pandas==2.2.1
 pluggy==1.4.0
     # via pytest
@@ -22,8 +24,10 @@ polars==0.20.13
 pytest==8.0.2
     # via
     #   pytest-randomly
+    #   pytest-rerunfailures
     #   pytest-xdist
 pytest-randomly==3.15.0
+pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
 python-dateutil==2.9.0.post0
     # via pandas
