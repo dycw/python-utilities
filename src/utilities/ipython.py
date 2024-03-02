@@ -9,18 +9,16 @@ def check_ipython_class(cls: type[Any], /) -> bool:
         func = get_ipython  # type: ignore
     except NameError:
         return False
-    return issubclass(func().__class__, cls)  # pragma: no cover
+    return issubclass(func().__class__, cls)
 
 
 def is_ipython() -> bool:
     """Check if `ipython` is running."""
     try:
-        from IPython.terminal.interactiveshell import (  # type: ignore
-            TerminalInteractiveShell,
-        )
-    except ImportError:
+        from IPython.terminal.interactiveshell import TerminalInteractiveShell
+    except ImportError:  # pragma: no cover
         return False
-    return check_ipython_class(TerminalInteractiveShell)  # pragma: no cover
+    return check_ipython_class(TerminalInteractiveShell)
 
 
 __all__ = ["check_ipython_class", "is_ipython"]

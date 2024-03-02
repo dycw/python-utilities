@@ -12,10 +12,10 @@ from utilities.ipython import check_ipython_class
 def is_jupyter() -> bool:
     """Check if `jupyter` is running."""
     try:
-        from ipykernel.zmqshell import ZMQInteractiveShell  # type: ignore
-    except ImportError:
+        from ipykernel.zmqshell import ZMQInteractiveShell
+    except ImportError:  # pragma: no cover
         return False
-    return check_ipython_class(ZMQInteractiveShell)  # pragma: no cover
+    return check_ipython_class(ZMQInteractiveShell)
 
 
 _DEFAULT_ROWS = 7

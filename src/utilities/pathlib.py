@@ -18,7 +18,7 @@ def ensure_path(
     *parts: PathLike, validate: bool = False, sanitize: bool = False
 ) -> Path:
     """Ensure a path-like object is a path."""
-    if validate:
+    if validate or sanitize:
         from utilities.pathvalidate import valid_path
 
         return valid_path(*parts, sanitize=sanitize)
