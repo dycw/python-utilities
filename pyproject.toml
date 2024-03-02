@@ -78,6 +78,8 @@ dev = [
   "pytest-only",
   "pytest-randomly",
   "pytest-xdist",
+  # CI
+  "win32_setctime",  # https://github.com/Delgan/loguru/issues/147
 ]
 fastapi = ["fastapi"]
 fpdf2 = ["fpdf2", "holoviews", "selenium"]
