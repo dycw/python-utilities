@@ -5,7 +5,7 @@ from enum import Enum as _Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from click import Context, Parameter, ParamType, option
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import (
     ParseDateError,

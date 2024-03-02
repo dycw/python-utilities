@@ -83,6 +83,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DuplicateColumnError
+from typing_extensions import Self
 
 from utilities.datetime import UTC, is_equal_mod_tz
 from utilities.hypothesis import sqlite_engines, text_ascii

@@ -6,6 +6,8 @@ from itertools import chain
 from types import TracebackType
 from typing import Any
 
+from typing_extensions import Self
+
 from utilities.ipython import check_ipython_class
 
 

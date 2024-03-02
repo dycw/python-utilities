@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.functions import CheckNameError, check_name, identity
 

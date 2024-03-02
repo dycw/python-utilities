@@ -26,6 +26,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
+from typing_extensions import Self
 
 from utilities.datetime import (
     UTC,

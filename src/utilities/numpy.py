@@ -41,7 +41,7 @@ from numpy import (
 from numpy.linalg import det, eig
 from numpy.random import default_rng
 from numpy.typing import NDArray
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import EPOCH_UTC, UTC
 from utilities.errors import redirect_error

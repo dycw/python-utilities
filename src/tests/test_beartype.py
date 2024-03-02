@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from beartype.roar import BeartypeCallHintParamViolation
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.beartype import beartype_if_dev
 

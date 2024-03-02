@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.re import (
     _ExtractGroupMultipleCaptureGroupsError,

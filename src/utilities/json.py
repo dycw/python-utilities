@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, TypeVar, cast
 from uuid import UUID
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.datetime import (
     UTC,

@@ -6,6 +6,7 @@ from operator import add, sub
 from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.functools import EmptyReduceError, partial, redirect_empty_reduce
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial as _partial
 from typing import Any, TypeVar
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from utilities.iterables import one
 from utilities.text import ensure_str

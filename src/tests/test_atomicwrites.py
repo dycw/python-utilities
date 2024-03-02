@@ -5,6 +5,7 @@ from pathlib import Path
 from re import escape
 
 from pytest import mark, param, raises
+from typing_extensions import Self
 
 from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
 from utilities.pathlib import ensure_path

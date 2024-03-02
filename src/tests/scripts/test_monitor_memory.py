@@ -4,6 +4,7 @@ from csv import reader
 from pathlib import Path
 
 from click.testing import CliRunner
+from typing_extensions import Self
 
 from utilities.pathlib import ensure_path
 from utilities.scripts.monitor_memory import _get_memory_usage, _monitor_memory, main

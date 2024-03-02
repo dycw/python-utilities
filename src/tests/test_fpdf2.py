@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from holoviews import Curve
 from hypothesis import given
+from typing_extensions import Self
 
 from utilities.fpdf2 import yield_pdf
 from utilities.hypothesis import text_ascii

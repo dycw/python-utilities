@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from polars import DataFrame, Utf8
 from polars.testing import assert_frame_equal
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.bs4 import TableTagToDataFrameError, yield_tables
 from utilities.text import strip_and_dedent

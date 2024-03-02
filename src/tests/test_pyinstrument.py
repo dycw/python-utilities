@@ -4,6 +4,8 @@ from pathlib import Path
 from re import search
 from time import sleep
 
+from typing_extensions import Self
+
 from utilities.pyinstrument import profile
 
 

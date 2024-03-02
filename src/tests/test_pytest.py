@@ -6,6 +6,7 @@ from time import sleep
 
 from _pytest.legacypath import Testdir
 from pytest import mark, param
+from typing_extensions import Self
 
 from tests.conftest import FLAKY
 from utilities.pytest import throttle

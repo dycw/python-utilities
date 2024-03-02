@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import integers
 from pytest import raises
+from typing_extensions import Self
 
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pathlib import ensure_path, temp_cwd

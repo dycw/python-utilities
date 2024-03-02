@@ -10,6 +10,7 @@ from hypothesis.strategies import DataObject, data, dictionaries, floats, intege
 from numpy import arange, array, errstate, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
+from typing_extensions import Self
 from zarr import open_array
 from zarr.errors import BoundsCheckError
 
