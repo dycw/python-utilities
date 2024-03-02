@@ -84,5 +84,5 @@ for package in "${packages[@]}"; do
     else
         path_test="test_${package//-/_}.py"
     fi
-    pytest "src/tests/${path_test}" -x
+    pytest "src/tests/${path_test}"
 done
