@@ -9,6 +9,7 @@ packages=(
     cachetools
     click
     cryptography
+    cvxpy
     fastapi
     more-itertools
     scipy
