@@ -15,7 +15,7 @@ class TemporaryDirectory:
     """Wrapper around `TemporaryDirectory` with a `Path` attribute."""
 
     def __init__(
-        self,
+        self: Self,
         *,
         suffix: str | None = None,
         prefix: str | None = None,
@@ -37,7 +37,7 @@ class TemporaryDirectory:
         return ensure_path(self._temp_dir.__enter__(), validate=self._validate)
 
     def __exit__(
-        self,
+        self: Self,
         exc: type[BaseException] | None,
         val: BaseException | None,
         tb: TracebackType | None,

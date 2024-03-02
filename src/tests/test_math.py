@@ -65,7 +65,7 @@ class TestCheckInteger:
 
     @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
     def test_equal_or_approx_pass(
-        self, *, equal_or_approx: int | tuple[int, float]
+        self: Self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
         check_integer(10, equal_or_approx=equal_or_approx)
 
@@ -80,7 +80,7 @@ class TestCheckInteger:
         ],
     )
     def test_equal_or_approx_fail(
-        self, *, equal_or_approx: int | tuple[int, float], match: str
+        self: Self, *, equal_or_approx: int | tuple[int, float], match: str
     ) -> None:
         with raises(CheckIntegerError, match=match):
             check_integer(0, equal_or_approx=equal_or_approx)
@@ -232,7 +232,11 @@ class TestIsEqualOrApprox:
         ],
     )
     def test_main(
-        self, *, x: int | tuple[int, float], y: int | tuple[int, float], expected: bool
+        self: Self,
+        *,
+        x: int | tuple[int, float],
+        y: int | tuple[int, float],
+        expected: bool,
     ) -> None:
         assert is_equal_or_approx(x, y) is expected
         assert is_equal_or_approx(y, x) is expected

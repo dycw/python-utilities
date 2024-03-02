@@ -55,7 +55,7 @@ class TestPytestOptions:
         [param([], 0, 1, [".*3: pass --slow"]), param(["--slow"], 1, 0, [])],
     )
     def test_one_mark_and_option(
-        self,
+        self: Self,
         *,
         testdir: Testdir,
         case: IterableStrs,
@@ -121,7 +121,7 @@ class TestPytestOptions:
         ],
     )
     def test_two_marks_and_options(
-        self,
+        self: Self,
         *,
         testdir: Testdir,
         case: IterableStrs,
@@ -180,7 +180,7 @@ class TestThrottle:
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(
-        self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
+        self: Self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
         root_str = str(tmp_path)
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"

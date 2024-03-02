@@ -58,7 +58,7 @@ class _ExtendedTSConverter(TSConverter):
     """An extension of the TSConverter for custom types."""
 
     def __init__(
-        self,
+        self: Self,
         *,
         resolve_paths: bool = True,
         strlist_sep: str | Callable[[str], list] | None = ":",

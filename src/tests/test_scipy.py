@@ -28,7 +28,7 @@ class TestPPF:
         ],
     )
     def test_examples(
-        self, *, values: Sequence[float], expected: Sequence[float]
+        self: Self, *, values: Sequence[float], expected: Sequence[float]
     ) -> None:
         result = ppf(array(values, dtype=float), 1.0)
         assert_allclose(result, array(expected, dtype=float))

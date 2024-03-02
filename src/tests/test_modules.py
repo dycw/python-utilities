@@ -80,7 +80,7 @@ class TestYieldModuleContents:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         module: ModuleType,
         type_: type[Any] | tuple[type[Any], ...] | None,
@@ -122,7 +122,7 @@ class TestYieldModuleSubclasses:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         module: ModuleType,
         type_: type[Any],

@@ -38,7 +38,7 @@ class TestEwma:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
+        self: Self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))
@@ -53,7 +53,7 @@ class TestExpMovingSum:
         halflife=integers(1, 10),
     )
     def test_main(
-        self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
+        self: Self, data: DataObject, indexes: Mapping[str, IndexA], halflife: int
     ) -> None:
         array = data.draw(float_data_arrays(indexes))
         dim = data.draw(sampled_from(list(indexes)))

@@ -29,7 +29,7 @@ class TestPypiServer:
         packages=text_ascii(min_size=1),
     )
     def test_get_args(
-        self, *, port: int, root: Path, password: str, packages: str
+        self: Self, *, port: int, root: Path, password: str, packages: str
     ) -> None:
         _ = _get_args(
             port=port,

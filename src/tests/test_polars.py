@@ -275,7 +275,7 @@ class TestNanSumAgg:
     @mark.parametrize("dtype", [param(Int64), param(Float64)])
     @mark.parametrize("mode", [param("str"), param("column")])
     def test_main(
-        self,
+        self: Self,
         *,
         data: list[Any],
         expected: int | None,
@@ -302,7 +302,7 @@ class TestNanSumCols:
     @mark.parametrize("x_kind", [param("str"), param("column")])
     @mark.parametrize("y_kind", [param("str"), param("column")])
     def test_main(
-        self,
+        self: Self,
         *,
         x: int | None,
         y: int | None,

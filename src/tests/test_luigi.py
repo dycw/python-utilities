@@ -166,7 +166,7 @@ class TestDateTimeParameter:
         ],
     )
     def test_main(
-        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+        self: Self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
     ) -> None:
         param = param_cls()
         input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
@@ -322,7 +322,11 @@ class TestVersionParameter:
 class TestWeekdayParameter:
     @given(data=data(), rounding=sampled_from(["prev", "next"]), date=dates())
     def test_main(
-        self, *, data: DataObject, rounding: Literal["prev", "next"], date: dt.date
+        self: Self,
+        *,
+        data: DataObject,
+        rounding: Literal["prev", "next"],
+        date: dt.date,
     ) -> None:
         param = WeekdayParameter(rounding=rounding)
         input_ = data.draw(sampled_from([date, serialize_date(date)]))

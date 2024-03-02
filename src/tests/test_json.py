@@ -153,7 +153,11 @@ class TestSerializeAndDeserialize:
     @given(data=data(), n=integers(0, 10))
     @mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_sortable(
-        self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
+        self: Self,
+        *,
+        data: DataObject,
+        n: int,
+        strategy: Callable[..., SearchStrategy[int]],
     ) -> None:
         elements = strategy(integers(0, 2 * n), min_size=n, max_size=n)
         x, y = data.draw(tuples(elements, elements))
@@ -162,7 +166,7 @@ class TestSerializeAndDeserialize:
     @given(data=data(), n=integers(2, 10))
     @mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_unsortable(
-        self,
+        self: Self,
         *,
         data: DataObject,
         n: int,
@@ -221,7 +225,7 @@ class TestSerializeAndDeserialize:
             _ = serialize(sentinel)
 
     def _assert_standard(
-        self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
+        self: Self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
     ) -> None:
         ser_x = serialize(x)
         assert eq(deserialize(ser_x), x)

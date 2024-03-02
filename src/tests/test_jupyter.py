@@ -49,7 +49,7 @@ class TestShow:
         columns=integers(0, 100) | none(),
     )
     def test_indirect(
-        self, *, dp: int | None, rows: int | None, columns: int | None
+        self: Self, *, dp: int | None, rows: int | None, columns: int | None
     ) -> None:
         with show(dp=dp, rows=rows, columns=columns):
             state = Config.state(if_set=True)

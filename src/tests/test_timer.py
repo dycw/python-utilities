@@ -34,7 +34,7 @@ class TestTimer:
     )
     @mark.parametrize("dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))])
     def test_comparison(
-        self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
+        self: Self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:
         with Timer() as timer:
             pass

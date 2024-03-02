@@ -108,7 +108,7 @@ class TestCheckLength:
 
     @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
     def test_equal_or_approx_pass(
-        self, *, equal_or_approx: int | tuple[int, float]
+        self: Self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
         check_length(range(10), equal_or_approx=equal_or_approx)
 
@@ -123,7 +123,7 @@ class TestCheckLength:
         ],
     )
     def test_equal_or_approx_fail(
-        self, *, equal_or_approx: int | tuple[int, float], match: str
+        self: Self, *, equal_or_approx: int | tuple[int, float], match: str
     ) -> None:
         with raises(CheckLengthError, match=match):
             check_length([], equal_or_approx=equal_or_approx)
@@ -333,7 +333,7 @@ class TestChunked:
         ],
     )
     def test_main(
-        self, *, iterable: Iterable[str], expected: Sequence[Sequence[str]]
+        self: Self, *, iterable: Iterable[str], expected: Sequence[Sequence[str]]
     ) -> None:
         result = list(chunked(iterable, 3))
         assert result == expected

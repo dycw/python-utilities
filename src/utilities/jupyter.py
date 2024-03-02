@@ -34,7 +34,7 @@ class _Show:
     stack: ExitStack = field(default_factory=ExitStack)
 
     def __call__(
-        self,
+        self: Self,
         *,
         dp: int | None = None,
         rows: int | None = _DEFAULT_ROWS,
@@ -81,7 +81,7 @@ class _Show:
             _ = self.stack.enter_context(config)
 
     def __exit__(
-        self,
+        self: Self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,

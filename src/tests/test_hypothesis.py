@@ -170,7 +170,7 @@ class TestBoolArrays:
 class TestBoolDataArrays:
     @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
     def test_main(
-        self, *, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
+        self: Self, *, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
     ) -> None:
         array = data.draw(bool_data_arrays(indexes, name=name))
         assert set(array.coords) == set(indexes)
@@ -203,7 +203,7 @@ class TestDatesPd:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self, *, data: DataObject, min_value: dt.date, max_value: dt.date
+        self: Self, *, data: DataObject, min_value: dt.date, max_value: dt.date
     ) -> None:
         _ = assume(min_value <= max_value)
         date = data.draw(dates_pd(min_value=min_value, max_value=max_value))
@@ -219,7 +219,7 @@ class TestDatetimesPd:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+        self: Self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
         datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
@@ -276,7 +276,7 @@ class TestDatetime64s:
         unit=just("D") | none(),
     )
     def test_valid_dates(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_value: datetime64 | dt.date | None,
@@ -320,7 +320,7 @@ class TestDatetime64s:
         unit=just("us") | none(),
     )
     def test_valid_datetimes(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_value: datetime64 | dt.datetime | None,
@@ -351,7 +351,7 @@ class TestDatetime64s:
 
     @given(data=data(), unit=datetime64_units())
     def test_valid_datetimes_error(
-        self, *, data: DataObject, unit: Datetime64Unit
+        self: Self, *, data: DataObject, unit: Datetime64Unit
     ) -> None:
         _ = assume(unit != "us")
         with raises(InvalidArgument):
@@ -361,7 +361,7 @@ class TestDatetime64s:
 class TestDatetimesUTC:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
     def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+        self: Self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
         _ = assume(min_value <= max_value)
@@ -378,7 +378,7 @@ class TestDictsOfIndexes:
         max_side=integers(1, 10) | none(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_dims: int,
@@ -420,7 +420,7 @@ class TestFloatArrays:
         unique=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         shape: Shape,
@@ -484,7 +484,7 @@ class TestFloatDataArrays:
         name=text_ascii() | none(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         indexes: Mapping[str, IndexA],
@@ -533,7 +533,7 @@ class TestFloatsExtra:
         integral=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_value: float | None,
@@ -574,7 +574,11 @@ class TestFloatsExtra:
 
     @given(data=data(), min_value=floats() | none(), max_value=floats() | none())
     def test_finite_and_integral(
-        self, *, data: DataObject, min_value: float | None, max_value: float | None
+        self: Self,
+        *,
+        data: DataObject,
+        min_value: float | None,
+        max_value: float | None,
     ) -> None:  # hard to reach
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(
@@ -629,7 +633,13 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_generic(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self: Self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(
             indexes(
@@ -651,7 +661,13 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_int(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self: Self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == int64
@@ -670,7 +686,13 @@ class TestIndexes:
         sort=booleans(),
     )
     def test_str(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
+        self: Self,
+        *,
+        data: DataObject,
+        n: int,
+        unique: bool,
+        name: Hashable,
+        sort: bool,
     ) -> None:
         index = data.draw(str_indexes(n=n, unique=unique, name=name, sort=sort))
         assert index.dtype == string
@@ -691,7 +713,7 @@ class TestIntArrays:
         unique=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         shape: Shape,
@@ -715,7 +737,7 @@ class TestIntArrays:
 class TestInt32s:
     @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
     def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
+        self: Self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
@@ -730,7 +752,7 @@ class TestInt32s:
 class TestInt64s:
     @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
     def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
+        self: Self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
@@ -752,7 +774,7 @@ class TestIntDataArrays:
         name=text_ascii() | none(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         indexes: Mapping[str, IndexA],
@@ -809,7 +831,7 @@ class TestListsFixedLength:
         "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
     def test_main(
-        self, *, data: DataObject, size: int, unique: bool, sorted_: bool
+        self: Self, *, data: DataObject, size: int, unique: bool, sorted_: bool
     ) -> None:
         result = data.draw(
             lists_fixed_length(integers(), size, unique=unique, sorted=sorted_)
@@ -879,7 +901,7 @@ class TestMergeIntoDictOfIndexes:
         data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
     )
     def test_non_empty(
-        self,
+        self: Self,
         *,
         data: DataObject,
         indexes1: Mapping[str, IndexA] | None,
@@ -937,7 +959,11 @@ class TestSQLiteEngines:
         self._run_test(engine, Example, ids)
 
     def _run_test(
-        self, engine: Engine, table_or_mapped_class: Table | type[Any], ids: set[int], /
+        self: Self,
+        engine: Engine,
+        table_or_mapped_class: Table | type[Any],
+        ids: set[int],
+        /,
     ) -> None:
         insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
         sel = select(get_table(table_or_mapped_class).c["id_"])
@@ -956,7 +982,7 @@ class TestStrArrays:
         unique=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         shape: Shape,
@@ -1000,7 +1026,7 @@ class TestStrDataArrays:
         name=text_ascii() | none(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         indexes: Mapping[str, IndexA],
@@ -1039,7 +1065,7 @@ class TestTempDirs:
     @FLAKY
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(
-        self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
+        self: Self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:
         path = temp_dir.path
         assert len(set(path.iterdir())) == 0
@@ -1074,7 +1100,7 @@ class TestTextAscii:
         disallow_na=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_size: int,
@@ -1103,7 +1129,7 @@ class TestTextClean:
         disallow_na=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_size: int,
@@ -1132,7 +1158,7 @@ class TestTextPrintable:
         disallow_na=booleans(),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_size: int,
@@ -1162,7 +1188,7 @@ class TestTimestamps:
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         min_value: dt.datetime,
@@ -1185,7 +1211,7 @@ class TestTimestamps:
 class TestUInt32s:
     @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
     def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
+        self: Self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint32s(min_value=min_value, max_value=max_value))
@@ -1200,7 +1226,7 @@ class TestUInt32s:
 class TestUInt64s:
     @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
     def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
+        self: Self, *, data: DataObject, min_value: int | None, max_value: int | None
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(uint64s(min_value=min_value, max_value=max_value))

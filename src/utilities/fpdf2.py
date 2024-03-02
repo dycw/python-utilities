@@ -23,7 +23,7 @@ class _BasePDF(FPDF):
         self.ln()
 
     def add_plot(
-        self, plot: Any, /, *, validate: bool = False
+        self: Self, plot: Any, /, *, validate: bool = False
     ) -> None:  # pragma: no cover
         from utilities.holoviews import save_plot
 

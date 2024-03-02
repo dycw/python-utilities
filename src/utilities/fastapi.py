@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter as _APIRouter
 from fastapi.types import DecoratedCallable
-from typing_extensions import override
+from typing_extensions import Self, override
 
 _PATTERN = re.compile(r"(^/$)|(^.+[^\/]$)")
 
@@ -16,7 +16,7 @@ class APIRouter(_APIRouter):
 
     @override
     def api_route(  # type: ignore
-        self, *, path: str, include_in_schema: bool = True, **kwargs: Any
+        self: Self, *, path: str, include_in_schema: bool = True, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """N/A."""
         if _PATTERN.search(path):

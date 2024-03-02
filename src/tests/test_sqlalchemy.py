@@ -320,7 +320,7 @@ class TestCheckColumnTypesEqual:
 class TestCheckColumnTypesBooleanEqual:
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_create_constraint(
-        self, *, create_constraints: typing.Sequence[bool]
+        self: Self, *, create_constraints: typing.Sequence[bool]
     ) -> None:
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (Boolean(create_constraint=cs) for cs in create_constraints)
@@ -382,7 +382,7 @@ class TestCheckColumnTypesEnumEqual:
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
     def test_create_constraint(
-        self, *, create_constraints: typing.Sequence[bool]
+        self: Self, *, create_constraints: typing.Sequence[bool]
     ) -> None:
         class Example(enum.Enum):
             member = auto()
@@ -462,7 +462,7 @@ class TestCheckColumnTypesFloatEqual:
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
-        self, *, dec_ret_scales: typing.Sequence[int | None]
+        self: Self, *, dec_ret_scales: typing.Sequence[int | None]
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Float(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -486,7 +486,7 @@ class TestCheckColumnTypesIntervalEqual:
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_second_precision(
-        self, *, second_precisions: typing.Sequence[int | None]
+        self: Self, *, second_precisions: typing.Sequence[int | None]
     ) -> None:
         second_precision_x, second_precision_y = second_precisions
         x, y = (Interval(second_precision=sp) for sp in second_precisions)
@@ -498,7 +498,7 @@ class TestCheckColumnTypesIntervalEqual:
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_day_precision(
-        self, *, day_precisions: typing.Sequence[int | None]
+        self: Self, *, day_precisions: typing.Sequence[int | None]
     ) -> None:
         day_precision_x, day_precision_y = day_precisions
         x, y = (Interval(day_precision=dp) for dp in day_precisions)
@@ -554,7 +554,7 @@ class TestCheckColumnTypesNumericEqual:
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
-        self, *, dec_ret_scales: typing.Sequence[int | None]
+        self: Self, *, dec_ret_scales: typing.Sequence[int | None]
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Numeric(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -571,7 +571,7 @@ class TestCheckColumnTypesStringEqual:
         lengths=lists_fixed_length(integers(0, 10) | none(), 2),
     )
     def test_length(
-        self,
+        self: Self,
         *,
         cls: type[String | Unicode | UnicodeText],
         lengths: typing.Sequence[int | None],
@@ -716,7 +716,7 @@ class TestColumnwiseMinMax:
         ),
     )
     def test_main(
-        self, *, engine: Engine, values: set[tuple[int | None, int | None]]
+        self: Self, *, engine: Engine, values: set[tuple[int | None, int | None]]
     ) -> None:
         table = Table(
             "example",
@@ -813,7 +813,11 @@ class TestEnsureTablesCreated:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+        self: Self,
+        table_or_mapped_class: Table | type[Any],
+        engine: Engine,
+        runs: int,
+        /,
     ) -> None:
         for _ in range(runs):
             ensure_tables_created(engine, table_or_mapped_class)
@@ -840,7 +844,11 @@ class TestEnsureTablesDropped:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+        self: Self,
+        table_or_mapped_class: Table | type[Any],
+        engine: Engine,
+        runs: int,
+        /,
     ) -> None:
         table = get_table(table_or_mapped_class)
         with engine.begin() as conn:
@@ -859,7 +867,7 @@ class TestGetChunkSize:
         scaling=floats(0.1, 10.0),
     )
     def test_main(
-        self, *, engine: Engine, chunk_size_frac: float, scaling: float
+        self: Self, *, engine: Engine, chunk_size_frac: float, scaling: float
     ) -> None:
         result = get_chunk_size(
             engine, chunk_size_frac=chunk_size_frac, scaling=scaling
@@ -962,25 +970,25 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_tuples_and_table(
-        self, *, engine: Engine, ids: set[int]
+        self: Self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, ([((id_,)) for id_ in ids], self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_dicts_and_table(
-        self, *, engine: Engine, ids: set[int]
+        self: Self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_tuples_and_tables(
-        self, *, engine: Engine, ids: set[int]
+        self: Self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, [(((id_,), self._table)) for id_ in ids])
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_dicts_and_tables(
-        self, *, engine: Engine, ids: set[int]
+        self: Self, *, engine: Engine, ids: set[int]
     ) -> None:
         self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 

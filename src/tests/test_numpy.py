@@ -157,7 +157,7 @@ class TestArrayIndexer:
         ],
     )
     def test_main(
-        self, *, i: int, ndim: int, expected: tuple[int | slice, ...]
+        self: Self, *, i: int, ndim: int, expected: tuple[int | slice, ...]
     ) -> None:
         assert array_indexer(i, ndim) == expected
 
@@ -181,7 +181,7 @@ class TestArrayIndexer:
         ],
     )
     def test_axis(
-        self, *, i: int, ndim: int, axis: int, expected: tuple[int | slice, ...]
+        self: Self, *, i: int, ndim: int, axis: int, expected: tuple[int | slice, ...]
     ) -> None:
         assert array_indexer(i, ndim, axis=axis) == expected
 
@@ -425,7 +425,7 @@ class TestDiscretize:
         ],
     )
     def test_bins_of_floats(
-        self,
+        self: Self,
         *,
         arr_v: Sequence[float],
         bins: Sequence[float],
@@ -483,7 +483,11 @@ class TestFFillNonNanSlices:
         ],
     )
     def test_main(
-        self, *, limit: int | None, axis: int, expected_v: Sequence[Sequence[float]]
+        self: Self,
+        *,
+        limit: int | None,
+        axis: int,
+        expected_v: Sequence[Sequence[float]],
     ) -> None:
         arr = array(
             [[0.1, nan, nan, 0.2], 4 * [nan], [0.3, nan, nan, nan]], dtype=float
@@ -500,7 +504,7 @@ class TestFFillNonNanSlices:
         ],
     )
     def test_initial_all_nan(
-        self, *, axis: int, expected_v: Sequence[Sequence[float]]
+        self: Self, *, axis: int, expected_v: Sequence[Sequence[float]]
     ) -> None:
         arr = array([4 * [nan], [nan, 0.1, nan, nan], 4 * [nan]], dtype=float)
         result = ffill_non_nan_slices(arr, axis=axis)
@@ -673,7 +677,13 @@ class TestIsBetween:
         ],
     )
     def test_main(
-        self, *, x: float, low: float, high: float, equal_nan: bool, expected: bool
+        self: Self,
+        *,
+        x: float,
+        low: float,
+        high: float,
+        equal_nan: bool,
+        expected: bool,
     ) -> None:
         assert is_between(x, low, high, equal_nan=equal_nan).item() is expected
 
@@ -713,7 +723,7 @@ class TestIsEmptyAndIsNotEmpty:
     )
     @mark.parametrize("kind", [param("shape"), param("array")])
     def test_main(
-        self,
+        self: Self,
         *,
         shape: int | tuple[int, ...],
         kind: Literal["shape", "array"],
@@ -1138,7 +1148,7 @@ class TestIsPositiveSemiDefinite:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self: Self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_positive_semidefinite(array.astype(dtype)) is expected
 
@@ -1158,7 +1168,7 @@ class TestIsSymmetric:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self: Self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
         assert is_symmetric(array.astype(dtype)) is expected
 
@@ -1437,7 +1447,7 @@ class TestShift:
         ],
     )
     def test_2d(
-        self, *, axis: int, n: int, expected_v: Sequence[Sequence[float]]
+        self: Self, *, axis: int, n: int, expected_v: Sequence[Sequence[float]]
     ) -> None:
         arr = arange(12, dtype=float).reshape((3, 4))
         result = shift(arr, axis=axis, n=n)
@@ -1462,7 +1472,7 @@ class TestShiftBool:
     )
     @mark.parametrize("fill_value", [param(True), param(False)])
     def test_main(
-        self, *, n: int, expected_v: Sequence[bool | None], fill_value: bool
+        self: Self, *, n: int, expected_v: Sequence[bool | None], fill_value: bool
     ) -> None:
         arr = array([True, False, True], dtype=bool)
         result = shift_bool(arr, n=n, fill_value=fill_value)

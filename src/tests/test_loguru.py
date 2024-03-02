@@ -87,7 +87,7 @@ class TestAugmentLevels:
         env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_with_env_var(
-        self, *, env_var_prefix: str, module: str, level: LogLevel
+        self: Self, *, env_var_prefix: str, module: str, level: LogLevel
     ) -> None:
         with temp_environ({f"{env_var_prefix}_{module}": level}):
             result = _augment_levels(env_var_prefix=env_var_prefix)
@@ -97,7 +97,7 @@ class TestAugmentLevels:
         env_var_prefix=env_var_prefixes, module=modules, level=sampled_from(LogLevel)
     )
     def test_without_env_var(
-        self, *, env_var_prefix: str, module: str, level: LogLevel
+        self: Self, *, env_var_prefix: str, module: str, level: LogLevel
     ) -> None:
         with temp_environ({f"{env_var_prefix}_{module}": level}):
             result = _augment_levels(env_var_prefix=None)
@@ -110,7 +110,7 @@ class TestAugmentLevels:
         level_env_var=sampled_from(LogLevel),
     )
     def test_both(
-        self,
+        self: Self,
         *,
         level_direct: LogLevel,
         env_var_prefix: str,

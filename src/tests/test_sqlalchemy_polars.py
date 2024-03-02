@@ -128,7 +128,7 @@ class TestInsertDataFrame:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         engine: Engine,
@@ -155,7 +155,7 @@ class TestInsertDataFrame:
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
     def test_snake(
-        self, *, engine: Engine, values: list[bool | None], sr_name: str
+        self: Self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
         df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = Table(
@@ -175,7 +175,7 @@ class TestInsertDataFrame:
         engine=sqlite_engines(),
     )
     def test_dataframe_becomes_no_items_error(
-        self, *, values: list[bool | None], engine: Engine
+        self: Self, *, values: list[bool | None], engine: Engine
     ) -> None:
         table = Table(
             "example",
@@ -310,7 +310,7 @@ class TestSelectToDataFrame:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         engine: Engine,
@@ -354,7 +354,7 @@ class TestSelectToDataFrame:
         in_clauses_chunk_size=integers(1, 10),
     )
     def test_engine_and_in_clauses_non_empty(
-        self,
+        self: Self,
         *,
         data: DataObject,
         engine: Engine,
@@ -401,7 +401,7 @@ class TestSelectToDataFrame:
         batch_size=integers(1, 10),
     )
     def test_conn_and_batch_size_only(
-        self, *, engine: Engine, values: list[bool | None], batch_size: int
+        self: Self, *, engine: Engine, values: list[bool | None], batch_size: int
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": pl.Boolean})
         table = Table(
@@ -430,7 +430,7 @@ class TestSelectToDataFrame:
         in_clauses_chunk_size=integers(1, 10),
     )
     def test_conn_and_in_clauses(
-        self,
+        self: Self,
         *,
         data: DataObject,
         batch_size: int | None,
@@ -555,7 +555,7 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
     )
     @mark.parametrize("use_inst", [param(True), param(False)])
     def test_main(
-        self, *, col_type: Any, use_inst: bool, expected: DataTypeClass
+        self: Self, *, col_type: Any, use_inst: bool, expected: DataTypeClass
     ) -> None:
         col_type_use = col_type() if use_inst else col_type
         dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)
@@ -578,7 +578,7 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
         chunk_size_frac=floats(0.1, 10.0),
     )
     def test_main(
-        self,
+        self: Self,
         *,
         engine: Engine,
         values: set[int],

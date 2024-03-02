@@ -11,7 +11,7 @@ class _Meta(type):
     instance: Any = None
 
     @override
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __call__(cls: Any, *args: Any, **kwargs: Any) -> Any:
         if cls.instance is None:
             cls.instance = super().__call__(*args, **kwargs)
         return cls.instance

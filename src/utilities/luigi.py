@@ -123,7 +123,12 @@ class EnumParameter(Parameter, Generic[_E]):
     """A parameter which takes the value of an Enum."""
 
     def __init__(
-        self, enum: type[_E], /, *args: Any, case_sensitive: bool = True, **kwargs: Any
+        self: Self,
+        enum: type[_E],
+        /,
+        *args: Any,
+        case_sensitive: bool = True,
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self._enum = enum
@@ -146,7 +151,7 @@ class FrozenSetIntsParameter(Parameter):
     """A parameter which takes the value of a frozen set of integers."""
 
     def __init__(
-        self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
+        self: Self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
     ) -> None:
         self._separator = separator
         self._empty = empty
@@ -172,7 +177,7 @@ class FrozenSetStrsParameter(Parameter):
     """A parameter which takes the value of a frozen set of strings."""
 
     def __init__(
-        self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
+        self: Self, *, separator: str = ",", empty: str = "{N/A}", **kwargs: Any
     ) -> None:
         self._separator = separator
         self._empty = empty
@@ -254,7 +259,10 @@ class WeekdayParameter(Parameter):
     """A parameter which takes the valeu of the previous/next weekday."""
 
     def __init__(
-        self, *args: Any, rounding: Literal["prev", "next"] = "prev", **kwargs: Any
+        self: Self,
+        *args: Any,
+        rounding: Literal["prev", "next"] = "prev",
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         if rounding == "prev":

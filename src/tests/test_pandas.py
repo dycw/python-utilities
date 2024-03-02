@@ -465,7 +465,7 @@ class TestSeriesMinMax:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         x_v: Any,
         y_v: Any,
@@ -484,7 +484,7 @@ class TestSeriesMinMax:
 
     @mark.parametrize("func", [param(series_min), param(series_max)])
     def test_different_index(
-        self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
+        self: Self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
@@ -604,7 +604,7 @@ class TestToNumpy:
         ],
     )
     def test_main(
-        self, *, series_v: Any, series_d: Any, array_v: Any, array_d: Any
+        self: Self, *, series_v: Any, series_d: Any, array_v: Any, array_d: Any
     ) -> None:
         series = Series([series_v], dtype=series_d)
         result = to_numpy(series)

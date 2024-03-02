@@ -791,7 +791,7 @@ class TablenameMixin:
     """Mix-in for an auto-generated tablename."""
 
     @cast(Any, declared_attr)
-    def __tablename__(cls) -> str:  # noqa: N805
+    def __tablename__(cls: Any) -> str:  # noqa: N805
         from utilities.humps import snake_case
 
         return snake_case(get_class_name(cls))

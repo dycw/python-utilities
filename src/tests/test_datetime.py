@@ -79,7 +79,7 @@ class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
     @mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
-        self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
+        self: Self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
         _ = assume(predicate(n, 0))
         with assume_does_not_raise(OverflowError):
@@ -157,7 +157,7 @@ class TestEnsure:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         strategy: SearchStrategy[Any],
@@ -442,7 +442,7 @@ class TestSerialize:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         strategy: SearchStrategy[Any],
@@ -472,7 +472,7 @@ class TestRoundToWeekday:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         date: dt.date,
         func: Callable[[dt.date], dt.date],

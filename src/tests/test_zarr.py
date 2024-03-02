@@ -49,7 +49,7 @@ class TestNDArrayWithIndexes:
         root=temp_paths(),
     )
     def test_main(
-        self, *, data: DataObject, indexes: Mapping[str, NDArrayI1], root: Path
+        self: Self, *, data: DataObject, indexes: Mapping[str, NDArrayI1], root: Path
     ) -> None:
         shape = tuple(map(len, indexes.values()))
         arrays = float_arrays(shape=shape, allow_nan=True, allow_inf=True)
@@ -94,7 +94,7 @@ class TestNDArrayWithIndexes:
         fill_value=floats(allow_infinity=True, allow_nan=True),
     )
     def test_fill_value(
-        self, *, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
+        self: Self, *, indexes: Mapping[str, NDArrayI1], root: Path, fill_value: float
     ) -> None:
         path = ensure_path(root, "array")
         with yield_array_with_indexes(indexes, path, fill_value=fill_value):
@@ -121,7 +121,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_isel(
-        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self: Self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
@@ -164,7 +164,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel(
-        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self: Self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {"x": array(["x0", "x1"]), "y": array(["y0", "y1", "y2"])}
         path = ensure_path(tmp_path, "array")
@@ -182,7 +182,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_error(
-        self, *, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
+        self: Self, *, tmp_path: Path, index: NDArrayO1, indexer: Mapping[str, Any]
     ) -> None:
         indexes = {"x": index}
         path = ensure_path(tmp_path, "array")
@@ -210,7 +210,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_date(
-        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self: Self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
@@ -249,7 +249,7 @@ class TestNDArrayWithIndexes:
         ],
     )
     def test_sel_with_datetime(
-        self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
+        self: Self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
         indexes = {
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)

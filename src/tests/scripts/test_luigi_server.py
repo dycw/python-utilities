@@ -20,7 +20,7 @@ class TestLuigiServer:
         port=integers(),
     )
     def test_get_args(
-        self, *, pid_file: Path, log_dir: str, state_path: str, port: int
+        self: Self, *, pid_file: Path, log_dir: str, state_path: str, port: int
     ) -> None:
         _ = _get_args(
             pid_file=pid_file, log_dir=log_dir, state_path=state_path, port=port

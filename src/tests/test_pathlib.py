@@ -68,7 +68,7 @@ class TestWalk:
         followlinks=booleans(),
     )
     def test_main(
-        self, *, root: Path, topdown: bool, onerror: bool, followlinks: bool
+        self: Self, *, root: Path, topdown: bool, onerror: bool, followlinks: bool
     ) -> None:
         def on_error(error: OSError, /) -> None:
             assert error.args != ()

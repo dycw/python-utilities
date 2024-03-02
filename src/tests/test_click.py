@@ -157,7 +157,7 @@ class TestParameters:
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_argument(
-        self,
+        self: Self,
         *,
         data: DataObject,
         param: ParamType,
@@ -183,7 +183,7 @@ class TestParameters:
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_option(
-        self,
+        self: Self,
         *,
         data: DataObject,
         param: ParamType,

@@ -92,7 +92,7 @@ class TestClickOptions:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         appname: str,
@@ -115,7 +115,7 @@ class TestClickOptions:
         self._run_test(Truth, default, appname, attrgetter("name"), root, value, cfg)
 
     def _run_test(
-        self,
+        self: Self,
         test_cls: type[_T],
         default: _T,
         appname: str,
@@ -184,7 +184,7 @@ class TestLoadSettings:
         ],
     )
     def test_main(
-        self,
+        self: Self,
         *,
         data: DataObject,
         root: Path,
@@ -204,7 +204,7 @@ class TestLoadSettings:
     )
     @skipif_windows  # writing \\ to file
     def test_engines(
-        self, *, default: Engine, root: Path, appname: str, value: Engine
+        self: Self, *, default: Engine, root: Path, appname: str, value: Engine
     ) -> None:
         def equal(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
@@ -212,7 +212,7 @@ class TestLoadSettings:
         self._run_test(Engine, default, root, appname, serialize_engine, value, equal)
 
     def _run_test(
-        self,
+        self: Self,
         test_cls: type[_T],
         default: _T,
         root: Path,

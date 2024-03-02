@@ -18,7 +18,7 @@ class TestWriter:
         [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
     )
     def test_file_writing(
-        self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
+        self: Self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
     ) -> None:
         path = ensure_path(tmp_path, "file.txt")
         with writer(path) as temp, temp.open(mode="wb" if is_binary else "w") as fh1:
@@ -80,7 +80,7 @@ class TestWriter:
 
     @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
     def test_error_during_write(
-        self, *, tmp_path: Path, error: type[Exception]
+        self: Self, *, tmp_path: Path, error: type[Exception]
     ) -> None:
         path = ensure_path(tmp_path, "file.txt")
 

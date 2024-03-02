@@ -51,7 +51,7 @@ class TestExtractGroup:
         ],
     )
     def test_errors(
-        self, *, pattern: str, text: str, error: type[Exception], match: str
+        self: Self, *, pattern: str, text: str, error: type[Exception], match: str
     ) -> None:
         with raises(error, match=match):
             _ = extract_group(pattern, text)
@@ -103,7 +103,7 @@ class TestExtractGroups:
         ],
     )
     def test_errors(
-        self, *, pattern: str, text: str, error: type[Exception], match: str
+        self: Self, *, pattern: str, text: str, error: type[Exception], match: str
     ) -> None:
         with raises(error, match=match):
             _ = extract_groups(pattern, text)

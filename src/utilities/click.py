@@ -31,7 +31,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -47,7 +47,7 @@ class DateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -63,7 +63,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -79,7 +79,7 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
@@ -156,7 +156,7 @@ class Engine(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self: Self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _Engine:
         """Convert a value into the `Engine` type."""
         from utilities.sqlalchemy import ParseEngineError, ensure_engine
