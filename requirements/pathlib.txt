@@ -15,6 +15,7 @@ packaging==23.2
     # via
     #   pytest
     #   pytest-rerunfailures
+pathvalidate==3.2.0
 pluggy==1.4.0
     # via pytest
 pytest==8.0.2

@@ -18,9 +18,9 @@ packages=(
     # locale
     # logging
     # math
-    modules
-    os
-    pathlib
+    # modules
+    # os
+    # pathlib
     pickle
     platform
     random
