@@ -26,6 +26,53 @@ click = ["click"]
 cryptography = ["cryptography"]
 cvxpy = ["cvxpy"]
 dev = [
+  "ast-comments",
+  "atomicwrites",
+  "beartype",
+  "beautifulsoup4",
+  "bidict",
+  "bottleneck",
+  "cachetools",
+  "click",
+  "cryptography",
+  "cvxpy",
+  "exceptiongroup",
+  "fastapi",
+  "fpdf2",
+  "frozendict",
+  "hatch",
+  "holoviews",
+  "hypothesis",
+  "loguru",
+  "luigi",
+  "mdutils",
+  "memory-profiler",
+  "more-itertools",
+  "numbagg",
+  "numpy",
+  "pandas",
+  "pathvalidate",
+  "polars",
+  "pqdm",
+  "psutil",
+  "pydantic",
+  "pyhumps",
+  "pyinstrument",
+  "pypiserver[passlib]",
+  "pytest-check",
+  "pytest-randomly",
+  "pytest-xdist",
+  "pytest",
+  "scipy",
+  "selenium",
+  "semver",
+  "sqlalchemy",
+  "streamlit",
+  "typed-settings[click]",
+  "xarray",
+  "xlrd",
+  "zarr",
+  # test
   "coverage-conditional-plugin",
   "pytest-cov",
   "pytest-instafail",
@@ -70,7 +117,7 @@ scripts-pypi-server = ["loguru", "pypiserver[passlib]", "typed-settings[click]"]
 selenium = ["selenium"]
 semver = ["semver"]
 sqlalchemy = ["sqlalchemy"]
-sqlalchemy-polars = ["sqlalchemy", "polars >= 0.20.13"]
+sqlalchemy-polars = ["sqlalchemy", "polars"]
 streamlit = ["streamlit"]
 test = [
   "exceptiongroup",
