@@ -14,7 +14,10 @@ from utilities.platform import IS_WINDOWS
 class TestWriter:
     @pytest.mark.parametrize(
         ("is_binary", "contents"),
-        [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
+        [
+            pytest.param(False, "contents", id="text"),
+            pytest.param(True, b"contents", id="binary"),
+        ],
     )
     def test_file_writing(
         self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
@@ -35,7 +38,7 @@ class TestWriter:
             else escape(str(path))
         )
         with (
-            raises(FileExistsError, match=match),
+            pytest.raises(FileExistsError, match=match),
             writer(path) as temp2,
             temp2.open(mode="w") as fh2,
         ):
@@ -77,7 +80,9 @@ class TestWriter:
                 ensure_path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
-    @pytest.mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
+    @pytest.mark.parametrize(
+        "error", [pytest.param(KeyboardInterrupt), pytest.param(ValueError)]
+    )
     def test_error_during_write(
         self, *, tmp_path: Path, error: type[Exception]
     ) -> None:

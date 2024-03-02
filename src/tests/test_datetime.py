@@ -76,7 +76,7 @@ from utilities.zoneinfo import HONG_KONG
 
 class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
-    @pytest.mark.parametrize("predicate", [param(gt), param(lt)])
+    @pytest.mark.parametrize("predicate", [pytest.param(gt), pytest.param(lt)])
     def test_add(
         self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
@@ -184,12 +184,15 @@ class TestGetNow:
         assert now.tzinfo is tz
 
     @pytest.mark.parametrize(
-        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
+        "get_now",
+        [pytest.param(get_now), pytest.param(get_now_hk), pytest.param(get_now_tokyo)],
     )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @pytest.mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TOKYO)])
+    @pytest.mark.parametrize(
+        "now", [pytest.param(NOW_UTC), pytest.param(NOW_HKG), pytest.param(NOW_TOKYO)]
+    )
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -201,13 +204,19 @@ class TestGetToday:
         assert isinstance(today, dt.date)
 
     @pytest.mark.parametrize(
-        "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
+        "get_today",
+        [
+            pytest.param(get_today),
+            pytest.param(get_today_hk),
+            pytest.param(get_today_tokyo),
+        ],
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
     @pytest.mark.parametrize(
-        "today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)]
+        "today",
+        [pytest.param(TODAY_UTC), pytest.param(TODAY_HK), pytest.param(TODAY_TOKYO)],
     )
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)

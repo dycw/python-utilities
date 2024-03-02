@@ -107,7 +107,9 @@ class TestCheckLength:
         ):
             check_length([], equal=1)
 
-    @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    @pytest.mark.parametrize(
+        "equal_or_approx", [pytest.param(10), pytest.param((11, 0.1))]
+    )
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
@@ -216,7 +218,8 @@ class TestCheckMappingsEqual:
 
 class TestCheckSetsEqual:
     @pytest.mark.parametrize(
-        ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
+        ("left", "right"),
+        [pytest.param(set(), set()), pytest.param(iter([]), iter([]))],
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_sets_equal(left, right)
@@ -271,7 +274,8 @@ class TestCheckSubMapping:
 
 class TestCheckSubSet:
     @pytest.mark.parametrize(
-        ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
+        ("left", "right"),
+        [pytest.param(set(), set()), pytest.param(iter([]), iter([]))],
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_subset(left, right)
@@ -312,7 +316,8 @@ class TestCheckSuperMapping:
 
 class TestCheckSuperSet:
     @pytest.mark.parametrize(
-        ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
+        ("left", "right"),
+        [pytest.param(set(), set()), pytest.param(iter([]), iter([]))],
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
         check_superset(left, right)
@@ -351,7 +356,9 @@ class TestEnsureHashables:
 
 
 class TestEnsureIterable:
-    @pytest.mark.parametrize("obj", [param([]), param(()), param("")])
+    @pytest.mark.parametrize(
+        "obj", [pytest.param([]), pytest.param(()), pytest.param("")]
+    )
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_iterable(obj)
 
@@ -361,11 +368,11 @@ class TestEnsureIterable:
 
 
 class TestEnsureIterableNotStr:
-    @pytest.mark.parametrize("obj", [param([]), param(())])
+    @pytest.mark.parametrize("obj", [pytest.param([]), pytest.param(())])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_iterable_not_str(obj)
 
-    @pytest.mark.parametrize("obj", [param(None), param("")])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param("")])
     def test_error(self, *, obj: Any) -> None:
         with pytest.raises(
             EnsureIterableNotStrError,
@@ -377,7 +384,12 @@ class TestEnsureIterableNotStr:
 class TestIsIterable:
     @pytest.mark.parametrize(
         ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", True)],
+        [
+            pytest.param(None, False),
+            pytest.param([], True),
+            pytest.param((), True),
+            pytest.param("", True),
+        ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable(obj) is expected
@@ -386,7 +398,12 @@ class TestIsIterable:
 class TestIsIterableNotStr:
     @pytest.mark.parametrize(
         ("obj", "expected"),
-        [param(None, False), param([], True), param((), True), param("", False)],
+        [
+            pytest.param(None, False),
+            pytest.param([], True),
+            pytest.param((), True),
+            pytest.param("", False),
+        ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable_not_str(obj) is expected

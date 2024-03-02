@@ -64,7 +64,9 @@ class TestCheckInteger:
         ):
             check_integer(0, equal=1)
 
-    @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    @pytest.mark.parametrize(
+        "equal_or_approx", [pytest.param(10), pytest.param((11, 0.1))]
+    )
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
@@ -127,7 +129,15 @@ class TestIsAtLeast:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
     @pytest.mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
@@ -155,7 +165,15 @@ class TestIsAtMost:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
     @pytest.mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
@@ -182,11 +200,25 @@ class TestIsBetween:
 
     @pytest.mark.parametrize(
         "low",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     @pytest.mark.parametrize(
         "high",
-        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     def test_nan(self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
@@ -424,7 +456,15 @@ class TestIsGreaterThan:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @pytest.mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     def test_nan(self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
@@ -481,7 +521,15 @@ class TestIsLessThan:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @pytest.mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [
+            pytest.param(-inf),
+            pytest.param(-1.0),
+            pytest.param(0.0),
+            pytest.param(1.0),
+            pytest.param(inf),
+            pytest.param(nan),
+        ],
     )
     def test_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)

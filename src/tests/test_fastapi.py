@@ -6,7 +6,7 @@ from utilities.fastapi import APIRouter
 
 
 class TestAPIRouter:
-    @pytest.mark.parametrize("route", [param("/"), param("/home")])
+    @pytest.mark.parametrize("route", [pytest.param("/"), pytest.param("/home")])
     def test_main(self, route: str) -> None:
         router = APIRouter()
 

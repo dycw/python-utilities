@@ -71,7 +71,8 @@ def _get_variable(
 
 class TestAbs:
     @pytest.mark.parametrize(
-        ("x", "expected"), [param(0.0, 0.0), param(1.0, 1.0), param(-1.0, 1.0)]
+        ("x", "expected"),
+        [pytest.param(0.0, 0.0), pytest.param(1.0, 1.0), pytest.param(-1.0, 1.0)],
     )
     def test_float(self, *, x: float, expected: float) -> None:
         assert isclose(abs_(x), expected)
@@ -109,7 +110,9 @@ class TestAbs:
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
         assert_frame_equal(abs_(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(abs_(var).value, abs_(var.value))
@@ -130,8 +133,10 @@ class TestAdd:
     ) -> None:
         assert_equal(add(x, y), expected)
 
-    @pytest.mark.parametrize("x", [param(1.0), param(array([1.0]))])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("x", [pytest.param(1.0), pytest.param(array([1.0]))])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_one_expression(
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
@@ -139,8 +144,12 @@ class TestAdd:
         assert isclose(add(x, var).value, add(x, var.value))  # type: ignore[]
         assert isclose(add(var, x).value, add(var.value, x))  # type: ignore[]
 
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,
@@ -180,8 +189,10 @@ class TestDivide:
     ) -> None:
         assert_equal(divide(x, y), expected)
 
-    @pytest.mark.parametrize("x", [param(1.0), param(array([1.0]))])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("x", [pytest.param(1.0), pytest.param(array([1.0]))])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_one_expression(
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
@@ -189,8 +200,12 @@ class TestDivide:
         assert_equal(divide(x, var).value, divide(x, var.value))
         assert_equal(divide(var, x).value, divide(var.value, x))
 
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,
@@ -220,7 +235,9 @@ class TestMax:
     ) -> None:
         assert_equal(max_(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert isclose(max_(var).value, max_(var.value))
@@ -228,19 +245,19 @@ class TestMax:
 
 class TestMaximumAndMinimum:
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_two_floats(self, *, func: Callable[..., Any], expected: float) -> None:
         assert isclose(func(2.0, 3.0), expected)
 
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_two_arrays(self, *, func: Callable[..., Any], expected: float) -> None:
         assert_equal(func(array([2.0]), array([3.0])), array([expected]))
 
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_two_series(self, *, func: Callable[..., Any], expected: float) -> None:
         res = func(Series([2.0]), Series([3.0]))
@@ -248,16 +265,20 @@ class TestMaximumAndMinimum:
         assert_series_equal(res, exp_series)
 
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_two_dataframes(self, *, func: Callable[..., Any], expected: float) -> None:
         res = func(DataFrame([2.0]), DataFrame([3.0]))
         exp_df = DataFrame([expected])
         assert_frame_equal(res, exp_df)
 
-    @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("func", [pytest.param(maximum), pytest.param(minimum)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,
@@ -269,9 +290,11 @@ class TestMaximumAndMinimum:
         var2 = _get_variable(objective2)
         assert isclose(func(var1, var2).value, func(var1.value, var2.value))
 
-    @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("shape", [param(None), param((2, 2))])
+    @pytest.mark.parametrize("func", [pytest.param(maximum), pytest.param(minimum)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize("shape", [pytest.param(None), pytest.param((2, 2))])
     def test_float_and_expr(
         self,
         *,
@@ -284,7 +307,7 @@ class TestMaximumAndMinimum:
         assert_equal(func(y, x).value, func(y.value, x))
 
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_array_and_series(
         self, *, func: Callable[..., Any], expected: float
@@ -294,7 +317,7 @@ class TestMaximumAndMinimum:
         assert_series_equal(func(y, x), exp_series)
 
     @pytest.mark.parametrize(
-        ("func", "expected"), [param(maximum, 3.0), param(minimum, 2.0)]
+        ("func", "expected"), [pytest.param(maximum, 3.0), pytest.param(minimum, 2.0)]
     )
     def test_array_and_dataframe(
         self, *, func: Callable[..., Any], expected: float
@@ -303,8 +326,10 @@ class TestMaximumAndMinimum:
         assert_frame_equal(func(x, y), exp_df)
         assert_frame_equal(func(y, x), exp_df)
 
-    @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("func", [pytest.param(maximum), pytest.param(minimum)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_array_and_expr(
         self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
     ) -> None:
@@ -313,7 +338,8 @@ class TestMaximumAndMinimum:
         assert isclose(func(y, x).value, func(y.value, x))
 
     @pytest.mark.parametrize(
-        ("func", "error"), [param(maximum, MaximumError), param(minimum, MinimumError)]
+        ("func", "error"),
+        [pytest.param(maximum, MaximumError), pytest.param(minimum, MinimumError)],
     )
     def test_series_and_dataframe(
         self, func: Callable[..., Any], error: type[Exception]
@@ -328,8 +354,10 @@ class TestMaximumAndMinimum:
         with pytest.raises(error, match=match):
             _ = func(cast(Any, y), cast(Any, x))
 
-    @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("func", [pytest.param(maximum), pytest.param(minimum)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_series_and_expr(
         self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
     ) -> None:
@@ -337,8 +365,10 @@ class TestMaximumAndMinimum:
         assert isclose(func(x, y).value, func(x, y.value))
         assert isclose(func(y, x).value, func(y.value, x))
 
-    @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("func", [pytest.param(maximum), pytest.param(minimum)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_dataframe_and_expr(
         self, *, func: Callable[..., Any], objective: type[Maximize | Minimize]
     ) -> None:
@@ -365,7 +395,9 @@ class TestMin:
     ) -> None:
         assert isclose(min_(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, shape=(2,))
         assert isclose(min_(var).value, min_(var.value))
@@ -388,8 +420,12 @@ class TestMultiply:
         expected = DataFrame([6.0])
         assert_frame_equal(res, expected)
 
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,
@@ -415,8 +451,10 @@ class TestMultiply:
         assert_frame_equal(multiply(x, y), expected)
         assert_frame_equal(multiply(y, x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("shape", [param(None), param((2, 2))])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize("shape", [pytest.param(None), pytest.param((2, 2))])
     def test_float_and_expr(
         self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...] | None
     ) -> None:
@@ -434,7 +472,9 @@ class TestMultiply:
         assert_frame_equal(multiply(x, y), expected)
         assert_frame_equal(multiply(y, x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_array_and_expr(self, *, objective: type[Maximize | Minimize]) -> None:
         x, y = array([2.0]), _get_variable(objective)
         assert isclose(multiply(x, y).value, multiply(x, y.value))
@@ -451,13 +491,17 @@ class TestMultiply:
         with pytest.raises(MultiplyError, match=match):
             _ = multiply(cast(Any, y), cast(Any, x))
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_series_and_expr(self, *, objective: type[Maximize | Minimize]) -> None:
         x, y = Series([2.0]), _get_variable(objective)
         assert isclose(multiply(x, y).value, multiply(x, y.value))
         assert isclose(multiply(y, x).value, multiply(y.value, x))
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_dataframe_and_expr(self, *, objective: type[Maximize | Minimize]) -> None:
         x, y = DataFrame([2.0]), _get_variable(objective)
         assert isclose(multiply(x, y).value, multiply(x, y.value))
@@ -503,7 +547,9 @@ class TestNegate:
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
         assert_frame_equal(negate(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(
         self,
         *,
@@ -552,7 +598,9 @@ class TestNegative:
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
         assert_frame_equal(negative(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(
         self,
         *,
@@ -563,12 +611,16 @@ class TestNegative:
 
 
 class TestNorm:
-    @pytest.mark.parametrize("x", [param(array([2.0, 3.0])), param(Series([2.0, 3.0]))])
+    @pytest.mark.parametrize(
+        "x", [pytest.param(array([2.0, 3.0])), pytest.param(Series([2.0, 3.0]))]
+    )
     def test_array_and_series(self, *, x: NDArrayF | SeriesF) -> None:
         assert isclose(norm(x), np.sqrt(13))
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("shape", [param((2,)), param((2, 2))])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize("shape", [pytest.param((2,)), pytest.param((2, 2))])
     def test_expression(
         self, *, objective: type[Maximize | Minimize], shape: tuple[int, ...]
     ) -> None:
@@ -615,7 +667,9 @@ class TestPositive:
     def test_dataframe(self, *, x: DataFrame, expected: DataFrame) -> None:
         assert_frame_equal(positive(x), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(positive(var).value, positive(var.value))
@@ -637,7 +691,9 @@ class TestPower:
     ) -> None:
         assert_equal(power(x, p), expected)
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_one_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(power(var, 2.0).value, power(var.value, 2.0))
@@ -649,7 +705,9 @@ class TestQuadForm:
             quad_form(array([2.0, 3.0]), array([[4.0, 5.0], [5.0, 4.0]])), 112.0
         )
 
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_expression(self, *, objective: type[Maximize | Minimize]) -> None:
         var = _get_variable(objective, shape=(2,))
         P = array([[2.0, 3.0], [3.0, 2.0]])  # noqa: N806
@@ -714,7 +772,9 @@ class TestScalarProduct:
             pytest.param(DataFrame([2.0]), (1, 1)),
         ],
     )
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_one_float_array_and_ndframe_and_one_expression(
         self,
         *,
@@ -726,8 +786,12 @@ class TestScalarProduct:
         assert isclose(scalar_product(x, y).value, scalar_product(x, y.value))
         assert isclose(scalar_product(y, x).value, scalar_product(y.value, x))
 
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,
@@ -781,7 +845,10 @@ class TestSqrt:
 
     @pytest.mark.parametrize(
         ("x", "expected"),
-        [param(Series([0.0]), Series([0.0])), param(Series([1.0]), Series([1.0]))],
+        [
+            pytest.param(Series([0.0]), Series([0.0])),
+            pytest.param(Series([1.0]), Series([1.0])),
+        ],
     )
     def test_series(self, *, x: SeriesF, expected: SeriesF) -> None:
         assert_series_equal(sqrt(x), expected)
@@ -816,8 +883,10 @@ class TestSubtract:
     ) -> None:
         assert_equal(subtract(x, y), expected)
 
-    @pytest.mark.parametrize("x", [param(1.0), param(array([1.0]))])
-    @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize("x", [pytest.param(1.0), pytest.param(array([1.0]))])
+    @pytest.mark.parametrize(
+        "objective", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_one_expression(
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
@@ -825,8 +894,12 @@ class TestSubtract:
         assert_equal(subtract(x, var).value, subtract(x, var.value))
         assert_equal(subtract(var, x).value, subtract(var.value, x))
 
-    @pytest.mark.parametrize("objective1", [param(Maximize), param(Minimize)])
-    @pytest.mark.parametrize("objective2", [param(Maximize), param(Minimize)])
+    @pytest.mark.parametrize(
+        "objective1", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
+    @pytest.mark.parametrize(
+        "objective2", [pytest.param(Maximize), pytest.param(Minimize)]
+    )
     def test_two_expressions(
         self,
         *,

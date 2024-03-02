@@ -20,7 +20,7 @@ class TestPartial:
 class TestRedirectEmptyReduce:
     def test_main(self) -> None:
         with (
-            raises(
+            pytest.raises(
                 EmptyReduceError,
                 match=r"reduce\(\) must not be called over an empty iterable, or must have an initial value\.",
             ),

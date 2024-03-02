@@ -155,7 +155,7 @@ class TestAssumeDoesNotRaise:
         msg = "x is True"
         if x is True:
             with (
-                raises(ValueError, match=msg),
+                pytest.raises(ValueError, match=msg),
                 assume_does_not_raise(ValueError, match="wrong"),
             ):
                 raise ValueError(msg)
@@ -803,10 +803,11 @@ class TestLiftDraw:
 class TestListsFixedLength:
     @given(data=data(), size=integers(1, 10))
     @pytest.mark.parametrize(
-        "unique", [param(True, id="unique"), param(False, id="no unique")]
+        "unique", [pytest.param(True, id="unique"), pytest.param(False, id="no unique")]
     )
     @pytest.mark.parametrize(
-        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
+        "sorted_",
+        [pytest.param(True, id="sorted"), pytest.param(False, id="no sorted")],
     )
     def test_main(
         self, *, data: DataObject, size: int, unique: bool, sorted_: bool

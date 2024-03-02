@@ -149,7 +149,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 10))
-    @pytest.mark.parametrize("strategy", [param(frozensets), param(sets)])
+    @pytest.mark.parametrize("strategy", [pytest.param(frozensets), pytest.param(sets)])
     def test_sets_sortable(
         self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
     ) -> None:
@@ -158,7 +158,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(2, 10))
-    @pytest.mark.parametrize("strategy", [param(frozensets), param(sets)])
+    @pytest.mark.parametrize("strategy", [pytest.param(frozensets), pytest.param(sets)])
     def test_sets_unsortable(
         self,
         *,

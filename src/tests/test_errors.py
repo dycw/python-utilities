@@ -57,7 +57,7 @@ class TestRedirectError:
         class SecondError(Exception): ...
 
         with (
-            raises(RedirectErrorError),
+            pytest.raises(RedirectErrorError),
             redirect_error(FirstError, SecondError, match="match"),
         ):
             raise FirstError()  # noqa: RSE102
@@ -68,7 +68,7 @@ class TestRedirectError:
         class SecondError(Exception): ...
 
         with (
-            raises(RedirectErrorError),
+            pytest.raises(RedirectErrorError),
             redirect_error(FirstError, SecondError, match="match"),
         ):
             args = "x", "y"
@@ -80,7 +80,7 @@ class TestRedirectError:
         class SecondError(Exception): ...
 
         with (
-            raises(RedirectErrorError),
+            pytest.raises(RedirectErrorError),
             redirect_error(FirstError, SecondError, match="match"),
         ):
             arg = 0
@@ -92,7 +92,7 @@ class TestRedirectError:
         class SecondError(Exception): ...
 
         with (
-            raises(FirstError),
+            pytest.raises(FirstError),
             redirect_error(FirstError, SecondError, match="something else"),
         ):
             msg = "text"
@@ -100,7 +100,9 @@ class TestRedirectError:
 
 
 class TestRetry:
-    @pytest.mark.parametrize("use_predicate", [param(None), param(True), param(False)])
+    @pytest.mark.parametrize(
+        "use_predicate", [pytest.param(None), pytest.param(True), pytest.param(False)]
+    )
     def test_main(self, *, use_predicate: bool | None) -> None:
         class TooLargeError(Exception): ...
 

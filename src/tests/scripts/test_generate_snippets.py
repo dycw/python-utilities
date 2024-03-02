@@ -66,7 +66,7 @@ class TestGenerateSnippets:
         expected = "fab-abc: from abc import ABC,fab-abc-meta: from abc import ABCMeta,"
         assert result == expected
 
-    def test_duplicated_keys(self, *, caplog: LogCaptureFixture) -> None:
+    def test_duplicated_keys(self, *, caplog: pytest.LogCaptureFixture) -> None:
         imports = {
             ImportFrom(module="dataclasses", names=[alias(name=name)])
             for name in ["field", "Field"]
@@ -80,7 +80,10 @@ class TestGenerateSnippets:
 class TestNodeToKey:
     @pytest.mark.parametrize(
         ("module", "name", "expected"),
-        [param("abc", "ABC", "fab-abc"), param("abc", "ABCMeta", "fab-abc-meta")],
+        [
+            pytest.param("abc", "ABC", "fab-abc"),
+            pytest.param("abc", "ABCMeta", "fab-abc-meta"),
+        ],
     )
     def test_main(self, *, module: str, name: str, expected: str) -> None:
         node = ImportFrom(module=module, names=[alias(name=name)])
@@ -198,7 +201,9 @@ class TestYieldImportNodesFromText:
 
 
 class TestYieldImports:
-    @pytest.mark.parametrize("method", [param(Method.direct), param(Method.parse)])
+    @pytest.mark.parametrize(
+        "method", [pytest.param(Method.direct), pytest.param(Method.parse)]
+    )
     def test_yield_imports(self, *, method: Method) -> None:
         for imp in yield_imports(method=method):
             assert isinstance(imp, ImportFrom)

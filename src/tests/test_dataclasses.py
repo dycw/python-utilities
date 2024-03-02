@@ -40,7 +40,7 @@ class TestIsDataClassClass:
         assert is_dataclass_class(Example)
         assert not is_dataclass_class(Example())
 
-    @pytest.mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_class(obj)
 
@@ -54,7 +54,7 @@ class TestIsDataClassInstance:
         assert not is_dataclass_instance(Example)
         assert is_dataclass_instance(Example())
 
-    @pytest.mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 
@@ -69,7 +69,7 @@ class TestReplaceNonSentinel:
         assert replace_non_sentinel(curr, x=1).x == 1
         assert replace_non_sentinel(curr, x=sentinel).x == 0
 
-    @pytest.mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 

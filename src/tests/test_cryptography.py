@@ -31,5 +31,5 @@ class TestGetFernet:
         assert isinstance(fernet, Fernet)
 
     def test_error(self) -> None:
-        with temp_environ({_ENV_VAR: None}), raises(GetFernetError):
+        with temp_environ({_ENV_VAR: None}), pytest.raises(GetFernetError):
             _ = get_fernet()

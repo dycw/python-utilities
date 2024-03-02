@@ -34,13 +34,15 @@ else:
     setup_loguru()
 
     @pytest.fixture()
-    def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
+    def caplog(
+        *, caplog: pytest.LogCaptureFixture
+    ) -> Iterator[pytest.LogCaptureFixture]:
         handler_id = logger.add(caplog.handler, format="{message}")
         yield caplog
         logger.remove(handler_id)
 
     @pytest.fixture(autouse=True)
-    def log_current_test(*, request: SubRequest) -> Iterator[None]:
+    def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
         """Log current test; usage:
 
         PYTEST_TIMER=1 pytest -s .
