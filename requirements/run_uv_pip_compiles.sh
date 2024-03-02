@@ -11,6 +11,7 @@ packages=(
     cvxpy
     fastapi
     fpdf2
+    hatch
     holoviews
     ipython
     jupyter
