@@ -15,7 +15,7 @@ def is_jupyter() -> bool:
         from ipykernel.zmqshell import ZMQInteractiveShell  # type: ignore
     except ImportError:
         return False
-    return check_ipython_class(ZMQInteractiveShell)
+    return check_ipython_class(ZMQInteractiveShell)  # pragma: no cover
 
 
 _DEFAULT_ROWS = 7

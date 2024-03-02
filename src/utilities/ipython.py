@@ -9,7 +9,7 @@ def check_ipython_class(cls: type[Any], /) -> bool:
         func = get_ipython  # type: ignore
     except NameError:
         return False
-    return issubclass(func().__class__, cls)
+    return issubclass(func().__class__, cls)  # pragma: no cover
 
 
 def is_ipython() -> bool:
@@ -20,7 +20,7 @@ def is_ipython() -> bool:
         )
     except ImportError:
         return False
-    return check_ipython_class(TerminalInteractiveShell)
+    return check_ipython_class(TerminalInteractiveShell)  # pragma: no cover
 
 
 __all__ = ["check_ipython_class", "is_ipython"]
