@@ -62,7 +62,6 @@ scripts-pypi = ["pypiserver[passlib] >= 2.0.1"]
 selenium = ["selenium >= 4.18.1"]
 semver = ["semver >= 3.0.2"]
 sqlalchemy = ["sqlalchemy >= 2.0.27"]
-sqlalchemy-dbs = ["cx-oracle", "mysqlclient", "psycopg2-binary", "pyodbc"]
 sqlalchemy-polars = ["sqlalchemy >= 2.0.27", "polars >= 0.20.13"]
 streamlit = ["streamlit >= 1.31.1"]
 test = [
@@ -104,6 +103,16 @@ zzz-test-pydantic = ["atomicwrites"]
 zzz-test-pyinstrument = ["atomicwrites"]
 zzz-test-pytest-check = ["atomicwrites"]
 zzz-test-scipy = []
+zzz-test-semver = []
+zzz-test-sqlalchemy = [
+  "bidict",
+  "cx-oracle",
+  "mysqlclient",
+  "psycopg2-binary",
+  "pyhumps",
+  "pyodbc",
+]
+zzz-test-sqlalchemy-polars = []
 zzz-test-xlrd = []
 
 [project.scripts]

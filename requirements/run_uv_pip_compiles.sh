@@ -28,6 +28,9 @@ packages=(
     pyinstrument
     pytest-check
     scipy
+    semver
+    sqlalchemy
+    sqlalchemy-polars
     xlrd
 )
 for package in "${packages[@]}"; do
