@@ -6,7 +6,7 @@ packages=(
 )
 for package in "${packages[@]}"; do
     uv pip sync "requirements/${package}.txt"
-    pytest "src/tests/test_${package}.py"
+    pytest "src/tests/test_${package}.py" -x
 done
 
 if false; then
