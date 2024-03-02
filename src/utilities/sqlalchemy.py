@@ -558,13 +558,13 @@ def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]
 def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
-    if isinstance(dialect, mssql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, mssql_dialect):  # pragma: no cover
         return Dialect.mssql
-    if isinstance(dialect, mysql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, mysql_dialect):  # pragma: no cover
         return Dialect.mysql
-    if isinstance(dialect, oracle_dialect):
+    if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return Dialect.oracle
-    if isinstance(dialect, postgresql_dialect):  # pragma: os-ne-linux
+    if isinstance(dialect, postgresql_dialect):  # pragma: no cover
         return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
         return Dialect.sqlite
