@@ -50,9 +50,7 @@ class TableTagToDataFrameError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Table {} must contain exactly one `th` tag; got {}, {} and perhaps more.".format(
-            self.table, self.first, self.second
-        )
+        return f"Table {self.table} must contain exactly one `th` tag; got {self.first}, {self.second} and perhaps more."
 
 
 def yield_tables(tag: Tag, /) -> Iterator[DataFrame]:

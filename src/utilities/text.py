@@ -23,9 +23,7 @@ class EnsureStrError(EnsureClassError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be a string; got {} instead".format(
-            self.obj, get_class_name(self.obj)
-        )
+        return f"Object {self.obj} must be a string; got {get_class_name(self.obj)} instead"
 
 
 def strip_and_dedent(text: str, /) -> str:

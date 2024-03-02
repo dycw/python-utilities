@@ -292,11 +292,7 @@ class MaximumError(Exception):
 
     @override
     def __str__(self) -> str:
-        return (
-            "Maximum must not be between a Series and DataFrame; got {} and {}.".format(
-                self.x, self.y
-            )
-        )
+        return f"Maximum must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
 @overload
@@ -447,11 +443,7 @@ class MinimumError(Exception):
 
     @override
     def __str__(self) -> str:
-        return (
-            "Minimum must not be between a Series and DataFrame; got {} and {}.".format(
-                self.x, self.y
-            )
-        )
+        return f"Minimum must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
 @overload
@@ -578,9 +570,7 @@ class MultiplyError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Multiply must not be between a Series and DataFrame; got {} and {}.".format(
-            self.x, self.y
-        )
+        return f"Multiply must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
 @overload
@@ -874,9 +864,7 @@ class ScalarProductError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Scalar product must not be between a Series and DataFrame; got {} and {}.".format(
-            self.x, self.y
-        )
+        return f"Scalar product must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
 def solve(
@@ -1118,9 +1106,7 @@ class _CheckSeriesAndDataFrameError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Function must not be between a Series and DataFrame; got {} and {}.".format(
-            self.x, self.y
-        )
+        return f"Function must not be between a Series and DataFrame; got {self.x} and {self.y}."
 
 
 __all__ = [

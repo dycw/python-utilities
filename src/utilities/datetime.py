@@ -3,12 +3,12 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Iterator
 from contextlib import suppress
+from dataclasses import dataclass
 from re import sub
 from typing import cast
 
-from typing_extensions import Never, assert_never
+from typing_extensions import Never, assert_never, override
 
-from utilities.errors import redirect_error
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.types import Duration
@@ -252,12 +252,21 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
             seconds=as_dt.second,
             microseconds=as_dt.microsecond,
         )
-    with redirect_error(ExtractGroupsError, ParseTimedeltaError(f"{timedelta=}")):
+    try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
+    except ExtractGroupsError as error:
+        raise ParseTimedeltaError(pattern=error.pattern, timedelta=timedelta) from None
     return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-class ParseTimedeltaError(Exception): ...
+@dataclass(frozen=True, kw_only=True, slots=True)
+class ParseTimedeltaError(Exception):
+    pattern: str
+    timedelta: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Pattern {self.pattern} must match against {self.timedelta}."
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:

@@ -237,9 +237,7 @@ class _CheckPandasDataFrameColumnsError(CheckPandasDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have columns {}; got {}\n\n{}.".format(
-            self.columns, self.df.columns, self.df
-        )
+        return f"DataFrame must have columns {self.columns}; got {self.df.columns}\n\n{self.df}."
 
 
 def _check_pandas_dataframe_dtypes(
@@ -261,9 +259,7 @@ class _CheckPandasDataFrameDTypesError(CheckPandasDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have dtypes {}; got {}\n\n{}.".format(
-            self.dtypes, self.df.dtypes, self.df
-        )
+        return f"DataFrame must have dtypes {self.dtypes}; got {self.df.dtypes}\n\n{self.df}."
 
 
 def _check_pandas_dataframe_length(
@@ -284,9 +280,7 @@ def _check_pandas_dataframe_length(
 class _CheckPandasDataFrameLengthError(CheckPandasDataFrameError):
     @override
     def __str__(self) -> str:
-        return "DataFrame must satisfy the length requirements; got {}\n\n{}.".format(
-            len(self.df), self.df
-        )
+        return f"DataFrame must satisfy the length requirements; got {len(self.df)}\n\n{self.df}."
 
 
 def _check_pandas_dataframe_standard(df: DataFrame, /) -> None:
@@ -305,16 +299,16 @@ def _check_pandas_dataframe_standard(df: DataFrame, /) -> None:
 class _CheckPandasDataFrameStandardIndexError(CheckPandasDataFrameError):
     @override
     def __str__(self) -> str:
-        return "DataFrame must have a standard index; got {}\n\n{}.".format(
-            self.df.index, self.df
+        return (
+            f"DataFrame must have a standard index; got {self.df.index}\n\n{self.df}."
         )
 
 
 class _CheckPandasDataFrameStandardColumnsError(CheckPandasDataFrameError):
     @override
     def __str__(self) -> str:
-        return "DataFrame must have standard columns; got {}\n\n{}.".format(
-            self.df.columns, self.df
+        return (
+            f"DataFrame must have standard columns; got {self.df.columns}\n\n{self.df}."
         )
 
 
@@ -362,9 +356,7 @@ class _CheckPandasDataFrameWidthError(CheckPandasDataFrameError):
 
     @override
     def __str__(self) -> str:
-        return "DataFrame must have width {}; got {}\n\n{}.".format(
-            self.width, len(self.df.columns), self.df
-        )
+        return f"DataFrame must have width {self.width}; got {len(self.df.columns)}\n\n{self.df}."
 
 
 def check_range_index(
@@ -528,9 +520,7 @@ class SeriesMinMaxError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Series {} and {} must have the same dtype; got {} and {}.".format(
-            self.x, self.y, self.x.dtype, self.y.dtype
-        )
+        return f"Series {self.x} and {self.y} must have the same dtype; got {self.x.dtype} and {self.y.dtype}."
 
 
 def sort_index(index: _Index, /) -> _Index:
@@ -631,9 +621,7 @@ class UnionIndexesError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Indexes {} and {} must have the same name; got {} and {}.".format(
-            self.left, self.right, self.left.name, self.right.name
-        )
+        return f"Indexes {self.left} and {self.right} must have the same name; got {self.left.name} and {self.right.name}."
 
 
 __all__ = [

@@ -65,9 +65,7 @@ class EnsureClassError(Exception):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must be an instance of {}; got {}.".format(
-            self.obj, self.cls, type(self.obj)
-        )
+        return f"Object {self.obj} must be an instance of {self.cls}; got {type(self.obj)}."
 
 
 def ensure_hashable(obj: Any, /) -> Hashable:

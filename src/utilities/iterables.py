@@ -178,9 +178,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have minimum length {}; got {}.".format(
-            self.obj, self.min_, len(self.obj)
-        )
+        return f"Object {self.obj} must have minimum length {self.min_}; got {len(self.obj)}."
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -189,9 +187,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return "Object {} must have maximum length {}; got {}.".format(
-            self.obj, self.max_, len(self.obj)
-        )
+        return f"Object {self.obj} must have maximum length {self.max_}; got {len(self.obj)}."
 
 
 def check_lengths_equal(left: Sized, right: Sized, /) -> None:
@@ -207,11 +203,7 @@ class CheckLengthsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return (
-            "Sized objects {} and {} must have the same length; got {} and {}.".format(
-                self.left, self.right, len(self.left), len(self.right)
-            )
-        )
+        return f"Sized objects {self.left} and {self.right} must have the same length; got {len(self.left)} and {len(self.right)}."
 
 
 def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -370,9 +362,7 @@ class CheckSubSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return "Set {} must be a subset of {}; left had extra items {}.".format(
-            self.left, self.right, self.extra
-        )
+        return f"Set {self.left} must be a subset of {self.right}; left had extra items {self.extra}."
 
 
 def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -436,9 +426,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return "Set {} must be a superset of {}; right had extra items {}.".format(
-            self.left, self.right, self.extra
-        )
+        return f"Set {self.left} must be a superset of {self.right}; right had extra items {self.extra}."
 
 
 def chunked(iterable: Iterable[_T], n: int | None, /) -> Iterable[Sequence[_T]]:
@@ -520,9 +508,7 @@ class OneNonUniqueError(OneError[_T]):
 
     @override
     def __str__(self) -> str:
-        return "Iterable {} must contain exactly one item; got {}, {} and perhaps more.".format(
-            self.iterable, self.first, self.second
-        )
+        return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
 
 
 def one(iterable: Iterable[_T], /) -> _T:
