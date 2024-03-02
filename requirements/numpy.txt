@@ -12,9 +12,16 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
+llvmlite==0.42.0
+    # via numba
+numba==0.59.0
+    # via numbagg
+numbagg==0.8.0
 numpy==1.26.4
     # via
     #   bottleneck
+    #   numba
+    #   numbagg
     #   pandas
 packaging==23.2
     # via pytest

@@ -20,6 +20,8 @@ packages=(
     memory_profiler
     more_itertools
     numpy
+    pandas
+    pathvalidate
     scipy
     xlrd
 )

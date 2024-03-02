@@ -11,7 +11,6 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
-more-itertools==10.2.0
 packaging==23.2
     # via pytest
 pluggy==1.4.0
