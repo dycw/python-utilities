@@ -313,8 +313,13 @@ def min_(
     """Compute the minimum of a quantity."""
     if isinstance(x, int | float | ndarray):
         return np.min(x)
-    if isinstance(x, Series | DataFrame):
-        return min_(x.to_numpy())
+    try:
+        from pandas import DataFrame, Series
+    except ModuleNotFoundError:
+        pass
+    else:
+        if isinstance(x, Series | DataFrame):
+            return min_(x.to_numpy())
     return cvxpy.min(x)
 
 
