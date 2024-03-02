@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 packages=(
-    ast
     atomicwrites
     beartype
     bs4
