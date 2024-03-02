@@ -51,8 +51,7 @@ from utilities.json import (
     _CLASS,
     _VALUE,
     JsonDeserializationError,
-    _JsonSerializationTimeZoneError,
-    _JsonSerializationTypeError,
+    JsonSerializationError,
     deserialize,
     serialize,
 )
@@ -211,12 +210,12 @@ class TestSerializeAndDeserialize:
 
     def test_error_timezone(self) -> None:
         with raises(
-            _JsonSerializationTimeZoneError, match=r"Invalid timezone: Asia/Hong_Kong\."
+            JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
         ):
             _ = serialize(NOW_HKG)
 
     def test_error(self) -> None:
-        with raises(_JsonSerializationTypeError, match=r"Unsupported type: Sentinel\."):
+        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel\."):
             _ = serialize(sentinel)
 
     def _assert_standard(
@@ -245,7 +244,7 @@ class TestSerialize:
         class Example2: ...
 
         extra = {Example2: ("example", neg)}
-        with raises(_JsonSerializationTypeError, match=r"Unsupported type: Example1\."):
+        with raises(JsonSerializationError, match=r"Unsupported type: Example1\."):
             _ = serialize(x, extra=extra)
 
 
