@@ -2,6 +2,7 @@
 #    uv pip compile --extra=xarray --extra=zzz-test-xarray --extra=test --quiet --prerelease=disallow --output-file=requirements/xarray.txt --upgrade --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+bottleneck==1.3.8
 exceptiongroup==1.2.0
     # via
     #   hypothesis
@@ -11,8 +12,16 @@ execnet==2.0.2
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
+llvmlite==0.42.0
+    # via numba
+numba==0.59.0
+    # via numbagg
+numbagg==0.8.0
 numpy==1.26.4
     # via
+    #   bottleneck
+    #   numba
+    #   numbagg
     #   pandas
     #   xarray
 packaging==23.2

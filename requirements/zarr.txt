@@ -2,6 +2,7 @@
 #    uv pip compile --extra=zarr --extra=zzz-test-zarr --extra=test --quiet --prerelease=disallow --output-file=requirements/zarr.txt --upgrade --python-version=3.10 pyproject.toml
 asciitree==0.3.3
     # via zarr
+atomicwrites==1.4.1
 attrs==23.2.0
     # via hypothesis
 exceptiongroup==1.2.0

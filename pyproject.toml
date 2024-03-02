@@ -114,9 +114,9 @@ zzz-test-sqlalchemy = [
 ]
 zzz-test-sqlalchemy-polars = ["pyhumps"]
 zzz-test-typed-settings = ["sqlalchemy"]
-zzz-test-xarray = []
+zzz-test-xarray = ["bottleneck", "numbagg"]
 zzz-test-xlrd = []
-zzz-test-zarr = []
+zzz-test-zarr = ["atomicwrites"]
 
 [project.scripts]
 clean-dir = "utilities.scripts.clean_dir:main"
