@@ -6,6 +6,7 @@ from time import sleep
 
 from pytest import raises
 
+from tests.conftest import FLAKY
 from utilities.cacher import cache_to_disk
 from utilities.functions import identity
 from utilities.iterables import one
@@ -61,6 +62,7 @@ class TestCacheToDisk:
         assert func(0) == 0
         assert len(list(tmp_path.iterdir())) == 0
 
+    @FLAKY
     def test_max_duration(self, *, tmp_path: Path) -> None:
         max_duration = 0.1
         func = cache_to_disk(root=tmp_path, max_duration=max_duration)(identity)

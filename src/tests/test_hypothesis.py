@@ -50,6 +50,7 @@ from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
+from tests.conftest import FLAKY
 from utilities.datetime import UTC
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
@@ -1032,8 +1033,8 @@ class TestTempDirs:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
+    @FLAKY
     @given(temp_dir=temp_dirs(), contents=sets(text_ascii(min_size=1), max_size=10))
-    @mark.flaky(reruns=5, reruns_delay=2)
     def test_writing_files(
         self, *, temp_dir: TemporaryDirectory, contents: AbstractSet[str]
     ) -> None:
