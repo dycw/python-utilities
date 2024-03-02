@@ -46,7 +46,7 @@ class TestGetRepoRoot:
         assert result == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetRepoRootError):
+        with pytest.raises(GetRepoRootError):
             _ = get_repo_root(cwd=tmp_path)
 
 

@@ -13,7 +13,7 @@ from utilities.xlrd import GetDateModeError, get_date_mode, to_date, to_datetime
 class TestGetDateMode:
     def test_main(self) -> None:
         if SYSTEM is System.linux:
-            with raises(GetDateModeError):
+            with pytest.raises(GetDateModeError):
                 _ = get_date_mode()
         else:
             assert get_date_mode() in {0, 1}

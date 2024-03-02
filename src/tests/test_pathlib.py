@@ -24,7 +24,7 @@ class TestEnsurePath:
         assert isinstance(ensure_path(Path("abc")), Path)
 
     def test_error_validation(self) -> None:
-        with raises(ValidationError):
+        with pytest.raises(ValidationError):
             _ = ensure_path("\0", validate=True)
 
     def test_error_sanitized(self) -> None:

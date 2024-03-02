@@ -136,7 +136,7 @@ class TestNDArrayWithIndexes:
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
-        with raises(BoundsCheckError):
+        with pytest.raises(BoundsCheckError):
             _ = view.isel(indexer)
 
     @pytest.mark.parametrize("func", [param(repr), param(str)])
@@ -184,11 +184,11 @@ class TestNDArrayWithIndexes:
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(2, dtype=int)
         view = NDArrayWithIndexes(path)
-        with raises(GetSelIndexerError):
+        with pytest.raises(GetSelIndexerError):
             _ = view.sel(indexer)
 
     def test_missing(self, *, tmp_path: Path) -> None:
-        with raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             _ = NDArrayWithIndexes(ensure_path(tmp_path, "array"))
 
     @pytest.mark.parametrize(

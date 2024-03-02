@@ -183,7 +183,7 @@ class TestInsertDataFrame:
             Column("value", sqlalchemy.Boolean),
         )
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(InsertDataFrameError):
+        with pytest.raises(InsertDataFrameError):
             insert_dataframe(df, table, engine)
 
 
@@ -206,14 +206,14 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
     @pytest.mark.parametrize("snake", [param(True), param(False)])
     def test_error_empty(self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "value", schema, snake=snake
             )
 
     def test_error_non_unique(self) -> None:
         schema = {"a": int, "b": float, "B": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "b", schema, snake=True
             )
@@ -229,7 +229,7 @@ class TestInsertDataFrameMapDFColumnToTableSchema:
 
     def test_error(self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableSchemaError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableSchemaError):
             _ = _insert_dataframe_map_df_column_to_table_schema(
                 "b", Int64, table_schema
             )
@@ -472,7 +472,7 @@ class TestSelectToDataFrame:
     def test_error(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table)
-        with raises(SelectToDataFrameError):
+        with pytest.raises(SelectToDataFrameError):
             _ = select_to_dataframe(sel, engine, batch_size=1)
 
 
@@ -495,7 +495,7 @@ class TestSelectToDataFrameCheckDuplicates:
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c["id"], table.c["id"])
-        with raises(DuplicateColumnError):
+        with pytest.raises(DuplicateColumnError):
             _select_to_dataframe_check_duplicates(sel.selected_columns)
 
 

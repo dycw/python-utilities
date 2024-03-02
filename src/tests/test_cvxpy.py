@@ -159,9 +159,9 @@ class TestCheckSeriesAndDataFrame:
             r"Function must not be between a Series and DataFrame; got .* and .*\.",
             flags=DOTALL,
         )
-        with raises(_CheckSeriesAndDataFrameError, match=match):
+        with pytest.raises(_CheckSeriesAndDataFrameError, match=match):
             _ = _check_series_and_dataframe(cast(Any, x), cast(Any, y))
-        with raises(_CheckSeriesAndDataFrameError, match=match):
+        with pytest.raises(_CheckSeriesAndDataFrameError, match=match):
             _ = _check_series_and_dataframe(cast(Any, y), cast(Any, x))
 
 
@@ -323,9 +323,9 @@ class TestMaximumAndMinimum:
             r".* must not be between a Series and DataFrame; got .* and .*\.",
             flags=DOTALL,
         )
-        with raises(error, match=match):
+        with pytest.raises(error, match=match):
             _ = func(cast(Any, x), cast(Any, y))
-        with raises(error, match=match):
+        with pytest.raises(error, match=match):
             _ = func(cast(Any, y), cast(Any, x))
 
     @pytest.mark.parametrize("func", [param(maximum), param(minimum)])
@@ -446,9 +446,9 @@ class TestMultiply:
             r"Multiply must not be between a Series and DataFrame; got .* and .*\.",
             flags=DOTALL,
         )
-        with raises(MultiplyError, match=match):
+        with pytest.raises(MultiplyError, match=match):
             _ = multiply(cast(Any, x), cast(Any, y))
-        with raises(MultiplyError, match=match):
+        with pytest.raises(MultiplyError, match=match):
             _ = multiply(cast(Any, y), cast(Any, x))
 
     @pytest.mark.parametrize("objective", [param(Maximize), param(Minimize)])
@@ -688,9 +688,9 @@ class TestScalarProduct:
                 r".* must not be between a Series and DataFrame; got .* and .*\.",
                 flags=DOTALL,
             )
-            with raises(ScalarProductError, match=match):
+            with pytest.raises(ScalarProductError, match=match):
                 _ = scalar_product(cast(Any, x), cast(Any, y))
-            with raises(ScalarProductError, match=match):
+            with pytest.raises(ScalarProductError, match=match):
                 _ = scalar_product(cast(Any, y), cast(Any, x))
         else:
             assert isclose(scalar_product(cast(Any, y), cast(Any, x)), 6.0)
@@ -754,13 +754,13 @@ class TestSolve:
             Minimize(sum_(abs_(var))),
             [cast(Any, var) >= threshold, cast(Any, var) <= -threshold],
         )
-        with raises(SolveInfeasibleError):
+        with pytest.raises(SolveInfeasibleError):
             _ = solve(problem, solver=CLARABEL)
 
     def test_unbounded_problem(self) -> None:
         var = Variable()
         problem = Problem(Maximize(sum_(var)), [])
-        with raises(SolveUnboundedError):
+        with pytest.raises(SolveUnboundedError):
             _ = solve(problem, solver=CLARABEL)
 
 

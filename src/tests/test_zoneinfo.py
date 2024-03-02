@@ -8,6 +8,6 @@ from utilities.zoneinfo import HONG_KONG, TOKYO
 
 
 class TestTimeZones:
-    @pytest.mark.parametrize("timezone", [param(HONG_KONG), param(TOKYO)])
+    @pytest.mark.parametrize("timezone", [pytest.param(HONG_KONG), pytest.param(TOKYO)])
     def test_main(self, *, timezone: ZoneInfo) -> None:
         assert isinstance(timezone, ZoneInfo)

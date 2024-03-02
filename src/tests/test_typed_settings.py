@@ -171,7 +171,9 @@ class TestGetLoaders:
         _ = _get_loaders()
 
     def test_error(self) -> None:
-        with raises(_GetLoadersError, match="App name .* must not contain underscores"):
+        with pytest.raises(
+            _GetLoadersError, match="App name .* must not contain underscores"
+        ):
             _ = _get_loaders(appname="app_name")
 
 
@@ -249,5 +251,5 @@ class TestLoadSettings:
         class Settings:
             value: cls = None
 
-        with raises(InvalidSettingsError):
+        with pytest.raises(InvalidSettingsError):
             _ = load_settings(Settings, appname=appname)

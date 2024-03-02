@@ -17,7 +17,7 @@ class TestAPIRouter:
     def test_error(self) -> None:
         router = APIRouter()
 
-        with raises(ValueError, match="Invalid route"):
+        with pytest.raises(ValueError, match="Invalid route"):
 
             @router.get("/home/")
             def _() -> None:

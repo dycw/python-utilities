@@ -22,7 +22,7 @@ class TestCheckName:
         class Example:
             name: str
 
-        with raises(CheckNameError, match=r"Object must have name .*; got .*\."):
+        with pytest.raises(CheckNameError, match=r"Object must have name .*; got .*\."):
             check_name(Example(name="foo"), "bar")
 
 

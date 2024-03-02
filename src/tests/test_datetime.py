@@ -96,7 +96,7 @@ class TestAddWeekdays:
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error(self, *, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
-        with raises(AddWeekdaysError):
+        with pytest.raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
@@ -278,7 +278,7 @@ class TestParseDate:
         assert result == date
 
     def test_error(self) -> None:
-        with raises(ParseDateError):
+        with pytest.raises(ParseDateError):
             _ = parse_date("error")
 
 
@@ -372,7 +372,7 @@ class TestParseDateTime:
         assert result == datetime
 
     def test_error(self) -> None:
-        with raises(ParseDateTimeError):
+        with pytest.raises(ParseDateTimeError):
             _ = parse_datetime("error")
 
 
@@ -411,7 +411,7 @@ class TestParseTime:
         assert result == time
 
     def test_error(self) -> None:
-        with raises(ParseTimeError):
+        with pytest.raises(ParseTimeError):
             _ = parse_time("error")
 
 
@@ -422,7 +422,9 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
+        with pytest.raises(
+            ParseTimedeltaError, match=r"Pattern .* must match against .*\."
+        ):
             _ = parse_timedelta("error")
 
 
@@ -523,5 +525,5 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with raises(YieldWeekdaysError):
+        with pytest.raises(YieldWeekdaysError):
             _ = list(yield_weekdays())

@@ -205,7 +205,7 @@ class TestCheckColumnCollectionsEqual:
         ],
     )
     def test_errors(self, *, x: Table, y: Table) -> None:
-        with raises(_CheckColumnCollectionsEqualError):
+        with pytest.raises(_CheckColumnCollectionsEqualError):
             _check_column_collections_equal(x.columns, y.columns)
 
 
@@ -234,7 +234,7 @@ class TestCheckColumnsEqual:
         ],
     )
     def test_errors(self, *, x: Any, y: Any) -> None:
-        with raises(_CheckColumnsEqualError):
+        with pytest.raises(_CheckColumnsEqualError):
             _check_columns_equal(x, y)
 
 
@@ -314,7 +314,7 @@ class TestCheckColumnTypesEqual:
         group_i, group_j = groups[i], groups[j]
         cls_x, cls_y = (data.draw(sampled_from(g)) for g in [group_i, group_j])
         x, y = (data.draw(sampled_from([c, c()])) for c in [cls_x, cls_y])
-        with raises(_CheckColumnTypesEqualError):
+        with pytest.raises(_CheckColumnTypesEqualError):
             _check_column_types_equal(x, y)
 
 
@@ -328,7 +328,7 @@ class TestCheckColumnTypesBooleanEqual:
         if create_constraint_x is create_constraint_y:
             _check_column_types_boolean_equal(x, y)
         else:
-            with raises(_CheckColumnTypesBooleanEqualError):
+            with pytest.raises(_CheckColumnTypesBooleanEqualError):
                 _check_column_types_boolean_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
@@ -338,7 +338,7 @@ class TestCheckColumnTypesBooleanEqual:
         if name_x == name_y:
             _check_column_types_boolean_equal(x, y)
         else:
-            with raises(_CheckColumnTypesBooleanEqualError):
+            with pytest.raises(_CheckColumnTypesBooleanEqualError):
                 _check_column_types_boolean_equal(x, y)
 
 
@@ -350,7 +350,7 @@ class TestCheckColumnTypesDateTimeEqual:
         if timezone_x is timezone_y:
             _check_column_types_datetime_equal(x, y)
         else:
-            with raises(_CheckColumnTypesDateTimeEqualError):
+            with pytest.raises(_CheckColumnTypesDateTimeEqualError):
                 _check_column_types_datetime_equal(x, y)
 
 
@@ -367,7 +367,7 @@ class TestCheckColumnTypesEnumEqual:
         x = sqlalchemy.Enum(Example)
         y = sqlalchemy.Enum()
         x, y = data.draw(permutations([x, y]))
-        with raises(_CheckColumnTypesEnumEqualError):
+        with pytest.raises(_CheckColumnTypesEnumEqualError):
             _check_column_types_enum_equal(x, y)
 
     def test_two_enum_classes(self) -> None:
@@ -378,7 +378,7 @@ class TestCheckColumnTypesEnumEqual:
             member = auto()
 
         x, y = (sqlalchemy.Enum(e) for e in [EnumX, EnumY])
-        with raises(_CheckColumnTypesEnumEqualError):
+        with pytest.raises(_CheckColumnTypesEnumEqualError):
             _check_column_types_enum_equal(x, y)
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
@@ -395,7 +395,7 @@ class TestCheckColumnTypesEnumEqual:
         if create_constraint_x is create_constraint_y:
             _check_column_types_enum_equal(x, y)
         else:
-            with raises(_CheckColumnTypesEnumEqualError):
+            with pytest.raises(_CheckColumnTypesEnumEqualError):
                 _check_column_types_enum_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
@@ -408,7 +408,7 @@ class TestCheckColumnTypesEnumEqual:
         if native_enum_x is native_enum_y:
             _check_column_types_enum_equal(x, y)
         else:
-            with raises(_CheckColumnTypesEnumEqualError):
+            with pytest.raises(_CheckColumnTypesEnumEqualError):
                 _check_column_types_enum_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
@@ -421,7 +421,7 @@ class TestCheckColumnTypesEnumEqual:
         if length_x == length_y:
             _check_column_types_enum_equal(x, y)
         else:
-            with raises(_CheckColumnTypesEnumEqualError):
+            with pytest.raises(_CheckColumnTypesEnumEqualError):
                 _check_column_types_enum_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
@@ -434,7 +434,7 @@ class TestCheckColumnTypesEnumEqual:
         if inherit_schema_x is inherit_schema_y:
             _check_column_types_enum_equal(x, y)
         else:
-            with raises(_CheckColumnTypesEnumEqualError):
+            with pytest.raises(_CheckColumnTypesEnumEqualError):
                 _check_column_types_enum_equal(x, y)
 
 
@@ -446,7 +446,7 @@ class TestCheckColumnTypesFloatEqual:
         if precision_x == precision_y:
             _check_column_types_float_equal(x, y)
         else:
-            with raises(_CheckColumnTypesFloatEqualError):
+            with pytest.raises(_CheckColumnTypesFloatEqualError):
                 _check_column_types_float_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
@@ -456,7 +456,7 @@ class TestCheckColumnTypesFloatEqual:
         if asdecimal_x is asdecimal_y:
             _check_column_types_float_equal(x, y)
         else:
-            with raises(_CheckColumnTypesFloatEqualError):
+            with pytest.raises(_CheckColumnTypesFloatEqualError):
                 _check_column_types_float_equal(x, y)
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
@@ -468,7 +468,7 @@ class TestCheckColumnTypesFloatEqual:
         if dec_ret_scale_x == dec_ret_scale_y:
             _check_column_types_float_equal(x, y)
         else:
-            with raises(_CheckColumnTypesFloatEqualError):
+            with pytest.raises(_CheckColumnTypesFloatEqualError):
                 _check_column_types_float_equal(x, y)
 
 
@@ -480,7 +480,7 @@ class TestCheckColumnTypesIntervalEqual:
         if native_x is native_y:
             _check_column_types_interval_equal(x, y)
         else:
-            with raises(_CheckColumnTypesIntervalEqualError):
+            with pytest.raises(_CheckColumnTypesIntervalEqualError):
                 _check_column_types_interval_equal(x, y)
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
@@ -492,7 +492,7 @@ class TestCheckColumnTypesIntervalEqual:
         if second_precision_x == second_precision_y:
             _check_column_types_interval_equal(x, y)
         else:
-            with raises(_CheckColumnTypesIntervalEqualError):
+            with pytest.raises(_CheckColumnTypesIntervalEqualError):
                 _check_column_types_interval_equal(x, y)
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
@@ -504,7 +504,7 @@ class TestCheckColumnTypesIntervalEqual:
         if day_precision_x == day_precision_y:
             _check_column_types_interval_equal(x, y)
         else:
-            with raises(_CheckColumnTypesIntervalEqualError):
+            with pytest.raises(_CheckColumnTypesIntervalEqualError):
                 _check_column_types_interval_equal(x, y)
 
 
@@ -516,7 +516,7 @@ class TestCheckColumnTypesLargeBinaryEqual:
         if length_x == length_y:
             _check_column_types_large_binary_equal(x, y)
         else:
-            with raises(_CheckColumnTypesLargeBinaryEqualError):
+            with pytest.raises(_CheckColumnTypesLargeBinaryEqualError):
                 _check_column_types_large_binary_equal(x, y)
 
 
@@ -528,7 +528,7 @@ class TestCheckColumnTypesNumericEqual:
         if precision_x == precision_y:
             _check_column_types_numeric_equal(x, y)
         else:
-            with raises(_CheckColumnTypesNumericEqualError):
+            with pytest.raises(_CheckColumnTypesNumericEqualError):
                 _check_column_types_numeric_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
@@ -538,7 +538,7 @@ class TestCheckColumnTypesNumericEqual:
         if asdecimal_x is asdecimal_y:
             _check_column_types_numeric_equal(x, y)
         else:
-            with raises(_CheckColumnTypesNumericEqualError):
+            with pytest.raises(_CheckColumnTypesNumericEqualError):
                 _check_column_types_numeric_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
@@ -548,7 +548,7 @@ class TestCheckColumnTypesNumericEqual:
         if scale_x == scale_y:
             _check_column_types_numeric_equal(x, y)
         else:
-            with raises(_CheckColumnTypesNumericEqualError):
+            with pytest.raises(_CheckColumnTypesNumericEqualError):
                 _check_column_types_numeric_equal(x, y)
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
@@ -560,7 +560,7 @@ class TestCheckColumnTypesNumericEqual:
         if dec_ret_scale_x == dec_ret_scale_y:
             _check_column_types_numeric_equal(x, y)
         else:
-            with raises(_CheckColumnTypesNumericEqualError):
+            with pytest.raises(_CheckColumnTypesNumericEqualError):
                 _check_column_types_numeric_equal(x, y)
 
 
@@ -580,7 +580,7 @@ class TestCheckColumnTypesStringEqual:
         if length_x == length_y:
             _check_column_types_string_equal(x, y)
         else:
-            with raises(_CheckColumnTypesStringEqualError):
+            with pytest.raises(_CheckColumnTypesStringEqualError):
                 _check_column_types_string_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
@@ -590,7 +590,7 @@ class TestCheckColumnTypesStringEqual:
         if collation_x == collation_y:
             _check_column_types_string_equal(x, y)
         else:
-            with raises(_CheckColumnTypesStringEqualError):
+            with pytest.raises(_CheckColumnTypesStringEqualError):
                 _check_column_types_string_equal(x, y)
 
 
@@ -602,7 +602,7 @@ class TestCheckColumnTypesUuidEqual:
         if as_uuid_x is as_uuid_y:
             _check_column_types_uuid_equal(x, y)
         else:
-            with raises(_CheckColumnTypesUuidEqualError):
+            with pytest.raises(_CheckColumnTypesUuidEqualError):
                 _check_column_types_uuid_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
@@ -612,7 +612,7 @@ class TestCheckColumnTypesUuidEqual:
         if native_uuid_x is native_uuid_y:
             _check_column_types_uuid_equal(x, y)
         else:
-            with raises(_CheckColumnTypesUuidEqualError):
+            with pytest.raises(_CheckColumnTypesUuidEqualError):
                 _check_column_types_uuid_equal(x, y)
 
 
@@ -629,7 +629,7 @@ class TestCheckEngine:
 
     @given(engine=sqlite_engines())
     def test_num_tables_error(self, *, engine: Engine) -> None:
-        with raises(CheckEngineError):
+        with pytest.raises(CheckEngineError):
             check_engine(engine, num_tables=1)
 
 
@@ -643,7 +643,7 @@ class TestCheckTableAgainstReflection:
     @given(engine=sqlite_engines())
     def test_error_no_such_table(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        with raises(NoSuchTableError):
+        with pytest.raises(NoSuchTableError):
             _ = check_table_against_reflection(table, engine)
 
 
@@ -687,7 +687,7 @@ class TestCheckTableOrColumnNamesEqual:
         if success:
             _check_table_or_column_names_equal(x, y, snake=snake)
         else:
-            with raises(_CheckTableOrColumnNamesEqualError):
+            with pytest.raises(_CheckTableOrColumnNamesEqualError):
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     @pytest.mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
@@ -847,7 +847,7 @@ class TestEnsureTablesDropped:
         for _ in range(runs):
             ensure_tables_dropped(engine, table_or_mapped_class)
         sel = table.select()
-        with raises(DatabaseError), engine.begin() as conn:
+        with pytest.raises(DatabaseError), engine.begin() as conn:
             _ = conn.execute(sel).all()
 
 
@@ -926,7 +926,7 @@ class TestGetTable:
         assert result is Example.__table__
 
     def test_error(self) -> None:
-        with raises(
+        with pytest.raises(
             GetTableError, match="Object .* must be a Table or mapped class; got .*"
         ):
             _ = get_table(type(None))
@@ -1076,12 +1076,12 @@ class TestInsertItemsCollect:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(_InsertItemsCollectError):
+        with pytest.raises(_InsertItemsCollectError):
             _ = list(_insert_items_collect(item))
 
     def test_error_tuple_but_first_argument_invalid(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectError):
+        with pytest.raises(_InsertItemsCollectError):
             _ = list(_insert_items_collect((None, table)))
 
 
@@ -1104,7 +1104,7 @@ class TestInsertItemsCollectIterable:
 
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectIterableError):
+        with pytest.raises(_InsertItemsCollectIterableError):
             _ = list(_insert_items_collect_iterable([None], table))
 
 
@@ -1185,7 +1185,7 @@ class TestParseEngine:
         assert result.url == url
 
     def test_error(self) -> None:
-        with raises(ParseEngineError):
+        with pytest.raises(ParseEngineError):
             _ = parse_engine("error")
 
 
@@ -1193,7 +1193,7 @@ class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         seq = sqlalchemy.Sequence("example")
-        with raises(NotImplementedError), engine.begin() as conn:
+        with pytest.raises(NotImplementedError), engine.begin() as conn:
             _ = conn.scalar(seq)
 
 
@@ -1236,7 +1236,7 @@ class TestReflectTable:
     @given(engine=sqlite_engines())
     def test_error(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
-        with raises(NoSuchTableError):
+        with pytest.raises(NoSuchTableError):
             _ = reflect_table(table, engine)
 
 

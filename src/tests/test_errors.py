@@ -14,7 +14,9 @@ from utilities.iterables import one
 class TestImpossibleCaseError:
     def test_main(self) -> None:
         x = None
-        with raises(ImpossibleCaseError, match=r"Case must be possible: x=None\."):
+        with pytest.raises(
+            ImpossibleCaseError, match=r"Case must be possible: x=None\."
+        ):
             raise ImpossibleCaseError(case=[f"{x=}"])
 
 
@@ -24,7 +26,7 @@ class TestRedirectError:
 
         class SecondError(Exception): ...
 
-        with raises(SecondError), redirect_error(FirstError, SecondError):
+        with pytest.raises(SecondError), redirect_error(FirstError, SecondError):
             raise FirstError
 
     def test_no_redirect(self) -> None:
@@ -34,7 +36,7 @@ class TestRedirectError:
 
         class ThirdError(Exception): ...
 
-        with raises(FirstError), redirect_error(SecondError, ThirdError):
+        with pytest.raises(FirstError), redirect_error(SecondError, ThirdError):
             raise FirstError
 
     def test_match_and_redirect(self) -> None:
@@ -42,7 +44,10 @@ class TestRedirectError:
 
         class SecondError(Exception): ...
 
-        with raises(SecondError), redirect_error(FirstError, SecondError, match="text"):
+        with (
+            pytest.raises(SecondError),
+            redirect_error(FirstError, SecondError, match="text"),
+        ):
             msg = "text"
             raise FirstError(msg)
 
@@ -109,7 +114,7 @@ class TestRetry:
         n = 0
         assert increment() == 1
         assert increment() == 2
-        with raises(TooLargeError):
+        with pytest.raises(TooLargeError):
             _ = increment()
 
         def reset(_error: TooLargeError, /) -> None:
@@ -133,5 +138,5 @@ class TestRetry:
         if (use_predicate is None) or (use_predicate is True):
             assert retry_inc() == 1
         else:
-            with raises(TooLargeError):
+            with pytest.raises(TooLargeError):
                 _ = retry_inc()

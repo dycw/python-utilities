@@ -10,7 +10,9 @@ class TestEnsureStr:
         assert isinstance(ensure_str(""), str)
 
     def test_not_str(self) -> None:
-        with raises(EnsureStrError, match="Object .* must be a string; got .* instead"):
+        with pytest.raises(
+            EnsureStrError, match="Object .* must be a string; got .* instead"
+        ):
             _ = ensure_str(None)
 
 

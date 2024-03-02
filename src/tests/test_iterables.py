@@ -50,7 +50,7 @@ class TestCheckDuplicates:
         check_duplicates(x)
 
     def test_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckDuplicatesError,
             match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)\.",
         ):
@@ -62,35 +62,35 @@ class TestCheckIterablesEqual:
         check_iterables_equal([], [])
 
     def test_error_differing_items_and_left_longer(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer\.",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
     def test_error_differing_items_and_right_longer(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer\.",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
     def test_error_differing_items_and_same_length(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)\.",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
     def test_error_no_differing_items_just_left_longer(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; left was longer\.",
         ):
             check_iterables_equal([1, 2, 3], [1])
 
     def test_error_no_differing_items_just_right_longer(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIterablesEqualError,
             match=r"Iterables .* and .* must be equal; right was longer\.",
         ):
@@ -102,7 +102,9 @@ class TestCheckLength:
         check_length([], equal=0)
 
     def test_equal_fail(self) -> None:
-        with raises(CheckLengthError, match=r"Object .* must have length .*; got .*\."):
+        with pytest.raises(
+            CheckLengthError, match=r"Object .* must have length .*; got .*\."
+        ):
             check_length([], equal=1)
 
     @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
@@ -124,14 +126,14 @@ class TestCheckLength:
     def test_equal_or_approx_fail(
         self, *, equal_or_approx: int | tuple[int, float], match: str
     ) -> None:
-        with raises(CheckLengthError, match=match):
+        with pytest.raises(CheckLengthError, match=match):
             check_length([], equal_or_approx=equal_or_approx)
 
     def test_min_pass(self) -> None:
         check_length([], min=0)
 
     def test_min_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckLengthError, match=r"Object .* must have minimum length .*; got .*\."
         ):
             check_length([], min=1)
@@ -140,7 +142,7 @@ class TestCheckLength:
         check_length([], max=0)
 
     def test_max_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckLengthError, match=r"Object .* must have maximum length .*; got .*\."
         ):
             check_length([1], max=0)
@@ -151,7 +153,7 @@ class TestCheckLengthsEqual:
         check_lengths_equal([], [])
 
     def test_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckLengthsEqualError,
             match=r"Sized objects .* and .* must have the same length; got .* and .*\.",
         ):
@@ -163,49 +165,49 @@ class TestCheckMappingsEqual:
         check_mappings_equal({}, {})
 
     def test_error_extra_and_missing_and_differing_values(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 9, "d": 4})
 
     def test_error_extra_and_missing(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .* and right had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 3, "d": 4})
 
     def test_error_extra_and_differing_values(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
     def test_error_missing_and_differing_values(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_mappings_equal({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
     def test_error_extra_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; left had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
     def test_error_missing_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; right had extra keys .*\.",
         ):
             check_mappings_equal({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
     def test_error_differing_values_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckMappingsEqualError,
             match=r"Mappings .* and .* must be equal; differing values were \(.*, .*, k=.*\)\.",
         ):
@@ -220,21 +222,21 @@ class TestCheckSetsEqual:
         check_sets_equal(left, right)
 
     def test_error_extra_and_missing(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; left had extra items .* and right had extra items .*\.",
         ):
             check_sets_equal({1, 2, 3}, {2, 3, 4})
 
     def test_error_extra(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; left had extra items .*\.",
         ):
             check_sets_equal({1, 2, 3}, set())
 
     def test_error_missing(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSetsEqualError,
             match=r"Sets .* and .* must be equal; right had extra items .*\.",
         ):
@@ -246,21 +248,21 @@ class TestCheckSubMapping:
         check_submapping({}, {})
 
     def test_error_extra_and_differing_values(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; left had extra keys .* and differing values were \(.*, .*., k=.*\)\.",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
     def test_error_extra_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; left had extra keys .*\.",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
     def test_error_differing_values_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSubMappingError,
             match=r"Mapping .* must be a submapping of .*; differing values were \(.*, .*, k=.*\)\.",
         ):
@@ -275,7 +277,7 @@ class TestCheckSubSet:
         check_subset(left, right)
 
     def test_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSubSetError,
             match=r"Set .* must be a subset of .*; left had extra items .*\.",
         ):
@@ -287,21 +289,21 @@ class TestCheckSuperMapping:
         check_supermapping({}, {})
 
     def test_error_missing_and_differing_values(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
         ):
             check_supermapping({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
     def test_error_extra_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; right had extra keys .*\.",
         ):
             check_supermapping({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
     def test_error_differing_values_only(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSuperMappingError,
             match=r"Mapping .* must be a supermapping of .*; differing values were \(.*, .*, k=.*\)\.",
         ):
@@ -316,7 +318,7 @@ class TestCheckSuperSet:
         check_superset(left, right)
 
     def test_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckSuperSetError,
             match=r"Set .* must be a superset of .*; right had extra items .*\.",
         ):
@@ -354,7 +356,7 @@ class TestEnsureIterable:
         _ = ensure_iterable(obj)
 
     def test_error(self) -> None:
-        with raises(EnsureIterableError, match=r"Object .* must be iterable\."):
+        with pytest.raises(EnsureIterableError, match=r"Object .* must be iterable\."):
             _ = ensure_iterable(None)
 
 
@@ -365,7 +367,7 @@ class TestEnsureIterableNotStr:
 
     @pytest.mark.parametrize("obj", [param(None), param("")])
     def test_error(self, *, obj: Any) -> None:
-        with raises(
+        with pytest.raises(
             EnsureIterableNotStrError,
             match=r"Object .* must be iterable, but not a string\.",
         ):
@@ -395,11 +397,11 @@ class TestOne:
         assert one([None]) is None
 
     def test_error_empty(self) -> None:
-        with raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
+        with pytest.raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
             _ = one([])
 
     def test_error_non_unique(self) -> None:
-        with raises(
+        with pytest.raises(
             OneNonUniqueError,
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
         ):
@@ -418,7 +420,7 @@ class TestTake:
         assert result == expected
 
     def test_negative(self) -> None:
-        with raises(
+        with pytest.raises(
             ValueError,
             match=r"Indices for islice\(\) must be None or an integer: 0 <= x <= sys.maxsize\.",
         ):

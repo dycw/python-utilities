@@ -103,5 +103,5 @@ class TestCacheToDisk:
 
     def test_rerun_not_a_boolean(self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
-        with raises(EnsureClassError):
+        with pytest.raises(EnsureClassError):
             _ = func(0, rerun=None)  # type: ignore[]

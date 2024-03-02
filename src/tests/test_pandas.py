@@ -82,7 +82,7 @@ class TestCheckIndex:
         check_index(RangeIndex(1), length=1)
 
     def test_length_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(1), length=2)
@@ -91,7 +91,7 @@ class TestCheckIndex:
         check_index(RangeIndex(2), min_length=1)
 
     def test_min_length_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(0), min_length=1)
@@ -100,7 +100,7 @@ class TestCheckIndex:
         check_index(RangeIndex(0), max_length=1)
 
     def test_max_length_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIndexError, match=r"Index .* must satisfy the length requirements\."
         ):
             check_index(RangeIndex(2), max_length=1)
@@ -109,7 +109,7 @@ class TestCheckIndex:
         check_index(RangeIndex(0), name=None)
 
     def test_name_error(self) -> None:
-        with raises(
+        with pytest.raises(
             CheckIndexError, match=r"Index .* must satisfy the name requirement\."
         ):
             check_index(RangeIndex(0), name="name")
@@ -118,14 +118,14 @@ class TestCheckIndex:
         check_index(Index(["A", "B"]), sorted=True)
 
     def test_sorted_error(self) -> None:
-        with raises(CheckIndexError, match=r"Index .* must be sorted\."):
+        with pytest.raises(CheckIndexError, match=r"Index .* must be sorted\."):
             check_index(Index(["B", "A"]), sorted=True)
 
     def test_unique_pass(self) -> None:
         check_index(Index(["A", "B"]), unique=True)
 
     def test_unique_error(self) -> None:
-        with raises(CheckIndexError, match=r"Index .* must be unique\."):
+        with pytest.raises(CheckIndexError, match=r"Index .* must be unique\."):
             check_index(Index(["A", "A"]), unique=True)
 
 
@@ -139,7 +139,7 @@ class TestCheckPandasDataFrame:
 
     def test_columns_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have columns .*; got .*\n\n.*\.", flags=DOTALL
@@ -153,7 +153,7 @@ class TestCheckPandasDataFrame:
 
     def test_dtypes_error_set_of_columns(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=[])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
@@ -163,7 +163,7 @@ class TestCheckPandasDataFrame:
 
     def test_dtypes_error_order_of_columns(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["a", "b"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
@@ -177,7 +177,7 @@ class TestCheckPandasDataFrame:
 
     def test_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -192,7 +192,7 @@ class TestCheckPandasDataFrame:
 
     def test_min_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -207,7 +207,7 @@ class TestCheckPandasDataFrame:
 
     def test_max_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -222,7 +222,7 @@ class TestCheckPandasDataFrame:
 
     def test_sorted_error(self) -> None:
         df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be sorted on .*\n\n.*\.", flags=DOTALL),
         ):
@@ -249,7 +249,7 @@ class TestCheckPandasDataFrame:
         ],
     )
     def test_standard_errors_index(self, *, df: DataFrame) -> None:
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have a standard index; got .*\n\n.*\.", flags=DOTALL
@@ -271,7 +271,7 @@ class TestCheckPandasDataFrame:
         ],
     )
     def test_standard_errors(self, *, df: DataFrame) -> None:
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have standard columns; got .*\n\n.*\.", flags=DOTALL
@@ -285,7 +285,7 @@ class TestCheckPandasDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be unique on .*\n\n.*\.", flags=DOTALL),
         ):
@@ -297,7 +297,7 @@ class TestCheckPandasDataFrame:
 
     def test_width_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have width .*; got .*\n\n.*\.", flags=DOTALL
@@ -314,49 +314,49 @@ class TestCheckRangeIndex:
         check_range_index(RangeIndex(0), start=0)
 
     def test_start_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), start=1)
 
     def test_stop_pass(self) -> None:
         check_range_index(RangeIndex(0), stop=0)
 
     def test_stop_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), stop=1)
 
     def test_step_pass(self) -> None:
         check_range_index(RangeIndex(0), step=1)
 
     def test_step_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), step=2)
 
     def test_length_pass(self) -> None:
         check_range_index(RangeIndex(1), length=1)
 
     def test_length_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(1), length=2)
 
     def test_min_length_pass(self) -> None:
         check_range_index(RangeIndex(2), min_length=1)
 
     def test_min_length_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), min_length=1)
 
     def test_max_length_pass(self) -> None:
         check_range_index(RangeIndex(0), max_length=1)
 
     def test_max_length_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(2), max_length=1)
 
     def test_name_pass(self) -> None:
         check_range_index(RangeIndex(0), name=None)
 
     def test_name_error(self) -> None:
-        with raises(CheckRangeIndexError):
+        with pytest.raises(CheckRangeIndexError):
             check_range_index(RangeIndex(0), name="name")
 
 
@@ -378,7 +378,7 @@ class TestReindexToSet:
     def test_error(self) -> None:
         index = Index([1, 2, 3])
         target = [2, 3, 4]
-        with raises(
+        with pytest.raises(
             ReindexToSetError, match=r"Index .* and .* must be equal as sets\."
         ):
             _ = reindex_to_set(index, target)
@@ -396,7 +396,9 @@ class TestReindexToSubSet:
     def test_error(self) -> None:
         index = Index([1])
         target = [1, 2, 3]
-        with raises(ReindexToSubSetError, match=r"Index .* must be a superset of .*\."):
+        with pytest.raises(
+            ReindexToSubSetError, match=r"Index .* must be a superset of .*\."
+        ):
             _ = reindex_to_subset(index, target)
 
 
@@ -412,13 +414,15 @@ class TestReindexToSuperSet:
     def test_error(self) -> None:
         index = Index([1, 2, 3])
         target = [1]
-        with raises(ReindexToSuperSetError, match=r"Index .* must be a subset of .*\."):
+        with pytest.raises(
+            ReindexToSuperSetError, match=r"Index .* must be a subset of .*\."
+        ):
             _ = reindex_to_superset(index, target)
 
 
 class TestRedirectEmptyPandasConcat:
     def test_main(self) -> None:
-        with raises(EmptyPandasConcatError), redirect_empty_pandas_concat():
+        with pytest.raises(EmptyPandasConcatError), redirect_empty_pandas_concat():
             _ = concat([])
 
 
@@ -489,14 +493,14 @@ class TestSeriesMinMax:
     ) -> None:
         x = Series(data=nan, index=Index([0], dtype=int))
         y = Series(data=nan, index=Index([1], dtype=int))
-        with raises(AssertionError):
+        with pytest.raises(AssertionError):
             _ = func(x, y)
 
     @pytest.mark.parametrize("func", [param(series_min), param(series_max)])
     def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore[]
-        with raises(
+        with pytest.raises(
             SeriesMinMaxError,
             match=re.compile(
                 r"Series .* and .* must have the same dtype; got .* and .*\.",
@@ -517,13 +521,13 @@ class TestTimestampMinMaxAsDate:
     def test_min(self) -> None:
         date = TIMESTAMP_MIN_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
-        with raises(ValueError, match="Out of bounds nanosecond timestamp"):
+        with pytest.raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(cast(Timestamp, date - dt.timedelta(days=1)))
 
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATE
         assert isinstance(to_datetime(cast(Timestamp, date)), Timestamp)
-        with raises(ValueError, match="Out of bounds nanosecond timestamp"):
+        with pytest.raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(cast(Timestamp, date + dt.timedelta(days=1)))
 
 
@@ -531,13 +535,13 @@ class TestTimestampMinMaxAsDateTime:
     def test_min(self) -> None:
         date = TIMESTAMP_MIN_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
-        with raises(ValueError, match="Out of bounds nanosecond timestamp"):
+        with pytest.raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(date - dt.timedelta(microseconds=1))
 
     def test_max(self) -> None:
         date = TIMESTAMP_MAX_AS_DATETIME
         assert isinstance(to_datetime(date), Timestamp)
-        with raises(ValueError, match="Out of bounds nanosecond timestamp"):
+        with pytest.raises(ValueError, match="Out of bounds nanosecond timestamp"):
             _ = to_datetime(date + dt.timedelta(microseconds=1))
 
 
@@ -553,7 +557,7 @@ class TestTimestampToDate:
         assert timestamp_to_date(timestamp) == expected
 
     def test_error(self) -> None:
-        with raises(TimestampToDateTimeError):
+        with pytest.raises(TimestampToDateTimeError):
             _ = timestamp_to_date(NaT)
 
 
@@ -580,11 +584,13 @@ class TestTimestampToDateTime:
     @given(timestamp=timestamps(allow_nanoseconds=True))
     def test_warn(self, *, timestamp: Timestamp) -> None:
         _ = assume(cast(Any, timestamp).nanosecond != 0)
-        with raises(UserWarning, match="Discarding nonzero nanoseconds in conversion"):
+        with pytest.raises(
+            UserWarning, match="Discarding nonzero nanoseconds in conversion"
+        ):
             _ = timestamp_to_datetime(timestamp)
 
     def test_error(self) -> None:
-        with raises(TimestampToDateTimeError):
+        with pytest.raises(TimestampToDateTimeError):
             _ = timestamp_to_datetime(NaT)
 
 
@@ -647,7 +653,7 @@ class TestUnionIndexes:
         _ = assume(lname != rname)
         left = Index([1, 2, 3], name=lname)
         right = Index([2, 3, 4], name=rname)
-        with raises(
+        with pytest.raises(
             UnionIndexesError,
             match=r"Indexes .* and .* must have the same name; got .* and .*\.",
         ):

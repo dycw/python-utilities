@@ -52,7 +52,7 @@ class TestTimer:
         match = (
             "Timer must be compared to a number, Timer, or timedelta; got .* instead"
         )
-        with raises(TimerError, match=match):
+        with pytest.raises(TimerError, match=match):
             _ = Timer() == "error"
 
     @pytest.mark.parametrize("func", [param(repr), param(str)])

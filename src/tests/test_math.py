@@ -59,7 +59,9 @@ class TestCheckInteger:
         check_integer(0, equal=0)
 
     def test_equal_fail(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
+        with pytest.raises(
+            CheckIntegerError, match="Integer must be equal to .*; got .*"
+        ):
             check_integer(0, equal=1)
 
     @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
@@ -81,21 +83,25 @@ class TestCheckInteger:
     def test_equal_or_approx_fail(
         self, *, equal_or_approx: int | tuple[int, float], match: str
     ) -> None:
-        with raises(CheckIntegerError, match=match):
+        with pytest.raises(CheckIntegerError, match=match):
             check_integer(0, equal_or_approx=equal_or_approx)
 
     def test_min_pass(self) -> None:
         check_integer(0, min=0)
 
     def test_min_error(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be at least .*; got .*"):
+        with pytest.raises(
+            CheckIntegerError, match="Integer must be at least .*; got .*"
+        ):
             check_integer(0, min=1)
 
     def test_max_pass(self) -> None:
         check_integer(0, max=1)
 
     def test_max_error(self) -> None:
-        with raises(CheckIntegerError, match="Integer must be at most .*; got .*"):
+        with pytest.raises(
+            CheckIntegerError, match="Integer must be at most .*; got .*"
+        ):
             check_integer(1, max=0)
 
 

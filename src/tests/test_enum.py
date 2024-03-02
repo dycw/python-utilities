@@ -37,7 +37,7 @@ class TestParseEnum:
         class Example(Enum):
             pass
 
-        with raises(ParseEnumError):
+        with pytest.raises(ParseEnumError):
             _ = parse_enum(Example, "not-a-member")
 
     @given(data=data())
@@ -47,7 +47,7 @@ class TestParseEnum:
             MEMBER = auto()
 
         member = data.draw(sampled_from(Example))
-        with raises(ParseEnumError):
+        with pytest.raises(ParseEnumError):
             _ = parse_enum(Example, member.name, case_sensitive=False)
 
 

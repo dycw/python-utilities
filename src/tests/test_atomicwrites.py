@@ -62,7 +62,7 @@ class TestWriter:
         path = ensure_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError), writer(path) as temp2:
+        with pytest.raises(DirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
@@ -94,5 +94,5 @@ class TestWriter:
 
     def test_writer(self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "file.txt")
-        with raises(WriterError), writer(path):
+        with pytest.raises(WriterError), writer(path):
             pass

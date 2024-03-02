@@ -27,7 +27,7 @@ class TestGetDataClassClass:
             assert get_dataclass_class(obj) is Example
 
     def test_error(self) -> None:
-        with raises(GetDataClassClassError):
+        with pytest.raises(GetDataClassClassError):
             _ = get_dataclass_class(None)  # type: ignore[]
 
 

@@ -13,7 +13,7 @@ class TestValidPath:
         assert isinstance(valid_path(Path("abc")), Path)
 
     def test_error_validation(self) -> None:
-        with raises(ValidationError):
+        with pytest.raises(ValidationError):
             _ = valid_path("\0")
 
     def test_error_sanitized(self) -> None:

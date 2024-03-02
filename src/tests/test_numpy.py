@@ -211,7 +211,7 @@ class TestAsInt:
     @pytest.mark.parametrize("value", [param(inf), param(nan), param(0.5)])
     def test_errors(self, *, value: float) -> None:
         arr = array([value], dtype=float)
-        with raises(AsIntError):
+        with pytest.raises(AsIntError):
             _ = as_int(arr)
 
 
@@ -243,7 +243,7 @@ class TestDatetimeToDatetime64:
 
     @given(datetime=datetimes(timezones=just(HONG_KONG)))
     def test_error(self, *, datetime: dt.datetime) -> None:
-        with raises(
+        with pytest.raises(
             DatetimeToDatetime64Error, match=r"Timezone must be None or UTC; got .*\."
         ):
             _ = datetime_to_datetime64(datetime)
@@ -265,7 +265,7 @@ class TestDatetime64ToDate:
         ],
     )
     def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
-        with raises(error):
+        with pytest.raises(error):
             _ = datetime64_to_date(datetime64(datetime, dtype))
 
 
@@ -313,7 +313,7 @@ class TestDatetime64ToDatetime:
         ],
     )
     def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
-        with raises(error):
+        with pytest.raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
 
@@ -535,7 +535,7 @@ class TestFlatN0:
         "array", [param(zeros(0, dtype=bool)), param(ones(2, dtype=bool))]
     )
     def test_errors(self, *, array: NDArrayB1) -> None:
-        with raises(FlatN0Error):
+        with pytest.raises(FlatN0Error):
             _ = flatn0(array)
 
 
@@ -558,7 +558,7 @@ class TestGetFillValue:
         assert has_dtype(array, dtype)
 
     def test_error(self) -> None:
-        with raises(GetFillValueError):
+        with pytest.raises(GetFillValueError):
             _ = get_fill_value(None)
 
 
@@ -1345,13 +1345,16 @@ class TestPctChange:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(PctChangeError, match="Shift must be non-zero"):
+        with pytest.raises(PctChangeError, match="Shift must be non-zero"):
             _ = pct_change(arr, n=0)
 
 
 class TestRedirectEmptyNumpyConcatenate:
     def test_main(self) -> None:
-        with raises(EmptyNumpyConcatenateError), redirect_empty_numpy_concatenate():
+        with (
+            pytest.raises(EmptyNumpyConcatenateError),
+            redirect_empty_numpy_concatenate(),
+        ):
             _ = concatenate([])
 
 
@@ -1429,7 +1432,7 @@ class TestShift:
 
     def test_error(self) -> None:
         arr = array([], dtype=float)
-        with raises(ShiftError, match="Shift must be non-zero"):
+        with pytest.raises(ShiftError, match="Shift must be non-zero"):
             _ = shift(arr, n=0)
 
 

@@ -209,13 +209,15 @@ class TestSerializeAndDeserialize:
         assert res is expected
 
     def test_error_timezone(self) -> None:
-        with raises(
+        with pytest.raises(
             JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
         ):
             _ = serialize(NOW_HKG)
 
     def test_error(self) -> None:
-        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel\."):
+        with pytest.raises(
+            JsonSerializationError, match=r"Unsupported type: Sentinel\."
+        ):
             _ = serialize(sentinel)
 
     def _assert_standard(
@@ -244,7 +246,9 @@ class TestSerialize:
         class Example2: ...
 
         extra = {Example2: ("example", neg)}
-        with raises(JsonSerializationError, match=r"Unsupported type: Example1\."):
+        with pytest.raises(
+            JsonSerializationError, match=r"Unsupported type: Example1\."
+        ):
             _ = serialize(x, extra=extra)
 
 
@@ -256,7 +260,7 @@ class TestDeserialization:
 
     def test_error_unknown_class(self) -> None:
         ser = dumps({_CLASS: "unknown", _VALUE: None})
-        with raises(JsonDeserializationError):
+        with pytest.raises(JsonDeserializationError):
             _ = deserialize(ser)
 
     @given(n=integers())
@@ -273,5 +277,5 @@ class TestDeserialization:
         extra_ser = {Example: ("example", f_ser)}
         ser = serialize(x, extra=extra_ser)
         extra_des = {"wrong": neg}
-        with raises(JsonDeserializationError):
+        with pytest.raises(JsonDeserializationError):
             _ = deserialize(ser, extra=extra_des)

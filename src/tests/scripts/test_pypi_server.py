@@ -18,7 +18,7 @@ class TestPypiServer:
         _check_password_file(path_password=path_password)
 
     def test_check_password_file_error(self, *, tmp_path: Path) -> None:
-        with raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             _check_password_file(path_password=ensure_path(tmp_path, "password"))
 
     @given(

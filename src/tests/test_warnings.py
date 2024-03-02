@@ -12,7 +12,7 @@ from utilities.warnings import catch_warnings_as_errors, suppress_warnings
 
 class TestCatchWarningsAsErrors:
     def test_main(self) -> None:
-        with raises(UserWarning), catch_warnings_as_errors():
+        with pytest.raises(UserWarning), catch_warnings_as_errors():
             warn("", stacklevel=2)
 
     def test_unbound_variables(self) -> None:
@@ -25,7 +25,10 @@ class TestCatchWarningsAsErrors:
 
         with warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
-        with raises(CustomWarning), catch_warnings_as_errors(category=CustomWarning):
+        with (
+            pytest.raises(CustomWarning),
+            catch_warnings_as_errors(category=CustomWarning),
+        ):
             warn("", category=CustomWarning, stacklevel=2)
 
     @given(data=data())

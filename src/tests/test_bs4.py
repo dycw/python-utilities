@@ -152,7 +152,7 @@ class TestYieldTables:
             </table>
         """
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
-        with raises(
+        with pytest.raises(
             TableTagToDataFrameError,
             match=re.compile(
                 r"Table .* must contain exactly one `th` tag; got .*, .* and perhaps more\.",

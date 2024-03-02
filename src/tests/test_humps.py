@@ -48,7 +48,7 @@ class TestSnakeCaseMappings:
 
     @given(text=text_ascii(min_size=1))
     def test_error_keys(self, *, text: str) -> None:
-        with raises(
+        with pytest.raises(
             SnakeCaseMappingsError,
             match="Strings .* must not contain duplicates; got .*",
         ):
@@ -56,7 +56,7 @@ class TestSnakeCaseMappings:
 
     @given(text=text_ascii(min_size=1))
     def test_error_values(self, *, text: str) -> None:
-        with raises(
+        with pytest.raises(
             SnakeCaseMappingsError,
             match="Snake-cased strings .* must not contain duplicates; got .*",
         ):
