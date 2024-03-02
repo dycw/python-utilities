@@ -31,7 +31,10 @@ packages=(
     semver
     sqlalchemy
     sqlalchemy-polars
+    typed-settings
+    xarray
     xlrd
+    zarr
 )
 for package in "${packages[@]}"; do
     uv pip compile \

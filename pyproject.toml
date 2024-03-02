@@ -72,7 +72,7 @@ test = [
   "pytest-xdist >= 3.3.1",
 ]
 tqdm = ["tqdm >= 4.66.2"]
-typed-settings = ["typed-settings >= 24.1.0"]
+typed-settings = ["typed-settings[click] >= 24.1.0"]
 xarray = ["xarray >= 2024.2.0"]
 xlrd = ["xlrd >= 2.0.1"]
 zarr = ["zarr >= 2.16.1"]
@@ -113,7 +113,10 @@ zzz-test-sqlalchemy = [
   "pyodbc",
 ]
 zzz-test-sqlalchemy-polars = ["pyhumps"]
+zzz-test-typed-settings = ["sqlalchemy"]
+zzz-test-xarray = []
 zzz-test-xlrd = []
+zzz-test-zarr = []
 
 [project.scripts]
 clean-dir = "utilities.scripts.clean_dir:main"

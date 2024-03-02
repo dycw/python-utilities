@@ -2,7 +2,8 @@
 
 # for package in ast atomicwrites beartype fastapi more-itertools scipy xlrd; do
 packages=(
-    sqlalchemy-polars
+    xarray
+
 )
 for package in "${packages[@]}"; do
     uv pip sync "requirements/${package}.txt"
