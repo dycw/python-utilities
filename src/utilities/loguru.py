@@ -14,7 +14,7 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.logging import LogLevel
-from utilities.pathvalidate import valid_path, valid_path_cwd
+from utilities.pathlib import PWD, ensure_path
 from utilities.platform import IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
 from utilities.types import IterableStrs, PathLike
@@ -32,8 +32,9 @@ def setup_loguru(
     enable: IterableStrs | None = None,
     console: LogLevel = LogLevel.INFO,
     files: PathLike | None = None,
-    files_root: PathLike = valid_path_cwd(),
+    files_root: PathLike = PWD,
     files_env_var: str | None = _FILES_ENV_VAR,
+    validate: bool = False,
     rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
     retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
@@ -49,13 +50,21 @@ def setup_loguru(
     _add_sink(stdout, console, all_levels, live=True)
     files_path = _get_files_path(files=files, env_var=files_env_var)
     if files_path is not None:
-        full_files_path = valid_path(files_root, files_path)
-        _add_file_sink(full_files_path, "log", LogLevel.DEBUG, all_levels, live=False)
+        full_files_path = ensure_path(files_root, files_path, validate=validate)
+        _add_file_sink(
+            full_files_path,
+            "log",
+            LogLevel.DEBUG,
+            all_levels,
+            validate=validate,
+            live=False,
+        )
         for level in set(LogLevel) - {LogLevel.CRITICAL}:
             _add_live_file_sink(
                 full_files_path,
                 level,
                 all_levels,
+                validate=validate,
                 rotation=rotation,
                 retention=retention,
             )
@@ -203,13 +212,14 @@ def _add_file_sink(
     levels: Mapping[str, LogLevel],
     /,
     *,
+    validate: bool,
     live: bool,
     rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
     retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
     """Add a file sink."""
     _add_sink(
-        valid_path(path, name),
+        ensure_path(path, name, validate=validate),
         level,
         levels,
         live=live,
@@ -224,6 +234,7 @@ def _add_live_file_sink(
     levels: Mapping[str, LogLevel],
     /,
     *,
+    validate: bool,
     rotation: str | int | dt.time | dt.timedelta | None = _ROTATION,
     retention: str | int | dt.timedelta | None = _RETENTION,
 ) -> None:
@@ -233,6 +244,7 @@ def _add_live_file_sink(
         level.name.lower(),
         level,
         levels,
+        validate=validate,
         live=True,
         rotation=rotation,
         retention=retention,
