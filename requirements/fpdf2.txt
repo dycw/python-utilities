@@ -2,12 +2,17 @@
 #    uv pip compile --extra=zzz-test-fpdf2 --extra=test --prerelease=disallow --output-file=requirements/fpdf2.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+defusedxml==0.7.1
+    # via fpdf2
 exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
+fonttools==4.49.0
+    # via fpdf2
+fpdf2==2.7.8
 hypothesis==6.98.15
 iniconfig==2.0.0
     # via pytest
@@ -15,6 +20,8 @@ packaging==23.2
     # via
     #   pytest
     #   pytest-rerunfailures
+pillow==10.2.0
+    # via fpdf2
 pluggy==1.4.0
     # via pytest
 pytest==8.0.2

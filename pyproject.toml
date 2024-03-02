@@ -107,7 +107,7 @@ zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-fastapi = []
-zzz-test-fpdf2 = []
+zzz-test-fpdf2 = ["fpdf2"]
 zzz-test-functions = []
 zzz-test-functools = []
 zzz-test-getpass = []
@@ -135,14 +135,28 @@ zzz-test-modules = [
   "cryptography",
   "cvxpy",
   "fastapi",
+  "fpdf2",
+  "hatch",
   "holoviews",
   "loguru",
   "luigi",
+  "memory-profiler",
+  "more-itertools",
   "numpy",
+  "pathvalidate",
   "polars",
+  "pqdm",
+  "pydantic",
+  "pyhumps",
+  "pyinstrument",
+  "pytest-check",
+  "scipy",
   "semver",
   "sqlalchemy",
   "typed-settings",
+  "xarray",
+  "xlrd",
+  "zarr",
 ]
 zzz-test-more-itertools = []
 zzz-test-numpy = ["bottleneck", "numbagg", "pandas"]
