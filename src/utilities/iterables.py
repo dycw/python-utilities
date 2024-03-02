@@ -443,7 +443,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
 
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterable[Sequence[_T]]:
     """Break an iterable into lists of length n."""
-    return iter(partial(take, n, iter(iterable)), [])
+    return cast(Iterable[Sequence[_T]], iter(partial(take, n, iter(iterable)), []))
 
 
 def ensure_hashables(
