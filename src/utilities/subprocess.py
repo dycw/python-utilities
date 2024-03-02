@@ -10,7 +10,7 @@ from typing import Any
 from utilities.errors import redirect_error
 from utilities.iterables import OneError, one
 from utilities.os import temp_environ
-from utilities.pathvalidate import valid_path, valid_path_cwd
+from utilities.pathlib import PWD, ensure_path
 from utilities.types import IterableStrs, PathLike
 
 
@@ -18,7 +18,7 @@ def get_shell_output(
     cmd: str,
     /,
     *,
-    cwd: PathLike = valid_path_cwd(),
+    cwd: PathLike = PWD,
     activate: PathLike | None = None,
     env: Mapping[str, str | None] | None = None,
 ) -> str:
@@ -26,7 +26,7 @@ def get_shell_output(
 
     Optionally, activate a virtual environment if necessary.
     """
-    cwd = valid_path(cwd)
+    cwd = ensure_path(cwd)
     if activate is not None:
         with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))

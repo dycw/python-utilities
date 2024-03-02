@@ -63,6 +63,7 @@ scripts-csv-to-markdown = [
 scripts-generate-snippets = [
   "ast-comments >= 1.2.1",
   "loguru >= 0.7.2",
+  "pyhumps >= 3.8.0",
   "typed-settings[click] >= 24.1.0",
 ]
 scripts-luigi-server = [
