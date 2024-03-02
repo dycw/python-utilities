@@ -29,7 +29,7 @@ from pytest import mark, param, raises
 
 from utilities.datetime import TODAY_UTC, UTC
 from utilities.hypothesis import int_indexes, text_ascii, timestamps
-from utilities.numpy import dt64ns
+from utilities.numpy import datetime64ns
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
     TIMESTAMP_MAX_AS_DATETIME,
@@ -511,25 +511,25 @@ class TestSeriesMinMax:
             param(
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
-                dt64ns,
+                datetime64ns,
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
             ),
             param(
                 TIMESTAMP_MIN_AS_DATE,
                 NaT,
-                dt64ns,
+                datetime64ns,
                 TIMESTAMP_MIN_AS_DATE,
                 TIMESTAMP_MIN_AS_DATE,
             ),
             param(
                 NaT,
                 TIMESTAMP_MAX_AS_DATE,
-                dt64ns,
+                datetime64ns,
                 TIMESTAMP_MAX_AS_DATE,
                 TIMESTAMP_MAX_AS_DATE,
             ),
-            param(NaT, NaT, dt64ns, NaT, NaT),
+            param(NaT, NaT, datetime64ns, NaT, NaT),
         ],
     )
     def test_main(
@@ -662,7 +662,7 @@ class TestToNumpy:
             param(True, boolean, True, object),
             param(False, boolean, False, object),
             param(NA, boolean, None, object),
-            param(TODAY_UTC, dt64ns, TODAY_UTC, dt64ns),
+            param(TODAY_UTC, datetime64ns, TODAY_UTC, datetime64ns),
             param(0, int, 0, int),
             param(0, Int64, 0, object),
             param(NA, Int64, None, object),

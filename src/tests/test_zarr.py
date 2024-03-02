@@ -14,7 +14,7 @@ from zarr import open_array
 from zarr.errors import BoundsCheckError
 
 from utilities.hypothesis import float_arrays, int_arrays, temp_paths, text_ascii
-from utilities.numpy import NDArrayI1, NDArrayO1, dt64D, dt64ns
+from utilities.numpy import NDArrayI1, NDArrayO1, datetime64D, datetime64ns
 from utilities.pathvalidate import valid_path
 from utilities.types import get_class_name
 from utilities.zarr import (
@@ -207,7 +207,9 @@ class TestNDArrayWithIndexes:
     def test_sel_with_date(
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes = {"x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=dt64D)}
+        indexes = {
+            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
+        }
         path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3)
@@ -244,7 +246,9 @@ class TestNDArrayWithIndexes:
     def test_sel_with_datetime(
         self, *, tmp_path: Path, indexer: Mapping[str, Any], expected: Any
     ) -> None:
-        indexes = {"x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=dt64ns)}
+        indexes = {
+            "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)
+        }
         path = valid_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3, dtype=int)

@@ -43,7 +43,7 @@ from utilities.iterables import (
     check_subset,
     check_superset,
 )
-from utilities.numpy import NDArray1, dt64ns, has_dtype
+from utilities.numpy import NDArray1, datetime64ns, has_dtype
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
 
@@ -582,7 +582,7 @@ TIMESTAMP_MAX_AS_DATETIME = _timestamp_minmax_to_datetime(Timestamp.max, "floor"
 
 def to_numpy(series: SeriesA, /) -> NDArray1:
     """Convert a series into a 1-dimensional `ndarray`."""
-    if has_dtype(series, (bool, dt64ns, int, float)):
+    if has_dtype(series, (bool, datetime64ns, int, float)):
         return series.to_numpy()
     if has_dtype(series, (boolean, Int64, string)):
         return where(

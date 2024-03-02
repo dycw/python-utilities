@@ -24,7 +24,7 @@ from utilities.hypothesis import (
     int_indexes,
     text_ascii,
 )
-from utilities.numpy import dt64ns
+from utilities.numpy import datetime64ns
 from utilities.pandas import IndexA
 from utilities.xarray import (
     DataArray0,
@@ -67,7 +67,7 @@ class TestAnnotations:
         ("dtype", "hint"),
         [
             param(bool, DataArrayB),
-            param(dt64ns, DataArrayDns),
+            param(datetime64ns, DataArrayDns),
             param(float, DataArrayF),
             param(int64, DataArrayI),
             param(object, DataArrayO),
@@ -95,25 +95,25 @@ class TestAnnotations:
         [
             # ndim 0
             param(bool, 0, DataArrayB0),
-            param(dt64ns, 0, DataArrayDns0),
+            param(datetime64ns, 0, DataArrayDns0),
             param(float, 0, DataArrayF0),
             param(int64, 0, DataArrayI0),
             param(object, 0, DataArrayO0),
             # ndim 1
             param(bool, 1, DataArrayB1),
-            param(dt64ns, 1, DataArrayDns1),
+            param(datetime64ns, 1, DataArrayDns1),
             param(float, 1, DataArrayF1),
             param(int64, 1, DataArrayI1),
             param(object, 1, DataArrayO1),
             # ndim 2
             param(bool, 2, DataArrayB2),
-            param(dt64ns, 2, DataArrayDns2),
+            param(datetime64ns, 2, DataArrayDns2),
             param(float, 2, DataArrayF2),
             param(int64, 2, DataArrayI2),
             param(object, 2, DataArrayO2),
             # ndim 3
             param(bool, 3, DataArrayB3),
-            param(dt64ns, 3, DataArrayDns3),
+            param(datetime64ns, 3, DataArrayDns3),
             param(float, 3, DataArrayF3),
             param(int64, 3, DataArrayI3),
             param(object, 3, DataArrayO3),

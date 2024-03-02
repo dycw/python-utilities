@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
@@ -9,7 +9,6 @@ from itertools import repeat
 from typing import Annotated, Any, Literal, cast, overload
 
 import numpy as np
-from beartype.vale import Is, IsAttr, IsEqual
 from numpy import (
     array,
     bool_,
@@ -37,7 +36,6 @@ from numpy import (
     prod,
     rint,
     roll,
-    unravel_index,
     where,
 )
 from numpy.linalg import det, eig
@@ -63,56 +61,55 @@ Datetime64Kind = Literal["date", "time"]
 
 
 # dtypes
-dt64Y = dtype("datetime64[Y]")  # noqa: N816
-dt64M = dtype("datetime64[M]")  # noqa: N816
-dt64W = dtype("datetime64[W]")  # noqa: N816
-dt64D = dtype("datetime64[D]")  # noqa: N816
-dt64h = dtype("datetime64[h]")
-dt64m = dtype("datetime64[m]")
-dt64s = dtype("datetime64[s]")
-dt64ms = dtype("datetime64[ms]")
-dt64us = dtype("datetime64[us]")
-dt64ns = dtype("datetime64[ns]")
-dt64ps = dtype("datetime64[ps]")
-dt64fs = dtype("datetime64[fs]")
-dt64as = dtype("datetime64[as]")
+datetime64Y = dtype("datetime64[Y]")  # noqa: N816
+datetime64M = dtype("datetime64[M]")  # noqa: N816
+datetime64W = dtype("datetime64[W]")  # noqa: N816
+datetime64D = dtype("datetime64[D]")  # noqa: N816
+datetime64h = dtype("datetime64[h]")
+datetime64m = dtype("datetime64[m]")
+datetime64s = dtype("datetime64[s]")
+datetime64ms = dtype("datetime64[ms]")
+datetime64us = dtype("datetime64[us]")
+datetime64ns = dtype("datetime64[ns]")
+datetime64ps = dtype("datetime64[ps]")
+datetime64fs = dtype("datetime64[fs]")
+datetime64as = dtype("datetime64[as]")
+
+
+timedelta64Y = dtype("datetime64[Y]")  # noqa: N816
+timedelta64M = dtype("datetime64[M]")  # noqa: N816
+timedelta64W = dtype("datetime64[W]")  # noqa: N816
+timedelta64D = dtype("datetime64[D]")  # noqa: N816
+timedelta64h = dtype("datetime64[h]")
+timedelta64m = dtype("datetime64[m]")
+timedelta64s = dtype("datetime64[s]")
+timedelta64ms = dtype("datetime64[ms]")
+timedelta64us = dtype("datetime64[us]")
+timedelta64ns = dtype("datetime64[ns]")
+timedelta64ps = dtype("datetime64[ps]")
+timedelta64fs = dtype("datetime64[fs]")
+timedelta64as = dtype("datetime64[as]")
 
 
 # annotations - dtypes
-DTypeB = IsAttr["dtype", IsEqual[bool]]
-DTypeF = IsAttr["dtype", IsEqual[float]]
-DTypeI = IsAttr["dtype", IsEqual[int64]]
-DTypeO = IsAttr["dtype", IsEqual[object]]
-DTypeDY = IsAttr["dtype", IsEqual[dt64Y]]
-DTypeDM = IsAttr["dtype", IsEqual[dt64M]]
-DTypeDW = IsAttr["dtype", IsEqual[dt64W]]
-DTypeDD = IsAttr["dtype", IsEqual[dt64D]]
-DTypeDh = IsAttr["dtype", IsEqual[dt64h]]
-DTypeDm = IsAttr["dtype", IsEqual[dt64m]]
-DTypeDs = IsAttr["dtype", IsEqual[dt64s]]
-DTypeDms = IsAttr["dtype", IsEqual[dt64ms]]
-DTypeDus = IsAttr["dtype", IsEqual[dt64us]]
-DTypeDns = IsAttr["dtype", IsEqual[dt64ns]]
-DTypeDps = IsAttr["dtype", IsEqual[dt64ps]]
-DTypeDfs = IsAttr["dtype", IsEqual[dt64fs]]
-DTypeDas = IsAttr["dtype", IsEqual[dt64as]]
 NDArrayA = NDArray[Any]
 NDArrayB = NDArray[bool_]
 NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
-NDArrayDY = Annotated[NDArrayA, DTypeDY]
-NDArrayDM = Annotated[NDArrayA, DTypeDM]
-NDArrayDW = Annotated[NDArrayA, DTypeDW]
-NDArrayDD = Annotated[NDArrayA, DTypeDD]
-NDArrayDh = Annotated[NDArrayA, DTypeDh]
-NDArrayDm = Annotated[NDArrayA, DTypeDm]
-NDArrayDs = Annotated[NDArrayA, DTypeDs]
-NDArrayDms = Annotated[NDArrayA, DTypeDms]
-NDArrayDus = Annotated[NDArrayA, DTypeDus]
-NDArrayDns = Annotated[NDArrayA, DTypeDns]
-NDArrayDps = Annotated[NDArrayA, DTypeDps]
-NDArrayDfs = Annotated[NDArrayA, DTypeDfs]
-NDArrayDas = Annotated[NDArrayA, DTypeDas]
+NDArrayO = NDArray[object_]
+NDArrayDY = Annotated[NDArrayA, datetime64Y]
+NDArrayDM = Annotated[NDArrayA, datetime64M]
+NDArrayDW = Annotated[NDArrayA, datetime64W]
+NDArrayDD = Annotated[NDArrayA, datetime64D]
+NDArrayDh = Annotated[NDArrayA, datetime64h]
+NDArrayDm = Annotated[NDArrayA, datetime64m]
+NDArrayDs = Annotated[NDArrayA, datetime64s]
+NDArrayDms = Annotated[NDArrayA, datetime64ms]
+NDArrayDus = Annotated[NDArrayA, datetime64us]
+NDArrayDns = Annotated[NDArrayA, datetime64ns]
+NDArrayDps = Annotated[NDArrayA, datetime64ps]
+NDArrayDfs = Annotated[NDArrayA, datetime64fs]
+NDArrayDas = Annotated[NDArrayA, datetime64as]
 NDArrayD = (
     NDArrayDY
     | NDArrayDM
@@ -128,96 +125,91 @@ NDArrayD = (
     | NDArrayDfs
     | NDArrayDas
 )
-NDArrayO = NDArray[object_]
 
 
 # annotations - ndims
-NDim0 = IsAttr["ndim", IsEqual[0]]
-NDim1 = IsAttr["ndim", IsEqual[1]]
-NDim2 = IsAttr["ndim", IsEqual[2]]
-NDim3 = IsAttr["ndim", IsEqual[3]]
-NDArray0 = Annotated[NDArrayA, NDim0]
-NDArray1 = Annotated[NDArrayA, NDim1]
-NDArray2 = Annotated[NDArrayA, NDim2]
-NDArray3 = Annotated[NDArrayA, NDim3]
+NDArray0 = Annotated[NDArrayA, 0]
+NDArray1 = Annotated[NDArrayA, 1]
+NDArray2 = Annotated[NDArrayA, 2]
+NDArray3 = Annotated[NDArrayA, 3]
 
 
 # annotations - dtype & ndim
-NDArrayB0 = Annotated[NDArrayB, NDim0]
-NDArrayD0 = Annotated[NDArrayD, NDim0]
-NDArrayF0 = Annotated[NDArrayF, NDim0]
-NDArrayI0 = Annotated[NDArrayI, NDim0]
-NDArrayO0 = Annotated[NDArrayO, NDim0]
-NDArrayDY0 = Annotated[NDArrayDY, NDim0]
-NDArrayDM0 = Annotated[NDArrayDM, NDim0]
-NDArrayDW0 = Annotated[NDArrayDW, NDim0]
-NDArrayDD0 = Annotated[NDArrayDD, NDim0]
-NDArrayDh0 = Annotated[NDArrayDh, NDim0]
-NDArrayDm0 = Annotated[NDArrayDm, NDim0]
-NDArrayDs0 = Annotated[NDArrayDs, NDim0]
-NDArrayDms0 = Annotated[NDArrayDms, NDim0]
-NDArrayDus0 = Annotated[NDArrayDus, NDim0]
-NDArrayDns0 = Annotated[NDArrayDns, NDim0]
-NDArrayDps0 = Annotated[NDArrayDps, NDim0]
-NDArrayDfs0 = Annotated[NDArrayDfs, NDim0]
-NDArrayDas0 = Annotated[NDArrayDas, NDim0]
+NDArrayB0 = Annotated[NDArrayB, 0]
+NDArrayD0 = Annotated[NDArrayD, 0]
+NDArrayF0 = Annotated[NDArrayF, 0]
+NDArrayI0 = Annotated[NDArrayI, 0]
+NDArrayO0 = Annotated[NDArrayO, 0]
+NDArrayDY0 = Annotated[NDArrayDY, 0]
+NDArrayDM0 = Annotated[NDArrayDM, 0]
+NDArrayDW0 = Annotated[NDArrayDW, 0]
+NDArrayDD0 = Annotated[NDArrayDD, 0]
+NDArrayDh0 = Annotated[NDArrayDh, 0]
+NDArrayDm0 = Annotated[NDArrayDm, 0]
+NDArrayDs0 = Annotated[NDArrayDs, 0]
+NDArrayDms0 = Annotated[NDArrayDms, 0]
+NDArrayDus0 = Annotated[NDArrayDus, 0]
+NDArrayDns0 = Annotated[NDArrayDns, 0]
+NDArrayDps0 = Annotated[NDArrayDps, 0]
+NDArrayDfs0 = Annotated[NDArrayDfs, 0]
+NDArrayDas0 = Annotated[NDArrayDas, 0]
 
-NDArrayB1 = Annotated[NDArrayB, NDim1]
-NDArrayD1 = Annotated[NDArrayD, NDim1]
-NDArrayF1 = Annotated[NDArrayF, NDim1]
-NDArrayI1 = Annotated[NDArrayI, NDim1]
-NDArrayO1 = Annotated[NDArrayO, NDim1]
-NDArrayDY1 = Annotated[NDArrayDY, NDim1]
-NDArrayDM1 = Annotated[NDArrayDM, NDim1]
-NDArrayDW1 = Annotated[NDArrayDW, NDim1]
-NDArrayDD1 = Annotated[NDArrayDD, NDim1]
-NDArrayDh1 = Annotated[NDArrayDh, NDim1]
-NDArrayDm1 = Annotated[NDArrayDm, NDim1]
-NDArrayDs1 = Annotated[NDArrayDs, NDim1]
-NDArrayDms1 = Annotated[NDArrayDms, NDim1]
-NDArrayDus1 = Annotated[NDArrayDus, NDim1]
-NDArrayDns1 = Annotated[NDArrayDns, NDim1]
-NDArrayDps1 = Annotated[NDArrayDps, NDim1]
-NDArrayDfs1 = Annotated[NDArrayDfs, NDim1]
-NDArrayDas1 = Annotated[NDArrayDas, NDim1]
+NDArrayB1 = Annotated[NDArrayB, 1]
+NDArrayD1 = Annotated[NDArrayD, 1]
+NDArrayF1 = Annotated[NDArrayF, 1]
+NDArrayI1 = Annotated[NDArrayI, 1]
+NDArrayO1 = Annotated[NDArrayO, 1]
+NDArrayDY1 = Annotated[NDArrayDY, 1]
+NDArrayDM1 = Annotated[NDArrayDM, 1]
+NDArrayDW1 = Annotated[NDArrayDW, 1]
+NDArrayDD1 = Annotated[NDArrayDD, 1]
+NDArrayDh1 = Annotated[NDArrayDh, 1]
+NDArrayDm1 = Annotated[NDArrayDm, 1]
+NDArrayDs1 = Annotated[NDArrayDs, 1]
+NDArrayDms1 = Annotated[NDArrayDms, 1]
+NDArrayDus1 = Annotated[NDArrayDus, 1]
+NDArrayDns1 = Annotated[NDArrayDns, 1]
+NDArrayDps1 = Annotated[NDArrayDps, 1]
+NDArrayDfs1 = Annotated[NDArrayDfs, 1]
+NDArrayDas1 = Annotated[NDArrayDas, 1]
 
-NDArrayB2 = Annotated[NDArrayB, NDim2]
-NDArrayD2 = Annotated[NDArrayD, NDim2]
-NDArrayF2 = Annotated[NDArrayF, NDim2]
-NDArrayI2 = Annotated[NDArrayI, NDim2]
-NDArrayO2 = Annotated[NDArrayO, NDim2]
-NDArrayDY2 = Annotated[NDArrayDY, NDim2]
-NDArrayDM2 = Annotated[NDArrayDM, NDim2]
-NDArrayDW2 = Annotated[NDArrayDW, NDim2]
-NDArrayDD2 = Annotated[NDArrayDD, NDim2]
-NDArrayDh2 = Annotated[NDArrayDh, NDim2]
-NDArrayDm2 = Annotated[NDArrayDm, NDim2]
-NDArrayDs2 = Annotated[NDArrayDs, NDim2]
-NDArrayDms2 = Annotated[NDArrayDms, NDim2]
-NDArrayDus2 = Annotated[NDArrayDus, NDim2]
-NDArrayDns2 = Annotated[NDArrayDns, NDim2]
-NDArrayDps2 = Annotated[NDArrayDps, NDim2]
-NDArrayDfs2 = Annotated[NDArrayDfs, NDim2]
-NDArrayDas2 = Annotated[NDArrayDas, NDim2]
+NDArrayB2 = Annotated[NDArrayB, 2]
+NDArrayD2 = Annotated[NDArrayD, 2]
+NDArrayF2 = Annotated[NDArrayF, 2]
+NDArrayI2 = Annotated[NDArrayI, 2]
+NDArrayO2 = Annotated[NDArrayO, 2]
+NDArrayDY2 = Annotated[NDArrayDY, 2]
+NDArrayDM2 = Annotated[NDArrayDM, 2]
+NDArrayDW2 = Annotated[NDArrayDW, 2]
+NDArrayDD2 = Annotated[NDArrayDD, 2]
+NDArrayDh2 = Annotated[NDArrayDh, 2]
+NDArrayDm2 = Annotated[NDArrayDm, 2]
+NDArrayDs2 = Annotated[NDArrayDs, 2]
+NDArrayDms2 = Annotated[NDArrayDms, 2]
+NDArrayDus2 = Annotated[NDArrayDus, 2]
+NDArrayDns2 = Annotated[NDArrayDns, 2]
+NDArrayDps2 = Annotated[NDArrayDps, 2]
+NDArrayDfs2 = Annotated[NDArrayDfs, 2]
+NDArrayDas2 = Annotated[NDArrayDas, 2]
 
-NDArrayB3 = Annotated[NDArrayB, NDim3]
-NDArrayD3 = Annotated[NDArrayD, NDim3]
-NDArrayF3 = Annotated[NDArrayF, NDim3]
-NDArrayI3 = Annotated[NDArrayI, NDim3]
-NDArrayO3 = Annotated[NDArrayO, NDim3]
-NDArrayDY3 = Annotated[NDArrayDY, NDim3]
-NDArrayDM3 = Annotated[NDArrayDM, NDim3]
-NDArrayDW3 = Annotated[NDArrayDW, NDim3]
-NDArrayDD3 = Annotated[NDArrayDD, NDim3]
-NDArrayDh3 = Annotated[NDArrayDh, NDim3]
-NDArrayDm3 = Annotated[NDArrayDm, NDim3]
-NDArrayDs3 = Annotated[NDArrayDs, NDim3]
-NDArrayDms3 = Annotated[NDArrayDms, NDim3]
-NDArrayDus3 = Annotated[NDArrayDus, NDim3]
-NDArrayDns3 = Annotated[NDArrayDns, NDim3]
-NDArrayDps3 = Annotated[NDArrayDps, NDim3]
-NDArrayDfs3 = Annotated[NDArrayDfs, NDim3]
-NDArrayDas3 = Annotated[NDArrayDas, NDim3]
+NDArrayB3 = Annotated[NDArrayB, 3]
+NDArrayD3 = Annotated[NDArrayD, 3]
+NDArrayF3 = Annotated[NDArrayF, 3]
+NDArrayI3 = Annotated[NDArrayI, 3]
+NDArrayO3 = Annotated[NDArrayO, 3]
+NDArrayDY3 = Annotated[NDArrayDY, 3]
+NDArrayDM3 = Annotated[NDArrayDM, 3]
+NDArrayDW3 = Annotated[NDArrayDW, 3]
+NDArrayDD3 = Annotated[NDArrayDD, 3]
+NDArrayDh3 = Annotated[NDArrayDh, 3]
+NDArrayDm3 = Annotated[NDArrayDm, 3]
+NDArrayDs3 = Annotated[NDArrayDs, 3]
+NDArrayDms3 = Annotated[NDArrayDms, 3]
+NDArrayDus3 = Annotated[NDArrayDus, 3]
+NDArrayDns3 = Annotated[NDArrayDns, 3]
+NDArrayDps3 = Annotated[NDArrayDps, 3]
+NDArrayDfs3 = Annotated[NDArrayDfs, 3]
+NDArrayDas3 = Annotated[NDArrayDas, 3]
 
 
 # functions
@@ -296,7 +288,7 @@ def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     """Convert a `numpy.datetime64` to a `dt.date`."""
 
     as_int = datetime64_to_int(datetime)
-    if (dtype := datetime.dtype) == dt64D:
+    if (dtype := datetime.dtype) == datetime64D:
         with redirect_error(
             OverflowError, DateTime64ToDateError(f"{datetime=}, {dtype=}")
         ):
@@ -324,14 +316,14 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     """Convert a `numpy.datetime64` to a `dt.datetime`."""
 
     as_int = datetime64_to_int(datetime)
-    if (dtype := datetime.dtype) == dt64ms:
+    if (dtype := datetime.dtype) == datetime64ms:
         with redirect_error(
             OverflowError, DateTime64ToDateTimeError(f"{datetime=}, {dtype=}")
         ):
             return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
-    if dtype == dt64us:
+    if dtype == datetime64us:
         return EPOCH_UTC + dt.timedelta(microseconds=as_int)
-    if dtype == dt64ns:
+    if dtype == datetime64ns:
         microseconds, nanoseconds = divmod(as_int, int(1e3))
         if nanoseconds != 0:
             msg = f"{datetime=}, {nanoseconds=}"
@@ -466,7 +458,7 @@ def get_fill_value(dtype: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
     if dtype == bool:
         return False
-    if dtype in (dt64D, dt64Y, dt64ns):
+    if dtype in (datetime64D, datetime64Y, datetime64ns):
         return datetime64("NaT")
     if dtype == float:
         return nan
@@ -1125,275 +1117,216 @@ def year(date: NDArrayDD, /) -> NDArrayI: ...
 
 def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
     """Convert a date/array of dates into a year/array of years."""
-    years = 1970 + date.astype(dt64Y).astype(int)
+    years = 1970 + date.astype(datetime64Y).astype(int)
     return years if isinstance(date, ndarray) else years.item()
 
 
-# annotations - predicates
-
-
-def _predicate_to_annotation(predicate: Callable[..., Any], /) -> Any:
-    """Apply the predicate to a subset of a float array."""
-
-    def inner(array: NDArrayI | NDArrayF, /) -> bool:
-        if (size := array.size) == 0:
-            return True
-        if size == 1:
-            return predicate(array).item()
-        num_samples = round(log(size))
-        indices = DEFAULT_RNG.integers(0, size, size=num_samples)
-        sample = array[unravel_index(indices, array.shape)]
-        return predicate(sample).all().item()
-
-    return Is[cast(Any, inner)]
-
-
-IsFinite = _predicate_to_annotation(isfinite)
-IsFiniteAndIntegral = _predicate_to_annotation(is_finite_and_integral)
-IsFiniteAndIntegralOrNan = _predicate_to_annotation(is_finite_and_integral_or_nan)
-IsFiniteAndNegative = _predicate_to_annotation(is_finite_and_negative)
-IsFiniteAndNegativeOrNan = _predicate_to_annotation(is_finite_and_negative_or_nan)
-IsFiniteAndNonNegative = _predicate_to_annotation(is_finite_and_non_negative)
-IsFiniteAndNonNegativeOrNan = _predicate_to_annotation(
-    is_finite_and_non_negative_or_nan
-)
-IsFiniteAndNonPositive = _predicate_to_annotation(is_finite_and_non_positive)
-IsFiniteAndNonPositiveOrNan = _predicate_to_annotation(
-    is_finite_and_non_positive_or_nan
-)
-IsFiniteAndNonZero = _predicate_to_annotation(is_finite_and_non_zero)
-IsFiniteAndNonZeroOrNan = _predicate_to_annotation(is_finite_and_non_zero_or_nan)
-IsFiniteAndPositive = _predicate_to_annotation(is_finite_and_positive)
-IsFiniteAndPositiveOrNan = _predicate_to_annotation(is_finite_and_positive_or_nan)
-IsFiniteOrNan = _predicate_to_annotation(is_finite_or_nan)
-IsIntegral = _predicate_to_annotation(is_integral)
-IsIntegralOrNan = _predicate_to_annotation(is_integral_or_nan)
-IsNegative = _predicate_to_annotation(is_negative)
-IsNegativeOrNan = _predicate_to_annotation(is_negative_or_nan)
-IsNonNegative = _predicate_to_annotation(is_non_negative)
-IsNonNegativeOrNan = _predicate_to_annotation(is_non_negative_or_nan)
-IsNonPositive = _predicate_to_annotation(is_non_positive)
-IsNonPositiveOrNan = _predicate_to_annotation(is_non_positive_or_nan)
-IsNonZero = _predicate_to_annotation(is_non_zero)
-IsNonZeroOrNan = _predicate_to_annotation(is_non_zero_or_nan)
-IsPositive = _predicate_to_annotation(is_positive)
-IsPositiveOrNan = _predicate_to_annotation(is_positive_or_nan)
-IsZero = _predicate_to_annotation(is_zero)
-IsZeroOrFiniteAndNonMicro = _predicate_to_annotation(is_zero_or_finite_and_non_micro)
-IsZeroOrFiniteAndNonMicroOrNan = _predicate_to_annotation(
-    is_zero_or_finite_and_non_micro_or_nan
-)
-IsZeroOrNan = _predicate_to_annotation(is_zero_or_nan)
-IsZeroOrNonMicro = _predicate_to_annotation(is_zero_or_non_micro)
-IsZeroOrNonMicroOrNan = _predicate_to_annotation(is_zero_or_non_micro_or_nan)
-
-
 # annotations - int & predicates
-NDArrayINeg = Annotated[NDArrayI, IsNegative]
-NDArrayINonNeg = Annotated[NDArrayI, IsNonNegative]
-NDArrayINonPos = Annotated[NDArrayI, IsNonPositive]
-NDArrayINonZr = Annotated[NDArrayI, IsNonZero]
-NDArrayIPos = Annotated[NDArrayI, IsPositive]
-NDArrayIZr = Annotated[NDArrayI, IsZero]
+NDArrayINeg = Annotated[NDArrayI, is_negative]
+NDArrayINonNeg = Annotated[NDArrayI, is_non_negative]
+NDArrayINonPos = Annotated[NDArrayI, is_non_positive]
+NDArrayINonZr = Annotated[NDArrayI, is_non_zero]
+NDArrayIPos = Annotated[NDArrayI, is_positive]
+NDArrayIZr = Annotated[NDArrayI, is_zero]
 
 
 # annotations - float & predicates
-NDArrayFFin = Annotated[NDArrayF, IsFinite]
-NDArrayFFinInt = Annotated[NDArrayF, IsFiniteAndIntegral]
-NDArrayFFinIntNan = Annotated[NDArrayF, IsFiniteAndIntegralOrNan]
-NDArrayFFinNeg = Annotated[NDArrayF, IsFiniteAndNegative]
-NDArrayFFinNegNan = Annotated[NDArrayF, IsFiniteAndNegativeOrNan]
-NDArrayFFinNonNeg = Annotated[NDArrayF, IsFiniteAndNonNegative]
-NDArrayFFinNonNegNan = Annotated[NDArrayF, IsFiniteAndNonNegativeOrNan]
-NDArrayFFinNonPos = Annotated[NDArrayF, IsFiniteAndNonPositive]
-NDArrayFFinNonPosNan = Annotated[NDArrayF, IsFiniteAndNonPositiveOrNan]
-NDArrayFFinNonZr = Annotated[NDArrayF, IsFiniteAndNonZero]
-NDArrayFFinNonZrNan = Annotated[NDArrayF, IsFiniteAndNonZeroOrNan]
-NDArrayFFinPos = Annotated[NDArrayF, IsFiniteAndPositive]
-NDArrayFFinPosNan = Annotated[NDArrayF, IsFiniteAndPositiveOrNan]
-NDArrayFFinNan = Annotated[NDArrayF, IsFiniteOrNan]
-NDArrayFInt = Annotated[NDArrayF, IsIntegral]
-NDArrayFIntNan = Annotated[NDArrayF, IsIntegralOrNan]
-NDArrayFNeg = Annotated[NDArrayF, IsNegative]
-NDArrayFNegNan = Annotated[NDArrayF, IsNegativeOrNan]
-NDArrayFNonNeg = Annotated[NDArrayF, IsNonNegative]
-NDArrayFNonNegNan = Annotated[NDArrayF, IsNonNegativeOrNan]
-NDArrayFNonPos = Annotated[NDArrayF, IsNonPositive]
-NDArrayFNonPosNan = Annotated[NDArrayF, IsNonPositiveOrNan]
-NDArrayFNonZr = Annotated[NDArrayF, IsNonZero]
-NDArrayFNonZrNan = Annotated[NDArrayF, IsNonZeroOrNan]
-NDArrayFPos = Annotated[NDArrayF, IsPositive]
-NDArrayFPosNan = Annotated[NDArrayF, IsPositiveOrNan]
-NDArrayFZr = Annotated[NDArrayF, IsZero]
-NDArrayFZrFinNonMic = Annotated[NDArrayF, IsZeroOrFiniteAndNonMicro]
-NDArrayFZrFinNonMicNan = Annotated[NDArrayF, IsZeroOrFiniteAndNonMicroOrNan]
-NDArrayFZrNan = Annotated[NDArrayF, IsZeroOrNan]
-NDArrayFZrNonMic = Annotated[NDArrayF, IsZeroOrNonMicro]
-NDArrayFZrNonMicNan = Annotated[NDArrayF, IsZeroOrNonMicroOrNan]
+NDArrayFFin = Annotated[NDArrayF, isfinite]
+NDArrayFFinInt = Annotated[NDArrayF, is_finite_and_integral]
+NDArrayFFinIntNan = Annotated[NDArrayF, is_finite_and_integral_or_nan]
+NDArrayFFinNeg = Annotated[NDArrayF, is_finite_and_negative]
+NDArrayFFinNegNan = Annotated[NDArrayF, is_finite_and_negative_or_nan]
+NDArrayFFinNonNeg = Annotated[NDArrayF, is_finite_and_non_negative]
+NDArrayFFinNonNegNan = Annotated[NDArrayF, is_finite_and_non_negative_or_nan]
+NDArrayFFinNonPos = Annotated[NDArrayF, is_finite_and_non_positive]
+NDArrayFFinNonPosNan = Annotated[NDArrayF, is_finite_and_non_positive_or_nan]
+NDArrayFFinNonZr = Annotated[NDArrayF, is_finite_and_non_zero]
+NDArrayFFinNonZrNan = Annotated[NDArrayF, is_finite_and_non_zero_or_nan]
+NDArrayFFinPos = Annotated[NDArrayF, is_finite_and_positive]
+NDArrayFFinPosNan = Annotated[NDArrayF, is_finite_and_positive_or_nan]
+NDArrayFFinNan = Annotated[NDArrayF, is_finite_or_nan]
+NDArrayFInt = Annotated[NDArrayF, is_integral]
+NDArrayFIntNan = Annotated[NDArrayF, is_integral_or_nan]
+NDArrayFNeg = Annotated[NDArrayF, is_negative]
+NDArrayFNegNan = Annotated[NDArrayF, is_negative_or_nan]
+NDArrayFNonNeg = Annotated[NDArrayF, is_non_negative]
+NDArrayFNonNegNan = Annotated[NDArrayF, is_non_negative_or_nan]
+NDArrayFNonPos = Annotated[NDArrayF, is_non_positive]
+NDArrayFNonPosNan = Annotated[NDArrayF, is_non_positive_or_nan]
+NDArrayFNonZr = Annotated[NDArrayF, is_non_zero]
+NDArrayFNonZrNan = Annotated[NDArrayF, is_non_zero_or_nan]
+NDArrayFPos = Annotated[NDArrayF, is_positive]
+NDArrayFPosNan = Annotated[NDArrayF, is_positive_or_nan]
+NDArrayFZr = Annotated[NDArrayF, is_zero]
+NDArrayFZrFinNonMic = Annotated[NDArrayF, is_zero_or_finite_and_non_micro]
+NDArrayFZrFinNonMicNan = Annotated[NDArrayF, is_zero_or_finite_and_non_micro_or_nan]
+NDArrayFZrNan = Annotated[NDArrayF, is_zero_or_nan]
+NDArrayFZrNonMic = Annotated[NDArrayF, is_zero_or_non_micro]
+NDArrayFZrNonMicNan = Annotated[NDArrayF, is_zero_or_non_micro_or_nan]
 
 
 # annotations - int, ndim & predicate
-NDArrayI0Neg = Annotated[NDArrayI, NDim0, IsNegative]
-NDArrayI0NonNeg = Annotated[NDArrayI, NDim0, IsNonNegative]
-NDArrayI0NonPos = Annotated[NDArrayI, NDim0, IsNonPositive]
-NDArrayI0NonZr = Annotated[NDArrayI, NDim0, IsNonZero]
-NDArrayI0Pos = Annotated[NDArrayI, NDim0, IsPositive]
-NDArrayI0Zr = Annotated[NDArrayI, NDim0, IsZero]
+NDArrayI0Neg = Annotated[NDArrayI0, is_negative]
+NDArrayI0NonNeg = Annotated[NDArrayI0, is_non_negative]
+NDArrayI0NonPos = Annotated[NDArrayI0, is_non_positive]
+NDArrayI0NonZr = Annotated[NDArrayI0, is_non_zero]
+NDArrayI0Pos = Annotated[NDArrayI0, is_positive]
+NDArrayI0Zr = Annotated[NDArrayI0, is_zero]
 
-NDArrayI1Neg = Annotated[NDArrayI, NDim1, IsNegative]
-NDArrayI1NonNeg = Annotated[NDArrayI, NDim1, IsNonNegative]
-NDArrayI1NonPos = Annotated[NDArrayI, NDim1, IsNonPositive]
-NDArrayI1NonZr = Annotated[NDArrayI, NDim1, IsNonZero]
-NDArrayI1Pos = Annotated[NDArrayI, NDim1, IsPositive]
-NDArrayI1Zr = Annotated[NDArrayI, NDim1, IsZero]
+NDArrayI1Neg = Annotated[NDArrayI1, is_negative]
+NDArrayI1NonNeg = Annotated[NDArrayI1, is_non_negative]
+NDArrayI1NonPos = Annotated[NDArrayI1, is_non_positive]
+NDArrayI1NonZr = Annotated[NDArrayI1, is_non_zero]
+NDArrayI1Pos = Annotated[NDArrayI1, is_positive]
+NDArrayI1Zr = Annotated[NDArrayI1, is_zero]
 
-NDArrayI2Neg = Annotated[NDArrayI, NDim2, IsNegative]
-NDArrayI2NonNeg = Annotated[NDArrayI, NDim2, IsNonNegative]
-NDArrayI2NonPos = Annotated[NDArrayI, NDim2, IsNonPositive]
-NDArrayI2NonZr = Annotated[NDArrayI, NDim2, IsNonZero]
-NDArrayI2Pos = Annotated[NDArrayI, NDim2, IsPositive]
-NDArrayI2Zr = Annotated[NDArrayI, NDim2, IsZero]
+NDArrayI2Neg = Annotated[NDArrayI2, is_negative]
+NDArrayI2NonNeg = Annotated[NDArrayI2, is_non_negative]
+NDArrayI2NonPos = Annotated[NDArrayI2, is_non_positive]
+NDArrayI2NonZr = Annotated[NDArrayI2, is_non_zero]
+NDArrayI2Pos = Annotated[NDArrayI2, is_positive]
+NDArrayI2Zr = Annotated[NDArrayI2, is_zero]
 
-NDArrayI3Neg = Annotated[NDArrayI, NDim1, IsNegative]
-NDArrayI3NonNeg = Annotated[NDArrayI, NDim3, IsNonNegative]
-NDArrayI3NonPos = Annotated[NDArrayI, NDim3, IsNonPositive]
-NDArrayI3NonZr = Annotated[NDArrayI, NDim3, IsNonZero]
-NDArrayI3Pos = Annotated[NDArrayI, NDim3, IsPositive]
-NDArrayI3Zr = Annotated[NDArrayI, NDim3, IsZero]
+NDArrayI3Neg = Annotated[NDArrayI1, is_negative]
+NDArrayI3NonNeg = Annotated[NDArrayI3, is_non_negative]
+NDArrayI3NonPos = Annotated[NDArrayI3, is_non_positive]
+NDArrayI3NonZr = Annotated[NDArrayI3, is_non_zero]
+NDArrayI3Pos = Annotated[NDArrayI3, is_positive]
+NDArrayI3Zr = Annotated[NDArrayI3, is_zero]
 
 
 # annotations - float, ndim & predicate
-NDArrayF0Fin = Annotated[NDArrayF, NDim0, IsFinite]
-NDArrayF0FinInt = Annotated[NDArrayF, NDim0, IsFiniteAndIntegral]
-NDArrayF0FinIntNan = Annotated[NDArrayF, NDim0, IsFiniteAndIntegralOrNan]
-NDArrayF0FinNeg = Annotated[NDArrayF, NDim0, IsFiniteAndNegative]
-NDArrayF0FinNegNan = Annotated[NDArrayF, NDim0, IsFiniteAndNegativeOrNan]
-NDArrayF0FinNonNeg = Annotated[NDArrayF, NDim0, IsFiniteAndNonNegative]
-NDArrayF0FinNonNegNan = Annotated[NDArrayF, NDim0, IsFiniteAndNonNegativeOrNan]
-NDArrayF0FinNonPos = Annotated[NDArrayF, NDim0, IsFiniteAndNonPositive]
-NDArrayF0FinNonPosNan = Annotated[NDArrayF, NDim0, IsFiniteAndNonPositiveOrNan]
-NDArrayF0FinNonZr = Annotated[NDArrayF, NDim0, IsFiniteAndNonZero]
-NDArrayF0FinNonZrNan = Annotated[NDArrayF, NDim0, IsFiniteAndNonZeroOrNan]
-NDArrayF0FinPos = Annotated[NDArrayF, NDim0, IsFiniteAndPositive]
-NDArrayF0FinPosNan = Annotated[NDArrayF, NDim0, IsFiniteAndPositiveOrNan]
-NDArrayF0FinNan = Annotated[NDArrayF, NDim0, IsFiniteOrNan]
-NDArrayF0Int = Annotated[NDArrayF, NDim0, IsIntegral]
-NDArrayF0IntNan = Annotated[NDArrayF, NDim0, IsIntegralOrNan]
-NDArrayF0Neg = Annotated[NDArrayF, NDim0, IsNegative]
-NDArrayF0NegNan = Annotated[NDArrayF, NDim0, IsNegativeOrNan]
-NDArrayF0NonNeg = Annotated[NDArrayF, NDim0, IsNonNegative]
-NDArrayF0NonNegNan = Annotated[NDArrayF, NDim0, IsNonNegativeOrNan]
-NDArrayF0NonPos = Annotated[NDArrayF, NDim0, IsNonPositive]
-NDArrayF0NonPosNan = Annotated[NDArrayF, NDim0, IsNonPositiveOrNan]
-NDArrayF0NonZr = Annotated[NDArrayF, NDim0, IsNonZero]
-NDArrayF0NonZrNan = Annotated[NDArrayF, NDim0, IsNonZeroOrNan]
-NDArrayF0Pos = Annotated[NDArrayF, NDim0, IsPositive]
-NDArrayF0PosNan = Annotated[NDArrayF, NDim0, IsPositiveOrNan]
-NDArrayF0Zr = Annotated[NDArrayF, NDim0, IsZero]
-NDArrayF0ZrFinNonMic = Annotated[NDArrayF, NDim0, IsZeroOrFiniteAndNonMicro]
-NDArrayF0ZrFinNonMicNan = Annotated[NDArrayF, NDim0, IsZeroOrFiniteAndNonMicroOrNan]
-NDArrayF0ZrNan = Annotated[NDArrayF, NDim0, IsZeroOrNan]
-NDArrayF0ZrNonMic = Annotated[NDArrayF, NDim0, IsZeroOrNonMicro]
-NDArrayF0ZrNonMicNan = Annotated[NDArrayF, NDim0, IsZeroOrNonMicroOrNan]
+NDArrayF0Fin = Annotated[NDArrayF0, isfinite]
+NDArrayF0FinInt = Annotated[NDArrayF0, is_finite_and_integral]
+NDArrayF0FinIntNan = Annotated[NDArrayF0, is_finite_and_integral_or_nan]
+NDArrayF0FinNeg = Annotated[NDArrayF0, is_finite_and_negative]
+NDArrayF0FinNegNan = Annotated[NDArrayF0, is_finite_and_negative_or_nan]
+NDArrayF0FinNonNeg = Annotated[NDArrayF0, is_finite_and_non_negative]
+NDArrayF0FinNonNegNan = Annotated[NDArrayF0, is_finite_and_non_negative_or_nan]
+NDArrayF0FinNonPos = Annotated[NDArrayF0, is_finite_and_non_positive]
+NDArrayF0FinNonPosNan = Annotated[NDArrayF0, is_finite_and_non_positive_or_nan]
+NDArrayF0FinNonZr = Annotated[NDArrayF0, is_finite_and_non_zero]
+NDArrayF0FinNonZrNan = Annotated[NDArrayF0, is_finite_and_non_zero_or_nan]
+NDArrayF0FinPos = Annotated[NDArrayF0, is_finite_and_positive]
+NDArrayF0FinPosNan = Annotated[NDArrayF0, is_finite_and_positive_or_nan]
+NDArrayF0FinNan = Annotated[NDArrayF0, is_finite_or_nan]
+NDArrayF0Int = Annotated[NDArrayF0, is_integral]
+NDArrayF0IntNan = Annotated[NDArrayF0, is_integral_or_nan]
+NDArrayF0Neg = Annotated[NDArrayF0, is_negative]
+NDArrayF0NegNan = Annotated[NDArrayF0, is_negative_or_nan]
+NDArrayF0NonNeg = Annotated[NDArrayF0, is_non_negative]
+NDArrayF0NonNegNan = Annotated[NDArrayF0, is_non_negative_or_nan]
+NDArrayF0NonPos = Annotated[NDArrayF0, is_non_positive]
+NDArrayF0NonPosNan = Annotated[NDArrayF0, is_non_positive_or_nan]
+NDArrayF0NonZr = Annotated[NDArrayF0, is_non_zero]
+NDArrayF0NonZrNan = Annotated[NDArrayF0, is_non_zero_or_nan]
+NDArrayF0Pos = Annotated[NDArrayF0, is_positive]
+NDArrayF0PosNan = Annotated[NDArrayF0, is_positive_or_nan]
+NDArrayF0Zr = Annotated[NDArrayF0, is_zero]
+NDArrayF0ZrFinNonMic = Annotated[NDArrayF0, is_zero_or_finite_and_non_micro]
+NDArrayF0ZrFinNonMicNan = Annotated[NDArrayF0, is_zero_or_finite_and_non_micro_or_nan]
+NDArrayF0ZrNan = Annotated[NDArrayF0, is_zero_or_nan]
+NDArrayF0ZrNonMic = Annotated[NDArrayF0, is_zero_or_non_micro]
+NDArrayF0ZrNonMicNan = Annotated[NDArrayF0, is_zero_or_non_micro_or_nan]
 
-NDArrayF1Fin = Annotated[NDArrayF, NDim1, IsFinite]
-NDArrayF1FinInt = Annotated[NDArrayF, NDim1, IsFiniteAndIntegral]
-NDArrayF1FinIntNan = Annotated[NDArrayF, NDim1, IsFiniteAndIntegralOrNan]
-NDArrayF1FinNeg = Annotated[NDArrayF, NDim1, IsFiniteAndNegative]
-NDArrayF1FinNegNan = Annotated[NDArrayF, NDim1, IsFiniteAndNegativeOrNan]
-NDArrayF1FinNonNeg = Annotated[NDArrayF, NDim1, IsFiniteAndNonNegative]
-NDArrayF1FinNonNegNan = Annotated[NDArrayF, NDim1, IsFiniteAndNonNegativeOrNan]
-NDArrayF1FinNonPos = Annotated[NDArrayF, NDim1, IsFiniteAndNonPositive]
-NDArrayF1FinNonPosNan = Annotated[NDArrayF, NDim1, IsFiniteAndNonPositiveOrNan]
-NDArrayF1FinNonZr = Annotated[NDArrayF, NDim1, IsFiniteAndNonZero]
-NDArrayF1FinNonZrNan = Annotated[NDArrayF, NDim1, IsFiniteAndNonZeroOrNan]
-NDArrayF1FinPos = Annotated[NDArrayF, NDim1, IsFiniteAndPositive]
-NDArrayF1FinPosNan = Annotated[NDArrayF, NDim1, IsFiniteAndPositiveOrNan]
-NDArrayF1FinNan = Annotated[NDArrayF, NDim1, IsFiniteOrNan]
-NDArrayF1Int = Annotated[NDArrayF, NDim1, IsIntegral]
-NDArrayF1IntNan = Annotated[NDArrayF, NDim1, IsIntegralOrNan]
-NDArrayF1Neg = Annotated[NDArrayF, NDim1, IsNegative]
-NDArrayF1NegNan = Annotated[NDArrayF, NDim1, IsNegativeOrNan]
-NDArrayF1NonNeg = Annotated[NDArrayF, NDim1, IsNonNegative]
-NDArrayF1NonNegNan = Annotated[NDArrayF, NDim1, IsNonNegativeOrNan]
-NDArrayF1NonPos = Annotated[NDArrayF, NDim1, IsNonPositive]
-NDArrayF1NonPosNan = Annotated[NDArrayF, NDim1, IsNonPositiveOrNan]
-NDArrayF1NonZr = Annotated[NDArrayF, NDim1, IsNonZero]
-NDArrayF1NonZrNan = Annotated[NDArrayF, NDim1, IsNonZeroOrNan]
-NDArrayF1Pos = Annotated[NDArrayF, NDim1, IsPositive]
-NDArrayF1PosNan = Annotated[NDArrayF, NDim1, IsPositiveOrNan]
-NDArrayF1Zr = Annotated[NDArrayF, NDim1, IsZero]
-NDArrayF1ZrFinNonMic = Annotated[NDArrayF, NDim1, IsZeroOrFiniteAndNonMicro]
-NDArrayF1ZrFinNonMicNan = Annotated[NDArrayF, NDim1, IsZeroOrFiniteAndNonMicroOrNan]
-NDArrayF1ZrNan = Annotated[NDArrayF, NDim1, IsZeroOrNan]
-NDArrayF1ZrNonMic = Annotated[NDArrayF, NDim1, IsZeroOrNonMicro]
-NDArrayF1ZrNonMicNan = Annotated[NDArrayF, NDim1, IsZeroOrNonMicroOrNan]
+NDArrayF1Fin = Annotated[NDArrayF1, isfinite]
+NDArrayF1FinInt = Annotated[NDArrayF1, is_finite_and_integral]
+NDArrayF1FinIntNan = Annotated[NDArrayF1, is_finite_and_integral_or_nan]
+NDArrayF1FinNeg = Annotated[NDArrayF1, is_finite_and_negative]
+NDArrayF1FinNegNan = Annotated[NDArrayF1, is_finite_and_negative_or_nan]
+NDArrayF1FinNonNeg = Annotated[NDArrayF1, is_finite_and_non_negative]
+NDArrayF1FinNonNegNan = Annotated[NDArrayF1, is_finite_and_non_negative_or_nan]
+NDArrayF1FinNonPos = Annotated[NDArrayF1, is_finite_and_non_positive]
+NDArrayF1FinNonPosNan = Annotated[NDArrayF1, is_finite_and_non_positive_or_nan]
+NDArrayF1FinNonZr = Annotated[NDArrayF1, is_finite_and_non_zero]
+NDArrayF1FinNonZrNan = Annotated[NDArrayF1, is_finite_and_non_zero_or_nan]
+NDArrayF1FinPos = Annotated[NDArrayF1, is_finite_and_positive]
+NDArrayF1FinPosNan = Annotated[NDArrayF1, is_finite_and_positive_or_nan]
+NDArrayF1FinNan = Annotated[NDArrayF1, is_finite_or_nan]
+NDArrayF1Int = Annotated[NDArrayF1, is_integral]
+NDArrayF1IntNan = Annotated[NDArrayF1, is_integral_or_nan]
+NDArrayF1Neg = Annotated[NDArrayF1, is_negative]
+NDArrayF1NegNan = Annotated[NDArrayF1, is_negative_or_nan]
+NDArrayF1NonNeg = Annotated[NDArrayF1, is_non_negative]
+NDArrayF1NonNegNan = Annotated[NDArrayF1, is_non_negative_or_nan]
+NDArrayF1NonPos = Annotated[NDArrayF1, is_non_positive]
+NDArrayF1NonPosNan = Annotated[NDArrayF1, is_non_positive_or_nan]
+NDArrayF1NonZr = Annotated[NDArrayF1, is_non_zero]
+NDArrayF1NonZrNan = Annotated[NDArrayF1, is_non_zero_or_nan]
+NDArrayF1Pos = Annotated[NDArrayF1, is_positive]
+NDArrayF1PosNan = Annotated[NDArrayF1, is_positive_or_nan]
+NDArrayF1Zr = Annotated[NDArrayF1, is_zero]
+NDArrayF1ZrFinNonMic = Annotated[NDArrayF1, is_zero_or_finite_and_non_micro]
+NDArrayF1ZrFinNonMicNan = Annotated[NDArrayF1, is_zero_or_finite_and_non_micro_or_nan]
+NDArrayF1ZrNan = Annotated[NDArrayF1, is_zero_or_nan]
+NDArrayF1ZrNonMic = Annotated[NDArrayF1, is_zero_or_non_micro]
+NDArrayF1ZrNonMicNan = Annotated[NDArrayF1, is_zero_or_non_micro_or_nan]
 
-NDArrayF2Fin = Annotated[NDArrayF, NDim2, IsFinite]
-NDArrayF2FinInt = Annotated[NDArrayF, NDim2, IsFiniteAndIntegral]
-NDArrayF2FinIntNan = Annotated[NDArrayF, NDim2, IsFiniteAndIntegralOrNan]
-NDArrayF2FinNeg = Annotated[NDArrayF, NDim2, IsFiniteAndNegative]
-NDArrayF2FinNegNan = Annotated[NDArrayF, NDim2, IsFiniteAndNegativeOrNan]
-NDArrayF2FinNonNeg = Annotated[NDArrayF, NDim2, IsFiniteAndNonNegative]
-NDArrayF2FinNonNegNan = Annotated[NDArrayF, NDim2, IsFiniteAndNonNegativeOrNan]
-NDArrayF2FinNonPos = Annotated[NDArrayF, NDim2, IsFiniteAndNonPositive]
-NDArrayF2FinNonPosNan = Annotated[NDArrayF, NDim2, IsFiniteAndNonPositiveOrNan]
-NDArrayF2FinNonZr = Annotated[NDArrayF, NDim2, IsFiniteAndNonZero]
-NDArrayF2FinNonZrNan = Annotated[NDArrayF, NDim2, IsFiniteAndNonZeroOrNan]
-NDArrayF2FinPos = Annotated[NDArrayF, NDim2, IsFiniteAndPositive]
-NDArrayF2FinPosNan = Annotated[NDArrayF, NDim2, IsFiniteAndPositiveOrNan]
-NDArrayF2FinNan = Annotated[NDArrayF, NDim2, IsFiniteOrNan]
-NDArrayF2Int = Annotated[NDArrayF, NDim2, IsIntegral]
-NDArrayF2IntNan = Annotated[NDArrayF, NDim2, IsIntegralOrNan]
-NDArrayF2Neg = Annotated[NDArrayF, NDim2, IsNegative]
-NDArrayF2NegNan = Annotated[NDArrayF, NDim2, IsNegativeOrNan]
-NDArrayF2NonNeg = Annotated[NDArrayF, NDim2, IsNonNegative]
-NDArrayF2NonNegNan = Annotated[NDArrayF, NDim2, IsNonNegativeOrNan]
-NDArrayF2NonPos = Annotated[NDArrayF, NDim2, IsNonPositive]
-NDArrayF2NonPosNan = Annotated[NDArrayF, NDim2, IsNonPositiveOrNan]
-NDArrayF2NonZr = Annotated[NDArrayF, NDim2, IsNonZero]
-NDArrayF2NonZrNan = Annotated[NDArrayF, NDim2, IsNonZeroOrNan]
-NDArrayF2Pos = Annotated[NDArrayF, NDim2, IsPositive]
-NDArrayF2PosNan = Annotated[NDArrayF, NDim2, IsPositiveOrNan]
-NDArrayF2Zr = Annotated[NDArrayF, NDim2, IsZero]
-NDArrayF2ZrFinNonMic = Annotated[NDArrayF, NDim2, IsZeroOrFiniteAndNonMicro]
-NDArrayF2ZrFinNonMicNan = Annotated[NDArrayF, NDim2, IsZeroOrFiniteAndNonMicroOrNan]
-NDArrayF2ZrNan = Annotated[NDArrayF, NDim2, IsZeroOrNan]
-NDArrayF2ZrNonMic = Annotated[NDArrayF, NDim2, IsZeroOrNonMicro]
-NDArrayF2ZrNonMicNan = Annotated[NDArrayF, NDim2, IsZeroOrNonMicroOrNan]
+NDArrayF2Fin = Annotated[NDArrayF2, isfinite]
+NDArrayF2FinInt = Annotated[NDArrayF2, is_finite_and_integral]
+NDArrayF2FinIntNan = Annotated[NDArrayF2, is_finite_and_integral_or_nan]
+NDArrayF2FinNeg = Annotated[NDArrayF2, is_finite_and_negative]
+NDArrayF2FinNegNan = Annotated[NDArrayF2, is_finite_and_negative_or_nan]
+NDArrayF2FinNonNeg = Annotated[NDArrayF2, is_finite_and_non_negative]
+NDArrayF2FinNonNegNan = Annotated[NDArrayF2, is_finite_and_non_negative_or_nan]
+NDArrayF2FinNonPos = Annotated[NDArrayF2, is_finite_and_non_positive]
+NDArrayF2FinNonPosNan = Annotated[NDArrayF2, is_finite_and_non_positive_or_nan]
+NDArrayF2FinNonZr = Annotated[NDArrayF2, is_finite_and_non_zero]
+NDArrayF2FinNonZrNan = Annotated[NDArrayF2, is_finite_and_non_zero_or_nan]
+NDArrayF2FinPos = Annotated[NDArrayF2, is_finite_and_positive]
+NDArrayF2FinPosNan = Annotated[NDArrayF2, is_finite_and_positive_or_nan]
+NDArrayF2FinNan = Annotated[NDArrayF2, is_finite_or_nan]
+NDArrayF2Int = Annotated[NDArrayF2, is_integral]
+NDArrayF2IntNan = Annotated[NDArrayF2, is_integral_or_nan]
+NDArrayF2Neg = Annotated[NDArrayF2, is_negative]
+NDArrayF2NegNan = Annotated[NDArrayF2, is_negative_or_nan]
+NDArrayF2NonNeg = Annotated[NDArrayF2, is_non_negative]
+NDArrayF2NonNegNan = Annotated[NDArrayF2, is_non_negative_or_nan]
+NDArrayF2NonPos = Annotated[NDArrayF2, is_non_positive]
+NDArrayF2NonPosNan = Annotated[NDArrayF2, is_non_positive_or_nan]
+NDArrayF2NonZr = Annotated[NDArrayF2, is_non_zero]
+NDArrayF2NonZrNan = Annotated[NDArrayF2, is_non_zero_or_nan]
+NDArrayF2Pos = Annotated[NDArrayF2, is_positive]
+NDArrayF2PosNan = Annotated[NDArrayF2, is_positive_or_nan]
+NDArrayF2Zr = Annotated[NDArrayF2, is_zero]
+NDArrayF2ZrFinNonMic = Annotated[NDArrayF2, is_zero_or_finite_and_non_micro]
+NDArrayF2ZrFinNonMicNan = Annotated[NDArrayF2, is_zero_or_finite_and_non_micro_or_nan]
+NDArrayF2ZrNan = Annotated[NDArrayF2, is_zero_or_nan]
+NDArrayF2ZrNonMic = Annotated[NDArrayF2, is_zero_or_non_micro]
+NDArrayF2ZrNonMicNan = Annotated[NDArrayF2, is_zero_or_non_micro_or_nan]
 
-NDArrayF3Fin = Annotated[NDArrayF, NDim3, IsFinite]
-NDArrayF3FinInt = Annotated[NDArrayF, NDim3, IsFiniteAndIntegral]
-NDArrayF3FinIntNan = Annotated[NDArrayF, NDim3, IsFiniteAndIntegralOrNan]
-NDArrayF3FinNeg = Annotated[NDArrayF, NDim3, IsFiniteAndNegative]
-NDArrayF3FinNegNan = Annotated[NDArrayF, NDim3, IsFiniteAndNegativeOrNan]
-NDArrayF3FinNonNeg = Annotated[NDArrayF, NDim3, IsFiniteAndNonNegative]
-NDArrayF3FinNonNegNan = Annotated[NDArrayF, NDim3, IsFiniteAndNonNegativeOrNan]
-NDArrayF3FinNonPos = Annotated[NDArrayF, NDim3, IsFiniteAndNonPositive]
-NDArrayF3FinNonPosNan = Annotated[NDArrayF, NDim3, IsFiniteAndNonPositiveOrNan]
-NDArrayF3FinNonZr = Annotated[NDArrayF, NDim3, IsFiniteAndNonZero]
-NDArrayF3FinNonZrNan = Annotated[NDArrayF, NDim3, IsFiniteAndNonZeroOrNan]
-NDArrayF3FinPos = Annotated[NDArrayF, NDim3, IsFiniteAndPositive]
-NDArrayF3FinPosNan = Annotated[NDArrayF, NDim3, IsFiniteAndPositiveOrNan]
-NDArrayF3FinNan = Annotated[NDArrayF, NDim3, IsFiniteOrNan]
-NDArrayF3Int = Annotated[NDArrayF, NDim3, IsIntegral]
-NDArrayF3IntNan = Annotated[NDArrayF, NDim3, IsIntegralOrNan]
-NDArrayF3Neg = Annotated[NDArrayF, NDim3, IsNegative]
-NDArrayF3NegNan = Annotated[NDArrayF, NDim3, IsNegativeOrNan]
-NDArrayF3NonNeg = Annotated[NDArrayF, NDim3, IsNonNegative]
-NDArrayF3NonNegNan = Annotated[NDArrayF, NDim3, IsNonNegativeOrNan]
-NDArrayF3NonPos = Annotated[NDArrayF, NDim3, IsNonPositive]
-NDArrayF3NonPosNan = Annotated[NDArrayF, NDim3, IsNonPositiveOrNan]
-NDArrayF3NonZr = Annotated[NDArrayF, NDim3, IsNonZero]
-NDArrayF3NonZrNan = Annotated[NDArrayF, NDim3, IsNonZeroOrNan]
-NDArrayF3Pos = Annotated[NDArrayF, NDim3, IsPositive]
-NDArrayF3PosNan = Annotated[NDArrayF, NDim3, IsPositiveOrNan]
-NDArrayF3Zr = Annotated[NDArrayF, NDim3, IsZero]
-NDArrayF3ZrFinNonMic = Annotated[NDArrayF, NDim3, IsZeroOrFiniteAndNonMicro]
-NDArrayF3ZrFinNonMicNan = Annotated[NDArrayF, NDim3, IsZeroOrFiniteAndNonMicroOrNan]
-NDArrayF3ZrNan = Annotated[NDArrayF, NDim3, IsZeroOrNan]
-NDArrayF3ZrNonMic = Annotated[NDArrayF, NDim3, IsZeroOrNonMicro]
-NDArrayF3ZrNonMicNan = Annotated[NDArrayF, NDim3, IsZeroOrNonMicroOrNan]
+NDArrayF3Fin = Annotated[NDArrayF3, isfinite]
+NDArrayF3FinInt = Annotated[NDArrayF3, is_finite_and_integral]
+NDArrayF3FinIntNan = Annotated[NDArrayF3, is_finite_and_integral_or_nan]
+NDArrayF3FinNeg = Annotated[NDArrayF3, is_finite_and_negative]
+NDArrayF3FinNegNan = Annotated[NDArrayF3, is_finite_and_negative_or_nan]
+NDArrayF3FinNonNeg = Annotated[NDArrayF3, is_finite_and_non_negative]
+NDArrayF3FinNonNegNan = Annotated[NDArrayF3, is_finite_and_non_negative_or_nan]
+NDArrayF3FinNonPos = Annotated[NDArrayF3, is_finite_and_non_positive]
+NDArrayF3FinNonPosNan = Annotated[NDArrayF3, is_finite_and_non_positive_or_nan]
+NDArrayF3FinNonZr = Annotated[NDArrayF3, is_finite_and_non_zero]
+NDArrayF3FinNonZrNan = Annotated[NDArrayF3, is_finite_and_non_zero_or_nan]
+NDArrayF3FinPos = Annotated[NDArrayF3, is_finite_and_positive]
+NDArrayF3FinPosNan = Annotated[NDArrayF3, is_finite_and_positive_or_nan]
+NDArrayF3FinNan = Annotated[NDArrayF3, is_finite_or_nan]
+NDArrayF3Int = Annotated[NDArrayF3, is_integral]
+NDArrayF3IntNan = Annotated[NDArrayF3, is_integral_or_nan]
+NDArrayF3Neg = Annotated[NDArrayF3, is_negative]
+NDArrayF3NegNan = Annotated[NDArrayF3, is_negative_or_nan]
+NDArrayF3NonNeg = Annotated[NDArrayF3, is_non_negative]
+NDArrayF3NonNegNan = Annotated[NDArrayF3, is_non_negative_or_nan]
+NDArrayF3NonPos = Annotated[NDArrayF3, is_non_positive]
+NDArrayF3NonPosNan = Annotated[NDArrayF3, is_non_positive_or_nan]
+NDArrayF3NonZr = Annotated[NDArrayF3, is_non_zero]
+NDArrayF3NonZrNan = Annotated[NDArrayF3, is_non_zero_or_nan]
+NDArrayF3Pos = Annotated[NDArrayF3, is_positive]
+NDArrayF3PosNan = Annotated[NDArrayF3, is_positive_or_nan]
+NDArrayF3Zr = Annotated[NDArrayF3, is_zero]
+NDArrayF3ZrFinNonMic = Annotated[NDArrayF3, is_zero_or_finite_and_non_micro]
+NDArrayF3ZrFinNonMicNan = Annotated[NDArrayF3, is_zero_or_finite_and_non_micro_or_nan]
+NDArrayF3ZrNan = Annotated[NDArrayF3, is_zero_or_nan]
+NDArrayF3ZrNonMic = Annotated[NDArrayF3, is_zero_or_non_micro]
+NDArrayF3ZrNonMicNan = Annotated[NDArrayF3, is_zero_or_non_micro_or_nan]
 
 
 __all__ = [
@@ -1753,19 +1686,19 @@ __all__ = [
     "datetime64_unit_to_kind",
     "datetime_to_datetime64",
     "discretize",
-    "dt64D",
-    "dt64M",
-    "dt64W",
-    "dt64Y",
-    "dt64as",
-    "dt64fs",
-    "dt64h",
-    "dt64m",
-    "dt64ms",
-    "dt64ns",
-    "dt64ps",
-    "dt64s",
-    "dt64us",
+    "datetime64D",
+    "datetime64M",
+    "datetime64W",
+    "datetime64Y",
+    "datetime64as",
+    "datetime64fs",
+    "datetime64h",
+    "datetime64m",
+    "datetime64ms",
+    "datetime64ns",
+    "datetime64ps",
+    "datetime64s",
+    "datetime64us",
     "ewma",
     "exp_moving_sum",
     "ffill",

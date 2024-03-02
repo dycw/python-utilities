@@ -24,9 +24,9 @@ from utilities.numpy import (
     NDArrayI1,
     _ffill_non_nan_slices_helper,
     array_indexer,
-    dt64D,
-    dt64ns,
-    dt64Y,
+    datetime64D,
+    datetime64ns,
+    datetime64Y,
     flatn0,
     get_fill_value,
     has_dtype,
@@ -184,9 +184,9 @@ class NDArrayWithIndexes:
         except KeyError:
             return slice(None)
         index = self._get_index_by_name(dim)
-        if has_dtype(index, (dt64D, dt64Y)):
+        if has_dtype(index, (datetime64D, datetime64Y)):
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
-        elif has_dtype(index, dt64ns):
+        elif has_dtype(index, datetime64ns):
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
         if is_sized_not_str(indexer):
             bool_indexer = isin(index, cast(ArrayLike, indexer))

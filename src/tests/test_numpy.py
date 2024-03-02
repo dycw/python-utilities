@@ -361,21 +361,20 @@ from utilities.numpy import (
     datetime64_to_int,
     datetime64_unit_to_dtype,
     datetime64_unit_to_kind,
+    datetime64as,
+    datetime64D,
+    datetime64fs,
+    datetime64h,
+    datetime64M,
+    datetime64m,
+    datetime64ms,
+    datetime64ns,
+    datetime64ps,
+    datetime64us,
+    datetime64W,
+    datetime64Y,
     datetime_to_datetime64,
     discretize,
-    dt64as,
-    dt64D,
-    dt64fs,
-    dt64h,
-    dt64M,
-    dt64m,
-    dt64ms,
-    dt64ns,
-    dt64ps,
-    dt64s,
-    dt64us,
-    dt64W,
-    dt64Y,
     ewma,
     exp_moving_sum,
     ffill,
@@ -446,19 +445,19 @@ class TestAnnotations:
         ("dtype", "hint"),
         [
             param(bool, NDArrayB),
-            param(dt64Y, NDArrayDY),
-            param(dt64M, NDArrayDM),
-            param(dt64W, NDArrayDW),
-            param(dt64D, NDArrayDD),
-            param(dt64h, NDArrayDh),
-            param(dt64m, NDArrayDm),
-            param(dt64s, NDArrayDs),
-            param(dt64ms, NDArrayDms),
-            param(dt64us, NDArrayDus),
-            param(dt64ns, NDArrayDns),
-            param(dt64ps, NDArrayDps),
-            param(dt64fs, NDArrayDfs),
-            param(dt64as, NDArrayDas),
+            param(datetime64Y, NDArrayDY),
+            param(datetime64M, NDArrayDM),
+            param(datetime64W, NDArrayDW),
+            param(datetime64D, NDArrayDD),
+            param(datetime64h, NDArrayDh),
+            param(datetime64m, NDArrayDm),
+            param(datetime64s, NDArrayDs),
+            param(datetime64ms, NDArrayDms),
+            param(datetime64us, NDArrayDus),
+            param(datetime64ns, NDArrayDns),
+            param(datetime64ps, NDArrayDps),
+            param(datetime64fs, NDArrayDfs),
+            param(datetime64as, NDArrayDas),
             param(float, NDArrayF),
             param(int64, NDArrayI),
             param(object, NDArrayO),
@@ -486,77 +485,77 @@ class TestAnnotations:
         [
             # ndim 0
             param(bool, 0, NDArrayB0),
-            param(dt64D, 0, NDArrayD0),
-            param(dt64Y, 0, NDArrayDY0),
-            param(dt64M, 0, NDArrayDM0),
-            param(dt64W, 0, NDArrayDW0),
-            param(dt64D, 0, NDArrayDD0),
-            param(dt64h, 0, NDArrayDh0),
-            param(dt64m, 0, NDArrayDm0),
-            param(dt64s, 0, NDArrayDs0),
-            param(dt64ms, 0, NDArrayDms0),
-            param(dt64us, 0, NDArrayDus0),
-            param(dt64ns, 0, NDArrayDns0),
-            param(dt64ps, 0, NDArrayDps0),
-            param(dt64fs, 0, NDArrayDfs0),
-            param(dt64as, 0, NDArrayDas0),
+            param(datetime64D, 0, NDArrayD0),
+            param(datetime64Y, 0, NDArrayDY0),
+            param(datetime64M, 0, NDArrayDM0),
+            param(datetime64W, 0, NDArrayDW0),
+            param(datetime64D, 0, NDArrayDD0),
+            param(datetime64h, 0, NDArrayDh0),
+            param(datetime64m, 0, NDArrayDm0),
+            param(datetime64s, 0, NDArrayDs0),
+            param(datetime64ms, 0, NDArrayDms0),
+            param(datetime64us, 0, NDArrayDus0),
+            param(datetime64ns, 0, NDArrayDns0),
+            param(datetime64ps, 0, NDArrayDps0),
+            param(datetime64fs, 0, NDArrayDfs0),
+            param(datetime64as, 0, NDArrayDas0),
             param(float, 0, NDArrayF0),
             param(int64, 0, NDArrayI0),
             param(object, 0, NDArrayO0),
             # ndim 1
             param(bool, 1, NDArrayB1),
-            param(dt64D, 1, NDArrayD1),
-            param(dt64Y, 1, NDArrayDY1),
-            param(dt64M, 1, NDArrayDM1),
-            param(dt64W, 1, NDArrayDW1),
-            param(dt64D, 1, NDArrayDD1),
-            param(dt64h, 1, NDArrayDh1),
-            param(dt64m, 1, NDArrayDm1),
-            param(dt64s, 1, NDArrayDs1),
-            param(dt64ms, 1, NDArrayDms1),
-            param(dt64us, 1, NDArrayDus1),
-            param(dt64ns, 1, NDArrayDns1),
-            param(dt64ps, 1, NDArrayDps1),
-            param(dt64fs, 1, NDArrayDfs1),
-            param(dt64as, 1, NDArrayDas1),
+            param(datetime64D, 1, NDArrayD1),
+            param(datetime64Y, 1, NDArrayDY1),
+            param(datetime64M, 1, NDArrayDM1),
+            param(datetime64W, 1, NDArrayDW1),
+            param(datetime64D, 1, NDArrayDD1),
+            param(datetime64h, 1, NDArrayDh1),
+            param(datetime64m, 1, NDArrayDm1),
+            param(datetime64s, 1, NDArrayDs1),
+            param(datetime64ms, 1, NDArrayDms1),
+            param(datetime64us, 1, NDArrayDus1),
+            param(datetime64ns, 1, NDArrayDns1),
+            param(datetime64ps, 1, NDArrayDps1),
+            param(datetime64fs, 1, NDArrayDfs1),
+            param(datetime64as, 1, NDArrayDas1),
             param(float, 1, NDArrayF1),
             param(int64, 1, NDArrayI1),
             param(object, 1, NDArrayO1),
             # ndim 2
             param(bool, 2, NDArrayB2),
-            param(dt64D, 2, NDArrayD2),
-            param(dt64Y, 2, NDArrayDY2),
-            param(dt64M, 2, NDArrayDM2),
-            param(dt64W, 2, NDArrayDW2),
-            param(dt64D, 2, NDArrayDD2),
-            param(dt64h, 2, NDArrayDh2),
-            param(dt64m, 2, NDArrayDm2),
-            param(dt64s, 2, NDArrayDs2),
-            param(dt64ms, 2, NDArrayDms2),
-            param(dt64us, 2, NDArrayDus2),
-            param(dt64ns, 2, NDArrayDns2),
-            param(dt64ps, 2, NDArrayDps2),
-            param(dt64fs, 2, NDArrayDfs2),
-            param(dt64as, 2, NDArrayDas2),
+            param(datetime64D, 2, NDArrayD2),
+            param(datetime64Y, 2, NDArrayDY2),
+            param(datetime64M, 2, NDArrayDM2),
+            param(datetime64W, 2, NDArrayDW2),
+            param(datetime64D, 2, NDArrayDD2),
+            param(datetime64h, 2, NDArrayDh2),
+            param(datetime64m, 2, NDArrayDm2),
+            param(datetime64s, 2, NDArrayDs2),
+            param(datetime64ms, 2, NDArrayDms2),
+            param(datetime64us, 2, NDArrayDus2),
+            param(datetime64ns, 2, NDArrayDns2),
+            param(datetime64ps, 2, NDArrayDps2),
+            param(datetime64fs, 2, NDArrayDfs2),
+            param(datetime64as, 2, NDArrayDas2),
             param(float, 2, NDArrayF2),
             param(int64, 2, NDArrayI2),
             param(object, 2, NDArrayO2),
             # ndim 3
             param(bool, 3, NDArrayB3),
-            param(dt64D, 3, NDArrayD3),
-            param(dt64Y, 3, NDArrayDY3),
-            param(dt64M, 3, NDArrayDM3),
-            param(dt64W, 3, NDArrayDW3),
-            param(dt64D, 3, NDArrayDD3),
-            param(dt64h, 3, NDArrayDh3),
-            param(dt64m, 3, NDArrayDm3),
-            param(dt64s, 3, NDArrayDs3),
-            param(dt64ms, 3, NDArrayDms3),
-            param(dt64us, 3, NDArrayDus3),
-            param(dt64ns, 3, NDArrayDns3),
-            param(dt64ps, 3, NDArrayDps3),
-            param(dt64fs, 3, NDArrayDfs3),
-            param(dt64as, 3, NDArrayDas3),
+            param(datetime64D, 3, NDArrayD3),
+            param(datetime64Y, 3, NDArrayDY3),
+            param(datetime64M, 3, NDArrayDM3),
+            param(datetime64W, 3, NDArrayDW3),
+            param(datetime64D, 3, NDArrayDD3),
+            param(datetime64h, 3, NDArrayDh3),
+            param(datetime64m, 3, NDArrayDm3),
+            param(datetime64s, 3, NDArrayDs3),
+            param(datetime64ms, 3, NDArrayDms3),
+            param(datetime64us, 3, NDArrayDus3),
+            param(datetime64ns, 3, NDArrayDns3),
+            param(datetime64ps, 3, NDArrayDps3),
+            param(datetime64fs, 3, NDArrayDfs3),
+            param(datetime64as, 3, NDArrayDas3),
             param(float, 3, NDArrayF3),
             param(int64, 3, NDArrayI3),
             param(object, 3, NDArrayO3),
@@ -860,12 +859,12 @@ class TestDateToDatetime64ns:
     def test_example(self) -> None:
         result = date_to_datetime64(dt.date(2000, 1, 1))
         assert result == datetime64("2000-01-01", "D")
-        assert result.dtype == dt64D
+        assert result.dtype == datetime64D
 
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_datetime64(date)
-        assert result.dtype == dt64D
+        assert result.dtype == datetime64D
 
 
 class TestDatetimeToDatetime64:
@@ -875,12 +874,12 @@ class TestDatetimeToDatetime64:
             dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=tzinfo)
         )
         assert result == datetime64("2000-01-01 00:00:00.123456", "us")
-        assert result.dtype == dt64us
+        assert result.dtype == datetime64us
 
     @given(datetime=datetimes() | datetimes_utc())
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = datetime_to_datetime64(datetime)
-        assert result.dtype == dt64us
+        assert result.dtype == datetime64us
 
     @given(datetime=datetimes(timezones=just(HONG_KONG)))
     def test_error(self, *, datetime: dt.datetime) -> None:
@@ -959,7 +958,7 @@ class TestDatetime64ToDatetime:
 class TestDatetime64DTypeToUnit:
     @mark.parametrize(
         ("dtype", "expected"),
-        [param(dt64D, "D"), param(dt64Y, "Y"), param(dt64ns, "ns")],
+        [param(datetime64D, "D"), param(datetime64Y, "Y"), param(datetime64ns, "ns")],
     )
     def test_example(self, *, dtype: Any, expected: Datetime64Unit) -> None:
         assert datetime64_dtype_to_unit(dtype) == expected
@@ -972,7 +971,7 @@ class TestDatetime64DTypeToUnit:
 class TestDatetime64DUnitToDType:
     @mark.parametrize(
         ("unit", "expected"),
-        [param("D", dt64D), param("Y", dt64Y), param("ns", dt64ns)],
+        [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
     )
     def test_example(self, *, unit: Datetime64Unit, expected: Any) -> None:
         assert datetime64_unit_to_dtype(unit) == expected
@@ -1181,9 +1180,9 @@ class TestGetFillValue:
         "dtype",
         [
             param(bool),
-            param(dt64D),
-            param(dt64Y),
-            param(dt64ns),
+            param(datetime64D),
+            param(datetime64Y),
+            param(datetime64ns),
             param(float),
             param(int),
             param(object),
@@ -2107,6 +2106,6 @@ class TestYear:
 
     @given(date=dates())
     def test_array(self, *, date: dt.date) -> None:
-        dates = array([date], dtype=dt64D)
+        dates = array([date], dtype=datetime64D)
         years = year(dates)
         assert years.item() == date.year
