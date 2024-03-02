@@ -17,11 +17,16 @@ packages=(
     jupyter
     loguru
     luigi
-    memory_profiler
-    more_itertools
+    memory-profiler
+    more-itertools
     numpy
     pandas
     pathvalidate
+    polars
+    pqdm
+    pydantic
+    pyinstrument
+    pytest-check
     scipy
     xlrd
 )
