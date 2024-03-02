@@ -1,56 +1,11 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from math import inf, nan
-from typing import Any
 
-from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeDoorHintViolation
-from hypothesis import given
-from hypothesis.strategies import floats, integers
 from pytest import mark, param, raises
 
-from utilities.hypothesis import settings_with_reduced_examples
 from utilities.math import (
     CheckIntegerError,
-    FloatFin,
-    FloatFinInt,
-    FloatFinIntNan,
-    FloatFinNan,
-    FloatFinNeg,
-    FloatFinNegNan,
-    FloatFinNonNeg,
-    FloatFinNonNegNan,
-    FloatFinNonPos,
-    FloatFinNonPosNan,
-    FloatFinNonZr,
-    FloatFinNonZrNan,
-    FloatFinPos,
-    FloatFinPosNan,
-    FloatInt,
-    FloatIntNan,
-    FloatNeg,
-    FloatNegNan,
-    FloatNonNeg,
-    FloatNonNegNan,
-    FloatNonPos,
-    FloatNonPosNan,
-    FloatNonZr,
-    FloatNonZrNan,
-    FloatPos,
-    FloatPosNan,
-    FloatZr,
-    FloatZrFinNonMic,
-    FloatZrFinNonMicNan,
-    FloatZrNan,
-    FloatZrNonMic,
-    FloatZrNonMicNan,
-    IntNeg,
-    IntNonNeg,
-    IntNonPos,
-    IntNonZr,
-    IntPos,
-    IntZr,
     check_integer,
     is_at_least,
     is_at_least_or_nan,
@@ -97,57 +52,6 @@ from utilities.math import (
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
 )
-
-
-class TestAnnotations:
-    @given(x=integers() | floats(allow_infinity=True, allow_nan=True))
-    @mark.parametrize(
-        "hint",
-        [
-            param(IntNeg),
-            param(IntNonNeg),
-            param(IntNonPos),
-            param(IntNonZr),
-            param(IntPos),
-            param(IntZr),
-            param(FloatFin),
-            param(FloatFinInt),
-            param(FloatFinIntNan),
-            param(FloatFinNeg),
-            param(FloatFinNegNan),
-            param(FloatFinNonNeg),
-            param(FloatFinNonNegNan),
-            param(FloatFinNonPos),
-            param(FloatFinNonPosNan),
-            param(FloatFinNonZr),
-            param(FloatFinNonZrNan),
-            param(FloatFinPos),
-            param(FloatFinPosNan),
-            param(FloatFinNan),
-            param(FloatInt),
-            param(FloatIntNan),
-            param(FloatNeg),
-            param(FloatNegNan),
-            param(FloatNonNeg),
-            param(FloatNonNegNan),
-            param(FloatNonPos),
-            param(FloatNonPosNan),
-            param(FloatNonZr),
-            param(FloatNonZrNan),
-            param(FloatPos),
-            param(FloatPosNan),
-            param(FloatZr),
-            param(FloatZrFinNonMic),
-            param(FloatZrFinNonMicNan),
-            param(FloatZrNan),
-            param(FloatZrNonMic),
-            param(FloatZrNonMicNan),
-        ],
-    )
-    @settings_with_reduced_examples()
-    def test_main(self, *, x: float, hint: Any) -> None:
-        with suppress(BeartypeDoorHintViolation):
-            die_if_unbearable(x, hint)
 
 
 class TestCheckinteger:

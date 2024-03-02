@@ -27,6 +27,8 @@ pytest-rerunfailures==13.0
 pytest-xdist==3.5.0
 sortedcontainers==2.4.0
     # via hypothesis
+sqlalchemy==2.0.27
 tomli==2.0.1
     # via pytest
 typing-extensions==4.10.0
+    # via sqlalchemy

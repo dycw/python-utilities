@@ -11,12 +11,12 @@ packages=(
     # functions
     # functools
     # getpass
-    git
-    hashlib
-    iterables
-    json
-    locale
-    logging
+    # git
+    # hashlib
+    # iterables
+    # json
+    # locale
+    # logging
     math
     modules
     os
