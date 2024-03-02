@@ -4,9 +4,12 @@ from collections.abc import Iterator
 from os import getenv
 
 from _pytest.fixtures import SubRequest
-from pytest import LogCaptureFixture, fixture
+from pytest import LogCaptureFixture, fixture, mark
 
 from utilities.timer import Timer
+
+FLAKY = mark.flaky(retries=3, delay=1)
+
 
 # hypothesis
 

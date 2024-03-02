@@ -74,6 +74,7 @@ dev = [
   "exceptiongroup",
   "freezegun",
   "pytest-cov",
+  "pytest-retry",
   "pytest-instafail",
   "pytest-only",
   "pytest-randomly",

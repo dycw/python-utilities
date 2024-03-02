@@ -275,12 +275,14 @@ pytest==8.0.2
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
+    #   pytest-retry
     #   pytest-xdist
 pytest-check==2.3.1
 pytest-cov==4.1.0
 pytest-instafail==0.5.0
 pytest-only==2.0.0
 pytest-randomly==3.15.0
+pytest-retry==1.6.2
 pytest-xdist==3.5.0
 python-daemon==3.0.1
     # via luigi
