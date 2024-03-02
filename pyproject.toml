@@ -353,7 +353,6 @@ ignore = [
   "ANN101",  # flake8-annotations, missing-type-self
   "ANN102",  # flake8-annotations, missing-type-cls
   "ANN401",  # flake8-annotations, dynamically-typed-expression
-  "B008",  # flake8-bugbear, function-call-argument-default
   "COM812",  # flake8-commas, trailing-comma-missing
   "FIX002",  # flake8-fixme, line-contains-todo
   "PGH003",  # pygrep-hooks, blanket-type-ignore
