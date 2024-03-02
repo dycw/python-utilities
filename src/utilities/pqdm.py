@@ -24,7 +24,7 @@ def pmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore
+    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:
@@ -51,7 +51,7 @@ def pstarmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore
+    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:

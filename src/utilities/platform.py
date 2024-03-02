@@ -61,7 +61,7 @@ def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
         case System.linux:  # pragma: os-ne-linux
             yield from text
         case _ as never:  # type: ignore[]
-              assert_never(never)
+            assert_never(never)
 
 
 __all__ = [

@@ -290,7 +290,7 @@ class PathTarget(Target):
         self.path = Path(path)
 
     @override
-    def exists(self) -> bool:  # type: ignore
+    def exists(self) -> bool:  # type: ignore[]
         """Check if the target exists."""
         return self.path.exists()
 
@@ -303,7 +303,7 @@ class DatabaseTarget(Target):
         self._sel = sel.limit(1)
         self._engine = engine
 
-    def exists(self) -> bool:  # type: ignore
+    def exists(self) -> bool:  # type: ignore[]
         from utilities.sqlalchemy import (
             TableDoesNotExistError,
             redirect_table_does_not_exist,
@@ -353,7 +353,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore
+    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[]
         return _ExternalTaskDummyTarget(self)
 
 
@@ -365,7 +365,7 @@ class _ExternalTaskDummyTarget(Target):
         self._task = task
 
     @override
-    def exists(self) -> bool:  # type: ignore
+    def exists(self) -> bool:  # type: ignore[]
         return self._task.exists()
 
 

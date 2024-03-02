@@ -493,7 +493,7 @@ class TestSeriesMinMax:
     @mark.parametrize("func", [param(series_min), param(series_max)])
     def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
-        y = Series(data=NA, dtype=Int64)  # type: ignore
+        y = Series(data=NA, dtype=Int64)  # type: ignore[]
         with raises(
             SeriesMinMaxError,
             match=re.compile(

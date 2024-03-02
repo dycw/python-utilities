@@ -177,7 +177,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestConcatenatedArrays:
@@ -515,7 +515,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestFloatsExtra:
@@ -773,7 +773,7 @@ class TestIntDataArrays:
         assert array.dtype == int64
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestLiftDraw:
@@ -1023,7 +1023,7 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestTempDirs:

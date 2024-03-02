@@ -782,8 +782,7 @@ def setup_hypothesis_profiles(
                 case Profile.debug:
                     return Verbosity.debug
                 case _ as never:  # type: ignore[]
-                                       assert_never(never)
-
+                    assert_never(never)
 
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
     if "HYPOTHESIS_NO_SHRINK" not in environ:
@@ -1033,7 +1032,7 @@ def timestamps(
     timestamp = Timestamp(datetime)
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore
+        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore[]
         timestamp += timedelta
         _ = assume(min_value_ <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value_)

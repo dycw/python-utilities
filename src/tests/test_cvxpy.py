@@ -136,8 +136,8 @@ class TestAdd:
         self, *, x: float | NDArrayF | Expression, objective: type[Maximize | Minimize]
     ) -> None:
         var = _get_variable(objective)
-        assert isclose(add(x, var).value, add(x, var.value))  # type: ignore
-        assert isclose(add(var, x).value, add(var.value, x))  # type: ignore
+        assert isclose(add(x, var).value, add(x, var.value))  # type: ignore[]
+        assert isclose(add(var, x).value, add(var.value, x))  # type: ignore[]
 
     @mark.parametrize("objective1", [param(Maximize), param(Minimize)])
     @mark.parametrize("objective2", [param(Maximize), param(Minimize)])

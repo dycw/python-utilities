@@ -35,7 +35,7 @@ class TestMaybeYieldLowerCase:
             case System.linux:  # pragma: os-ne-linux
                 assert result == text
             case _ as never:  # type: ignore[]
-                  assert_never(never)
+                assert_never(never)
 
 
 class TestSystem:

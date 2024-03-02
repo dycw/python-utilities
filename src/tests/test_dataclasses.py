@@ -28,7 +28,7 @@ class TestGetDataClassClass:
 
     def test_error(self) -> None:
         with raises(GetDataClassClassError):
-            _ = get_dataclass_class(None)  # type: ignore
+            _ = get_dataclass_class(None)  # type: ignore[]
 
 
 class TestIsDataClassClass:
