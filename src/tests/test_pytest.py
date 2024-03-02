@@ -182,7 +182,7 @@ class TestThrottle:
         self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
         root_str = str(tmp_path)
-        duration = "0.1" if as_float else "dt.timedelta(seconds=0.1)"
+        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
         contents = f"""
             import datetime as dt
             from utilities.pytest import throttle
@@ -194,7 +194,7 @@ class TestThrottle:
         _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(0.1)
+        sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
     @FLAKY
@@ -215,7 +215,7 @@ class TestThrottle:
         contents = f"""
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=0.1)
+            @throttle(root={root_str!r}, duration=1.0)
             def test_main(is_pass):
                 assert is_pass
             """
@@ -227,7 +227,7 @@ class TestThrottle:
             for _ in range(2):
                 testdir.runpytest("--pass").assert_outcomes(skipped=1)
             if i == 0:
-                sleep(0.1)
+                sleep(1.0)
 
     @FLAKY
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -247,7 +247,7 @@ class TestThrottle:
         contents = f"""
             from utilities.pytest import throttle
 
-            @throttle(root={root_str!r}, duration=0.1, on_try=True)
+            @throttle(root={root_str!r}, duration=1.0, on_try=True)
             def test_main(is_pass):
                 assert is_pass
             """
@@ -256,12 +256,12 @@ class TestThrottle:
             testdir.runpytest().assert_outcomes(failed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
-            sleep(0.1)
+            sleep(1.0)
             testdir.runpytest("--pass").assert_outcomes(passed=1)
             for _ in range(2):
                 testdir.runpytest().assert_outcomes(skipped=1)
             if i == 0:
-                sleep(0.1)
+                sleep(1.0)
 
     @FLAKY
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
@@ -272,14 +272,14 @@ class TestThrottle:
             from utilities.pytest import throttle
 
             @mark.parametrize('arg', [10 * printable])
-            @throttle(root={root_str!r}, duration=0.1)
+            @throttle(root={root_str!r}, duration=1.0)
             def test_main(*, arg: str):
                 assert True
             """
         _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(0.1)
+        sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
     def test_signature(self) -> None:
