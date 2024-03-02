@@ -8,7 +8,7 @@ requires = ["hatchling"]
 # project
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
-dependencies = ["typing-extensions >= 4.9.0"]
+dependencies = ["typing-extensions"]
 dynamic = ["version"]
 name = "dycw-utilities"
 readme = "README.md"
@@ -72,6 +72,7 @@ dev = [
   "exceptiongroup",
   "hypothesis",
   "pytest",
+  "pytest-cov",
   "pytest-instafail",
   "pytest-only",
   "pytest-randomly",
@@ -271,9 +272,9 @@ addopts = [
   "-ra",
   "-vv",
   "--color=auto",
-  # "--cov=utilities",
-  # "--cov-config=pyproject.toml",
-  # "--cov-report=html",
+  "--cov=utilities",
+  "--cov-config=pyproject.toml",
+  "--cov-report=html",
   "--strict-markers",
 ]
 filterwarnings = [

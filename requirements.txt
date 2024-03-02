@@ -77,6 +77,8 @@ comm==0.2.1
     # via ipykernel
 contourpy==1.2.0
     # via bokeh
+coverage==7.4.3
+    # via pytest-cov
 cryptography==42.0.5
 cvxpy==1.4.2
 cx-oracle==8.3.0
@@ -408,11 +410,13 @@ pysocks==1.7.1
 pytest==8.0.2
     # via
     #   pytest-check
+    #   pytest-cov
     #   pytest-instafail
     #   pytest-only
     #   pytest-randomly
     #   pytest-xdist
 pytest-check==2.3.1
+pytest-cov==4.1.0
 pytest-instafail==0.5.0
 pytest-only==2.0.0
 pytest-randomly==3.15.0
@@ -529,6 +533,7 @@ toml==0.10.2
     # via streamlit
 tomli==2.0.1
     # via
+    #   coverage
     #   hatchling
     #   jupyterlab
     #   pytest
