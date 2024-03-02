@@ -54,7 +54,7 @@ from utilities.math import (
 )
 
 
-class TestCheckinteger:
+class TestCheckInteger:
     def test_equal_pass(self) -> None:
         check_integer(0, equal=0)
 
