@@ -34,9 +34,11 @@ class TestWriter:
             if IS_WINDOWS
             else escape(str(path))
         )
-        with raises(FileExistsError, match=match), writer(path) as temp2, temp2.open(
-            mode="w"
-        ) as fh2:
+        with (
+            raises(FileExistsError, match=match),
+            writer(path) as temp2,
+            temp2.open(mode="w") as fh2,
+        ):
             _ = fh2.write("new contents")
 
     def test_file_overwrite(self, *, tmp_path: Path) -> None:

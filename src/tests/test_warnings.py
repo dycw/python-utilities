@@ -20,8 +20,7 @@ class TestCatchWarningsAsErrors:
         assert x is None
 
     def test_one_warning(self) -> None:
-        class CustomWarning(UserWarning):
-            ...
+        class CustomWarning(UserWarning): ...
 
         with warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
@@ -30,17 +29,16 @@ class TestCatchWarningsAsErrors:
 
     @given(data=data())
     def test_multiple_warnings(self, data: DataObject) -> None:
-        class FirstWarning(UserWarning):
-            ...
+        class FirstWarning(UserWarning): ...
 
-        class SecondWarning(UserWarning):
-            ...
+        class SecondWarning(UserWarning): ...
 
         category = data.draw(sampled_from([FirstWarning, SecondWarning]))
         with warns(category):
             warn("", category=category, stacklevel=2)
-        with raises(category), catch_warnings_as_errors(
-            category=(FirstWarning, SecondWarning)
+        with (
+            raises(category),
+            catch_warnings_as_errors(category=(FirstWarning, SecondWarning)),
         ):
             warn("", category=category, stacklevel=2)
 
@@ -56,8 +54,7 @@ class TestSuppressWarnings:
         assert x is None
 
     def test_one_warning(self) -> None:
-        class CustomWarning(UserWarning):
-            ...
+        class CustomWarning(UserWarning): ...
 
         with warns(CustomWarning):
             warn("", category=CustomWarning, stacklevel=2)
@@ -66,11 +63,9 @@ class TestSuppressWarnings:
 
     @given(data=data())
     def test_multiple_warnings(self, data: DataObject) -> None:
-        class FirstWarning(UserWarning):
-            ...
+        class FirstWarning(UserWarning): ...
 
-        class SecondWarning(UserWarning):
-            ...
+        class SecondWarning(UserWarning): ...
 
         category = data.draw(sampled_from([FirstWarning, SecondWarning]))
         with warns(category):

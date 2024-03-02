@@ -66,29 +66,25 @@ class OneNonUniqueError(OneError[_T]):
 
 
 @overload
-def transpose(iterable: Iterable[tuple[_T1]], /) -> tuple[tuple[_T1, ...]]:
-    ...
+def transpose(iterable: Iterable[tuple[_T1]], /) -> tuple[tuple[_T1, ...]]: ...
 
 
 @overload
 def transpose(
     iterable: Iterable[tuple[_T1, _T2]], /
-) -> tuple[tuple[_T1, ...], tuple[_T2, ...]]:
-    ...
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...]]: ...
 
 
 @overload
 def transpose(
     iterable: Iterable[tuple[_T1, _T2, _T3]], /
-) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...]]:
-    ...
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...]]: ...
 
 
 @overload
 def transpose(
     iterable: Iterable[tuple[_T1, _T2, _T3, _T4]], /
-) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...]]:
-    ...
+) -> tuple[tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...]]: ...
 
 
 @overload
@@ -96,8 +92,7 @@ def transpose(
     iterable: Iterable[tuple[_T1, _T2, _T3, _T4, _T5]], /
 ) -> tuple[
     tuple[_T1, ...], tuple[_T2, ...], tuple[_T3, ...], tuple[_T4, ...], tuple[_T5, ...]
-]:
-    ...
+]: ...
 
 
 def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...]:

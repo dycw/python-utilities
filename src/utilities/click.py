@@ -20,6 +20,9 @@ from utilities.datetime import (
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
 
+if TYPE_CHECKING:
+    from sqlalchemy import Engine as _Engine
+
 
 class Date(ParamType):
     """A date-valued parameter."""
@@ -142,10 +145,6 @@ workers_option = option(
 
 
 # sqlalchemy
-
-
-if TYPE_CHECKING:
-    from sqlalchemy import Engine as _Engine
 
 
 class Engine(ParamType):

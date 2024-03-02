@@ -57,15 +57,13 @@ def get_repo_root(*, cwd: PathLike = valid_path_cwd()) -> Path:
         return valid_path(output.strip("\n"))
 
 
-class GetRepoRootError(Exception):
-    ...
+class GetRepoRootError(Exception): ...
 
 
 @overload
 def get_repo_root_or_cwd_sub_path(
     if_exists: Callable[[Path], _T], /, *, cwd: PathLike = ..., if_missing: None = ...
-) -> _T | None:
-    ...
+) -> _T | None: ...
 
 
 @overload
@@ -75,8 +73,7 @@ def get_repo_root_or_cwd_sub_path(
     *,
     cwd: PathLike = ...,
     if_missing: Callable[[Path], _U] = ...,
-) -> _T | _U:
-    ...
+) -> _T | _U: ...
 
 
 def get_repo_root_or_cwd_sub_path(

@@ -11,8 +11,7 @@ from utilities.tempfile import TemporaryDirectory
 from utilities.types import PathLike
 
 
-class DirectoryExistsError(Exception):
-    ...
+class DirectoryExistsError(Exception): ...
 
 
 @contextmanager
@@ -42,8 +41,7 @@ def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
             raise WriterError(msg)
 
 
-class WriterError(Exception):
-    ...
+class WriterError(Exception): ...
 
 
 __all__ = ["DirectoryExistsError", "WriterError", "writer"]

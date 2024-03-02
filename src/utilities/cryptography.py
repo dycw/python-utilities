@@ -25,8 +25,7 @@ def get_fernet(*, env_var: str = _ENV_VAR) -> Fernet:
     return Fernet(key.encode())
 
 
-class GetFernetError(Exception):
-    ...
+class GetFernetError(Exception): ...
 
 
 __all__ = ["GetFernetError", "decrypt", "encrypt", "get_fernet"]

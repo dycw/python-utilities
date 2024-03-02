@@ -4,7 +4,7 @@ from pathlib import Path
 
 from holoviews import Curve
 from hypothesis import given
-from hypothesis.strategies import floats
+from hypothesis.strategies import floats, integers
 from pytest import raises
 
 from utilities.holoviews import (
@@ -39,7 +39,14 @@ class TestApplyOpts:
 
 
 class TestPlotCurve:
-    @given(array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)))
+    @given(
+        array=float_data_arrays(
+            min_value=-1.0,
+            max_value=1.0,
+            dim=int_indexes(),
+            name=text_ascii(min_size=1),
+        )
+    )
     def test_main(self, *, array: DataArrayF1) -> None:
         curve = plot_curve(array)
         assert curve.kdims == ["dim"]
@@ -47,7 +54,12 @@ class TestPlotCurve:
         assert curve.label == array.name
 
     @given(
-        array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)),
+        array=float_data_arrays(
+            min_value=-1.0,
+            max_value=1.0,
+            dim=int_indexes(),
+            name=text_ascii(min_size=1),
+        ),
         label=text_ascii(min_size=1),
     )
     def test_label(self, *, array: DataArrayF1, label: str) -> None:
@@ -55,11 +67,28 @@ class TestPlotCurve:
         assert curve.label == label
 
     @given(
-        array=float_data_arrays(dim=int_indexes(), name=text_ascii(min_size=1)),
+        array=float_data_arrays(
+            min_value=-1.0,
+            max_value=1.0,
+            dim=int_indexes(),
+            name=text_ascii(min_size=1),
+        ),
         aspect=floats(1.0, 10.0),
     )
     def test_aspect(self, *, array: DataArrayF1, aspect: float) -> None:
         _ = plot_curve(array, aspect=aspect)
+
+    @given(
+        array=float_data_arrays(
+            min_value=-1.0,
+            max_value=1.0,
+            dim=int_indexes(),
+            name=text_ascii(min_size=1),
+        ),
+        smooth=integers(1, 10),
+    )
+    def test_smooth(self, *, array: DataArrayF1, smooth: int) -> None:
+        _ = plot_curve(array, smooth=smooth)
 
     @given(array=float_data_arrays(dim=int_indexes()))
     def test_array_name_not_a_string(self, *, array: DataArrayF1) -> None:

@@ -94,8 +94,7 @@ class TestAwaitTime:
 class TestBuild:
     @given(namespace_mixin=namespace_mixins())
     def test_main(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task):
-            ...
+        class Example(namespace_mixin, Task): ...
 
         _ = build([Example()], local_scheduler=True)
 
@@ -199,8 +198,7 @@ class TestExternalFile:
     def test_main(self, *, namespace_mixin: Any, root: Path) -> None:
         path = valid_path(root, "file")
 
-        class Example(namespace_mixin, ExternalFile):
-            ...
+        class Example(namespace_mixin, ExternalFile): ...
 
         task = Example(path)
         assert not task.exists()
@@ -242,8 +240,7 @@ class TestFrozenSetStrsParameter:
 class TestGetDependencies:
     @given(namespace_mixin=namespace_mixins())
     def test_recursive(self, *, namespace_mixin: Any) -> None:
-        class A(namespace_mixin, Task):
-            ...
+        class A(namespace_mixin, Task): ...
 
         class B(namespace_mixin, Task):
             @override
@@ -262,8 +259,7 @@ class TestGetDependencies:
 
     @given(namespace_mixin=namespace_mixins())
     def test_non_recursive(self, *, namespace_mixin: Any) -> None:
-        class A(namespace_mixin, Task):
-            ...
+        class A(namespace_mixin, Task): ...
 
         class B(namespace_mixin, Task):
             @override

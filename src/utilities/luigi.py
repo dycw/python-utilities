@@ -414,8 +414,7 @@ def build(
     local_scheduler: bool = False,
     log_level: LogLevel | None = None,
     workers: int | None = None,
-) -> bool:
-    ...
+) -> bool: ...
 
 
 @overload
@@ -427,8 +426,7 @@ def build(
     local_scheduler: bool = False,
     log_level: LogLevel | None = None,
     workers: int | None = None,
-) -> LuigiRunResult:
-    ...
+) -> LuigiRunResult: ...
 
 
 def build(
@@ -456,15 +454,13 @@ _Task = TypeVar("_Task", bound=Task)
 @overload
 def clone(
     task: Task, cls: type[_Task], /, *, await_: Literal[True], **kwargs: Any
-) -> AwaitTask[_Task]:
-    ...
+) -> AwaitTask[_Task]: ...
 
 
 @overload
 def clone(
     task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
-) -> _Task:
-    ...
+) -> _Task: ...
 
 
 def clone(

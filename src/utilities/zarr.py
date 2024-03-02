@@ -39,12 +39,10 @@ from utilities.types import PathLike, get_class_name, is_sized_not_str
 IselIndexer = int | slice | Sequence[int] | NDArrayB1 | NDArrayI1
 
 
-class GetIndexByNameError(Exception):
-    ...
+class GetIndexByNameError(Exception): ...
 
 
-class GetSelIndexerError(Exception):
-    ...
+class GetSelIndexerError(Exception): ...
 
 
 class NDArrayWithIndexes:

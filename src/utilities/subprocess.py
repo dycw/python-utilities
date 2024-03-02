@@ -42,8 +42,7 @@ def get_shell_output(
         )
 
 
-class GetShellOutputError(Exception):
-    ...
+class GetShellOutputError(Exception): ...
 
 
 def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:

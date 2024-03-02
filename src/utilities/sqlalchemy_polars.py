@@ -71,8 +71,7 @@ def insert_dataframe(
     )
 
 
-class InsertDataFrameError(Exception):
-    ...
+class InsertDataFrameError(Exception): ...
 
 
 def _insert_dataframe_map_df_schema_to_table(
@@ -113,8 +112,7 @@ def _insert_dataframe_map_df_column_to_table_schema(
     return db_col_name
 
 
-class _InsertDataFrameMapDFColumnToTableSchemaError(Exception):
-    ...
+class _InsertDataFrameMapDFColumnToTableSchemaError(Exception): ...
 
 
 def _insert_dataframe_map_df_column_to_table_column_and_type(
@@ -133,8 +131,7 @@ def _insert_dataframe_map_df_column_to_table_column_and_type(
         return one((n, t) for n, t in items if func(n) == target)
 
 
-class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception):
-    ...
+class _InsertDataFrameMapDFColumnToTableColumnAndTypeError(Exception): ...
 
 
 def _insert_dataframe_check_df_and_db_types(
@@ -167,8 +164,7 @@ def select_to_dataframe(
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
-) -> DataFrame:
-    ...
+) -> DataFrame: ...
 
 
 @overload
@@ -184,8 +180,7 @@ def select_to_dataframe(
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
-) -> DataFrame:
-    ...
+) -> DataFrame: ...
 
 
 @overload
@@ -201,8 +196,7 @@ def select_to_dataframe(
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
-) -> Iterator[DataFrame]:
-    ...
+) -> Iterator[DataFrame]: ...
 
 
 @overload
@@ -218,8 +212,7 @@ def select_to_dataframe(
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
-) -> Iterator[DataFrame]:
-    ...
+) -> Iterator[DataFrame]: ...
 
 
 def select_to_dataframe(
@@ -331,8 +324,7 @@ def select_to_dataframe(
     raise SelectToDataFrameError(msg)
 
 
-class SelectToDataFrameError(Exception):
-    ...
+class SelectToDataFrameError(Exception): ...
 
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
@@ -388,8 +380,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(  # noqa: PLR0911
     raise _SelectToDataFrameMapTableColumnToDTypeError(msg)  # pragma: no cover
 
 
-class _SelectToDataFrameMapTableColumnToDTypeError(Exception):
-    ...
+class _SelectToDataFrameMapTableColumnToDTypeError(Exception): ...
 
 
 def _select_to_dataframe_check_duplicates(

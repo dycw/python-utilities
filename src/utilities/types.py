@@ -26,34 +26,29 @@ _T5 = TypeVar("_T5")
 
 
 @overload
-def ensure_class(obj: Any, cls: type[_T], /) -> _T:
-    ...
+def ensure_class(obj: Any, cls: type[_T], /) -> _T: ...
 
 
 @overload
-def ensure_class(obj: Any, cls: tuple[type[_T1], type[_T2]], /) -> _T1 | _T2:
-    ...
+def ensure_class(obj: Any, cls: tuple[type[_T1], type[_T2]], /) -> _T1 | _T2: ...
 
 
 @overload
 def ensure_class(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3]], /
-) -> _T1 | _T2 | _T3:
-    ...
+) -> _T1 | _T2 | _T3: ...
 
 
 @overload
 def ensure_class(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4]], /
-) -> _T1 | _T2 | _T3 | _T4:
-    ...
+) -> _T1 | _T2 | _T3 | _T4: ...
 
 
 @overload
 def ensure_class(
     obj: Any, cls: tuple[type[_T1], type[_T2], type[_T3], type[_T4], type[_T5]], /
-) -> _T1 | _T2 | _T3 | _T4 | _T5:
-    ...
+) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
 
 
 def ensure_class(obj: Any, cls: type[_T] | tuple[type[_T], ...], /) -> _T:
@@ -138,13 +133,11 @@ class EnsureSizedNotStrError(Exception):
 
 
 @overload
-def get_class(obj: type[_T], /) -> type[_T]:
-    ...
+def get_class(obj: type[_T], /) -> type[_T]: ...
 
 
 @overload
-def get_class(obj: _T, /) -> type[_T]:
-    ...
+def get_class(obj: _T, /) -> type[_T]: ...
 
 
 def get_class(obj: _T | type[_T], /) -> type[_T]:

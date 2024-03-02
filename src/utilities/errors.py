@@ -52,8 +52,7 @@ def redirect_error(
         raise
 
 
-class RedirectErrorError(Exception):
-    ...
+class RedirectErrorError(Exception): ...
 
 
 _T = TypeVar("_T")

@@ -35,8 +35,7 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     return date
 
 
-class AddWeekdaysError(Exception):
-    ...
+class AddWeekdaysError(Exception): ...
 
 
 def date_to_datetime(
@@ -133,8 +132,7 @@ def local_timezone() -> dt.tzinfo:
     return tz
 
 
-class LocalTimeZoneError(Exception):
-    ...
+class LocalTimeZoneError(Exception): ...
 
 
 def maybe_sub_pct_y(text: str, /) -> str:
@@ -160,8 +158,7 @@ def parse_date(date: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.date:
     raise ParseDateError(date)
 
 
-class ParseDateError(Exception):
-    ...
+class ParseDateError(Exception): ...
 
 
 def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
@@ -183,8 +180,7 @@ def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
     raise ParseDateTimeError(datetime)
 
 
-class ParseDateTimeError(Exception):
-    ...
+class ParseDateTimeError(Exception): ...
 
 
 def parse_time(time: str, /) -> dt.time:
@@ -197,8 +193,7 @@ def parse_time(time: str, /) -> dt.time:
     raise ParseTimeError(time)
 
 
-class ParseTimeError(Exception):
-    ...
+class ParseTimeError(Exception): ...
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
@@ -230,8 +225,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-class ParseTimedeltaError(Exception):
-    ...
+class ParseTimedeltaError(Exception): ...
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
@@ -301,8 +295,7 @@ def yield_weekdays(
         raise YieldWeekdaysError(msg)
 
 
-class YieldWeekdaysError(Exception):
-    ...
+class YieldWeekdaysError(Exception): ...
 
 
 __all__ = [

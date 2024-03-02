@@ -108,8 +108,7 @@ def _check_column_collections_equal(
         _check_columns_equal(x_i, y_i, snake=snake, primary_key=primary_key)
 
 
-class _CheckColumnCollectionsEqualError(Exception):
-    ...
+class _CheckColumnCollectionsEqualError(Exception): ...
 
 
 def _check_columns_equal(
@@ -126,8 +125,7 @@ def _check_columns_equal(
         raise _CheckColumnsEqualError(msg)
 
 
-class _CheckColumnsEqualError(Exception):
-    ...
+class _CheckColumnsEqualError(Exception): ...
 
 
 def _check_column_types_equal(x: Any, y: Any, /) -> None:
@@ -159,8 +157,7 @@ def _check_column_types_equal(x: Any, y: Any, /) -> None:
         _check_column_types_uuid_equal(x_inst, y_inst)
 
 
-class _CheckColumnTypesEqualError(Exception):
-    ...
+class _CheckColumnTypesEqualError(Exception): ...
 
 
 def _check_column_types_boolean_equal(x: Any, y: Any, /) -> None:
@@ -172,8 +169,7 @@ def _check_column_types_boolean_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesBooleanEqualError(msg)
 
 
-class _CheckColumnTypesBooleanEqualError(Exception):
-    ...
+class _CheckColumnTypesBooleanEqualError(Exception): ...
 
 
 def _check_column_types_datetime_equal(x: Any, y: Any, /) -> None:
@@ -183,8 +179,7 @@ def _check_column_types_datetime_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesDateTimeEqualError(msg)
 
 
-class _CheckColumnTypesDateTimeEqualError(Exception):
-    ...
+class _CheckColumnTypesDateTimeEqualError(Exception): ...
 
 
 def _check_column_types_enum_equal(x: Any, y: Any, /) -> None:
@@ -209,8 +204,7 @@ def _check_column_types_enum_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesEnumEqualError(msg)
 
 
-class _CheckColumnTypesEnumEqualError(Exception):
-    ...
+class _CheckColumnTypesEnumEqualError(Exception): ...
 
 
 def _check_column_types_float_equal(x: Any, y: Any, /) -> None:
@@ -224,8 +218,7 @@ def _check_column_types_float_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesFloatEqualError(msg)
 
 
-class _CheckColumnTypesFloatEqualError(Exception):
-    ...
+class _CheckColumnTypesFloatEqualError(Exception): ...
 
 
 def _check_column_types_interval_equal(x: Any, y: Any, /) -> None:
@@ -239,8 +232,7 @@ def _check_column_types_interval_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesIntervalEqualError(msg)
 
 
-class _CheckColumnTypesIntervalEqualError(Exception):
-    ...
+class _CheckColumnTypesIntervalEqualError(Exception): ...
 
 
 def _check_column_types_large_binary_equal(x: Any, y: Any, /) -> None:
@@ -250,8 +242,7 @@ def _check_column_types_large_binary_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesLargeBinaryEqualError(msg)
 
 
-class _CheckColumnTypesLargeBinaryEqualError(Exception):
-    ...
+class _CheckColumnTypesLargeBinaryEqualError(Exception): ...
 
 
 def _check_column_types_numeric_equal(x: Any, y: Any, /) -> None:
@@ -267,8 +258,7 @@ def _check_column_types_numeric_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesNumericEqualError(msg)
 
 
-class _CheckColumnTypesNumericEqualError(Exception):
-    ...
+class _CheckColumnTypesNumericEqualError(Exception): ...
 
 
 def _check_column_types_string_equal(x: Any, y: Any, /) -> None:
@@ -280,8 +270,7 @@ def _check_column_types_string_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesStringEqualError(msg)
 
 
-class _CheckColumnTypesStringEqualError(Exception):
-    ...
+class _CheckColumnTypesStringEqualError(Exception): ...
 
 
 def _check_column_types_uuid_equal(x: Any, y: Any, /) -> None:
@@ -293,8 +282,7 @@ def _check_column_types_uuid_equal(x: Any, y: Any, /) -> None:
         raise _CheckColumnTypesUuidEqualError(msg)
 
 
-class _CheckColumnTypesUuidEqualError(Exception):
-    ...
+class _CheckColumnTypesUuidEqualError(Exception): ...
 
 
 def check_engine(
@@ -327,8 +315,7 @@ def check_engine(
             check_length(rows, equal_or_approx=num_tables)
 
 
-class CheckEngineError(Exception):
-    ...
+class CheckEngineError(Exception): ...
 
 
 def check_table_against_reflection(
@@ -388,8 +375,7 @@ def _check_table_or_column_names_equal(
         raise _CheckTableOrColumnNamesEqualError(msg)
 
 
-class _CheckTableOrColumnNamesEqualError(Exception):
-    ...
+class _CheckTableOrColumnNamesEqualError(Exception): ...
 
 
 def columnwise_max(*columns: Any) -> Any:
@@ -500,8 +486,7 @@ def ensure_tables_created(
 ) -> None:
     """Ensure a table/set of tables is/are created."""
 
-    class TableAlreadyExistsError(Exception):
-        ...
+    class TableAlreadyExistsError(Exception): ...
 
     match dialect := get_dialect(engine):
         case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
@@ -517,9 +502,11 @@ def ensure_tables_created(
 
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with suppress(TableAlreadyExistsError), redirect_error(
-            DatabaseError, TableAlreadyExistsError, match=match
-        ), engine.begin() as conn:
+        with (
+            suppress(TableAlreadyExistsError),
+            redirect_error(DatabaseError, TableAlreadyExistsError, match=match),
+            engine.begin() as conn,
+        ):
             table.create(conn)
 
 
@@ -529,9 +516,11 @@ def ensure_tables_dropped(
     """Ensure a table/set of tables is/are dropped."""
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with suppress(TableDoesNotExistError), redirect_table_does_not_exist(
-            engine
-        ), engine.begin() as conn:
+        with (
+            suppress(TableDoesNotExistError),
+            redirect_table_does_not_exist(engine),
+            engine.begin() as conn,
+        ):
             table.drop(conn)
 
 
@@ -682,8 +671,7 @@ def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
         raise _InsertItemsCollectError(msg)
 
 
-class _InsertItemsCollectError(Exception):
-    ...
+class _InsertItemsCollectError(Exception): ...
 
 
 def _insert_items_collect_iterable(
@@ -699,8 +687,7 @@ def _insert_items_collect_iterable(
             raise _InsertItemsCollectIterableError(msg)
 
 
-class _InsertItemsCollectIterableError(Exception):
-    ...
+class _InsertItemsCollectIterableError(Exception): ...
 
 
 def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
@@ -751,8 +738,7 @@ def parse_engine(engine: str, /) -> Engine:
         return _create_engine(engine, poolclass=NullPool)
 
 
-class ParseEngineError(Exception):
-    ...
+class ParseEngineError(Exception): ...
 
 
 @contextmanager
@@ -776,8 +762,7 @@ def redirect_table_does_not_exist(engine: Engine, /) -> Iterator[None]:
         yield
 
 
-class TableDoesNotExistError(Exception):
-    ...
+class TableDoesNotExistError(Exception): ...
 
 
 def reflect_table(

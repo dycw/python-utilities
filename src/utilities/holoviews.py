@@ -8,6 +8,7 @@ from holoviews.plotting import bokeh
 from typing_extensions import override
 
 from utilities.iterables import _CheckLengthMinError, check_length
+from utilities.math import IntPos
 from utilities.text import EnsureStrError, ensure_str
 from utilities.types import PathLike, get_class_name
 
@@ -33,7 +34,7 @@ def plot_curve(
     /,
     *,
     label: str | None = None,
-    smooth: int | None = None,
+    smooth: IntPos | None = None,
     aspect: float | None = None,
 ) -> Curve:
     """Plot a 1D array as a curve."""
@@ -64,8 +65,7 @@ def plot_curve(
     return curve
 
 
-class PlotCurveError(Exception):
-    ...
+class PlotCurveError(Exception): ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -95,7 +95,7 @@ def relabel_plot(plot: _T, label: str, /) -> _T:
 
 def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a plot to disk."""
-    from utilities.atomicwrites import writer
+    from utilities.atomicwrites import writer  # pragma: os-ne-linux
 
     with writer(path, overwrite=overwrite) as temp:  # pragma: os-ne-linux
         save(plot, temp, backend="bokeh")

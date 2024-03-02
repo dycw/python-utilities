@@ -87,7 +87,7 @@ class TestClickOptions:
             param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
-            param(Engine, sqlite_engines(), serialize_engine),
+            param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
         ],
     )
     def test_main(
@@ -195,13 +195,13 @@ class TestLoadSettings:
         default, value = data.draw(tuples(strategy, strategy))
         self._run_test(test_cls, default, root, appname, serialize, value, eq)
 
-    @skipif_windows  # writing \\ to file
     @given(
         default=sqlite_engines(),
         appname=app_names,
         root=temp_paths(),
         value=sqlite_engines(),
     )
+    @skipif_windows  # writing \\ to file
     def test_engines(
         self, *, default: Engine, root: Path, appname: str, value: Engine
     ) -> None:

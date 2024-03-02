@@ -26,8 +26,7 @@ def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     raise GetDataClassClassError(msg)
 
 
-class GetDataClassClassError(Exception):
-    ...
+class GetDataClassClassError(Exception): ...
 
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:

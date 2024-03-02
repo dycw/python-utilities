@@ -7,7 +7,7 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
-from numpy import arange, array, isclose, nan, sort, zeros
+from numpy import arange, array, errstate, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
 from zarr import open_array
@@ -99,7 +99,8 @@ class TestNDArrayWithIndexes:
         with yield_array_with_indexes(indexes, path, fill_value=fill_value):
             pass
         view = NDArrayWithIndexes(path)
-        assert isclose(view.ndarray, fill_value, equal_nan=True).all()
+        with errstate(invalid="ignore"):
+            assert isclose(view.ndarray, fill_value, equal_nan=True).all()
 
     @mark.parametrize(
         ("indexer", "expected"),

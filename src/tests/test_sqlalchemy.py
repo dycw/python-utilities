@@ -1223,9 +1223,11 @@ class TestRedirectTableDoesNotExist:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(TableDoesNotExistError), redirect_table_does_not_exist(
-            engine
-        ), engine.begin() as conn:
+        with (
+            raises(TableDoesNotExistError),
+            redirect_table_does_not_exist(engine),
+            engine.begin() as conn,
+        ):
             _ = conn.execute(select(table))
 
 

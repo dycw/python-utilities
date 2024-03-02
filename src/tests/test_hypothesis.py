@@ -150,8 +150,9 @@ class TestAssumeDoesNotRaise:
     def test_with_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
-            with raises(ValueError, match=msg), assume_does_not_raise(
-                ValueError, match="wrong"
+            with (
+                raises(ValueError, match=msg),
+                assume_does_not_raise(ValueError, match="wrong"),
             ):
                 raise ValueError(msg)
 
@@ -824,15 +825,13 @@ class TestNamespaceMixins:
 
     @given(namespace_mixin=namespace_mixins())
     def test_first(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task):
-            ...
+        class Example(namespace_mixin, Task): ...
 
         _ = Example()
 
     @given(namespace_mixin=namespace_mixins())
     def test_second(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task):
-            ...
+        class Example(namespace_mixin, Task): ...
 
         _ = Example()
 
