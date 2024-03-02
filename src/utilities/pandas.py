@@ -607,7 +607,7 @@ def union_indexes(
                     name = rname
                 case "raise":
                     raise UnionIndexesError(left=left, right=right)
-                case _ as never:  # type: ignore
+                case _ as never:  # type: ignore[]
                     assert_never(never)
         return left.union(right).rename(name)
 

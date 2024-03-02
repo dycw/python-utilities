@@ -80,7 +80,7 @@ def _get_memory_usage() -> Item:  # type: ignore
             virtual_kwargs["virtual_cached"] = virtual.cached
             virtual_kwargs["virtual_shared"] = virtual.shared
             virtual_kwargs["virtual_slab"] = virtual.slab
-        case _ as never:  # type: ignore
+        case _ as never:  # type: ignore[]
             assert_never(never)
     swap = swap_memory()
     return Item(

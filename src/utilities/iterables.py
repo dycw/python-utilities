@@ -115,7 +115,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:  # type: ignore
+            case _ as never:  # type: ignore[]
                 assert_never(never)
 
 
