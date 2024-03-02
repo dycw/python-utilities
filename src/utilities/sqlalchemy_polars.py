@@ -33,7 +33,6 @@ from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import identity
-from utilities.humps import snake_case
 from utilities.iterables import (
     CheckDuplicatesError,
     OneError,
@@ -123,6 +122,8 @@ def _insert_dataframe_map_df_column_to_table_column_and_type(
     df_col_name: str, table_schema: Mapping[str, type], /, *, snake: bool = False
 ) -> tuple[str, type]:
     """Map a DataFrame column to a table column and type."""
+    from utilities.humps import snake_case
+
     items = table_schema.items()
     func = snake_case if snake else identity
     target = func(df_col_name)
@@ -334,6 +335,8 @@ class SelectToDataFrameError(Exception): ...
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
     """Apply snake-case to a selectable."""
 
+    from utilities.humps import snake_case
+
     alias = sel.alias()
     columns = [alias.c[c.name].label(snake_case(c.name)) for c in sel.selected_columns]
     return select(*columns)
@@ -413,9 +416,7 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
         )
     else:
         chunk_size = in_clauses_chunk_size
-    return (
-        sel.where(in_col.in_(values)) for values in chunked(in_values, n=chunk_size)
-    )
+    return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
 
 
 __all__ = [

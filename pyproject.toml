@@ -112,7 +112,7 @@ zzz-test-sqlalchemy = [
   "pyhumps",
   "pyodbc",
 ]
-zzz-test-sqlalchemy-polars = []
+zzz-test-sqlalchemy-polars = ["pyhumps"]
 zzz-test-xlrd = []
 
 [project.scripts]

@@ -16,6 +16,7 @@ packaging==23.2
 pluggy==1.4.0
     # via pytest
 polars==0.20.13
+pyhumps==3.8.0
 pytest==8.0.2
     # via
     #   pytest-randomly
