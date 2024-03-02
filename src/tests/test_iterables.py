@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import integers, sets
-from pytest import mark, param, raises
 
 from utilities.iterables import (
     CheckDuplicatesError,
@@ -105,13 +105,13 @@ class TestCheckLength:
         with raises(CheckLengthError, match=r"Object .* must have length .*; got .*\."):
             check_length([], equal=1)
 
-    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
         check_length(range(10), equal_or_approx=equal_or_approx)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("equal_or_approx", "match"),
         [
             param(10, r"Object .* must have length .*; got .*\."),
@@ -213,7 +213,7 @@ class TestCheckMappingsEqual:
 
 
 class TestCheckSetsEqual:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
@@ -268,7 +268,7 @@ class TestCheckSubMapping:
 
 
 class TestCheckSubSet:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
@@ -309,7 +309,7 @@ class TestCheckSuperMapping:
 
 
 class TestCheckSuperSet:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("left", "right"), [param(set(), set()), param(iter([]), iter([]))]
     )
     def test_pass(self, *, left: Iterable[Any], right: Iterable[Any]) -> None:
@@ -324,7 +324,7 @@ class TestCheckSuperSet:
 
 
 class TestChunked:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("iterable", "expected"),
         [
             param("ABCDEF", [["A", "B", "C"], ["D", "E", "F"]]),
@@ -349,7 +349,7 @@ class TestEnsureHashables:
 
 
 class TestEnsureIterable:
-    @mark.parametrize("obj", [param([]), param(()), param("")])
+    @pytest.mark.parametrize("obj", [param([]), param(()), param("")])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_iterable(obj)
 
@@ -359,11 +359,11 @@ class TestEnsureIterable:
 
 
 class TestEnsureIterableNotStr:
-    @mark.parametrize("obj", [param([]), param(())])
+    @pytest.mark.parametrize("obj", [param([]), param(())])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_iterable_not_str(obj)
 
-    @mark.parametrize("obj", [param(None), param("")])
+    @pytest.mark.parametrize("obj", [param(None), param("")])
     def test_error(self, *, obj: Any) -> None:
         with raises(
             EnsureIterableNotStrError,
@@ -373,7 +373,7 @@ class TestEnsureIterableNotStr:
 
 
 class TestIsIterable:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", True)],
     )
@@ -382,7 +382,7 @@ class TestIsIterable:
 
 
 class TestIsIterableNotStr:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", False)],
     )

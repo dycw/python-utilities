@@ -5,7 +5,7 @@ from functools import partial
 from operator import neg, pow
 from typing import Any, Literal
 
-from pytest import mark, param
+import pytest
 
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
@@ -13,7 +13,7 @@ from utilities.types import get_class_name
 
 
 class TestGetDesc:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("desc", "func", "expected"),
         [
             param(sentinel, neg, {"desc": "neg"}),
@@ -40,8 +40,8 @@ class TestGetDesc:
 
 
 class TestPMap:
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
+    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
     def test_unary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -49,8 +49,8 @@ class TestPMap:
         expected = [-1, -2, -3]
         assert result == expected
 
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
+    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
     def test_binary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -62,8 +62,8 @@ class TestPMap:
 
 
 class TestPStarMap:
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
+    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
     def test_unary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -73,8 +73,8 @@ class TestPStarMap:
         expected = [-1, -2, -3]
         assert result == expected
 
-    @mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
+    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
     def test_binary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.re import (
     _ExtractGroupMultipleCaptureGroupsError,
@@ -20,7 +20,7 @@ class TestExtractGroup:
     def test_main(self) -> None:
         assert extract_group(r"(\d)", "A0A") == "0"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("pattern", "text", "error", "match"),
         [
             param(
@@ -57,14 +57,14 @@ class TestExtractGroup:
 
 
 class TestExtractGroups:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
     def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
         assert extract_groups(pattern, text) == expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("pattern", "text", "error", "match"),
         [
             param(

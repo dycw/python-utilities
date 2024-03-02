@@ -4,7 +4,7 @@ from operator import itemgetter
 from pathlib import Path
 from time import sleep
 
-from pytest import raises
+import pytest
 
 from tests.conftest import FLAKY
 from utilities.cacher import cache_to_disk

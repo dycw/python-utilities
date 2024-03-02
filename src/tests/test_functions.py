@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
-from pytest import raises
 
 from utilities.functions import CheckNameError, check_name, identity
 

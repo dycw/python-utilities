@@ -3,10 +3,10 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import booleans
 from pathvalidate import ValidationError
-from pytest import mark, param, raises
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import (
@@ -32,7 +32,7 @@ class TestEnsurePath:
 
 
 class TestEnsureSuffix:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("path", "expected"),
         [
             param("hello.txt", "hello.txt"),

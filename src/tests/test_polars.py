@@ -4,10 +4,10 @@ from collections.abc import Callable, Mapping
 from math import isfinite, nan
 from typing import Any, Literal
 
+import pytest
 from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
-from pytest import mark, param, raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
@@ -202,7 +202,7 @@ class TestCheckPolarsDataFramePredicates:
         df = DataFrame({"value": [0.0, 1.0]})
         _check_polars_dataframe_predicates(df, {"value": isfinite})
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "predicates",
         [
             param({"other": Float64}, id="missing column"),
@@ -231,7 +231,7 @@ class TestCheckPolarsDataFrameSchemaInc:
         df = DataFrame({"foo": [0.0], "bar": [0.0]})
         _check_polars_dataframe_schema_inc(df, {"foo": Float64})
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "schema_inc",
         [
             param({"bar": Float64}, id="missing column"),
@@ -256,7 +256,7 @@ class TestJoin:
 
 
 class TestNanSumAgg:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("data", "expected"),
         [
             param([None], None, id="one None"),
@@ -269,8 +269,8 @@ class TestNanSumAgg:
             param([1, 2, None, None], 3, id="two ints, two Nones"),
         ],
     )
-    @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    @mark.parametrize("mode", [param("str"), param("column")])
+    @pytest.mark.parametrize("dtype", [param(Int64), param(Float64)])
+    @pytest.mark.parametrize("mode", [param("str"), param("column")])
     def test_main(
         self,
         *,
@@ -292,12 +292,12 @@ class TestNanSumAgg:
 
 
 class TestNanSumCols:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
     )
-    @mark.parametrize("x_kind", [param("str"), param("column")])
-    @mark.parametrize("y_kind", [param("str"), param("column")])
+    @pytest.mark.parametrize("x_kind", [param("str"), param("column")])
+    @pytest.mark.parametrize("y_kind", [param("str"), param("column")])
     def test_main(
         self,
         *,

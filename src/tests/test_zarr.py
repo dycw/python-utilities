@@ -5,11 +5,11 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
 from numpy import arange, array, errstate, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
-from pytest import mark, param, raises
 from zarr import open_array
 from zarr.errors import BoundsCheckError
 
@@ -102,7 +102,7 @@ class TestNDArrayWithIndexes:
         with errstate(invalid="ignore"):
             assert isclose(view.ndarray, fill_value, equal_nan=True).all()
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
             param({"x": 0}, array([0, 1, 2])),
@@ -129,7 +129,7 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.isel(indexer), expected)
 
-    @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
+    @pytest.mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
     def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
@@ -139,13 +139,13 @@ class TestNDArrayWithIndexes:
         with raises(BoundsCheckError):
             _ = view.isel(indexer)
 
-    @mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, *, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
         assert func(view) == f"{cls}({tmp_path})"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
             param({"x": "x0"}, array([0, 1, 2])),
@@ -168,7 +168,7 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("index", "indexer"),
         [
             param(array(["x0", "x1"]), {"x": "x2"}),
@@ -191,7 +191,7 @@ class TestNDArrayWithIndexes:
         with raises(FileNotFoundError):
             _ = NDArrayWithIndexes(ensure_path(tmp_path, "array"))
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
             param({"x": dt.date(2000, 1, 1)}, 0),
@@ -216,7 +216,7 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
             param({"x": dt.datetime(2000, 1, 1)}, 0),  # noqa: DTZ001

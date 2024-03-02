@@ -6,7 +6,6 @@ from ast import ImportFrom, alias
 
 import pytest
 from click.testing import CliRunner
-from pytest import LogCaptureFixture, mark, param
 
 from utilities.iterables import one
 from utilities.scripts.generate_snippets import (
@@ -79,7 +78,7 @@ class TestGenerateSnippets:
 
 
 class TestNodeToKey:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "name", "expected"),
         [param("abc", "ABC", "fab-abc"), param("abc", "ABCMeta", "fab-abc-meta")],
     )
@@ -115,7 +114,7 @@ class TestYieldImportNodesFromText:
         assert imp.module == "abc"
         assert one(imp.names).name == "ABC"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "text",
         [
             param(
@@ -165,7 +164,7 @@ class TestYieldImportNodesFromText:
         assert imp.module == "abc"
         assert one(imp.names).name == "ABC"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "text",
         [
             param(
@@ -199,7 +198,7 @@ class TestYieldImportNodesFromText:
 
 
 class TestYieldImports:
-    @mark.parametrize("method", [param(Method.direct), param(Method.parse)])
+    @pytest.mark.parametrize("method", [param(Method.direct), param(Method.parse)])
     def test_yield_imports(self, *, method: Method) -> None:
         for imp in yield_imports(method=method):
             assert isinstance(imp, ImportFrom)

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytest
 from beartype.roar import BeartypeCallHintParamViolation
-from pytest import raises
 
 from utilities.beartype import beartype_if_dev
 

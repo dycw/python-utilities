@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Set as AbstractSet
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import sets
-from pytest import mark, param
 from typing_extensions import assert_never
 
 from utilities.hypothesis import text_ascii
@@ -42,7 +42,7 @@ class TestSystem:
     def test_function(self) -> None:
         assert isinstance(get_system(), System)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("constant", "cls"),
         [
             param(SYSTEM, System),

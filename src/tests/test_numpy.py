@@ -4,6 +4,7 @@ import datetime as dt
 from collections.abc import Sequence
 from typing import Any, Literal
 
+import pytest
 from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
@@ -34,7 +35,6 @@ from numpy import (
 from numpy.random import Generator
 from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
-from pytest import mark, param, raises
 
 from utilities.datetime import UTC
 from utilities.hypothesis import (
@@ -144,7 +144,7 @@ from utilities.zoneinfo import HONG_KONG
 
 
 class TestArrayIndexer:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("i", "ndim", "expected"),
         [
             param(0, 1, (0,)),
@@ -160,7 +160,7 @@ class TestArrayIndexer:
     ) -> None:
         assert array_indexer(i, ndim) == expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("i", "ndim", "axis", "expected"),
         [
             param(0, 1, 0, (0,)),
@@ -208,7 +208,7 @@ class TestAsInt:
         expected = array([n], dtype=int)
         assert_equal(result, expected)
 
-    @mark.parametrize("value", [param(inf), param(nan), param(0.5)])
+    @pytest.mark.parametrize("value", [param(inf), param(nan), param(0.5)])
     def test_errors(self, *, value: float) -> None:
         arr = array([value], dtype=float)
         with raises(AsIntError):
@@ -228,7 +228,7 @@ class TestDateToDatetime64ns:
 
 
 class TestDatetimeToDatetime64:
-    @mark.parametrize("tzinfo", [param(UTC), param(None)])
+    @pytest.mark.parametrize("tzinfo", [param(UTC), param(None)])
     def test_example(self, *, tzinfo: dt.tzinfo) -> None:
         result = datetime_to_datetime64(
             dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=tzinfo)
@@ -257,7 +257,7 @@ class TestDatetime64ToDate:
     def test_round_trip(self, *, date: dt.date) -> None:
         assert datetime64_to_date(date_to_datetime64(date)) == date
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("datetime", "dtype", "error"),
         [
             param("10000-01-01", "D", DateTime64ToDateError),
@@ -291,7 +291,7 @@ class TestDatetime64ToDatetime:
             datetime64("2000-01-01 00:00:00.123", "ms")
         ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123000, tzinfo=UTC)
 
-    @mark.parametrize("dtype", [param("us"), param("ns")])
+    @pytest.mark.parametrize("dtype", [param("us"), param("ns")])
     def test_examples_us_ns(self, *, dtype: str) -> None:
         assert datetime64_to_datetime(
             datetime64("2000-01-01 00:00:00.123456", dtype)
@@ -301,7 +301,7 @@ class TestDatetime64ToDatetime:
     def test_round_trip(self, *, datetime: dt.datetime) -> None:
         assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("datetime", "dtype", "error"),
         [
             param("0000-12-31", "ms", DateTime64ToDateTimeError),
@@ -316,7 +316,7 @@ class TestDatetime64ToDatetime:
 
 
 class TestDatetime64DTypeToUnit:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("dtype", "expected"),
         [param(datetime64D, "D"), param(datetime64Y, "Y"), param(datetime64ns, "ns")],
     )
@@ -329,7 +329,7 @@ class TestDatetime64DTypeToUnit:
 
 
 class TestDatetime64DUnitToDType:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("unit", "expected"),
         [param("D", datetime64D), param("Y", datetime64Y), param("ns", datetime64ns)],
     )
@@ -342,7 +342,7 @@ class TestDatetime64DUnitToDType:
 
 
 class TestDatetime64DUnitToKind:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("unit", "expected"),
         [param("D", "date"), param("Y", "date"), param("ns", "time")],
     )
@@ -388,7 +388,7 @@ class TestDiscretize:
         result = discretize(arr, bins)
         assert_equal(result, arr)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("arr_v", "bins", "expected_v"),
         [
             param(
@@ -447,7 +447,7 @@ class TestExpMovingSum:
 
 
 class TestFFill:
-    @mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
+    @pytest.mark.parametrize(("limit", "expected_v"), [param(None, 0.2), param(1, nan)])
     def test_main(self, limit: int | None, expected_v: float) -> None:
         arr = array([0.1, nan, 0.2, nan, nan, 0.3], dtype=float)
         result = ffill(arr, limit=limit)
@@ -456,7 +456,7 @@ class TestFFill:
 
 
 class TestFFillNonNanSlices:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("limit", "axis", "expected_v"),
         [
             param(
@@ -481,7 +481,7 @@ class TestFFillNonNanSlices:
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("axis", "expected_v"),
         [
             param(0, [4 * [nan], [nan, 0.1, nan, nan], [nan, 0.1, nan, nan]]),
@@ -498,7 +498,7 @@ class TestFFillNonNanSlices:
 
 
 class TestFillNa:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("init", "value", "expected_v"),
         [
             param(0.0, 0.0, 0.0),
@@ -527,7 +527,7 @@ class TestFlatN0:
         result = flatn0(arr)
         assert result == i
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "array", [param(zeros(0, dtype=bool)), param(ones(2, dtype=bool))]
     )
     def test_errors(self, *, array: NDArrayB1) -> None:
@@ -536,7 +536,7 @@ class TestFlatN0:
 
 
 class TestGetFillValue:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "dtype",
         [
             param(bool),
@@ -559,14 +559,16 @@ class TestGetFillValue:
 
 
 class TestHasDtype:
-    @mark.parametrize(("dtype", "expected"), [param(float, True), param(int, False)])
-    @mark.parametrize("is_tuple", [param(True), param(False)])
+    @pytest.mark.parametrize(
+        ("dtype", "expected"), [param(float, True), param(int, False)]
+    )
+    @pytest.mark.parametrize("is_tuple", [param(True), param(False)])
     def test_main(self, *, dtype: Any, is_tuple: bool, expected: bool) -> None:
         against = (dtype,) if is_tuple else dtype
         result = has_dtype(array([], dtype=float), against)
         assert result is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("dtype", "against", "expected"),
         [
             param("Int64", "Int64", True),
@@ -584,7 +586,7 @@ class TestHasDtype:
 
 
 class TestIsAtLeast:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
             param(0.0, -inf, False, True),
@@ -605,7 +607,7 @@ class TestIsAtLeast:
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_at_least(x, y, equal_nan=equal_nan).item() is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -613,7 +615,7 @@ class TestIsAtLeast:
 
 
 class TestIsAtMost:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
             param(0.0, -inf, False, False),
@@ -634,7 +636,7 @@ class TestIsAtMost:
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_at_most(x, y, equal_nan=equal_nan).item() is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -642,7 +644,7 @@ class TestIsAtMost:
 
 
 class TestIsBetween:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "low", "high", "equal_nan", "expected"),
         [
             param(0.0, -1.0, -1.0, False, False),
@@ -662,11 +664,11 @@ class TestIsBetween:
     ) -> None:
         assert is_between(x, low, high, equal_nan=equal_nan).item() is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "low",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
@@ -675,7 +677,7 @@ class TestIsBetween:
 
 
 class TestIsEmptyAndIsNotEmpty:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("shape", "expected"),
         [
             param(0, "empty"),
@@ -696,7 +698,7 @@ class TestIsEmptyAndIsNotEmpty:
             param((2, 2), "non-empty"),
         ],
     )
-    @mark.parametrize("kind", [param("shape"), param("array")])
+    @pytest.mark.parametrize("kind", [param("shape"), param("array")])
     def test_main(
         self,
         *,
@@ -710,7 +712,7 @@ class TestIsEmptyAndIsNotEmpty:
 
 
 class TestIsFiniteAndIntegral:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -741,7 +743,7 @@ class TestIsFiniteAndIntegral:
 
 
 class TestIsFiniteOrNan:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -757,7 +759,7 @@ class TestIsFiniteOrNan:
 
 
 class TestIsFiniteAndNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -782,7 +784,7 @@ class TestIsFiniteAndNegative:
 
 
 class TestIsFiniteAndNonNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -807,7 +809,7 @@ class TestIsFiniteAndNonNegative:
 
 
 class TestIsFiniteAndNonPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -832,7 +834,7 @@ class TestIsFiniteAndNonPositive:
 
 
 class TestIsFiniteAndNonZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -857,7 +859,7 @@ class TestIsFiniteAndNonZero:
 
 
 class TestIsFiniteAndPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -882,7 +884,7 @@ class TestIsFiniteAndPositive:
 
 
 class TestIsGreaterThan:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
             param(0.0, -inf, False, True),
@@ -903,7 +905,7 @@ class TestIsGreaterThan:
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_greater_than(x, y, equal_nan=equal_nan).item() is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -911,7 +913,7 @@ class TestIsGreaterThan:
 
 
 class TestIsIntegral:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -942,7 +944,7 @@ class TestIsIntegral:
 
 
 class TestIsLessThan:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "equal_nan", "expected"),
         [
             param(0.0, -inf, False, False),
@@ -963,7 +965,7 @@ class TestIsLessThan:
     def test_main(self, *, x: float, y: float, equal_nan: bool, expected: bool) -> None:
         assert is_less_than(x, y, equal_nan=equal_nan).item() is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -971,7 +973,7 @@ class TestIsLessThan:
 
 
 class TestIsNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -996,7 +998,7 @@ class TestIsNegative:
 
 
 class TestIsNonNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -1021,7 +1023,7 @@ class TestIsNonNegative:
 
 
 class TestIsNonPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -1046,10 +1048,10 @@ class TestIsNonPositive:
 
 
 class TestIsNonSingular:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
-    @mark.parametrize("dtype", [param(float), param(int)])
+    @pytest.mark.parametrize("dtype", [param(float), param(int)])
     def test_main(self, *, array: NDArrayF2, dtype: Any, expected: bool) -> None:
         assert is_non_singular(array.astype(dtype)) is expected
 
@@ -1059,7 +1061,7 @@ class TestIsNonSingular:
 
 
 class TestIsNonZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -1084,7 +1086,7 @@ class TestIsNonZero:
 
 
 class TestIsPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -1109,7 +1111,7 @@ class TestIsPositive:
 
 
 class TestIsPositiveSemiDefinite:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("array", "expected"),
         [
             param(eye(2), True),
@@ -1117,7 +1119,7 @@ class TestIsPositiveSemiDefinite:
             param(arange(4).reshape((2, 2)), False),
         ],
     )
-    @mark.parametrize("dtype", [param(float), param(int)])
+    @pytest.mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
         self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
@@ -1129,7 +1131,7 @@ class TestIsPositiveSemiDefinite:
 
 
 class TestIsSymmetric:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("array", "expected"),
         [
             param(eye(2), True),
@@ -1137,7 +1139,7 @@ class TestIsSymmetric:
             param(arange(4).reshape((2, 2)), False),
         ],
     )
-    @mark.parametrize("dtype", [param(float), param(int)])
+    @pytest.mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
         self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
     ) -> None:
@@ -1145,7 +1147,7 @@ class TestIsSymmetric:
 
 
 class TestIsZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -1170,7 +1172,7 @@ class TestIsZero:
 
 
 class TestIsZeroOrFiniteAndMicro:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, False),
@@ -1195,7 +1197,7 @@ class TestIsZeroOrFiniteAndMicro:
 
 
 class TestIsZeroOrNonMicro:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -1238,7 +1240,7 @@ class TestMaximumMinimum:
 
 
 class TestPctChange:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
             param(1, [nan, 0.1, 0.090909]),
@@ -1247,14 +1249,14 @@ class TestPctChange:
             param(-2, [-0.166667, nan, nan]),
         ],
     )
-    @mark.parametrize("dtype", [param(float), param(int)])
+    @pytest.mark.parametrize("dtype", [param(float), param(int)])
     def test_1d(self, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
         arr = arange(10, 13, dtype=dtype)
         result = pct_change(arr, n=n)
         expected = array(expected_v, dtype=float)
         assert_allclose(result, expected, atol=1e-4, equal_nan=True)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("axis", "n", "expected_v"),
         [
             param(
@@ -1350,7 +1352,7 @@ class TestRedirectEmptyNumpyConcatenate:
 
 
 class TestShift:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
             param(1, [nan, 0.0, 1.0]),
@@ -1359,14 +1361,14 @@ class TestShift:
             param(-2, [2.0, nan, nan]),
         ],
     )
-    @mark.parametrize("dtype", [param(float), param(int)])
+    @pytest.mark.parametrize("dtype", [param(float), param(int)])
     def test_1d(self, *, n: int, expected_v: Sequence[float], dtype: type[Any]) -> None:
         arr = arange(3, dtype=dtype)
         result = shift(arr, n=n)
         expected = array(expected_v, dtype=float)
         assert_equal(result, expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("axis", "n", "expected_v"),
         [
             param(
@@ -1426,7 +1428,7 @@ class TestShift:
 
 
 class TestShiftBool:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("n", "expected_v"),
         [
             param(1, [None, True, False], id="n=1"),
@@ -1435,7 +1437,7 @@ class TestShiftBool:
             param(-2, [True, None, None], id="n=-2"),
         ],
     )
-    @mark.parametrize("fill_value", [param(True), param(False)])
+    @pytest.mark.parametrize("fill_value", [param(True), param(False)])
     def test_main(
         self, *, n: int, expected_v: Sequence[bool | None], fill_value: bool
     ) -> None:

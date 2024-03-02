@@ -6,6 +6,7 @@ from collections.abc import Callable
 from enum import auto
 from typing import Any
 
+import pytest
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
@@ -23,7 +24,6 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
-from pytest import mark, param
 
 import utilities.click
 from utilities.click import (
@@ -95,7 +95,7 @@ class TestEnum:
 
 
 class TestLocalSchedulerOption:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("args", "expected"),
         [param([], True), param(["-ls"], True), param(["-nls"], False)],
     )
@@ -109,7 +109,7 @@ class TestLocalSchedulerOption:
         assert result.exit_code == 0
         assert result.stdout == f"local_scheduler = {expected}\n"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("args", "expected"),
         [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
@@ -154,7 +154,7 @@ class TestParameters:
     )
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @pytest.mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_argument(
         self,
         *,
@@ -180,7 +180,7 @@ class TestParameters:
         assert result.exit_code == 2
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @pytest.mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_option(
         self,
         *,

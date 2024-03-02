@@ -7,6 +7,7 @@ from operator import eq, gt, lt
 from re import search
 from typing import Any
 
+import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
@@ -22,7 +23,6 @@ from hypothesis.strategies import (
     times,
     timezones,
 )
-from pytest import mark, param, raises
 
 from utilities.datetime import (
     EPOCH_UTC,
@@ -76,7 +76,7 @@ from utilities.zoneinfo import HONG_KONG
 
 class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
-    @mark.parametrize("predicate", [param(gt), param(lt)])
+    @pytest.mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
         self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
@@ -147,7 +147,7 @@ class TestDurationToTimedelta:
 
 class TestEnsure:
     @given(data=data())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("strategy", "func"),
         [
             param(dates(), ensure_date),
@@ -183,13 +183,13 @@ class TestGetNow:
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is tz
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
     )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TOKYO)])
+    @pytest.mark.parametrize("now", [param(NOW_UTC), param(NOW_HKG), param(NOW_TOKYO)])
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -200,13 +200,15 @@ class TestGetToday:
         today = get_today(tz=tz)
         assert isinstance(today, dt.date)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
+    @pytest.mark.parametrize(
+        "today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)]
+    )
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 
@@ -426,7 +428,7 @@ class TestParseTimedelta:
 
 class TestSerialize:
     @given(data=data())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("strategy", "serialize", "parse"),
         [
             param(dates(), serialize_date, parse_date),
@@ -457,7 +459,7 @@ class TestSerialize:
 class TestRoundToWeekday:
     @given(date=dates())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("func", "predicate", "operator"),
         [
             param(round_to_next_weekday, True, eq),

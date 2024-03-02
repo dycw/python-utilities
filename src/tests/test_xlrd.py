@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.datetime import UTC
 from utilities.platform import SYSTEM, System
@@ -20,7 +20,7 @@ class TestGetDateMode:
 
 
 class TestToDate:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("date", "expected"),
         [
             param(0.0, dt.date(1899, 12, 31), marks=skipif_not_windows),
@@ -36,7 +36,7 @@ class TestToDate:
 
 
 class TestToDatetime:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("date", "expected"),
         [
             param(0.0, dt.datetime(1899, 12, 31, tzinfo=UTC), marks=skipif_not_windows),

@@ -4,9 +4,9 @@ import datetime as dt
 from types import NoneType
 from typing import Any, cast
 
+import pytest
 from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
-from pytest import mark, param, raises
 
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (
@@ -36,7 +36,7 @@ from utilities.types import (
 
 
 class TestDuration:
-    @mark.parametrize("x", [param(0), param(0.0), param(dt.timedelta(0))])
+    @pytest.mark.parametrize("x", [param(0), param(0.0), param(dt.timedelta(0))])
     def test_success(self, *, x: Duration) -> None:
         die_if_unbearable(x, Duration)
 
@@ -68,7 +68,7 @@ class TestEnsureClass:
 
 
 class TestEnsureHashable:
-    @mark.parametrize("obj", [param(0), param((1, 2, 3))])
+    @pytest.mark.parametrize("obj", [param(0), param((1, 2, 3))])
     def test_main(self, *, obj: Any) -> None:
         assert ensure_hashable(obj) == obj
 
@@ -89,7 +89,7 @@ class TestEnsureNotNone:
 
 
 class TestEnsureSized:
-    @mark.parametrize("obj", [param([]), param(()), param("")])
+    @pytest.mark.parametrize("obj", [param([]), param(()), param("")])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized(obj)
 
@@ -99,11 +99,11 @@ class TestEnsureSized:
 
 
 class TestEnsureSizedNotStr:
-    @mark.parametrize("obj", [param([]), param(())])
+    @pytest.mark.parametrize("obj", [param([]), param(())])
     def test_main(self, *, obj: Any) -> None:
         _ = ensure_sized_not_str(obj)
 
-    @mark.parametrize("obj", [param(None), param("")])
+    @pytest.mark.parametrize("obj", [param(None), param("")])
     def test_error(self, *, obj: Any) -> None:
         with raises(
             EnsureSizedNotStrError, match=r"Object .* must be sized, but not a string\."
@@ -112,7 +112,7 @@ class TestEnsureSizedNotStr:
 
 
 class TestGetClass:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
     )
     def test_main(self, *, obj: Any, expected: type[Any]) -> None:
@@ -142,7 +142,7 @@ class TestIfNotNone:
 
 
 class TestIsHashable:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [param(0, True), param((1, 2, 3), True), param([1, 2, 3], False)],
     )
@@ -151,7 +151,7 @@ class TestIsHashable:
 
 
 class TestIsSized:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", True)],
     )
@@ -160,7 +160,7 @@ class TestIsSized:
 
 
 class TestIsSizedNotStr:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [param(None, False), param([], True), param((), True), param("", False)],
     )
@@ -169,7 +169,7 @@ class TestIsSizedNotStr:
 
 
 class TestIsSubclassExceptBoolInt:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [param(bool, bool, True), param(bool, int, False), param(int, int, True)],
     )
@@ -183,7 +183,7 @@ class TestIsSubclassExceptBoolInt:
 
 
 class TestIterableStrs:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "x",
         [
             param(["a", "b", "c"]),
@@ -201,7 +201,7 @@ class TestIterableStrs:
 
 
 class TestNumber:
-    @mark.parametrize("x", [param(0), param(0.0)])
+    @pytest.mark.parametrize("x", [param(0), param(0.0)])
     def test_ok(self, *, x: Number) -> None:
         die_if_unbearable(x, Number)
 
@@ -211,7 +211,7 @@ class TestNumber:
 
 
 class TestPathLike:
-    @mark.parametrize("path", [param(valid_path_home()), param("~")])
+    @pytest.mark.parametrize("path", [param(valid_path_home()), param("~")])
     def test_main(self, *, path: PathLike) -> None:
         die_if_unbearable(path, PathLike)
 
@@ -221,11 +221,11 @@ class TestPathLike:
 
 
 class TestSequenceStrs:
-    @mark.parametrize("x", [param(["a", "b", "c"]), param(("a", "b", "c"))])
+    @pytest.mark.parametrize("x", [param(["a", "b", "c"]), param(("a", "b", "c"))])
     def test_pass(self, *, x: SequenceStrs) -> None:
         die_if_unbearable(x, SequenceStrs)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "x", [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")]
     )
     def test_fail(self, *, x: IterableStrs | str) -> None:

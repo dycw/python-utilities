@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import raises
+import pytest
 
 from utilities.text import EnsureStrError, ensure_str, strip_and_dedent
 

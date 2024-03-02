@@ -7,7 +7,7 @@ from re import search
 from time import sleep
 from typing import Any
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.timer import Timer, TimerError
 
@@ -20,7 +20,7 @@ class TestTimer:
             sleep(2 * duration)
         assert timer >= duration
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("op", "expected"),
         [
             param(eq, False),
@@ -31,7 +31,9 @@ class TestTimer:
             param(lt, True),
         ],
     )
-    @mark.parametrize("dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))])
+    @pytest.mark.parametrize(
+        "dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))]
+    )
     def test_comparison(
         self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:
@@ -53,7 +55,7 @@ class TestTimer:
         with raises(TimerError, match=match):
             _ = Timer() == "error"
 
-    @mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [param(repr), param(str)])
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             sleep(0.01)

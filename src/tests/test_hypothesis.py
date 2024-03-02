@@ -9,6 +9,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import Any, Literal, cast
 
+import pytest
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -45,7 +46,6 @@ from numpy import (
 )
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
-from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
@@ -799,10 +799,10 @@ class TestLiftDraw:
 
 class TestListsFixedLength:
     @given(data=data(), size=integers(1, 10))
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "unique", [param(True, id="unique"), param(False, id="no unique")]
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
     def test_main(

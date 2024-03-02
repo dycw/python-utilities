@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import reduce
 from operator import add, sub
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
-from pytest import raises
 
 from utilities.functools import EmptyReduceError, partial, redirect_empty_reduce
 

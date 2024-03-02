@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from warnings import warn
 
+import pytest
+import warns
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
-from pytest import raises, warns
 
 from utilities.warnings import catch_warnings_as_errors, suppress_warnings
 

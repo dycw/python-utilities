@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from holoviews import Curve
 from hypothesis import given
 from hypothesis.strategies import floats, integers
-from pytest import raises
 
 from utilities.holoviews import (
     PlotCurveError,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from smtplib import SMTPServerDisconnected
 
-from pytest import raises
+import pytest
 
 from utilities.email import send_email
 

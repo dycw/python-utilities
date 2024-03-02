@@ -3,9 +3,9 @@ from __future__ import annotations
 from enum import Enum, auto
 from typing import cast
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
-from pytest import raises
 
 from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 

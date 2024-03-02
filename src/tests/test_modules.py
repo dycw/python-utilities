@@ -8,7 +8,7 @@ from re import search
 from types import ModuleType
 from typing import Any
 
-from pytest import mark, param
+import pytest
 
 import utilities
 from tests.modules import package_with, package_without, standalone
@@ -23,7 +23,7 @@ from utilities.types import get_class_name
 
 
 class TestYieldModules:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "expected"),
         [
             param(standalone, False, 1),
@@ -52,7 +52,7 @@ class TestYieldModules:
 
 
 class TestYieldModuleContents:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "factor"),
         [
             param(standalone, False, 1),
@@ -63,7 +63,7 @@ class TestYieldModuleContents:
             param(package_with, True, 5),
         ],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("type_", "predicate", "expected"),
         [
             param(int, None, 3),
@@ -98,7 +98,7 @@ class TestYieldModuleSubclasses:
     def predicate(self: Any, /) -> bool:
         return bool(search("1", get_class_name(self)))
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "factor"),
         [
             param(standalone, False, 1),
@@ -109,7 +109,7 @@ class TestYieldModuleSubclasses:
             param(package_with, True, 5),
         ],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("type_", "predicate", "expected"),
         [
             param(int, None, 1),

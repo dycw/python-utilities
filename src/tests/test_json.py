@@ -7,6 +7,7 @@ from math import isnan
 from operator import eq, neg
 from typing import Any
 
+import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
@@ -36,7 +37,6 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from pytest import mark, param, raises
 from sqlalchemy import Engine
 from typing_extensions import override
 
@@ -60,7 +60,7 @@ from utilities.sentinel import sentinel
 
 class TestSerializeAndDeserialize:
     @given(data=data())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "elements",
         [
             param(booleans()),
@@ -149,7 +149,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 10))
-    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    @pytest.mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_sortable(
         self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
     ) -> None:
@@ -158,7 +158,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(2, 10))
-    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    @pytest.mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_unsortable(
         self,
         *,

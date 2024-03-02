@@ -6,6 +6,7 @@ from enum import auto
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
+import pytest
 import sqlalchemy
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -20,7 +21,6 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import mark, param, raises
 from sqlalchemy import (
     BIGINT,
     BINARY,
@@ -186,7 +186,7 @@ class TestCheckColumnCollectionsEqual:
             x.columns, y.columns, snake=True, allow_permutations=True
         )
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y"),
         [
             param(
@@ -224,7 +224,7 @@ class TestCheckColumnsEqual:
         y = Column("id", Integer, nullable=False)
         _check_columns_equal(x, y, primary_key=False)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y"),
         [
             param(Column("id", Integer, primary_key=True), Column("id", Integer)),
@@ -272,7 +272,7 @@ class TestCheckColumnTypesEqual:
         [UUID, Uuid],
     )
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "cls",
         [
             param(Boolean),
@@ -670,7 +670,7 @@ class TestCheckTablesEqual:
 
 
 class TestCheckTableOrColumnNamesEqual:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "snake", "success"),
         [
             param("x", "x", False, True),
@@ -688,7 +688,7 @@ class TestCheckTableOrColumnNamesEqual:
             with raises(_CheckTableOrColumnNamesEqualError):
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
-    @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
+    @pytest.mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
     def test_quoted_name(self, *, name: str | None, expected: str) -> None:
         class Kwargs(TypedDict, total=False):
             name: str
@@ -777,7 +777,7 @@ class TestCreateEngine:
 
 
 class TestDialect:
-    @mark.parametrize("dialect", Dialect)
+    @pytest.mark.parametrize("dialect", Dialect)
     def test_max_params(self, *, dialect: Dialect) -> None:
         assert isinstance(dialect.max_params, int)
 
@@ -794,13 +794,13 @@ class TestEnsureEngine:
 
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [param(1), param(2)])
     def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
@@ -821,13 +821,13 @@ class TestEnsureTablesCreated:
 
 class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [param(1), param(2)])
     def test_table(self, *, engine: Engine, runs: int) -> None:
         table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
+    @pytest.mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"
@@ -1063,7 +1063,7 @@ class TestInsertItemsCollect:
         expected = [_InsertionItem(values={"id_": id_}, table=get_table(Example))]
         assert result == expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "item",
         [
             param((None,), id="tuple length"),
@@ -1105,7 +1105,7 @@ class TestInsertItemsCollectIterable:
 
 
 class TestInsertItemsCollectValid:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("obj", "expected"),
         [
             param(None, False),

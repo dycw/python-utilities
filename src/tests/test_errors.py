@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.errors import (
     ImpossibleCaseError,
@@ -95,7 +95,7 @@ class TestRedirectError:
 
 
 class TestRetry:
-    @mark.parametrize("use_predicate", [param(None), param(True), param(False)])
+    @pytest.mark.parametrize("use_predicate", [param(None), param(True), param(False)])
     def test_main(self, *, use_predicate: bool | None) -> None:
         class TooLargeError(Exception): ...
 

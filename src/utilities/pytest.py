@@ -20,10 +20,10 @@ from utilities.platform import (
 from utilities.types import Duration, IterableStrs, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
+    import pytest
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark, skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
@@ -61,7 +61,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
 def add_pytest_collection_modifyitems(
     config: Config, items: Iterable[Function], options: IterableStrs, /
 ) -> None:
-    """Add the @mark.skips as necessary.
+    """Add the @pytest.mark.skips as necessary.
 
     Usage:
 

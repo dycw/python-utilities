@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.fastapi import APIRouter
 
 
 class TestAPIRouter:
-    @mark.parametrize("route", [param("/"), param("/home")])
+    @pytest.mark.parametrize("route", [param("/"), param("/home")])
     def test_main(self, route: str) -> None:
         router = APIRouter()
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from re import DOTALL
 
+import pytest
 from bs4 import BeautifulSoup
 from polars import DataFrame, Utf8
 from polars.testing import assert_frame_equal
-from pytest import raises
 
 from utilities.bs4 import TableTagToDataFrameError, yield_tables
 from utilities.text import strip_and_dedent

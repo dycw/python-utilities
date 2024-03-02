@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from math import inf, nan
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.math import (
     CheckIntegerError,
@@ -62,13 +62,13 @@ class TestCheckInteger:
         with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
             check_integer(0, equal=1)
 
-    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    @pytest.mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
         check_integer(10, equal_or_approx=equal_or_approx)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("equal_or_approx", "match"),
         [
             param(10, "Integer must be equal to .*; got .*"),
@@ -100,7 +100,7 @@ class TestCheckInteger:
 
 
 class TestIsAtLeast:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0.0, -inf, True),
@@ -120,7 +120,7 @@ class TestIsAtLeast:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -128,7 +128,7 @@ class TestIsAtLeast:
 
 
 class TestIsAtMost:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0.0, -inf, False),
@@ -148,7 +148,7 @@ class TestIsAtMost:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -156,7 +156,7 @@ class TestIsAtMost:
 
 
 class TestIsBetween:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "low", "high", "expected"),
         [
             param(0.0, -1.0, -1.0, False),
@@ -174,11 +174,11 @@ class TestIsBetween:
     def test_main(self, *, x: float, low: float, high: float, expected: bool) -> None:
         assert is_between(x, low, high, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "low",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
     )
@@ -187,7 +187,7 @@ class TestIsBetween:
 
 
 class TestIsEqual:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0.0, -inf, False),
@@ -210,7 +210,7 @@ class TestIsEqual:
 
 
 class TestIsEqualOrApprox:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0, 0, True),
@@ -236,7 +236,7 @@ class TestIsEqualOrApprox:
 
 
 class TestIsFinite:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -253,7 +253,7 @@ class TestIsFinite:
 
 
 class TestIsFiniteAndIntegral:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -282,7 +282,7 @@ class TestIsFiniteAndIntegral:
 
 
 class TestIsFiniteAndNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -305,7 +305,7 @@ class TestIsFiniteAndNegative:
 
 
 class TestIsFiniteAndNonNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -328,7 +328,7 @@ class TestIsFiniteAndNonNegative:
 
 
 class TestIsFiniteAndNonPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -351,7 +351,7 @@ class TestIsFiniteAndNonPositive:
 
 
 class TestIsFiniteAndNonZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -374,7 +374,7 @@ class TestIsFiniteAndNonZero:
 
 
 class TestIsFiniteAndPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -397,7 +397,7 @@ class TestIsFiniteAndPositive:
 
 
 class TestIsGreaterThan:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0.0, -inf, True),
@@ -417,7 +417,7 @@ class TestIsGreaterThan:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -425,7 +425,7 @@ class TestIsGreaterThan:
 
 
 class TestIsIntegral:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, True, True),
@@ -454,7 +454,7 @@ class TestIsIntegral:
 
 
 class TestIsLessThan:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
         [
             param(0.0, -inf, False),
@@ -474,7 +474,7 @@ class TestIsLessThan:
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
     )
     def test_nan(self, *, y: float) -> None:
@@ -482,7 +482,7 @@ class TestIsLessThan:
 
 
 class TestIsNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, True, True),
@@ -505,7 +505,7 @@ class TestIsNegative:
 
 
 class TestIsNonNegative:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -528,7 +528,7 @@ class TestIsNonNegative:
 
 
 class TestIsNonPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, True, True),
@@ -551,7 +551,7 @@ class TestIsNonPositive:
 
 
 class TestIsNonZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),
@@ -574,7 +574,7 @@ class TestIsNonZero:
 
 
 class TestIsPositive:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -597,7 +597,7 @@ class TestIsPositive:
 
 
 class TestIsZero:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -620,7 +620,7 @@ class TestIsZero:
 
 
 class TestIsZeroOrFiniteAndNonMicro:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected", "expected_nan"),
         [
             param(-inf, False, False),
@@ -643,7 +643,7 @@ class TestIsZeroOrFiniteAndNonMicro:
 
 
 class TestIsZeroOrNonMicro:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "expected"),
         [
             param(-inf, True),

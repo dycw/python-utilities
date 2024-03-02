@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from locale import LC_CTYPE, LC_TIME, setlocale
 
-from pytest import mark, param
+import pytest
 
 from utilities.locale import atof, atoi, get_locale_for_platform, override_locale
 from utilities.pytest import skipif_windows
 
 
 class TestAToF:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("text", "expected"),
         [
             param("0.00", 0.0),
@@ -25,7 +25,7 @@ class TestAToF:
 
 
 class TestAToI:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("text", "expected"),
         [
             param("0", 0),

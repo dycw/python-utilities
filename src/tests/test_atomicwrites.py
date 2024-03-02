@@ -4,7 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 from re import escape
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
 from utilities.pathlib import ensure_path
@@ -12,7 +12,7 @@ from utilities.platform import IS_WINDOWS
 
 
 class TestWriter:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("is_binary", "contents"),
         [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
     )
@@ -77,7 +77,7 @@ class TestWriter:
                 ensure_path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
-    @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
+    @pytest.mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
     def test_error_during_write(
         self, *, tmp_path: Path, error: type[Exception]
     ) -> None:

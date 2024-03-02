@@ -6,6 +6,7 @@ from collections.abc import Callable
 from re import DOTALL
 from typing import Any, cast
 
+import pytest
 from hypothesis import assume, given
 from hypothesis.strategies import none
 from numpy import array, nan
@@ -22,7 +23,6 @@ from pandas import (
     to_datetime,
 )
 from pandas.testing import assert_index_equal, assert_series_equal
-from pytest import mark, param, raises
 
 from utilities.datetime import TODAY_UTC, UTC
 from utilities.hypothesis import int_indexes, text_ascii, timestamps
@@ -231,7 +231,7 @@ class TestCheckPandasDataFrame:
     def test_standard_pass(self) -> None:
         check_pandas_dataframe(DataFrame(index=RangeIndex(0)), standard=True)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "df",
         [
             param(DataFrame(0.0, index=Index(["A"]), columns=Index(["value"]))),
@@ -255,7 +255,7 @@ class TestCheckPandasDataFrame:
         ):
             check_pandas_dataframe(df, standard=True)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "df",
         [
             param(
@@ -359,7 +359,7 @@ class TestCheckRangeIndex:
 
 
 class TestDTypes:
-    @mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
+    @pytest.mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
     def test_main(self, *, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
 
@@ -428,7 +428,7 @@ class TestRenameIndex:
 
 
 class TestSeriesMinMax:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x_v", "y_v", "dtype", "expected_min_v", "expected_max_v"),
         [
             param(0.0, 1.0, float, 0.0, 1.0),
@@ -481,7 +481,7 @@ class TestSeriesMinMax:
         expected_max = Series(data=[expected_max_v], dtype=dtype)
         assert_series_equal(result_max, expected_max)
 
-    @mark.parametrize("func", [param(series_min), param(series_max)])
+    @pytest.mark.parametrize("func", [param(series_min), param(series_max)])
     def test_different_index(
         self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
@@ -490,7 +490,7 @@ class TestSeriesMinMax:
         with raises(AssertionError):
             _ = func(x, y)
 
-    @mark.parametrize("func", [param(series_min), param(series_max)])
+    @pytest.mark.parametrize("func", [param(series_min), param(series_max)])
     def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore[]
@@ -540,7 +540,7 @@ class TestTimestampMinMaxAsDateTime:
 
 
 class TestTimestampToDate:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("timestamp", "expected"),
         [
             param(to_datetime("2000-01-01"), dt.date(2000, 1, 1)),
@@ -556,7 +556,7 @@ class TestTimestampToDate:
 
 
 class TestTimestampToDateTime:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("timestamp", "expected"),
         [
             param(to_datetime("2000-01-01"), dt.datetime(2000, 1, 1, tzinfo=UTC)),
@@ -585,7 +585,7 @@ class TestTimestampToDateTime:
 
 
 class TestToNumpy:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("series_v", "series_d", "array_v", "array_d"),
         [
             param(True, bool, True, bool),

@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import Iterator
 from os import getenv
 
+import pytest
 from _pytest.fixtures import SubRequest
-from pytest import LogCaptureFixture, fixture, mark
 
 from utilities.timer import Timer
 
-FLAKY = mark.flaky(reruns=10, reruns_delay=3)
+FLAKY = pytest.mark.flaky(reruns=10, reruns_delay=3)
 
 
 # hypothesis
@@ -33,14 +33,14 @@ except ModuleNotFoundError:
 else:
     setup_loguru()
 
-    @fixture()
+    @pytest.fixture()
     def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
         handler_id = logger.add(caplog.handler, format="{message}")
         yield caplog
         logger.remove(handler_id)
 
-    @fixture(autouse=True)
-    def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
+    @pytest.fixture(autouse=True)
+    def log_current_test(*, request: SubRequest) -> Iterator[None]:
         """Log current test; usage:
 
         PYTEST_TIMER=1 pytest -s .

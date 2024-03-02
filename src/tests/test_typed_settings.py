@@ -7,6 +7,7 @@ from operator import attrgetter, eq
 from pathlib import Path
 from typing import Any, TypeVar
 
+import pytest
 from click import command, echo
 from click.testing import CliRunner
 from hypothesis import given
@@ -23,7 +24,6 @@ from hypothesis.strategies import (
     times,
     tuples,
 )
-from pytest import mark, param, raises
 from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
 
@@ -80,7 +80,7 @@ class TestClickField:
 
 class TestClickOptions:
     @given(data=data(), appname=app_names, root=temp_paths())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
@@ -173,7 +173,7 @@ class TestGetLoaders:
 
 class TestLoadSettings:
     @given(data=data(), root=temp_paths(), appname=app_names)
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
@@ -235,7 +235,9 @@ class TestLoadSettings:
         assert equal(settings_loaded.value, value)
 
     @given(appname=app_names)
-    @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
+    @pytest.mark.parametrize(
+        "cls", [param(dt.date), param(dt.time), param(dt.timedelta)]
+    )
     def test_errors(self, *, appname: str, cls: Any) -> None:
         @dataclass(frozen=True)
         class Settings:

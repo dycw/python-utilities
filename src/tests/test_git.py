@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
-from pytest import raises
 
 from utilities.git import (
     GetRepoRootError,
