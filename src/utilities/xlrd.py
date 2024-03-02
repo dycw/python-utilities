@@ -22,7 +22,7 @@ def get_date_mode() -> Literal[0, 1]:
             raise GetDateModeError(system=system)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class GetDateModeError(Exception):
     system: System
 

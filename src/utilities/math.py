@@ -424,12 +424,12 @@ def check_integer(
         raise _CheckIntegerMaxError(n=n, max_=max)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class CheckIntegerError(Exception):
     n: int
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _CheckIntegerEqualError(CheckIntegerError):
     equal: int
 
@@ -438,7 +438,7 @@ class _CheckIntegerEqualError(CheckIntegerError):
         return f"Integer must be equal to {self.equal}; got {self.n}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _CheckIntegerEqualOrApproxError(CheckIntegerError):
     equal_or_approx: int | tuple[int, float]
 
@@ -452,7 +452,7 @@ class _CheckIntegerEqualOrApproxError(CheckIntegerError):
         return f"Integer must be {desc}; got {self.n}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _CheckIntegerMinError(CheckIntegerError):
     min_: int
 
@@ -461,7 +461,7 @@ class _CheckIntegerMinError(CheckIntegerError):
         return f"Integer must be at least {self.min_}; got {self.n}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _CheckIntegerMaxError(CheckIntegerError):
     max_: int
 

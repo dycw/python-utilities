@@ -31,7 +31,7 @@ def get_system() -> System:
     raise GetSystemError(sys=sys)  # pragma: no cover
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class GetSystemError(Exception):
     sys: str
 

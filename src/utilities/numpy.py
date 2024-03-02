@@ -268,7 +268,7 @@ def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     return datetime64(datetime_use, "us")
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class DatetimeToDatetime64Error(Exception):
     datetime: dt.datetime
     tzinfo: dt.tzinfo
@@ -1059,7 +1059,7 @@ def pct_change(
     return flip(result, axis=axis)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class PctChangeError(Exception):
     @override
     def __str__(self) -> str:
@@ -1092,7 +1092,7 @@ def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArr
     return shifted
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class ShiftError(Exception):
     @override
     def __str__(self) -> str:

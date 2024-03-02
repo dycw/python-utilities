@@ -20,7 +20,7 @@ def check_name(obj: _HasName, name: Any, /) -> None:
         raise CheckNameError(obj=obj, name=name)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class CheckNameError(Exception):
     obj: _HasName
     name: Any

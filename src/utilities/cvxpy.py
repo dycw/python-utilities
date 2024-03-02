@@ -285,7 +285,7 @@ def maximum(
     return cvxpy.maximum(x, y)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class MaximumError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame
@@ -436,7 +436,7 @@ def minimum(
     return cvxpy.minimum(x, y)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class MinimumError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame
@@ -563,7 +563,7 @@ def multiply(
     return cvxpy.multiply(x, y)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class MultiplyError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame
@@ -857,7 +857,7 @@ def scalar_product(
     return sum_(prod)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class ScalarProductError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame
@@ -1099,7 +1099,7 @@ def _check_series_and_dataframe(
         raise _CheckSeriesAndDataFrameError(x=x, y=y)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _CheckSeriesAndDataFrameError(Exception):
     x: SeriesF | DataFrame
     y: SeriesF | DataFrame

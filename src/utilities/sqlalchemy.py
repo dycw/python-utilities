@@ -571,7 +571,7 @@ def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
     raise GetDialectError(dialect=dialect)  # pragma: no cover
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class GetDialectError(Exception):
     dialect: sqlalchemy.Dialect
 
@@ -591,7 +591,7 @@ def get_table(obj: Table | type[Any], /) -> Table:
     raise GetTableError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class GetTableError(Exception):
     obj: Any
 

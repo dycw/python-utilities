@@ -10,15 +10,14 @@ from typing import TypeVar, cast
 from typing_extensions import override
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class ImpossibleCaseError(Exception):
     case: list[str]
 
     @override
     def __str__(self) -> str:
-        return (  # pragma: no cover
-            "Arguments must be possible: {}".format(", ".join(self.case))
-        )
+        desc = ", ".join(self.case)
+        return f"Arguments must be possible: {desc}"
 
 
 @contextmanager
