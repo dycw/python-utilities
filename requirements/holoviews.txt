@@ -41,6 +41,8 @@ jinja2==3.1.3
     # via bokeh
 linkify-it-py==2.0.3
     # via panel
+llvmlite==0.42.0
+    # via numba
 markdown==3.5.2
     # via panel
 markdown-it-py==3.0.0
@@ -53,11 +55,16 @@ mdit-py-plugins==0.4.0
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
+numba==0.59.0
+    # via numbagg
+numbagg==0.8.0
 numpy==1.26.4
     # via
     #   bokeh
     #   contourpy
     #   holoviews
+    #   numba
+    #   numbagg
     #   pandas
     #   xarray
 outcome==1.3.0.post0
