@@ -21,6 +21,6 @@ jobs:
           python-version: ${{ matrix.version }}
       - run: python -m pip install "uv==0.1.13"
       - run: uv venv
-      - run: uv pip sync requirements.txt
+      - run: uv pip sync requirements-ci.txt
       - run: pytest --cov-report=term-missing:skip-covered -n=auto
     timeout-minutes: 60
