@@ -69,8 +69,8 @@ packages=(
     # scripts-monitor-memory
     # scripts-pypi-server
     # semver
-    sqlalchemy
-    sqlalchemy-polars
+    # sqlalchemy
+    # sqlalchemy-polars
     typed-settings
     xarray
     xlrd
