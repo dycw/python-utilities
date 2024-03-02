@@ -269,8 +269,8 @@ class TestNanSumAgg:
             pytest.param([1, 2, None, None], 3, id="two ints, two Nones"),
         ],
     )
-    @pytest.mark.parametrize("dtype", [param(Int64), param(Float64)])
-    @pytest.mark.parametrize("mode", [param("str"), param("column")])
+    @pytest.mark.parametrize("dtype", [pytest.param(Int64), pytest.param(Float64)])
+    @pytest.mark.parametrize("mode", [pytest.param("str"), pytest.param("column")])
     def test_main(
         self,
         *,
@@ -294,10 +294,15 @@ class TestNanSumAgg:
 class TestNanSumCols:
     @pytest.mark.parametrize(
         ("x", "y", "expected"),
-        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+        [
+            pytest.param(None, None, None),
+            pytest.param(None, 0, 0),
+            pytest.param(0, None, 0),
+            pytest.param(1, 2, 3),
+        ],
     )
-    @pytest.mark.parametrize("x_kind", [param("str"), param("column")])
-    @pytest.mark.parametrize("y_kind", [param("str"), param("column")])
+    @pytest.mark.parametrize("x_kind", [pytest.param("str"), pytest.param("column")])
+    @pytest.mark.parametrize("y_kind", [pytest.param("str"), pytest.param("column")])
     def test_main(
         self,
         *,

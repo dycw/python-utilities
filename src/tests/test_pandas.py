@@ -361,7 +361,9 @@ class TestCheckRangeIndex:
 
 
 class TestDTypes:
-    @pytest.mark.parametrize("dtype", [param(Int64), param(boolean), param(string)])
+    @pytest.mark.parametrize(
+        "dtype", [pytest.param(Int64), pytest.param(boolean), pytest.param(string)]
+    )
     def test_main(self, *, dtype: Any) -> None:
         assert isinstance(Series([], dtype=dtype), Series)
 
@@ -487,7 +489,9 @@ class TestSeriesMinMax:
         expected_max = Series(data=[expected_max_v], dtype=dtype)
         assert_series_equal(result_max, expected_max)
 
-    @pytest.mark.parametrize("func", [param(series_min), param(series_max)])
+    @pytest.mark.parametrize(
+        "func", [pytest.param(series_min), pytest.param(series_max)]
+    )
     def test_different_index(
         self, *, func: Callable[[SeriesA, SeriesA], SeriesA]
     ) -> None:
@@ -496,7 +500,9 @@ class TestSeriesMinMax:
         with pytest.raises(AssertionError):
             _ = func(x, y)
 
-    @pytest.mark.parametrize("func", [param(series_min), param(series_max)])
+    @pytest.mark.parametrize(
+        "func", [pytest.param(series_min), pytest.param(series_max)]
+    )
     def test_error(self, *, func: Callable[[SeriesA, SeriesA], SeriesA]) -> None:
         x = Series(data=nan, dtype=float)
         y = Series(data=NA, dtype=Int64)  # type: ignore[]

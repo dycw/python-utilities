@@ -59,7 +59,10 @@ class TestExtractGroup:
 class TestExtractGroups:
     @pytest.mark.parametrize(
         ("pattern", "text", "expected"),
-        [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
+        [
+            pytest.param(r"(\d)", "A0A", ["0"]),
+            pytest.param(r"(\d)(\w)", "A0A0", ["0", "A"]),
+        ],
     )
     def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
         assert extract_groups(pattern, text) == expected

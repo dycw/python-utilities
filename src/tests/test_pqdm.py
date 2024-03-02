@@ -40,8 +40,10 @@ class TestGetDesc:
 
 
 class TestPMap:
-    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize(
+        "parallelism", [pytest.param("processes"), pytest.param("threads")]
+    )
+    @pytest.mark.parametrize("n_jobs", [pytest.param(1), pytest.param(2)])
     def test_unary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -49,8 +51,10 @@ class TestPMap:
         expected = [-1, -2, -3]
         assert result == expected
 
-    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize(
+        "parallelism", [pytest.param("processes"), pytest.param("threads")]
+    )
+    @pytest.mark.parametrize("n_jobs", [pytest.param(1), pytest.param(2)])
     def test_binary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -62,8 +66,10 @@ class TestPMap:
 
 
 class TestPStarMap:
-    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize(
+        "parallelism", [pytest.param("processes"), pytest.param("threads")]
+    )
+    @pytest.mark.parametrize("n_jobs", [pytest.param(1), pytest.param(2)])
     def test_unary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
@@ -73,8 +79,10 @@ class TestPStarMap:
         expected = [-1, -2, -3]
         assert result == expected
 
-    @pytest.mark.parametrize("parallelism", [param("processes"), param("threads")])
-    @pytest.mark.parametrize("n_jobs", [param(1), param(2)])
+    @pytest.mark.parametrize(
+        "parallelism", [pytest.param("processes"), pytest.param("threads")]
+    )
+    @pytest.mark.parametrize("n_jobs", [pytest.param(1), pytest.param(2)])
     def test_binary(
         self, *, parallelism: Literal["processes", "threads"], n_jobs: int
     ) -> None:
