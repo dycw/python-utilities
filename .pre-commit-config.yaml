@@ -52,6 +52,6 @@ repos:
     hooks:
       - id: uv pip compiles
         name: uv pip compiles
-        entry: bash requirements/run_uv_pip_compiles.sh
+        entry: bash scripts/run_uv_pip_compiles.sh
         language: system
         files: ^pyproject\.toml$
