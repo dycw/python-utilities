@@ -46,7 +46,6 @@ pandas = ["pandas >= 2.2.1"]
 pathvalidate = ["pathvalidate >= 3.2.0"]
 polars = ["polars >= 0.20.13"]
 pqdm = ["pqdm >= 0.2.0"]
-psutil = ["psutil >= 5.9.6"]
 pydantic = ["pydantic >= 2.6.3"]
 pyhumps = ["pyhumps >= 3.8.0"]
 pyinstrument = ["pyinstrument >= 4.6.2"]
@@ -71,7 +70,11 @@ scripts-luigi-server = [
   "luigi >= 3.5.0",
   "typed-settings[click] >= 24.1.0",
 ]
-scripts-monitor-memory = ["loguru >= 0.7.2", "typed-settings[click] >= 24.1.0"]
+scripts-monitor-memory = [
+  "loguru >= 0.7.2",
+  "psutil >= 5.9.6",
+  "typed-settings[click] >= 24.1.0",
+]
 scripts-pypi-server = [
   "loguru >= 0.7.2",
   "pypiserver[passlib] >= 2.0.1",
