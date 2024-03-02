@@ -336,6 +336,7 @@ addopts = [
 filterwarnings = [
   "error",
   "ignore:invalid escape sequence:DeprecationWarning",
+  "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
 ]
 minversion = "8.0"
