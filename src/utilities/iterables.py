@@ -611,4 +611,5 @@ __all__ = [
     "is_iterable_not_str",
     "one",
     "take",
+    "transpose",
 ]

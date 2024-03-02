@@ -20,6 +20,8 @@ from utilities.iterables import (
     CheckSuperSetError,
     EnsureIterableError,
     EnsureIterableNotStrError,
+    OneEmptyError,
+    OneNonUniqueError,
     check_duplicates,
     check_iterables_equal,
     check_length,
@@ -35,6 +37,8 @@ from utilities.iterables import (
     ensure_iterable_not_str,
     is_iterable,
     is_iterable_not_str,
+    one,
+    transpose,
 )
 
 
@@ -362,3 +366,76 @@ class TestIsIterableNotStr:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable_not_str(obj) is expected
+
+
+class TestOne:
+    def test_main(self) -> None:
+        assert one([None]) is None
+
+    def test_error_empty(self) -> None:
+        with raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
+            _ = one([])
+
+    def test_error_non_unique(self) -> None:
+        with raises(
+            OneNonUniqueError,
+            match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
+        ):
+            _ = one([1, 2])
+
+
+class TestTranspose:
+    @given(n=integers(1, 10))
+    def test_singles(self, *, n: int) -> None:
+        iterable = ((i,) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        (first,) = result
+        assert isinstance(first, tuple)
+        assert len(first) == n
+        for i in first:
+            assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_pairs(self, *, n: int) -> None:
+        iterable = ((i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second = result
+        for part in [first, second]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_triples(self, *, n: int) -> None:
+        iterable = ((i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third = result
+        for part in [first, second, third]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quadruples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth = result
+        for part in [first, second, third, fourth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
+
+    @given(n=integers(1, 10))
+    def test_quintuples(self, *, n: int) -> None:
+        iterable = ((i, i, i, i, i) for i in range(n))
+        result = transpose(iterable)
+        assert isinstance(result, tuple)
+        first, second, third, fourth, fifth = result
+        for part in [first, second, third, fourth, fifth]:
+            assert len(part) == n
+            for i in part:
+                assert isinstance(i, int)
