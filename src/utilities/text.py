@@ -17,7 +17,7 @@ def ensure_str(obj: Any, /) -> str:
         raise EnsureStrError(obj=error.obj) from None
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class EnsureStrError(EnsureClassError):
     cls: type[str] = str
 

@@ -2,8 +2,20 @@ from __future__ import annotations
 
 from pytest import mark, param, raises
 
-from utilities.errors import RedirectErrorError, redirect_error, retry
+from utilities.errors import (
+    ImpossibleCaseError,
+    RedirectErrorError,
+    redirect_error,
+    retry,
+)
 from utilities.iterables import one
+
+
+class TestImpossibleCaseError:
+    def test_main(self) -> None:
+        x = None
+        with raises(ImpossibleCaseError, match=r"Case must be possible: x=None\."):
+            raise ImpossibleCaseError(case=[f"{x=}"])
 
 
 class TestRedirectError:

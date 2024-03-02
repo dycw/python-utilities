@@ -9,6 +9,7 @@ from typing import cast
 
 from typing_extensions import Never, assert_never, override
 
+from utilities.errors import ImpossibleCaseError
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.types import Duration
@@ -159,12 +160,8 @@ def local_timezone() -> dt.tzinfo:
     """Get the local timezone."""
     tz = get_now(tz=None).astimezone().tzinfo
     if tz is None:  # pragma: no cover
-        msg = f"{tz=}"
-        raise LocalTimeZoneError(msg)
+        raise ImpossibleCaseError(case=[])
     return tz
-
-
-class LocalTimeZoneError(Exception): ...
 
 
 def maybe_sub_pct_y(text: str, /) -> str:
@@ -342,7 +339,6 @@ class YieldWeekdaysError(Exception): ...
 __all__ = [
     "AddWeekdaysError",
     "EPOCH_UTC",
-    "LocalTimeZoneError",
     "NOW_HKG",
     "NOW_TOKYO",
     "NOW_UTC",

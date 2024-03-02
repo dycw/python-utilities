@@ -31,20 +31,20 @@ def extract_group(pattern: str, text: str, /) -> str:
             raise _ExtractGroupMultipleCaptureGroupsError(pattern=pattern, text=text)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class ExtractGroupError(Exception):
     pattern: str
     text: str
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupMultipleCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
         return f"Pattern {self.pattern} must contain exactly one capture group; it had multiple"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupMultipleMatchesError(ExtractGroupError):
     matches: list[str]
 
@@ -53,7 +53,7 @@ class _ExtractGroupMultipleMatchesError(ExtractGroupError):
         return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
     @override
     def __str__(self) -> str:
@@ -62,7 +62,7 @@ class _ExtractGroupNoCaptureGroupsError(ExtractGroupError):
         )
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupNoMatchesError(ExtractGroupError):
     @override
     def __str__(self) -> str:
@@ -92,13 +92,13 @@ def extract_groups(pattern: str, text: str, /) -> list[str]:
             )
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class ExtractGroupsError(Exception):
     pattern: str
     text: str
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
     matches: list[str]
 
@@ -107,7 +107,7 @@ class _ExtractGroupsMultipleMatchesError(ExtractGroupsError):
         return f"Pattern {self.pattern} must match against {self.text} exactly once; matches were {self.matches}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
     pattern: str
     text: str
@@ -117,7 +117,7 @@ class _ExtractGroupsNoCaptureGroupsError(ExtractGroupsError):
         return f"Pattern {self.pattern} must contain at least one capture group"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _ExtractGroupsNoMatchesError(ExtractGroupsError):
     @override
     def __str__(self) -> str:

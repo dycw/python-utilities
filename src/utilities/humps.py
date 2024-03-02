@@ -46,20 +46,20 @@ def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
     return bidict(zip(keys, values, strict=True))
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class SnakeCaseMappingsError(Exception):
     text: list[str]
     counts: dict[Hashable, int]
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _SnakeCaseMappingsDuplicateKeysError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:
         return f"Strings {self.text} must not contain duplicates; got {self.counts}"
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class _SnakeCaseMappingsDuplicateValuesError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:

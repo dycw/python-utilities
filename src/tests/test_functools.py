@@ -17,7 +17,18 @@ class TestPartial:
         assert func(x) == x - y
 
 
-class TestReduce:
+class TestRedirectEmptyReduce:
     def test_main(self) -> None:
-        with raises(EmptyReduceError), redirect_empty_reduce():
+        with (
+            raises(
+                EmptyReduceError,
+                match=r"reduce\(\) must not be called over an empty iterable, or must have an initial value\.",
+            ),
+            redirect_empty_reduce(),
+        ):
             _ = reduce(add, [])
+
+    def test_other_error(self) -> None:
+        with raises(TypeError, match="other"), redirect_empty_reduce():
+            msg = "other"
+            raise TypeError(msg)

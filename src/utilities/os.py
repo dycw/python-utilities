@@ -16,7 +16,7 @@ def get_cpu_count() -> int:
     return count
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(frozen=True, kw_only=True)
 class GetCPUCountError(Exception):
     @override
     def __str__(self) -> str:

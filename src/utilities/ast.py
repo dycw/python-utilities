@@ -40,7 +40,7 @@ def _yield_from_target_and_value(target: expr, value: expr, /) -> Iterator[list[
         and (target.id == "__all__")
         and isinstance(value, List)
     ):
-        return  # pragma: no cover
+        return
     elts = value.elts
     if not all(isinstance(c, Constant) for c in elts):  # pragma: no cover
         return
