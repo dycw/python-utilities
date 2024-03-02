@@ -13,6 +13,9 @@ packages=(
     fastapi
     fpdf2
     holoviews
+    ipython
+    jupyter
+    loguru
     more-itertools
     scipy
     xlrd
