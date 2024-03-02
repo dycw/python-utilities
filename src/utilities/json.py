@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any, TypeVar, cast
 from uuid import UUID
 
+from typing_extensions import override
+
 from utilities.datetime import (
     UTC,
     parse_date,
@@ -25,6 +27,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.errors import redirect_error
+from utilities.types import get_class_name
 
 _T = TypeVar("_T")
 _ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
@@ -38,12 +41,12 @@ def serialize(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> str:
     return dumps(_pre_process(obj), default=partial(_default, extra=extra))
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class _DictWrapper:
     value: dict[Any, Any]
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=True)
 class _TupleWrapper:
     value: tuple[Any, ...]
 
@@ -52,9 +55,9 @@ def _pre_process(obj: Any) -> Any:
     if isinstance(obj, float):
         return _positive_zero(obj)
     if isinstance(obj, dict):
-        return _DictWrapper(obj)
+        return _DictWrapper(value=obj)
     if isinstance(obj, tuple):
-        return _TupleWrapper(obj)
+        return _TupleWrapper(value=obj)
     return obj
 
 
@@ -88,8 +91,7 @@ def _default(  # noqa: PLR0911, PLR0912
             return {_CLASS: "dt.datetime|naive", _VALUE: obj.isoformat()}
         if tzinfo is UTC:
             return {_CLASS: "dt.datetime|UTC", _VALUE: serialize_datetime(obj)}
-        msg = f"{tzinfo=}"
-        raise JsonSerializationError(msg)
+        raise _JsonSerializationTimeZoneError(obj=obj, tzinfo=tzinfo)
     if isinstance(obj, dt.time):
         return {_CLASS: "dt.time", _VALUE: serialize_time(obj)}
     if isinstance(obj, dt.timedelta):
@@ -122,8 +124,10 @@ def _default(  # noqa: PLR0911, PLR0912
         return {_CLASS: "UUID", _VALUE: str(obj)}
     if extra is not None:
         cls = type(obj)
-        with redirect_error((KeyError, ValueError), JsonSerializationError(f"{cls=}")):
+        try:
             key, func = extra[cls]
+        except KeyError:
+            raise _JsonSerializationTypeError(obj=obj) from None
         return {_CLASS: key, _VALUE: func(obj)}
     try:
         from sqlalchemy import Engine
@@ -135,11 +139,28 @@ def _default(  # noqa: PLR0911, PLR0912
                 _CLASS: "sqlalchemy.Engine",
                 _VALUE: obj.url.render_as_string(hide_password=False),
             }
-    msg = f"{type(obj)=}"
-    raise JsonSerializationError(msg)
+    raise _JsonSerializationTypeError(obj=obj)
 
 
-class JsonSerializationError(Exception): ...
+@dataclass(frozen=True, kw_only=True)
+class JsonSerializationError(Exception):
+    obj: Any
+
+
+@dataclass(frozen=True, kw_only=True)
+class _JsonSerializationTimeZoneError(JsonSerializationError):
+    tzinfo: dt.tzinfo
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid timezone: {self.tzinfo}."
+
+
+@dataclass(frozen=True, kw_only=True)
+class _JsonSerializationTypeError(JsonSerializationError):
+    @override
+    def __str__(self) -> str:
+        return f"Unsupported type: {get_class_name(self.obj)}."
 
 
 def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:

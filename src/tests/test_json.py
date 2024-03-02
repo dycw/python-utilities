@@ -208,13 +208,15 @@ class TestSerializeAndDeserialize:
         expected = x == y
         assert res is expected
 
-    @mark.parametrize(
-        "obj",
-        [param(NOW_HKG, id="invalid timezone"), param(sentinel, id="invalid object")],
-    )
-    def test_error(self, *, obj: Any) -> None:
-        with raises(JsonSerializationError):
-            _ = serialize(obj)
+    def test_error_timezone(self) -> None:
+        with raises(
+            JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
+        ):
+            _ = serialize(NOW_HKG)
+
+    def test_error(self) -> None:
+        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel\."):
+            _ = serialize(sentinel)
 
     def _assert_standard(
         self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
@@ -235,16 +237,14 @@ class TestSerializeAndDeserialize:
 
 class TestSerialize:
     def test_error_despite_extra(self) -> None:
-        class Example1:
-            pass
+        class Example1: ...
 
         x = Example1()
 
-        class Example2:
-            pass
+        class Example2: ...
 
         extra = {Example2: ("example", neg)}
-        with raises(JsonSerializationError):
+        with raises(JsonSerializationError, match=r"Unsupported type: Example1\."):
             _ = serialize(x, extra=extra)
 
 
