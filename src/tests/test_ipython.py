@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from types import NoneType
 
 from utilities.ipython import check_ipython_class, is_ipython

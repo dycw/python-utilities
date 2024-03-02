@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from collections.abc import Callable
 from re import DOTALL
@@ -50,7 +48,7 @@ from utilities.pandas import SeriesF
 
 
 def _get_variable(
-    objective: type[Maximize] | type[Minimize],  # noqa: PYI055
+    objective: type[Maximize] | type[Minimize],
     /,
     *,
     shape: tuple[int, ...] | None = None,
@@ -550,11 +548,7 @@ class TestNegate:
     @pytest.mark.parametrize(
         "objective", [pytest.param(Maximize), pytest.param(Minimize)]
     )
-    def test_expression(
-        self,
-        *,
-        objective: type[Maximize] | type[Minimize],  # noqa: PYI055
-    ) -> None:
+    def test_expression(self, *, objective: type[Maximize] | type[Minimize]) -> None:
         var = _get_variable(objective)
         assert_equal(negate(var).value, negate(var.value))
 
@@ -601,11 +595,7 @@ class TestNegative:
     @pytest.mark.parametrize(
         "objective", [pytest.param(Maximize), pytest.param(Minimize)]
     )
-    def test_expression(
-        self,
-        *,
-        objective: type[Maximize] | type[Minimize],  # noqa: PYI055
-    ) -> None:
+    def test_expression(self, *, objective: type[Maximize] | type[Minimize]) -> None:
         var = _get_variable(objective)
         assert isclose(negative(var).value, negative(var.value))
 

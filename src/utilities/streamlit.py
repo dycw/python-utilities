@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from hmac import compare_digest
 from typing import NoReturn

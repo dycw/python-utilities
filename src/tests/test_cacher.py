@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from operator import itemgetter
 from pathlib import Path
 from time import sleep

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Iterable
 from functools import partial
 from multiprocessing import cpu_count

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from re import search
 from subprocess import CalledProcessError, check_call

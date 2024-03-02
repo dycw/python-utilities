@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 POSITIVE_INT = 1
 ZERO_INT = 0
 NEGATIVE_INT = -1

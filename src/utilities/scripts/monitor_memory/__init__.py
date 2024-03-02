@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 import datetime as dt
 from collections.abc import Iterator
@@ -57,7 +55,7 @@ def _monitor_memory(
 @contextmanager
 def _yield_writer(
     *, path: Path = _CONFIG.path, mode: str = "r"
-) -> Iterator[DictWriter[Any]]:
+) -> Iterator[DictWriter]:
     fieldnames = [f.name for f in fields(cast(Any, Item))]
     with path.open(mode=mode) as fh:
         yield DictWriter(fh, fieldnames=fieldnames)

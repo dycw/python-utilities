@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from utilities.pathlib import PWD
 from utilities.re import extract_groups
 from utilities.subprocess import get_shell_output

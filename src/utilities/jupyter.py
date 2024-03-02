@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 from contextlib import ExitStack
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import chain
 from types import TracebackType
 from typing import Any
+
+from typing_extensions import Self
 
 from utilities.ipython import check_ipython_class
 
@@ -22,7 +22,7 @@ _DEFAULT_ROWS = 7
 _DEFAULT_COLS = 100
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class _Show:
     """Context manager which adjusts the display of NDFrames."""
 
@@ -37,8 +37,8 @@ class _Show:
         dp: int | None = None,
         rows: int | None = _DEFAULT_ROWS,
         columns: int | None = _DEFAULT_COLS,
-    ) -> _Show:
-        return _Show(dp=dp, rows=rows, columns=columns)
+    ) -> Self:
+        return replace(self, dp=dp, rows=rows, columns=columns)
 
     def __enter__(self) -> None:
         self._enter_pandas()

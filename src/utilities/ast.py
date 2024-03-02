@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from ast import Assign, AugAssign, Constant, List, Name, Try, expr, parse
 from collections.abc import Iterator
 from typing import cast

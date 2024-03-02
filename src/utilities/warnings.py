@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 from typing import Literal, TypedDict, cast

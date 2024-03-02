@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Set as AbstractSet
 from typing import Any
 

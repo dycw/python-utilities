@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from collections.abc import Callable
 from operator import eq, ge, gt, le, lt, ne

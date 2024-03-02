@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from locale import LC_CTYPE, LC_NUMERIC, getlocale, setlocale

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir

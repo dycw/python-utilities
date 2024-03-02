@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from collections.abc import Hashable, Mapping
 from collections.abc import Set as AbstractSet

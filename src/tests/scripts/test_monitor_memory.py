@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from csv import reader
 from pathlib import Path
 
