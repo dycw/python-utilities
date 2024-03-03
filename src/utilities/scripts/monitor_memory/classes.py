@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path  # noqa: TCH003
 from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import assert_never
@@ -11,7 +12,6 @@ from utilities.typed_settings import click_field
 
 if TYPE_CHECKING:
     import datetime as dt
-    from pathlib import Path
 
 
 @dataclass(frozen=True)

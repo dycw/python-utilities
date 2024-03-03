@@ -5,6 +5,7 @@ import datetime as dt
 from contextlib import contextmanager
 from csv import DictWriter
 from dataclasses import fields
+from pathlib import Path  # noqa: TCH003
 from time import sleep
 from typing import TYPE_CHECKING, Any, cast
 
@@ -22,7 +23,6 @@ from utilities.typed_settings import click_options
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from pathlib import Path
 
 _CONFIG = Config()
 
