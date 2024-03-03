@@ -18,8 +18,8 @@ def ensure_str(obj: Any, /) -> str:
 
 
 @dataclass(kw_only=True)
-class EnsureStrError(EnsureClassError):
-    cls: type[str] = str
+class EnsureStrError(Exception):
+    obj: Any
 
     @override
     def __str__(self) -> str:
