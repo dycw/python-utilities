@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from re import DOTALL
 from typing import TYPE_CHECKING
 
 import pytest
@@ -23,6 +24,9 @@ if TYPE_CHECKING:
 class TestExtractGroup:
     def test_main(self) -> None:
         assert extract_group(r"(\d)", "A0A") == "0"
+
+    def test_with_flags(self) -> None:
+        assert extract_group(r"(.\d)", "A\n0\nA", flags=DOTALL) == "\n0"
 
     @pytest.mark.parametrize(
         ("pattern", "text", "error", "match"),
@@ -70,6 +74,13 @@ class TestExtractGroups:
     )
     def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
         assert extract_groups(pattern, text) == expected
+
+    def test_with_flags(self) -> None:
+        assert extract_groups(r"(.)(\d)(\w)", "\n0A\n", flags=DOTALL) == [
+            "\n",
+            "0",
+            "A",
+        ]
 
     @pytest.mark.parametrize(
         ("pattern", "text", "error", "match"),

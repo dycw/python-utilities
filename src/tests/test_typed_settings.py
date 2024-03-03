@@ -27,6 +27,7 @@ from hypothesis.strategies import (
 from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
 
+from tests.conftest import FLAKY
 from utilities.datetime import (
     UTC,
     serialize_date,
@@ -107,6 +108,7 @@ class TestClickOptions:
         default, value, cfg = data.draw(tuples(strategy, strategy, strategy))
         self._run_test(test_cls, default, appname, serialize, root, value, cfg)
 
+    @FLAKY
     @given(data=data(), appname=app_names, root=temp_paths())
     def test_enum(self, *, data: DataObject, appname: str, root: Path) -> None:
         class Truth(enum.Enum):

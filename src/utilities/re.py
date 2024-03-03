@@ -8,12 +8,12 @@ from typing_extensions import override
 from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 
 
-def extract_group(pattern: str, text: str, /) -> str:
+def extract_group(pattern: str, text: str, /, *, flags: int = 0) -> str:
     """Extract a group.
 
     The regex must have 1 capture group, and this must match exactly once.
     """
-    compiled = compile(pattern)
+    compiled = compile(pattern, flags=flags)
     match compiled.groups:
         case 0:
             raise _ExtractGroupNoCaptureGroupsError(pattern=pattern, text=text)
@@ -69,13 +69,13 @@ class _ExtractGroupNoMatchesError(ExtractGroupError):
         return f"Pattern {self.pattern} must match against {self.text}"
 
 
-def extract_groups(pattern: str, text: str, /) -> list[str]:
+def extract_groups(pattern: str, text: str, /, *, flags: int = 0) -> list[str]:
     """Extract multiple groups.
 
     The regex may have any number of capture groups, and they must collectively
     match exactly once.
     """
-    compiled = compile(pattern)
+    compiled = compile(pattern, flags=flags)
     if (n_groups := compiled.groups) == 0:
         raise _ExtractGroupsNoCaptureGroupsError(pattern=pattern, text=text)
     matches: list[str] = compiled.findall(text)
