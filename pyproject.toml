@@ -420,7 +420,6 @@ select = [
   "S101",  # flake8-bandit, assert-used
 ]
 "src/tests/test_typed_settings.py" = ["I002"]  # isort, missing-required-import
-"src/utilities/typed_settings.py" = ["I002"]  # isort, missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["utilities.typed_settings.click_field"]
