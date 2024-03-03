@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Mapping
 from math import isfinite, nan
 from typing import Any, Literal

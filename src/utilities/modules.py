@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Callable, Iterator
 from importlib import import_module
 from pkgutil import iter_modules

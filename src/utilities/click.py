@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 import datetime as dt
 from enum import Enum as _Enum
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from click import Context, Parameter, ParamType, option
+from sqlalchemy import Engine as _Engine
 from typing_extensions import override
 
 from utilities.datetime import (
@@ -19,9 +18,6 @@ from utilities.datetime import (
 )
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
-
-if TYPE_CHECKING:
-    from sqlalchemy import Engine as _Engine
 
 
 class Date(ParamType):

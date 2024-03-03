@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Set as AbstractSet
 from pathlib import Path
 from string import ascii_letters

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass

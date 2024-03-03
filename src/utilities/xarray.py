@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Hashable, Mapping
 from dataclasses import asdict
 from typing import Annotated, Any, cast

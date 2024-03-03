@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from types import NoneType
 from typing import Any, cast

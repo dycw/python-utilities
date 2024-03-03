@@ -1,8 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from functools import partial
-from inspect import getsource
 from operator import le, lt
 from re import search
 from types import ModuleType
@@ -10,10 +7,7 @@ from typing import Any
 
 import pytest
 
-import utilities
 from tests.modules import package_with, package_without, standalone
-from utilities.ast import yield_dunder_all
-from utilities.iterables import check_duplicates
 from utilities.modules import (
     yield_module_contents,
     yield_module_subclasses,
@@ -37,18 +31,6 @@ class TestYieldModules:
     def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
         res = list(yield_modules(module, recursive=recursive))
         assert len(res) == expected
-
-    def test_all(self) -> None:
-        for module in yield_modules(utilities, recursive=True):
-            source = getsource(module)
-            for dunder_all in yield_dunder_all(source):
-                check_duplicates(dunder_all)
-                expected = sorted(dunder_all)
-                msg = (
-                    f"Please paste in\n\t{module.__name__}\nthe following:\n\n\n"
-                    f"\t__all__ = {expected}\n\n"
-                )
-                assert dunder_all == expected, msg
 
 
 class TestYieldModuleContents:

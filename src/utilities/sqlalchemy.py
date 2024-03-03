@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping

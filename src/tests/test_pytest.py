@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from inspect import signature
 from pathlib import Path
 from time import sleep

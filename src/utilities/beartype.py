@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, cast, overload
 
 from beartype import BeartypeConf, BeartypeStrategy, beartype

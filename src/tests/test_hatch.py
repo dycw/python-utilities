@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from utilities.hatch import get_hatch_version
 
 

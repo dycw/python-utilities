@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Iterator
 from dataclasses import fields, is_dataclass, replace
 from typing import Any, ClassVar, TypeGuard, TypeVar

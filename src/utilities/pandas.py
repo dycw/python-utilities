@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
