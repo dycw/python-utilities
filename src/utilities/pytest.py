@@ -20,10 +20,10 @@ from utilities.platform import (
 from utilities.types import Duration, IterableStrs, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
+    import pytest
     from _pytest.config import Config
     from _pytest.config.argparsing import Parser
     from _pytest.python import Function
-    from pytest import mark, skip
 except ModuleNotFoundError:  # pragma: no cover
     from typing import Any as Config
     from typing import Any as Function
@@ -33,12 +33,16 @@ except ModuleNotFoundError:  # pragma: no cover
         skipif_not_mac
     ) = skipif_not_linux = None
 else:
-    skipif_windows = mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
-    skipif_mac = mark.skipif(IS_MAC, reason="Skipped for Mac")
-    skipif_linux = mark.skipif(IS_LINUX, reason="Skipped for Linux")
-    skipif_not_windows = mark.skipif(IS_NOT_WINDOWS, reason="Skipped for non-Windows")
-    skipif_not_mac = mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
-    skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
+    mark = pytest.mark
+    skip = pytest.skip
+    skipif_windows = pytest.mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
+    skipif_mac = pytest.mark.skipif(IS_MAC, reason="Skipped for Mac")
+    skipif_linux = pytest.mark.skipif(IS_LINUX, reason="Skipped for Linux")
+    skipif_not_windows = pytest.mark.skipif(
+        IS_NOT_WINDOWS, reason="Skipped for non-Windows"
+    )
+    skipif_not_mac = pytest.mark.skipif(IS_NOT_MAC, reason="Skipped for non-Mac")
+    skipif_not_linux = pytest.mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
 def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
@@ -61,7 +65,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
 def add_pytest_collection_modifyitems(
     config: Config, items: Iterable[Function], options: IterableStrs, /
 ) -> None:
-    """Add the @mark.skips as necessary.
+    """Add the @pytest.mark.skips as necessary.
 
     Usage:
 
@@ -125,7 +129,7 @@ def throttle(
                 and (prev is not None)
                 and ((now - prev) < duration_to_float(duration))
             ):
-                skip(reason=f"{test} throttled")
+                _ = skip(reason=f"{test} throttled")
             if on_try:
                 _throttle_write(path, now)
                 return func(*args, **kwargs)

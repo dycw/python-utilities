@@ -6,6 +6,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Literal, cast
 
+import pytest
 from freezegun import freeze_time
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -21,7 +22,6 @@ from hypothesis.strategies import (
     tuples,
 )
 from luigi import BoolParameter, Parameter, Task
-from pytest import mark, param
 from semver import VersionInfo
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
@@ -155,12 +155,12 @@ class TestDateParameter:
 
 class TestDateTimeParameter:
     @given(data=data(), datetime=datetimes_utc())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "param_cls",
         [
-            param(DateHourParameter),
-            param(DateMinuteParameter),
-            param(DateSecondParameter),
+            pytest.param(DateHourParameter),
+            pytest.param(DateMinuteParameter),
+            pytest.param(DateSecondParameter),
         ],
     )
     def test_main(

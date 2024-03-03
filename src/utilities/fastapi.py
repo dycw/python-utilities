@@ -15,7 +15,7 @@ class APIRouter(_APIRouter):
     """Subclass which handles paths with & without trailing slashes."""
 
     @override
-    def api_route(  # type: ignore
+    def api_route(  # type: ignore[]
         self, *, path: str, include_in_schema: bool = True, **kwargs: Any
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """N/A."""

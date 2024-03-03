@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
 from pydantic import BaseModel
-from pytest import raises
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import ensure_path
@@ -44,7 +44,7 @@ class TestSaveAndLoadModel:
         class Example(BaseModel):
             x: int
 
-        with raises(
+        with pytest.raises(
             LoadModelError,
             match=r"Unable to load .*; path .* must not be a directory\.",
         ):
@@ -54,5 +54,7 @@ class TestSaveAndLoadModel:
         class Example(BaseModel):
             x: int
 
-        with raises(LoadModelError, match=r"Unable to load .*; path .* must exist\."):
+        with pytest.raises(
+            LoadModelError, match=r"Unable to load .*; path .* must exist\."
+        ):
             _ = load_model(Example, tmp_path.joinpath("model.json"))

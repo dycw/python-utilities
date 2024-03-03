@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Set as AbstractSet
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import sets
-from pytest import mark, param
 from typing_extensions import assert_never
 
 from utilities.hypothesis import text_ascii
@@ -34,7 +34,7 @@ class TestMaybeYieldLowerCase:
                 assert all(text == text.lower() for text in result)
             case System.linux:  # pragma: os-ne-linux
                 assert result == text
-            case _ as never:  # type: ignore
+            case _ as never:  # type: ignore[]
                 assert_never(never)
 
 
@@ -42,16 +42,16 @@ class TestSystem:
     def test_function(self) -> None:
         assert isinstance(get_system(), System)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("constant", "cls"),
         [
-            param(SYSTEM, System),
-            param(IS_WINDOWS, bool),
-            param(IS_MAC, bool),
-            param(IS_LINUX, bool),
-            param(IS_NOT_WINDOWS, bool),
-            param(IS_NOT_MAC, bool),
-            param(IS_NOT_LINUX, bool),
+            pytest.param(SYSTEM, System),
+            pytest.param(IS_WINDOWS, bool),
+            pytest.param(IS_MAC, bool),
+            pytest.param(IS_LINUX, bool),
+            pytest.param(IS_NOT_WINDOWS, bool),
+            pytest.param(IS_NOT_MAC, bool),
+            pytest.param(IS_NOT_LINUX, bool),
         ],
     )
     def test_constants(self, *, constant: Any, cls: type) -> None:

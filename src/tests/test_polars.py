@@ -4,10 +4,10 @@ from collections.abc import Callable, Mapping
 from math import isfinite, nan
 from typing import Any, Literal
 
+import pytest
 from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
 from polars.testing import assert_frame_equal
 from polars.type_aliases import PolarsDataType, SchemaDict
-from pytest import mark, param, raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
@@ -36,7 +36,7 @@ class TestCheckPolarsDataFrame:
 
     def test_columns_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have columns .*; got .*\n\n.*",
         ):
@@ -48,7 +48,7 @@ class TestCheckPolarsDataFrame:
 
     def test_dtypes_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have dtypes .*; got .*\n\n.*",
         ):
@@ -60,7 +60,7 @@ class TestCheckPolarsDataFrame:
 
     def test_height_error(self) -> None:
         df = DataFrame({"value": [0.0]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the height requirements; got .*\n\n.*",
         ):
@@ -72,7 +72,7 @@ class TestCheckPolarsDataFrame:
 
     def test_min_height_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the height requirements; got .*\n\n.*",
         ):
@@ -84,7 +84,7 @@ class TestCheckPolarsDataFrame:
 
     def test_max_height_error(self) -> None:
         df = DataFrame({"value": [0.0, 1.0]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the height requirements; got .*\n\n.*",
         ):
@@ -96,7 +96,7 @@ class TestCheckPolarsDataFrame:
 
     def test_predicates_error_missing_columns_and_failed(self) -> None:
         df = DataFrame({"a": [0.0, nan], "b": [0.0, nan]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the predicates; missing columns were .* and failed predicates were .*\n\n.*",
         ):
@@ -104,7 +104,7 @@ class TestCheckPolarsDataFrame:
 
     def test_predicates_error_missing_columns_only(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the predicates; missing columns were .*\n\n.*",
         ):
@@ -112,7 +112,7 @@ class TestCheckPolarsDataFrame:
 
     def test_predicates_error_failed_only(self) -> None:
         df = DataFrame({"a": [0.0, nan]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must satisfy the predicates; failed predicates were .*\n\n.*",
         ):
@@ -124,7 +124,7 @@ class TestCheckPolarsDataFrame:
 
     def test_schema_error_set_of_columns(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have schema .*; got .*\n\n.*",
         ):
@@ -132,7 +132,7 @@ class TestCheckPolarsDataFrame:
 
     def test_schema_error_order_of_columns(self) -> None:
         df = DataFrame(schema={"a": Float64, "b": Float64})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have schema .*; got .*\n\n.*",
         ):
@@ -144,7 +144,7 @@ class TestCheckPolarsDataFrame:
 
     def test_schema_inc_error(self) -> None:
         df = DataFrame({"foo": [0.0]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame schema must include .*; got .*\n\n.*",
         ):
@@ -156,7 +156,7 @@ class TestCheckPolarsDataFrame:
 
     def test_shape_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have shape .*; got .*\n\n.*",
         ):
@@ -168,7 +168,7 @@ class TestCheckPolarsDataFrame:
 
     def test_sorted_error(self) -> None:
         df = DataFrame({"value": [1.0, 0.0]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError, match="DataFrame must be sorted on .*\n\n.*"
         ):
             check_polars_dataframe(df, sorted="value")
@@ -179,7 +179,7 @@ class TestCheckPolarsDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame({"value": [0.0, 0.0]})
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError, match="DataFrame must be unique on .*\n\n.*"
         ):
             check_polars_dataframe(df, unique="value")
@@ -190,7 +190,7 @@ class TestCheckPolarsDataFrame:
 
     def test_width_error(self) -> None:
         df = DataFrame()
-        with raises(
+        with pytest.raises(
             CheckPolarsDataFrameError,
             match="DataFrame must have width .*; got .*\n\n.*",
         ):
@@ -202,16 +202,16 @@ class TestCheckPolarsDataFramePredicates:
         df = DataFrame({"value": [0.0, 1.0]})
         _check_polars_dataframe_predicates(df, {"value": isfinite})
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "predicates",
         [
-            param({"other": Float64}, id="missing column"),
-            param({"value": isfinite}, id="failed"),
+            pytest.param({"other": Float64}, id="missing column"),
+            pytest.param({"value": isfinite}, id="failed"),
         ],
     )
     def test_error(self, *, predicates: Mapping[str, Callable[[Any], bool]]) -> None:
         df = DataFrame({"value": [0.0, nan]})
-        with raises(CheckPolarsDataFrameError):
+        with pytest.raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_predicates(df, predicates)
 
 
@@ -222,7 +222,7 @@ class TestCheckPolarsDataFrameSchema:
 
     def test_error(self) -> None:
         df = DataFrame()
-        with raises(CheckPolarsDataFrameError):
+        with pytest.raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema(df, {"value": Float64})
 
 
@@ -231,16 +231,16 @@ class TestCheckPolarsDataFrameSchemaInc:
         df = DataFrame({"foo": [0.0], "bar": [0.0]})
         _check_polars_dataframe_schema_inc(df, {"foo": Float64})
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "schema_inc",
         [
-            param({"bar": Float64}, id="missing column"),
-            param({"foo": Int64}, id="wrong dtype"),
+            pytest.param({"bar": Float64}, id="missing column"),
+            pytest.param({"foo": Int64}, id="wrong dtype"),
         ],
     )
     def test_error(self, *, schema_inc: SchemaDict) -> None:
         df = DataFrame({"foo": [0.0]})
-        with raises(CheckPolarsDataFrameError):
+        with pytest.raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema_inc(df, schema_inc)
 
 
@@ -256,21 +256,21 @@ class TestJoin:
 
 
 class TestNanSumAgg:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("data", "expected"),
         [
-            param([None], None, id="one None"),
-            param([None, None], None, id="two Nones"),
-            param([0], 0, id="one int"),
-            param([0, None], 0, id="one int, one None"),
-            param([0, None, None], 0, id="one int, two Nones"),
-            param([1, 2], 3, id="two ints"),
-            param([1, 2, None], 3, id="two ints, one None"),
-            param([1, 2, None, None], 3, id="two ints, two Nones"),
+            pytest.param([None], None, id="one None"),
+            pytest.param([None, None], None, id="two Nones"),
+            pytest.param([0], 0, id="one int"),
+            pytest.param([0, None], 0, id="one int, one None"),
+            pytest.param([0, None, None], 0, id="one int, two Nones"),
+            pytest.param([1, 2], 3, id="two ints"),
+            pytest.param([1, 2, None], 3, id="two ints, one None"),
+            pytest.param([1, 2, None, None], 3, id="two ints, two Nones"),
         ],
     )
-    @mark.parametrize("dtype", [param(Int64), param(Float64)])
-    @mark.parametrize("mode", [param("str"), param("column")])
+    @pytest.mark.parametrize("dtype", [pytest.param(Int64), pytest.param(Float64)])
+    @pytest.mark.parametrize("mode", [pytest.param("str"), pytest.param("column")])
     def test_main(
         self,
         *,
@@ -292,12 +292,17 @@ class TestNanSumAgg:
 
 
 class TestNanSumCols:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("x", "y", "expected"),
-        [param(None, None, None), param(None, 0, 0), param(0, None, 0), param(1, 2, 3)],
+        [
+            pytest.param(None, None, None),
+            pytest.param(None, 0, 0),
+            pytest.param(0, None, 0),
+            pytest.param(1, 2, 3),
+        ],
     )
-    @mark.parametrize("x_kind", [param("str"), param("column")])
-    @mark.parametrize("y_kind", [param("str"), param("column")])
+    @pytest.mark.parametrize("x_kind", [pytest.param("str"), pytest.param("column")])
+    @pytest.mark.parametrize("y_kind", [pytest.param("str"), pytest.param("column")])
     def test_main(
         self,
         *,
@@ -317,14 +322,14 @@ class TestNanSumCols:
 
 class TestRedirectEmptyPolarsConcat:
     def test_main(self) -> None:
-        with raises(EmptyPolarsConcatError), redirect_empty_polars_concat():
+        with pytest.raises(EmptyPolarsConcatError), redirect_empty_polars_concat():
             _ = concat([])
 
 
 class TestSetFirstRowAsColumns:
     def test_empty(self) -> None:
         df = DataFrame()
-        with raises(SetFirstRowAsColumnsError):
+        with pytest.raises(SetFirstRowAsColumnsError):
             _ = set_first_row_as_columns(df)
 
     def test_one_row(self) -> None:

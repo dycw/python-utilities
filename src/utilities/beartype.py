@@ -18,7 +18,7 @@ _CONF = BeartypeConf(is_color=is_pytest(), strategy=_STRATEGY)
 
 
 @overload
-def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT:  # type: ignore
+def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT:  # type: ignore[]
     ...
 
 

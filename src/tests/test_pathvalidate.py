@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from pathvalidate import ValidationError
-from pytest import raises
 
 from utilities.pathvalidate import valid_path, valid_path_cwd, valid_path_home
 
@@ -13,7 +13,7 @@ class TestValidPath:
         assert isinstance(valid_path(Path("abc")), Path)
 
     def test_error_validation(self) -> None:
-        with raises(ValidationError):
+        with pytest.raises(ValidationError):
             _ = valid_path("\0")
 
     def test_error_sanitized(self) -> None:

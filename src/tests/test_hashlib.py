@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
@@ -15,7 +16,6 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pytest import mark, param
 
 from utilities.hashlib import md5_hash
 
@@ -27,13 +27,13 @@ class _Example:
 
 class TestMD5Hash:
     @given(data=data())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         "strategy",
         [
-            param(dictionaries(integers(), integers(), max_size=3)),
-            param(frozensets(integers(), max_size=3)),
-            param(lists(integers(), max_size=3)),
-            param(sets(integers(), max_size=3)),
+            pytest.param(dictionaries(integers(), integers(), max_size=3)),
+            pytest.param(frozensets(integers(), max_size=3)),
+            pytest.param(lists(integers(), max_size=3)),
+            pytest.param(sets(integers(), max_size=3)),
         ],
     )
     def test_main(self, *, data: DataObject, strategy: SearchStrategy[Any]) -> None:

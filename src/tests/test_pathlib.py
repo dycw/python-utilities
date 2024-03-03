@@ -3,10 +3,10 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import booleans
 from pathvalidate import ValidationError
-from pytest import mark, param, raises
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import (
@@ -24,7 +24,7 @@ class TestEnsurePath:
         assert isinstance(ensure_path(Path("abc")), Path)
 
     def test_error_validation(self) -> None:
-        with raises(ValidationError):
+        with pytest.raises(ValidationError):
             _ = ensure_path("\0", validate=True)
 
     def test_error_sanitized(self) -> None:
@@ -32,18 +32,18 @@ class TestEnsurePath:
 
 
 class TestEnsureSuffix:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("path", "expected"),
         [
-            param("hello.txt", "hello.txt"),
-            param("hello.1.txt", "hello.1.txt"),
-            param("hello.1.2.txt", "hello.1.2.txt"),
-            param("hello.jpg", "hello.jpg.txt"),
-            param("hello.1.jpg", "hello.1.jpg.txt"),
-            param("hello.1.2.jpg", "hello.1.2.jpg.txt"),
-            param("hello.txt.jpg", "hello.txt.jpg.txt"),
-            param("hello.txt.1.jpg", "hello.txt.1.jpg.txt"),
-            param("hello.txt.1.2.jpg", "hello.txt.1.2.jpg.txt"),
+            pytest.param("hello.txt", "hello.txt"),
+            pytest.param("hello.1.txt", "hello.1.txt"),
+            pytest.param("hello.1.2.txt", "hello.1.2.txt"),
+            pytest.param("hello.jpg", "hello.jpg.txt"),
+            pytest.param("hello.1.jpg", "hello.1.jpg.txt"),
+            pytest.param("hello.1.2.jpg", "hello.1.2.jpg.txt"),
+            pytest.param("hello.txt.jpg", "hello.txt.jpg.txt"),
+            pytest.param("hello.txt.1.jpg", "hello.txt.1.jpg.txt"),
+            pytest.param("hello.txt.1.2.jpg", "hello.txt.1.2.jpg.txt"),
         ],
     )
     def test_main(self, *, path: Path, expected: Path) -> None:

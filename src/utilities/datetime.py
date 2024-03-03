@@ -40,10 +40,11 @@ class AddWeekdaysError(Exception): ...
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time = dt.time(0), tzinfo: dt.tzinfo | None = UTC
+    date: dt.date, /, *, time: dt.time | None = None, tzinfo: dt.tzinfo | None = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
-    return dt.datetime.combine(date, time, tzinfo=tzinfo)
+    time_use = dt.time(0) if time is None else time
+    return dt.datetime.combine(date, time_use, tzinfo=tzinfo)
 
 
 def duration_to_float(duration: Duration, /) -> float:
@@ -173,7 +174,7 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return text
         case System.linux:  # pragma: os-ne-linux
             return sub("%Y", "%4Y", text)
-        case _ as never:  # type: ignore
+        case _ as never:  # type: ignore[]
             assert_never(never)
 
 

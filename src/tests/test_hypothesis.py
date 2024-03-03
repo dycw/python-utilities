@@ -9,6 +9,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import Any, Literal, cast
 
+import pytest
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -45,7 +46,6 @@ from numpy import (
 )
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
-from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
@@ -136,7 +136,10 @@ class TestAssumeDoesNotRaise:
     def test_no_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
-            with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
+            with (
+                pytest.raises(ValueError, match=msg),
+                assume_does_not_raise(RuntimeError),
+            ):
                 raise ValueError(msg)
 
     @given(x=booleans())
@@ -152,7 +155,7 @@ class TestAssumeDoesNotRaise:
         msg = "x is True"
         if x is True:
             with (
-                raises(ValueError, match=msg),
+                pytest.raises(ValueError, match=msg),
                 assume_does_not_raise(ValueError, match="wrong"),
             ):
                 raise ValueError(msg)
@@ -177,7 +180,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestConcatenatedArrays:
@@ -307,7 +310,7 @@ class TestDatetime64s:
     @given(data=data(), unit=datetime64_units())
     def test_valid_dates_error(self, *, data: DataObject, unit: Datetime64Unit) -> None:
         _ = assume(unit != "D")
-        with raises(InvalidArgument):
+        with pytest.raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_dates=True))
 
     @given(
@@ -351,7 +354,7 @@ class TestDatetime64s:
         self, *, data: DataObject, unit: Datetime64Unit
     ) -> None:
         _ = assume(unit != "us")
-        with raises(InvalidArgument):
+        with pytest.raises(InvalidArgument):
             _ = data.draw(datetime64s(unit=unit, valid_datetimes=True))
 
 
@@ -515,7 +518,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestFloatsExtra:
@@ -773,7 +776,7 @@ class TestIntDataArrays:
         assert array.dtype == int64
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestLiftDraw:
@@ -799,11 +802,12 @@ class TestLiftDraw:
 
 class TestListsFixedLength:
     @given(data=data(), size=integers(1, 10))
-    @mark.parametrize(
-        "unique", [param(True, id="unique"), param(False, id="no unique")]
+    @pytest.mark.parametrize(
+        "unique", [pytest.param(True, id="unique"), pytest.param(False, id="no unique")]
     )
-    @mark.parametrize(
-        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
+    @pytest.mark.parametrize(
+        "sorted_",
+        [pytest.param(True, id="sorted"), pytest.param(False, id="no sorted")],
     )
     def test_main(
         self, *, data: DataObject, size: int, unique: bool, sorted_: bool
@@ -861,7 +865,7 @@ class TestSlices:
 
     @given(data=data(), iter_len=integers(0, 10))
     def test_error(self, *, data: DataObject, iter_len: int) -> None:
-        with raises(
+        with pytest.raises(
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
@@ -1023,7 +1027,7 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore
+            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
 
 
 class TestTempDirs:
@@ -1237,7 +1241,7 @@ class TestVersions:
     def test_error(self, data: DataObject) -> None:
         version1, version2 = data.draw(lists_fixed_length(versions(), 2))
         _ = assume(version1 != version2)
-        with raises(InvalidArgument):
+        with pytest.raises(InvalidArgument):
             _ = data.draw(
                 versions(
                     min_version=max(version1, version2),

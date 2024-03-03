@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from types import NoneType
 from typing import Any
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.dataclasses import (
     GetDataClassClassError,
@@ -27,8 +27,8 @@ class TestGetDataClassClass:
             assert get_dataclass_class(obj) is Example
 
     def test_error(self) -> None:
-        with raises(GetDataClassClassError):
-            _ = get_dataclass_class(None)  # type: ignore
+        with pytest.raises(GetDataClassClassError):
+            _ = get_dataclass_class(None)  # type: ignore[]
 
 
 class TestIsDataClassClass:
@@ -40,7 +40,7 @@ class TestIsDataClassClass:
         assert is_dataclass_class(Example)
         assert not is_dataclass_class(Example())
 
-    @mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_class(obj)
 
@@ -54,7 +54,7 @@ class TestIsDataClassInstance:
         assert not is_dataclass_instance(Example)
         assert is_dataclass_instance(Example())
 
-    @mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 
@@ -69,7 +69,7 @@ class TestReplaceNonSentinel:
         assert replace_non_sentinel(curr, x=1).x == 1
         assert replace_non_sentinel(curr, x=sentinel).x == 0
 
-    @mark.parametrize("obj", [param(None), param(NoneType)])
+    @pytest.mark.parametrize("obj", [pytest.param(None), pytest.param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
         assert not is_dataclass_instance(obj)
 

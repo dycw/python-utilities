@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import pytest
 from cryptography.fernet import Fernet
 from hypothesis import given
 from hypothesis.strategies import text
-from pytest import raises
 
 from utilities.cryptography import (
     _ENV_VAR,
@@ -31,5 +31,5 @@ class TestGetFernet:
         assert isinstance(fernet, Fernet)
 
     def test_error(self) -> None:
-        with temp_environ({_ENV_VAR: None}), raises(GetFernetError):
+        with temp_environ({_ENV_VAR: None}), pytest.raises(GetFernetError):
             _ = get_fernet()

@@ -4,7 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 from re import escape
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
 from utilities.pathlib import ensure_path
@@ -12,9 +12,12 @@ from utilities.platform import IS_WINDOWS
 
 
 class TestWriter:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("is_binary", "contents"),
-        [param(False, "contents", id="text"), param(True, b"contents", id="binary")],
+        [
+            pytest.param(False, "contents", id="text"),
+            pytest.param(True, b"contents", id="binary"),
+        ],
     )
     def test_file_writing(
         self, *, tmp_path: Path, is_binary: bool, contents: str | bytes
@@ -35,7 +38,7 @@ class TestWriter:
             else escape(str(path))
         )
         with (
-            raises(FileExistsError, match=match),
+            pytest.raises(FileExistsError, match=match),
             writer(path) as temp2,
             temp2.open(mode="w") as fh2,
         ):
@@ -62,7 +65,7 @@ class TestWriter:
         path = ensure_path(tmp_path, "dir")
         with writer(path) as temp1:
             temp1.mkdir()
-        with raises(DirectoryExistsError), writer(path) as temp2:
+        with pytest.raises(DirectoryExistsError), writer(path) as temp2:
             temp2.mkdir()
 
     def test_dir_overwrite(self, *, tmp_path: Path) -> None:
@@ -77,7 +80,9 @@ class TestWriter:
                 ensure_path(temp2, f"file{i}").touch()
         assert len(list(path.iterdir())) == 3
 
-    @mark.parametrize("error", [param(KeyboardInterrupt), param(ValueError)])
+    @pytest.mark.parametrize(
+        "error", [pytest.param(KeyboardInterrupt), pytest.param(ValueError)]
+    )
     def test_error_during_write(
         self, *, tmp_path: Path, error: type[Exception]
     ) -> None:
@@ -94,5 +99,5 @@ class TestWriter:
 
     def test_writer(self, *, tmp_path: Path) -> None:
         path = ensure_path(tmp_path, "file.txt")
-        with raises(WriterError), writer(path):
+        with pytest.raises(WriterError), writer(path):
             pass

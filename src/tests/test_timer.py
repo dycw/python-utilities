@@ -7,7 +7,7 @@ from re import search
 from time import sleep
 from typing import Any
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.timer import Timer, TimerError
 
@@ -20,18 +20,21 @@ class TestTimer:
             sleep(2 * duration)
         assert timer >= duration
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("op", "expected"),
         [
-            param(eq, False),
-            param(ne, True),
-            param(ge, False),
-            param(gt, False),
-            param(le, True),
-            param(lt, True),
+            pytest.param(eq, False),
+            pytest.param(ne, True),
+            pytest.param(ge, False),
+            pytest.param(gt, False),
+            pytest.param(le, True),
+            pytest.param(lt, True),
         ],
     )
-    @mark.parametrize("dur", [param(1), param(1.0), param(dt.timedelta(seconds=1))])
+    @pytest.mark.parametrize(
+        "dur",
+        [pytest.param(1), pytest.param(1.0), pytest.param(dt.timedelta(seconds=1))],
+    )
     def test_comparison(
         self, *, op: Callable[[Any, Any], bool], dur: Any, expected: bool
     ) -> None:
@@ -50,10 +53,10 @@ class TestTimer:
         match = (
             "Timer must be compared to a number, Timer, or timedelta; got .* instead"
         )
-        with raises(TimerError, match=match):
+        with pytest.raises(TimerError, match=match):
             _ = Timer() == "error"
 
-    @mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [pytest.param(repr), pytest.param(str)])
     def test_repr_and_str(self, *, func: Callable[[Timer], str]) -> None:
         with Timer() as timer:
             sleep(0.01)

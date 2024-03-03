@@ -4,7 +4,7 @@ from operator import itemgetter
 from pathlib import Path
 from time import sleep
 
-from pytest import raises
+import pytest
 
 from tests.conftest import FLAKY
 from utilities.cacher import cache_to_disk
@@ -97,11 +97,11 @@ class TestCacheToDisk:
         assert len(list(path.iterdir())) == 1
         pre = path.stat().st_mtime
         sleep(0.01)
-        assert func(0, rerun=True) == 0  # type: ignore
+        assert func(0, rerun=True) == 0  # type: ignore[]
         post = path.stat().st_mtime
         assert pre < post
 
     def test_rerun_not_a_boolean(self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
-        with raises(EnsureClassError):
-            _ = func(0, rerun=None)  # type: ignore
+        with pytest.raises(EnsureClassError):
+            _ = func(0, rerun=None)  # type: ignore[]

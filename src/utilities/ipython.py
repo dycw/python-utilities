@@ -6,7 +6,7 @@ from typing import Any
 def check_ipython_class(cls: type[Any], /) -> bool:
     """Check if the `get_ipython` class is a subclass of `cls`."""
     try:
-        func = get_ipython  # type: ignore
+        func = get_ipython  # type: ignore[]
     except NameError:
         return False
     return issubclass(func().__class__, cls)  # pragma: no cover
@@ -15,7 +15,7 @@ def check_ipython_class(cls: type[Any], /) -> bool:
 def is_ipython() -> bool:
     """Check if `ipython` is running."""
     try:
-        from IPython.terminal.interactiveshell import (  # type: ignore
+        from IPython.terminal.interactiveshell import (  # type: ignore[]
             TerminalInteractiveShell,
         )
     except ImportError:

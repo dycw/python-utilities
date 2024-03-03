@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pytest import mark, param, raises
+import pytest
 
 from utilities.errors import (
     ImpossibleCaseError,
@@ -14,7 +14,9 @@ from utilities.iterables import one
 class TestImpossibleCaseError:
     def test_main(self) -> None:
         x = None
-        with raises(ImpossibleCaseError, match=r"Case must be possible: x=None\."):
+        with pytest.raises(
+            ImpossibleCaseError, match=r"Case must be possible: x=None\."
+        ):
             raise ImpossibleCaseError(case=[f"{x=}"])
 
 
@@ -24,7 +26,7 @@ class TestRedirectError:
 
         class SecondError(Exception): ...
 
-        with raises(SecondError), redirect_error(FirstError, SecondError):
+        with pytest.raises(SecondError), redirect_error(FirstError, SecondError):
             raise FirstError
 
     def test_no_redirect(self) -> None:
@@ -34,7 +36,10 @@ class TestRedirectError:
 
         class ThirdError(Exception): ...
 
-        with raises(FirstError), redirect_error(SecondError, ThirdError):
+        with (
+            pytest.raises(FirstError, match=""),
+            redirect_error(SecondError, ThirdError),
+        ):
             raise FirstError
 
     def test_match_and_redirect(self) -> None:
@@ -42,60 +47,75 @@ class TestRedirectError:
 
         class SecondError(Exception): ...
 
-        with raises(SecondError), redirect_error(FirstError, SecondError, match="text"):
-            msg = "text"
-            raise FirstError(msg)
+        def run_test() -> None:
+            new = SecondError("second")
+            with redirect_error(FirstError, new, match="first"):
+                msg = "first"
+                raise FirstError(msg)
+
+        with pytest.raises(SecondError, match="second"):
+            run_test()
 
     def test_match_and_args_empty_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error must contain a unique argument; got .*\."
         ):
-            raise FirstError()  # noqa: RSE102
+            run_test()
 
     def test_match_and_args_non_unique_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError(1, 2)
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error must contain a unique argument; got .*\."
         ):
-            args = "x", "y"
-            raise FirstError(args)
+            run_test()
 
     def test_match_and_arg_not_string_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError(None)
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error argument must be a string; got None\."
         ):
-            arg = 0
-            raise FirstError(arg)
+            run_test()
 
     def test_match_and_no_redirect(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            raises(FirstError),
-            redirect_error(FirstError, SecondError, match="something else"),
-        ):
-            msg = "text"
-            raise FirstError(msg)
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="something else"):
+                msg = "initial"
+                raise FirstError(msg)
+
+        with pytest.raises(FirstError, match="initial"):
+            run_test()
 
 
 class TestRetry:
-    @mark.parametrize("use_predicate", [param(None), param(True), param(False)])
+    @pytest.mark.parametrize(
+        "use_predicate", [pytest.param(None), pytest.param(True), pytest.param(False)]
+    )
     def test_main(self, *, use_predicate: bool | None) -> None:
         class TooLargeError(Exception): ...
 
@@ -109,7 +129,7 @@ class TestRetry:
         n = 0
         assert increment() == 1
         assert increment() == 2
-        with raises(TooLargeError):
+        with pytest.raises(TooLargeError):
             _ = increment()
 
         def reset(_error: TooLargeError, /) -> None:
@@ -133,5 +153,5 @@ class TestRetry:
         if (use_predicate is None) or (use_predicate is True):
             assert retry_inc() == 1
         else:
-            with raises(TooLargeError):
+            with pytest.raises(TooLargeError):
                 _ = retry_inc()

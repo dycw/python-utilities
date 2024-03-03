@@ -5,6 +5,7 @@ from operator import eq
 from typing import Any
 
 import polars as pl
+import pytest
 import sqlalchemy
 from hypothesis import given
 from hypothesis.strategies import (
@@ -35,7 +36,6 @@ from polars import (
 )
 from polars.datatypes import DataTypeClass
 from polars.testing import assert_frame_equal
-from pytest import mark, param, raises
 from sqlalchemy import (
     BIGINT,
     BINARY,
@@ -109,21 +109,21 @@ from utilities.sqlalchemy_polars import (
 
 class TestInsertDataFrame:
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("strategy", "pl_dtype", "col_type", "check"),
         [
-            param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
-            param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
-            param(datetimes() | none(), Datetime, DateTime, eq),
-            param(
+            pytest.param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
+            pytest.param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
+            pytest.param(datetimes() | none(), Datetime, DateTime, eq),
+            pytest.param(
                 datetimes(timezones=just(UTC)) | none(),
                 Datetime(time_zone=UTC),
                 DateTime(timezone=True),
                 is_equal_mod_tz,
             ),
-            param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
-            param(integers(-10, 10) | none(), Int64, Integer, eq),
-            param(text_ascii() | none(), Utf8, String, eq),
+            pytest.param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
+            pytest.param(integers(-10, 10) | none(), Int64, Integer, eq),
+            pytest.param(text_ascii() | none(), Utf8, String, eq),
         ],
     )
     def test_main(
@@ -152,7 +152,7 @@ class TestInsertDataFrame:
             assert ((r is None) == (v is None)) or check(r, v)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    @pytest.mark.parametrize("sr_name", [pytest.param("Value"), pytest.param("value")])
     def test_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
@@ -183,7 +183,7 @@ class TestInsertDataFrame:
             Column("value", sqlalchemy.Boolean),
         )
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(InsertDataFrameError):
+        with pytest.raises(InsertDataFrameError):
             insert_dataframe(df, table, engine)
 
 
@@ -194,7 +194,7 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         expected = ("b", float)
         assert result == expected
 
-    @mark.parametrize("sr_name", [param("b"), param("B")])
+    @pytest.mark.parametrize("sr_name", [pytest.param("b"), pytest.param("B")])
     def test_snake(self, *, sr_name: str) -> None:
         schema = {"A": int, "B": float, "C": str}
         result = _insert_dataframe_map_df_column_to_table_column_and_type(
@@ -203,17 +203,17 @@ class TestInsertDataFrameMapDFColumnToTableColumnAndType:
         expected = ("B", float)
         assert result == expected
 
-    @mark.parametrize("snake", [param(True), param(False)])
+    @pytest.mark.parametrize("snake", [pytest.param(True), pytest.param(False)])
     def test_error_empty(self, *, snake: bool) -> None:
         schema = {"a": int, "b": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "value", schema, snake=snake
             )
 
     def test_error_non_unique(self) -> None:
         schema = {"a": int, "b": float, "B": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableColumnAndTypeError):
             _ = _insert_dataframe_map_df_column_to_table_column_and_type(
                 "b", schema, snake=True
             )
@@ -229,7 +229,7 @@ class TestInsertDataFrameMapDFColumnToTableSchema:
 
     def test_error(self) -> None:
         table_schema = {"a": int, "b": float, "c": str}
-        with raises(_InsertDataFrameMapDFColumnToTableSchemaError):
+        with pytest.raises(_InsertDataFrameMapDFColumnToTableSchemaError):
             _ = _insert_dataframe_map_df_column_to_table_schema(
                 "b", Int64, table_schema
             )
@@ -292,20 +292,20 @@ class TestInsertDataFrameMapDFSchemaToTable:
 
 class TestSelectToDataFrame:
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("strategy", "pl_dtype", "col_type"),
         [
-            param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean),
-            param(dates() | none(), pl.Date, sqlalchemy.Date),
-            param(datetimes() | none(), Datetime, DateTime),
-            param(
+            pytest.param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean),
+            pytest.param(dates() | none(), pl.Date, sqlalchemy.Date),
+            pytest.param(datetimes() | none(), Datetime, DateTime),
+            pytest.param(
                 datetimes(timezones=just(UTC)) | none(),
                 Datetime(time_zone=UTC),
                 DateTime(timezone=True),
             ),
-            param(floats(allow_nan=False) | none(), Float64, Float),
-            param(integers(-10, 10) | none(), Int64, Integer),
-            param(text_ascii() | none(), Utf8, String),
+            pytest.param(floats(allow_nan=False) | none(), Float64, Float),
+            pytest.param(integers(-10, 10) | none(), Int64, Integer),
+            pytest.param(text_ascii() | none(), Utf8, String),
         ],
     )
     def test_main(
@@ -472,7 +472,7 @@ class TestSelectToDataFrame:
     def test_error(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table)
-        with raises(SelectToDataFrameError):
+        with pytest.raises(SelectToDataFrameError):
             _ = select_to_dataframe(sel, engine, batch_size=1)
 
 
@@ -495,7 +495,7 @@ class TestSelectToDataFrameCheckDuplicates:
     def test_error(self) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
         sel = select(table.c["id"], table.c["id"])
-        with raises(DuplicateColumnError):
+        with pytest.raises(DuplicateColumnError):
             _select_to_dataframe_check_duplicates(sel.selected_columns)
 
 
@@ -509,50 +509,50 @@ class TestSelectToDataFrameMapSelectToDFSchema:
 
 
 class TestSelectToDataFrameMapTableColumnTypeToDType:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("col_type", "expected"),
         [
-            param(BigInteger, Int64),
-            param(BIGINT, Int64),
-            param(BINARY, Binary),
-            param(sqlalchemy.Boolean, pl.Boolean),
-            param(BOOLEAN, pl.Boolean),
-            param(CHAR, Utf8),
-            param(CLOB, Utf8),
-            param(sqlalchemy.Date, pl.Date),
-            param(DATE, pl.Date),
-            param(DECIMAL, Decimal),
-            param(Double, Float64),
-            param(DOUBLE, Float64),
-            param(DOUBLE_PRECISION, Float64),
-            param(Float, Float64),
-            param(FLOAT, Float64),
-            param(INT, Int64),
-            param(Integer, Int64),
-            param(INTEGER, Int64),
-            param(Interval, Duration),
-            param(LargeBinary, Binary),
-            param(NCHAR, Utf8),
-            param(Numeric, Decimal),
-            param(NUMERIC, Decimal),
-            param(NVARCHAR, Utf8),
-            param(REAL, Float64),
-            param(SMALLINT, Int64),
-            param(SmallInteger, Int64),
-            param(String, Utf8),
-            param(TEXT, Utf8),
-            param(Text, Utf8),
-            param(TIME, pl.Time),
-            param(sqlalchemy.Time, pl.Time),
-            param(Unicode, Utf8),
-            param(UnicodeText, Utf8),
-            param(Uuid, pl.Utf8),
-            param(UUID, pl.Utf8),
-            param(VARBINARY, Binary),
-            param(VARCHAR, Utf8),
+            pytest.param(BigInteger, Int64),
+            pytest.param(BIGINT, Int64),
+            pytest.param(BINARY, Binary),
+            pytest.param(sqlalchemy.Boolean, pl.Boolean),
+            pytest.param(BOOLEAN, pl.Boolean),
+            pytest.param(CHAR, Utf8),
+            pytest.param(CLOB, Utf8),
+            pytest.param(sqlalchemy.Date, pl.Date),
+            pytest.param(DATE, pl.Date),
+            pytest.param(DECIMAL, Decimal),
+            pytest.param(Double, Float64),
+            pytest.param(DOUBLE, Float64),
+            pytest.param(DOUBLE_PRECISION, Float64),
+            pytest.param(Float, Float64),
+            pytest.param(FLOAT, Float64),
+            pytest.param(INT, Int64),
+            pytest.param(Integer, Int64),
+            pytest.param(INTEGER, Int64),
+            pytest.param(Interval, Duration),
+            pytest.param(LargeBinary, Binary),
+            pytest.param(NCHAR, Utf8),
+            pytest.param(Numeric, Decimal),
+            pytest.param(NUMERIC, Decimal),
+            pytest.param(NVARCHAR, Utf8),
+            pytest.param(REAL, Float64),
+            pytest.param(SMALLINT, Int64),
+            pytest.param(SmallInteger, Int64),
+            pytest.param(String, Utf8),
+            pytest.param(TEXT, Utf8),
+            pytest.param(Text, Utf8),
+            pytest.param(TIME, pl.Time),
+            pytest.param(sqlalchemy.Time, pl.Time),
+            pytest.param(Unicode, Utf8),
+            pytest.param(UnicodeText, Utf8),
+            pytest.param(Uuid, pl.Utf8),
+            pytest.param(UUID, pl.Utf8),
+            pytest.param(VARBINARY, Binary),
+            pytest.param(VARCHAR, Utf8),
         ],
     )
-    @mark.parametrize("use_inst", [param(True), param(False)])
+    @pytest.mark.parametrize("use_inst", [pytest.param(True), pytest.param(False)])
     def test_main(
         self, *, col_type: Any, use_inst: bool, expected: DataTypeClass
     ) -> None:
@@ -561,8 +561,13 @@ class TestSelectToDataFrameMapTableColumnTypeToDType:
         assert isinstance(dtype, type)
         assert issubclass(dtype, expected)
 
-    @mark.parametrize("col_type", [param(DATETIME), param(DateTime), param(TIMESTAMP)])
-    @mark.parametrize("timezone", [param(None), param(True), param(False)])
+    @pytest.mark.parametrize(
+        "col_type",
+        [pytest.param(DATETIME), pytest.param(DateTime), pytest.param(TIMESTAMP)],
+    )
+    @pytest.mark.parametrize(
+        "timezone", [pytest.param(None), pytest.param(True), pytest.param(False)]
+    )
     def test_datetime(self, *, col_type: Any, timezone: bool | None) -> None:
         col_type_use = col_type if timezone is None else col_type(timezone=timezone)
         dtype = _select_to_dataframe_map_table_column_type_to_dtype(col_type_use)

@@ -5,11 +5,11 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
 from numpy import arange, array, errstate, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
-from pytest import mark, param, raises
 from zarr import open_array
 from zarr.errors import BoundsCheckError
 
@@ -102,21 +102,21 @@ class TestNDArrayWithIndexes:
         with errstate(invalid="ignore"):
             assert isclose(view.ndarray, fill_value, equal_nan=True).all()
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": 0}, array([0, 1, 2])),
-            param({"x": -1}, array([3, 4, 5])),
-            param({"x": slice(None, 1)}, array([[0, 1, 2]])),
-            param({"x": []}, zeros((0, 3), dtype=int)),
-            param({"x": array([True, False])}, array([[0, 1, 2]])),
-            param({"x": array([0])}, array([[0, 1, 2]])),
-            param({"x": 0, "y": 0}, 0),
-            param({"x": 0, "y": -1}, 2),
-            param({"x": 0, "y": slice(None, 1)}, array([0])),
-            param({"x": 0, "y": []}, array([])),
-            param({"x": 0, "y": array([True, False, False])}, array([0])),
-            param({"x": 0, "y": array([0])}, array([0])),
+            pytest.param({"x": 0}, array([0, 1, 2])),
+            pytest.param({"x": -1}, array([3, 4, 5])),
+            pytest.param({"x": slice(None, 1)}, array([[0, 1, 2]])),
+            pytest.param({"x": []}, zeros((0, 3), dtype=int)),
+            pytest.param({"x": array([True, False])}, array([[0, 1, 2]])),
+            pytest.param({"x": array([0])}, array([[0, 1, 2]])),
+            pytest.param({"x": 0, "y": 0}, 0),
+            pytest.param({"x": 0, "y": -1}, 2),
+            pytest.param({"x": 0, "y": slice(None, 1)}, array([0])),
+            pytest.param({"x": 0, "y": []}, array([])),
+            pytest.param({"x": 0, "y": array([True, False, False])}, array([0])),
+            pytest.param({"x": 0, "y": array([0])}, array([0])),
         ],
     )
     def test_isel(
@@ -129,33 +129,35 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.isel(indexer), expected)
 
-    @mark.parametrize("indexer", [param({"x": 2}), param({"x": [2]})])
+    @pytest.mark.parametrize(
+        "indexer", [pytest.param({"x": 2}), pytest.param({"x": [2]})]
+    )
     def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
-        with raises(BoundsCheckError):
+        with pytest.raises(BoundsCheckError):
             _ = view.isel(indexer)
 
-    @mark.parametrize("func", [param(repr), param(str)])
+    @pytest.mark.parametrize("func", [pytest.param(repr), pytest.param(str)])
     def test_repr_and_str(self, *, func: Callable[[Any], str], tmp_path: Path) -> None:
         view = NDArrayWithIndexes(tmp_path)
         cls = get_class_name(NDArrayWithIndexes)
         assert func(view) == f"{cls}({tmp_path})"
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": "x0"}, array([0, 1, 2])),
-            param({"x": []}, zeros((0, 3), dtype=int)),
-            param({"x": ["x0"]}, array([[0, 1, 2]])),
-            param({"x": ["x0", "x1"]}, array([[0, 1, 2], [3, 4, 5]])),
-            param({"x": "x0", "y": "y0"}, 0),
-            param({"x": "x0", "y": []}, zeros(0, dtype=int)),
-            param({"x": "x0", "y": ["y0"]}, array([0])),
-            param({"x": "x0", "y": ["y0", "y1"]}, array([0, 1])),
+            pytest.param({"x": "x0"}, array([0, 1, 2])),
+            pytest.param({"x": []}, zeros((0, 3), dtype=int)),
+            pytest.param({"x": ["x0"]}, array([[0, 1, 2]])),
+            pytest.param({"x": ["x0", "x1"]}, array([[0, 1, 2], [3, 4, 5]])),
+            pytest.param({"x": "x0", "y": "y0"}, 0),
+            pytest.param({"x": "x0", "y": []}, zeros(0, dtype=int)),
+            pytest.param({"x": "x0", "y": ["y0"]}, array([0])),
+            pytest.param({"x": "x0", "y": ["y0", "y1"]}, array([0, 1])),
         ],
     )
     def test_sel(
@@ -168,12 +170,12 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("index", "indexer"),
         [
-            param(array(["x0", "x1"]), {"x": "x2"}),
-            param(array(["x0", "x0"]), {"x": "x0"}),
-            param(array(["x0", "x0"]), {"x": ["x0"]}),
+            pytest.param(array(["x0", "x1"]), {"x": "x2"}),
+            pytest.param(array(["x0", "x0"]), {"x": "x0"}),
+            pytest.param(array(["x0", "x0"]), {"x": ["x0"]}),
         ],
     )
     def test_sel_error(
@@ -184,24 +186,26 @@ class TestNDArrayWithIndexes:
         with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(2, dtype=int)
         view = NDArrayWithIndexes(path)
-        with raises(GetSelIndexerError):
+        with pytest.raises(GetSelIndexerError):
             _ = view.sel(indexer)
 
     def test_missing(self, *, tmp_path: Path) -> None:
-        with raises(FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
             _ = NDArrayWithIndexes(ensure_path(tmp_path, "array"))
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": dt.date(2000, 1, 1)}, 0),
-            param({"x": "2000-01-01"}, 0),
-            param({"x": [dt.date(2000, 1, 1)]}, array([0])),
-            param({"x": ["2000-01-01"]}, array([0])),
-            param({"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])),
-            param({"x": [dt.date(2000, 1, 1), "2000-01-02"]}, array([0, 1])),
-            param({"x": ["2000-01-01", dt.date(2000, 1, 2)]}, array([0, 1])),
-            param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
+            pytest.param({"x": dt.date(2000, 1, 1)}, 0),
+            pytest.param({"x": "2000-01-01"}, 0),
+            pytest.param({"x": [dt.date(2000, 1, 1)]}, array([0])),
+            pytest.param({"x": ["2000-01-01"]}, array([0])),
+            pytest.param(
+                {"x": [dt.date(2000, 1, 1), dt.date(2000, 1, 2)]}, array([0, 1])
+            ),
+            pytest.param({"x": [dt.date(2000, 1, 1), "2000-01-02"]}, array([0, 1])),
+            pytest.param({"x": ["2000-01-01", dt.date(2000, 1, 2)]}, array([0, 1])),
+            pytest.param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
         ],
     )
     def test_sel_with_date(
@@ -216,14 +220,14 @@ class TestNDArrayWithIndexes:
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("indexer", "expected"),
         [
-            param({"x": dt.datetime(2000, 1, 1)}, 0),  # noqa: DTZ001
-            param({"x": "2000-01-01"}, 0),
-            param({"x": [dt.datetime(2000, 1, 1)]}, array([0])),  # noqa: DTZ001
-            param({"x": ["2000-01-01"]}, array([0])),
-            param(
+            pytest.param({"x": dt.datetime(2000, 1, 1)}, 0),  # noqa: DTZ001
+            pytest.param({"x": "2000-01-01"}, 0),
+            pytest.param({"x": [dt.datetime(2000, 1, 1)]}, array([0])),  # noqa: DTZ001
+            pytest.param({"x": ["2000-01-01"]}, array([0])),
+            pytest.param(
                 {
                     "x": [
                         dt.datetime(2000, 1, 1),  # noqa: DTZ001
@@ -232,15 +236,15 @@ class TestNDArrayWithIndexes:
                 },
                 array([0, 1]),
             ),
-            param(
+            pytest.param(
                 {"x": [dt.datetime(2000, 1, 1), "2000-01-02"]},  # noqa: DTZ001
                 array([0, 1]),
             ),
-            param(
+            pytest.param(
                 {"x": ["2000-01-01", dt.datetime(2000, 1, 2)]},  # noqa: DTZ001
                 array([0, 1]),
             ),
-            param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
+            pytest.param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
         ],
     )
     def test_sel_with_datetime(

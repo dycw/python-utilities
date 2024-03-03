@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from functools import partial
 from multiprocessing import cpu_count
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar
 
 from pqdm import processes, threads
 from tqdm import tqdm as tqdm_type
@@ -24,7 +24,7 @@ def pmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = cast(Any, tqdm_auto),
+    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:
@@ -51,7 +51,7 @@ def pstarmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = cast(Any, tqdm_auto),
+    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:
@@ -82,7 +82,7 @@ def pstarmap(
                 **_get_desc(desc, func),
                 **kwargs,
             )
-        case _ as never:  # type: ignore
+        case _ as never:  # type: ignore[]
             assert_never(never)
     return list(result)
 

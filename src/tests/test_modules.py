@@ -8,7 +8,7 @@ from re import search
 from types import ModuleType
 from typing import Any
 
-from pytest import mark, param
+import pytest
 
 import utilities
 from tests.modules import package_with, package_without, standalone
@@ -23,15 +23,15 @@ from utilities.types import get_class_name
 
 
 class TestYieldModules:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "expected"),
         [
-            param(standalone, False, 1),
-            param(standalone, True, 1),
-            param(package_without, False, 2),
-            param(package_without, True, 2),
-            param(package_with, False, 3),
-            param(package_with, True, 6),
+            pytest.param(standalone, False, 1),
+            pytest.param(standalone, True, 1),
+            pytest.param(package_without, False, 2),
+            pytest.param(package_without, True, 2),
+            pytest.param(package_with, False, 3),
+            pytest.param(package_with, True, 6),
         ],
     )
     def test_main(self, *, module: ModuleType, recursive: bool, expected: int) -> None:
@@ -52,28 +52,28 @@ class TestYieldModules:
 
 
 class TestYieldModuleContents:
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "factor"),
         [
-            param(standalone, False, 1),
-            param(standalone, True, 1),
-            param(package_without, False, 2),
-            param(package_without, True, 2),
-            param(package_with, False, 2),
-            param(package_with, True, 5),
+            pytest.param(standalone, False, 1),
+            pytest.param(standalone, True, 1),
+            pytest.param(package_without, False, 2),
+            pytest.param(package_without, True, 2),
+            pytest.param(package_with, False, 2),
+            pytest.param(package_with, True, 5),
         ],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("type_", "predicate", "expected"),
         [
-            param(int, None, 3),
-            param(float, None, 3),
-            param((int, float), None, 6),
-            param(type, None, 3),
-            param(int, partial(le, 0), 2),
-            param(int, partial(lt, 0), 1),
-            param(float, partial(le, 0), 2),
-            param(float, partial(lt, 0), 1),
+            pytest.param(int, None, 3),
+            pytest.param(float, None, 3),
+            pytest.param((int, float), None, 6),
+            pytest.param(type, None, 3),
+            pytest.param(int, partial(le, 0), 2),
+            pytest.param(int, partial(lt, 0), 1),
+            pytest.param(float, partial(le, 0), 2),
+            pytest.param(float, partial(lt, 0), 1),
         ],
     )
     def test_main(
@@ -98,24 +98,24 @@ class TestYieldModuleSubclasses:
     def predicate(self: Any, /) -> bool:
         return bool(search("1", get_class_name(self)))
 
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("module", "recursive", "factor"),
         [
-            param(standalone, False, 1),
-            param(standalone, True, 1),
-            param(package_without, False, 2),
-            param(package_without, True, 2),
-            param(package_with, False, 2),
-            param(package_with, True, 5),
+            pytest.param(standalone, False, 1),
+            pytest.param(standalone, True, 1),
+            pytest.param(package_without, False, 2),
+            pytest.param(package_without, True, 2),
+            pytest.param(package_with, False, 2),
+            pytest.param(package_with, True, 5),
         ],
     )
-    @mark.parametrize(
+    @pytest.mark.parametrize(
         ("type_", "predicate", "expected"),
         [
-            param(int, None, 1),
-            param(int, predicate, 0),
-            param(float, None, 2),
-            param(float, predicate, 1),
+            pytest.param(int, None, 1),
+            pytest.param(int, predicate, 0),
+            pytest.param(float, None, 2),
+            pytest.param(float, predicate, 1),
         ],
     )
     def test_main(

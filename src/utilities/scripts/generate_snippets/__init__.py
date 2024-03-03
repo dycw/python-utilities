@@ -49,7 +49,7 @@ from itertools import (
             return _yield_import_nodes_from_text(
                 text, include_suppress=include_suppress
             )
-        case _ as never:  # type: ignore
+        case _ as never:  # type: ignore[]
             assert_never(never)
 
 
