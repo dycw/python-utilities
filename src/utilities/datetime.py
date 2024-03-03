@@ -105,7 +105,7 @@ def get_now_hk() -> dt.datetime:
     return dt.datetime.now(tz=HONG_KONG)
 
 
-NOW_HKG = get_now_hk()
+NOW_HK = get_now_hk()
 
 
 def get_now_tokyo() -> dt.datetime:
@@ -343,7 +343,7 @@ class YieldWeekdaysError(Exception): ...
 __all__ = [
     "AddWeekdaysError",
     "EPOCH_UTC",
-    "NOW_HKG",
+    "NOW_HK",
     "NOW_TOKYO",
     "NOW_UTC",
     "ParseDateError",

@@ -25,7 +25,7 @@ from hypothesis.strategies import (
 
 from utilities.datetime import (
     EPOCH_UTC,
-    NOW_HKG,
+    NOW_HK,
     NOW_TOKYO,
     NOW_UTC,
     TODAY_HK,
@@ -194,7 +194,7 @@ class TestGetNow:
         assert isinstance(get_now(), dt.date)
 
     @pytest.mark.parametrize(
-        "now", [pytest.param(NOW_UTC), pytest.param(NOW_HKG), pytest.param(NOW_TOKYO)]
+        "now", [pytest.param(NOW_UTC), pytest.param(NOW_HK), pytest.param(NOW_TOKYO)]
     )
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
