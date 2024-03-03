@@ -504,7 +504,7 @@ def ensure_tables_created(
             match = "ORA-00955: name is already used by an existing object"
         case Dialect.sqlite:
             match = "table .* already exists"
-        case _ as never:  # type: ignore[]     a
+        case _ as never:  # type: ignore[]
             assert_never(never)
 
     for table_or_mapped_class in tables_or_mapped_classes:
