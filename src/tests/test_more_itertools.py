@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
 
-from utilities.more_itertools import always_iterable, windowed_complete
+from utilities.more_itertools import always_iterable, peekable, windowed_complete
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -55,6 +55,41 @@ class TestAlwaysIterable:
             yield 1
 
         assert list(always_iterable(yield_ints())) == [0, 1]
+
+
+class TestPeekable:
+    def test_dropwhile(self) -> None:
+        it: peekable[int] = peekable(range(10))
+        it.dropwhile(lambda x: x <= 4)
+        assert it.peek() == 5
+        result = list(it)
+        expected = [5, 6, 7, 8, 9]
+        assert result == expected
+
+    def test_takewhile(self) -> None:
+        it: peekable[int] = peekable(range(10))
+        result1 = list(it.takewhile(lambda x: x <= 4))
+        expected1 = [0, 1, 2, 3, 4]
+        assert result1 == expected1
+        assert it.peek() == 5
+        result2 = list(it)
+        expected2 = [5, 6, 7, 8, 9]
+        assert result2 == expected2
+
+    def test_combined(self) -> None:
+        it: peekable[int] = peekable(range(10))
+        result1 = list(it.takewhile(lambda x: x <= 2))
+        expected1 = [0, 1, 2]
+        assert result1 == expected1
+        assert it.peek() == 3
+        it.dropwhile(lambda x: x <= 4)
+        assert it.peek() == 5
+        result2 = list(it.takewhile(lambda x: x <= 6))
+        expected2 = [5, 6]
+        assert result2 == expected2
+        result3 = list(it)
+        expected3 = [7, 8, 9]
+        assert result3 == expected3
 
 
 class TestWindowedComplete:
