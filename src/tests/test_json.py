@@ -37,7 +37,7 @@ from hypothesis.strategies import (
 )
 from typing_extensions import override
 
-from utilities.datetime import NOW_HKG, UTC
+from utilities.datetime import NOW_HK, UTC
 from utilities.hypothesis import (
     assume_does_not_raise,
     sqlite_engines,
@@ -215,7 +215,7 @@ class TestSerializeAndDeserialize:
         with pytest.raises(
             JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
         ):
-            _ = serialize(NOW_HKG)
+            _ = serialize(NOW_HK)
 
     def test_error(self) -> None:
         with pytest.raises(
