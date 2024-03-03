@@ -41,11 +41,12 @@ from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
-    from utilities.math import FloatFinPos, IntNonNeg
-
-try:
     from numpy import datetime64
+    from pandas import Timestamp
+    from semver import Version
+    from sqlalchemy import Engine, MetaData
 
+    from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import (
         Datetime64Kind,
         Datetime64Unit,
@@ -55,29 +56,8 @@ try:
         NDArrayI,
         NDArrayO,
     )
-except ModuleNotFoundError:
-    datetime64 = Datetime64Kind = Datetime64Unit = NDArrayA = NDArrayB = NDArrayF = (
-        NDArrayI
-    ) = NDArrayO = Any
-
-try:
-    from pandas import Timestamp
-
     from utilities.pandas import IndexA, IndexI, IndexS
-except ModuleNotFoundError:
-    Timestamp = IndexA = IndexI = IndexS = Any
-try:
-    from semver import Version
-except ModuleNotFoundError:
-    Version = Any
-try:
-    from sqlalchemy import Engine, MetaData
-except ModuleNotFoundError:
-    Engine = MetaData = Any
-try:
     from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
-except ModuleNotFoundError:
-    DataArrayB = DataArrayF = DataArrayI = DataArrayO = Any
 
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
