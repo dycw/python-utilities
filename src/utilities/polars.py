@@ -72,7 +72,7 @@ def check_polars_dataframe(
         _check_polars_dataframe_width(df, width)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckPolarsDataFrameError(Exception):
     df: DataFrame
 
@@ -84,7 +84,7 @@ def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> 
         raise _CheckPolarsDataFrameColumnsError(df=df, columns=columns) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
     columns: IterableStrs
 
@@ -102,7 +102,7 @@ def _check_polars_dataframe_dtypes(
         raise _CheckPolarsDataFrameDTypesError(df=df, dtypes=dtypes) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
     dtypes: Iterable[PolarsDataType]
 
@@ -125,7 +125,7 @@ def _check_polars_dataframe_height(
         raise _CheckPolarsDataFrameHeightError(df=df) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameHeightError(CheckPolarsDataFrameError):
     @override
     def __str__(self) -> str:
@@ -151,7 +151,7 @@ def _check_polars_dataframe_predicates(
         )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
     predicates: Mapping[str, Callable[[Any], bool]]
     missing: AbstractSet[str]
@@ -186,7 +186,7 @@ def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None
         raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
@@ -202,7 +202,7 @@ def _check_polars_dataframe_schema_inc(df: DataFrame, schema: SchemaDict, /) -> 
         raise _CheckPolarsDataFrameSchemaIncError(df=df, schema=schema) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameSchemaIncError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
@@ -216,7 +216,7 @@ def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> N
         raise _CheckPolarsDataFrameShapeError(df=df, shape=shape) from None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
     shape: tuple[int, int]
 
@@ -240,7 +240,7 @@ def _check_polars_dataframe_sorted(
         raise _CheckPolarsDataFrameSortedError(df=df, by=by_use) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
@@ -259,7 +259,7 @@ def _check_polars_dataframe_unique(
         raise _CheckPolarsDataFrameUniqueError(df=df, by=by_use)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
@@ -273,7 +273,7 @@ def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
         raise _CheckPolarsDataFrameWidthError(df=df, width=width)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
     width: int
 

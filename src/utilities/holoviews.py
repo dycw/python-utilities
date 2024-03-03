@@ -69,7 +69,7 @@ def plot_curve(
 class PlotCurveError(Exception): ...
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _PlotCurveArrayNameNotAStringError(PlotCurveError):
     name: Any
 
@@ -78,7 +78,7 @@ class _PlotCurveArrayNameNotAStringError(PlotCurveError):
         return f"Array name {self.name} must be a string; got {get_class_name(self.name)!r} instead"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _PlotCurveArrayNameIsEmptyError(PlotCurveError):
     name: str
 

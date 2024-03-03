@@ -38,7 +38,7 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
         raise CheckDuplicatesError(iterable=iterable, counts=counts)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckDuplicatesError(Exception):
     iterable: Iterable[Hashable]
     counts: dict[Hashable, int]
@@ -83,7 +83,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckIterablesEqualError(Exception, Generic[_T]):
     left: list[_T]
     right: list[_T]
@@ -141,12 +141,12 @@ def check_length(
         raise _CheckLengthMaxError(obj=obj, max_=error.max_) from None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckLengthError(Exception):
     obj: Sized
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckLengthEqualError(CheckLengthError):
     equal: int
 
@@ -155,7 +155,7 @@ class _CheckLengthEqualError(CheckLengthError):
         return f"Object {self.obj} must have length {self.equal}; got {len(self.obj)}."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckLengthEqualOrApproxError(CheckLengthError):
     equal_or_approx: int | tuple[int, float]
 
@@ -169,7 +169,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
         return f"Object {self.obj} must have {desc}; got {len(self.obj)}."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckLengthMinError(CheckLengthError):
     min_: int
 
@@ -178,7 +178,7 @@ class _CheckLengthMinError(CheckLengthError):
         return f"Object {self.obj} must have minimum length {self.min_}; got {len(self.obj)}."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckLengthMaxError(CheckLengthError):
     max_: int
 
@@ -193,7 +193,7 @@ def check_lengths_equal(left: Sized, right: Sized, /) -> None:
         raise CheckLengthsEqualError(left=left, right=right)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckLengthsEqualError(Exception):
     left: Sized
     right: Sized
@@ -227,7 +227,7 @@ def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -
         )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckMappingsEqualError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -273,7 +273,7 @@ def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckSetsEqualError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -316,7 +316,7 @@ def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> No
         raise CheckSubMappingError(left=left, right=right, extra=extra, errors=errors)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckSubMappingError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -351,7 +351,7 @@ def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckSubSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckSubSetError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -380,7 +380,7 @@ def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> 
         raise CheckSuperMappingError(left=left, right=right, extra=extra, errors=errors)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckSuperMappingError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -415,7 +415,7 @@ def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckSuperSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckSuperSetError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -447,7 +447,7 @@ def ensure_iterable(obj: Any, /) -> Iterable[Any]:
     raise EnsureIterableError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureIterableError(Exception):
     obj: Any
 
@@ -463,7 +463,7 @@ def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
     raise EnsureIterableNotStrError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureIterableNotStrError(Exception):
     obj: Any
 
@@ -486,19 +486,19 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return is_iterable(obj) and not isinstance(obj, str)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class OneError(Exception, Generic[_T]):
     iterable: Iterable[_T]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} must not be empty."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class OneNonUniqueError(OneError[_T]):
     first: _T
     second: _T

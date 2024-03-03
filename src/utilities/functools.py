@@ -38,7 +38,7 @@ def redirect_empty_reduce() -> Iterator[None]:
         raise
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EmptyReduceError(Exception):
     @override
     def __str__(self) -> str:

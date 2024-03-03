@@ -260,7 +260,7 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
+@dataclass(kw_only=True, slots=True)
 class ParseTimedeltaError(Exception):
     pattern: str
     timedelta: str

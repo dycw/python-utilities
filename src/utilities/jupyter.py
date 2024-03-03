@@ -26,7 +26,7 @@ _DEFAULT_ROWS = 7
 _DEFAULT_COLS = 100
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _Show:
     """Context manager which adjusts the display of NDFrames."""
 
