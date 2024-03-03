@@ -119,7 +119,7 @@ def check_index(
         _check_index_unique(index)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckIndexError(Exception):
     index: IndexA
 
@@ -138,7 +138,7 @@ def _check_index_length(
         raise _CheckIndexLengthError(index=index) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckIndexLengthError(CheckIndexError):
     @override
     def __str__(self) -> str:
@@ -153,7 +153,7 @@ def _check_index_name(index: IndexA, name: Any, /) -> None:
             raise _CheckIndexNameError(index=index) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckIndexNameError(CheckIndexError):
     @override
     def __str__(self) -> str:
@@ -167,7 +167,7 @@ def _check_index_sorted(index: IndexA, /) -> None:
         raise _CheckIndexSortedError(index=index) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckIndexSortedError(CheckIndexError):
     @override
     def __str__(self) -> str:
@@ -179,7 +179,7 @@ def _check_index_unique(index: IndexA, /) -> None:
         raise _CheckIndexUniqueError(index=index)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckIndexUniqueError(CheckIndexError):
     @override
     def __str__(self) -> str:
@@ -218,7 +218,7 @@ def check_pandas_dataframe(
         _check_pandas_dataframe_width(df, width)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class CheckPandasDataFrameError(Exception):
     df: DataFrame
 
@@ -232,7 +232,7 @@ def _check_pandas_dataframe_columns(
         raise _CheckPandasDataFrameColumnsError(df=df, columns=columns) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameColumnsError(CheckPandasDataFrameError):
     columns: Iterable[Hashable]
 
@@ -254,7 +254,7 @@ def _check_pandas_dataframe_dtypes(
         raise _CheckPandasDataFrameDTypesError(df=df, dtypes=dtypes) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameDTypesError(CheckPandasDataFrameError):
     dtypes: Iterable[Any]
 
@@ -277,7 +277,7 @@ def _check_pandas_dataframe_length(
         raise _CheckPandasDataFrameLengthError(df=df) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameLengthError(CheckPandasDataFrameError):
     @override
     def __str__(self) -> str:
@@ -321,7 +321,7 @@ def _check_pandas_dataframe_sorted(df: DataFrame, by: str | Sequence[str], /) ->
         raise _CheckPandasDataFrameSortedError(df=df, by=by) from error
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameSortedError(CheckPandasDataFrameError):
     by: str | Sequence[str]
 
@@ -337,7 +337,7 @@ def _check_pandas_dataframe_unique(
         raise _CheckPandasDataFrameUniqueError(df=df, by=by)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameUniqueError(CheckPandasDataFrameError):
     by: Hashable | Sequence[Hashable]
 
@@ -351,7 +351,7 @@ def _check_pandas_dataframe_width(df: DataFrame, width: int, /) -> None:
         raise _CheckPandasDataFrameWidthError(df=df, width=width)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _CheckPandasDataFrameWidthError(CheckPandasDataFrameError):
     width: int
 
@@ -435,7 +435,7 @@ def reindex_to_set(index: _Index, target: Iterable[Any], /) -> _Index:
     return new_index
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class ReindexToSetError(Exception):
     index: IndexA
     target: list[Any]
@@ -456,7 +456,7 @@ def reindex_to_subset(index: _Index, target: Iterable[Any], /) -> _Index:
     return new_index
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class ReindexToSubSetError(Exception):
     index: IndexA
     target: list[Any]
@@ -477,7 +477,7 @@ def reindex_to_superset(index: _Index, target: Iterable[Any], /) -> _Index:
     return new_index
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class ReindexToSuperSetError(Exception):
     index: IndexA
     target: list[Any]
@@ -514,7 +514,7 @@ def _series_minmax(
     return out
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class SeriesMinMaxError(Exception):
     x: SeriesA
     y: SeriesA
@@ -615,7 +615,7 @@ def union_indexes(
     return reduce(func, indexes)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class UnionIndexesError(Exception):
     left: IndexA
     right: IndexA

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class ImpossibleCaseError(Exception):
     case: list[str]
 
@@ -59,14 +59,14 @@ def redirect_error(
         raise
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class RedirectErrorError(Exception):
     old: type[Exception] | tuple[type[Exception], ...]
     new: Exception | type[Exception]
     match: str | None = None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _RedirectErrorNonUniqueArgError(RedirectErrorError):
     args: tuple[Any, ...]
 
@@ -75,7 +75,7 @@ class _RedirectErrorNonUniqueArgError(RedirectErrorError):
         return f"Error must contain a unique argument; got {self.args}."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _RedirectErrorArgNotStringError(RedirectErrorError):
     arg: Any
 

@@ -41,12 +41,12 @@ def serialize(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> str:
     return dumps(_pre_process(obj), default=partial(_default, extra=extra))
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _DictWrapper:
     value: dict[Any, Any]
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _TupleWrapper:
     value: tuple[Any, ...]
 
@@ -142,12 +142,12 @@ def _default(  # noqa: PLR0911, PLR0912
     raise _JsonSerializationTypeError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class JsonSerializationError(Exception):
     obj: Any
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _JsonSerializationTimeZoneError(JsonSerializationError):
     tzinfo: dt.tzinfo
 
@@ -156,7 +156,7 @@ class _JsonSerializationTimeZoneError(JsonSerializationError):
         return f"Invalid timezone: {self.tzinfo}."
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _JsonSerializationTypeError(JsonSerializationError):
     @override
     def __str__(self) -> str:

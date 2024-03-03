@@ -58,7 +58,7 @@ def ensure_class(obj: Any, cls: type[_T] | tuple[type[_T], ...], /) -> _T:
     raise EnsureClassError(obj=obj, cls=cls)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureClassError(Exception):
     obj: Any
     cls: type[Any] | tuple[type[Any], ...]
@@ -75,7 +75,7 @@ def ensure_hashable(obj: Any, /) -> Hashable:
     raise EnsureHashableError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureHashableError(Exception):
     obj: Any
 
@@ -91,7 +91,7 @@ def ensure_not_none(obj: _T | None, /) -> _T:
     return obj
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureNotNoneError(Exception):
     @override
     def __str__(self) -> str:
@@ -105,7 +105,7 @@ def ensure_sized(obj: Any, /) -> Sized:
     raise EnsureSizedError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureSizedError(Exception):
     obj: Any
 
@@ -121,7 +121,7 @@ def ensure_sized_not_str(obj: Any, /) -> Sized:
     raise EnsureSizedNotStrError(obj=obj)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class EnsureSizedNotStrError(Exception):
     obj: Any
 

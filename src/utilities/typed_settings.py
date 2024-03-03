@@ -113,7 +113,7 @@ def _get_loaders(
     )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _GetLoadersError(Exception):
     appname: str
 

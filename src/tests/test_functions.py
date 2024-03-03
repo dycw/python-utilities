@@ -11,14 +11,14 @@ from utilities.functions import CheckNameError, check_name, identity
 
 class TestCheckName:
     def test_main(self) -> None:
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Example:
             name: str
 
         check_name(Example(name="name"), "name")
 
     def test_error(self) -> None:
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Example:
             name: str
 

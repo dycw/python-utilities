@@ -42,7 +42,7 @@ def table_tag_to_dataframe(table: Tag, /) -> DataFrame:
     return df.rename({f"column_{i}": th for i, th in enumerate(th)})
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class TableTagToDataFrameError(Exception):
     table: Tag
     first: list[str]

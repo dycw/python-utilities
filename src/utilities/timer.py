@@ -77,7 +77,7 @@ class Timer:
         return op(left, right)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class TimerError(Exception):
     obj: Any
 
