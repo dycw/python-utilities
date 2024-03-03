@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from holoviews import Curve, Layout, save
 from holoviews.plotting import bokeh
@@ -9,7 +9,10 @@ from utilities.iterables import _CheckLengthMinError, check_length
 from utilities.math import IntPos
 from utilities.text import EnsureStrError, ensure_str
 from utilities.types import PathLike, get_class_name
-from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1
+
+if TYPE_CHECKING:
+    from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1  # noqa: TCH004
+
 
 _ = bokeh
 _T = TypeVar("_T")
