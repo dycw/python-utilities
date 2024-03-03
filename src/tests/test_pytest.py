@@ -16,7 +16,7 @@ class TestPytestOptions:
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
-            from pytest import mark
+            import pytest
 
             @pytest.mark.unknown
             def test_main():
@@ -83,7 +83,7 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            from pytest import mark
+            import pytest
 
             @pytest.mark.slow
             def test_main():
@@ -153,7 +153,7 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            from pytest import mark
+            import pytest
 
             def test_none():
                 assert True
@@ -209,7 +209,7 @@ class TestThrottle:
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
 
-            @fixture
+            @pytest.fixture
             def is_pass(request):
                 return request.config.getoption("--pass")
             """
@@ -241,7 +241,7 @@ class TestThrottle:
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
 
-            @fixture
+            @pytest.fixture
             def is_pass(request):
                 return request.config.getoption("--pass")
             """
@@ -270,7 +270,8 @@ class TestThrottle:
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
-            from pytest import mark
+            import pytest
+
             from string import printable
             from utilities.pytest import throttle
 

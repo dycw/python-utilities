@@ -8,7 +8,7 @@ from _pytest.fixtures import SubRequest
 
 from utilities.timer import Timer
 
-FLAKY = pytest.mark.flaky(reruns=10, reruns_delay=3)
+FLAKY = pytest.mark.flaky(reruns=5, reruns_delay=1)
 
 
 # hypothesis

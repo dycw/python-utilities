@@ -831,7 +831,7 @@ class TestEnsureTablesDropped:
         self._run_test(table, engine, runs)
 
     @given(engine=sqlite_engines())
-    @pytest.mark.parametrize("runs", [pytest.param(0), pytest.param(2)])
+    @pytest.mark.parametrize("runs", [pytest.param(1), pytest.param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
         class Example(declarative_base()):
             __tablename__ = "example"

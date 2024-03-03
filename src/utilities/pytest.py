@@ -33,6 +33,8 @@ except ModuleNotFoundError:  # pragma: no cover
         skipif_not_mac
     ) = skipif_not_linux = None
 else:
+    mark = pytest.mark
+    skip = pytest.skip
     skipif_windows = pytest.mark.skipif(IS_WINDOWS, reason="Skipped for Windows")
     skipif_mac = pytest.mark.skipif(IS_MAC, reason="Skipped for Mac")
     skipif_linux = pytest.mark.skipif(IS_LINUX, reason="Skipped for Linux")
@@ -127,7 +129,7 @@ def throttle(
                 and (prev is not None)
                 and ((now - prev) < duration_to_float(duration))
             ):
-                skip(reason=f"{test} throttled")
+                _ = skip(reason=f"{test} throttled")
             if on_try:
                 _throttle_write(path, now)
                 return func(*args, **kwargs)
