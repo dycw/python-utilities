@@ -11,7 +11,6 @@ from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
-from utilities.errors import ImpossibleCaseError
 from utilities.math import (
     _CheckIntegerEqualError,
     _CheckIntegerEqualOrApproxError,
@@ -75,9 +74,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
             case "zip() argument 2 is shorter than argument 1":
                 state = _CheckIterablesEqualState.left_longer
             case _:  # pragma: no cover
-                raise ImpossibleCaseError(  # pragma: no cover
-                    case=[f"{msg=}"]
-                ) from None
+                raise
     else:
         state = None
     if (len(errors) >= 1) or (state is not None):

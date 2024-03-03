@@ -5,9 +5,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from re import search
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from typing_extensions import override
+
+from utilities.text import EnsureStrError, ensure_str
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -37,20 +39,47 @@ def redirect_error(
             raise
         if match is None:
             raise new from error
+        match error.args:  #  do not import from utilities.iterables
+            case (arg,):
+                pass
+            case _:
+                raise _RedirectErrorNonUniqueArgError(
+                    old=old, new=new, match=match, args=error.args
+                ) from None
         try:
-            (arg,) = error.args
-        except ValueError:
-            msg = f"{error.args=}"
-            raise RedirectErrorError(msg) from None
-        if not isinstance(arg, str):
-            msg = f"{arg=}"
-            raise RedirectErrorError(msg) from error
-        if search(match, arg):
+            msg = ensure_str(arg)
+        except EnsureStrError:
+            raise _RedirectErrorArgNotStringError(
+                old=old, new=new, match=match, arg=arg
+            ) from None
+        if search(match, msg):
             raise new from error
         raise
 
 
-class RedirectErrorError(Exception): ...
+@dataclass(frozen=True, kw_only=True)
+class RedirectErrorError(Exception):
+    old: type[Exception] | tuple[type[Exception], ...]
+    new: Exception | type[Exception]
+    match: str | None = None
+
+
+@dataclass(frozen=True, kw_only=True)
+class _RedirectErrorNonUniqueArgError(RedirectErrorError):
+    args: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return f"Error must contain a unique argument; got {self.args}."
+
+
+@dataclass(frozen=True, kw_only=True)
+class _RedirectErrorArgNotStringError(RedirectErrorError):
+    arg: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Error argument must be a string; got {self.arg}."
 
 
 _T = TypeVar("_T")

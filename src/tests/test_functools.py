@@ -29,6 +29,10 @@ class TestRedirectEmptyReduce:
             _ = reduce(add, [])
 
     def test_other_error(self) -> None:
-        with pytest.raises(TypeError, match="other"), redirect_empty_reduce():
-            msg = "other"
-            raise TypeError(msg)
+        def run_test() -> None:
+            with redirect_empty_reduce():
+                msg = "other"
+                raise TypeError(msg)
+
+        with pytest.raises(TypeError, match="other"):
+            run_test()

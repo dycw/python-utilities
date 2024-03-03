@@ -36,7 +36,10 @@ class TestRedirectError:
 
         class ThirdError(Exception): ...
 
-        with pytest.raises(FirstError), redirect_error(SecondError, ThirdError):
+        with (
+            pytest.raises(FirstError, match=""),
+            redirect_error(SecondError, ThirdError),
+        ):
             raise FirstError
 
     def test_match_and_redirect(self) -> None:
@@ -44,59 +47,69 @@ class TestRedirectError:
 
         class SecondError(Exception): ...
 
-        with (
-            pytest.raises(SecondError),
-            redirect_error(FirstError, SecondError, match="text"),
-        ):
-            msg = "text"
-            raise FirstError(msg)
+        def run_test() -> None:
+            new = SecondError("second")
+            with redirect_error(FirstError, new, match="first"):
+                msg = "first"
+                raise FirstError(msg)
+
+        with pytest.raises(SecondError, match="second"):
+            run_test()
 
     def test_match_and_args_empty_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            pytest.raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error must contain a unique argument; got .*\."
         ):
-            raise FirstError()  # noqa: RSE102
+            run_test()
 
     def test_match_and_args_non_unique_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            pytest.raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError(1, 2)
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error must contain a unique argument; got .*\."
         ):
-            args = "x", "y"
-            raise FirstError(args)
+            run_test()
 
     def test_match_and_arg_not_string_error(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            pytest.raises(RedirectErrorError),
-            redirect_error(FirstError, SecondError, match="match"),
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="match"):
+                raise FirstError(None)
+
+        with pytest.raises(
+            RedirectErrorError, match=r"Error argument must be a string; got None\."
         ):
-            arg = 0
-            raise FirstError(arg)
+            run_test()
 
     def test_match_and_no_redirect(self) -> None:
         class FirstError(Exception): ...
 
         class SecondError(Exception): ...
 
-        with (
-            pytest.raises(FirstError),
-            redirect_error(FirstError, SecondError, match="something else"),
-        ):
-            msg = "text"
-            raise FirstError(msg)
+        def run_test() -> None:
+            with redirect_error(FirstError, SecondError, match="something else"):
+                msg = "initial"
+                raise FirstError(msg)
+
+        with pytest.raises(FirstError, match="initial"):
+            run_test()
 
 
 class TestRetry:
