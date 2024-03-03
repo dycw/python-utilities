@@ -1,4 +1,6 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import given
@@ -9,6 +11,9 @@ from numpy.testing import assert_allclose, assert_equal
 from utilities.hypothesis import float_arrays
 from utilities.numpy import NDArrayF1, is_between_or_nan
 from utilities.scipy import ppf
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TestPPF:

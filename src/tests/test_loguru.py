@@ -1,8 +1,9 @@
-from collections.abc import Mapping
-from collections.abc import Set as AbstractSet
+from __future__ import annotations
+
 from pathlib import Path
 from re import search
 from time import sleep
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
@@ -17,7 +18,12 @@ from utilities.loguru import (
     setup_loguru,
 )
 from utilities.os import temp_environ
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from collections.abc import Set as AbstractSet
+
+    from utilities.types import PathLike
 
 
 class TestSetupLoguru:

@@ -1,10 +1,16 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
 from contextlib import contextmanager
-from pathlib import Path
+from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
 from utilities.tempfile import TemporaryDirectory
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
+
+    from utilities.types import PathLike
 
 
 @contextmanager

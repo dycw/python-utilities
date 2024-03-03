@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter as _APIRouter
-from fastapi.types import DecoratedCallable
 from typing_extensions import override
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from fastapi.types import DecoratedCallable
 
 _PATTERN = re.compile(r"(^/$)|(^.+[^\/]$)")
 

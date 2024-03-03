@@ -1,10 +1,16 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
 from os import getenv
+from typing import TYPE_CHECKING
 
 import pytest
-from _pytest.fixtures import SubRequest
 
 from utilities.timer import Timer
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from _pytest.fixtures import SubRequest
 
 FLAKY = pytest.mark.flaky(reruns=5, reruns_delay=1)
 

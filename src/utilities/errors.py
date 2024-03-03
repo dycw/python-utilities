@@ -1,13 +1,17 @@
-from collections.abc import Callable, Iterator
+from __future__ import annotations
+
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from re import search
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from typing_extensions import override
 
 from utilities.text import EnsureStrError, ensure_str
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
 
 @dataclass(frozen=True, kw_only=True)

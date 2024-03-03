@@ -1,10 +1,14 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
 from dataclasses import fields, is_dataclass, replace
-from typing import Any, ClassVar, TypeGuard, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard, TypeVar
 
 from typing_extensions import Protocol
 
 from utilities.sentinel import Sentinel
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class Dataclass(Protocol):

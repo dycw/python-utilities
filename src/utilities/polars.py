@@ -1,10 +1,10 @@
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from collections.abc import Set as AbstractSet
+from __future__ import annotations
+
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
@@ -23,7 +23,12 @@ from utilities.iterables import (
     is_iterable_not_str,
 )
 from utilities.math import CheckIntegerError, check_integer
-from utilities.types import IterableStrs
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Set as AbstractSet
+
+    from utilities.types import IterableStrs
 
 
 def check_polars_dataframe(

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import gzip
 from pickle import dump, load
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from utilities.types import PathLike
+if TYPE_CHECKING:
+    from utilities.types import PathLike
 
 
 def read_pickle(path: PathLike, /) -> Any:

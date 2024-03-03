@@ -1,8 +1,13 @@
-from collections.abc import Callable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 
 from utilities.sentinel import _REPR, Sentinel, sentinel
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TestSentinel:

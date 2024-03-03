@@ -1,13 +1,17 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Callable
 from operator import eq, ge, gt, le, lt, ne
 from re import search
 from time import sleep
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from utilities.timer import Timer, TimerError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TestTimer:

@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import datetime as dt
 import enum
-from collections.abc import Callable
 from enum import auto
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import sqlalchemy
@@ -44,7 +45,11 @@ from utilities.datetime import (
 from utilities.hypothesis import sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
-from utilities.types import SequenceStrs
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from utilities.types import SequenceStrs
 
 
 class _Truth(enum.Enum):

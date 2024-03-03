@@ -1,8 +1,8 @@
-from collections.abc import Callable, Iterable
+from __future__ import annotations
+
 from functools import cache, wraps
 from os import environ
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.hashlib import md5_hash
@@ -15,7 +15,12 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import Duration, IterableStrs, PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+    from pathlib import Path
+
+    from utilities.types import Duration, IterableStrs, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     import pytest

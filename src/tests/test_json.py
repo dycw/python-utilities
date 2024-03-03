@@ -1,9 +1,9 @@
-from collections.abc import Callable
-from decimal import Decimal
+from __future__ import annotations
+
 from json import dumps
 from math import isnan
 from operator import eq, neg
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -35,7 +35,6 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
-from sqlalchemy import Engine
 from typing_extensions import override
 
 from utilities.datetime import NOW_HKG, UTC
@@ -54,6 +53,12 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from decimal import Decimal
+
+    from sqlalchemy import Engine
 
 
 class TestSerializeAndDeserialize:

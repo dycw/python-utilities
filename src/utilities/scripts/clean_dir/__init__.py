@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Iterable, Iterator
 from functools import partial
 from getpass import getuser
 from itertools import islice
 from pathlib import Path
 from shutil import rmtree
+from typing import TYPE_CHECKING
 
 from click import command
 from loguru import logger
@@ -14,7 +16,11 @@ from utilities.datetime import UTC, get_now
 from utilities.loguru import setup_loguru
 from utilities.scripts.clean_dir.classes import Config, Item
 from utilities.typed_settings import click_options
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+    from utilities.types import PathLike
 
 _CONFIG = Config()
 

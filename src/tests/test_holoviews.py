@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from holoviews import Curve
@@ -20,7 +23,9 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.pytest import skipif_not_linux
-from utilities.xarray import DataArrayB1, DataArrayF1
+
+if TYPE_CHECKING:
+    from utilities.xarray import DataArrayB1, DataArrayF1
 
 
 class TestApplyCols:

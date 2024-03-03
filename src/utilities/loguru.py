@@ -1,12 +1,13 @@
+from __future__ import annotations
+
 import datetime as dt
 import logging
-from collections.abc import Iterator, Mapping
 from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
 from pathlib import Path
 from re import search
 from sys import _getframe, stdout
-from typing import Any, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -15,7 +16,11 @@ from utilities.logging import LogLevel
 from utilities.pathlib import PWD, ensure_path
 from utilities.platform import IS_WINDOWS
 from utilities.re import ExtractGroupError, extract_group
-from utilities.types import IterableStrs, PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+
+    from utilities.types import IterableStrs, PathLike
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
