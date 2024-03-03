@@ -1,5 +1,6 @@
-from collections.abc import Iterable, Sequence
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from hypothesis import given
@@ -40,6 +41,9 @@ from utilities.iterables import (
     take,
     transpose,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 
 class TestCheckDuplicates:

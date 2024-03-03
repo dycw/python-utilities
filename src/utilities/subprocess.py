@@ -1,15 +1,20 @@
-from collections.abc import Iterator, Mapping
+from __future__ import annotations
+
 from functools import partial
 from itertools import chain, repeat, starmap
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from utilities.errors import redirect_error
 from utilities.iterables import OneError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PWD, ensure_path
-from utilities.types import IterableStrs, PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+
+    from utilities.types import IterableStrs, PathLike
 
 
 def get_shell_output(

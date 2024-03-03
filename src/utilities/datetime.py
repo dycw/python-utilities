@@ -1,17 +1,22 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Iterator
 from contextlib import suppress
 from dataclasses import dataclass
 from re import sub
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import ImpossibleCaseError
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
-from utilities.types import Duration
 from utilities.zoneinfo import HONG_KONG, TOKYO
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from utilities.types import Duration
 
 UTC = dt.timezone.utc
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)

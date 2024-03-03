@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pytest
 
 from utilities.re import (
@@ -11,7 +15,9 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-from utilities.types import IterableStrs
+
+if TYPE_CHECKING:
+    from utilities.types import IterableStrs
 
 
 class TestExtractGroup:

@@ -1,9 +1,14 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
 
 from utilities.more_itertools import always_iterable, windowed_complete
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class TestAlwaysIterable:

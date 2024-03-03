@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Callable
 from math import isclose
 from operator import eq, gt, lt
 from re import search
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from hypothesis import HealthCheck, assume, given, settings
@@ -68,8 +69,12 @@ from utilities.datetime import (
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, text_clean
-from utilities.types import Number
 from utilities.zoneinfo import HONG_KONG
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from utilities.types import Number
 
 
 class TestAddWeekdays:

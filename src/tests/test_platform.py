@@ -1,5 +1,6 @@
-from collections.abc import Set as AbstractSet
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from hypothesis import given
@@ -19,6 +20,9 @@ from utilities.platform import (
     get_system,
     maybe_yield_lower_case,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Set as AbstractSet
 
 
 class TestMaybeYieldLowerCase:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -6,12 +8,12 @@ from holoviews.plotting import bokeh
 from typing_extensions import override
 
 from utilities.iterables import _CheckLengthMinError, check_length
-from utilities.math import IntPos
 from utilities.text import EnsureStrError, ensure_str
 from utilities.types import PathLike, get_class_name
 
 if TYPE_CHECKING:
-    from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1  # noqa: TCH004
+    from utilities.math import IntPos
+    from utilities.xarray import DataArrayB1, DataArrayF1, DataArrayI1
 
 
 _ = bokeh

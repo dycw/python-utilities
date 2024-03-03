@@ -1,11 +1,11 @@
-from collections.abc import Callable, Mapping
+from __future__ import annotations
+
 from math import isfinite, nan
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
 from polars.testing import assert_frame_equal
-from polars.type_aliases import PolarsDataType, SchemaDict
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
@@ -21,6 +21,11 @@ from utilities.polars import (
     redirect_empty_polars_concat,
     set_first_row_as_columns,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from polars.type_aliases import PolarsDataType, SchemaDict
 
 
 class TestCheckPolarsDataFrame:

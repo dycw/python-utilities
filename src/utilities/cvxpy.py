@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
@@ -11,9 +13,9 @@ from typing_extensions import override
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
 
 if TYPE_CHECKING:
-    from pandas import DataFrame  # noqa: TCH004
+    from pandas import DataFrame
 
-    from utilities.pandas import SeriesF  # noqa: TCH004
+    from utilities.pandas import SeriesF
 
 
 @overload

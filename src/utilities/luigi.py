@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
@@ -9,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
-from luigi.interface import LuigiRunResult
 from luigi.task import flatten
 from typing_extensions import override
 
@@ -30,12 +31,14 @@ from utilities.datetime import (
     serialize_time,
 )
 from utilities.enum import ensure_enum, parse_enum
-from utilities.logging import LogLevel
-from utilities.types import IterableStrs, PathLike
 
 if TYPE_CHECKING:
-    from semver import Version  # noqa: TCH004
-    from sqlalchemy import Engine, Select  # noqa: TCH004
+    from luigi.interface import LuigiRunResult
+    from semver import Version
+    from sqlalchemy import Engine, Select
+
+    from utilities.logging import LogLevel
+    from utilities.types import IterableStrs, PathLike
 
 
 # parameters
@@ -351,7 +354,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> "_ExternalTaskDummyTarget":  # type: ignore[]
+    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[]
         return _ExternalTaskDummyTarget(self)
 
 

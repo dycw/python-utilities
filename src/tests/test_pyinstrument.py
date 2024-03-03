@@ -1,8 +1,13 @@
-from pathlib import Path
+from __future__ import annotations
+
 from re import search
 from time import sleep
+from typing import TYPE_CHECKING
 
 from utilities.pyinstrument import profile
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestProfile:

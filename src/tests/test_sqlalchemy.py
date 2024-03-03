@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import enum
 import typing
 from enum import auto
-from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import pytest
@@ -140,6 +141,9 @@ from utilities.sqlalchemy import (
     reflect_table,
     serialize_engine,
 )
+
+if typing.TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestCheckColumnCollectionsEqual:

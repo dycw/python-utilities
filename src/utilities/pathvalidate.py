@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pathvalidate import ValidationError, sanitize_filepath, validate_filepath
 
-from utilities.types import PathLike
+if TYPE_CHECKING:
+    from utilities.types import PathLike
 
 
 def valid_path(*parts: PathLike, sanitize: bool = False) -> Path:

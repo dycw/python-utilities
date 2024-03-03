@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from utilities.text import EnsureStrError, ensure_str, strip_and_dedent

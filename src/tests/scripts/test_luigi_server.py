@@ -1,4 +1,6 @@
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 from hypothesis import given
@@ -7,6 +9,9 @@ from hypothesis.strategies import integers
 from utilities.hypothesis import text_ascii
 from utilities.pathlib import temp_cwd
 from utilities.scripts.luigi_server import _get_args, main
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestLuigiServer:

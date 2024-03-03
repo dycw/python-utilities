@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from ast import AST, Call, ImportFrom, Module, Name, With, alias, expr, parse
 from collections import Counter
-from collections.abc import Iterable, Iterator
 from enum import Enum, auto
 from operator import itemgetter
 from sys import stdout
-from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 from ast_comments import Comment, unparse
@@ -16,6 +16,10 @@ from typing_extensions import assert_never
 from utilities.humps import snake_case
 from utilities.iterables import one
 from utilities.text import ensure_str, strip_and_dedent
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+    from types import ModuleType
 
 
 class Method(Enum):

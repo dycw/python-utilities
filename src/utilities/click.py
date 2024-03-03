@@ -1,4 +1,5 @@
-import datetime as dt
+from __future__ import annotations
+
 from enum import Enum as _Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
@@ -19,7 +20,9 @@ from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
 
 if TYPE_CHECKING:
-    from sqlalchemy import Engine as _Engine  # noqa: TCH004
+    import datetime as dt
+
+    from sqlalchemy import Engine as _Engine
 
 
 class Date(ParamType):

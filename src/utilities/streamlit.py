@@ -1,6 +1,7 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from hmac import compare_digest
-from typing import NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 from streamlit import (
     error,
@@ -11,6 +12,9 @@ from streamlit import (
     text_input,
 )
 from streamlit import stop as _stop
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _USERNAME = "username"
 _PASSWORD = "password"  # noqa: S105

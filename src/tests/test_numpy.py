@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from hypothesis import assume, given
@@ -139,6 +140,9 @@ from utilities.numpy import (
     year,
 )
 from utilities.zoneinfo import HONG_KONG
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TestArrayIndexer:

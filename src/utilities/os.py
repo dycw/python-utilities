@@ -1,9 +1,14 @@
-from collections.abc import Iterator, Mapping
+from __future__ import annotations
+
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
 
 
 def get_cpu_count() -> int:

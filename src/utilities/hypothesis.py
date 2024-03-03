@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator, Mapping
@@ -33,19 +35,18 @@ from hypothesis.strategies import (
 from typing_extensions import assert_never
 
 from utilities.datetime import UTC
-from utilities.math import FloatFinPos, IntNonNeg
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
-    from numpy import datetime64  # noqa: TCH004
-    from pandas import Timestamp  # noqa: TCH004
-    from semver import Version  # noqa: TCH004
-    from sqlalchemy import Engine, MetaData  # noqa: TCH004
+    from utilities.math import FloatFinPos, IntNonNeg
 
-    from utilities.numpy import (  # noqa: TCH004
+try:
+    from numpy import datetime64
+
+    from utilities.numpy import (
         Datetime64Kind,
         Datetime64Unit,
         NDArrayA,
@@ -54,13 +55,29 @@ if TYPE_CHECKING:
         NDArrayI,
         NDArrayO,
     )
-    from utilities.pandas import IndexA, IndexI, IndexS  # noqa: TCH004
-    from utilities.xarray import (  # noqa: TCH004
-        DataArrayB,
-        DataArrayF,
-        DataArrayI,
-        DataArrayO,
-    )
+except ModuleNotFoundError:
+    datetime64 = Datetime64Kind = Datetime64Unit = NDArrayA = NDArrayB = NDArrayF = (
+        NDArrayI
+    ) = NDArrayO = Any
+
+try:
+    from pandas import Timestamp
+
+    from utilities.pandas import IndexA, IndexI, IndexS
+except ModuleNotFoundError:
+    Timestamp = IndexA = IndexI = IndexS = Any
+try:
+    from semver import Version
+except ModuleNotFoundError:
+    Version = Any
+try:
+    from sqlalchemy import Engine, MetaData
+except ModuleNotFoundError:
+    Engine = MetaData = Any
+try:
+    from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
+except ModuleNotFoundError:
+    DataArrayB = DataArrayF = DataArrayI = DataArrayO = Any
 
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]

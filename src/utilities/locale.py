@@ -1,12 +1,17 @@
-from collections.abc import Callable, Iterable, Iterator
+from __future__ import annotations
+
 from contextlib import contextmanager
 from locale import LC_CTYPE, LC_NUMERIC, getlocale, setlocale
 from locale import atof as _atof
 from locale import atoi as _atoi
+from typing import TYPE_CHECKING
 
 from typing_extensions import assert_never
 
 from utilities.platform import SYSTEM, System
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator
 
 
 def get_locale_for_platform(locale: str, /) -> str:

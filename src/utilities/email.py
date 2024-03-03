@@ -1,11 +1,17 @@
-from collections.abc import Iterable
+from __future__ import annotations
+
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP
+from typing import TYPE_CHECKING
 
 from utilities.pathlib import ensure_path
-from utilities.types import IterableStrs, PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from utilities.types import IterableStrs, PathLike
 
 
 def send_email(

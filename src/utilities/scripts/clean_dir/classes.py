@@ -1,10 +1,14 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from utilities.tempfile import TEMP_DIR
 from utilities.typed_settings import click_field
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 @dataclass(frozen=True)

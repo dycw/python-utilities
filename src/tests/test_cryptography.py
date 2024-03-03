@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from cryptography.fernet import Fernet
 from hypothesis import given

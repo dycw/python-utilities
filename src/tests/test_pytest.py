@@ -1,13 +1,20 @@
+from __future__ import annotations
+
 from inspect import signature
-from pathlib import Path
 from time import sleep
+from typing import TYPE_CHECKING
 
 import pytest
-from _pytest.legacypath import Testdir
 
 from tests.conftest import FLAKY
 from utilities.pytest import throttle
-from utilities.types import IterableStrs
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from _pytest.legacypath import Testdir
+
+    from utilities.types import IterableStrs
 
 
 class TestPytestOptions:
