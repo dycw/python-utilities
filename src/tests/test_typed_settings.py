@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import datetime as dt
 import enum
-from collections.abc import Callable
 from dataclasses import dataclass
 from enum import auto
 from operator import attrgetter, eq
-from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 from click import command, echo
@@ -45,6 +45,10 @@ from utilities.typed_settings import (
     click_options,
     load_settings,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 app_names = text_ascii(min_size=1).map(str.lower)
 
