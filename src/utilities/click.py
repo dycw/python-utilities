@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from enum import Enum as _Enum
+import enum
+import pathlib
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
+import click
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
@@ -23,6 +25,16 @@ if TYPE_CHECKING:
     import datetime as dt
 
     from sqlalchemy import Engine as _Engine
+
+
+FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
+DirPath = click.Path(file_okay=False, dir_okay=True, path_type=pathlib.Path)
+ExistingFilePath = click.Path(
+    exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path
+)
+ExistingDirPath = click.Path(
+    exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path
+)
 
 
 class Date(ParamType):
@@ -89,7 +101,7 @@ class Timedelta(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
-_E = TypeVar("_E", bound=_Enum)
+_E = TypeVar("_E", bound=enum.Enum)
 
 
 class Enum(ParamType, Generic[_E]):
@@ -169,8 +181,12 @@ class Engine(ParamType):
 __all__ = [
     "Date",
     "DateTime",
+    "DirPath",
     "Engine",
     "Enum",
+    "ExistingDirPath",
+    "ExistingFilePath",
+    "FilePath",
     "Time",
     "Timedelta",
     "local_scheduler_option_default_central",
