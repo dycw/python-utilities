@@ -11,7 +11,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.98.15
+hypothesis==6.98.17
 iniconfig==2.0.0
     # via pytest
 more-itertools==10.2.0

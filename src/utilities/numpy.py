@@ -79,19 +79,19 @@ datetime64fs = dtype("datetime64[fs]")
 datetime64as = dtype("datetime64[as]")
 
 
-timedelta64Y = dtype("datetime64[Y]")  # noqa: N816
-timedelta64M = dtype("datetime64[M]")  # noqa: N816
-timedelta64W = dtype("datetime64[W]")  # noqa: N816
-timedelta64D = dtype("datetime64[D]")  # noqa: N816
-timedelta64h = dtype("datetime64[h]")
-timedelta64m = dtype("datetime64[m]")
-timedelta64s = dtype("datetime64[s]")
-timedelta64ms = dtype("datetime64[ms]")
-timedelta64us = dtype("datetime64[us]")
-timedelta64ns = dtype("datetime64[ns]")
-timedelta64ps = dtype("datetime64[ps]")
-timedelta64fs = dtype("datetime64[fs]")
-timedelta64as = dtype("datetime64[as]")
+timedelta64Y = dtype("timedelta64[Y]")  # noqa: N816
+timedelta64M = dtype("timedelta64[M]")  # noqa: N816
+timedelta64W = dtype("timedelta64[W]")  # noqa: N816
+timedelta64D = dtype("timedelta64[D]")  # noqa: N816
+timedelta64h = dtype("timedelta64[h]")
+timedelta64m = dtype("timedelta64[m]")
+timedelta64s = dtype("timedelta64[s]")
+timedelta64ms = dtype("timedelta64[ms]")
+timedelta64us = dtype("timedelta64[us]")
+timedelta64ns = dtype("timedelta64[ns]")
+timedelta64ps = dtype("timedelta64[ps]")
+timedelta64fs = dtype("timedelta64[fs]")
+timedelta64as = dtype("timedelta64[as]")
 
 
 # annotations - dtypes
