@@ -17,7 +17,7 @@ exceptiongroup==1.2.0
     #   hypothesis
     #   pytest
 fastapi==0.110.0
-hypothesis==6.98.15
+hypothesis==6.98.17
 idna==3.6
     # via anyio
 iniconfig==2.0.0

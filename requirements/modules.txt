@@ -97,7 +97,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.98.15
+hypothesis==6.98.17
 idna==3.6
     # via
     #   anyio
@@ -311,7 +311,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==2.0.27
+sqlalchemy==2.0.28
 starlette==0.36.3
     # via fastapi
 streamlit==1.31.1
@@ -342,7 +342,7 @@ tqdm==4.66.2
     # via
     #   panel
     #   pqdm
-trove-classifiers==2024.2.23
+trove-classifiers==2024.3.3
     # via hatchling
 typed-settings==24.1.0
 typing-extensions==4.10.0

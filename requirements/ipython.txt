@@ -18,10 +18,10 @@ exceptiongroup==1.2.0
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.98.15
+hypothesis==6.98.17
 iniconfig==2.0.0
     # via pytest
-ipython==8.22.1
+ipython==8.22.2
 jedi==0.19.1
     # via ipython
 matplotlib-inline==0.1.6
