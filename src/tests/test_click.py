@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 from enum import auto
+from re import search
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -23,11 +24,15 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
+from pydantic import FilePath
 
 import utilities.click
 from utilities.click import (
     Date,
     DateTime,
+    DirPath,
+    ExistingDirPath,
+    ExistingFilePath,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -48,6 +53,7 @@ from utilities.sqlalchemy import serialize_engine
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from utilities.types import SequenceStrs
 
@@ -95,6 +101,93 @@ class TestEnum:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
+
+
+class TestFileAndDirPaths:
+    def test_existing_dir_path(self, *, tmp_path: Path) -> None:
+        @command()
+        @argument("path", type=ExistingDirPath)
+        def cli(*, path: Path) -> None:
+            from pathlib import Path
+
+            assert isinstance(path, Path)
+
+        result = CliRunner().invoke(cli, [str(tmp_path)])
+        assert result.exit_code == 0
+
+        file_path = tmp_path.joinpath("file.txt")
+        file_path.touch()
+        result = CliRunner().invoke(cli, [str(file_path)])
+        assert result.exit_code == 2
+        assert search("is a file", result.stdout)
+
+        non_existent = tmp_path.joinpath("non-existent")
+        result = CliRunner().invoke(cli, [str(non_existent)])
+        assert result.exit_code == 2
+        assert search("does not exist", result.stdout)
+
+    def test_existing_file_path(self, *, tmp_path: Path) -> None:
+        @command()
+        @argument("path", type=ExistingFilePath)
+        def cli(*, path: Path) -> None:
+            from pathlib import Path
+
+            assert isinstance(path, Path)
+
+        result = CliRunner().invoke(cli, [str(tmp_path)])
+        assert result.exit_code == 2
+        assert search("is a directory", result.stdout)
+
+        file_path = tmp_path.joinpath("file.txt")
+        file_path.touch()
+        result = CliRunner().invoke(cli, [str(file_path)])
+        assert result.exit_code == 0
+
+        non_existent = tmp_path.joinpath("non-existent")
+        result = CliRunner().invoke(cli, [str(non_existent)])
+        assert result.exit_code == 2
+        assert search("does not exist", result.stdout)
+
+    def test_dir_path(self, *, tmp_path: Path) -> None:
+        @command()
+        @argument("path", type=DirPath)
+        def cli(*, path: Path) -> None:
+            from pathlib import Path
+
+            assert isinstance(path, Path)
+
+        result = CliRunner().invoke(cli, [str(tmp_path)])
+        assert result.exit_code == 0
+
+        file_path = tmp_path.joinpath("file.txt")
+        file_path.touch()
+        result = CliRunner().invoke(cli, [str(file_path)])
+        assert result.exit_code == 2
+        assert search("is a file", result.stdout)
+
+        non_existent = tmp_path.joinpath("non-existent")
+        result = CliRunner().invoke(cli, [str(non_existent)])
+        assert result.exit_code == 0
+
+    def test_file_path(self, *, tmp_path: Path) -> None:
+        @command()
+        @argument("path", type=FilePath)
+        def cli(*, path: Path) -> None:
+            from pathlib import Path
+
+            assert isinstance(path, Path)
+
+        result = CliRunner().invoke(cli, [str(tmp_path)])
+        assert result.exit_code == 0
+
+        file_path = tmp_path.joinpath("file.txt")
+        file_path.touch()
+        result = CliRunner().invoke(cli, [str(file_path)])
+        assert result.exit_code == 0
+
+        non_existent = tmp_path.joinpath("non-existent")
+        result = CliRunner().invoke(cli, [str(non_existent)])
+        assert result.exit_code == 0
 
 
 class TestLocalSchedulerOption:
