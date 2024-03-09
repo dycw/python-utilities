@@ -24,7 +24,6 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
-from pydantic import FilePath
 
 import utilities.click
 from utilities.click import (
@@ -33,6 +32,7 @@ from utilities.click import (
     DirPath,
     ExistingDirPath,
     ExistingFilePath,
+    FilePath,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -178,7 +178,8 @@ class TestFileAndDirPaths:
             assert isinstance(path, Path)
 
         result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 0
+        assert result.exit_code == 2
+        assert search("is a directory", result.stdout)
 
         file_path = tmp_path.joinpath("file.txt")
         file_path.touch()
