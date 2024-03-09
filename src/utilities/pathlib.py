@@ -11,7 +11,7 @@ from utilities.datetime import UTC
 from utilities.re import extract_group
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
 
     from utilities.types import PathLike
 
@@ -44,6 +44,11 @@ def get_modified_time(path: PathLike, /) -> dt.datetime:
     return dt.datetime.fromtimestamp(Path(path).stat().st_mtime, tz=UTC)
 
 
+def list_dir(path: PathLike, /) -> Sequence[Path]:
+    """List the contents of a directory."""
+    return list(Path(path).iterdir())
+
+
 @contextmanager
 def temp_cwd(path: PathLike, /) -> Iterator[None]:
     """Context manager with temporary current working directory set."""
@@ -70,4 +75,11 @@ def walk(
         yield (Path(dirpath), list(map(Path, dirnames)), list(map(Path, filenames)))
 
 
-__all__ = ["ensure_path", "ensure_suffix", "get_modified_time", "temp_cwd", "walk"]
+__all__ = [
+    "ensure_path",
+    "ensure_suffix",
+    "get_modified_time",
+    "list_dir",
+    "temp_cwd",
+    "walk",
+]
