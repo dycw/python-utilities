@@ -178,7 +178,8 @@ class TestFileAndDirPaths:
             assert isinstance(path, Path)
 
         result = CliRunner().invoke(cli, [str(tmp_path)])
-        assert result.exit_code == 0
+        assert result.exit_code == 2
+        assert search("is a directory", result.stdout)
 
         file_path = tmp_path.joinpath("file.txt")
         file_path.touch()
