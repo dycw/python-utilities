@@ -13,6 +13,7 @@ from utilities.pathlib import (
     ensure_path,
     ensure_suffix,
     get_modified_time,
+    list_dir,
     temp_cwd,
     walk,
 )
@@ -57,6 +58,15 @@ class TestGetModifiedTime:
         path.touch()
         mod = get_modified_time(path)
         assert isinstance(mod, dt.datetime)
+
+
+class TestListDir:
+    def test_main(self, *, tmp_path: Path) -> None:
+        file = tmp_path.joinpath("file.txt")
+        file.touch()
+        result = list_dir(tmp_path)
+        expected = [file]
+        assert result == expected
 
 
 class TestWalk:
