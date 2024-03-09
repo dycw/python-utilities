@@ -24,7 +24,6 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
-from pydantic import FilePath
 
 import utilities.click
 from utilities.click import (
@@ -33,6 +32,7 @@ from utilities.click import (
     DirPath,
     ExistingDirPath,
     ExistingFilePath,
+    FilePath,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
