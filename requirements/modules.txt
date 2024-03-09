@@ -104,10 +104,8 @@ idna==3.6
     #   httpx
     #   hyperlink
     #   requests
-importlib-metadata==7.0.1
-    # via
-    #   keyring
-    #   streamlit
+importlib-metadata==7.0.2
+    # via keyring
 iniconfig==2.0.0
     # via pytest
 jaraco-classes==3.3.1
@@ -215,7 +213,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.13
+polars==0.20.14
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -223,7 +221,7 @@ psutil==5.9.8
     # via memory-profiler
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.0
+pyarrow==15.0.1
     # via streamlit
 pybind11==2.11.1
     # via cvxpy
@@ -255,7 +253,6 @@ python-dateutil==2.9.0.post0
     # via
     #   luigi
     #   pandas
-    #   streamlit
 pytz==2024.1
     # via pandas
 pyviz-comms==3.0.1
@@ -314,7 +311,7 @@ soupsieve==2.5
 sqlalchemy==2.0.28
 starlette==0.36.3
     # via fastapi
-streamlit==1.31.1
+streamlit==1.32.0
 tenacity==8.2.3
     # via
     #   luigi
@@ -358,16 +355,12 @@ typing-extensions==4.10.0
     #   streamlit
 tzdata==2024.1
     # via pandas
-tzlocal==5.2
-    # via streamlit
 uc-micro-py==1.0.3
     # via linkify-it-py
 urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-validators==0.22.0
-    # via streamlit
 virtualenv==20.25.1
     # via hatch
 webencodings==0.5.1
@@ -378,7 +371,7 @@ xyzservices==2023.10.1
     # via
     #   bokeh
     #   panel
-zarr==2.17.0
+zarr==2.17.1
 zipp==3.17.0
     # via importlib-metadata
 zstandard==0.22.0

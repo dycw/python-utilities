@@ -21,7 +21,7 @@ packaging==23.2
     #   pytest-rerunfailures
 pluggy==1.4.0
     # via pytest
-polars==0.20.13
+polars==0.20.14
 pytest==8.0.2
     # via
     #   pytest-cov
