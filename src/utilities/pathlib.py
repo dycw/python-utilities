@@ -46,7 +46,7 @@ def get_modified_time(path: PathLike, /) -> dt.datetime:
 
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
-    return list(Path(path).iterdir())
+    return sorted(Path(path).iterdir())
 
 
 @contextmanager
