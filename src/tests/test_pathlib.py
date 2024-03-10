@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from hypothesis import given
-from hypothesis.strategies import booleans
+from hypothesis.strategies import booleans, integers, sets
 from pathvalidate import ValidationError
 
 from utilities.hypothesis import temp_paths
@@ -61,11 +61,13 @@ class TestGetModifiedTime:
 
 
 class TestListDir:
-    def test_main(self, *, tmp_path: Path) -> None:
-        file = tmp_path.joinpath("file.txt")
-        file.touch()
-        result = list_dir(tmp_path)
-        expected = [file]
+    @given(root=temp_paths(), nums=sets(integers(0, 100), max_size=10))
+    def test_main(self, *, root: Path, nums: set[str]) -> None:
+        for n in nums:
+            path = root.joinpath(f"{n}.txt")
+            path.touch()
+        result = list_dir(root)
+        expected = sorted(Path(root, f"{n}.txt") for n in nums)
         assert result == expected
 
 
