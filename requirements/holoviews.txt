@@ -24,7 +24,7 @@ exceptiongroup==1.2.0
     #   hypothesis
     #   pytest
 holoviews==1.18.3
-hypothesis==6.98.17
+hypothesis==6.99.5
 idna==3.6
     # via requests
 iniconfig==2.0.0
@@ -59,7 +59,7 @@ numpy==1.26.4
     #   numbagg
     #   pandas
     #   xarray
-packaging==23.2
+packaging==24.0
     # via
     #   bokeh
     #   coverage-conditional-plugin
@@ -84,7 +84,7 @@ pillow==10.2.0
     # via bokeh
 pluggy==1.4.0
     # via pytest
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly

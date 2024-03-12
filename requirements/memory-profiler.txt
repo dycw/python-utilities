@@ -11,11 +11,11 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.98.17
+hypothesis==6.99.5
 iniconfig==2.0.0
     # via pytest
 memory-profiler==0.61.0
-packaging==23.2
+packaging==24.0
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -24,7 +24,7 @@ pluggy==1.4.0
     # via pytest
 psutil==5.9.8
     # via memory-profiler
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly
