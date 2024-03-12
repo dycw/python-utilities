@@ -16,7 +16,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.98.17
+hypothesis==6.99.5
 iniconfig==2.0.0
     # via pytest
 numpy==1.26.4
@@ -31,7 +31,7 @@ numpy==1.26.4
     #   scs
 osqp==0.6.5
     # via cvxpy
-packaging==23.2
+packaging==24.0
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -41,7 +41,7 @@ pluggy==1.4.0
     # via pytest
 pybind11==2.11.1
     # via cvxpy
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly

@@ -17,23 +17,23 @@ exceptiongroup==1.2.0
     #   hypothesis
     #   pytest
 fastapi==0.110.0
-hypothesis==6.98.17
+hypothesis==6.99.5
 idna==3.6
     # via anyio
 iniconfig==2.0.0
     # via pytest
-packaging==23.2
+packaging==24.0
     # via
     #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
 pluggy==1.4.0
     # via pytest
-pydantic==2.6.3
+pydantic==2.6.4
     # via fastapi
 pydantic-core==2.16.3
     # via pydantic
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly

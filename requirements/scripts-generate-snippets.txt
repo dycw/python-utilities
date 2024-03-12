@@ -13,11 +13,11 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.98.17
+hypothesis==6.99.5
 iniconfig==2.0.0
     # via pytest
 loguru==0.7.2
-packaging==23.2
+packaging==24.0
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -25,7 +25,7 @@ packaging==23.2
 pluggy==1.4.0
     # via pytest
 pyhumps==3.8.0
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly
@@ -40,5 +40,5 @@ tomli==2.0.1
     #   coverage
     #   pytest
     #   typed-settings
-typed-settings==24.1.0
+typed-settings==24.2.0
 typing-extensions==4.10.0

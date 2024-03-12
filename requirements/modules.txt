@@ -87,7 +87,7 @@ gitpython==3.1.42
     # via streamlit
 h11==0.14.0
     # via httpcore
-hatch==1.9.3
+hatch==1.9.4
 hatchling==1.21.1
     # via hatch
 holoviews==1.18.3
@@ -97,7 +97,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.98.17
+hypothesis==6.99.5
 idna==3.6
     # via
     #   anyio
@@ -213,7 +213,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.14
+polars==0.20.15
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -227,7 +227,7 @@ pybind11==2.11.1
     # via cvxpy
 pycparser==2.21
     # via cffi
-pydantic==2.6.3
+pydantic==2.6.4
     # via fastapi
 pydantic-core==2.16.3
     # via pydantic
@@ -237,7 +237,7 @@ pygments==2.17.2
     # via rich
 pyhumps==3.8.0
 pyinstrument==4.6.2
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-check
     #   pytest-cov
@@ -341,7 +341,7 @@ tqdm==4.66.2
     #   pqdm
 trove-classifiers==2024.3.3
     # via hatchling
-typed-settings==24.1.0
+typed-settings==24.2.0
 typing-extensions==4.10.0
     # via
     #   altair

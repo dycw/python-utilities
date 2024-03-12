@@ -18,7 +18,7 @@ exceptiongroup==1.2.0
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.98.17
+hypothesis==6.99.5
 iniconfig==2.0.0
     # via pytest
 ipython==8.22.2
@@ -26,7 +26,7 @@ jedi==0.19.1
     # via ipython
 matplotlib-inline==0.1.6
     # via ipython
-packaging==23.2
+packaging==24.0
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -45,7 +45,7 @@ pure-eval==0.2.2
     # via stack-data
 pygments==2.17.2
     # via ipython
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly
@@ -63,7 +63,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-traitlets==5.14.1
+traitlets==5.14.2
     # via
     #   ipython
     #   matplotlib-inline
