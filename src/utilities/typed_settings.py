@@ -88,7 +88,7 @@ class _ExtendedTSConverter(TSConverter):
 def _pair_type_and_converter(
     cls: type[Any], func: Callable[[Any], Any], /
 ) -> Callable[[Any, type[Any]], Any]:
-    def hook(value: Any, _: type[Any] = Any, /) -> Any:
+    def hook(value: Any, _: type[Any] = type, /) -> Any:
         return func(ensure_class(value, (cls, str)))
 
     return hook

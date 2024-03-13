@@ -30,7 +30,7 @@ pytest==8.1.1
     #   pytest-rerunfailures
 pytest-cov==4.1.0
 pytest-randomly==3.15.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.0.1
