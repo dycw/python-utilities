@@ -6,7 +6,7 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import partial
-from itertools import islice
+from itertools import islice, product
 from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
@@ -522,6 +522,13 @@ def one(iterable: Iterable[_T], /) -> _T:
     raise OneNonUniqueError(iterable=iterable, first=first, second=second)
 
 
+def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
+    """The cartesian product of the values in a mapping, as mappings."""
+    keys = list(mapping)
+    for values in product(*mapping.values()):
+        yield dict(zip(keys, values, strict=True))
+
+
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
@@ -593,6 +600,7 @@ __all__ = [
     "is_iterable",
     "is_iterable_not_str",
     "one",
+    "product_dicts",
     "take",
     "transpose",
 ]

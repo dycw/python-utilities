@@ -38,6 +38,7 @@ from utilities.iterables import (
     is_iterable,
     is_iterable_not_str,
     one,
+    product_dicts,
     take,
     transpose,
 )
@@ -425,6 +426,21 @@ class TestOne:
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
         ):
             _ = one([1, 2])
+
+
+class TestProductDicts:
+    def test_main(self) -> None:
+        mapping = {"x": [1, 2], "y": [7, 8, 9]}
+        result = list(product_dicts(mapping))
+        expected = [
+            {"x": 1, "y": 7},
+            {"x": 1, "y": 8},
+            {"x": 1, "y": 9},
+            {"x": 2, "y": 7},
+            {"x": 2, "y": 8},
+            {"x": 2, "y": 9},
+        ]
+        assert result == expected
 
 
 class TestTake:
