@@ -41,21 +41,12 @@ from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
-    from numpy import datetime64
     from pandas import Timestamp
     from semver import Version
     from sqlalchemy import Engine, MetaData
 
     from utilities.math import FloatFinPos, IntNonNeg
-    from utilities.numpy import (
-        Datetime64Kind,
-        Datetime64Unit,
-        NDArrayA,
-        NDArrayB,
-        NDArrayF,
-        NDArrayI,
-        NDArrayO,
-    )
+    from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.pandas import IndexA, IndexI, IndexS
     from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
 
@@ -192,152 +183,6 @@ def dates_pd(
     max_value_use = TIMESTAMP_MAX_AS_DATE if max_value is None else max_value
     draw = lift_draw(_draw)
     return draw(dates(min_value=draw(min_value_use), max_value=draw(max_value_use)))
-
-
-@composite
-def datetime64_dtypes(
-    _draw: DrawFn, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
-) -> Any:
-    """Strategy for generating datetime64 dtypes."""
-    from utilities.numpy import datetime64_unit_to_dtype
-
-    draw = lift_draw(_draw)
-    unit = draw(datetime64_units(kind=kind))
-    return datetime64_unit_to_dtype(unit)
-
-
-def datetime64_kinds() -> SearchStrategy[Datetime64Kind]:
-    """Strategy for generating datetime64 kinds."""
-    kinds: list[Datetime64Kind] = ["date", "time"]
-    return sampled_from(kinds)
-
-
-@composite
-def datetime64_units(
-    _draw: DrawFn, /, *, kind: MaybeSearchStrategy[Datetime64Kind | None] = None
-) -> Datetime64Unit:
-    """Strategy for generating datetime64 units."""
-    from utilities.numpy import datetime64_unit_to_kind
-
-    draw = lift_draw(_draw)
-    units: list[Datetime64Unit] = [
-        "Y",
-        "M",
-        "W",
-        "D",
-        "h",
-        "m",
-        "s",
-        "ms",
-        "us",
-        "ns",
-        "ps",
-        "fs",
-        "as",
-    ]
-    kind_ = draw(kind)
-    if kind_ is not None:
-        units = [unit for unit in units if datetime64_unit_to_kind(unit) == kind_]
-    return draw(sampled_from(units))
-
-
-@composite
-def datetime64s(
-    _draw: DrawFn,
-    /,
-    *,
-    unit: MaybeSearchStrategy[Datetime64Unit | None] = None,
-    min_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
-    max_value: MaybeSearchStrategy[datetime64 | int | dt.date | None] = None,
-    valid_dates: MaybeSearchStrategy[bool] = False,
-    valid_datetimes: MaybeSearchStrategy[bool] = False,
-) -> datetime64:
-    """Strategy for generating datetime64s."""
-    from numpy import datetime64, iinfo, int64
-
-    draw = lift_draw(_draw)
-    unit_: Datetime64Unit | None = draw(unit)
-    min_value_, max_value_ = (
-        _datetime64s_convert(draw(mv)) for mv in (min_value, max_value)
-    )
-    if draw(valid_dates):
-        unit_, min_value_, max_value_ = _datetime64s_check_valid_dates(
-            unit=unit_, min_value=min_value_, max_value=max_value_
-        )
-    if draw(valid_datetimes):
-        unit_, min_value_, max_value_ = _datetime64s_check_valid_datetimes(
-            unit=unit_, min_value=min_value_, max_value=max_value_
-        )
-    i = draw(int64s(min_value=min_value_, max_value=max_value_))
-    _ = assume(i != iinfo(int64).min)
-    if unit_ is None:
-        unit_ = draw(datetime64_units())
-    return datetime64(i, unit_)
-
-
-def _datetime64s_convert(value: int | datetime64 | dt.date | None, /) -> int | None:
-    """Convert a min/max value supplied into `datetime64s`."""
-    from numpy import datetime64
-
-    from utilities.numpy import (
-        date_to_datetime64,
-        datetime64_to_int,
-        datetime_to_datetime64,
-    )
-
-    if (value is None) or isinstance(value, int):
-        return value
-    if isinstance(value, datetime64):
-        return datetime64_to_int(value)
-    if isinstance(value, dt.datetime):
-        return _datetime64s_convert(datetime_to_datetime64(value))
-    return _datetime64s_convert(date_to_datetime64(value))
-
-
-def _datetime64s_check_valid_dates(
-    *,
-    unit: Datetime64Unit | None = None,
-    min_value: int | None = None,
-    max_value: int | None = None,
-) -> tuple[Datetime64Unit, int | None, int | None]:
-    """Check/clip the bounds to generate valid `dt.date`s."""
-    from utilities.numpy import DATE_MAX_AS_INT, DATE_MIN_AS_INT
-
-    if (unit is not None) and (unit != "D"):
-        msg = f"{unit=}"
-        raise InvalidArgument(msg)
-    if min_value is None:
-        min_value = DATE_MIN_AS_INT
-    else:
-        min_value = max(min_value, DATE_MIN_AS_INT)
-    if max_value is None:
-        max_value = DATE_MAX_AS_INT
-    else:
-        max_value = min(max_value, DATE_MAX_AS_INT)
-    return "D", min_value, max_value
-
-
-def _datetime64s_check_valid_datetimes(
-    *,
-    unit: Datetime64Unit | None = None,
-    min_value: int | None = None,
-    max_value: int | None = None,
-) -> tuple[Datetime64Unit, int | None, int | None]:
-    """Check/clip the bounds to generate valid `dt.datetime`s."""
-    from utilities.numpy import DATETIME_MAX_AS_INT, DATETIME_MIN_AS_INT
-
-    if (unit is not None) and (unit != "us"):
-        msg = f"{unit=}"
-        raise InvalidArgument(msg)
-    if min_value is None:
-        min_value = DATETIME_MIN_AS_INT
-    else:
-        min_value = max(min_value, DATETIME_MIN_AS_INT)
-    if max_value is None:
-        max_value = DATETIME_MAX_AS_INT
-    else:
-        max_value = min(max_value, DATETIME_MAX_AS_INT)
-    return "us", min_value, max_value
 
 
 @composite
@@ -1158,10 +1003,6 @@ __all__ = [
     "bool_data_arrays",
     "concatenated_arrays",
     "dates_pd",
-    "datetime64_dtypes",
-    "datetime64_kinds",
-    "datetime64_units",
-    "datetime64s",
     "datetimes_pd",
     "datetimes_utc",
     "dicts_of_indexes",
