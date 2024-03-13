@@ -34,7 +34,7 @@ pytest==8.1.1
     #   pytest-rerunfailures
 pytest-cov==4.1.0
 pytest-randomly==3.15.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
@@ -42,7 +42,7 @@ python-dateutil==2.9.0.post0
     #   freezegun
     #   luigi
 semver==3.0.2
-setuptools==69.1.1
+setuptools==69.2.0
     # via python-daemon
 six==1.16.0
     # via python-dateutil

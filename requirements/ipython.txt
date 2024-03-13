@@ -52,7 +52,7 @@ pytest==8.1.1
     #   pytest-rerunfailures
 pytest-cov==4.1.0
 pytest-randomly==3.15.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 six==1.16.0
     # via asttokens
 sortedcontainers==2.4.0

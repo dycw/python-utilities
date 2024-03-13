@@ -51,7 +51,7 @@ def ensure_class(
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
 
 
-def ensure_class(obj: Any, cls: type[_T] | tuple[type[_T], ...], /) -> _T:
+def ensure_class(obj: Any, cls: type[_T] | tuple[type[_T], ...], /) -> _T:  # type: ignore[]
     """Ensure an object is of the required class."""
     if isinstance(obj, cls):
         return obj

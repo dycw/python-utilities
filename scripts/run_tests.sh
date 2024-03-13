@@ -53,6 +53,7 @@ packages=(
     memory-profiler
     more-itertools
     numpy
+    optuna
     pandas
     pathvalidate
     polars

@@ -246,7 +246,7 @@ pytest==8.1.1
 pytest-check==2.3.1
 pytest-cov==4.1.0
 pytest-randomly==3.15.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
@@ -290,7 +290,7 @@ scipy==1.12.0
 scs==3.2.4.post1
     # via cvxpy
 semver==3.0.2
-setuptools==69.1.1
+setuptools==69.2.0
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -311,7 +311,7 @@ soupsieve==2.5
 sqlalchemy==2.0.28
 starlette==0.36.3
     # via fastapi
-streamlit==1.32.0
+streamlit==1.32.1
 tenacity==8.2.3
     # via
     #   luigi
@@ -372,7 +372,7 @@ xyzservices==2023.10.1
     #   bokeh
     #   panel
 zarr==2.17.1
-zipp==3.17.0
+zipp==3.18.0
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

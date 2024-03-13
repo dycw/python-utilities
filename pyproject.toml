@@ -39,6 +39,7 @@ dev = [
   "more-itertools",
   "numbagg",
   "numpy",
+  "optuna",
   "pandas",
   "pathvalidate",
   "polars-lts-cpu",  # for CI
@@ -177,6 +178,7 @@ zzz-test-modules = [
 ]
 zzz-test-more-itertools = ["more-itertools"]
 zzz-test-numpy = ["bottleneck", "numbagg", "pandas"]
+zzz-test-optuna = ["optuna"]
 zzz-test-os = []
 zzz-test-pandas = ["pandas"]
 zzz-test-pathlib = ["pathvalidate"]

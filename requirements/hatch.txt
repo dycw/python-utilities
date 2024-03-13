@@ -89,7 +89,7 @@ pytest==8.1.1
     #   pytest-rerunfailures
 pytest-cov==4.1.0
 pytest-randomly==3.15.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 rich==13.7.1
     # via hatch
 shellingham==1.5.4
@@ -117,7 +117,7 @@ userpath==1.9.2
     # via hatch
 virtualenv==20.25.1
     # via hatch
-zipp==3.17.0
+zipp==3.18.0
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch
