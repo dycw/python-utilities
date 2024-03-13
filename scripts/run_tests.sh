@@ -91,3 +91,4 @@ for package in "${packages[@]}"; do
         break
     fi
 done
+uv pip sync requirementst.txt

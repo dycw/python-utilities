@@ -45,7 +45,6 @@ from typing_extensions import override
 from utilities.datetime import EPOCH_UTC, UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
-from utilities.re import extract_group
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -337,21 +336,6 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
 
 
 class DateTime64ToDateTimeError(Exception): ...
-
-
-def datetime64_dtype_to_unit(dtype: Any, /) -> Datetime64Unit:
-    """Convert a `datetime64` dtype to a unit."""
-    return cast(Datetime64Unit, extract_group(r"^<M8\[(\w+)\]$", dtype.str))
-
-
-def datetime64_unit_to_dtype(unit: Datetime64Unit, /) -> Any:
-    """Convert a `datetime64` unit to a dtype."""
-    return dtype(f"datetime64[{unit}]")
-
-
-def datetime64_unit_to_kind(unit: Datetime64Unit, /) -> Datetime64Kind:
-    """Convert a `datetime64` unit to a kind."""
-    return "date" if unit in {"Y", "M", "W", "D"} else "time"
 
 
 def discretize(x: NDArrayF1, bins: int | Iterable[float], /) -> NDArrayF1:
@@ -1644,12 +1628,9 @@ __all__ = [
     "datetime64M",
     "datetime64W",
     "datetime64Y",
-    "datetime64_dtype_to_unit",
     "datetime64_to_date",
     "datetime64_to_datetime",
     "datetime64_to_int",
-    "datetime64_unit_to_dtype",
-    "datetime64_unit_to_kind",
     "datetime64as",
     "datetime64fs",
     "datetime64h",

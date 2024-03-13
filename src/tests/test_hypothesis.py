@@ -4,7 +4,7 @@ from itertools import pairwise
 from pathlib import Path
 from re import search
 from subprocess import PIPE, check_output
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from hypothesis import HealthCheck, Phase, assume, given, settings
@@ -26,7 +26,6 @@ from hypothesis.strategies import (
 )
 from luigi import Task
 from numpy import (
-    datetime64,
     iinfo,
     inf,
     int32,
@@ -34,7 +33,6 @@ from numpy import (
     isfinite,
     isinf,
     isnan,
-    isnat,
     ravel,
     rint,
     uint32,
@@ -58,10 +56,6 @@ from utilities.hypothesis import (
     bool_data_arrays,
     concatenated_arrays,
     dates_pd,
-    datetime64_dtypes,
-    datetime64_kinds,
-    datetime64_units,
-    datetime64s,
     datetimes_pd,
     datetimes_utc,
     dicts_of_indexes,
@@ -94,15 +88,6 @@ from utilities.hypothesis import (
     uint32s,
     uint64s,
     versions,
-)
-from utilities.numpy import (
-    Datetime64Kind,
-    Datetime64Unit,
-    datetime64_dtype_to_unit,
-    datetime64_to_date,
-    datetime64_to_datetime,
-    datetime64_to_int,
-    datetime64_unit_to_kind,
 )
 from utilities.os import temp_environ
 from utilities.pandas import (
@@ -230,135 +215,6 @@ class TestDatetimesPd:
         datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
         _ = Timestamp(datetime)
         assert min_value <= datetime <= max_value
-
-
-class TestDatetime64DTypes:
-    @given(dtype=datetime64_dtypes())
-    def test_main(self, *, dtype: Any) -> None:
-        _ = dtype
-
-
-class TestDatetime64Kinds:
-    @given(kind=datetime64_kinds())
-    def test_main(self, *, kind: Datetime64Kind) -> None:
-        _ = kind
-
-
-class TestDatetime64Units:
-    @given(data=data(), kind=datetime64_kinds() | none())
-    def test_main(self, *, data: DataObject, kind: Datetime64Kind | None) -> None:
-        unit = data.draw(datetime64_units(kind=kind))
-        if kind is not None:
-            assert datetime64_unit_to_kind(unit) == kind
-
-
-class TestDatetime64s:
-    @given(data=data(), unit=datetime64_units())
-    def test_main(self, *, data: DataObject, unit: Datetime64Unit) -> None:
-        min_value = data.draw(datetime64s(unit=unit) | int64s() | none())
-        max_value = data.draw(datetime64s(unit=unit) | int64s() | none())
-        with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                datetime64s(min_value=min_value, max_value=max_value, unit=unit)
-            )
-        assert datetime64_dtype_to_unit(datetime.dtype) == unit
-        assert not isnat(datetime)
-        if min_value is not None:
-            if isinstance(min_value, datetime64):
-                assert datetime >= min_value
-            else:
-                assert datetime64_to_int(datetime) >= min_value
-        if max_value is not None:
-            if isinstance(max_value, datetime64):
-                assert datetime <= max_value
-            else:
-                assert datetime64_to_int(datetime) <= max_value
-
-    @given(
-        data=data(),
-        min_value=datetime64s(unit="D") | dates() | none(),
-        max_value=datetime64s(unit="D") | dates() | none(),
-        unit=just("D") | none(),
-    )
-    def test_valid_dates(
-        self,
-        *,
-        data: DataObject,
-        min_value: datetime64 | dt.date | None,
-        max_value: datetime64 | dt.date | None,
-        unit: Literal["D"] | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            datetime = data.draw(
-                datetime64s(
-                    min_value=min_value,
-                    max_value=max_value,
-                    unit=unit,
-                    valid_dates=True,
-                )
-            )
-        assert datetime64_dtype_to_unit(datetime.dtype) == "D"
-        date = datetime64_to_date(datetime)
-        if min_value is not None:
-            if isinstance(min_value, datetime64):
-                assert datetime >= min_value
-            else:
-                assert date >= min_value
-        if max_value is not None:
-            if isinstance(max_value, datetime64):
-                assert datetime <= max_value
-            else:
-                assert date <= max_value
-
-    @given(data=data(), unit=datetime64_units())
-    def test_valid_dates_error(self, *, data: DataObject, unit: Datetime64Unit) -> None:
-        _ = assume(unit != "D")
-        with pytest.raises(InvalidArgument):
-            _ = data.draw(datetime64s(unit=unit, valid_dates=True))
-
-    @given(
-        data=data(),
-        min_value=datetime64s(unit="us") | datetimes_utc() | none(),
-        max_value=datetime64s(unit="us") | datetimes_utc() | none(),
-        unit=just("us") | none(),
-    )
-    def test_valid_datetimes(
-        self,
-        *,
-        data: DataObject,
-        min_value: datetime64 | dt.datetime | None,
-        max_value: datetime64 | dt.datetime | None,
-        unit: Literal["us"] | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            np_datetime = data.draw(
-                datetime64s(
-                    min_value=min_value,
-                    max_value=max_value,
-                    unit=unit,
-                    valid_datetimes=True,
-                )
-            )
-        assert datetime64_dtype_to_unit(np_datetime.dtype) == "us"
-        py_datetime = datetime64_to_datetime(np_datetime)
-        if min_value is not None:
-            if isinstance(min_value, datetime64):
-                assert np_datetime >= min_value
-            else:
-                assert py_datetime >= min_value
-        if max_value is not None:
-            if isinstance(max_value, datetime64):
-                assert np_datetime <= max_value
-            else:
-                assert py_datetime <= max_value
-
-    @given(data=data(), unit=datetime64_units())
-    def test_valid_datetimes_error(
-        self, *, data: DataObject, unit: Datetime64Unit
-    ) -> None:
-        _ = assume(unit != "us")
-        with pytest.raises(InvalidArgument):
-            _ = data.draw(datetime64s(unit=unit, valid_datetimes=True))
 
 
 class TestDatetimesUTC:

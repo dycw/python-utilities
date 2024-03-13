@@ -36,21 +36,12 @@ from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 
 from utilities.datetime import UTC
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    datetime64_dtypes,
-    datetime64_units,
-    datetime64s,
-    datetimes_utc,
-    float_arrays,
-)
+from utilities.hypothesis import assume_does_not_raise, datetimes_utc, float_arrays
 from utilities.numpy import (
     DEFAULT_RNG,
     AsIntError,
-    Datetime64Kind,
     DateTime64ToDateError,
     DateTime64ToDateTimeError,
-    Datetime64Unit,
     DatetimeToDatetime64Error,
     EmptyNumpyConcatenateError,
     FlatN0Error,
@@ -65,12 +56,9 @@ from utilities.numpy import (
     array_indexer,
     as_int,
     date_to_datetime64,
-    datetime64_dtype_to_unit,
     datetime64_to_date,
     datetime64_to_datetime,
     datetime64_to_int,
-    datetime64_unit_to_dtype,
-    datetime64_unit_to_kind,
     datetime64D,
     datetime64ns,
     datetime64us,
@@ -278,16 +266,6 @@ class TestDatetime64ToInt:
         expected = 10957
         assert datetime64_to_int(datetime64("2000-01-01", "D")) == expected
 
-    @given(datetime=datetime64s())
-    def test_main(self, *, datetime: datetime64) -> None:
-        _ = datetime64_to_int(datetime)
-
-    @given(data=data(), unit=datetime64_units())
-    def test_round_trip(self, *, data: DataObject, unit: Datetime64Unit) -> None:
-        datetime = data.draw(datetime64s(unit=unit))
-        result = datetime64(datetime64_to_int(datetime), unit)
-        assert result == datetime
-
 
 class TestDatetime64ToDatetime:
     def test_example_ms(self) -> None:
@@ -319,53 +297,6 @@ class TestDatetime64ToDatetime:
     def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
         with pytest.raises(error):
             _ = datetime64_to_datetime(datetime64(datetime, dtype))
-
-
-class TestDatetime64DTypeToUnit:
-    @pytest.mark.parametrize(
-        ("dtype", "expected"),
-        [
-            pytest.param(datetime64D, "D"),
-            pytest.param(datetime64Y, "Y"),
-            pytest.param(datetime64ns, "ns"),
-        ],
-    )
-    def test_example(self, *, dtype: Any, expected: Datetime64Unit) -> None:
-        assert datetime64_dtype_to_unit(dtype) == expected
-
-    @given(dtype=datetime64_dtypes())
-    def test_round_trip(self, *, dtype: Any) -> None:
-        assert datetime64_unit_to_dtype(datetime64_dtype_to_unit(dtype)) == dtype
-
-
-class TestDatetime64DUnitToDType:
-    @pytest.mark.parametrize(
-        ("unit", "expected"),
-        [
-            pytest.param("D", datetime64D),
-            pytest.param("Y", datetime64Y),
-            pytest.param("ns", datetime64ns),
-        ],
-    )
-    def test_example(self, *, unit: Datetime64Unit, expected: Any) -> None:
-        assert datetime64_unit_to_dtype(unit) == expected
-
-    @given(unit=datetime64_units())
-    def test_round_trip(self, *, unit: Datetime64Unit) -> None:
-        assert datetime64_dtype_to_unit(datetime64_unit_to_dtype(unit)) == unit
-
-
-class TestDatetime64DUnitToKind:
-    @pytest.mark.parametrize(
-        ("unit", "expected"),
-        [
-            pytest.param("D", "date"),
-            pytest.param("Y", "date"),
-            pytest.param("ns", "time"),
-        ],
-    )
-    def test_example(self, *, unit: Datetime64Unit, expected: Datetime64Kind) -> None:
-        assert datetime64_unit_to_kind(unit) == expected
 
 
 class TestDefaultRng:
