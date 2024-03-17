@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
 
@@ -59,15 +60,30 @@ class TestAlwaysIterable:
 
 class TestPeekable:
     def test_dropwhile(self) -> None:
-        it: peekable[int] = peekable(range(10))
+        it = peekable(range(10))
         it.dropwhile(lambda x: x <= 4)
         assert it.peek() == 5
         result = list(it)
         expected = [5, 6, 7, 8, 9]
         assert result == expected
 
+    def test_peek_non_empty(self) -> None:
+        it = peekable(range(10))
+        value = it.peek()
+        assert isinstance(value, int)
+
+    def test_peek_empty_without_default(self) -> None:
+        it: peekable[int] = peekable([])
+        with pytest.raises(StopIteration):
+            _ = it.peek()
+
+    def test_peek_empty_with_default(self) -> None:
+        it: peekable[int] = peekable([])
+        value = it.peek(default="default")
+        assert isinstance(value, str)
+
     def test_takewhile(self) -> None:
-        it: peekable[int] = peekable(range(10))
+        it = peekable(range(10))
         result1 = list(it.takewhile(lambda x: x <= 4))
         expected1 = [0, 1, 2, 3, 4]
         assert result1 == expected1
@@ -77,7 +93,7 @@ class TestPeekable:
         assert result2 == expected2
 
     def test_combined(self) -> None:
-        it: peekable[int] = peekable(range(10))
+        it = peekable(range(10))
         result1 = list(it.takewhile(lambda x: x <= 2))
         expected1 = [0, 1, 2]
         assert result1 == expected1

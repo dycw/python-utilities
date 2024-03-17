@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast, overload
 
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import peekable as _peekable
 from more_itertools import windowed_complete as _windowed_complete
+from typing_extensions import override
+
+from utilities.sentinel import Sentinel, sentinel
 
 _T = TypeVar("_T")
+_U = TypeVar("_U")
 
 
 def always_iterable(
@@ -23,9 +27,22 @@ def always_iterable(
 class peekable(_peekable, Generic[_T]):  # noqa: N801
     """Peekable which supports dropwhile/takewhile methods."""
 
+    def __init__(self, iterable: Iterable[_T], /) -> None:
+        super().__init__(iterable)
+
     def dropwhile(self, predicate: Callable[[_T], bool], /) -> None:
         while bool(self) and predicate(self.peek()):
             _ = next(self)
+
+    @overload
+    def peek(self, *, default: Sentinel = sentinel) -> _T: ...
+    @overload
+    def peek(self, *, default: _U) -> _T | _U: ...
+    @override
+    def peek(self, *, default: Any = sentinel) -> Any:  # type: ignore[]
+        if isinstance(default, Sentinel):
+            return super().peek()
+        return super().peek(default=default)
 
     def takewhile(self, predicate: Callable[[_T], bool], /) -> Iterator[_T]:
         while bool(self) and predicate(self.peek()):
