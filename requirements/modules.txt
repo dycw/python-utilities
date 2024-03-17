@@ -51,7 +51,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.0
     # via bokeh
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -78,7 +78,7 @@ fasteners==0.19
     # via zarr
 filelock==3.13.1
     # via virtualenv
-fonttools==4.49.0
+fonttools==4.50.0
     # via fpdf2
 fpdf2==2.7.8
 gitdb==4.0.11
@@ -97,7 +97,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.99.5
+hypothesis==6.99.6
 idna==3.6
     # via
     #   anyio
@@ -127,7 +127,7 @@ lockfile==0.12.2
     # via python-daemon
 loguru==0.7.2
 luigi==3.5.0
-markdown==3.5.2
+markdown==3.6
     # via panel
 markdown-it-py==3.0.0
     # via
@@ -263,7 +263,7 @@ pyyaml==6.0.1
     # via bokeh
 qdldl==0.1.7.post0
     # via osqp
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -311,7 +311,7 @@ soupsieve==2.5
 sqlalchemy==2.0.28
 starlette==0.36.3
     # via fastapi
-streamlit==1.32.1
+streamlit==1.32.2
 tenacity==8.2.3
     # via
     #   luigi
@@ -372,7 +372,7 @@ xyzservices==2023.10.1
     #   bokeh
     #   panel
 zarr==2.17.1
-zipp==3.18.0
+zipp==3.18.1
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

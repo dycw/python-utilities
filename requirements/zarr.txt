@@ -5,7 +5,7 @@ asciitree==0.3.3
 atomicwrites==1.4.1
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -16,7 +16,7 @@ exceptiongroup==1.2.0
     #   pytest
 fasteners==0.19
     # via zarr
-hypothesis==6.99.5
+hypothesis==6.99.6
 iniconfig==2.0.0
     # via pytest
 numcodecs==0.12.1

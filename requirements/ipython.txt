@@ -4,7 +4,7 @@ asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -18,7 +18,7 @@ exceptiongroup==1.2.0
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.99.5
+hypothesis==6.99.6
 iniconfig==2.0.0
     # via pytest
 ipython==8.22.2
