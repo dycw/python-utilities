@@ -12,7 +12,7 @@ click==8.1.7
     # via
     #   hatch
     #   userpath
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -39,7 +39,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.99.5
+hypothesis==6.99.6
 idna==3.6
     # via
     #   anyio
@@ -117,7 +117,7 @@ userpath==1.9.2
     # via hatch
 virtualenv==20.25.1
     # via hatch
-zipp==3.18.0
+zipp==3.18.1
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

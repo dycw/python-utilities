@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-functools --prerelease=disallow --output-file=requirements/functools.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -11,7 +11,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.5
+hypothesis==6.99.6
 iniconfig==2.0.0
     # via pytest
 packaging==24.0

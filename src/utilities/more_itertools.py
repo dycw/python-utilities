@@ -30,6 +30,10 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
     def __init__(self, iterable: Iterable[_T], /) -> None:
         super().__init__(iterable)
 
+    @override
+    def __next__(self) -> _T:
+        return super().__next__()
+
     def dropwhile(self, predicate: Callable[[_T], bool], /) -> None:
         while bool(self) and predicate(self.peek()):
             _ = next(self)

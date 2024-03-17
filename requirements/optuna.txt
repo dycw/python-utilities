@@ -6,7 +6,7 @@ attrs==23.2.0
     # via hypothesis
 colorlog==6.8.2
     # via optuna
-coverage==7.4.3
+coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -15,7 +15,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.5
+hypothesis==6.99.6
 iniconfig==2.0.0
     # via pytest
 mako==1.3.2
