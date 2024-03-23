@@ -12,12 +12,12 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.6
+hypothesis==6.99.11
 iniconfig==2.0.0
     # via pytest
 llvmlite==0.42.0
     # via numba
-numba==0.59.0
+numba==0.59.1
     # via numbagg
 numbagg==0.8.1
 numpy==1.26.4

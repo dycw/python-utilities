@@ -65,7 +65,7 @@ def _positive_zero(x: float, /) -> float:
     return abs(x) if x == 0.0 else x
 
 
-def _default(  # noqa: PLR0911, PLR0912
+def _default(  # noqa: C901, PLR0911, PLR0912
     obj: Any, /, *, extra: _ExtraSer[Any] | None = None
 ) -> Any:
     """Extension for the JSON serializer."""
@@ -79,19 +79,11 @@ def _default(  # noqa: PLR0911, PLR0912
     if isinstance(obj, Decimal):
         return {_CLASS: "Decimal", _VALUE: str(obj)}
     if isinstance(obj, _DictWrapper):
-        try:
-            value = sorted(obj.value.items(), key=itemgetter(0))
-        except TypeError:
-            value = list(obj.value.items())
-        return {_CLASS: "dict", _VALUE: value}
+        return _default_dict(obj)
     if isinstance(obj, dt.date) and not isinstance(obj, dt.datetime):
         return {_CLASS: "dt.date", _VALUE: serialize_date(obj)}
     if isinstance(obj, dt.datetime):
-        if (tzinfo := obj.tzinfo) is None:
-            return {_CLASS: "dt.datetime|naive", _VALUE: obj.isoformat()}
-        if tzinfo is UTC:
-            return {_CLASS: "dt.datetime|UTC", _VALUE: serialize_datetime(obj)}
-        raise _JsonSerializationTimeZoneError(obj=obj, tzinfo=tzinfo)
+        return _default_datetime(obj)
     if isinstance(obj, dt.time):
         return {_CLASS: "dt.time", _VALUE: serialize_time(obj)}
     if isinstance(obj, dt.timedelta):
@@ -99,23 +91,15 @@ def _default(  # noqa: PLR0911, PLR0912
     if isinstance(obj, Fraction):
         return {_CLASS: "Fraction", _VALUE: obj.as_integer_ratio()}
     if isinstance(obj, frozenset):
-        try:
-            value = sorted(obj)
-        except TypeError:
-            value = list(obj)
-        return {_CLASS: "frozenset", _VALUE: value}
+        return _default_frozenset(obj)
     if isinstance(obj, IPv4Address):
         return {_CLASS: "IPv4Address", _VALUE: str(obj)}
     if isinstance(obj, IPv6Address):
         return {_CLASS: "IPv6Address", _VALUE: str(obj)}
     if isinstance(obj, Path):
         return {_CLASS: "Path", _VALUE: str(obj)}
-    if isinstance(obj, set):
-        try:
-            value = sorted(obj)
-        except TypeError:
-            value = list(obj)
-        return {_CLASS: "set", _VALUE: value}
+    if isinstance(obj, set) and not isinstance(obj, frozenset):
+        return _default_set(obj)
     if isinstance(obj, slice):
         return {_CLASS: "slice", _VALUE: (obj.start, obj.stop, obj.step)}
     if isinstance(obj, _TupleWrapper):
@@ -123,12 +107,29 @@ def _default(  # noqa: PLR0911, PLR0912
     if isinstance(obj, UUID):
         return {_CLASS: "UUID", _VALUE: str(obj)}
     if extra is not None:
-        cls = type(obj)
-        try:
-            key, func = extra[cls]
-        except KeyError:
-            raise _JsonSerializationTypeError(obj=obj) from None
-        return {_CLASS: key, _VALUE: func(obj)}
+        return _default_extra(obj, extra)
+    if (result := _default_engine(obj)) is not None:
+        return result
+    raise _JsonSerializationTypeError(obj=obj)
+
+
+def _default_datetime(obj: dt.datetime, /) -> Any:
+    if (tzinfo := obj.tzinfo) is None:
+        return {_CLASS: "dt.datetime|naive", _VALUE: obj.isoformat()}
+    if tzinfo is UTC:
+        return {_CLASS: "dt.datetime|UTC", _VALUE: serialize_datetime(obj)}
+    raise _JsonSerializationTimeZoneError(obj=obj, tzinfo=tzinfo)
+
+
+def _default_dict(obj: _DictWrapper, /) -> Any:
+    try:
+        value = sorted(obj.value.items(), key=itemgetter(0))
+    except TypeError:
+        value = list(obj.value.items())
+    return {_CLASS: "dict", _VALUE: value}
+
+
+def _default_engine(obj: Any, /) -> Any:
     try:
         from sqlalchemy import Engine
     except ModuleNotFoundError:  # pragma: no cover
@@ -139,7 +140,32 @@ def _default(  # noqa: PLR0911, PLR0912
                 _CLASS: "sqlalchemy.Engine",
                 _VALUE: obj.url.render_as_string(hide_password=False),
             }
-    raise _JsonSerializationTypeError(obj=obj)
+    return None
+
+
+def _default_extra(obj: Any, extra: _ExtraSer[Any], /) -> Any:
+    cls = type(obj)
+    try:
+        key, func = extra[cls]
+    except KeyError:
+        raise _JsonSerializationTypeError(obj=obj) from None
+    return {_CLASS: key, _VALUE: func(obj)}
+
+
+def _default_frozenset(obj: frozenset[Any], /) -> Any:
+    try:
+        value = sorted(obj)
+    except TypeError:
+        value = list(obj)
+    return {_CLASS: "frozenset", _VALUE: value}
+
+
+def _default_set(obj: set[Any], /) -> Any:
+    try:
+        value = sorted(obj)
+    except TypeError:
+        value = list(obj)
+    return {_CLASS: "set", _VALUE: value}
 
 
 @dataclass(kw_only=True)

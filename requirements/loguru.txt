@@ -11,7 +11,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.6
+hypothesis==6.99.11
 iniconfig==2.0.0
     # via pytest
 loguru==0.7.2

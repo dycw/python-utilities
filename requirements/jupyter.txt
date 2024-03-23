@@ -67,7 +67,7 @@ httpcore==1.0.4
     # via httpx
 httpx==0.27.0
     # via jupyterlab
-hypothesis==6.99.6
+hypothesis==6.99.11
 idna==3.6
     # via
     #   anyio
@@ -115,7 +115,7 @@ jupyter-core==5.7.2
     #   nbclient
     #   nbconvert
     #   nbformat
-jupyter-events==0.9.1
+jupyter-events==0.10.0
     # via jupyter-server
 jupyter-lsp==2.2.4
     # via jupyterlab
@@ -144,7 +144,7 @@ mistune==3.0.2
     # via nbconvert
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
+nbconvert==7.16.3
     # via jupyter-server
 nbformat==5.10.3
     # via
@@ -180,7 +180,7 @@ platformdirs==4.2.0
     # via jupyter-core
 pluggy==1.4.0
     # via pytest
-polars==0.20.15
+polars==0.20.16
 prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43

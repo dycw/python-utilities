@@ -136,7 +136,7 @@ def _check_columns_equal(
 class _CheckColumnsEqualError(Exception): ...
 
 
-def _check_column_types_equal(x: Any, y: Any, /) -> None:
+def _check_column_types_equal(x: Any, y: Any, /) -> None:  # noqa: C901
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001
@@ -625,7 +625,7 @@ def insert_items(
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
-        values = item.values
+        values = item.values  # noqa: PD011
         to_insert[item.table].append(values)
         lengths.add(len(values))
     max_length = max(lengths, default=1)

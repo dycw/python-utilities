@@ -97,14 +97,14 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.99.6
+hypothesis==6.99.11
 idna==3.6
     # via
     #   anyio
     #   httpx
     #   hyperlink
     #   requests
-importlib-metadata==7.0.2
+importlib-metadata==7.1.0
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -190,7 +190,7 @@ pandas==2.2.1
     #   xarray
 panel==1.3.8
     # via holoviews
-param==2.0.2
+param==2.1.0
     # via
     #   holoviews
     #   panel
@@ -213,7 +213,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.15
+polars==0.20.16
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -221,7 +221,7 @@ psutil==5.9.8
     # via memory-profiler
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.1
+pyarrow==15.0.2
     # via streamlit
 pybind11==2.11.1
     # via cvxpy
@@ -255,7 +255,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.1
+pyviz-comms==3.0.2
     # via
     #   holoviews
     #   panel

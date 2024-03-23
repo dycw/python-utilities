@@ -24,7 +24,7 @@ exceptiongroup==1.2.0
     #   hypothesis
     #   pytest
 holoviews==1.18.3
-hypothesis==6.99.6
+hypothesis==6.99.11
 idna==3.6
     # via requests
 iniconfig==2.0.0
@@ -47,7 +47,7 @@ mdit-py-plugins==0.4.0
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
-numba==0.59.0
+numba==0.59.1
     # via numbagg
 numbagg==0.8.1
 numpy==1.26.4
@@ -75,7 +75,7 @@ pandas==2.2.1
     #   xarray
 panel==1.3.8
     # via holoviews
-param==2.0.2
+param==2.1.0
     # via
     #   holoviews
     #   panel
@@ -96,7 +96,7 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.1
+pyviz-comms==3.0.2
     # via
     #   holoviews
     #   panel

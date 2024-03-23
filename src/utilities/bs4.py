@@ -36,10 +36,10 @@ def table_tag_to_dataframe(table: Tag, /) -> DataFrame:
         ) from None
     tds_use = (td for td in tds if td is not None)
     cols = list(zip(*tds_use, strict=True))
-    df = DataFrame(cols)
+    df_table = DataFrame(cols)
     if th is None:
-        return df
-    return df.rename({f"column_{i}": th for i, th in enumerate(th)})
+        return df_table
+    return df_table.rename({f"column_{i}": th for i, th in enumerate(th)})
 
 
 @dataclass(kw_only=True)
