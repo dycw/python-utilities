@@ -373,13 +373,13 @@ def check_range_index(
     name: Hashable | Sentinel = sentinel,
 ) -> None:
     """Check the properties of a RangeIndex."""
-    if (start is not None) and (cast(int, index.start) != start):
+    if (start is not None) and (index.start != start):
         msg = f"{index=}, {start=}"
         raise CheckRangeIndexError(msg)
-    if (stop is not None) and (cast(int, index.stop) != stop):
+    if (stop is not None) and (index.stop != stop):
         msg = f"{index=}, {stop=}"
         raise CheckRangeIndexError(msg)
-    if (step is not None) and (cast(int, index.step) != step):
+    if (step is not None) and (index.step != step):
         msg = f"{index=}, {step=}"
         raise CheckRangeIndexError(msg)
     if length is not None:

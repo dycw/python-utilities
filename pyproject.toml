@@ -357,6 +357,8 @@ ignore = [
   "ANN102",  # missing-type-cls
   "ANN401",  # dynamically-typed-expression
   "D",  # pydocstyle
+  "E501",  # line-too-long
+  "PLR0913",  # too-many-arguments
   # formatter
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
