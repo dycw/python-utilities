@@ -29,7 +29,7 @@ fonttools==4.50.0
     # via fpdf2
 fpdf2==2.7.8
 holoviews==1.18.3
-hypothesis==6.99.6
+hypothesis==6.99.11
 idna==3.6
     # via requests
 iniconfig==2.0.0
@@ -70,7 +70,7 @@ pandas==2.2.1
     #   panel
 panel==1.3.8
     # via holoviews
-param==2.0.2
+param==2.1.0
     # via
     #   holoviews
     #   panel
@@ -93,7 +93,7 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.1
+pyviz-comms==3.0.2
     # via
     #   holoviews
     #   panel

@@ -1,5 +1,6 @@
 #
 
+# build-system
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling"]
@@ -352,67 +353,27 @@ unsafe-fixes = true
 
 [tool.ruff.lint]
 ignore = [
-  "ANN101",  # flake8-annotations, missing-type-self
-  "ANN102",  # flake8-annotations, missing-type-cls
-  "ANN401",  # flake8-annotations, dynamically-typed-expression
-  "PLR0913",  # refactor, too-many-arguments
+  "ANN101",  # missing-type-self
+  "ANN102",  # missing-type-cls
+  "ANN401",  # dynamically-typed-expression
+  "D",  # pydocstyle
   # formatter
-  "E501",  # pycodestyle, line-too-long
-  "ISC001",  # flake8-implicit-str-concat, single-line-implicit-string-concatenation
-  "W191",  # pycodestyle, tab-indentation
+  "W191",  # tab-indentation
+  "E111",  # indentation-with-invalid-multiple
+  "E114",  # indentation-with-invalid-multiple-comment
+  "E117",  # over-indented
+  "D206",  # indent-with-spaces
+  "D300",  # triple-single-quotes
+  "Q000",  # bad-quotes-inline-string
+  "Q001",  # bad-quotes-multiline-string
+  "Q002",  # bad-quotes-docstring
+  "Q003",  # avoidable-escaped-quote
+  "COM812",  # missing-trailing-comma
+  "COM819",  # prohibited-trailing-comma
+  "ISC001",  # single-line-implicit-string-concatenation
+  "ISC002",  # multi-line-implicit-string-concatenation
 ]
-select = [
-  "A",  # flake8-builtins
-  "ANN",  # flake8-annotations
-  "ARG",  # flake8-unused-arguments
-  "ASYNC",  # flake8-async
-  "B",  # flake8-bugbear
-  "BLE",  # flake8-blind-excpt
-  "C4",  # flake8-comprehensions
-  "DTZ",  # flake8-datetimez
-  "E",  # pycodestyle
-  "EM",  # flake8-errmsg
-  "ERA",  # eradicate
-  "EXE",  # flake8-executable
-  "F",  # pyflakes
-  "FA",  # flake8-future-annotations
-  "FBT",  # flake8-boolean-trap
-  "FIX",  # flake8-fixme
-  "FLY",  # flynt
-  "FURB",  # refurb
-  "G",  # flake8-logging-format
-  "I",  # isort
-  "ICN",  # flake8-import-conventions
-  "INP",  # flake8-no-pep420
-  "INT",  # flake8-gettext
-  "ISC",  # flake8-implicit-str-concat
-  "LOG",  # flake8-logging
-  "N",  # pep8-naming
-  "NPY",  # numpy-specific-rules
-  "PERF",  # perflint
-  "PGH",  # pygrep-hooks
-  "PIE",  # flake8-pie
-  "PL",  # pylint
-  "PT",  # flake8-pytest-style
-  "PTH",  # flake8-use-pathlib
-  "PYI",  # flake8-pyi
-  "RET",  # flake8-return
-  "RSE",  # flake8-raise
-  "RUF",  # ruff
-  "S",  # flake8-bandit
-  "SIM",  # flake8-simplify
-  "SLF",  # flake8-self
-  "SLOT",  # flake8-slots
-  "T10",  # flake8-debugger
-  "T20",  # flake8-print
-  "TCH",  # flake8-type-checking
-  "TD",  # flake8-todos
-  "TID",  # flake8-tidy-imports
-  "TRY",  # tryceratops
-  "UP",  # pyupgrade
-  "W",  # pycodestyle
-  "YTT",  # flake8-2020
-]
+select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = [
