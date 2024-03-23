@@ -385,7 +385,7 @@ select = ["ALL"]
   "PLR2004",  # magic-value-comparison
   "S101",  # assert-used
 ]
-"src/tests/test_typed_settings.py" = ["I002"]  # isort, missing-required-import
+"src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["utilities.typed_settings.click_field"]
