@@ -625,7 +625,7 @@ def insert_items(
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
-        values = item.item_values
+        values = item.values  # noqa: PD011
         to_insert[item.table].append(values)
         lengths.add(len(values))
     max_length = max(lengths, default=1)
@@ -648,7 +648,7 @@ _InsertItemValues = tuple[Any, ...] | dict[str, Any]
 
 @dataclass
 class _InsertionItem:
-    item_values: _InsertItemValues
+    values: _InsertItemValues
     table: Table
 
 
@@ -661,9 +661,7 @@ def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
             msg = f"{table_or_mapped_class=}"
             raise _InsertItemsCollectError(msg)
         if _insert_items_collect_valid(data):
-            yield _InsertionItem(
-                item_values=data, table=get_table(table_or_mapped_class)
-            )
+            yield _InsertionItem(values=data, table=get_table(table_or_mapped_class))
         elif is_iterable_not_str(data):
             yield from _insert_items_collect_iterable(data, table_or_mapped_class)
         else:
@@ -673,9 +671,7 @@ def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
         for i in item:
             yield from _insert_items_collect(i)
     elif is_mapped_class(cls := type(item)):
-        yield _InsertionItem(
-            item_values=mapped_class_to_dict(item), table=get_table(cls)
-        )
+        yield _InsertionItem(values=mapped_class_to_dict(item), table=get_table(cls))
     else:
         msg = f"{item=}"
         raise _InsertItemsCollectError(msg)
@@ -691,7 +687,7 @@ def _insert_items_collect_iterable(
     table = get_table(table_or_mapped_class)
     for datum in obj:
         if _insert_items_collect_valid(datum):
-            yield _InsertionItem(item_values=datum, table=table)
+            yield _InsertionItem(values=datum, table=table)
         else:
             msg = f"{datum=}"
             raise _InsertItemsCollectIterableError(msg)
