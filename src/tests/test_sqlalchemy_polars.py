@@ -140,14 +140,14 @@ class TestInsertDataFrame:
         check: Callable[[Any, Any], bool],
     ) -> None:
         values = data.draw(lists(strategy, max_size=100))
-        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        dummy = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = Table(
             "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
             Column("value", col_type),
         )
-        insert_dataframe(df, table, engine)
+        insert_dataframe(dummy, table, engine)
         sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -159,14 +159,14 @@ class TestInsertDataFrame:
     def test_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
-        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        dummy = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = Table(
             "example",
             MetaData(),
             Column("Id", Integer, primary_key=True),
             Column("Value", sqlalchemy.Boolean),
         )
-        insert_dataframe(df, table, engine, snake=True)
+        insert_dataframe(dummy, table, engine, snake=True)
         sel = select(table.c["Value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -185,9 +185,9 @@ class TestInsertDataFrame:
             Column("id", Integer, primary_key=True),
             Column("value", sqlalchemy.Boolean),
         )
-        df = DataFrame({"other": values}, schema={"other": pl.Boolean})
+        dummy = DataFrame({"other": values}, schema={"other": pl.Boolean})
         with pytest.raises(InsertDataFrameError):
-            insert_dataframe(df, table, engine)
+            insert_dataframe(dummy, table, engine)
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
