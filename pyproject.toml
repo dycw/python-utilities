@@ -382,7 +382,7 @@ select = ["ALL"]
   "FBT001",  # boolean-positional-arg-in-function-definition
   "FBT003",  # boolean-positional-value-in-function-call
   "PD901",  # pandas-df-variable-name
-  "PLR2004",  # refactor, magic-value-comparison
+  "PLR2004",  # magic-value-comparison
   "S101",  # assert-used
 ]
 "src/tests/test_typed_settings.py" = ["I002"]  # isort, missing-required-import
