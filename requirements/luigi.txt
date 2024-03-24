@@ -48,7 +48,7 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.28
+sqlalchemy==2.0.29
 tenacity==8.2.3
     # via luigi
 tomli==2.0.1
