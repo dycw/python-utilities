@@ -299,7 +299,6 @@ style = [
 
 # pyright
 [tool.pyright]
-exclude = ["**/__pycache__", ".direnv", ".git", ".nox"]
 executionEnvironments = [{root = "src"}]
 include = ["src"]
 pythonVersion = "3.10"

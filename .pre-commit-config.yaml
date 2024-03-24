@@ -4,12 +4,12 @@ default_language_version:
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.3
+    rev: v0.3.4
     hooks:
       - id: ruff
         args: [--fix]
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.9.9
+    rev: 0.9.13
     hooks:
       - id: run-hatch-version
       - id: run-ruff-format
@@ -44,7 +44,7 @@ repos:
     hooks:
       - id: nitpick-check
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
+    rev: v0.10.0.1
     hooks:
       - id: shellcheck
   # compile
