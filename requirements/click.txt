@@ -12,7 +12,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.12
+hypothesis==6.100.1
 iniconfig==2.0.0
     # via pytest
 packaging==24.0
@@ -27,7 +27,7 @@ pytest==8.1.1
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
-pytest-cov==4.1.0
+pytest-cov==5.0.0
 pytest-randomly==3.15.0
 pytest-rerunfailures==14.0
 sortedcontainers==2.4.0
@@ -37,5 +37,5 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via sqlalchemy
