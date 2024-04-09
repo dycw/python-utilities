@@ -16,7 +16,7 @@ exceptiongroup==1.2.0
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.99.12
+hypothesis==6.100.1
 iniconfig==2.0.0
     # via pytest
 numpy==1.26.4
@@ -39,21 +39,21 @@ packaging==24.0
 pandas==2.2.1
 pluggy==1.4.0
     # via pytest
-pybind11==2.11.1
+pybind11==2.12.0
     # via cvxpy
 pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
-pytest-cov==4.1.0
+pytest-cov==5.0.0
 pytest-randomly==3.15.0
 pytest-rerunfailures==14.0
 python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
-qdldl==0.1.7.post0
+qdldl==0.1.7.post1
     # via osqp
 scipy==1.11.4
     # via
@@ -73,6 +73,6 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.10.0
+typing-extensions==4.11.0
 tzdata==2024.1
     # via pandas
