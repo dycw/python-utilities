@@ -19,7 +19,7 @@ class TestGetBestParams:
             return (x - 2.0) ** 2
 
         study = create_study(direction="minimize")
-        study.optimize(objective, n_trials=100)
+        study.optimize(objective, n_trials=200)
 
         @dataclass(frozen=True, kw_only=True)
         class Params:
@@ -43,7 +43,7 @@ class TestMakeObjective:
             return (params.x - 2.0) ** 2
 
         study = create_study(direction="minimize")
-        study.optimize(make_objective(suggest_params, objective), n_trials=100)
+        study.optimize(make_objective(suggest_params, objective), n_trials=200)
         assert study.best_params["x"] == pytest.approx(2.0, abs=1e-2)
         assert study.best_value == pytest.approx(0.0, abs=1e-4)
 
@@ -56,9 +56,9 @@ class TestSuggestBool:
             return (x - 2.0) ** 2 + int(y)
 
         study = create_study(direction="minimize")
-        study.optimize(objective, n_trials=100)
+        study.optimize(objective, n_trials=200)
         params = study.best_params
         assert set(params) == {"x", "y"}
-        assert params["x"] == pytest.approx(2.0, abs=2e-2)
+        assert params["x"] == pytest.approx(2.0, abs=1e-2)
         assert not params["y"]
         assert study.best_value == pytest.approx(0.0, abs=1e-4)
