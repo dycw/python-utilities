@@ -59,6 +59,6 @@ class TestSuggestBool:
         study.optimize(objective, n_trials=100)
         params = study.best_params
         assert set(params) == {"x", "y"}
-        assert params["x"] == pytest.approx(2.0, abs=0.1)
+        assert params["x"] == pytest.approx(2.0, abs=2e-2)
         assert not params["y"]
         assert study.best_value == pytest.approx(0.0, abs=1e-4)
