@@ -21,7 +21,7 @@ attrs==23.2.0
     #   outcome
     #   referencing
     #   trio
-backports-tarfile==1.0.0
+backports-tarfile==1.1.0
     # via jaraco-context
 beartype==0.18.2
 beautifulsoup4==4.12.3
@@ -30,7 +30,7 @@ bleach==6.1.0
     # via panel
 blinker==1.7.0
     # via streamlit
-bokeh==3.4.0
+bokeh==3.4.1
     # via panel
 bottleneck==1.3.8
 bounded-pool-executor==0.0.3
@@ -66,12 +66,12 @@ coverage==7.4.4
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
 cryptography==42.0.5
-cvxpy==1.4.2
+cvxpy==1.4.3
 defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
     # via virtualenv
-docutils==0.20.1
+docutils==0.21.1
     # via python-daemon
 ecos==2.0.13
     # via cvxpy
@@ -89,13 +89,13 @@ execnet==2.1.1
 fastapi==0.110.1
 fasteners==0.19
     # via zarr
-filelock==3.13.3
+filelock==3.13.4
     # via virtualenv
 fonttools==4.51.0
     # via fpdf2
 fpdf2==2.7.8
 freezegun==1.4.0
-frozendict==2.4.1
+frozendict==2.4.2
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
@@ -115,7 +115,7 @@ httpx==0.27.0
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -151,7 +151,7 @@ lockfile==0.12.2
     # via python-daemon
 loguru==0.7.2
 luigi==3.5.0
-mako==1.3.2
+mako==1.3.3
     # via alembic
 markdown==3.6
     # via panel
@@ -221,7 +221,7 @@ packaging==24.0
     #   pytest-rerunfailures
     #   streamlit
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   altair
     #   bokeh
@@ -258,7 +258,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.19
+polars-lts-cpu==0.20.21
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -272,9 +272,9 @@ pybind11==2.12.0
     # via cvxpy
 pycparser==2.22
     # via cffi
-pydantic==2.6.4
+pydantic==2.7.0
     # via fastapi
-pydantic-core==2.16.3
+pydantic-core==2.18.1
     # via pydantic
 pydeck==0.8.0
     # via streamlit
@@ -348,7 +348,7 @@ scs==3.2.4.post1
     # via cvxpy
 selenium==4.19.0
 semver==3.0.2
-setuptools==69.2.0
+setuptools==69.5.1
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -410,7 +410,7 @@ trio==0.25.0
     #   trio-websocket
 trio-websocket==0.11.1
     # via selenium
-trove-classifiers==2024.3.25
+trove-classifiers==2024.4.10
     # via hatchling
 typed-settings==24.2.0
 typing-extensions==4.11.0

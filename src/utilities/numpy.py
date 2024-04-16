@@ -424,21 +424,34 @@ def fillna(array: NDArrayF, /, *, value: float = 0.0) -> NDArrayF:
     return where(isnan(array), value, array)
 
 
-def flatn0(array: NDArrayB1, /) -> int:
+def flatn0(array: NDArrayB, /) -> int:
     """Return the index of the unique True element."""
     if not array.any():
-        msg = f"{array=}"
-        raise FlatN0Error(msg)
+        raise FlatN0EmptyError(array=array)
     flattened = flatnonzero(array)
-    with redirect_error(
-        ValueError,
-        FlatN0Error(f"{array=}"),
-        match="can only convert an array of size 1 to a Python scalar",
-    ):
+    try:
         return flattened.item()
+    except ValueError:
+        raise FlatN0MultipleError(array=array) from None
 
 
-class FlatN0Error(Exception): ...
+@dataclass(kw_only=True)
+class FlatN0Error(Exception):
+    array: NDArrayB
+
+
+@dataclass(kw_only=True)
+class FlatN0EmptyError(FlatN0Error):
+    @override
+    def __str__(self) -> str:
+        return f"Array {self.array} must contain a True."
+
+
+@dataclass(kw_only=True)
+class FlatN0MultipleError(FlatN0Error):
+    @override
+    def __str__(self) -> str:
+        return f"Array {self.array} must contain at most one True."
 
 
 def get_fill_value(dtype: Any, /) -> Any:
@@ -1333,6 +1346,8 @@ __all__ = [
     "Datetime64Unit",
     "EmptyNumpyConcatenateError",
     "FlatN0Error",
+    "FlatN0MultipleError",
+    "FlatN0EmptyError",
     "GetFillValueError",
     "NDArray0",
     "NDArray1",

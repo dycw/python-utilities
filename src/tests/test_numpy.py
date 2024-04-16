@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from re import escape
 from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
@@ -44,9 +45,9 @@ from utilities.numpy import (
     DateTime64ToDateTimeError,
     DatetimeToDatetime64Error,
     EmptyNumpyConcatenateError,
-    FlatN0Error,
+    FlatN0EmptyError,
+    FlatN0MultipleError,
     GetFillValueError,
-    NDArrayB1,
     NDArrayF,
     NDArrayF1,
     NDArrayF2,
@@ -480,12 +481,18 @@ class TestFlatN0:
         result = flatn0(arr)
         assert result == i
 
-    @pytest.mark.parametrize(
-        "array", [pytest.param(zeros(0, dtype=bool)), pytest.param(ones(2, dtype=bool))]
-    )
-    def test_errors(self, *, array: NDArrayB1) -> None:
-        with pytest.raises(FlatN0Error):
-            _ = flatn0(array)
+    def test_empty_error(self) -> None:
+        with pytest.raises(
+            FlatN0EmptyError, match=escape(r"Array [] must contain a True.")
+        ):
+            _ = flatn0(zeros(0, dtype=bool))
+
+    def test_multiple_error(self) -> None:
+        with pytest.raises(
+            FlatN0MultipleError,
+            match=escape("Array [ True  True] must contain at most one True."),
+        ):
+            _ = flatn0(ones(2, dtype=bool))
 
 
 class TestGetFillValue:

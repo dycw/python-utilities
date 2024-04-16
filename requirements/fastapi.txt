@@ -18,7 +18,7 @@ exceptiongroup==1.2.0
     #   pytest
 fastapi==0.110.1
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via anyio
 iniconfig==2.0.0
     # via pytest
@@ -29,9 +29,9 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.4.0
     # via pytest
-pydantic==2.6.4
+pydantic==2.7.0
     # via fastapi
-pydantic-core==2.16.3
+pydantic-core==2.18.1
     # via pydantic
 pytest==8.1.1
     # via

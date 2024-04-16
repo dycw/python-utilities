@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 bleach==6.1.0
     # via panel
-bokeh==3.4.0
+bokeh==3.4.1
     # via panel
 certifi==2024.2.2
     # via requests
@@ -25,7 +25,7 @@ exceptiongroup==1.2.0
     #   pytest
 holoviews==1.18.3
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via requests
 iniconfig==2.0.0
     # via pytest
@@ -67,7 +67,7 @@ packaging==24.0
     #   pytest
     #   pytest-rerunfailures
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   bokeh
     #   holoviews

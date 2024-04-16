@@ -7,7 +7,7 @@ coverage==7.4.4
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
-docutils==0.20.1
+docutils==0.21.1
     # via python-daemon
 exceptiongroup==1.2.0
     # via
@@ -42,7 +42,7 @@ python-dateutil==2.9.0.post0
     #   freezegun
     #   luigi
 semver==3.0.2
-setuptools==69.2.0
+setuptools==69.5.1
     # via python-daemon
 six==1.16.0
     # via python-dateutil

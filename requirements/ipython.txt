@@ -24,7 +24,7 @@ iniconfig==2.0.0
 ipython==8.23.0
 jedi==0.19.1
     # via ipython
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via ipython
 packaging==24.0
     # via

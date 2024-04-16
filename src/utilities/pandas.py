@@ -5,9 +5,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, reduce
 from itertools import chain, permutations
+from operator import ge, gt, le, lt
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
-from numpy import where
+from numpy import arange, where
 from pandas import (
     NA,
     BooleanDtype,
@@ -21,6 +22,7 @@ from pandas import (
     Series,
     StringDtype,
     Timestamp,
+    concat,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
 from typing_extensions import assert_never, override
@@ -42,38 +44,53 @@ from utilities.iterables import (
     check_subset,
     check_superset,
 )
-from utilities.numpy import NDArray1, datetime64ns, has_dtype
+from utilities.numpy import (
+    FlatN0Error,
+    NDArray1,
+    NDArrayB1,
+    NDArrayI1,
+    datetime64ns,
+    flatn0,
+    has_dtype,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import (
+        Callable,
+        Hashable,
+        Iterable,
+        Iterator,
+        Mapping,
+        Sequence,
+    )
 
-    IndexA: TypeAlias = Index[Any]
-    IndexB: TypeAlias = Index[bool]
-    IndexBn: TypeAlias = Index[BooleanDtype]
-    IndexC: TypeAlias = Index[CategoricalDtype]
-    IndexD: TypeAlias = Index[dt.datetime]
-    IndexDhk: TypeAlias = Index[DatetimeTZDtype]
-    IndexDutc: TypeAlias = Index[DatetimeTZDtype]
-    IndexF: TypeAlias = Index[float]
-    IndexI: TypeAlias = Index[int]
-    IndexI64: TypeAlias = Index[Int64Dtype]
-    IndexS: TypeAlias = Index[str]
-    IndexSt: TypeAlias = Index[StringDtype]
+    IndexA: TypeAlias = Index[Any]  # type: ignore[]
+    IndexB: TypeAlias = Index[bool]  # type: ignore[]
+    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore[]
+    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore[]
+    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore[]
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[]
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[]
+    IndexF: TypeAlias = Index[float]  # type: ignore[]
+    IndexI: TypeAlias = Index[int]  # type: ignore[]
+    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore[]
+    IndexS: TypeAlias = Index[str]  # type: ignore[]
+    IndexSt: TypeAlias = Index[StringDtype]  # type: ignore[]
 
-    SeriesA: TypeAlias = Series[Any]
-    SeriesB: TypeAlias = Series[bool]
-    SeriesBn: TypeAlias = Series[BooleanDtype]
-    SeriesC: TypeAlias = Series[CategoricalDtype]
-    SeriesD: TypeAlias = Series[dt.datetime]
-    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]
-    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]
-    SeriesF: TypeAlias = Series[float]
-    SeriesI: TypeAlias = Series[int]
-    SeriesI64: TypeAlias = Series[Int64Dtype]
-    SeriesS: TypeAlias = Series[str]
-    SeriesSt: TypeAlias = Series[StringDtype]
+    SeriesA: TypeAlias = Series[Any]  # type: ignore[]
+    SeriesB: TypeAlias = Series[bool]  # type: ignore[]
+    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore[]
+    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore[]
+    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore[]
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[]
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[]
+    SeriesF: TypeAlias = Series[float]  # type: ignore[]
+    SeriesI: TypeAlias = Series[int]  # type: ignore[]
+    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore[]
+    SeriesS: TypeAlias = Series[str]  # type: ignore[]
+    SeriesSt: TypeAlias = Series[StringDtype]  # type: ignore[]
 else:
     IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = IndexDutc = IndexF = (
         IndexI
@@ -92,6 +109,87 @@ datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
 
 
 _Index = TypeVar("_Index", bound=Index)
+
+
+def assign_after(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
+    return _assign_before_or_after(df, key, value, le, gt)
+
+
+def assign_before(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
+    return _assign_before_or_after(df, key, value, lt, ge)
+
+
+def _assign_before_or_after(
+    df: DataFrame,
+    key: Hashable,
+    value: SeriesA,
+    left: Callable[[NDArrayI1, int], NDArrayB1],
+    right: Callable[[NDArrayI1, int], NDArrayB1],
+    /,
+) -> DataFrame:
+    cols = df.columns.to_numpy()
+    try:
+        index = flatn0(cols == key)
+    except FlatN0Error:
+        raise AssignBeforeOrAfterError(df=df, key=key) from None
+    ar = arange(len(cols))
+    return concat(
+        [df.iloc[:, left(ar, index)], value, df.iloc[:, right(ar, index)]], axis=1
+    )
+
+
+@dataclass(kw_only=True)
+class AssignBeforeOrAfterError(Exception):
+    df: DataFrame
+    key: Hashable
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must contain exactly one column named {self.key!r}:\n\n{self.df}"
+
+
+def assign_between(
+    df: DataFrame, left: Hashable, right: Hashable, value: SeriesA, /
+) -> DataFrame:
+    cols = df.columns.to_numpy()
+    try:
+        index_left = flatn0(cols == left)
+        index_right = flatn0(cols == right)
+    except FlatN0Error:
+        raise AssignBetweenIndexError(df=df, left=left, right=right) from None
+    if (index_left + 1) != index_right:
+        raise AssignBetweenIndicesError(
+            df=df,
+            left=left,
+            right=right,
+            index_left=index_left,
+            index_right=index_right,
+        )
+    return assign_after(df, left, value)
+
+
+@dataclass(kw_only=True)
+class AssignBetweenError(Exception):
+    df: DataFrame
+    left: Hashable
+    right: Hashable
+
+
+@dataclass(kw_only=True)
+class AssignBetweenIndexError(AssignBetweenError):
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must contain exactly one column named {self.left!r} and {self.right!r}:\n\n{self.df}"
+
+
+@dataclass(kw_only=True)
+class AssignBetweenIndicesError(AssignBetweenError):
+    index_left: int
+    index_right: int
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must specify consecutive indices; got {self.index_left} and {self.index_right}"
 
 
 def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
@@ -626,6 +724,10 @@ class UnionIndexesError(Exception):
 
 
 __all__ = [
+    "AssignBeforeOrAfterError",
+    "AssignBetweenError",
+    "AssignBetweenIndexError",
+    "AssignBetweenIndicesError",
     "CheckIndexError",
     "CheckPandasDataFrameError",
     "CheckRangeIndexError",
@@ -665,6 +767,9 @@ __all__ = [
     "TIMESTAMP_MIN_AS_DATETIME",
     "TimestampToDateTimeError",
     "UnionIndexesError",
+    "assign_after",
+    "assign_before",
+    "assign_between",
     "astype",
     "boolean",
     "category",

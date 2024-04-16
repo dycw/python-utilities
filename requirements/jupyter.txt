@@ -68,7 +68,7 @@ httpcore==1.0.5
 httpx==0.27.0
     # via jupyterlab
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -90,7 +90,7 @@ jinja2==3.1.3
     #   jupyterlab
     #   jupyterlab-server
     #   nbconvert
-json5==0.9.24
+json5==0.9.25
     # via jupyterlab-server
 jsonpointer==2.4
     # via jsonschema
@@ -117,9 +117,9 @@ jupyter-core==5.7.2
     #   nbformat
 jupyter-events==0.10.0
     # via jupyter-server
-jupyter-lsp==2.2.4
+jupyter-lsp==2.2.5
     # via jupyterlab
-jupyter-server==2.13.0
+jupyter-server==2.14.0
     # via
     #   jupyter-lsp
     #   jupyterlab
@@ -136,7 +136,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
@@ -169,7 +169,7 @@ packaging==24.0
     #   nbconvert
     #   pytest
     #   pytest-rerunfailures
-pandas==2.2.1
+pandas==2.2.2
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -180,7 +180,7 @@ platformdirs==4.2.0
     # via jupyter-core
 pluggy==1.4.0
     # via pytest
-polars==0.20.19
+polars==0.20.21
 prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
@@ -218,7 +218,7 @@ pytz==2024.1
     # via pandas
 pyyaml==6.0.1
     # via jupyter-events
-pyzmq==25.1.2
+pyzmq==26.0.0
     # via
     #   ipykernel
     #   jupyter-client
