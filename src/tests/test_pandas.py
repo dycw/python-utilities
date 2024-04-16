@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import pytest
 from hypothesis import assume, given
@@ -31,6 +31,9 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
+    AssignBeforeOrAfterError,
+    AssignBetweenIndexError,
+    AssignBetweenIndicesError,
     CheckIndexError,
     CheckPandasDataFrameError,
     CheckRangeIndexError,
@@ -44,7 +47,9 @@ from utilities.pandas import (
     SeriesMinMaxError,
     TimestampToDateTimeError,
     UnionIndexesError,
+    assign_after,
     assign_before,
+    assign_between,
     astype,
     boolean,
     check_index,
@@ -69,18 +74,58 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-class TestAssignBefore:
-    def test_main(self) -> None:
-        df = DataFrame([[0, 1]], columns=Index(["a", "b"]))
-        result = assign_before(df, "a", Series(9, name="z"))
-        expected = DataFrame([[9, 0, 1]], columns=Index(["z", "a", "b"]))
+class TestAssignBeforeOrAfter:
+    def test_after(self) -> None:
+        df = DataFrame([[0, 1, 2]], columns=Index(["a", "b", "c"]))
+        result = assign_after(df, "b", Series(9, name="z"))
+        expected = DataFrame([[0, 1, 9, 2]], columns=Index(["a", "b", "z", "c"]))
         assert_frame_equal(result, expected)
 
-    def test_error(self) -> None:
-        df = DataFrame([[0, 1]], columns=Index(["a", "b"]))
-        result = assign_before(df, "c", Series(9, name="z"))
-        expected = DataFrame([[9, 0, 1]], columns=Index(["z", "a", "b"]))
+    def test_before(self) -> None:
+        df = DataFrame([[0, 1, 2]], columns=Index(["a", "b", "c"]))
+        result = assign_before(df, "b", Series(9, name="z"))
+        expected = DataFrame([[0, 9, 1, 2]], columns=Index(["a", "z", "b", "c"]))
         assert_frame_equal(result, expected)
+
+    @pytest.mark.parametrize("mode", [pytest.param("before"), pytest.param("after")])
+    def test_error(self, *, mode: Literal["before", "after"]) -> None:
+        df = DataFrame([[0, 1, 2]], columns=Index(["a", "b", "c"]))
+        match mode:
+            case "before":
+                func = assign_before
+            case "after":
+                func = assign_after
+        with pytest.raises(
+            AssignBeforeOrAfterError,
+            match="DataFrame must contain exactly one column named 'd'",
+        ):
+            _ = func(df, "d", Series(9, name="z"))
+
+
+class TestAssignBetween:
+    def test_main(self) -> None:
+        df = DataFrame([[0, 1, 2, 3]], columns=Index(["a", "b", "c", "d"]))
+        result = assign_between(df, "b", "c", Series(9, name="z"))
+        expected = DataFrame(
+            [[0, 1, 9, 2, 3]], columns=Index(["a", "b", "z", "c", "d"])
+        )
+        assert_frame_equal(result, expected)
+
+    def test_error_index(self) -> None:
+        df = DataFrame([[0, 1, 2]], columns=Index(["a", "b", "c"]))
+        with pytest.raises(
+            AssignBetweenIndexError,
+            match="DataFrame must contain exactly one column named 'd'",
+        ):
+            _ = assign_between(df, "d", "e", Series(9, name="z"))
+
+    def test_error_indices(self) -> None:
+        df = DataFrame([[0, 1, 2]], columns=Index(["a", "b", "c"]))
+        with pytest.raises(
+            AssignBetweenIndicesError,
+            match="DataFrame must specify consecutive indices; got 0 and 2",
+        ):
+            _ = assign_between(df, "a", "c", Series(9, name="z"))
 
 
 class TestAsType:
