@@ -76,6 +76,12 @@ class TestAssignBefore:
         expected = DataFrame([[9, 0, 1]], columns=Index(["z", "a", "b"]))
         assert_frame_equal(result, expected)
 
+    def test_error(self) -> None:
+        df = DataFrame([[0, 1]], columns=Index(["a", "b"]))
+        result = assign_before(df, "c", Series(9, name="z"))
+        expected = DataFrame([[9, 0, 1]], columns=Index(["z", "a", "b"]))
+        assert_frame_equal(result, expected)
+
 
 class TestAsType:
     def test_main(self) -> None:

@@ -102,6 +102,10 @@ def assign_before(df: DataFrame, key: Hashable, value: Series[Any], /) -> DataFr
     return concat([df.iloc[:, ar < index], value, df.iloc[:, ar >= index]], axis=1)
 
 
+class Assign:
+    pass
+
+
 def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
     """Wrapper around `.astype`."""
     return cast(Any, df).astype(dtype)
