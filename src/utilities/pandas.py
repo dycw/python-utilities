@@ -7,7 +7,7 @@ from functools import partial, reduce
 from itertools import chain, permutations
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
 
-from numpy import where
+from numpy import arange, where
 from pandas import (
     NA,
     BooleanDtype,
@@ -21,6 +21,7 @@ from pandas import (
     Series,
     StringDtype,
     Timestamp,
+    concat,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
 from typing_extensions import assert_never, override
@@ -42,7 +43,7 @@ from utilities.iterables import (
     check_subset,
     check_superset,
 )
-from utilities.numpy import NDArray1, datetime64ns, has_dtype
+from utilities.numpy import NDArray1, datetime64ns, flatn0, has_dtype
 from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
 
@@ -92,6 +93,13 @@ datetime64nshk = DatetimeTZDtype(tz=HONG_KONG)
 
 
 _Index = TypeVar("_Index", bound=Index)
+
+
+def assign_before(df: DataFrame, key: Hashable, value: Series[Any], /) -> DataFrame:
+    cols = df.columns.to_numpy()
+    index = flatn0(cols == key)
+    ar = arange(len(cols))
+    return concat([df.iloc[:, ar < index], value, df.iloc[:, ar >= index]], axis=1)
 
 
 def astype(df: DataFrame, dtype: Any, /) -> DataFrame:

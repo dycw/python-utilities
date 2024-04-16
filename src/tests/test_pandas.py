@@ -21,7 +21,7 @@ from pandas import (
     concat,
     to_datetime,
 )
-from pandas.testing import assert_index_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
 from utilities.datetime import TODAY_UTC, UTC
 from utilities.hypothesis import int_indexes, text_ascii, timestamps
@@ -44,6 +44,7 @@ from utilities.pandas import (
     SeriesMinMaxError,
     TimestampToDateTimeError,
     UnionIndexesError,
+    assign_before,
     astype,
     boolean,
     check_index,
@@ -68,9 +69,17 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+class TestAssignBefore:
+    def test_main(self) -> None:
+        df = DataFrame([[0, 1]], columns=Index(["a", "b"]))
+        result = assign_before(df, "a", Series(9, name="z"))
+        expected = DataFrame([[9, 0, 1]], columns=Index(["z", "a", "b"]))
+        assert_frame_equal(result, expected)
+
+
 class TestAsType:
     def test_main(self) -> None:
-        df = DataFrame(0, index=RangeIndex(1), columns=["value"], dtype=int)
+        df = DataFrame(0, index=RangeIndex(1), columns=Index(["value"]), dtype=int)
         check_pandas_dataframe(df, dtypes={"value": int})
         result = astype(df, float)
         check_pandas_dataframe(result, dtypes={"value": float})
