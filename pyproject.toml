@@ -356,6 +356,7 @@ ignore = [
   "D",  # pydocstyle
   "E501",  # line-too-long
   "PLR0913",  # too-many-arguments
+  "PT013",  # pytest-incorrect-pytest-import
   # formatter
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
@@ -375,6 +376,9 @@ ignore = [
 select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
+"*.ipynb" = [
+  "PLE1142",
+]
 "src/tests/**/*.py" = [
   "FBT001",  # boolean-positional-arg-in-function-definition
   "FBT003",  # boolean-positional-value-in-function-call
