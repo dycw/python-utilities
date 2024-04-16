@@ -18,7 +18,7 @@ exceptiongroup==1.2.0
 hypothesis==6.100.1
 iniconfig==2.0.0
     # via pytest
-mako==1.3.2
+mako==1.3.3
     # via alembic
 markupsafe==2.1.5
     # via mako

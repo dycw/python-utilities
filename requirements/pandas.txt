@@ -21,7 +21,7 @@ packaging==24.0
     #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
-pandas==2.2.1
+pandas==2.2.2
 pluggy==1.4.0
     # via pytest
 pytest==8.1.1

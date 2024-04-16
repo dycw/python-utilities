@@ -4,7 +4,7 @@ anyio==4.3.0
     # via httpx
 attrs==23.2.0
     # via hypothesis
-backports-tarfile==1.0.0
+backports-tarfile==1.1.0
     # via jaraco-context
 certifi==2024.2.2
     # via
@@ -28,7 +28,7 @@ exceptiongroup==1.2.0
     #   anyio
     #   hypothesis
     #   pytest
-filelock==3.13.3
+filelock==3.13.4
     # via virtualenv
 h11==0.14.0
     # via httpcore
@@ -42,7 +42,7 @@ httpx==0.27.0
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -117,7 +117,7 @@ tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.4
     # via hatch
-trove-classifiers==2024.3.25
+trove-classifiers==2024.4.10
     # via hatchling
 typing-extensions==4.11.0
     # via anyio

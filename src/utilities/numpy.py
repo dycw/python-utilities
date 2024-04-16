@@ -1346,6 +1346,8 @@ __all__ = [
     "Datetime64Unit",
     "EmptyNumpyConcatenateError",
     "FlatN0Error",
+    "FlatN0MultipleError",
+    "FlatN0EmptyError",
     "GetFillValueError",
     "NDArray0",
     "NDArray1",

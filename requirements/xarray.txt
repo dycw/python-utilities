@@ -33,7 +33,7 @@ packaging==24.0
     #   pytest
     #   pytest-rerunfailures
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via xarray
 pluggy==1.4.0
     # via pytest

@@ -724,6 +724,10 @@ class UnionIndexesError(Exception):
 
 
 __all__ = [
+    "AssignBeforeOrAfterError",
+    "AssignBetweenError",
+    "AssignBetweenIndexError",
+    "AssignBetweenIndicesError",
     "CheckIndexError",
     "CheckPandasDataFrameError",
     "CheckRangeIndexError",
@@ -763,6 +767,9 @@ __all__ = [
     "TIMESTAMP_MIN_AS_DATETIME",
     "TimestampToDateTimeError",
     "UnionIndexesError",
+    "assign_after",
+    "assign_before",
+    "assign_between",
     "astype",
     "boolean",
     "category",

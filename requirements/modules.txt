@@ -17,7 +17,7 @@ attrs==23.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-backports-tarfile==1.0.0
+backports-tarfile==1.1.0
     # via jaraco-context
 beartype==0.18.2
 beautifulsoup4==4.12.3
@@ -26,7 +26,7 @@ bleach==6.1.0
     # via panel
 blinker==1.7.0
     # via streamlit
-bokeh==3.4.0
+bokeh==3.4.1
     # via panel
 bounded-pool-executor==0.0.3
     # via pqdm
@@ -59,12 +59,12 @@ coverage==7.4.4
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
 cryptography==42.0.5
-cvxpy==1.4.2
+cvxpy==1.4.3
 defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
     # via virtualenv
-docutils==0.20.1
+docutils==0.21.1
     # via python-daemon
 ecos==2.0.13
     # via cvxpy
@@ -78,7 +78,7 @@ exceptiongroup==1.2.0
 fastapi==0.110.1
 fasteners==0.19
     # via zarr
-filelock==3.13.3
+filelock==3.13.4
     # via virtualenv
 fonttools==4.51.0
     # via fpdf2
@@ -100,7 +100,7 @@ httpx==0.27.0
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.100.1
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -188,7 +188,7 @@ packaging==24.0
     #   pytest-rerunfailures
     #   streamlit
     #   xarray
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   altair
     #   bokeh
@@ -221,7 +221,7 @@ pluggy==1.4.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.19
+polars==0.20.21
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -235,9 +235,9 @@ pybind11==2.12.0
     # via cvxpy
 pycparser==2.22
     # via cffi
-pydantic==2.6.4
+pydantic==2.7.0
     # via fastapi
-pydantic-core==2.16.3
+pydantic-core==2.18.1
     # via pydantic
 pydeck==0.8.0
     # via streamlit
@@ -298,7 +298,7 @@ scipy==1.13.0
 scs==3.2.4.post1
     # via cvxpy
 semver==3.0.2
-setuptools==69.2.0
+setuptools==69.5.1
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -347,7 +347,7 @@ tqdm==4.66.2
     # via
     #   panel
     #   pqdm
-trove-classifiers==2024.3.25
+trove-classifiers==2024.4.10
     # via hatchling
 typed-settings==24.2.0
 typing-extensions==4.11.0
