@@ -4,6 +4,7 @@ import datetime as dt
 from collections.abc import Hashable, Mapping, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
+from inspect import iscoroutinefunction, isfunction
 from pathlib import Path
 from typing import Any, TypeGuard, TypeVar, overload
 
@@ -153,6 +154,25 @@ def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
     return x if x is not None else y
 
 
+def is_function_async(obj: Any, /) -> bool:
+    """Check if a function is asynchronous."""
+
+    if iscoroutinefunction(obj):
+        return True
+    if isfunction(obj):
+        return False
+    raise IsFunctionAsyncError(obj=obj)
+
+
+@dataclass(kw_only=True)
+class IsFunctionAsyncError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a function; got {self.obj}."
+
+
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     """Check if an object is hashable."""
     try:
@@ -188,6 +208,7 @@ __all__ = [
     "EnsureNotNoneError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
+    "IsFunctionAsyncError",
     "IterableStrs",
     "Number",
     "PathLike",
@@ -200,6 +221,7 @@ __all__ = [
     "get_class",
     "get_class_name",
     "if_not_none",
+    "is_function_async",
     "is_hashable",
     "is_sized",
     "is_sized_not_str",
