@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from re import escape
 from types import NoneType
 from typing import Any, cast
 
@@ -16,6 +17,7 @@ from utilities.types import (
     EnsureNotNoneError,
     EnsureSizedError,
     EnsureSizedNotStrError,
+    IsFunctionAsyncError,
     IterableStrs,
     Number,
     PathLike,
@@ -28,6 +30,7 @@ from utilities.types import (
     get_class,
     get_class_name,
     if_not_none,
+    is_function_async,
     is_hashable,
     is_sized,
     is_sized_not_str,
@@ -144,6 +147,26 @@ class TestIfNotNone:
     def test_uses_second(self) -> None:
         result = if_not_none(None, 0)
         assert result == 0
+
+
+class TestIsFunctionAsync:
+    def test_function(self) -> None:
+        def func() -> None:
+            pass
+
+        assert not is_function_async(func)
+
+    def test_coroutine(self) -> None:
+        async def func() -> None:
+            pass
+
+        assert is_function_async(func)
+
+    def test_error(self) -> None:
+        with pytest.raises(
+            IsFunctionAsyncError, match=escape("Object must be a function; got None.")
+        ):
+            _ = is_function_async(None)
 
 
 class TestIsHashable:

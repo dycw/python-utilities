@@ -112,10 +112,14 @@ _Index = TypeVar("_Index", bound=Index)
 
 
 def assign_after(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
+    """Assign a series after an existing column."""
+
     return _assign_before_or_after(df, key, value, le, gt)
 
 
 def assign_before(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
+    """Assign a series before an existing column."""
+
     return _assign_before_or_after(df, key, value, lt, ge)
 
 
@@ -151,6 +155,7 @@ class AssignBeforeOrAfterError(Exception):
 def assign_between(
     df: DataFrame, left: Hashable, right: Hashable, value: SeriesA, /
 ) -> DataFrame:
+    """Assign a series in between two existing columns."""
     cols = df.columns.to_numpy()
     try:
         index_left = flatn0(cols == left)
