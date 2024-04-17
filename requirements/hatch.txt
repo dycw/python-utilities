@@ -123,7 +123,7 @@ typing-extensions==4.11.0
     # via anyio
 userpath==1.9.2
     # via hatch
-virtualenv==20.25.1
+virtualenv==20.25.3
     # via hatch
 zipp==3.18.1
     # via importlib-metadata
