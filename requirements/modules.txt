@@ -369,7 +369,7 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-virtualenv==20.25.1
+virtualenv==20.25.3
     # via hatch
 webencodings==0.5.1
     # via bleach
