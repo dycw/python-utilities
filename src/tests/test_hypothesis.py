@@ -463,12 +463,7 @@ class TestGitRepos:
         path = data.draw(git_repos(branch=branch))
         assert set(path.iterdir()) == {Path(path, ".git")}
         if branch is not None:
-            output = check_output(
-                _GET_BRANCH_NAME,  # noqa: S603
-                stderr=PIPE,
-                cwd=path,
-                text=True,
-            )
+            output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=path, text=True)
             assert output.strip("\n") == branch
 
 

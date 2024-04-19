@@ -47,7 +47,7 @@ class TestTabulateCalledProcessError:
     @skipif_windows
     def test_main(self) -> None:
         def which() -> None:
-            _ = check_call(["which"], text=True)  # noqa: S603, S607
+            _ = check_call(["which"], text=True)
 
         try:
             which()

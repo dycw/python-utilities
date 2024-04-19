@@ -51,7 +51,7 @@ class GetShellOutputError(Exception): ...
 def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
-        _ = check_output(list(args), stderr=PIPE, text=True)  # noqa: S603
+        _ = check_output(list(args), stderr=PIPE, text=True)
     except CalledProcessError as error:  # pragma: no cover
         pattern = _address_already_in_use_pattern()
         try:

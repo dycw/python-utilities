@@ -359,11 +359,13 @@ ignore = [
   "F405",  # undefined-local-with-import-star-usage
   "PLE1142",  # await-outside-async
   "PLR0911",  # too-many-return-statements
+  "PLR0913",  # too-many-arguments
   "PLR0915",  # too-many-statements
   "PLR2004",  # magic-value-comparison
   "PT013",  # pytest-incorrect-pytest-import
   "S101",  # assert-used
   "S603",  # subprocess-without-shell-equals-true
+  "S607",  # start-process-with-partial-path
   # formatter
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
