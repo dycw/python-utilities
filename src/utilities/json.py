@@ -65,7 +65,7 @@ def _positive_zero(x: float, /) -> float:
     return abs(x) if x == 0.0 else x
 
 
-def _default(  # noqa: C901, PLR0911, PLR0912
+def _default(  # noqa: C901, PLR0912
     obj: Any, /, *, extra: _ExtraSer[Any] | None = None
 ) -> Any:
     """Extension for the JSON serializer."""
@@ -193,7 +193,7 @@ def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
     return loads(text, object_hook=partial(_object_hook, extra=extra))
 
 
-def _object_hook(  # noqa: PLR0911
+def _object_hook(
     mapping: Mapping[str, Any], /, *, extra: _ExtraDes | None = None
 ) -> Any:
     try:

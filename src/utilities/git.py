@@ -20,12 +20,7 @@ _U = TypeVar("_U")
 def get_branch_name(*, cwd: PathLike = PWD) -> str:
     """Get the current branch name."""
     root = get_repo_root(cwd=cwd)
-    output = check_output(
-        _GET_BRANCH_NAME,  # noqa: S603
-        stderr=PIPE,
-        cwd=root,
-        text=True,
-    )
+    output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=root, text=True)
     return output.strip("\n")
 
 
@@ -33,10 +28,7 @@ def get_repo_name(*, cwd: PathLike = PWD) -> str:
     """Get the repo name."""
     root = get_repo_root(cwd=cwd)
     output = check_output(
-        ["git", "remote", "get-url", "origin"],  # noqa: S603, S607
-        stderr=PIPE,
-        cwd=root,
-        text=True,
+        ["git", "remote", "get-url", "origin"], stderr=PIPE, cwd=root, text=True
     )
     return Path(output.strip("\n")).stem  # not valid_path
 
@@ -45,10 +37,7 @@ def get_repo_root(*, cwd: PathLike = PWD) -> Path:
     """Get the repo root."""
     try:
         output = check_output(
-            ["git", "rev-parse", "--show-toplevel"],  # noqa: S603, S607
-            stderr=PIPE,
-            cwd=cwd,
-            text=True,
+            ["git", "rev-parse", "--show-toplevel"], stderr=PIPE, cwd=cwd, text=True
         )
     except CalledProcessError as error:
         # newer versions of git report "Not a git repository", whilst older

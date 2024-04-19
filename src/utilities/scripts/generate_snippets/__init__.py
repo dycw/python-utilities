@@ -141,7 +141,7 @@ def _generate_snippets(imports: Iterable[ImportFrom], template: str, /) -> str:
     items = ((_node_to_key(imp), _generate_snippet(imp, template)) for imp in imports)
     sorted_items = sorted(items, key=itemgetter(0))
     counts = Counter(k for k, _ in sorted_items)
-    duplicated = {k for k, v in counts.items() if v >= 2}  # noqa: PLR2004
+    duplicated = {k for k, v in counts.items() if v >= 2}
     if len(duplicated) >= 1:
         logger.warning(f"Duplicated keys: {duplicated}")
     snippets = (f"{s}," for _, s in sorted_items)

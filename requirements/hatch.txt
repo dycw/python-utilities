@@ -23,7 +23,7 @@ distlib==0.3.8
     # via virtualenv
 editables==0.5
     # via hatchling
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   anyio
     #   hypothesis
@@ -55,7 +55,7 @@ jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
     # via keyring
-jaraco-functools==4.0.0
+jaraco-functools==4.0.1
     # via keyring
 keyring==25.1.0
     # via hatch

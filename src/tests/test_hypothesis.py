@@ -138,7 +138,7 @@ class TestAssumeDoesNotRaise:
                 raise ValueError(msg)
         assert x is False
 
-    @given(x=just(True))
+    @given(x=just(value=True))
     def test_with_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
@@ -168,7 +168,7 @@ class TestBoolDataArrays:
         assert array.dtype == bool
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestConcatenatedArrays:
@@ -377,7 +377,7 @@ class TestFloatDataArrays:
         assert array.dtype == float
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestFloatsExtra:
@@ -463,12 +463,7 @@ class TestGitRepos:
         path = data.draw(git_repos(branch=branch))
         assert set(path.iterdir()) == {Path(path, ".git")}
         if branch is not None:
-            output = check_output(
-                _GET_BRANCH_NAME,  # noqa: S603
-                stderr=PIPE,
-                cwd=path,
-                text=True,
-            )
+            output = check_output(_GET_BRANCH_NAME, stderr=PIPE, cwd=path, text=True)
             assert output.strip("\n") == branch
 
 
@@ -635,7 +630,7 @@ class TestIntDataArrays:
         assert array.dtype == int64
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestLiftDraw:
@@ -886,7 +881,7 @@ class TestStrDataArrays:
         assert array.dtype == object
         assert array.name == name
         for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)  # type: ignore[]
+            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestTempDirs:

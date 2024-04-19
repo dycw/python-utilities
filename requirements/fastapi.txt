@@ -11,12 +11,12 @@ coverage==7.4.4
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   anyio
     #   hypothesis
     #   pytest
-fastapi==0.110.1
+fastapi==0.110.2
 hypothesis==6.100.1
 idna==3.7
     # via anyio
