@@ -355,8 +355,15 @@ ignore = [
   "ANN401",  # dynamically-typed-expression
   "D",  # pydocstyle
   "E501",  # line-too-long
-  "PLR0913",  # too-many-arguments
+  "F403",  # undefined-local-with-import-star
+  "F405",  # undefined-local-with-import-star-usage
+  "PLE1142",  # await-outside-async
+  "PLR0911",  # too-many-return-statements
+  "PLR0915",  # too-many-statements
+  "PLR2004",  # magic-value-comparison
   "PT013",  # pytest-incorrect-pytest-import
+  "S101",  # assert-used
+  "S603",  # subprocess-without-shell-equals-true
   # formatter
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
@@ -377,9 +384,11 @@ select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "*.ipynb" = [
+  "B018",  # useless-expression
   "F403",  # undefined-local-with-import-star
   "F405",  # undefined-local-with-import-star-usage
   "PLE1142",  # await-outside-async
+  "S101",  # assert-used
 ]
 "src/tests/**/*.py" = [
   "FBT001",  # boolean-positional-arg-in-function-definition

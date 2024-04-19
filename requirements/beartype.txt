@@ -2,13 +2,13 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-beartype --prerelease=disallow --output-file=requirements/beartype.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-beartype==0.18.2
+beartype==0.18.4
 coverage==7.4.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
