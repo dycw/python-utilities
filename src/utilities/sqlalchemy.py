@@ -517,7 +517,7 @@ def ensure_tables_created(
                 table.create(conn)
             except DatabaseError as error:
                 if not search(match, ensure_str(one(error.args))):
-                    raise
+                    raise  # pragma: no cover
 
 
 def ensure_tables_dropped(
@@ -532,7 +532,7 @@ def ensure_tables_dropped(
                 table.drop(conn)
             except DatabaseError as error:
                 if not search(match, ensure_str(one(error.args))):
-                    raise
+                    raise  # pragma: no cover
 
 
 def get_chunk_size(

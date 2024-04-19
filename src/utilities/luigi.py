@@ -319,7 +319,7 @@ class DatabaseTarget(Target):
         except DatabaseError as error:
             if search(match, ensure_str(one(error.args))):
                 return False
-            raise
+            raise  # pragma: no cover
         return res is not None
 
 
