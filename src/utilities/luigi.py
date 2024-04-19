@@ -6,12 +6,14 @@ from collections.abc import Iterable, Iterator
 from contextlib import suppress
 from enum import Enum
 from pathlib import Path
+from re import search
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.task import flatten
+from sqlalchemy.exc import DatabaseError
 from typing_extensions import override
 
 from utilities.datetime import (
@@ -31,6 +33,8 @@ from utilities.datetime import (
     serialize_time,
 )
 from utilities.enum import ensure_enum, parse_enum
+from utilities.iterables import one
+from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     from luigi.interface import LuigiRunResult
@@ -305,19 +309,18 @@ class DatabaseTarget(Target):
         self._engine = engine
 
     def exists(self) -> bool:  # type: ignore[]
-        from utilities.sqlalchemy import (
-            TableDoesNotExistError,
-            redirect_table_does_not_exist,
-        )
+        from utilities.sqlalchemy import get_table_does_not_exist_message
 
         engine = self._engine
+        match = get_table_does_not_exist_message(engine)
         try:
-            with redirect_table_does_not_exist(engine), engine.begin() as conn:
+            with engine.begin() as conn:
                 res = conn.execute(self._sel).one_or_none()
-        except TableDoesNotExistError:
-            return False
-        else:
-            return res is not None
+        except DatabaseError as error:
+            if search(match, ensure_str(one(error.args))):
+                return False
+            raise  # pragma: no cover
+        return res is not None
 
 
 class EngineParameter(Parameter):

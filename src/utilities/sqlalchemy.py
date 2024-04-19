@@ -3,13 +3,13 @@ from __future__ import annotations
 import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping
-from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
 from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
+from re import search
 from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 import sqlalchemy
@@ -496,11 +496,11 @@ def ensure_tables_created(
 ) -> None:
     """Ensure a table/set of tables is/are created."""
 
-    class TableAlreadyExistsError(Exception): ...
-
     match dialect := get_dialect(engine):
-        case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+        case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # pragma: no cover
+            match = "relation .* already exists"
         case Dialect.mssql:  # pragma: no cover
             match = "There is already an object named .* in the database"
         case Dialect.oracle:  # pragma: no cover
@@ -512,26 +512,27 @@ def ensure_tables_created(
 
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with (
-            suppress(TableAlreadyExistsError),
-            redirect_error(DatabaseError, TableAlreadyExistsError, match=match),
-            engine.begin() as conn,
-        ):
-            table.create(conn)
+        with engine.begin() as conn:
+            try:
+                table.create(conn)
+            except DatabaseError as error:
+                if not search(match, ensure_str(one(error.args))):
+                    raise  # pragma: no cover
 
 
 def ensure_tables_dropped(
     engine: Engine, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
+    match = get_table_does_not_exist_message(engine)
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with (
-            suppress(TableDoesNotExistError),
-            redirect_table_does_not_exist(engine),
-            engine.begin() as conn,
-        ):
-            table.drop(conn)
+        with engine.begin() as conn:
+            try:
+                table.drop(conn)
+            except DatabaseError as error:
+                if not search(match, ensure_str(one(error.args))):
+                    raise  # pragma: no cover
 
 
 def get_chunk_size(
@@ -601,6 +602,26 @@ class GetTableError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
+
+
+def get_table_does_not_exist_message(engine: Engine, /) -> str:
+    """Get the message for a non-existent table."""
+    match dialect := get_dialect(engine):
+        case Dialect.mysql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # pragma: no cover
+            return "table .* does not exist"
+        case Dialect.mssql:  # pragma: no cover
+            return (
+                "Cannot drop the table .*, because it does not exist or you do "
+                "not have permission"
+            )
+        case Dialect.oracle:  # pragma: no cover
+            return "ORA-00942: table or view does not exist"
+        case Dialect.sqlite:
+            return "no such table"
+        case _ as never:  # type: ignore[]
+            assert_never(never)
 
 
 def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
@@ -747,30 +768,6 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
-@contextmanager
-def redirect_table_does_not_exist(engine: Engine, /) -> Iterator[None]:
-    """Redirect to the `TableDoesNotExistError`."""
-    match dialect := get_dialect(engine):
-        case Dialect.mysql | Dialect.postgresql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.mssql:  # pragma: no cover
-            match = (
-                "Cannot drop the table .*, because it does not exist or you do "
-                "not have permission"
-            )
-        case Dialect.oracle:  # pragma: no cover
-            match = "ORA-00942: table or view does not exist"
-        case Dialect.sqlite:
-            match = "no such table"
-        case _ as never:  # type: ignore[]
-            assert_never(never)
-    with redirect_error(DatabaseError, TableDoesNotExistError, match=match):
-        yield
-
-
-class TableDoesNotExistError(Exception): ...
-
-
 def reflect_table(
     table_or_mapped_class: Table | type[Any],
     engine: Engine,
@@ -821,12 +818,12 @@ __all__ = [
     "get_columns",
     "get_dialect",
     "get_table",
+    "get_table_does_not_exist_message",
     "get_table_name",
     "insert_items",
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "parse_engine",
-    "redirect_table_does_not_exist",
     "serialize_engine",
 ]
