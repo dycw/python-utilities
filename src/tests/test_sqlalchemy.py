@@ -130,6 +130,7 @@ from utilities.sqlalchemy import (
     get_columns,
     get_dialect,
     get_table,
+    get_table_does_not_exist_message,
     get_table_name,
     insert_items,
     is_mapped_class,
@@ -932,6 +933,12 @@ class TestGetTable:
             GetTableError, match="Object .* must be a Table or mapped class; got .*"
         ):
             _ = get_table(type(None))
+
+
+class TestGetTableDoesNotExistMessage:
+    @given(engine=sqlite_engines())
+    def test_main(self, *, engine: Engine) -> None:
+        assert isinstance(get_table_does_not_exist_message(engine), str)
 
 
 class TestGetTableName:

@@ -524,23 +524,7 @@ def ensure_tables_dropped(
     engine: Engine, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
-    match dialect := get_dialect(engine):
-        case Dialect.mysql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # pragma: no cover
-            match = "table .* does not exist"
-        case Dialect.mssql:  # pragma: no cover
-            match = (
-                "Cannot drop the table .*, because it does not exist or you do "
-                "not have permission"
-            )
-        case Dialect.oracle:  # pragma: no cover
-            match = "ORA-00942: table or view does not exist"
-        case Dialect.sqlite:
-            match = "no such table"
-        case _ as never:  # type: ignore[]
-            assert_never(never)
-
+    match = get_table_does_not_exist_message(engine)
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
         with engine.begin() as conn:
@@ -618,6 +602,26 @@ class GetTableError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
+
+
+def get_table_does_not_exist_message(engine: Engine, /) -> str:
+    """Get the message for a non-existent table."""
+    match dialect := get_dialect(engine):
+        case Dialect.mysql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # pragma: no cover
+            return "table .* does not exist"
+        case Dialect.mssql:  # pragma: no cover
+            return (
+                "Cannot drop the table .*, because it does not exist or you do "
+                "not have permission"
+            )
+        case Dialect.oracle:  # pragma: no cover
+            return "ORA-00942: table or view does not exist"
+        case Dialect.sqlite:
+            return "no such table"
+        case _ as never:  # type: ignore[]
+            assert_never(never)
 
 
 def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
@@ -814,6 +818,7 @@ __all__ = [
     "get_columns",
     "get_dialect",
     "get_table",
+    "get_table_does_not_exist_message",
     "get_table_name",
     "insert_items",
     "is_mapped_class",
