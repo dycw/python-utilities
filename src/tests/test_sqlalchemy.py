@@ -83,7 +83,6 @@ from utilities.sqlalchemy import (
     Dialect,
     GetTableError,
     ParseEngineError,
-    TableDoesNotExistError,
     TablenameMixin,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -137,7 +136,6 @@ from utilities.sqlalchemy import (
     is_table_or_mapped_class,
     mapped_class_to_dict,
     parse_engine,
-    redirect_table_does_not_exist,
     reflect_table,
     serialize_engine,
 )
@@ -1199,18 +1197,6 @@ class TestRedirectToNoSuchSequenceError:
         seq = sqlalchemy.Sequence("example")
         with pytest.raises(NotImplementedError), engine.begin() as conn:
             _ = conn.scalar(seq)
-
-
-class TestRedirectTableDoesNotExist:
-    @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with (
-            pytest.raises(TableDoesNotExistError),
-            redirect_table_does_not_exist(engine),
-            engine.begin() as conn,
-        ):
-            _ = conn.execute(select(table))
 
 
 class TestReflectTable:
