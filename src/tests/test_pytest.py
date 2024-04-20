@@ -193,12 +193,53 @@ class TestThrottle:
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
         contents = f"""
             import datetime as dt
+
             from utilities.pytest import throttle
 
             @throttle(root={root_str!r}, duration={duration}, on_try={on_try})
             def test_main():
                 assert True
             """
+        _ = testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    @FLAKY
+    @pytest.mark.parametrize("asyncio_first", [pytest.param(True), pytest.param(False)])
+    @pytest.mark.parametrize("as_float", [pytest.param(True), pytest.param(False)])
+    @pytest.mark.parametrize("on_try", [pytest.param(True), pytest.param(False)])
+    def test_async(
+        self,
+        *,
+        testdir: Testdir,
+        tmp_path: Path,
+        asyncio_first: bool,
+        as_float: bool,
+        on_try: bool,
+    ) -> None:
+        root_str = str(tmp_path)
+        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
+        asyncio_str = "@pytest.mark.asyncio"
+        throttle_str = (
+            f"@throttle(root={root_str!r}, duration={duration}, on_try={on_try})"
+        )
+        if asyncio_first:
+            decorators = f"{asyncio_str}\n{throttle_str}"
+        else:
+            decorators = f"{throttle_str}\n{asyncio_str}"
+        contents = f"""
+import datetime as dt
+
+import pytest
+
+from utilities.pytest import throttle
+
+{decorators}
+async def test_main():
+    assert True
+        """
         _ = testdir.makepyfile(contents)
         testdir.runpytest().assert_outcomes(passed=1)
         testdir.runpytest().assert_outcomes(skipped=1)

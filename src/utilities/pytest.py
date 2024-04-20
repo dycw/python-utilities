@@ -15,6 +15,7 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
+from utilities.types import is_function_async
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -115,24 +116,29 @@ def throttle(
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
 
+        if is_function_async(func):
+
+            @wraps(func)
+            async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+                """The throttled async test function/method."""
+                path, now = _throttle_path_and_now(
+                    root_use, duration=duration, validate=validate
+                )
+                if on_try:
+                    _throttle_write(path, now)
+                    return await func(*args, **kwargs)
+                out = await func(*args, **kwargs)
+                _throttle_write(path, now)
+                return out
+
+            return wrapped_async
+
         @wraps(func)
-        def wrapped(*args: Any, **kwargs: Any) -> Any:
-            """The throttled test function/method."""
-            test = environ["PYTEST_CURRENT_TEST"]
-            path = ensure_path(root_use, _throttle_md5_hash(test), validate=validate)
-            if path.exists():
-                with path.open(mode="r") as fh:
-                    contents = fh.read()
-                prev = float(contents)
-            else:
-                prev = None
-            now = get_now(tz=UTC).timestamp()
-            if (
-                (skip is not None)
-                and (prev is not None)
-                and ((now - prev) < duration_to_float(duration))
-            ):
-                _ = skip(reason=f"{test} throttled")
+        def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+            """The throttled sync test function/method."""
+            path, now = _throttle_path_and_now(
+                root_use, duration=duration, validate=validate
+            )
             if on_try:
                 _throttle_write(path, now)
                 return func(*args, **kwargs)
@@ -140,9 +146,30 @@ def throttle(
             _throttle_write(path, now)
             return out
 
-        return wrapped
+        return wrapped_sync
 
     return wrapper
+
+
+def _throttle_path_and_now(
+    root: Path, /, *, duration: Duration = 1.0, validate: bool = False
+) -> tuple[Path, float]:
+    test = environ["PYTEST_CURRENT_TEST"]
+    path = ensure_path(root, _throttle_md5_hash(test), validate=validate)
+    if path.exists():
+        with path.open(mode="r") as fh:
+            contents = fh.read()
+        prev = float(contents)
+    else:
+        prev = None
+    now = get_now(tz=UTC).timestamp()
+    if (
+        (skip is not None)
+        and (prev is not None)
+        and ((now - prev) < duration_to_float(duration))
+    ):
+        _ = skip(reason=f"{test} throttled")
+    return path, now
 
 
 @cache

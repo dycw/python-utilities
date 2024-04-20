@@ -24,9 +24,11 @@ pluggy==1.4.0
     # via pytest
 pytest==8.1.1
     # via
+    #   pytest-asyncio
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
+pytest-asyncio==0.23.6
 pytest-cov==5.0.0
 pytest-randomly==3.15.0
 pytest-rerunfailures==14.0

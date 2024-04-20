@@ -65,6 +65,7 @@ dev = [
   "coverage-conditional-plugin",
   "exceptiongroup",
   "freezegun",
+  "pytest-asyncio",
   "pytest-cov",
   "pytest-instafail",
   "pytest-only",
@@ -190,7 +191,7 @@ zzz-test-polars = ["polars"]
 zzz-test-pqdm = ["pqdm"]
 zzz-test-pydantic = ["atomicwrites", "pydantic"]
 zzz-test-pyinstrument = ["atomicwrites", "pyinstrument"]
-zzz-test-pytest = ["atomicwrites"]
+zzz-test-pytest = ["atomicwrites", "pytest-asyncio"]
 zzz-test-pytest-check = ["pytest-check"]
 zzz-test-random = []
 zzz-test-re = []
@@ -344,6 +345,7 @@ xfail_strict = true
 
 # ruff
 [tool.ruff]
+extend-exclude = ["**/*.ipynb"]
 src = ["src"]
 target-version = "py310"
 unsafe-fixes = true
@@ -385,15 +387,9 @@ ignore = [
 select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
-"*.ipynb" = [
-  "B018",  # useless-expression
-  "F403",  # undefined-local-with-import-star
-  "F405",  # undefined-local-with-import-star-usage
-  "PLE1142",  # await-outside-async
-  "S101",  # assert-used
-]
 "src/tests/**/*.py" = [
   "PD901",  # pandas-df-variable-name
+  "S101",  # assert-used
 ]
 "src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
 
