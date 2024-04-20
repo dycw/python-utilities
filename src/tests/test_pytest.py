@@ -299,7 +299,6 @@ class TestThrottle:
         contents = f"""
             import pytest
 
-            from string import printable
             from utilities.pytest import throttle
 
             @pytest.mark.asyncio
@@ -321,7 +320,6 @@ class TestThrottle:
         contents = f"""
             import pytest
 
-            from string import printable
             from utilities.pytest import throttle
 
             @throttle(root={root_str!r}, duration=1.0)
