@@ -291,6 +291,50 @@ class TestThrottle:
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
+    @FLAKY
+    def test_async_mark_then_throttle(
+        self, *, testdir: Testdir, tmp_path: Path
+    ) -> None:
+        root_str = str(tmp_path)
+        contents = f"""
+            import pytest
+
+            from string import printable
+            from utilities.pytest import throttle
+
+            @pytest.mark.asyncio
+            @throttle(root={root_str!r}, duration=1.0)
+            async def test_main():
+                assert True
+            """
+        _ = testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    @FLAKY
+    def test_async_throttle_then_mark(
+        self, *, testdir: Testdir, tmp_path: Path
+    ) -> None:
+        root_str = str(tmp_path)
+        contents = f"""
+            import pytest
+
+            from string import printable
+            from utilities.pytest import throttle
+
+            @throttle(root={root_str!r}, duration=1.0)
+            @pytest.mark.asyncio
+            async def test_main():
+                assert True
+            """
+        _ = testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(passed=1)
+
     def test_signature(self) -> None:
         @throttle()
         def func(*, fix: bool) -> None:
