@@ -193,6 +193,7 @@ class TestThrottle:
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
         contents = f"""
             import datetime as dt
+
             from utilities.pytest import throttle
 
             @throttle(root={root_str!r}, duration={duration}, on_try={on_try})
