@@ -207,6 +207,46 @@ class TestThrottle:
         testdir.runpytest().assert_outcomes(passed=1)
 
     @FLAKY
+    @pytest.mark.parametrize("asyncio_first", [pytest.param(True), pytest.param(False)])
+    @pytest.mark.parametrize("as_float", [pytest.param(True), pytest.param(False)])
+    @pytest.mark.parametrize("on_try", [pytest.param(True), pytest.param(False)])
+    def test_async(
+        self,
+        *,
+        testdir: Testdir,
+        tmp_path: Path,
+        asyncio_first: bool,
+        as_float: bool,
+        on_try: bool,
+    ) -> None:
+        root_str = str(tmp_path)
+        duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
+        asyncio_str = "@pytest.mark.asyncio"
+        throttle_str = (
+            f"@throttle(root={root_str!r}, duration={duration}, on_try={on_try})"
+        )
+        if asyncio_first:
+            decorators = f"{asyncio_str}\n{throttle_str}"
+        else:
+            decorators = f"{throttle_str}\n{asyncio_str}"
+        contents = f"""
+import datetime as dt
+
+import pytest
+
+from utilities.pytest import throttle
+
+{decorators}
+async def test_main():
+    assert True
+        """
+        _ = testdir.makepyfile(contents)
+        testdir.runpytest().assert_outcomes(passed=1)
+        testdir.runpytest().assert_outcomes(skipped=1)
+        sleep(1.0)
+        testdir.runpytest().assert_outcomes(passed=1)
+
+    @FLAKY
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -284,48 +324,6 @@ class TestThrottle:
             @pytest.mark.parametrize('arg', [10 * printable])
             @throttle(root={root_str!r}, duration=1.0)
             def test_main(*, arg: str):
-                assert True
-            """
-        _ = testdir.makepyfile(contents)
-        testdir.runpytest().assert_outcomes(passed=1)
-        testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
-        testdir.runpytest().assert_outcomes(passed=1)
-
-    @FLAKY
-    def test_async_mark_then_throttle(
-        self, *, testdir: Testdir, tmp_path: Path
-    ) -> None:
-        root_str = str(tmp_path)
-        contents = f"""
-            import pytest
-
-            from utilities.pytest import throttle
-
-            @pytest.mark.asyncio
-            @throttle(root={root_str!r}, duration=1.0)
-            async def test_main():
-                assert True
-            """
-        _ = testdir.makepyfile(contents)
-        testdir.runpytest().assert_outcomes(passed=1)
-        testdir.runpytest().assert_outcomes(skipped=1)
-        sleep(1.0)
-        testdir.runpytest().assert_outcomes(passed=1)
-
-    @FLAKY
-    def test_async_throttle_then_mark(
-        self, *, testdir: Testdir, tmp_path: Path
-    ) -> None:
-        root_str = str(tmp_path)
-        contents = f"""
-            import pytest
-
-            from utilities.pytest import throttle
-
-            @throttle(root={root_str!r}, duration=1.0)
-            @pytest.mark.asyncio
-            async def test_main():
                 assert True
             """
         _ = testdir.makepyfile(contents)
