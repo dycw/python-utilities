@@ -15,10 +15,12 @@ readme = "README.md"
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
+atools = ["atools"]
 cacher = ["atomicwrites", "cachetools"]
 dev = [
   "ast-comments",
   "atomicwrites",
+  "atools",
   "beartype",
   "beautifulsoup4",
   "bidict",
@@ -102,6 +104,7 @@ test = [
 ]
 zzz-test-ast = []
 zzz-test-atomicwrites = ["atomicwrites"]
+zzz-test-atools = ["atools"]
 zzz-test-beartype = ["beartype"]
 zzz-test-bs4 = ["beautifulsoup4", "polars"]
 zzz-test-cacher = ["atomicwrites", "cachetools"]

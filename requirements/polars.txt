@@ -19,7 +19,7 @@ packaging==24.0
     #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 polars==0.20.21
 pytest==8.1.1

@@ -14,6 +14,7 @@ asciitree==0.3.3
     # via zarr
 ast-comments==1.2.2
 atomicwrites==1.4.1
+atools==0.14.2
 attrs==23.2.0
     # via
     #   hypothesis
@@ -96,6 +97,7 @@ fonttools==4.51.0
 fpdf2==2.7.8
 freezegun==1.4.0
 frozendict==2.4.2
+    # via atools
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
@@ -254,7 +256,7 @@ platformdirs==4.2.0
     # via
     #   hatch
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
@@ -266,7 +268,7 @@ psutil==5.9.8
     # via memory-profiler
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==15.0.2
+pyarrow==16.0.0
     # via streamlit
 pybind11==2.12.0
     # via cvxpy
