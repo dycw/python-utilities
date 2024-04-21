@@ -82,7 +82,7 @@ param==2.1.0
     #   pyviz-comms
 pillow==10.3.0
     # via bokeh
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 pytest==8.1.1
     # via
