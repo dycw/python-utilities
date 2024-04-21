@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from hmac import compare_digest
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Literal, NoReturn
 
 from streamlit import (
+    button,
+    empty,
     error,
     form,
     form_submit_button,
+    markdown,
     secrets,
     session_state,
     text_input,
@@ -15,6 +18,40 @@ from streamlit import stop as _stop
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from streamlit.runtime.state import WidgetArgs, WidgetCallback, WidgetKwargs
+    from streamlit.type_util import Key
+
+
+def centered_button(
+    label: str,
+    /,
+    *,
+    key: Key | None = None,
+    help: str | None = None,  # noqa: A002
+    on_click: WidgetCallback | None = None,
+    args: WidgetArgs | None = None,
+    kwargs: WidgetKwargs | None = None,
+    type: Literal["primary", "secondary"] = "secondary",  # noqa: A002
+    disabled: bool = False,
+    use_container_width: bool = False,
+) -> bool:
+    """A centered button."""
+    style = r"<style>.row-widget.stButton {text-align: center;}</style>"
+    _ = markdown(style, unsafe_allow_html=True)
+    with empty():
+        return button(
+            label,
+            key=key,
+            help=help,
+            on_click=on_click,
+            args=args,
+            kwargs=kwargs,
+            type=type,
+            disabled=disabled,
+            use_container_width=use_container_width,
+        )
+
 
 _USERNAME = "username"
 _PASSWORD = "password"  # noqa: S105
