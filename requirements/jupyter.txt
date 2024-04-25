@@ -38,7 +38,7 @@ charset-normalizer==3.3.2
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -130,7 +130,7 @@ jupyter-server-terminals==0.5.3
 jupyterlab==4.1.6
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-server==2.26.0
+jupyterlab-server==2.27.1
     # via jupyterlab
 markupsafe==2.1.5
     # via
@@ -176,11 +176,11 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars==0.20.21
+polars==0.20.22
 prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
@@ -223,7 +223,7 @@ pyzmq==26.0.2
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -264,7 +264,7 @@ terminado==0.18.1
     # via
     #   jupyter-server
     #   jupyter-server-terminals
-tinycss2==1.2.1
+tinycss2==1.3.0
     # via nbconvert
 tomli==2.0.1
     # via
@@ -313,5 +313,5 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.7.0
+websocket-client==1.8.0
     # via jupyter-server

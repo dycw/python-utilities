@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-sqlalchemy-polars --prerelease=disallow --output-file=requirements/sqlalchemy-polars.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -21,7 +21,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars==0.20.21
+polars==0.20.22
 pyhumps==3.8.0
 pytest==8.1.1
     # via

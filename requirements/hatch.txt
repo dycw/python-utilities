@@ -4,7 +4,7 @@ anyio==4.3.0
     # via httpx
 attrs==23.2.0
     # via hypothesis
-backports-tarfile==1.1.0
+backports-tarfile==1.1.1
     # via jaraco-context
 certifi==2024.2.2
     # via
@@ -14,7 +14,7 @@ click==8.1.7
     # via
     #   hatch
     #   userpath
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -32,7 +32,7 @@ filelock==3.13.4
     # via virtualenv
 h11==0.14.0
     # via httpcore
-hatch==1.9.4
+hatch==1.9.7
 hatchling==1.21.1
     # via hatch
 httpcore==1.0.5
@@ -78,7 +78,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via
     #   hatch
     #   virtualenv

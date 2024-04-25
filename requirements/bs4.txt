@@ -3,7 +3,7 @@
 attrs==23.2.0
     # via hypothesis
 beautifulsoup4==4.12.3
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -22,7 +22,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars==0.20.21
+polars==0.20.22
 pytest==8.1.1
     # via
     #   pytest-cov
