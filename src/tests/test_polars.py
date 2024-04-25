@@ -9,12 +9,14 @@ from polars.testing import assert_frame_equal
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
+    ColumnsToDictError,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema,
     _check_polars_dataframe_schema_inc,
     check_polars_dataframe,
+    columns_to_dict,
     join,
     nan_sum_agg,
     nan_sum_cols,
@@ -245,6 +247,24 @@ class TestCheckPolarsDataFrameSchemaInc:
         df = DataFrame({"foo": [0.0]})
         with pytest.raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema_inc(df, schema_inc)
+
+
+class TestColumnsToDict:
+    def test_main(self) -> None:
+        df = DataFrame(
+            [{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 3, "b": 13}],
+            schema={"a": Int64, "b": Int64},
+        )
+        mapping = columns_to_dict(df, "a", "b")
+        assert mapping == {1: 11, 2: 12, 3: 13}
+
+    def test_error(self) -> None:
+        df = DataFrame(
+            [{"a": 1, "b": 11}, {"a": 2, "b": 12}, {"a": 1, "b": 13}],
+            schema={"a": Int64, "b": Int64},
+        )
+        with pytest.raises(ColumnsToDictError, match="DataFrame must be unique on 'a'"):
+            _ = columns_to_dict(df, "a", "b")
 
 
 class TestJoin:

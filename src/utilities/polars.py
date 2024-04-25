@@ -284,6 +284,25 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         )
 
 
+def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
+    """Map a pair of columns into a dictionary. Must be unique on `key`."""
+    col_key = df[key]
+    if col_key.is_duplicated().any():
+        raise ColumnsToDictError(df=df, key=key)
+    col_value = df[value]
+    return dict(zip(col_key, col_value, strict=True))
+
+
+@dataclass(kw_only=True)
+class ColumnsToDictError(Exception):
+    df: DataFrame
+    key: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -358,9 +377,11 @@ class SetFirstRowAsColumnsError(Exception): ...
 
 __all__ = [
     "CheckPolarsDataFrameError",
+    "ColumnsToDictError",
     "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
     "check_polars_dataframe",
+    "columns_to_dict",
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
