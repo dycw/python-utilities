@@ -3,7 +3,7 @@
 attrs==23.2.0
     # via hypothesis
 cachetools==5.3.3
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

@@ -3,7 +3,7 @@
 atomicwrites==1.4.1
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

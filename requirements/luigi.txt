@@ -2,18 +2,18 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-luigi --prerelease=disallow --output-file=requirements/luigi.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
-docutils==0.21.1
+docutils==0.21.2
     # via python-daemon
 exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-freezegun==1.4.0
+freezegun==1.5.0
 hypothesis==6.100.1
 iniconfig==2.0.0
     # via pytest

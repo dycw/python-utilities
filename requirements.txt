@@ -22,9 +22,9 @@ attrs==23.2.0
     #   outcome
     #   referencing
     #   trio
-backports-tarfile==1.1.0
+backports-tarfile==1.1.1
     # via jaraco-context
-beartype==0.18.4
+beartype==0.18.5
 beautifulsoup4==4.12.3
 bidict==0.23.1
 bleach==6.1.0
@@ -61,7 +61,7 @@ colorlog==6.8.2
     # via optuna
 contourpy==1.2.1
     # via bokeh
-coverage==7.4.4
+coverage==7.5.0
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -72,7 +72,7 @@ defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
     # via virtualenv
-docutils==0.21.1
+docutils==0.21.2
     # via python-daemon
 ecos==2.0.13
     # via cvxpy
@@ -95,7 +95,7 @@ filelock==3.13.4
 fonttools==4.51.0
     # via fpdf2
 fpdf2==2.7.8
-freezegun==1.4.0
+freezegun==1.5.0
 frozendict==2.4.2
     # via atools
 gitdb==4.0.11
@@ -106,7 +106,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   wsproto
-hatch==1.9.4
+hatch==1.9.7
 hatchling==1.21.1
     # via hatch
 holoviews==1.18.3
@@ -126,6 +126,8 @@ idna==3.7
     #   trio
 importlib-metadata==7.1.0
     # via keyring
+importlib-resources==6.4.0
+    # via pypiserver
 iniconfig==2.0.0
     # via pytest
 jaraco-classes==3.4.0
@@ -219,6 +221,7 @@ packaging==24.0
     #   hatchling
     #   holoviews
     #   optuna
+    #   pypiserver
     #   pytest
     #   pytest-rerunfailures
     #   streamlit
@@ -231,7 +234,7 @@ pandas==2.2.2
     #   panel
     #   streamlit
     #   xarray
-panel==1.4.1
+panel==1.4.2
     # via holoviews
 param==2.1.0
     # via
@@ -252,7 +255,7 @@ pillow==10.3.0
     #   streamlit
 pip==24.0
     # via pypiserver
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via
     #   hatch
     #   virtualenv
@@ -260,7 +263,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.21
+polars-lts-cpu==0.20.22
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -274,9 +277,9 @@ pybind11==2.12.0
     # via cvxpy
 pycparser==2.22
     # via cffi
-pydantic==2.7.0
+pydantic==2.7.1
     # via fastapi
-pydantic-core==2.18.1
+pydantic-core==2.18.2
     # via pydantic
 pydeck==0.8.0
     # via streamlit
@@ -284,7 +287,7 @@ pygments==2.17.2
     # via rich
 pyhumps==3.8.0
 pyinstrument==4.6.2
-pypiserver==2.0.1
+pypiserver==2.1.1
 pysocks==1.7.1
     # via urllib3
 pytest==8.1.1
@@ -324,7 +327,7 @@ pyyaml==6.0.1
     #   optuna
 qdldl==0.1.7.post2
     # via osqp
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -350,7 +353,7 @@ scipy==1.13.0
     #   scs
 scs==3.2.4.post1
     # via cvxpy
-selenium==4.19.0
+selenium==4.20.0
 semver==3.0.2
 setuptools==69.5.1
     # via python-daemon
