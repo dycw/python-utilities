@@ -552,5 +552,8 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with raises(YieldWeekdaysError):
+        with raises(
+            YieldWeekdaysError,
+            match="Invalid arguments: start=None, end=None, days=None",
+        ):
             _ = list(yield_weekdays())
