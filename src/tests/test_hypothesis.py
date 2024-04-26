@@ -96,7 +96,6 @@ from utilities.pandas import (
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
     IndexA,
-    sort_index,
     string,
 )
 from utilities.pathvalidate import valid_path
@@ -492,7 +491,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, sort_index(index))
+            assert_index_equal(index, index.sort_values())
 
     @given(
         data=data(),
@@ -511,7 +510,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, sort_index(index))
+            assert_index_equal(index, index.sort_values())
 
     @given(
         data=data(),
@@ -530,7 +529,7 @@ class TestIndexes:
             assert not index.duplicated().any()
         assert index.name == name
         if sort:
-            assert_index_equal(index, sort_index(index))
+            assert_index_equal(index, index.sort_values())
 
 
 class TestIntArrays:

@@ -125,7 +125,7 @@ jsonschema==4.21.1
     # via altair
 jsonschema-specifications==2023.12.1
     # via jsonschema
-keyring==25.1.0
+keyring==25.2.0
     # via hatch
 linkify-it-py==2.0.3
     # via panel

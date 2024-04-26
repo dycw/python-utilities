@@ -24,7 +24,7 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 from pytest import mark, param, raises
 
 from utilities.datetime import TODAY_UTC, UTC
-from utilities.hypothesis import int_indexes, text_ascii, timestamps
+from utilities.hypothesis import text_ascii, timestamps
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
@@ -38,7 +38,6 @@ from utilities.pandas import (
     CheckPandasDataFrameError,
     CheckRangeIndexError,
     EmptyPandasConcatError,
-    IndexI,
     Int64,
     ReindexToSetError,
     ReindexToSubSetError,
@@ -59,10 +58,8 @@ from utilities.pandas import (
     reindex_to_set,
     reindex_to_subset,
     reindex_to_superset,
-    rename_index,
     series_max,
     series_min,
-    sort_index,
     string,
     timestamp_to_date,
     timestamp_to_datetime,
@@ -196,11 +193,11 @@ class TestCheckPandasDataFrame:
         check_pandas_dataframe(DataFrame())
 
     def test_columns_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index([]))
         check_pandas_dataframe(df, columns=[])
 
     def test_columns_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -210,11 +207,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, columns=["other"])
 
     def test_dtypes_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index([]))
         check_pandas_dataframe(df, dtypes={})
 
     def test_dtypes_error_set_of_columns(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=[])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index([]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -224,7 +221,7 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, dtypes={"value": int})
 
     def test_dtypes_error_order_of_columns(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["a", "b"])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["a", "b"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -234,11 +231,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, dtypes={"b": float, "a": float})
 
     def test_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"]))
         check_pandas_dataframe(df, length=1)
 
     def test_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(1), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -249,11 +246,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, length=2)
 
     def test_min_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(2), columns=Index(["value"]))
         check_pandas_dataframe(df, min_length=1)
 
     def test_min_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -264,11 +261,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, min_length=1)
 
     def test_max_length_pass(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(0), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["value"]))
         check_pandas_dataframe(df, max_length=1)
 
     def test_max_length_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(2), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(
@@ -279,11 +276,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, max_length=1)
 
     def test_sorted_pass(self) -> None:
-        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
+        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=Index(["value"]))
         check_pandas_dataframe(df, sorted="value")
 
     def test_sorted_error(self) -> None:
-        df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=["value"])
+        df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be sorted on .*\n\n.*\.", flags=DOTALL),
@@ -340,11 +337,11 @@ class TestCheckPandasDataFrame:
             check_pandas_dataframe(df, standard=True)
 
     def test_unique_pass(self) -> None:
-        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=["value"])
+        df = DataFrame([[0.0], [1.0]], index=RangeIndex(2), columns=Index(["value"]))
         check_pandas_dataframe(df, unique="value")
 
     def test_unique_error(self) -> None:
-        df = DataFrame(0.0, index=RangeIndex(2), columns=["value"])
+        df = DataFrame(0.0, index=RangeIndex(2), columns=Index(["value"]))
         with raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be unique on .*\n\n.*\.", flags=DOTALL),
@@ -482,13 +479,6 @@ class TestRedirectEmptyPandasConcat:
             _ = concat([])
 
 
-class TestRenameIndex:
-    @given(index=int_indexes(), name=text_ascii())
-    def test_main(self, *, index: IndexI, name: str) -> None:
-        renamed = rename_index(index, name)
-        assert renamed.name == name
-
-
 class TestSeriesMinMax:
     @mark.parametrize(
         ("x_v", "y_v", "dtype", "expected_min_v", "expected_max_v"),
@@ -564,13 +554,6 @@ class TestSeriesMinMax:
             ),
         ):
             _ = func(x, y)
-
-
-class TestSortIndex:
-    @given(index=int_indexes())
-    def test_main(self, *, index: IndexI) -> None:
-        sorted_ = sort_index(index)
-        assert_index_equal(sorted_, cast(Any, index.sort_values()))
 
 
 class TestTimestampMinMaxAsDate:
