@@ -198,7 +198,7 @@ class TestCheckPandasDataFrame:
 
     def test_columns_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have columns .*; got .*\n\n.*\.", flags=DOTALL
@@ -212,7 +212,7 @@ class TestCheckPandasDataFrame:
 
     def test_dtypes_error_set_of_columns(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=Index([]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
@@ -222,7 +222,7 @@ class TestCheckPandasDataFrame:
 
     def test_dtypes_error_order_of_columns(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["a", "b"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must have dtypes .*; got .*\n\n.*\.", flags=DOTALL
@@ -236,7 +236,7 @@ class TestCheckPandasDataFrame:
 
     def test_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(1), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -251,7 +251,7 @@ class TestCheckPandasDataFrame:
 
     def test_min_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(0), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -266,7 +266,7 @@ class TestCheckPandasDataFrame:
 
     def test_max_length_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(
                 r"DataFrame must satisfy the length requirements; got .*\n\n.*\.",
@@ -281,7 +281,7 @@ class TestCheckPandasDataFrame:
 
     def test_sorted_error(self) -> None:
         df = DataFrame([[1.0], [0.0]], index=RangeIndex(2), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be sorted on .*\n\n.*\.", flags=DOTALL),
         ):
@@ -342,7 +342,7 @@ class TestCheckPandasDataFrame:
 
     def test_unique_error(self) -> None:
         df = DataFrame(0.0, index=RangeIndex(2), columns=Index(["value"]))
-        with pytest.raises(
+        with raises(
             CheckPandasDataFrameError,
             match=re.compile(r"DataFrame must be unique on .*\n\n.*\.", flags=DOTALL),
         ):
