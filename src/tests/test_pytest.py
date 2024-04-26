@@ -21,7 +21,7 @@ class TestPytestOptions:
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
-            from pytest import mark,param,fixture,raises
+            from pytest import mark
 
             @mark.unknown
             def test_main():
@@ -45,8 +45,6 @@ class TestPytestOptions:
             )
         _ = testdir.makepyfile(
             """
-            from pytest import mark
-
             def test_main():
                 assert True
             """
