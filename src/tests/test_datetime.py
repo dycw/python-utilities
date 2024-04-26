@@ -518,7 +518,7 @@ class TestYieldDays:
         assert all(d <= end for d in dates)
 
     def test_error(self) -> None:
-        with pytest.raises(
+        with raises(
             YieldDaysError, match="Invalid arguments: start=None, end=None, days=None"
         ):
             _ = list(yield_days())
