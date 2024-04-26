@@ -21,7 +21,7 @@ executing==2.0.1
 hypothesis==6.100.1
 iniconfig==2.0.0
     # via pytest
-ipython==8.23.0
+ipython==8.24.0
 jedi==0.19.1
     # via ipython
 matplotlib-inline==0.1.7

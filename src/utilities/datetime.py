@@ -313,6 +313,44 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     return f"d{days},{tail}"
 
 
+def yield_days(
+    *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
+) -> Iterator[dt.date]:
+    """Yield the days in a range."""
+    if (start is not None) and (end is not None) and (days is None):
+        date = start
+        while date <= end:
+            yield date
+            date += dt.timedelta(days=1)
+        return
+    if (start is not None) and (end is None) and (days is not None):
+        date = start
+        for _ in range(days):
+            yield date
+            date += dt.timedelta(days=1)
+        return
+    if (start is None) and (end is not None) and (days is not None):
+        date = end
+        for _ in range(days):
+            yield date
+            date -= dt.timedelta(days=1)
+        return
+    raise YieldDaysError(start=start, end=end, days=days)
+
+
+@dataclass(kw_only=True, slots=True)
+class YieldDaysError(Exception):
+    start: dt.date | None
+    end: dt.date | None
+    days: int | None
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid arguments: start={self.start}, end={self.end}, days={self.days}"
+        )
+
+
 def yield_weekdays(
     *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
 ) -> Iterator[dt.date]:
@@ -322,22 +360,33 @@ def yield_weekdays(
         while date <= end:
             yield date
             date = round_to_next_weekday(date + dt.timedelta(days=1))
-    elif (start is not None) and (end is None) and (days is not None):
+        return
+    if (start is not None) and (end is None) and (days is not None):
         date = round_to_next_weekday(start)
         for _ in range(days):
             yield date
             date = round_to_next_weekday(date + dt.timedelta(days=1))
-    elif (start is None) and (end is not None) and (days is not None):
+        return
+    if (start is None) and (end is not None) and (days is not None):
         date = round_to_prev_weekday(end)
         for _ in range(days):
             yield date
             date = round_to_prev_weekday(date - dt.timedelta(days=1))
-    else:
-        msg = f"Invalid arguments: {start=}, {end=}, {days=}"
-        raise YieldWeekdaysError(msg)
+        return
+    raise YieldWeekdaysError(start=start, end=end, days=days)
 
 
-class YieldWeekdaysError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class YieldWeekdaysError(Exception):
+    start: dt.date | None
+    end: dt.date | None
+    days: int | None
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Invalid arguments: start={self.start}, end={self.end}, days={self.days}"
+        )
 
 
 __all__ = [
@@ -354,6 +403,7 @@ __all__ = [
     "TODAY_TOKYO",
     "TODAY_UTC",
     "UTC",
+    "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
     "date_to_datetime",
@@ -382,5 +432,6 @@ __all__ = [
     "serialize_datetime",
     "serialize_time",
     "serialize_timedelta",
+    "yield_days",
     "yield_weekdays",
 ]
