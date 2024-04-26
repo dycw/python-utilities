@@ -3,10 +3,10 @@ from __future__ import annotations
 import re
 from re import DOTALL
 
-import pytest
 from bs4 import BeautifulSoup
 from polars import DataFrame, Utf8
 from polars.testing import assert_frame_equal
+from pytest import raises
 
 from utilities.bs4 import TableTagToDataFrameError, yield_tables
 from utilities.text import strip_and_dedent
@@ -152,7 +152,7 @@ class TestYieldTables:
             </table>
         """
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
-        with pytest.raises(
+        with raises(
             TableTagToDataFrameError,
             match=re.compile(
                 r"Table .* must contain exactly one `th` tag; got .*, .* and perhaps more\.",

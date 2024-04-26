@@ -4,7 +4,7 @@ from operator import itemgetter
 from time import sleep
 from typing import TYPE_CHECKING
 
-import pytest
+from pytest import raises
 
 from tests.conftest import FLAKY
 from utilities.cacher import cache_to_disk
@@ -106,5 +106,5 @@ class TestCacheToDisk:
 
     def test_rerun_not_a_boolean(self, *, tmp_path: Path) -> None:
         func = cache_to_disk(root=tmp_path)(identity)
-        with pytest.raises(EnsureClassError):
+        with raises(EnsureClassError):
             _ = func(0, rerun=None)  # type: ignore[]

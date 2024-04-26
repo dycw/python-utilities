@@ -6,7 +6,6 @@ from enum import auto
 from re import search
 from typing import TYPE_CHECKING, Any
 
-import pytest
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
@@ -24,6 +23,7 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
+from pytest import mark, param
 
 import utilities.click
 from utilities.click import (
@@ -192,13 +192,9 @@ class TestFileAndDirPaths:
 
 
 class TestLocalSchedulerOption:
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("args", "expected"),
-        [
-            pytest.param([], True),
-            pytest.param(["-ls"], True),
-            pytest.param(["-nls"], False),
-        ],
+        [param([], True), param(["-ls"], True), param(["-nls"], False)],
     )
     def test_default_local(self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
@@ -210,13 +206,9 @@ class TestLocalSchedulerOption:
         assert result.exit_code == 0
         assert result.stdout == f"local_scheduler = {expected}\n"
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("args", "expected"),
-        [
-            pytest.param([], False),
-            pytest.param(["-ls"], True),
-            pytest.param(["-nls"], False),
-        ],
+        [param([], False), param(["-ls"], True), param(["-nls"], False)],
     )
     def test_default_central(self, *, args: SequenceStrs, expected: bool) -> None:
         @command()
@@ -244,22 +236,22 @@ class TestLogLevelOption:
 
 class TestParameters:
     cases = (
-        pytest.param(Date(), dt.date, dates(), serialize_date),
-        pytest.param(
+        param(Date(), dt.date, dates(), serialize_date),
+        param(
             DateTime(), dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
         ),
-        pytest.param(
+        param(
             utilities.click.Engine(),
             sqlalchemy.Engine,
             sqlite_engines(),
             serialize_engine,
         ),
-        pytest.param(Time(), dt.time, times(), serialize_time),
-        pytest.param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
+        param(Time(), dt.time, times(), serialize_time),
+        param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )
 
     @given(data=data())
-    @pytest.mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_argument(
         self,
         *,
@@ -285,7 +277,7 @@ class TestParameters:
         assert result.exit_code == 2
 
     @given(data=data())
-    @pytest.mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
     def test_option(
         self,
         *,

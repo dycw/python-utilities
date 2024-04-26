@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import pytest
+from pytest import mark, param, raises
 
 from utilities.fastapi import APIRouter
 
 
 class TestAPIRouter:
-    @pytest.mark.parametrize("route", [pytest.param("/"), pytest.param("/home")])
+    @mark.parametrize("route", [param("/"), param("/home")])
     def test_main(self, route: str) -> None:
         router = APIRouter()
 
@@ -17,7 +17,7 @@ class TestAPIRouter:
     def test_error(self) -> None:
         router = APIRouter()
 
-        with pytest.raises(ValueError, match="Invalid route"):
+        with raises(ValueError, match="Invalid route"):
 
             @router.get("/home/")
             def _() -> None:

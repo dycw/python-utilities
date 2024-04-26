@@ -4,7 +4,7 @@ from pathlib import Path
 from re import search
 from subprocess import CalledProcessError, check_call
 
-import pytest
+from pytest import raises
 
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (
@@ -39,7 +39,7 @@ class TestGetShellOutput:
 
     def test_no_activate(self, *, tmp_path: Path) -> None:
         venv = Path(tmp_path, ".venv")
-        with pytest.raises(GetShellOutputError):
+        with raises(GetShellOutputError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
 
@@ -61,5 +61,5 @@ class TestTabulateCalledProcessError:
             """
             assert result == strip_and_dedent(expected)
         else:
-            with pytest.raises(CalledProcessError):
+            with raises(CalledProcessError):
                 which()

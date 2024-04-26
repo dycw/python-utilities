@@ -3,7 +3,7 @@ from __future__ import annotations
 from os import getenv
 from typing import TYPE_CHECKING
 
-import pytest
+from pytest import LogCaptureFixture, fixture, mark
 
 from utilities.timer import Timer
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
     from _pytest.fixtures import SubRequest
 
-FLAKY = pytest.mark.flaky(reruns=5, reruns_delay=1)
+FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 
 
 # hypothesis
@@ -37,15 +37,13 @@ except ModuleNotFoundError:
 else:
     setup_loguru()
 
-    @pytest.fixture()
-    def caplog(
-        *, caplog: pytest.LogCaptureFixture
-    ) -> Iterator[pytest.LogCaptureFixture]:
+    @fixture()
+    def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
         handler_id = logger.add(caplog.handler, format="{message}")
         yield caplog
         logger.remove(handler_id)
 
-    @pytest.fixture(autouse=True)
+    @fixture(autouse=True)
     def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
         """Log current test; usage:
 
