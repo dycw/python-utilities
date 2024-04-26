@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
 from hypothesis import given
 from hypothesis.strategies import floats, integers
 from numpy import array, isfinite, isnan, nan
 from numpy.testing import assert_allclose, assert_equal
+from pytest import mark, param
 
 from utilities.hypothesis import float_arrays
 from utilities.numpy import NDArrayF1, is_between_or_nan
@@ -17,16 +17,16 @@ if TYPE_CHECKING:
 
 
 class TestPPF:
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("values", "expected"),
         [
-            pytest.param([], []),
-            pytest.param([0.0], [0.0]),
-            pytest.param([0.0, 0.1], [-1.0, 1.0]),
-            pytest.param([0.0, 0.1, 0.2], [-1.0, 0.0, 1.0]),
-            pytest.param([0.0, 0.1, 0.2, 0.3], [-1.0, -0.2891889, 0.2891889, 1.0]),
-            pytest.param([nan], [nan]),
-            pytest.param([0.0, nan, 0.1], [-1.0, nan, 1.0]),
+            param([], []),
+            param([0.0], [0.0]),
+            param([0.0, 0.1], [-1.0, 1.0]),
+            param([0.0, 0.1, 0.2], [-1.0, 0.0, 1.0]),
+            param([0.0, 0.1, 0.2, 0.3], [-1.0, -0.2891889, 0.2891889, 1.0]),
+            param([nan], [nan]),
+            param([0.0, nan, 0.1], [-1.0, nan, 1.0]),
         ],
     )
     def test_examples(

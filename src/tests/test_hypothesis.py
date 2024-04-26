@@ -6,7 +6,6 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-import pytest
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -41,6 +40,7 @@ from numpy import (
 )
 from pandas import Timestamp
 from pandas.testing import assert_index_equal
+from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
@@ -124,10 +124,7 @@ class TestAssumeDoesNotRaise:
     def test_no_match_and_not_suppressed(self, *, x: bool) -> None:
         msg = "x is True"
         if x is True:
-            with (
-                pytest.raises(ValueError, match=msg),
-                assume_does_not_raise(RuntimeError),
-            ):
+            with raises(ValueError, match=msg), assume_does_not_raise(RuntimeError):
                 raise ValueError(msg)
 
     @given(x=booleans())
@@ -143,7 +140,7 @@ class TestAssumeDoesNotRaise:
         msg = "x is True"
         if x is True:
             with (
-                pytest.raises(ValueError, match=msg),
+                raises(ValueError, match=msg),
                 assume_does_not_raise(ValueError, match="wrong"),
             ):
                 raise ValueError(msg)
@@ -656,12 +653,11 @@ class TestLiftDraw:
 
 class TestListsFixedLength:
     @given(data=data(), size=integers(1, 10))
-    @pytest.mark.parametrize(
-        "unique", [pytest.param(True, id="unique"), pytest.param(False, id="no unique")]
+    @mark.parametrize(
+        "unique", [param(True, id="unique"), param(False, id="no unique")]
     )
-    @pytest.mark.parametrize(
-        "sorted_",
-        [pytest.param(True, id="sorted"), pytest.param(False, id="no sorted")],
+    @mark.parametrize(
+        "sorted_", [param(True, id="sorted"), param(False, id="no sorted")]
     )
     def test_main(
         self, *, data: DataObject, size: int, unique: bool, sorted_: bool
@@ -719,7 +715,7 @@ class TestSlices:
 
     @given(data=data(), iter_len=integers(0, 10))
     def test_error(self, *, data: DataObject, iter_len: int) -> None:
-        with pytest.raises(
+        with raises(
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
@@ -1095,7 +1091,7 @@ class TestVersions:
     def test_error(self, data: DataObject) -> None:
         version1, version2 = data.draw(lists_fixed_length(versions(), 2))
         _ = assume(version1 != version2)
-        with pytest.raises(InvalidArgument):
+        with raises(InvalidArgument):
             _ = data.draw(
                 versions(
                     min_version=max(version1, version2),

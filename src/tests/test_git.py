@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
+from pytest import raises
 
 from utilities.git import (
     GetRepoRootError,
@@ -46,7 +46,7 @@ class TestGetRepoRoot:
         assert result == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with pytest.raises(GetRepoRootError):
+        with raises(GetRepoRootError):
             _ = get_repo_root(cwd=tmp_path)
 
 

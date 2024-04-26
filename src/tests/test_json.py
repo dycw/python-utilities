@@ -5,7 +5,6 @@ from math import isnan
 from operator import eq, neg
 from typing import TYPE_CHECKING, Any
 
-import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
@@ -35,6 +34,7 @@ from hypothesis.strategies import (
     tuples,
     uuids,
 )
+from pytest import mark, param, raises
 from typing_extensions import override
 
 from utilities.datetime import NOW_HK, UTC
@@ -63,23 +63,23 @@ if TYPE_CHECKING:
 
 class TestSerializeAndDeserialize:
     @given(data=data())
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         "elements",
         [
-            pytest.param(booleans()),
-            pytest.param(characters()),
-            pytest.param(dates()),
-            pytest.param(datetimes(timezones=just(UTC) | none())),
-            pytest.param(fractions()),
-            pytest.param(ip_addresses(v=4)),
-            pytest.param(ip_addresses(v=6)),
-            pytest.param(lists(integers(), max_size=3)),
-            pytest.param(none()),
-            pytest.param(temp_paths()),
-            pytest.param(text()),
-            pytest.param(timedeltas()),
-            pytest.param(times()),
-            pytest.param(uuids()),
+            param(booleans()),
+            param(characters()),
+            param(dates()),
+            param(datetimes(timezones=just(UTC) | none())),
+            param(fractions()),
+            param(ip_addresses(v=4)),
+            param(ip_addresses(v=6)),
+            param(lists(integers(), max_size=3)),
+            param(none()),
+            param(temp_paths()),
+            param(text()),
+            param(timedeltas()),
+            param(times()),
+            param(uuids()),
         ],
     )
     def test_main(self, *, data: DataObject, elements: SearchStrategy[Any]) -> None:
@@ -152,7 +152,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(0, 10))
-    @pytest.mark.parametrize("strategy", [pytest.param(frozensets), pytest.param(sets)])
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_sortable(
         self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
     ) -> None:
@@ -161,7 +161,7 @@ class TestSerializeAndDeserialize:
         self._assert_standard(x, y, eq=eq)
 
     @given(data=data(), n=integers(2, 10))
-    @pytest.mark.parametrize("strategy", [pytest.param(frozensets), pytest.param(sets)])
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
     def test_sets_unsortable(
         self,
         *,
@@ -212,15 +212,13 @@ class TestSerializeAndDeserialize:
         assert res is expected
 
     def test_error_timezone(self) -> None:
-        with pytest.raises(
+        with raises(
             JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
         ):
             _ = serialize(NOW_HK)
 
     def test_error(self) -> None:
-        with pytest.raises(
-            JsonSerializationError, match=r"Unsupported type: Sentinel\."
-        ):
+        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel\."):
             _ = serialize(sentinel)
 
     def _assert_standard(
@@ -249,9 +247,7 @@ class TestSerialize:
         class Example2: ...
 
         extra = {Example2: ("example", neg)}
-        with pytest.raises(
-            JsonSerializationError, match=r"Unsupported type: Example1\."
-        ):
+        with raises(JsonSerializationError, match=r"Unsupported type: Example1\."):
             _ = serialize(x, extra=extra)
 
 
@@ -263,7 +259,7 @@ class TestDeserialization:
 
     def test_error_unknown_class(self) -> None:
         ser = dumps({_CLASS: "unknown", _VALUE: None})
-        with pytest.raises(JsonDeserializationError):
+        with raises(JsonDeserializationError):
             _ = deserialize(ser)
 
     @given(n=integers())
@@ -280,5 +276,5 @@ class TestDeserialization:
         extra_ser = {Example: ("example", f_ser)}
         ser = serialize(x, extra=extra_ser)
         extra_des = {"wrong": neg}
-        with pytest.raises(JsonDeserializationError):
+        with raises(JsonDeserializationError):
             _ = deserialize(ser, extra=extra_des)

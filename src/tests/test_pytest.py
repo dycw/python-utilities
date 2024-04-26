@@ -4,7 +4,7 @@ from inspect import signature
 from time import sleep
 from typing import TYPE_CHECKING
 
-import pytest
+from pytest import mark, param
 
 from tests.conftest import FLAKY
 from utilities.pytest import throttle
@@ -21,9 +21,9 @@ class TestPytestOptions:
     def test_unknown_mark(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(
             """
-            import pytest
+            from pytest import mark,param,fixture,raises
 
-            @pytest.mark.unknown
+            @mark.unknown
             def test_main():
                 assert True
             """
@@ -32,7 +32,7 @@ class TestPytestOptions:
         result.assert_outcomes(errors=1)
         result.stdout.re_match_lines([r".*Unknown pytest\.mark\.unknown"])
 
-    @pytest.mark.parametrize("configure", [pytest.param(True), pytest.param(False)])
+    @mark.parametrize("configure", [param(True), param(False)])
     def test_unknown_option(self, *, configure: bool, testdir: Testdir) -> None:
         if configure:
             _ = testdir.makeconftest(
@@ -54,12 +54,9 @@ class TestPytestOptions:
         result = testdir.runpytest("--unknown")
         result.stderr.re_match_lines([r".*unrecognized arguments.*"])
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("case", "passed", "skipped", "matches"),
-        [
-            pytest.param([], 0, 1, [".*3: pass --slow"]),
-            pytest.param(["--slow"], 1, 0, []),
-        ],
+        [param([], 0, 1, [".*3: pass --slow"]), param(["--slow"], 1, 0, [])],
     )
     def test_one_mark_and_option(
         self,
@@ -88,9 +85,9 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            import pytest
+            from pytest import mark,param,fixture,raises
 
-            @pytest.mark.slow
+            @mark.slow
             def test_main():
                 assert True
             """
@@ -99,10 +96,10 @@ class TestPytestOptions:
         result.assert_outcomes(passed=passed, skipped=skipped)
         result.stdout.re_match_lines(list(matches))
 
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("case", "passed", "skipped", "matches"),
         [
-            pytest.param(
+            param(
                 [],
                 1,
                 3,
@@ -112,19 +109,19 @@ class TestPytestOptions:
                     "SKIPPED.*: pass --slow --fast",
                 ],
             ),
-            pytest.param(
+            param(
                 ["--slow"],
                 2,
                 2,
                 ["SKIPPED.*: pass --fast", "SKIPPED.*: pass --slow --fast"],
             ),
-            pytest.param(
+            param(
                 ["--fast"],
                 2,
                 2,
                 ["SKIPPED.*: pass --slow", "SKIPPED.*: pass --slow --fast"],
             ),
-            pytest.param(["--slow", "--fast"], 4, 0, []),
+            param(["--slow", "--fast"], 4, 0, []),
         ],
     )
     def test_two_marks_and_options(
@@ -158,21 +155,21 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            import pytest
+            from pytest import mark,param,fixture,raises
 
             def test_none():
                 assert True
 
-            @pytest.mark.slow
+            @mark.slow
             def test_slow():
                 assert True
 
-            @pytest.mark.fast
+            @mark.fast
             def test_fast():
                 assert True
 
-            @pytest.mark.slow
-            @pytest.mark.fast
+            @mark.slow
+            @mark.fast
             def test_both():
                 assert True
             """
@@ -184,8 +181,8 @@ class TestPytestOptions:
 
 class TestThrottle:
     @FLAKY
-    @pytest.mark.parametrize("as_float", [pytest.param(True), pytest.param(False)])
-    @pytest.mark.parametrize("on_try", [pytest.param(True), pytest.param(False)])
+    @mark.parametrize("as_float", [param(True), param(False)])
+    @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(
         self, *, testdir: Testdir, tmp_path: Path, as_float: bool, on_try: bool
     ) -> None:
@@ -207,9 +204,9 @@ class TestThrottle:
         testdir.runpytest().assert_outcomes(passed=1)
 
     @FLAKY
-    @pytest.mark.parametrize("asyncio_first", [pytest.param(True), pytest.param(False)])
-    @pytest.mark.parametrize("as_float", [pytest.param(True), pytest.param(False)])
-    @pytest.mark.parametrize("on_try", [pytest.param(True), pytest.param(False)])
+    @mark.parametrize("asyncio_first", [param(True), param(False)])
+    @mark.parametrize("as_float", [param(True), param(False)])
+    @mark.parametrize("on_try", [param(True), param(False)])
     def test_async(
         self,
         *,
@@ -221,7 +218,7 @@ class TestThrottle:
     ) -> None:
         root_str = str(tmp_path)
         duration = "1.0" if as_float else "dt.timedelta(seconds=1.0)"
-        asyncio_str = "@pytest.mark.asyncio"
+        asyncio_str = "@mark.asyncio"
         throttle_str = (
             f"@throttle(root={root_str!r}, duration={duration}, on_try={on_try})"
         )
@@ -232,7 +229,7 @@ class TestThrottle:
         contents = f"""
 import datetime as dt
 
-import pytest
+from pytest import mark,param,fixture,raises
 
 from utilities.pytest import throttle
 
@@ -250,12 +247,12 @@ async def test_main():
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
-            import pytest
+            from pytest import mark,param,fixture,raises
 
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
 
-            @pytest.fixture
+            @fixture
             def is_pass(request):
                 return request.config.getoption("--pass")
             """
@@ -282,12 +279,12 @@ async def test_main():
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
-            import pytest
+            from pytest import mark,param,fixture,raises
 
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
 
-            @pytest.fixture
+            @fixture
             def is_pass(request):
                 return request.config.getoption("--pass")
             """
@@ -316,12 +313,12 @@ async def test_main():
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
-            import pytest
+            from pytest import mark,param,fixture,raises
 
             from string import printable
             from utilities.pytest import throttle
 
-            @pytest.mark.parametrize('arg', [10 * printable])
+            @mark.parametrize('arg', [10 * printable])
             @throttle(root={root_str!r}, duration=1.0)
             def test_main(*, arg: str):
                 assert True

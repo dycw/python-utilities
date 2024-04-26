@@ -3,9 +3,9 @@ from __future__ import annotations
 from enum import Enum, auto
 from typing import cast
 
-import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
+from pytest import raises
 
 from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 
@@ -37,7 +37,7 @@ class TestParseEnum:
         class Example(Enum):
             pass
 
-        with pytest.raises(ParseEnumError):
+        with raises(ParseEnumError):
             _ = parse_enum(Example, "not-a-member")
 
     @given(data=data())
@@ -47,7 +47,7 @@ class TestParseEnum:
             MEMBER = auto()
 
         member = data.draw(sampled_from(Example))
-        with pytest.raises(ParseEnumError):
+        with raises(ParseEnumError):
             _ = parse_enum(Example, member.name, case_sensitive=False)
 
 

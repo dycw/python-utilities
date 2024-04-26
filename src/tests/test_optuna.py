@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import pytest
 from optuna import create_study
+from pytest import approx
 
 from utilities.optuna import get_best_params, make_objective, suggest_bool
 
@@ -26,8 +26,8 @@ class TestGetBestParams:
             x: float
 
         params = get_best_params(study, Params)
-        assert params.x == pytest.approx(2.0, abs=1e-2)
-        assert study.best_value == pytest.approx(0.0, abs=1e-4)
+        assert params.x == approx(2.0, abs=1e-2)
+        assert study.best_value == approx(0.0, abs=1e-4)
 
 
 class TestMakeObjective:
@@ -44,8 +44,8 @@ class TestMakeObjective:
 
         study = create_study(direction="minimize")
         study.optimize(make_objective(suggest_params, objective), n_trials=200)
-        assert study.best_params["x"] == pytest.approx(2.0, abs=1e-2)
-        assert study.best_value == pytest.approx(0.0, abs=1e-4)
+        assert study.best_params["x"] == approx(2.0, abs=1e-2)
+        assert study.best_value == approx(0.0, abs=1e-4)
 
 
 class TestSuggestBool:
@@ -59,6 +59,6 @@ class TestSuggestBool:
         study.optimize(objective, n_trials=200)
         params = study.best_params
         assert set(params) == {"x", "y"}
-        assert params["x"] == pytest.approx(2.0, abs=1e-2)
+        assert params["x"] == approx(2.0, abs=1e-2)
         assert not params["y"]
-        assert study.best_value == pytest.approx(0.0, abs=1e-4)
+        assert study.best_value == approx(0.0, abs=1e-4)

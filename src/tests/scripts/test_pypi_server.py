@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import integers
+from pytest import raises
 
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pathlib import ensure_path, temp_cwd
@@ -21,7 +21,7 @@ class TestPypiServer:
         _check_password_file(path_password=path_password)
 
     def test_check_password_file_error(self, *, tmp_path: Path) -> None:
-        with pytest.raises(FileNotFoundError):
+        with raises(FileNotFoundError):
             _check_password_file(path_password=ensure_path(tmp_path, "password"))
 
     @given(

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
+from pytest import raises
 
 from utilities.more_itertools import always_iterable, peekable, windowed_complete
 
@@ -79,7 +79,7 @@ class TestPeekable:
 
     def test_peek_empty_without_default(self) -> None:
         it: peekable[int] = peekable([])
-        with pytest.raises(StopIteration):
+        with raises(StopIteration):
             _ = it.peek()
 
     def test_peek_empty_with_default(self) -> None:

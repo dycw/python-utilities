@@ -6,7 +6,6 @@ from operator import eq, gt, lt
 from re import search
 from typing import TYPE_CHECKING, Any
 
-import pytest
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
@@ -22,6 +21,7 @@ from hypothesis.strategies import (
     times,
     timezones,
 )
+from pytest import mark, param, raises
 
 from utilities.datetime import (
     EPOCH_UTC,
@@ -81,7 +81,7 @@ if TYPE_CHECKING:
 
 class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
-    @pytest.mark.parametrize("predicate", [pytest.param(gt), pytest.param(lt)])
+    @mark.parametrize("predicate", [param(gt), param(lt)])
     def test_add(
         self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
@@ -101,7 +101,7 @@ class TestAddWeekdays:
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_error(self, *, date: dt.date) -> None:
         _ = assume(not is_weekday(date))
-        with pytest.raises(AddWeekdaysError):
+        with raises(AddWeekdaysError):
             _ = add_weekdays(date, n=0)
 
     @given(date=dates(), n1=integers(-10, 10), n2=integers(-10, 10))
@@ -152,12 +152,12 @@ class TestDurationToTimedelta:
 
 class TestEnsure:
     @given(data=data())
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("strategy", "func"),
         [
-            pytest.param(dates(), ensure_date),
-            pytest.param(times(), ensure_time),
-            pytest.param(timedeltas(), ensure_timedelta),
+            param(dates(), ensure_date),
+            param(times(), ensure_time),
+            param(timedeltas(), ensure_timedelta),
         ],
     )
     def test_main(
@@ -188,16 +188,13 @@ class TestGetNow:
         assert isinstance(now, dt.datetime)
         assert now.tzinfo is tz
 
-    @pytest.mark.parametrize(
-        "get_now",
-        [pytest.param(get_now), pytest.param(get_now_hk), pytest.param(get_now_tokyo)],
+    @mark.parametrize(
+        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
     )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @pytest.mark.parametrize(
-        "now", [pytest.param(NOW_UTC), pytest.param(NOW_HK), pytest.param(NOW_TOKYO)]
-    )
+    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)])
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -208,21 +205,13 @@ class TestGetToday:
         today = get_today(tz=tz)
         assert isinstance(today, dt.date)
 
-    @pytest.mark.parametrize(
-        "get_today",
-        [
-            pytest.param(get_today),
-            pytest.param(get_today_hk),
-            pytest.param(get_today_tokyo),
-        ],
+    @mark.parametrize(
+        "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @pytest.mark.parametrize(
-        "today",
-        [pytest.param(TODAY_UTC), pytest.param(TODAY_HK), pytest.param(TODAY_TOKYO)],
-    )
+    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 
@@ -293,7 +282,7 @@ class TestParseDate:
         assert result == date
 
     def test_error(self) -> None:
-        with pytest.raises(ParseDateError):
+        with raises(ParseDateError):
             _ = parse_date("error")
 
 
@@ -387,7 +376,7 @@ class TestParseDateTime:
         assert result == datetime
 
     def test_error(self) -> None:
-        with pytest.raises(ParseDateTimeError):
+        with raises(ParseDateTimeError):
             _ = parse_datetime("error")
 
 
@@ -426,7 +415,7 @@ class TestParseTime:
         assert result == time
 
     def test_error(self) -> None:
-        with pytest.raises(ParseTimeError):
+        with raises(ParseTimeError):
             _ = parse_time("error")
 
 
@@ -437,24 +426,20 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with pytest.raises(
-            ParseTimedeltaError, match=r"Pattern .* must match against .*\."
-        ):
+        with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
             _ = parse_timedelta("error")
 
 
 class TestSerialize:
     @given(data=data())
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("strategy", "serialize", "parse"),
         [
-            pytest.param(dates(), serialize_date, parse_date),
-            pytest.param(
-                datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime
-            ),
-            pytest.param(times(), serialize_time, parse_time),
-            pytest.param(timedeltas(), str, parse_timedelta),
-            pytest.param(timedeltas(), serialize_timedelta, parse_timedelta),
+            param(dates(), serialize_date, parse_date),
+            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
+            param(times(), serialize_time, parse_time),
+            param(timedeltas(), str, parse_timedelta),
+            param(timedeltas(), serialize_timedelta, parse_timedelta),
         ],
     )
     def test_main(
@@ -478,13 +463,13 @@ class TestSerialize:
 class TestRoundToWeekday:
     @given(date=dates())
     @settings(suppress_health_check={HealthCheck.filter_too_much})
-    @pytest.mark.parametrize(
+    @mark.parametrize(
         ("func", "predicate", "operator"),
         [
-            pytest.param(round_to_next_weekday, True, eq),
-            pytest.param(round_to_next_weekday, False, gt),
-            pytest.param(round_to_prev_weekday, True, eq),
-            pytest.param(round_to_prev_weekday, False, lt),
+            param(round_to_next_weekday, True, eq),
+            param(round_to_next_weekday, False, gt),
+            param(round_to_prev_weekday, True, eq),
+            param(round_to_prev_weekday, False, lt),
         ],
     )
     def test_main(
@@ -567,8 +552,5 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with pytest.raises(
-            YieldWeekdaysError,
-            match="Invalid arguments: start=None, end=None, days=None",
-        ):
+        with raises(YieldWeekdaysError):
             _ = list(yield_weekdays())

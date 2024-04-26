@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
+from pytest import mark, param
 
 from utilities.sentinel import _REPR, Sentinel, sentinel
 
@@ -14,7 +14,7 @@ class TestSentinel:
     def test_isinstance(self) -> None:
         assert isinstance(sentinel, Sentinel)
 
-    @pytest.mark.parametrize("method", [pytest.param(repr), pytest.param(str)])
+    @mark.parametrize("method", [param(repr), param(str)])
     def test_repr_and_str(self, method: Callable[..., str]) -> None:
         assert method(sentinel) == _REPR
 

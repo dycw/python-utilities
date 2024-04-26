@@ -3,9 +3,9 @@ from __future__ import annotations
 from functools import reduce
 from operator import add, sub
 
-import pytest
 from hypothesis import given
 from hypothesis.strategies import integers
+from pytest import raises
 
 from utilities.functools import EmptyReduceError, partial, redirect_empty_reduce
 
@@ -20,7 +20,7 @@ class TestPartial:
 class TestRedirectEmptyReduce:
     def test_main(self) -> None:
         with (
-            pytest.raises(
+            raises(
                 EmptyReduceError,
                 match=r"reduce\(\) must not be called over an empty iterable, or must have an initial value\.",
             ),
@@ -34,5 +34,5 @@ class TestRedirectEmptyReduce:
                 msg = "other"
                 raise TypeError(msg)
 
-        with pytest.raises(TypeError, match="other"):
+        with raises(TypeError, match="other"):
             run_test()
