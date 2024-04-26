@@ -83,7 +83,7 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            from pytest import mark,param,fixture,raises
+            from pytest import mark
 
             @mark.slow
             def test_main():
@@ -153,7 +153,7 @@ class TestPytestOptions:
         )
         _ = testdir.makepyfile(
             """
-            from pytest import mark,param,fixture,raises
+            from pytest import mark
 
             def test_none():
                 assert True
@@ -227,7 +227,7 @@ class TestThrottle:
         contents = f"""
 import datetime as dt
 
-from pytest import mark,param,fixture,raises
+from pytest import mark
 
 from utilities.pytest import throttle
 
@@ -245,7 +245,7 @@ async def test_main():
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
-            from pytest import mark,param,fixture,raises
+            from pytest import fixture
 
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
@@ -277,7 +277,7 @@ async def test_main():
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
-            from pytest import mark,param,fixture,raises
+            from pytest import fixture
 
             def pytest_addoption(parser):
                 parser.addoption("--pass", action="store_true")
@@ -311,7 +311,7 @@ async def test_main():
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
-            from pytest import mark,param,fixture,raises
+            from pytest import mark
 
             from string import printable
             from utilities.pytest import throttle
