@@ -57,7 +57,7 @@ jaraco-context==5.3.0
     # via keyring
 jaraco-functools==4.0.1
     # via keyring
-keyring==25.1.0
+keyring==25.2.0
     # via hatch
 markdown-it-py==3.0.0
     # via rich
