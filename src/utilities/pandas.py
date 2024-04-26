@@ -265,7 +265,7 @@ class _CheckIndexNameError(CheckIndexError):
 
 def _check_index_sorted(index: IndexA, /) -> None:
     try:
-        assert_index_equal(index, sort_index(index))
+        assert_index_equal(index, index.sort_values())
     except AssertionError as error:
         raise _CheckIndexSortedError(index=index) from error
 
@@ -522,11 +522,6 @@ def redirect_empty_pandas_concat() -> Iterator[None]:
 class EmptyPandasConcatError(Exception): ...
 
 
-def rename_index(index: _Index, name: Hashable, /) -> _Index:
-    """Wrapper around `.rename`."""
-    return cast(_Index, index.rename(name))
-
-
 def reindex_to_set(index: _Index, target: Iterable[Any], /) -> _Index:
     """Re-index an Index to a strict permutation of its elements."""
     target_as_list = list(target)
@@ -625,10 +620,6 @@ class SeriesMinMaxError(Exception):
     @override
     def __str__(self) -> str:
         return f"Series {self.x} and {self.y} must have the same dtype; got {self.x.dtype} and {self.y.dtype}."
-
-
-def sort_index(index: _Index, /) -> _Index:
-    return cast(_Index, index.sort_values())
 
 
 def timestamp_to_date(timestamp: Any, /, *, warn: bool = True) -> dt.date:
@@ -787,10 +778,8 @@ __all__ = [
     "reindex_to_set",
     "reindex_to_subset",
     "reindex_to_superset",
-    "rename_index",
     "series_max",
     "series_min",
-    "sort_index",
     "string",
     "timestamp_to_date",
     "timestamp_to_datetime",

@@ -408,8 +408,6 @@ def indexes(
     """Strategy for generating Indexes."""
     from hypothesis.extra.pandas import indexes as _indexes
 
-    from utilities.pandas import rename_index, sort_index
-
     draw = lift_draw(_draw)
     n_ = draw(n)
     index = draw(
@@ -421,9 +419,9 @@ def indexes(
             unique=draw(unique),
         )
     )
-    index = rename_index(index, draw(name))
+    index = index.rename(draw(name))
     if draw(sort):
-        return sort_index(index)
+        return index.sort_values()
     return index
 
 
@@ -865,11 +863,11 @@ def timestamps(
     min_value_ = TIMESTAMP_MIN_AS_DATETIME if min_value is None else draw(min_value)
     max_value_ = TIMESTAMP_MAX_AS_DATETIME if max_value is None else draw(max_value)
     datetime = draw(datetimes_pd(min_value=min_value_, max_value=max_value_))
-    timestamp = Timestamp(datetime)
+    timestamp = cast(Timestamp, Timestamp(datetime))
     if draw(allow_nanoseconds):
         nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)  # type: ignore[]
-        timestamp += timedelta
+        timedelta = Timedelta(nanoseconds=nanoseconds)
+        timestamp = cast(Timestamp, timestamp + timedelta)
         _ = assume(min_value_ <= timestamp.floor("us"))
         _ = assume(timestamp.ceil("us") <= max_value_)
     return timestamp
