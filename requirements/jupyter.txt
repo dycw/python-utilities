@@ -78,7 +78,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.4
     # via jupyterlab
-ipython==8.23.0
+ipython==8.24.0
     # via ipykernel
 isoduration==20.11.0
     # via jsonschema
@@ -127,7 +127,7 @@ jupyter-server==2.14.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.1.6
+jupyterlab==4.1.7
 jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-server==2.27.1

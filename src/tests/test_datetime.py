@@ -37,6 +37,7 @@ from utilities.datetime import (
     ParseDateTimeError,
     ParseTimedeltaError,
     ParseTimeError,
+    YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
     date_to_datetime,
@@ -66,6 +67,7 @@ from utilities.datetime import (
     serialize_datetime,
     serialize_time,
     serialize_timedelta,
+    yield_days,
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, text_clean
@@ -510,6 +512,33 @@ class TestTimeZones:
         assert isinstance(UTC, dt.tzinfo)
 
 
+class TestYieldDays:
+    @given(start=dates(), days=integers(0, 365))
+    def test_start_and_end(self, *, start: dt.date, days: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            end = start + dt.timedelta(days=days)
+        dates = list(yield_days(start=start, end=end))
+        assert all(start <= d <= end for d in dates)
+
+    @given(start=dates(), days=integers(0, 10))
+    def test_start_and_days(self, *, start: dt.date, days: int) -> None:
+        dates = list(yield_days(start=start, days=days))
+        assert len(dates) == days
+        assert all(d >= start for d in dates)
+
+    @given(end=dates(), days=integers(0, 10))
+    def test_end_and_days(self, *, end: dt.date, days: int) -> None:
+        dates = list(yield_days(end=end, days=days))
+        assert len(dates) == days
+        assert all(d <= end for d in dates)
+
+    def test_error(self) -> None:
+        with pytest.raises(
+            YieldDaysError, match="Invalid arguments: start=None, end=None, days=None"
+        ):
+            _ = list(yield_days())
+
+
 class TestYieldWeekdays:
     @given(start=dates(), days=integers(0, 365))
     def test_start_and_end(self, *, start: dt.date, days: int) -> None:
@@ -538,5 +567,8 @@ class TestYieldWeekdays:
         assert all(map(is_weekday, dates))
 
     def test_error(self) -> None:
-        with pytest.raises(YieldWeekdaysError):
+        with pytest.raises(
+            YieldWeekdaysError,
+            match="Invalid arguments: start=None, end=None, days=None",
+        ):
             _ = list(yield_weekdays())
