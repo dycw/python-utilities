@@ -69,6 +69,44 @@ class EnsureClassError(Exception):
         return f"Object {self.obj} must be an instance of {self.cls}; got {type(self.obj)}."
 
 
+def ensure_date(obj: Any, /) -> dt.date:
+    """Ensure an object is a date."""
+    try:
+        return ensure_class(obj, dt.date)
+    except EnsureClassError as error:
+        raise EnsureDateError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureDateError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Object {self.obj} must be a date; got {get_class_name(self.obj)} instead"
+        )
+
+
+def ensure_float(obj: Any, /) -> float:
+    """Ensure an object is a float."""
+    try:
+        return ensure_class(obj, float)
+    except EnsureClassError as error:
+        raise EnsureFloatError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureFloatError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Object {self.obj} must be a float; got {get_class_name(self.obj)} instead"
+        )
+
+
 def ensure_hashable(obj: Any, /) -> Hashable:
     """Ensure an object is hashable."""
     if is_hashable(obj):
@@ -83,6 +121,23 @@ class EnsureHashableError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object {self.obj} must be hashable."
+
+
+def ensure_int(obj: Any, /) -> int:
+    """Ensure an object is an integer."""
+    try:
+        return ensure_class(obj, int)
+    except EnsureClassError as error:
+        raise EnsureIntError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureIntError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must be an integer; got {get_class_name(self.obj)} instead"
 
 
 def ensure_not_none(obj: _T | None, /) -> _T:
@@ -204,7 +259,10 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
 __all__ = [
     "Duration",
     "EnsureClassError",
+    "EnsureDateError",
+    "EnsureFloatError",
     "EnsureHashableError",
+    "EnsureIntError",
     "EnsureNotNoneError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
@@ -214,7 +272,10 @@ __all__ = [
     "PathLike",
     "SequenceStrs",
     "ensure_class",
+    "ensure_date",
+    "ensure_float",
     "ensure_hashable",
+    "ensure_int",
     "ensure_not_none",
     "ensure_sized",
     "ensure_sized_not_str",
