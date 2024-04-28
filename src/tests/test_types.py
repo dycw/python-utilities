@@ -15,6 +15,7 @@ from utilities.types import (
     Duration,
     EnsureClassError,
     EnsureDateError,
+    EnsureDatetimeError,
     EnsureFloatError,
     EnsureHashableError,
     EnsureIntError,
@@ -93,7 +94,7 @@ class TestEnsureDatetime:
 
     def test_error(self) -> None:
         with raises(
-            EnsureDateError, match="Object .* must be a datetime; got .* instead"
+            EnsureDatetimeError, match="Object .* must be a datetime; got .* instead"
         ):
             _ = ensure_datetime(None)
 
