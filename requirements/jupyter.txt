@@ -67,7 +67,7 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via jupyterlab
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via
     #   anyio
@@ -127,7 +127,7 @@ jupyter-server==2.14.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.1.7
+jupyterlab==4.1.8
 jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-server==2.27.1
@@ -199,7 +199,7 @@ pygments==2.17.2
     # via
     #   ipython
     #   nbconvert
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-randomly
