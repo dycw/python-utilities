@@ -29,7 +29,7 @@ fonttools==4.51.0
     # via fpdf2
 fpdf2==2.7.8
 holoviews==1.18.3
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via requests
 iniconfig==2.0.0
@@ -81,7 +81,7 @@ pillow==10.3.0
     #   fpdf2
 pluggy==1.5.0
     # via pytest
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-randomly

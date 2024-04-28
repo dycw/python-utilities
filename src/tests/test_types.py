@@ -9,11 +9,16 @@ from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from pytest import mark, param, raises
 
+from utilities.datetime import get_now, get_today
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (
     Duration,
     EnsureClassError,
+    EnsureDateError,
+    EnsureDatetimeError,
+    EnsureFloatError,
     EnsureHashableError,
+    EnsureIntError,
     EnsureNotNoneError,
     EnsureSizedError,
     EnsureSizedNotStrError,
@@ -23,7 +28,11 @@ from utilities.types import (
     PathLike,
     SequenceStrs,
     ensure_class,
+    ensure_date,
+    ensure_datetime,
+    ensure_float,
     ensure_hashable,
+    ensure_int,
     ensure_not_none,
     ensure_sized,
     ensure_sized_not_str,
@@ -70,6 +79,37 @@ class TestEnsureClass:
             _ = ensure_class(None, (int, float))
 
 
+class TestEnsureDate:
+    def test_main(self) -> None:
+        assert isinstance(ensure_date(get_today()), dt.date)
+
+    def test_error(self) -> None:
+        with raises(EnsureDateError, match="Object .* must be a date; got .* instead"):
+            _ = ensure_date(None)
+
+
+class TestEnsureDatetime:
+    def test_main(self) -> None:
+        assert isinstance(ensure_datetime(get_now()), dt.datetime)
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureDatetimeError, match="Object .* must be a datetime; got .* instead"
+        ):
+            _ = ensure_datetime(None)
+
+
+class TestEnsureFloat:
+    def test_main(self) -> None:
+        assert isinstance(ensure_float(0.0), float)
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureFloatError, match="Object .* must be a float; got .* instead"
+        ):
+            _ = ensure_float(None)
+
+
 class TestEnsureHashable:
     @mark.parametrize("obj", [param(0), param((1, 2, 3))])
     def test_main(self, *, obj: Any) -> None:
@@ -78,6 +118,17 @@ class TestEnsureHashable:
     def test_error(self) -> None:
         with raises(EnsureHashableError, match=r"Object .* must be hashable\."):
             _ = ensure_hashable([1, 2, 3])
+
+
+class TestEnsureInt:
+    def test_main(self) -> None:
+        assert isinstance(ensure_int(0), int)
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureIntError, match="Object .* must be an integer; got .* instead"
+        ):
+            _ = ensure_int(None)
 
 
 class TestEnsureNotNone:

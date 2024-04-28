@@ -41,7 +41,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via
     #   anyio
@@ -90,7 +90,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.17.2
     # via rich
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-randomly

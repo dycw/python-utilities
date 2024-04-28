@@ -6,10 +6,10 @@ from utilities.text import EnsureStrError, ensure_str, strip_and_dedent
 
 
 class TestEnsureStr:
-    def test_str(self) -> None:
+    def test_main(self) -> None:
         assert isinstance(ensure_str(""), str)
 
-    def test_not_str(self) -> None:
+    def test_error(self) -> None:
         with raises(EnsureStrError, match="Object .* must be a string; got .* instead"):
             _ = ensure_str(None)
 

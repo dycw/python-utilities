@@ -16,7 +16,7 @@ exceptiongroup==1.2.1
     #   pytest
 fasteners==0.19
     # via zarr
-hypothesis==6.100.1
+hypothesis==6.100.2
 iniconfig==2.0.0
     # via pytest
 numcodecs==0.12.1
@@ -32,7 +32,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-cov
     #   pytest-randomly
