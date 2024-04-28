@@ -88,6 +88,23 @@ class EnsureDateError(Exception):
         )
 
 
+def ensure_datetime(obj: Any, /) -> dt.datetime:
+    """Ensure an object is a datetime."""
+    try:
+        return ensure_class(obj, dt.datetime)
+    except EnsureClassError as error:
+        raise EnsureDatetimeError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureDatetimeError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must be a datetime; got {get_class_name(self.obj)} instead"
+
+
 def ensure_float(obj: Any, /) -> float:
     """Ensure an object is a float."""
     try:
@@ -260,6 +277,7 @@ __all__ = [
     "Duration",
     "EnsureClassError",
     "EnsureDateError",
+    "EnsureDatetimeError",
     "EnsureFloatError",
     "EnsureHashableError",
     "EnsureIntError",
@@ -273,6 +291,7 @@ __all__ = [
     "SequenceStrs",
     "ensure_class",
     "ensure_date",
+    "ensure_datetime",
     "ensure_float",
     "ensure_hashable",
     "ensure_int",

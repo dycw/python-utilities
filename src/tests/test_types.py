@@ -9,7 +9,7 @@ from beartype.door import die_if_unbearable
 from beartype.roar import BeartypeDoorHintViolation
 from pytest import mark, param, raises
 
-from utilities.datetime import get_today
+from utilities.datetime import get_now, get_today
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (
     Duration,
@@ -28,6 +28,7 @@ from utilities.types import (
     SequenceStrs,
     ensure_class,
     ensure_date,
+    ensure_datetime,
     ensure_float,
     ensure_hashable,
     ensure_int,
@@ -78,19 +79,30 @@ class TestEnsureClass:
 
 
 class TestEnsureDate:
-    def test_str(self) -> None:
+    def test_main(self) -> None:
         assert isinstance(ensure_date(get_today()), dt.date)
 
-    def test_not_str(self) -> None:
+    def test_error(self) -> None:
         with raises(EnsureDateError, match="Object .* must be a date; got .* instead"):
             _ = ensure_date(None)
 
 
+class TestEnsureDatetime:
+    def test_main(self) -> None:
+        assert isinstance(ensure_datetime(get_now()), dt.datetime)
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureDateError, match="Object .* must be a datetime; got .* instead"
+        ):
+            _ = ensure_datetime(None)
+
+
 class TestEnsureFloat:
-    def test_str(self) -> None:
+    def test_main(self) -> None:
         assert isinstance(ensure_float(0.0), float)
 
-    def test_not_str(self) -> None:
+    def test_error(self) -> None:
         with raises(
             EnsureFloatError, match="Object .* must be a float; got .* instead"
         ):
@@ -108,10 +120,10 @@ class TestEnsureHashable:
 
 
 class TestEnsureInt:
-    def test_str(self) -> None:
+    def test_main(self) -> None:
         assert isinstance(ensure_int(0), int)
 
-    def test_not_str(self) -> None:
+    def test_error(self) -> None:
         with raises(
             EnsureIntError, match="Object .* must be an integer; got .* instead"
         ):
