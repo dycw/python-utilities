@@ -142,21 +142,39 @@ class TestWindowedComplete:
 
 class TestYieldSplits:
     @mark.parametrize(
-        ("iterable", "head", "tail", "expected"),
+        ("iterable", "head", "tail", "min_frac", "freq", "expected"),
         [
             param(
                 "abcde",
                 3,
                 1,
+                None,
+                None,
                 [
                     Split(head=["a", "b", "c"], tail=["d"]),
                     Split(head=["b", "c", "d"], tail=["e"]),
                 ],
+                id="3/1",
+            ),
+            param(
+                "abcde",
+                3,
+                1,
+                0.4,
+                None,
+                [
+                    Split(head=["a", "b"], tail=["c"]),
+                    Split(head=["a", "b", "c"], tail=["d"]),
+                    Split(head=["b", "c", "d"], tail=["e"]),
+                ],
+                id="3/1, min-frac=0.4",
             ),
             param(
                 "abcdefg",
                 3,
                 2,
+                None,
+                None,
                 [
                     Split(head=["a", "b", "c"], tail=["d", "e"]),
                     Split(head=["c", "d", "e"], tail=["f", "g"]),
@@ -167,12 +185,29 @@ class TestYieldSplits:
                 "abcdefgh",
                 3,
                 2,
+                None,
+                None,
                 [
                     Split(head=["a", "b", "c"], tail=["d", "e"]),
                     Split(head=["c", "d", "e"], tail=["f", "g"]),
                     Split(head=["e", "f", "g"], tail=["h"]),
                 ],
                 id="3/2, truncated tail",
+            ),
+            param(
+                "abcdefgh",
+                3,
+                2,
+                None,
+                1,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["b", "c", "d"], tail=["e", "f"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                    Split(head=["d", "e", "f"], tail=["g", "h"]),
+                    Split(head=["e", "f", "g"], tail=["h"]),
+                ],
+                id="3/2, freq=1",
             ),
         ],
     )
@@ -182,7 +217,9 @@ class TestYieldSplits:
         iterable: Iterable[str],
         head: int,
         tail: int,
+        min_frac: float | None,
+        freq: int | None,
         expected: list[Split[list[str]]],
     ) -> None:
-        splits = list(yield_splits(iterable, head, tail))
+        splits = list(yield_splits(iterable, head, tail, min_frac=min_frac, freq=freq))
         assert splits == expected
