@@ -4,12 +4,18 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.more_itertools import always_iterable, peekable, windowed_complete
+from utilities.more_itertools import (
+    Split,
+    always_iterable,
+    peekable,
+    windowed_complete,
+    yield_splits,
+)
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
 
 class TestAlwaysIterable:
@@ -132,3 +138,51 @@ class TestWindowedComplete:
             ((1, 2, 3), (), ()),
         ]
         assert result == expected
+
+
+class TestYieldSplits:
+    @mark.parametrize(
+        ("iterable", "head", "tail", "expected"),
+        [
+            param(
+                "abcde",
+                3,
+                1,
+                [
+                    Split(head=["a", "b", "c"], tail=["d"]),
+                    Split(head=["b", "c", "d"], tail=["e"]),
+                ],
+            ),
+            param(
+                "abcdefg",
+                3,
+                2,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                ],
+                id="3/2, clean tail",
+            ),
+            param(
+                "abcdefgh",
+                3,
+                2,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                    Split(head=["e", "f", "g"], tail=["h"]),
+                ],
+                id="3/2, truncated tail",
+            ),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        iterable: Iterable[str],
+        head: int,
+        tail: int,
+        expected: list[Split[list[str]]],
+    ) -> None:
+        splits = list(yield_splits(iterable, head, tail))
+        assert splits == expected
