@@ -569,10 +569,6 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
     return tuple(zip(*iterable, strict=True))
 
 
-def yield_splits() -> Iterator[_YieldSplit]:
-    """Yield the splits of an iterable."""
-
-
 __all__ = [
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
