@@ -28,7 +28,7 @@ exceptiongroup==1.2.1
     #   anyio
     #   hypothesis
     #   pytest
-filelock==3.13.4
+filelock==3.14.0
     # via virtualenv
 h11==0.14.0
     # via httpcore

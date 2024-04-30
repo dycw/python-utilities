@@ -4,12 +4,19 @@ from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
-from pytest import raises
+from pytest import mark, param, raises
 
-from utilities.more_itertools import always_iterable, peekable, windowed_complete
+from utilities.more_itertools import (
+    Split,
+    always_iterable,
+    peekable,
+    windowed_complete,
+    yield_splits,
+)
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
 
 class TestAlwaysIterable:
@@ -131,4 +138,106 @@ class TestWindowedComplete:
             ((1, 2), (), (3,)),
             ((1, 2, 3), (), ()),
         ]
+        assert result == expected
+
+
+class TestYieldSplits:
+    @mark.parametrize(
+        ("iterable", "head", "tail", "min_frac", "freq", "expected"),
+        [
+            param(
+                "abcde",
+                3,
+                1,
+                None,
+                None,
+                [
+                    Split(head=["a", "b", "c"], tail=["d"]),
+                    Split(head=["b", "c", "d"], tail=["e"]),
+                ],
+                id="3/1",
+            ),
+            param(
+                "abcde",
+                3,
+                1,
+                0.4,
+                None,
+                [
+                    Split(head=["a", "b"], tail=["c"]),
+                    Split(head=["a", "b", "c"], tail=["d"]),
+                    Split(head=["b", "c", "d"], tail=["e"]),
+                ],
+                id="3/1, min-frac=0.4",
+            ),
+            param(
+                "abcdefg",
+                3,
+                2,
+                None,
+                None,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                ],
+                id="3/2, clean tail",
+            ),
+            param(
+                "abcdefgh",
+                3,
+                2,
+                None,
+                None,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                    Split(head=["e", "f", "g"], tail=["h"]),
+                ],
+                id="3/2, truncated tail",
+            ),
+            param(
+                "abcdefgh",
+                3,
+                2,
+                None,
+                1,
+                [
+                    Split(head=["a", "b", "c"], tail=["d", "e"]),
+                    Split(head=["b", "c", "d"], tail=["e", "f"]),
+                    Split(head=["c", "d", "e"], tail=["f", "g"]),
+                    Split(head=["d", "e", "f"], tail=["g", "h"]),
+                    Split(head=["e", "f", "g"], tail=["h"]),
+                ],
+                id="3/2, freq=1",
+            ),
+            param("abc", 5, 1, None, None, [], id="len(iterable) < head"),
+            param("abc", 1, 5, None, None, [], id="len(iterable) < tail"),
+        ],
+    )
+    def test_main(
+        self,
+        *,
+        iterable: Iterable[str],
+        head: int,
+        tail: int,
+        min_frac: float | None,
+        freq: int | None,
+        expected: list[Split[list[str]]],
+    ) -> None:
+        splits = list(yield_splits(iterable, head, tail, min_frac=min_frac, freq=freq))
+        assert splits == expected
+
+    def test_repr(self) -> None:
+        split = Split(head=["a", "b", "c"], tail=["d"])
+        result = repr(split)
+        expected = strip_and_dedent(
+            """
+            Split(
+                head=
+                    ['a', 'b', 'c']
+                tail=
+                    ['d']
+            )
+            """
+        )
         assert result == expected

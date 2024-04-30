@@ -16,7 +16,7 @@ exceptiongroup==1.2.1
     #   anyio
     #   hypothesis
     #   pytest
-fastapi==0.110.2
+fastapi==0.110.3
 hypothesis==6.100.2
 idna==3.7
     # via anyio

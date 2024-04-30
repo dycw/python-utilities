@@ -144,7 +144,7 @@ mistune==3.0.2
     # via nbconvert
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.3
+nbconvert==7.16.4
     # via jupyter-server
 nbformat==5.10.4
     # via
@@ -180,7 +180,7 @@ platformdirs==4.2.1
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars==0.20.22
+polars==0.20.23
 prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
