@@ -78,3 +78,6 @@ def plot_intraday_dataframe(
         )
     )
     return layer(lines, hover_line, text, span)
+
+
+__all__ = ["plot_intraday_dataframe"]
