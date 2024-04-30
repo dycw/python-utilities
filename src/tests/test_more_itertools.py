@@ -209,6 +209,8 @@ class TestYieldSplits:
                 ],
                 id="3/2, freq=1",
             ),
+            param("abc", 5, 1, None, None, [], id="len(iterable) < head"),
+            param("abc", 1, 5, None, None, [], id="len(iterable) < tail"),
         ],
     )
     def test_main(

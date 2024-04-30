@@ -10,7 +10,7 @@ from more_itertools import always_iterable as _always_iterable
 from more_itertools import peekable as _peekable
 from more_itertools import split_into
 from more_itertools import windowed_complete as _windowed_complete
-from typing_extensions import override
+from typing_extensions import assert_never, override
 
 from utilities.sentinel import Sentinel, sentinel
 
@@ -111,7 +111,7 @@ def _yield_splits1(
         if len(result := peek[:i]) < i:
             return
         yield "head", result
-    while bool(peek):
+    while True:
         _ = next(peek)
         if len(result := peek[:total]) >= 1:
             yield "body", result
@@ -139,6 +139,8 @@ def _yield_splits2(
                 len_tail = max(len_win - head, 0)
                 if len_tail >= 1:
                     yield window, head, len_tail
+            case _ as never:  # type: ignore[]
+                assert_never(never)
 
 
 def _yield_splits3(
