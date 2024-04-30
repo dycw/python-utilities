@@ -151,4 +151,4 @@ def _yield_splits3(
         yield Split(head=list(head_win), tail=list(tail_win))
 
 
-__all__ = ["always_iterable", "peekable", "windowed_complete"]
+__all__ = ["Split", "always_iterable", "peekable", "windowed_complete", "yield_splits"]
