@@ -13,6 +13,7 @@ from utilities.more_itertools import (
     windowed_complete,
     yield_splits,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -225,3 +226,18 @@ class TestYieldSplits:
     ) -> None:
         splits = list(yield_splits(iterable, head, tail, min_frac=min_frac, freq=freq))
         assert splits == expected
+
+    def test_repr(self) -> None:
+        split = Split(head=["a", "b", "c"], tail=["d"])
+        result = repr(split)
+        expected = strip_and_dedent(
+            """
+            Split(
+                head=
+                    ['a', 'b', 'c']
+                tail=
+                    ['d']
+            )
+            """
+        )
+        assert result == expected
