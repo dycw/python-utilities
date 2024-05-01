@@ -171,6 +171,23 @@ class EnsureNotNoneError(Exception):
         return "Object must not be None."
 
 
+def ensure_number(obj: Any, /) -> Number:
+    """Ensure an object is a number."""
+    try:
+        return ensure_class(obj, Number)
+    except EnsureClassError as error:
+        raise EnsureNumberError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureNumberError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must be a number; got {get_class_name(self.obj)} instead"
+
+
 def ensure_sized(obj: Any, /) -> Sized:
     """Ensure an object is sized."""
     if is_sized(obj):
@@ -282,6 +299,7 @@ __all__ = [
     "EnsureHashableError",
     "EnsureIntError",
     "EnsureNotNoneError",
+    "EnsureNumberError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "IsFunctionAsyncError",
@@ -296,6 +314,7 @@ __all__ = [
     "ensure_hashable",
     "ensure_int",
     "ensure_not_none",
+    "ensure_number",
     "ensure_sized",
     "ensure_sized_not_str",
     "get_class",

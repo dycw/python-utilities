@@ -20,6 +20,7 @@ from utilities.types import (
     EnsureHashableError,
     EnsureIntError,
     EnsureNotNoneError,
+    EnsureNumberError,
     EnsureSizedError,
     EnsureSizedNotStrError,
     IsFunctionAsyncError,
@@ -34,6 +35,7 @@ from utilities.types import (
     ensure_hashable,
     ensure_int,
     ensure_not_none,
+    ensure_number,
     ensure_sized,
     ensure_sized_not_str,
     get_class,
@@ -140,6 +142,18 @@ class TestEnsureNotNone:
     def test_error(self) -> None:
         with raises(EnsureNotNoneError, match=r"Object must not be None\."):
             _ = ensure_not_none(None)
+
+
+class TestEnsureNumber:
+    @mark.parametrize("number", [param(0), param(0.0)])
+    def test_main(self, *, number: Number) -> None:
+        assert isinstance(ensure_number(number), Number)
+
+    def test_error(self) -> None:
+        with raises(
+            EnsureNumberError, match="Object .* must be a number; got .* instead"
+        ):
+            _ = ensure_number(None)
 
 
 class TestEnsureSized:

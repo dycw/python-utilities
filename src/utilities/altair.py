@@ -1,14 +1,33 @@
 from __future__ import annotations
 
+from math import isfinite
 from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
-from altair import X2, Chart, Color, X, Y, condition, layer, selection_point, value
+from altair import (
+    X2,
+    Chart,
+    Color,
+    HConcatChart,
+    VConcatChart,
+    X,
+    Y,
+    condition,
+    layer,
+    selection_interval,
+    selection_point,
+    value,
+    vconcat,
+)
 from polars import col, int_range
+
+from utilities.types import ensure_number
 
 if TYPE_CHECKING:
     from altair import LayerChart
     from polars import DataFrame
+
+_WIDTH = 800
 
 
 def plot_intraday_dataframe(
@@ -17,11 +36,13 @@ def plot_intraday_dataframe(
     *,
     datetime: str = "datetime",
     value_name: str = "value",
+    interactive: bool = True,
     bind_y: bool = False,
+    width: int | None = _WIDTH,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
-    data2 = data.with_columns(
+    data2 = data.sort(datetime).with_columns(
         int_range(end=pl.len()).alias(f"_{datetime}_index"),
         _date=col(datetime).dt.date(),
     )
@@ -32,12 +53,18 @@ def plot_intraday_dataframe(
     melted = data3.select(
         col(f"_{datetime}_index").alias(f"{datetime} index"), *other_cols
     ).melt(id_vars=f"{datetime} index", value_name=value_name)
+
+    y = Y(value_name).scale(zero=False)
+    melted_value = melted[value_name]
+    value_min, value_max = map(ensure_number, [melted_value.min(), melted_value.max()])
+    if isfinite(value_min) and isfinite(value_max):
+        y = y.scale(domain=(value_min, value_max))
     lines = (
         Chart(melted)
         .mark_line()
         .encode(
             x=X(f"{datetime} index").scale(domain=(0, data3.height), nice=False),
-            y=Y(value_name).scale(zero=False),
+            y=y,
             color=Color("variable").legend(
                 direction="horizontal", offset=10, orient="top-right", title=None
             ),
@@ -82,7 +109,27 @@ def plot_intraday_dataframe(
             color=Color("date_index:Q", legend=None).scale(scheme="category10"),
         )
     )
-    return layer(lines, hover_line, text, span).interactive(bind_y=bind_y)
+
+    chart = layer(lines, hover_line, text, span)
+    if interactive:
+        chart = chart.interactive(bind_y=bind_y)
+    if width is not None:
+        chart = chart.properties(width=width)
+    return chart
 
 
-__all__ = ["plot_intraday_dataframe"]
+def vconcat_charts(
+    *charts: Chart | HConcatChart | LayerChart | VConcatChart,
+    width: int | None = _WIDTH,
+) -> VConcatChart:
+    """Vertically concatenate a set of charts."""
+    if width is None:
+        charts_use = charts
+    else:
+        charts_use = (c.properties(width=width) for c in charts)
+    resize = selection_interval(bind="scales", encodings=["x"])
+    charts_use = (c.add_params(resize) for c in charts_use)
+    return vconcat(*charts_use).resolve_scale(color="independent")
+
+
+__all__ = ["plot_intraday_dataframe", "vconcat_charts"]
