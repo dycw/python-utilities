@@ -21,7 +21,7 @@ def plot_intraday_dataframe(
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
-    data2 = data.with_columns(
+    data2 = data.sort(datetime).with_columns(
         int_range(end=pl.len()).alias(f"_{datetime}_index"),
         _date=col(datetime).dt.date(),
     )
