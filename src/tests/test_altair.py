@@ -17,7 +17,7 @@ def time_series() -> DataFrame:
     return (
         datetime_range(
             dt.datetime(2024, 1, 1, tzinfo=UTC),
-            dt.datetime(2024, 1, 8, 23, tzinfo=UTC),
+            dt.datetime(2024, 1, 7, 23, tzinfo=UTC),
             interval="1h",
             eager=True,
         )
