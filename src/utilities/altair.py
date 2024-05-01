@@ -21,7 +21,7 @@ from altair import (
 )
 from polars import col, int_range
 
-from utilities.types import ensure_number
+from utilities.types import EnsureNumberError, ensure_number
 
 if TYPE_CHECKING:
     from altair import LayerChart
@@ -56,9 +56,15 @@ def plot_intraday_dataframe(
 
     y = Y(value_name).scale(zero=False)
     melted_value = melted[value_name]
-    value_min, value_max = map(ensure_number, [melted_value.min(), melted_value.max()])
-    if isfinite(value_min) and isfinite(value_max):
-        y = y.scale(domain=(value_min, value_max))
+    try:
+        value_min, value_max = map(
+            ensure_number, [melted_value.min(), melted_value.max()]
+        )
+    except EnsureNumberError:
+        value_min = value_max = None
+    else:
+        if isfinite(value_min) and isfinite(value_max):
+            y = y.scale(domain=(value_min, value_max))
     lines = (
         Chart(melted)
         .mark_line()

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import datetime as dt
+from math import inf
 
 import polars as pl
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, integers, none
-from polars import DataFrame, datetime_range, int_range
+from polars import DataFrame, Datetime, Float64, datetime_range, int_range
 from pytest import fixture
 
 from utilities.altair import plot_intraday_dataframe, vconcat_charts
-from utilities.datetime import UTC
+from utilities.datetime import UTC, get_now
 
 
 @fixture()
@@ -34,6 +35,13 @@ class TestPlotIntradayDataFrame:
         self, *, time_series: DataFrame, interactive: bool, width: int | None
     ) -> None:
         _ = plot_intraday_dataframe(time_series, interactive=interactive, width=width)
+
+    def test_non_finite(self) -> None:
+        data = DataFrame(
+            [(get_now(), inf)],
+            schema={"datetime": Datetime(time_zone=UTC), "value": Float64},
+        )
+        _ = plot_intraday_dataframe(data)
 
 
 class TestVConcatCharts:
