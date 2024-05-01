@@ -8,6 +8,7 @@ from altair import (
     X2,
     Chart,
     Color,
+    HConcatChart,
     VConcatChart,
     X,
     Y,
@@ -117,7 +118,10 @@ def plot_intraday_dataframe(
     return chart
 
 
-def vconcat_charts(*charts: Chart, width: int | None = _WIDTH) -> VConcatChart:
+def vconcat_charts(
+    *charts: Chart | HConcatChart | LayerChart | VConcatChart,
+    width: int | None = _WIDTH,
+) -> VConcatChart:
     """Vertically concatenate a set of charts."""
     if width is None:
         charts_use = charts
