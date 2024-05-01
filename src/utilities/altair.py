@@ -12,7 +12,12 @@ if TYPE_CHECKING:
 
 
 def plot_intraday_dataframe(
-    data: DataFrame, /, *, datetime: str = "datetime", value_name: str = "value"
+    data: DataFrame,
+    /,
+    *,
+    datetime: str = "datetime",
+    value_name: str = "value",
+    bind_y: bool = False,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
@@ -77,7 +82,7 @@ def plot_intraday_dataframe(
             color=Color("date_index:Q", legend=None).scale(scheme="category10"),
         )
     )
-    return layer(lines, hover_line, text, span)
+    return layer(lines, hover_line, text, span).interactive(bind_y=bind_y)
 
 
 __all__ = ["plot_intraday_dataframe"]
