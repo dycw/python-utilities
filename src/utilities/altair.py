@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from math import isfinite
 from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
 from altair import X2, Chart, Color, X, Y, condition, layer, selection_point, value
 from polars import col, int_range
+
+from utilities.types import ensure_float
 
 if TYPE_CHECKING:
     from altair import LayerChart
@@ -32,12 +35,25 @@ def plot_intraday_dataframe(
     melted = data3.select(
         col(f"_{datetime}_index").alias(f"{datetime} index"), *other_cols
     ).melt(id_vars=f"{datetime} index", value_name=value_name)
+
+    y = Y(value_name).scale(zero=False)
+    melted_value = melted[value_name]
+    value_min, value_max = map(ensure_float, [melted_value.min(), melted_value.max()])
+    assert 0
+    from loguru import logger
+
+    logger.info(f"First run, min/max: {value_min}, {value_max}")
+    if isfinite(value_min) and isfinite(value_max):
+        from loguru import logger
+
+        logger.info(f"Got domain {value_min}, {value_max}")
+        y = y.scale(domain=(value_min, value_max))
     lines = (
         Chart(melted)
         .mark_line()
         .encode(
             x=X(f"{datetime} index").scale(domain=(0, data3.height), nice=False),
-            y=Y(value_name).scale(zero=False),
+            y=y,
             color=Color("variable").legend(
                 direction="horizontal", offset=10, orient="top-right", title=None
             ),
