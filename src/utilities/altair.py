@@ -39,14 +39,7 @@ def plot_intraday_dataframe(
     y = Y(value_name).scale(zero=False)
     melted_value = melted[value_name]
     value_min, value_max = map(ensure_float, [melted_value.min(), melted_value.max()])
-    assert 0
-    from loguru import logger
-
-    logger.info(f"First run, min/max: {value_min}, {value_max}")
     if isfinite(value_min) and isfinite(value_max):
-        from loguru import logger
-
-        logger.info(f"Got domain {value_min}, {value_max}")
         y = y.scale(domain=(value_min, value_max))
     lines = (
         Chart(melted)
