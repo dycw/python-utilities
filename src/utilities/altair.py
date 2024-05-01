@@ -4,7 +4,20 @@ from math import isfinite
 from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
-from altair import X2, Chart, Color, X, Y, condition, layer, selection_point, value
+from altair import (
+    X2,
+    Chart,
+    Color,
+    VConcatChart,
+    X,
+    Y,
+    condition,
+    layer,
+    selection_interval,
+    selection_point,
+    value,
+    vconcat,
+)
 from polars import col, int_range
 
 from utilities.types import ensure_number
@@ -20,7 +33,9 @@ def plot_intraday_dataframe(
     *,
     datetime: str = "datetime",
     value_name: str = "value",
+    interactive: bool = True,
     bind_y: bool = False,
+    width: int | None = None,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
@@ -91,7 +106,24 @@ def plot_intraday_dataframe(
             color=Color("date_index:Q", legend=None).scale(scheme="category10"),
         )
     )
-    return layer(lines, hover_line, text, span).interactive(bind_y=bind_y)
+
+    chart = layer(lines, hover_line, text, span)
+    if interactive:
+        chart = chart.interactive(bind_y=bind_y)
+    if width is not None:
+        chart = chart.properties(width=width)
+    return chart
 
 
-__all__ = ["plot_intraday_dataframe"]
+def vconcat_charts(*charts: Chart, width: int | None = None) -> VConcatChart:
+    """Vertically concatenate a set of charts."""
+    if width is None:
+        charts_use = charts
+    else:
+        charts_use = (c.properties(width=width) for c in charts)
+    resize = selection_interval(bind="scales", encodings=["x"])
+    charts_use = (c.add_params(resize) for c in charts_use)
+    return vconcat(*charts_use).resolve_scale(color="independent")
+
+
+__all__ = ["plot_intraday_dataframe", "vconcat_charts"]
