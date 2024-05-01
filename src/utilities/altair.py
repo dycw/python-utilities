@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from altair import LayerChart
     from polars import DataFrame
 
+_WIDTH = 800
+
 
 def plot_intraday_dataframe(
     data: DataFrame,
@@ -35,7 +37,7 @@ def plot_intraday_dataframe(
     value_name: str = "value",
     interactive: bool = True,
     bind_y: bool = False,
-    width: int | None = None,
+    width: int | None = _WIDTH,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
@@ -115,7 +117,7 @@ def plot_intraday_dataframe(
     return chart
 
 
-def vconcat_charts(*charts: Chart, width: int | None = None) -> VConcatChart:
+def vconcat_charts(*charts: Chart, width: int | None = _WIDTH) -> VConcatChart:
     """Vertically concatenate a set of charts."""
     if width is None:
         charts_use = charts
