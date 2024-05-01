@@ -7,7 +7,7 @@ import polars as pl
 from altair import X2, Chart, Color, X, Y, condition, layer, selection_point, value
 from polars import col, int_range
 
-from utilities.types import ensure_float
+from utilities.types import ensure_number
 
 if TYPE_CHECKING:
     from altair import LayerChart
@@ -38,7 +38,7 @@ def plot_intraday_dataframe(
 
     y = Y(value_name).scale(zero=False)
     melted_value = melted[value_name]
-    value_min, value_max = map(ensure_float, [melted_value.min(), melted_value.max()])
+    value_min, value_max = map(ensure_number, [melted_value.min(), melted_value.max()])
     if isfinite(value_min) and isfinite(value_max):
         y = y.scale(domain=(value_min, value_max))
     lines = (

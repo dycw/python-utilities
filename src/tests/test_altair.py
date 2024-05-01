@@ -5,7 +5,7 @@ import datetime as dt
 import polars as pl
 from polars import datetime_range, int_range
 
-from utilities.altair import plot_intraday_dataframe2
+from utilities.altair import plot_intraday_dataframe
 from utilities.datetime import UTC
 
 
@@ -24,4 +24,4 @@ class TestPlotIntradayDataFrame:
                 x=int_range(end=pl.len()), y=int_range(end=2 * pl.len(), step=2)
             )
         )
-        _ = plot_intraday_dataframe2(data)
+        _ = plot_intraday_dataframe(data)
