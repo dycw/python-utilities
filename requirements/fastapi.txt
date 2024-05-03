@@ -16,7 +16,7 @@ exceptiongroup==1.2.1
     #   anyio
     #   hypothesis
     #   pytest
-fastapi==0.110.3
+fastapi-slim==0.111.0
 hypothesis==6.100.2
 idna==3.7
     # via anyio
@@ -30,7 +30,7 @@ packaging==24.0
 pluggy==1.5.0
     # via pytest
 pydantic==2.7.1
-    # via fastapi
+    # via fastapi-slim
 pydantic-core==2.18.2
     # via pydantic
 pytest==8.2.0
@@ -46,7 +46,7 @@ sniffio==1.3.1
 sortedcontainers==2.4.0
     # via hypothesis
 starlette==0.37.2
-    # via fastapi
+    # via fastapi-slim
 tomli==2.0.1
     # via
     #   coverage
@@ -54,6 +54,6 @@ tomli==2.0.1
 typing-extensions==4.11.0
     # via
     #   anyio
-    #   fastapi
+    #   fastapi-slim
     #   pydantic
     #   pydantic-core

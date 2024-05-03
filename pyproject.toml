@@ -29,7 +29,7 @@ dev = [
   "click",
   "cryptography",
   "cvxpy",
-  "fastapi",
+  "fastapi-slim",
   "fpdf2",
   "frozendict",
   "hatch",
@@ -126,7 +126,7 @@ zzz-test-defaults = [
 zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
-zzz-test-fastapi = ["fastapi"]
+zzz-test-fastapi = ["fastapi-slim"]
 zzz-test-fpdf2 = ["fpdf2", "holoviews"]
 zzz-test-functions = []
 zzz-test-functools = []
@@ -155,7 +155,7 @@ zzz-test-modules = [
   "click",
   "cryptography",
   "cvxpy",
-  "fastapi",
+  "fastapi-slim",
   "fpdf2",
   "hatch",
   "holoviews",

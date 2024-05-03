@@ -26,6 +26,23 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 
 
+def ensure_bool(obj: Any, /) -> bool:
+    """Ensure an object is a boolean."""
+    try:
+        return ensure_class(obj, bool)
+    except EnsureClassError as error:
+        raise EnsureBoolError(obj=error.obj) from None
+
+
+@dataclass(kw_only=True)
+class EnsureBoolError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must be a boolean; got {get_class_name(self.obj)} instead"
+
+
 @overload
 def ensure_class(obj: Any, cls: type[_T], /) -> _T: ...
 
@@ -292,6 +309,7 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
 
 __all__ = [
     "Duration",
+    "EnsureBoolError",
     "EnsureClassError",
     "EnsureDateError",
     "EnsureDatetimeError",
@@ -307,6 +325,7 @@ __all__ = [
     "Number",
     "PathLike",
     "SequenceStrs",
+    "ensure_bool",
     "ensure_class",
     "ensure_date",
     "ensure_datetime",
