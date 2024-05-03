@@ -60,6 +60,17 @@ dev = [
   "sqlalchemy",
   "streamlit",
   "typed-settings",
+  "uvloop < 0.19.0",
+  # Traceback (most recent call last):
+  # File "<string>", line 14, in <module>
+  # File "C:\Users\runneradmin\AppData\Local\uv\cache\.tmpytP3fH\.venv\lib\site-packages\setuptools\build_meta.py", line 325, in get_requires_for_build_wheel
+  # return self._get_build_requires(config_settings, requirements=['wheel'])
+  # File "C:\Users\runneradmin\AppData\Local\uv\cache\.tmpytP3fH\.venv\lib\site-packages\setuptools\build_meta.py", line 295, in _get_build_requires
+  # self.run_setup()
+  # File "C:\Users\runneradmin\AppData\Local\uv\cache\.tmpytP3fH\.venv\lib\site-packages\setuptools\build_meta.py", line 311, in run_setup
+  # exec(code, locals())
+  # File "<string>", line 8, in <module>
+  # RuntimeError: uvloop does not support Windows at the moment
   "xarray",
   "xlrd",
   "zarr",
