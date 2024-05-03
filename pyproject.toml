@@ -29,7 +29,7 @@ dev = [
   "click",
   "cryptography",
   "cvxpy",
-  "fastapi",
+  "fastapi-slim",
   "fpdf2",
   "frozendict",
   "hatch",
