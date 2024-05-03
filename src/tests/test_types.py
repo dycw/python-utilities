@@ -128,25 +128,42 @@ class TestEnsureDate:
 
 
 class TestEnsureDatetime:
-    def test_main(self) -> None:
-        assert isinstance(ensure_datetime(get_now()), dt.datetime)
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [param(get_now(), False), param(get_now(), True), param(None, True)],
+    )
+    def test_main(self, *, obj: dt.datetime | None, nullable: bool) -> None:
+        _ = ensure_datetime(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureDatetimeError, match="Object .* must be a datetime; got .* instead"
-        ):
-            _ = ensure_datetime(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a datetime"),
+            param(True, "Object .* must be a datetime or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureDatetimeError, match=f"{match}; got .* instead"):
+            _ = ensure_datetime(sentinel, nullable=nullable)
 
 
 class TestEnsureFloat:
-    def test_main(self) -> None:
-        assert isinstance(ensure_float(0.0), float)
+    @mark.parametrize(
+        ("obj", "nullable"), [param(0.0, False), param(0.0, True), param(None, True)]
+    )
+    def test_main(self, *, obj: float | None, nullable: bool) -> None:
+        _ = ensure_float(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureFloatError, match="Object .* must be a float; got .* instead"
-        ):
-            _ = ensure_float(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a float"),
+            param(True, "Object .* must be a float or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureFloatError, match=f"{match}; got .* instead"):
+            _ = ensure_float(sentinel, nullable=nullable)
 
 
 class TestEnsureHashable:
@@ -160,14 +177,22 @@ class TestEnsureHashable:
 
 
 class TestEnsureInt:
-    def test_main(self) -> None:
-        assert isinstance(ensure_int(0), int)
+    @mark.parametrize(
+        ("obj", "nullable"), [param(0, False), param(0, True), param(None, True)]
+    )
+    def test_main(self, *, obj: int | None, nullable: bool) -> None:
+        _ = ensure_int(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureIntError, match="Object .* must be an integer; got .* instead"
-        ):
-            _ = ensure_int(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be an integer"),
+            param(True, "Object .* must be an integer or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureIntError, match=f"{match}; got .* instead"):
+            _ = ensure_int(sentinel, nullable=nullable)
 
 
 class TestEnsureNotNone:
@@ -182,15 +207,23 @@ class TestEnsureNotNone:
 
 
 class TestEnsureNumber:
-    @mark.parametrize("number", [param(0), param(0.0)])
-    def test_main(self, *, number: Number) -> None:
-        assert isinstance(ensure_number(number), Number)
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [param(0, False), param(0.0, False), param(0.0, True), param(None, True)],
+    )
+    def test_main(self, *, obj: Number, nullable: bool) -> None:
+        _ = ensure_number(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureNumberError, match="Object .* must be a number; got .* instead"
-        ):
-            _ = ensure_number(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a number"),
+            param(True, "Object .* must be a number or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureNumberError, match=f"{match}; got .* instead"):
+            _ = ensure_number(sentinel, nullable=nullable)
 
 
 class TestEnsureSized:
