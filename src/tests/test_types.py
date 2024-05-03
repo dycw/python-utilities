@@ -13,6 +13,7 @@ from utilities.datetime import get_now, get_today
 from utilities.pathvalidate import valid_path_home
 from utilities.types import (
     Duration,
+    EnsureBoolError,
     EnsureClassError,
     EnsureDateError,
     EnsureDatetimeError,
@@ -28,6 +29,7 @@ from utilities.types import (
     Number,
     PathLike,
     SequenceStrs,
+    ensure_bool,
     ensure_class,
     ensure_date,
     ensure_datetime,
@@ -57,6 +59,16 @@ class TestDuration:
     def test_error(self) -> None:
         with raises(BeartypeDoorHintViolation):
             die_if_unbearable("0", Duration)
+
+
+class TestEnsureBool:
+    def test_main(self) -> None:
+        value = True
+        assert isinstance(ensure_bool(value), bool)
+
+    def test_error(self) -> None:
+        with raises(EnsureBoolError, match="Object .* must be a bool; got .* instead"):
+            _ = ensure_bool(None)
 
 
 class TestEnsureClass:
