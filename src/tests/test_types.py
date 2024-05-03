@@ -11,6 +11,7 @@ from pytest import mark, param, raises
 
 from utilities.datetime import get_now, get_today
 from utilities.pathvalidate import valid_path_home
+from utilities.sentinel import sentinel
 from utilities.types import (
     Duration,
     EnsureBoolError,
@@ -62,68 +63,107 @@ class TestDuration:
 
 
 class TestEnsureBool:
-    def test_main(self) -> None:
-        value = True
-        assert isinstance(ensure_bool(value), bool)
+    @mark.parametrize(
+        ("obj", "nullable"), [param(True, False), param(True, True), param(None, True)]
+    )
+    def test_main(self, *, obj: bool | None, nullable: bool) -> None:
+        _ = ensure_bool(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureBoolError, match="Object .* must be a boolean; got .* instead"
-        ):
-            _ = ensure_bool(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a boolean"),
+            param(True, "Object .* must be a boolean or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureBoolError, match=f"{match}; got .* instead"):
+            _ = ensure_bool(sentinel, nullable=nullable)
 
 
 class TestEnsureClass:
-    def test_single_pass(self) -> None:
-        result = ensure_class(None, NoneType)
-        assert isinstance(result, NoneType)
+    @mark.parametrize(
+        ("obj", "cls", "nullable"),
+        [
+            param(True, bool, False),
+            param(True, bool, True),
+            param(True, (bool,), False),
+            param(True, (bool,), True),
+            param(None, bool, True),
+        ],
+    )
+    def test_main(self, *, obj: Any, cls: Any, nullable: bool) -> None:
+        _ = ensure_class(obj, cls, nullable=nullable)
 
-    def test_multiple_pass(self) -> None:
-        result = ensure_class(None, (NoneType, int))
-        assert isinstance(result, NoneType)
-
-    def test_single_error(self) -> None:
-        with raises(
-            EnsureClassError, match=r"Object .* must be an instance of .*; got .*\."
-        ):
-            _ = ensure_class(None, int)
-
-    def test_multiple_error(self) -> None:
-        with raises(
-            EnsureClassError, match=r"Object .* must be an instance of .*, .*; got .*\."
-        ):
-            _ = ensure_class(None, (int, float))
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be an instance of .*"),
+            param(True, "Object .* must be an instance of .* or None"),
+        ],
+    )
+    def test_single_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureClassError, match=f"{match}; got .* instead"):
+            _ = ensure_class(sentinel, bool, nullable=nullable)
 
 
 class TestEnsureDate:
-    def test_main(self) -> None:
-        assert isinstance(ensure_date(get_today()), dt.date)
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [param(get_today(), False), param(get_today(), True), param(None, True)],
+    )
+    def test_main(self, *, obj: dt.date | None, nullable: bool) -> None:
+        _ = ensure_date(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(EnsureDateError, match="Object .* must be a date; got .* instead"):
-            _ = ensure_date(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a date"),
+            param(True, "Object .* must be a date or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureDateError, match=f"{match}; got .* instead"):
+            _ = ensure_date(sentinel, nullable=nullable)
 
 
 class TestEnsureDatetime:
-    def test_main(self) -> None:
-        assert isinstance(ensure_datetime(get_now()), dt.datetime)
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [param(get_now(), False), param(get_now(), True), param(None, True)],
+    )
+    def test_main(self, *, obj: dt.datetime | None, nullable: bool) -> None:
+        _ = ensure_datetime(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureDatetimeError, match="Object .* must be a datetime; got .* instead"
-        ):
-            _ = ensure_datetime(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a datetime"),
+            param(True, "Object .* must be a datetime or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureDatetimeError, match=f"{match}; got .* instead"):
+            _ = ensure_datetime(sentinel, nullable=nullable)
 
 
 class TestEnsureFloat:
-    def test_main(self) -> None:
-        assert isinstance(ensure_float(0.0), float)
+    @mark.parametrize(
+        ("obj", "nullable"), [param(0.0, False), param(0.0, True), param(None, True)]
+    )
+    def test_main(self, *, obj: float | None, nullable: bool) -> None:
+        _ = ensure_float(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureFloatError, match="Object .* must be a float; got .* instead"
-        ):
-            _ = ensure_float(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a float"),
+            param(True, "Object .* must be a float or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureFloatError, match=f"{match}; got .* instead"):
+            _ = ensure_float(sentinel, nullable=nullable)
 
 
 class TestEnsureHashable:
@@ -137,14 +177,22 @@ class TestEnsureHashable:
 
 
 class TestEnsureInt:
-    def test_main(self) -> None:
-        assert isinstance(ensure_int(0), int)
+    @mark.parametrize(
+        ("obj", "nullable"), [param(0, False), param(0, True), param(None, True)]
+    )
+    def test_main(self, *, obj: int | None, nullable: bool) -> None:
+        _ = ensure_int(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureIntError, match="Object .* must be an integer; got .* instead"
-        ):
-            _ = ensure_int(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be an integer"),
+            param(True, "Object .* must be an integer or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureIntError, match=f"{match}; got .* instead"):
+            _ = ensure_int(sentinel, nullable=nullable)
 
 
 class TestEnsureNotNone:
@@ -154,20 +202,28 @@ class TestEnsureNotNone:
         assert result == 0
 
     def test_error(self) -> None:
-        with raises(EnsureNotNoneError, match=r"Object must not be None\."):
+        with raises(EnsureNotNoneError, match="Object .* must not be None"):
             _ = ensure_not_none(None)
 
 
 class TestEnsureNumber:
-    @mark.parametrize("number", [param(0), param(0.0)])
-    def test_main(self, *, number: Number) -> None:
-        assert isinstance(ensure_number(number), Number)
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [param(0, False), param(0.0, False), param(0.0, True), param(None, True)],
+    )
+    def test_main(self, *, obj: Number, nullable: bool) -> None:
+        _ = ensure_number(obj, nullable=nullable)
 
-    def test_error(self) -> None:
-        with raises(
-            EnsureNumberError, match="Object .* must be a number; got .* instead"
-        ):
-            _ = ensure_number(None)
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a number"),
+            param(True, "Object .* must be a number or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureNumberError, match=f"{match}; got .* instead"):
+            _ = ensure_number(sentinel, nullable=nullable)
 
 
 class TestEnsureSized:
@@ -176,7 +232,7 @@ class TestEnsureSized:
         _ = ensure_sized(obj)
 
     def test_error(self) -> None:
-        with raises(EnsureSizedError, match=r"Object .* must be sized\."):
+        with raises(EnsureSizedError, match=r"Object .* must be sized"):
             _ = ensure_sized(None)
 
 
@@ -188,7 +244,7 @@ class TestEnsureSizedNotStr:
     @mark.parametrize("obj", [param(None), param("")])
     def test_error(self, *, obj: Any) -> None:
         with raises(
-            EnsureSizedNotStrError, match=r"Object .* must be sized, but not a string\."
+            EnsureSizedNotStrError, match="Object .* must be sized, but not a string"
         ):
             _ = ensure_sized_not_str(obj)
 
