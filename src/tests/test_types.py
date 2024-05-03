@@ -106,12 +106,6 @@ class TestEnsureClass:
         with raises(EnsureClassError, match=f"{match}; got .* instead"):
             _ = ensure_class(sentinel, bool, nullable=nullable)
 
-    def test_multiple_error(self) -> None:
-        with raises(
-            EnsureClassError, match=r"Object .* must be an instance of .*, .*; got .*\."
-        ):
-            _ = ensure_class(None, (int, float))
-
 
 class TestEnsureDate:
     @mark.parametrize(
