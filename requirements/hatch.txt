@@ -21,8 +21,6 @@ coverage==7.5.0
 coverage-conditional-plugin==0.9.0
 distlib==0.3.8
     # via virtualenv
-editables==0.5
-    # via hatchling
 exceptiongroup==1.2.1
     # via
     #   anyio
@@ -32,8 +30,8 @@ filelock==3.14.0
     # via virtualenv
 h11==0.14.0
     # via httpcore
-hatch==1.9.7
-hatchling==1.21.1
+hatch==1.10.0
+hatchling==1.24.2
     # via hatch
 httpcore==1.0.5
     # via httpx
@@ -123,7 +121,9 @@ typing-extensions==4.11.0
     # via anyio
 userpath==1.9.2
     # via hatch
-virtualenv==20.25.3
+uv==0.1.39
+    # via hatch
+virtualenv==20.26.1
     # via hatch
 zipp==3.18.1
     # via importlib-metadata

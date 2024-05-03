@@ -116,7 +116,7 @@ tomli==2.0.1
     #   pytest
 tornado==6.4
     # via bokeh
-tqdm==4.66.2
+tqdm==4.66.4
     # via panel
 typing-extensions==4.11.0
     # via panel

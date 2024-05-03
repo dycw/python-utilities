@@ -8,6 +8,7 @@ anyio==4.3.0
     # via
     #   httpx
     #   starlette
+    #   watchfiles
 asciitree==0.3.3
     # via zarr
 ast-comments==1.2.2
@@ -48,7 +49,9 @@ click==8.1.7
     # via
     #   hatch
     #   streamlit
+    #   typer
     #   userpath
+    #   uvicorn
 colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
@@ -64,18 +67,23 @@ defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
     # via virtualenv
+dnspython==2.6.1
+    # via email-validator
 docutils==0.21.2
     # via python-daemon
 ecos==2.0.13
     # via cvxpy
-editables==0.5
-    # via hatchling
+email-validator==2.1.1
+    # via fastapi
 exceptiongroup==1.2.1
     # via
     #   anyio
     #   hypothesis
     #   pytest
-fastapi==0.110.3
+fastapi==0.111.0
+    # via fastapi-cli
+fastapi-cli==0.0.2
+    # via fastapi
 fasteners==0.19
     # via zarr
 filelock==3.14.0
@@ -88,21 +96,28 @@ gitdb==4.0.11
 gitpython==3.1.43
     # via streamlit
 h11==0.14.0
-    # via httpcore
-hatch==1.9.7
-hatchling==1.21.1
+    # via
+    #   httpcore
+    #   uvicorn
+hatch==1.10.0
+hatchling==1.24.2
     # via hatch
 holoviews==1.18.3
 httpcore==1.0.5
     # via httpx
+httptools==0.6.1
+    # via uvicorn
 httpx==0.27.0
-    # via hatch
+    # via
+    #   fastapi
+    #   hatch
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.100.2
 idna==3.7
     # via
     #   anyio
+    #   email-validator
     #   httpx
     #   hyperlink
     #   requests
@@ -120,6 +135,7 @@ jinja2==3.1.3
     # via
     #   altair
     #   bokeh
+    #   fastapi
     #   pydeck
 jsonschema==4.22.0
     # via altair
@@ -174,6 +190,8 @@ numpy==1.26.4
     #   streamlit
     #   xarray
     #   zarr
+orjson==3.10.2
+    # via fastapi
 osqp==0.6.4
     # via cvxpy
 packaging==24.0
@@ -261,6 +279,10 @@ python-dateutil==2.9.0.post0
     # via
     #   luigi
     #   pandas
+python-dotenv==1.0.1
+    # via uvicorn
+python-multipart==0.0.9
+    # via fastapi
 pytz==2024.1
     # via pandas
 pyviz-comms==3.0.2
@@ -268,10 +290,12 @@ pyviz-comms==3.0.2
     #   holoviews
     #   panel
 pyyaml==6.0.1
-    # via bokeh
+    # via
+    #   bokeh
+    #   uvicorn
 qdldl==0.1.7.post2
     # via osqp
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -283,6 +307,7 @@ rich==13.7.1
     # via
     #   hatch
     #   streamlit
+    #   typer
 rpds-py==0.18.0
     # via
     #   jsonschema
@@ -301,7 +326,9 @@ semver==3.0.2
 setuptools==69.5.1
     # via python-daemon
 shellingham==1.5.4
-    # via hatch
+    # via
+    #   hatch
+    #   typer
 six==1.16.0
     # via
     #   bleach
@@ -319,7 +346,7 @@ soupsieve==2.5
 sqlalchemy==2.0.29
 starlette==0.37.2
     # via fastapi
-streamlit==1.33.0
+streamlit==1.34.0
 tenacity==8.2.3
     # via
     #   luigi
@@ -343,13 +370,15 @@ tornado==6.4
     #   bokeh
     #   luigi
     #   streamlit
-tqdm==4.66.2
+tqdm==4.66.4
     # via
     #   panel
     #   pqdm
 trove-classifiers==2024.4.10
     # via hatchling
 typed-settings==24.2.0
+typer==0.12.3
+    # via fastapi-cli
 typing-extensions==4.11.0
     # via
     #   altair
@@ -361,18 +390,34 @@ typing-extensions==4.11.0
     #   pydantic-core
     #   sqlalchemy
     #   streamlit
+    #   typer
+    #   uvicorn
 tzdata==2024.1
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
+ujson==5.9.0
+    # via fastapi
 urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-virtualenv==20.25.3
+uv==0.1.39
     # via hatch
+uvicorn==0.29.0
+    # via
+    #   fastapi
+    #   fastapi-cli
+uvloop==0.19.0
+    # via uvicorn
+virtualenv==20.26.1
+    # via hatch
+watchfiles==0.21.0
+    # via uvicorn
 webencodings==0.5.1
     # via bleach
+websockets==12.0
+    # via uvicorn
 xarray==2024.3.0
 xlrd==2.0.1
 xyzservices==2024.4.0

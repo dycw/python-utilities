@@ -218,12 +218,12 @@ pytz==2024.1
     # via pandas
 pyyaml==6.0.1
     # via jupyter-events
-pyzmq==26.0.2
+pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
