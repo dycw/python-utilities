@@ -67,7 +67,9 @@ class TestEnsureBool:
         assert isinstance(ensure_bool(value), bool)
 
     def test_error(self) -> None:
-        with raises(EnsureBoolError, match="Object .* must be a bool; got .* instead"):
+        with raises(
+            EnsureBoolError, match="Object .* must be a boolean; got .* instead"
+        ):
             _ = ensure_bool(None)
 
 
