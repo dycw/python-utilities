@@ -442,6 +442,7 @@ addopts = [
 filterwarnings = [
   "error",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+  "ignore:utcfromtimestamp.* is deprecated:DeprecationWarning",
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
