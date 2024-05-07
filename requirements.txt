@@ -267,7 +267,7 @@ protobuf==4.25.3
     # via streamlit
 psutil==5.9.8
     # via memory-profiler
-psycopg2==2.9.9
+psycopg2-binary==2.9.9
 ptyprocess==0.7.0
     # via pexpect
 pyarrow==16.0.0
