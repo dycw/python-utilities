@@ -779,9 +779,6 @@ def postgres_upsert(
 ) -> Insert:
     """Construct an `upsert` statement (postgres only)."""
     table = get_table(table_or_mapped_class)
-    if 0:
-        if (updated_at := table_has_updated_at(table)) is not None:
-            value_or_values = add_updated_at(value_or_values, updated_at)
     ins = postgresql_insert(table).values(value_or_values)
     constraint = cast(Any, table.primary_key)
     if selected_or_all == "selected":
@@ -855,5 +852,6 @@ __all__ = [
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "parse_engine",
+    "postgres_upsert",
     "serialize_engine",
 ]

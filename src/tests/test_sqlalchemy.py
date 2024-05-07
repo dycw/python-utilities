@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import typing
 from enum import auto
-from typing import Any, TypedDict, cast
+from typing import Any, Literal, TypedDict, cast
 
 import sqlalchemy
 from hypothesis import Phase, assume, given, settings
@@ -1287,6 +1287,46 @@ class TestPostgresUpsert:
         with engine.begin() as conn:
             results = conn.execute(select(table).order_by(table.c.id_)).all()
         assert results == rows
+
+    @given(id_=integers(0, 10), old1=booleans(), old2=booleans(), new1=booleans())
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_selected_or_all(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        old1: bool,
+        old2: bool,
+        new1: bool,
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all.__name__}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+            Column("value1", Boolean, nullable=True),
+            Column("value2", Boolean, nullable=True),
+        )
+        engine = create_postgres_engine(table)
+        ups = postgres_upsert(table, {"id_": id_, "value1": old1, "value2": old2})
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            assert conn.execute(select(table)).one() == (id_, old1, old2)
+        ups = postgres_upsert(
+            table, {"id_": id_, "value1": new1}, selected_or_all=selected_or_all
+        )
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            result = conn.execute(select(table)).one()
+        if selected_or_all == "selected":
+            expected = (id_, new1, old2)
+        else:
+            expected = (id_, new1, None)
+        assert result == expected
 
 
 class TestRedirectToNoSuchSequenceError:
