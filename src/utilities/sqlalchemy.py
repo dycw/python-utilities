@@ -770,7 +770,7 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
-def postgres_upsert(  # pragma: no cover
+def postgres_upsert(  # pragma: os-in-environ
     table_or_mapped_class: Table | type[Any],
     value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
