@@ -21,7 +21,7 @@ attrs==23.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.14.0
+babel==2.15.0
     # via jupyterlab-server
 beautifulsoup4==4.12.3
     # via nbconvert
@@ -38,7 +38,7 @@ charset-normalizer==3.3.2
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.5.0
+coverage==7.5.1
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -67,7 +67,7 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via jupyterlab
-hypothesis==6.100.2
+hypothesis==6.100.5
 idna==3.7
     # via
     #   anyio
@@ -84,7 +84,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.1
     # via ipython
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   jupyter-server
     #   jupyterlab
@@ -127,7 +127,7 @@ jupyter-server==2.14.0
     #   notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
-jupyterlab==4.1.8
+jupyterlab==4.2.0
 jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-server==2.27.1
@@ -180,7 +180,7 @@ platformdirs==4.2.1
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars==0.20.23
+polars==0.20.24
 prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
@@ -195,7 +195,7 @@ pure-eval==0.2.2
     # via stack-data
 pycparser==2.22
     # via cffi
-pygments==2.17.2
+pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
@@ -238,7 +238,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.18.0
+rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing

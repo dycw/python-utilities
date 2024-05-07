@@ -6,7 +6,8 @@ from enum import auto
 from typing import Any, TypedDict, cast
 
 import sqlalchemy
-from hypothesis import assume, given
+from hypothesis import Phase, assume, given, settings
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DataObject,
     booleans,
@@ -66,18 +67,20 @@ from sqlalchemy import (
     Unicode,
     UnicodeText,
     Uuid,
+    func,
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
 from utilities.hypothesis import (
+    assume_does_not_raise,
     lists_fixed_length,
     sqlite_engines,
     temp_paths,
     text_ascii,
 )
-from utilities.iterables import one
+from utilities.iterables import OneEmptyError, one
 from utilities.sqlalchemy import (
     CheckEngineError,
     Dialect,
@@ -137,11 +140,14 @@ from utilities.sqlalchemy import (
     is_table_or_mapped_class,
     mapped_class_to_dict,
     parse_engine,
+    postgres_upsert,
     reflect_table,
     serialize_engine,
 )
+from utilities.types import get_class_name
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 
@@ -1190,6 +1196,97 @@ class TestParseEngine:
     def test_error(self) -> None:
         with raises(ParseEngineError):
             _ = parse_engine("error")
+
+
+class TestPostgresEngine:
+    @given(ids=sets(integers(0, 10)))
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_main(
+        self, *, create_postgres_engine: Callable[..., Engine], ids: set[int]
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresEngine)}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+        )
+        engine = create_postgres_engine(table)
+        insert_items(engine, ([(id_,) for id_ in ids], table))
+        sel = select(table.c["id_"])
+        with engine.begin() as conn:
+            res = conn.execute(sel).scalars().all()
+        assert set(res) == ids
+
+
+class TestPostgresUpsert:
+    @given(id_=integers(0, 10), old=booleans(), new=booleans())
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_mapping(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        id_: int,
+        old: bool,
+        new: bool,
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapping.__name__}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        engine = create_postgres_engine(table)
+        ups = postgres_upsert(table, {"id_": id_, "value": old})
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            assert conn.execute(select(table)).one() == (id_, old)
+        ups = postgres_upsert(table, {"id_": id_, "value": new})
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            assert conn.execute(select(table)).one() == (id_, new)
+
+    @given(data=data(), ids=sets(integers(0, 10)))
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_sequence(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        data: DataObject,
+        ids: set[int],
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence.__name__}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        engine = create_postgres_engine(table)
+        with assume_does_not_raise(InvalidArgument):
+            id_ins = data.draw(sets(sampled_from(sorted(ids))))
+        old = data.draw(lists_fixed_length(booleans(), len(id_ins)))
+        values = [
+            {"id_": id_, "value": v} for (id_, v) in zip(id_ins, old, strict=True)
+        ]
+        with assume_does_not_raise(OneEmptyError):
+            ups = postgres_upsert(table, values)
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            assert conn.execute(
+                select(func.count()).select_from(table)
+            ).scalar_one() == len(id_ins)
+        new = data.draw(lists_fixed_length(booleans(), len(ids)))
+        rows = list(zip(sorted(ids), new, strict=True))
+        ups = postgres_upsert(table, [{"id_": id_, "value": v} for id_, v in rows])
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            results = conn.execute(select(table).order_by(table.c.id_)).all()
+        assert results == rows
 
 
 class TestRedirectToNoSuchSequenceError:

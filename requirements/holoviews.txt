@@ -14,7 +14,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.0
+coverage==7.5.1
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -24,12 +24,12 @@ exceptiongroup==1.2.1
     #   hypothesis
     #   pytest
 holoviews==1.18.3
-hypothesis==6.100.2
+hypothesis==6.100.5
 idna==3.7
     # via requests
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.3
+jinja2==3.1.4
     # via bokeh
 linkify-it-py==2.0.3
     # via panel

@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-dataclasses --prerelease=disallow --output-file=requirements/dataclasses.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.0
+coverage==7.5.1
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -11,7 +11,7 @@ exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.100.2
+hypothesis==6.100.5
 iniconfig==2.0.0
     # via pytest
 packaging==24.0
