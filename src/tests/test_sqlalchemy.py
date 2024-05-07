@@ -73,6 +73,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
 from sqlalchemy.orm import declarative_base
 
+from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
     assume_does_not_raise,
     lists_fixed_length,
@@ -1198,6 +1199,7 @@ class TestParseEngine:
             _ = parse_engine("error")
 
 
+@SKIPIF_CI
 class TestPostgresEngine:
     @given(ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
@@ -1218,6 +1220,7 @@ class TestPostgresEngine:
         assert set(res) == ids
 
 
+@SKIPIF_CI
 class TestPostgresUpsert:
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})

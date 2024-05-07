@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from os import getenv
+from os import environ, getenv
 from typing import TYPE_CHECKING, Any
 
 from pytest import LogCaptureFixture, fixture, mark
@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from _pytest.fixtures import SubRequest
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
+SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
 
 
 # hypothesis
