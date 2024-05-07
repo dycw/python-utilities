@@ -67,6 +67,7 @@ dev = [
   "coverage-conditional-plugin",
   "exceptiongroup",
   "freezegun",
+  "psycopg2-binary",
   "pytest-asyncio",
   "pytest-cov",
   "pytest-instafail",
@@ -229,7 +230,7 @@ zzz-test-scripts-pypi-server = [
 zzz-test-semver = ["semver"]
 zzz-test-sentinel = []
 zzz-test-socket = []
-zzz-test-sqlalchemy = ["bidict", "pyhumps", "sqlalchemy"]
+zzz-test-sqlalchemy = ["bidict", "psycopg2-binary", "pyhumps", "sqlalchemy"]
 zzz-test-sqlalchemy-polars = ["polars", "pyhumps", "sqlalchemy"]
 zzz-test-subprocess = []
 zzz-test-sys = []

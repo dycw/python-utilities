@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-luigi --prerelease=disallow --output-file=requirements/luigi.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.0
+coverage==7.5.1
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -14,7 +14,7 @@ exceptiongroup==1.2.1
     #   hypothesis
     #   pytest
 freezegun==1.5.0
-hypothesis==6.100.2
+hypothesis==6.100.5
 iniconfig==2.0.0
     # via pytest
 lockfile==0.12.2
@@ -48,8 +48,8 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.29
-tenacity==8.2.3
+sqlalchemy==2.0.30
+tenacity==8.3.0
     # via luigi
 tomli==2.0.1
     # via

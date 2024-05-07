@@ -8,6 +8,8 @@ on:
 jobs:
   test:
     name: test / ${{ matrix.os }} / ${{ matrix.version }}
+    env:
+      CI: 1
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

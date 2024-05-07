@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
@@ -10,7 +10,7 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, TypeGuard, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast
 
 import sqlalchemy
 from sqlalchemy import (
@@ -21,6 +21,7 @@ from sqlalchemy import (
     DateTime,
     Engine,
     Float,
+    Insert,
     Interval,
     LargeBinary,
     MetaData,
@@ -41,6 +42,7 @@ from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
@@ -768,6 +770,31 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
+def postgres_upsert(  # pragma: no cover
+    table_or_mapped_class: Table | type[Any],
+    value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    """Construct an `upsert` statement (postgres only)."""
+    table = get_table(table_or_mapped_class)
+    ins = postgresql_insert(table).values(value_or_values)
+    constraint = cast(Any, table.primary_key)
+    if selected_or_all == "selected":
+        if isinstance(value_or_values, Mapping):
+            columns = set(value_or_values)
+        else:
+            all_columns = set(map(frozenset, value_or_values))
+            columns = one(all_columns)
+    elif selected_or_all == "all":
+        columns = {c.name for c in ins.excluded}
+    else:
+        assert_never(selected_or_all)  # pragma: no cover
+    set_ = {c: getattr(ins.excluded, c) for c in columns}
+    return ins.on_conflict_do_update(constraint=constraint, set_=set_)
+
+
 def reflect_table(
     table_or_mapped_class: Table | type[Any],
     engine: Engine,
@@ -825,5 +852,6 @@ __all__ = [
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "parse_engine",
+    "postgres_upsert",
     "serialize_engine",
 ]
