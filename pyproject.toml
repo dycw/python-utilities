@@ -78,7 +78,11 @@ dev = [
   # CI
   "win32_setctime >= 1.1.0, < 1.2",  # https://github.com/Delgan/loguru/issues/147
 ]
-scripts-clean-dir = ["click >= 8.1.7, < 8.2", "loguru >= 0.7.2, < 0.8", "typed-settings >= 24.2.0, < 24.3"]
+scripts-clean-dir = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 scripts-csv-to-markdown = ["click >= 8.1.7, < 8.2", "loguru >= 0.7.2, < 0.8", "mdutils >= 1.6.0, < 1.7", "typed-settings >= 24.2.0, < 24.3"]
 scripts-generate-snippets = [
   "ast-comments >= 1.2.2, < 1.3",
@@ -87,8 +91,18 @@ scripts-generate-snippets = [
   "pyhumps >= 3.8.0, < 3.9",
   "typed-settings >= 24.2.0, < 24.3",
 ]
-scripts-luigi-server = ["click >= 8.1.7, < 8.2", "loguru >= 0.7.2, < 0.8", "luigi >= 3.5.0, < 3.6", "typed-settings >= 24.2.0, < 24.3"]
-scripts-monitor-memory = ["click >= 8.1.7, < 8.2", "loguru >= 0.7.2, < 0.8", "psutil >= 5.9.8, < 5.10", "typed-settings >= 24.2.0, < 24.3"]
+scripts-luigi-server = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "typed-settings >= 24.2.0, < 24.3",
+]
+scripts-monitor-memory = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "psutil >= 5.9.8, < 5.10",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",
@@ -107,12 +121,24 @@ zzz-test-ast = []
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = ["atools >= 0.14.2, < 0.15"]
 zzz-test-beartype = ["beartype >= 0.18.5, < 0.19"]
-zzz-test-bs4 = ["beautifulsoup4 >= 4.12.3, < 4.13", "polars >= 0.20.24, < 0.21"]
-zzz-test-cacher = ["atomicwrites >= 1.4.1, < 1.5", "cachetools >= 5.3.3, < 5.4"]
+zzz-test-bs4 = [
+  "beautifulsoup4 >= 4.12.3, < 4.13",
+  "polars >= 0.20.24, < 0.21",
+]
+zzz-test-cacher = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "cachetools >= 5.3.3, < 5.4",
+]
 zzz-test-cachetools = ["cachetools >= 5.3.3, < 5.4"]
-zzz-test-click = ["click >= 8.1.7, < 8.2", "sqlalchemy >= 2.0.30, < 2.1"]
+zzz-test-click = [
+  "click >= 8.1.7, < 8.2",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
 zzz-test-cryptography = ["cryptography >= 42.0.7, < 42.1"]
-zzz-test-cvxpy = ["cvxpy >= 1.4.3, < 1.5", "pandas >= 2.2.2, < 2.3"]
+zzz-test-cvxpy = [
+  "cvxpy >= 1.4.3, < 1.5",
+  "pandas >= 2.2.2, < 2.3",
+]
 zzz-test-dataclasses = []
 zzz-test-datetime = []
 zzz-test-defaults = [
@@ -128,23 +154,42 @@ zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-fastapi = ["fastapi-slim >= 0.111.0, < 0.112"]
-zzz-test-fpdf2 = ["fpdf2 >= 2.7.8, < 2.8", "holoviews >= 1.18.3, < 1.19"]
+zzz-test-fpdf2 = [
+  "fpdf2 >= 2.7.8, < 2.8",
+  "holoviews >= 1.18.3, < 1.19",
+]
 zzz-test-functions = []
 zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
 zzz-test-hatch = ["hatch >= 1.10.0, < 1.11"]
-zzz-test-holoviews = ["holoviews >= 1.18.3, < 1.19", "numbagg >= 0.8.1, < 0.9", "xarray >= 2024.3.0, < 2024.4"]
-zzz-test-humps = ["bidict >= 0.23.1, < 0.24", "pyhumps >= 3.8.0, < 3.9"]
+zzz-test-holoviews = [
+  "holoviews >= 1.18.3, < 1.19",
+  "numbagg >= 0.8.1, < 0.9",
+  "xarray >= 2024.3.0, < 2024.4",
+]
+zzz-test-humps = [
+  "bidict >= 0.23.1, < 0.24",
+  "pyhumps >= 3.8.0, < 3.9",
+]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
 zzz-test-json = ["sqlalchemy >= 2.0.30, < 2.1"]
-zzz-test-jupyter = ["jupyterlab >= 4.2.0, < 4.3", "pandas >= 2.2.2, < 2.3", "polars >= 0.20.24, < 0.21"]
+zzz-test-jupyter = [
+  "jupyterlab >= 4.2.0, < 4.3",
+  "pandas >= 2.2.2, < 2.3",
+  "polars >= 0.20.24, < 0.21",
+]
 zzz-test-locale = []
 zzz-test-logging = []
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
-zzz-test-luigi = ["freezegun >= 1.5.0, < 1.6", "luigi >= 3.5.0, < 3.6", "semver >= 3.0.2, < 3.1", "sqlalchemy >= 2.0.30, < 2.1"]
+zzz-test-luigi = [
+  "freezegun >= 1.5.0, < 1.6",
+  "luigi >= 3.5.0, < 3.6",
+  "semver >= 3.0.2, < 3.1",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
 zzz-test-math = []
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = [
@@ -183,7 +228,11 @@ zzz-test-modules = [
   "zarr >= 2.18.0, < 2.19",
 ]
 zzz-test-more-itertools = ["more-itertools >= 10.2.0, < 10.3"]
-zzz-test-numpy = ["bottleneck >= 1.3.8, < 1.4", "numbagg >= 0.8.1, < 0.9", "pandas >= 2.2.2, < 2.3"]
+zzz-test-numpy = [
+  "bottleneck >= 1.3.8, < 1.4",
+  "numbagg >= 0.8.1, < 0.9",
+  "pandas >= 2.2.2, < 2.3",
+]
 zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-os = []
 zzz-test-pandas = ["pandas >= 2.2.2, < 2.3"]
@@ -193,14 +242,28 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = ["polars >= 0.20.24, < 0.21"]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
-zzz-test-pydantic = ["atomicwrites >= 1.4.1, < 1.5", "pydantic >= 2.7.1, < 2.8"]
-zzz-test-pyinstrument = ["atomicwrites >= 1.4.1, < 1.5", "pyinstrument >= 4.6.2, < 4.7"]
-zzz-test-pytest = ["atomicwrites >= 1.4.1, < 1.5", "pytest-asyncio >= 0.23.6, < 0.24"]
+zzz-test-pydantic = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pydantic >= 2.7.1, < 2.8",
+]
+zzz-test-pyinstrument = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pyinstrument >= 4.6.2, < 4.7",
+]
+zzz-test-pytest = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pytest-asyncio >= 0.23.6, < 0.24",
+]
 zzz-test-pytest-check = ["pytest-check >= 2.3.1, < 2.4"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-scipy = ["scipy >= 1.13.0, < 1.14"]
-zzz-test-scripts-clean-dir = ["click >= 8.1.7, < 8.2", "freezegun >= 1.5.0, < 1.6", "loguru >= 0.7.2, < 0.8", "typed-settings >= 24.2.0, < 24.3"]
+zzz-test-scripts-clean-dir = [
+  "click >= 8.1.7, < 8.2",
+  "freezegun >= 1.5.0, < 1.6",
+  "loguru >= 0.7.2, < 0.8",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 zzz-test-scripts-csv-to-markdown = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",
@@ -214,7 +277,12 @@ zzz-test-scripts-generate-snippets = [
   "pyhumps >= 3.8.0, < 3.9",
   "typed-settings >= 24.2.0, < 24.3",
 ]
-zzz-test-scripts-luigi-server = ["click >= 8.1.7, < 8.2", "loguru >= 0.7.2, < 0.8", "luigi >= 3.5.0, < 3.6", "typed-settings >= 24.2.0, < 24.3"]
+zzz-test-scripts-luigi-server = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 zzz-test-scripts-monitor-memory = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",
@@ -230,17 +298,37 @@ zzz-test-scripts-pypi-server = [
 zzz-test-semver = ["semver >= 3.0.2, < 3.1"]
 zzz-test-sentinel = []
 zzz-test-socket = []
-zzz-test-sqlalchemy = ["bidict >= 0.23.1, < 0.24", "psycopg2-binary >= 2.9.9, < 2.10", "pyhumps >= 3.8.0, < 3.9", "sqlalchemy >= 2.0.30, < 2.1"]
-zzz-test-sqlalchemy-polars = ["polars >= 0.20.24, < 0.21", "pyhumps >= 3.8.0, < 3.9", "sqlalchemy >= 2.0.30, < 2.1"]
+zzz-test-sqlalchemy = [
+  "bidict >= 0.23.1, < 0.24",
+  "psycopg2-binary >= 2.9.9, < 2.10",
+  "pyhumps >= 3.8.0, < 3.9",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
+zzz-test-sqlalchemy-polars = [
+  "polars >= 0.20.24, < 0.21",
+  "pyhumps >= 3.8.0, < 3.9",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-text = []
 zzz-test-timer = []
-zzz-test-typed-settings = ["click >= 8.1.7, < 8.2", "sqlalchemy >= 2.0.30, < 2.1", "typed-settings >= 24.2.0, < 24.3"]
-zzz-test-xarray = ["bottleneck >= 1.3.8, < 1.4", "numbagg >= 0.8.1, < 0.9", "xarray >= 2024.3.0, < 2024.4"]
+zzz-test-typed-settings = [
+  "click >= 8.1.7, < 8.2",
+  "sqlalchemy >= 2.0.30, < 2.1",
+  "typed-settings >= 24.2.0, < 24.3",
+]
+zzz-test-xarray = [
+  "bottleneck >= 1.3.8, < 1.4",
+  "numbagg >= 0.8.1, < 0.9",
+  "xarray >= 2024.3.0, < 2024.4",
+]
 zzz-test-xlrd = ["xlrd >= 2.0.1, < 2.1"]
-zzz-test-zarr = ["atomicwrites >= 1.4.1, < 1.5", "zarr >= 2.18.0, < 2.19"]
+zzz-test-zarr = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "zarr >= 2.18.0, < 2.19",
+]
 
 [project.scripts]
 clean-dir = "utilities.scripts.clean_dir:main"
