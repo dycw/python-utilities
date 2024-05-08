@@ -21,7 +21,6 @@ backports-tarfile==1.1.1
     # via jaraco-context
 beartype==0.18.5
 beautifulsoup4==4.12.3
-    # via bs4
 bleach==6.1.0
     # via panel
 blinker==1.8.2
@@ -30,7 +29,6 @@ bokeh==3.4.1
     # via panel
 bounded-pool-executor==0.0.3
     # via pqdm
-bs4==0.0.2
 cachetools==5.3.3
     # via streamlit
 certifi==2024.2.2
@@ -367,7 +365,7 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.1.39
+uv==0.1.40
     # via hatch
 virtualenv==20.26.1
     # via hatch
@@ -379,7 +377,7 @@ xyzservices==2024.4.0
     # via
     #   bokeh
     #   panel
-zarr==2.17.2
+zarr==2.18.0
 zipp==3.18.1
     # via importlib-metadata
 zstandard==0.22.0

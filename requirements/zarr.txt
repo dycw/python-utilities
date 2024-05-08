@@ -47,4 +47,4 @@ tomli==2.0.1
     #   coverage
     #   pytest
 typing-extensions==4.11.0
-zarr==2.17.2
+zarr==2.18.0

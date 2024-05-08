@@ -8,239 +8,335 @@ requires = ["hatchling"]
 # project
 [project]
 authors = [{name = "Derek Wan", email = "d.wan@icloud.com"}]
-dependencies = ["typing-extensions"]
+dependencies = ["typing-extensions >= 4.11.0, < 4.12"]
 dynamic = ["version"]
 name = "dycw-utilities"
 readme = "README.md"
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
-cacher = ["atomicwrites", "cachetools"]
+cacher = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "cachetools >= 5.3.3, < 5.4",
+]
 dev = [
-  "altair",
-  "ast-comments",
-  "atomicwrites",
-  "atools",
-  "beartype",
-  "beautifulsoup4",
-  "bidict",
-  "bottleneck",
-  "cachetools",
-  "click",
-  "cryptography",
-  "cvxpy",
-  "fastapi-slim",
-  "fpdf2",
-  "frozendict",
-  "hatch",
-  "holoviews",
-  "hypothesis",
-  "loguru",
-  "luigi",
-  "mdutils",
-  "memory-profiler",
-  "more-itertools",
-  "numbagg",
-  "numpy",
-  "optuna",
-  "pandas",
-  "pathvalidate",
-  "polars-lts-cpu",  # for CI
-  "pqdm",
-  "psutil",
-  "pydantic",
-  "pyhumps",
-  "pyinstrument",
-  "pypiserver[passlib]",
-  "pytest",
-  "pytest-check",
-  "scipy",
-  "selenium",
-  "semver",
-  "sqlalchemy",
-  "streamlit",
-  "typed-settings",
-  "xarray",
-  "xlrd",
-  "zarr",
+  "altair >= 5.3.0, < 5.4",
+  "ast-comments >= 1.2.2, < 1.3",
+  "atomicwrites >= 1.4.1, < 1.5",
+  "atools >= 0.14.2, < 0.15",
+  "beartype >= 0.18.5, < 0.19",
+  "beautifulsoup4 >= 4.12.3, < 4.13",
+  "bidict >= 0.23.1, < 0.24",
+  "bottleneck >= 1.3.8, < 1.4",
+  "cachetools >= 5.3.3, < 5.4",
+  "click >= 8.1.7, < 8.2",
+  "cryptography >= 42.0.7, < 42.1",
+  "cvxpy >= 1.4.3, < 1.5",
+  "fastapi-slim >= 0.111.0, < 0.112",
+  "fpdf2 >= 2.7.8, < 2.8",
+  "frozendict >= 2.4.4, < 2.5",
+  "hatch >= 1.10.0, < 1.11",
+  "holoviews >= 1.18.3, < 1.19",
+  "hypothesis >= 6.100.5, < 6.101",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "mdutils >= 1.6.0, < 1.7",
+  "memory-profiler >= 0.61.0, < 0.62",
+  "more-itertools >= 10.2.0, < 10.3",
+  "numbagg >= 0.8.1, < 0.9",
+  "numpy >= 1.26.4, < 1.27",
+  "optuna >= 3.6.1, < 3.7",
+  "pandas >= 2.2.2, < 2.3",
+  "pathvalidate >= 3.2.0, < 3.3",
+  "polars-lts-cpu >= 0.20.24, < 0.21",  # for CI
+  "pqdm >= 0.2.0, < 0.3",
+  "psutil >= 5.9.8, < 5.10",
+  "pydantic >= 2.7.1, < 2.8",
+  "pyhumps >= 3.8.0, < 3.9",
+  "pyinstrument >= 4.6.2, < 4.7",
+  "pypiserver[passlib] >= 2.1.1, < 2.2",
+  "pytest >= 8.2.0, < 8.3",
+  "pytest-check >= 2.3.1, < 2.4",
+  "scipy >= 1.13.0, < 1.14",
+  "selenium >= 4.20.0, < 4.21",
+  "semver >= 3.0.2, < 3.1",
+  "sqlalchemy >= 2.0.30, < 2.1",
+  "streamlit >= 1.34.0, < 1.35",
+  "typed-settings >= 24.2.0, < 24.3",
+  "xarray >= 2024.3.0, < 2024.4",
+  "xlrd >= 2.0.1, < 2.1",
+  "zarr >= 2.18.0, < 2.19",
   # test
-  "coverage-conditional-plugin",
-  "exceptiongroup",
-  "freezegun",
-  "psycopg2-binary",
-  "pytest-asyncio",
-  "pytest-cov",
-  "pytest-instafail",
-  "pytest-only",
-  "pytest-randomly",
-  "pytest-rerunfailures",
-  "pytest-xdist",
+  "coverage-conditional-plugin >= 0.9.0, < 0.10",
+  "exceptiongroup >= 1.2.1, < 1.3",
+  "freezegun >= 1.5.0, < 1.6",
+  "psycopg2-binary >= 2.9.9, < 2.10",
+  "pytest-asyncio >= 0.23.6, < 0.24",
+  "pytest-cov >= 5.0.0, < 5.1",
+  "pytest-instafail >= 0.5.0, < 0.6",
+  "pytest-only >= 2.1.1, < 2.2",
+  "pytest-randomly >= 3.15.0, < 3.16",
+  "pytest-rerunfailures >= 14.0, < 15",
+  "pytest-xdist >= 3.6.1, < 3.7",
   # CI
-  "win32_setctime",  # https://github.com/Delgan/loguru/issues/147
+  "win32_setctime >= 1.1.0, < 1.2",  # https://github.com/Delgan/loguru/issues/147
 ]
-scripts-clean-dir = ["click", "loguru", "typed-settings"]
-scripts-csv-to-markdown = ["click", "loguru", "mdutils", "typed-settings"]
+scripts-clean-dir = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "typed-settings >= 24.2.0, < 24.3",
+]
+scripts-csv-to-markdown = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "mdutils >= 1.6.0, < 1.7",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 scripts-generate-snippets = [
-  "ast-comments",
-  "click",
-  "loguru",
-  "pyhumps",
-  "typed-settings",
+  "ast-comments >= 1.2.2, < 1.3",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "pyhumps >= 3.8.0, < 3.9",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
-scripts-luigi-server = ["click", "loguru", "luigi", "typed-settings"]
-scripts-monitor-memory = ["click", "loguru", "psutil", "typed-settings"]
+scripts-luigi-server = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "typed-settings >= 24.2.0, < 24.3",
+]
+scripts-monitor-memory = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "psutil >= 5.9.8, < 5.10",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 scripts-pypi-server = [
-  "click",
-  "loguru",
-  "pypiserver[passlib]",
-  "typed-settings",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "pypiserver[passlib] >= 2.1.1, < 2.2",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
 test = [
-  "exceptiongroup",
-  "hypothesis",
-  "pytest",
-  "pytest-randomly",
-  "pytest-rerunfailures",
-  "pytest-xdist",
+  "exceptiongroup >= 1.2.1, < 1.3",
+  "hypothesis >= 6.100.5, < 6.101",
+  "pytest >= 8.2.0, < 8.3",
+  "pytest-randomly >= 3.15.0, < 3.16",
+  "pytest-rerunfailures >= 14.0, < 15",
+  "pytest-xdist >= 3.6.1, < 3.7",
 ]
 zzz-test-ast = []
-zzz-test-atomicwrites = ["atomicwrites"]
-zzz-test-atools = ["atools"]
-zzz-test-beartype = ["beartype"]
-zzz-test-bs4 = ["beautifulsoup4", "polars"]
-zzz-test-cacher = ["atomicwrites", "cachetools"]
-zzz-test-cachetools = ["cachetools"]
-zzz-test-click = ["click", "sqlalchemy"]
-zzz-test-cryptography = ["cryptography"]
-zzz-test-cvxpy = ["cvxpy", "pandas"]
+zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
+zzz-test-atools = ["atools >= 0.14.2, < 0.15"]
+zzz-test-beartype = ["beartype >= 0.18.5, < 0.19"]
+zzz-test-bs4 = [
+  "beautifulsoup4 >= 4.12.3, < 4.13",
+  "polars >= 0.20.24, < 0.21",
+]
+zzz-test-cacher = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "cachetools >= 5.3.3, < 5.4",
+]
+zzz-test-cachetools = ["cachetools >= 5.3.3, < 5.4"]
+zzz-test-click = [
+  "click >= 8.1.7, < 8.2",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
+zzz-test-cryptography = ["cryptography >= 42.0.7, < 42.1"]
+zzz-test-cvxpy = [
+  "cvxpy >= 1.4.3, < 1.5",
+  "pandas >= 2.2.2, < 2.3",
+]
 zzz-test-dataclasses = []
 zzz-test-datetime = []
 zzz-test-defaults = [
-  "coverage-conditional-plugin",
-  "exceptiongroup",
-  "hypothesis",
-  "pytest",
-  "pytest-cov",
-  "pytest-randomly",
-  "pytest-rerunfailures",
+  "coverage-conditional-plugin >= 0.9.0, < 0.10",
+  "exceptiongroup >= 1.2.1, < 1.3",
+  "hypothesis >= 6.100.5, < 6.101",
+  "pytest >= 8.2.0, < 8.3",
+  "pytest-cov >= 5.0.0, < 5.1",
+  "pytest-randomly >= 3.15.0, < 3.16",
+  "pytest-rerunfailures >= 14.0, < 15",
 ]
 zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
-zzz-test-fastapi = ["fastapi-slim"]
-zzz-test-fpdf2 = ["fpdf2", "holoviews"]
+zzz-test-fastapi = ["fastapi-slim >= 0.111.0, < 0.112"]
+zzz-test-fpdf2 = [
+  "fpdf2 >= 2.7.8, < 2.8",
+  "holoviews >= 1.18.3, < 1.19",
+]
 zzz-test-functions = []
 zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
-zzz-test-hatch = ["hatch"]
-zzz-test-holoviews = ["holoviews", "numbagg", "xarray"]
-zzz-test-humps = ["bidict", "pyhumps"]
-zzz-test-ipython = ["ipython"]
+zzz-test-hatch = ["hatch >= 1.10.0, < 1.11"]
+zzz-test-holoviews = [
+  "holoviews >= 1.18.3, < 1.19",
+  "numbagg >= 0.8.1, < 0.9",
+  "xarray >= 2024.3.0, < 2024.4",
+]
+zzz-test-humps = [
+  "bidict >= 0.23.1, < 0.24",
+  "pyhumps >= 3.8.0, < 3.9",
+]
+zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
-zzz-test-json = ["sqlalchemy"]
-zzz-test-jupyter = ["jupyterlab", "pandas", "polars"]
+zzz-test-json = ["sqlalchemy >= 2.0.30, < 2.1"]
+zzz-test-jupyter = [
+  "jupyterlab >= 4.2.0, < 4.3",
+  "pandas >= 2.2.2, < 2.3",
+  "polars >= 0.20.24, < 0.21",
+]
 zzz-test-locale = []
 zzz-test-logging = []
-zzz-test-loguru = ["loguru"]
-zzz-test-luigi = ["freezegun", "luigi", "semver", "sqlalchemy"]
-zzz-test-math = []
-zzz-test-memory-profiler = ["memory-profiler"]
-zzz-test-modules = [
-  "atomicwrites",
-  "ast-comments",
-  "beartype",
-  "bs4",
-  "cachetools",
-  "click",
-  "cryptography",
-  "cvxpy",
-  "fastapi-slim",
-  "fpdf2",
-  "hatch",
-  "holoviews",
-  "loguru",
-  "luigi",
-  "memory-profiler",
-  "mdutils",
-  "more-itertools",
-  "numpy",
-  "pathvalidate",
-  "polars",
-  "pqdm",
-  "pydantic",
-  "pyhumps",
-  "pyinstrument",
-  "pytest-check",
-  "scipy",
-  "semver",
-  "sqlalchemy",
-  "streamlit",
-  "typed-settings",
-  "xarray",
-  "xlrd",
-  "zarr",
+zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
+zzz-test-luigi = [
+  "freezegun >= 1.5.0, < 1.6",
+  "luigi >= 3.5.0, < 3.6",
+  "semver >= 3.0.2, < 3.1",
+  "sqlalchemy >= 2.0.30, < 2.1",
 ]
-zzz-test-more-itertools = ["more-itertools"]
-zzz-test-numpy = ["bottleneck", "numbagg", "pandas"]
-zzz-test-optuna = ["optuna"]
+zzz-test-math = []
+zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
+zzz-test-modules = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "ast-comments >= 1.2.2, < 1.3",
+  "beartype >= 0.18.5, < 0.19",
+  "beautifulsoup4 >= 4.12.3, < 4.13",
+  "cachetools >= 5.3.3, < 5.4",
+  "click >= 8.1.7, < 8.2",
+  "cryptography >= 42.0.7, < 42.1",
+  "cvxpy >= 1.4.3, < 1.5",
+  "fastapi-slim >= 0.111.0, < 0.112",
+  "fpdf2 >= 2.7.8, < 2.8",
+  "hatch >= 1.10.0, < 1.11",
+  "holoviews >= 1.18.3, < 1.19",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "memory-profiler >= 0.61.0, < 0.62",
+  "mdutils >= 1.6.0, < 1.7",
+  "more-itertools >= 10.2.0, < 10.3",
+  "numpy >= 1.26.4, < 1.27",
+  "pathvalidate >= 3.2.0, < 3.3",
+  "polars >= 0.20.24, < 0.21",
+  "pqdm >= 0.2.0, < 0.3",
+  "pydantic >= 2.7.1, < 2.8",
+  "pyhumps >= 3.8.0, < 3.9",
+  "pyinstrument >= 4.6.2, < 4.7",
+  "pytest-check >= 2.3.1, < 2.4",
+  "scipy >= 1.13.0, < 1.14",
+  "semver >= 3.0.2, < 3.1",
+  "sqlalchemy >= 2.0.30, < 2.1",
+  "streamlit >= 1.34.0, < 1.35",
+  "typed-settings >= 24.2.0, < 24.3",
+  "xarray >= 2024.3.0, < 2024.4",
+  "xlrd >= 2.0.1, < 2.1",
+  "zarr >= 2.18.0, < 2.19",
+]
+zzz-test-more-itertools = ["more-itertools >= 10.2.0, < 10.3"]
+zzz-test-numpy = [
+  "bottleneck >= 1.3.8, < 1.4",
+  "numbagg >= 0.8.1, < 0.9",
+  "pandas >= 2.2.2, < 2.3",
+]
+zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-os = []
-zzz-test-pandas = ["pandas"]
-zzz-test-pathlib = ["pathvalidate"]
-zzz-test-pathvalidate = ["pathvalidate"]
-zzz-test-pickle = ["atomicwrites"]
+zzz-test-pandas = ["pandas >= 2.2.2, < 2.3"]
+zzz-test-pathlib = ["pathvalidate >= 3.2.0, < 3.3"]
+zzz-test-pathvalidate = ["pathvalidate >= 3.2.0, < 3.3"]
+zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
-zzz-test-polars = ["polars"]
-zzz-test-pqdm = ["pqdm"]
-zzz-test-pydantic = ["atomicwrites", "pydantic"]
-zzz-test-pyinstrument = ["atomicwrites", "pyinstrument"]
-zzz-test-pytest = ["atomicwrites", "pytest-asyncio"]
-zzz-test-pytest-check = ["pytest-check"]
+zzz-test-polars = ["polars >= 0.20.24, < 0.21"]
+zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
+zzz-test-pydantic = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pydantic >= 2.7.1, < 2.8",
+]
+zzz-test-pyinstrument = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pyinstrument >= 4.6.2, < 4.7",
+]
+zzz-test-pytest = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "pytest-asyncio >= 0.23.6, < 0.24",
+]
+zzz-test-pytest-check = ["pytest-check >= 2.3.1, < 2.4"]
 zzz-test-random = []
 zzz-test-re = []
-zzz-test-scipy = ["scipy"]
-zzz-test-scripts-clean-dir = ["click", "freezegun", "loguru", "typed-settings"]
+zzz-test-scipy = ["scipy >= 1.13.0, < 1.14"]
+zzz-test-scripts-clean-dir = [
+  "click >= 8.1.7, < 8.2",
+  "freezegun >= 1.5.0, < 1.6",
+  "loguru >= 0.7.2, < 0.8",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 zzz-test-scripts-csv-to-markdown = [
-  "click",
-  "loguru",
-  "mdutils",
-  "typed-settings",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "mdutils >= 1.6.0, < 1.7",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
 zzz-test-scripts-generate-snippets = [
-  "ast-comments",
-  "click",
-  "loguru",
-  "pyhumps",
-  "typed-settings",
+  "ast-comments >= 1.2.2, < 1.3",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "pyhumps >= 3.8.0, < 3.9",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
-zzz-test-scripts-luigi-server = ["click", "loguru", "luigi", "typed-settings"]
+zzz-test-scripts-luigi-server = [
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "luigi >= 3.5.0, < 3.6",
+  "typed-settings >= 24.2.0, < 24.3",
+]
 zzz-test-scripts-monitor-memory = [
-  "click",
-  "loguru",
-  "psutil",
-  "typed-settings",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "psutil >= 5.9.8, < 5.10",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
 zzz-test-scripts-pypi-server = [
-  "click",
-  "loguru",
-  "pypiserver[passlib]",
-  "typed-settings",
+  "click >= 8.1.7, < 8.2",
+  "loguru >= 0.7.2, < 0.8",
+  "pypiserver[passlib] >= 2.1.1, < 2.2",
+  "typed-settings >= 24.2.0, < 24.3",
 ]
-zzz-test-semver = ["semver"]
+zzz-test-semver = ["semver >= 3.0.2, < 3.1"]
 zzz-test-sentinel = []
 zzz-test-socket = []
-zzz-test-sqlalchemy = ["bidict", "psycopg2-binary", "pyhumps", "sqlalchemy"]
-zzz-test-sqlalchemy-polars = ["polars", "pyhumps", "sqlalchemy"]
+zzz-test-sqlalchemy = [
+  "bidict >= 0.23.1, < 0.24",
+  "psycopg2-binary >= 2.9.9, < 2.10",
+  "pyhumps >= 3.8.0, < 3.9",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
+zzz-test-sqlalchemy-polars = [
+  "polars >= 0.20.24, < 0.21",
+  "pyhumps >= 3.8.0, < 3.9",
+  "sqlalchemy >= 2.0.30, < 2.1",
+]
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-text = []
 zzz-test-timer = []
-zzz-test-typed-settings = ["click", "sqlalchemy", "typed-settings"]
-zzz-test-xarray = ["bottleneck", "numbagg", "xarray"]
-zzz-test-xlrd = ["xlrd"]
-zzz-test-zarr = ["atomicwrites", "zarr"]
+zzz-test-typed-settings = [
+  "click >= 8.1.7, < 8.2",
+  "sqlalchemy >= 2.0.30, < 2.1",
+  "typed-settings >= 24.2.0, < 24.3",
+]
+zzz-test-xarray = [
+  "bottleneck >= 1.3.8, < 1.4",
+  "numbagg >= 0.8.1, < 0.9",
+  "xarray >= 2024.3.0, < 2024.4",
+]
+zzz-test-xlrd = ["xlrd >= 2.0.1, < 2.1"]
+zzz-test-zarr = [
+  "atomicwrites >= 1.4.1, < 1.5",
+  "zarr >= 2.18.0, < 2.19",
+]
 
 [project.scripts]
 clean-dir = "utilities.scripts.clean_dir:main"
