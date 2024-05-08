@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import typing
 from enum import auto
+from time import sleep
 from typing import Any, Literal, TypedDict, cast
 
 import sqlalchemy
@@ -136,6 +137,7 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_does_not_exist_message,
     get_table_name,
+    get_table_updated_column,
     insert_items,
     is_mapped_class,
     is_table_or_mapped_class,
@@ -962,6 +964,32 @@ class TestGetTableName:
         assert result == expected
 
 
+class TestGetTableUpdatedColumn:
+    def test_main(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("created_at", DateTime(timezone=True), server_default=func.now()),
+            Column(
+                "updated_at",
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+            ),
+        )
+        assert get_table_updated_column(table) == "updated_at"
+
+    def test_none(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("created_at", DateTime(timezone=True), server_default=func.now()),
+        )
+        assert get_table_updated_column(table) is None
+
+
 class TestInsertItems:
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
@@ -1330,6 +1358,88 @@ class TestPostgresUpsert:
         else:
             expected = (id_, new1, None)
         assert result == expected
+
+    @given(id_=integers(0, 10), old=booleans(), new=booleans())
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_mapping_with_updated(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        id_: int,
+        old: bool,
+        new: bool,
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapping_with_updated.__name__}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+            Column(
+                "updated_at",
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+            ),
+        )
+        engine = create_postgres_engine(table)
+        ups = postgres_upsert(table, {"id_": id_, "value": old})
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            update1 = conn.execute(select(table.c.updated_at)).scalar_one()
+        sleep(0.1)
+        ups = postgres_upsert(table, {"id_": id_, "value": new})
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            update2 = conn.execute(select(table.c.updated_at)).scalar_one()
+        assert update1 < update2
+
+    @given(data=data(), ids=sets(integers(0, 10)))
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_sequence_with_updated(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        data: DataObject,
+        ids: set[int],
+    ) -> None:
+        metadata = MetaData()
+        table = Table(
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_with_updated.__name__}",
+            metadata,
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+            Column(
+                "updated_at",
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+            ),
+        )
+        engine = create_postgres_engine(table)
+        old = data.draw(lists_fixed_length(booleans(), len(ids)))
+        old_values = [
+            {"id_": id_, "value": v} for (id_, v) in zip(ids, old, strict=True)
+        ]
+        with assume_does_not_raise(OneEmptyError):
+            ups = postgres_upsert(table, old_values)
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            update1 = conn.execute(select(table.c.updated_at)).scalar_one()
+        sleep(0.1)
+        new = data.draw(lists_fixed_length(booleans(), len(ids)))
+        new_values = [
+            {"id_": id_, "value": v} for (id_, v) in zip(ids, new, strict=True)
+        ]
+        ups = postgres_upsert(table, new_values)
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            update2 = conn.execute(select(table.c.updated_at)).scalar_one()
+        assert update1 < update2
 
 
 class TestRedirectToNoSuchSequenceError:
