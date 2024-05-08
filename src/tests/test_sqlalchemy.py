@@ -136,6 +136,7 @@ from utilities.sqlalchemy import (
     get_table,
     get_table_does_not_exist_message,
     get_table_name,
+    get_table_updated_column,
     insert_items,
     is_mapped_class,
     is_table_or_mapped_class,
@@ -960,6 +961,32 @@ class TestGetTableName:
         result = get_table_name(Example)
         expected = "example"
         assert result == expected
+
+
+class TestGetTableUpdatedColumn:
+    def test_main(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("created_at", DateTime(timezone=True), server_default=func.now()),
+            Column(
+                "updated_at",
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+            ),
+        )
+        assert get_table_updated_column(table) == "updated_at"
+
+    def test_none(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("created_at", DateTime(timezone=True), server_default=func.now()),
+        )
+        assert get_table_updated_column(table) is None
 
 
 class TestInsertItems:

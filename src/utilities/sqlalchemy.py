@@ -48,11 +48,14 @@ from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
+from sqlalchemy.sql.functions import now
+from sqlalchemy.sql.schema import ColumnElementColumnDefault
 from typing_extensions import assert_never, override
 
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckLengthError,
+    OneEmptyError,
     check_length,
     chunked,
     is_iterable_not_str,
@@ -626,6 +629,33 @@ def get_table_does_not_exist_message(engine: Engine, /) -> str:
             assert_never(never)
 
 
+def get_table_updated_column(
+    table_or_mapped_class: Table | type[Any], /, *, pattern: str = "updated"
+) -> str | None:
+    """Get the name of the unique `updated_at` column, if it exists."""
+
+    def is_updated_at(column: Column[Any], /) -> bool:
+        return (
+            bool(search(pattern, column.name))
+            and is_date_time_with_time_zone(column.type)
+            and is_now(column.onupdate)
+        )
+
+    def is_date_time_with_time_zone(type_: Any, /) -> bool:
+        return isinstance(type_, DateTime) and type_.timezone
+
+    def is_now(on_update: Any, /) -> bool:
+        return isinstance(on_update, ColumnElementColumnDefault) and isinstance(
+            on_update.arg, now
+        )
+
+    matches = filter(is_updated_at, get_columns(table_or_mapped_class))
+    try:
+        return one(matches).name
+    except OneEmptyError:
+        return None
+
+
 def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
     """Get the table name from a Table or mapped class."""
     return get_table(table_or_mapped_class).name
@@ -847,6 +877,7 @@ __all__ = [
     "get_table",
     "get_table_does_not_exist_message",
     "get_table_name",
+    "get_table_updated_column",
     "insert_items",
     "is_mapped_class",
     "is_table_or_mapped_class",
