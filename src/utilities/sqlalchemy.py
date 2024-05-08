@@ -831,7 +831,7 @@ def postgres_upsert(  # pragma: ci-in-environ
     return ins.on_conflict_do_update(constraint=constraint, set_=set_)
 
 
-def _postgres_upsert_add_updated(
+def _postgres_upsert_add_updated(  # pragma: ci-in-environ
     value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     updated: Mapping[str, dt.datetime],
     /,
@@ -843,7 +843,7 @@ def _postgres_upsert_add_updated(
     ]
 
 
-def _postgres_upsert_add_updated_to_mapping(
+def _postgres_upsert_add_updated_to_mapping(  # pragma: ci-in-environ
     value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
 ) -> Mapping[str, Any]:
     return {**value, **updated_at}
