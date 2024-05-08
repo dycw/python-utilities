@@ -770,7 +770,7 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
-def postgres_upsert(  # pragma: no cover
+def postgres_upsert(  # pragma: ci-in-environ
     table_or_mapped_class: Table | type[Any],
     value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
@@ -790,7 +790,7 @@ def postgres_upsert(  # pragma: no cover
     elif selected_or_all == "all":
         columns = {c.name for c in ins.excluded}
     else:
-        assert_never(selected_or_all)  # pragma: no cover
+        assert_never(selected_or_all)
     set_ = {c: getattr(ins.excluded, c) for c in columns}
     return ins.on_conflict_do_update(constraint=constraint, set_=set_)
 

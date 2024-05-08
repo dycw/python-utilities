@@ -82,7 +82,7 @@ else:
             )
 
             engine = create_engine(
-                "postgresql", host="localhost", port=5432, database="dts"
+                "postgresql", host="localhost", port=5432, database="testing"
             )
             ensure_tables_dropped(engine, *tables_or_mapped_classes)
             ensure_tables_created(engine, *tables_or_mapped_classes)
