@@ -52,6 +52,7 @@ from sqlalchemy.sql.functions import now
 from sqlalchemy.sql.schema import ColumnElementColumnDefault
 from typing_extensions import assert_never, override
 
+from utilities.datetime import get_now
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckLengthError,
@@ -65,6 +66,8 @@ from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
 
 if TYPE_CHECKING:
+    import datetime as dt
+
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
     from utilities.math import FloatFinNonNeg, IntNonNeg
@@ -809,8 +812,11 @@ def postgres_upsert(  # pragma: ci-in-environ
 ) -> Insert:
     """Construct an `upsert` statement (postgres only)."""
     table = get_table(table_or_mapped_class)
-    ins = postgresql_insert(table).values(value_or_values)
+    if (updated_col := get_table_updated_column(table)) is not None:
+        updated_mapping = {updated_col: get_now()}
+        value_or_values = _postgres_upsert_add_updated(value_or_values, updated_mapping)
     constraint = cast(Any, table.primary_key)
+    ins = postgresql_insert(table).values(value_or_values)
     if selected_or_all == "selected":
         if isinstance(value_or_values, Mapping):
             columns = set(value_or_values)
@@ -823,6 +829,24 @@ def postgres_upsert(  # pragma: ci-in-environ
         assert_never(selected_or_all)
     set_ = {c: getattr(ins.excluded, c) for c in columns}
     return ins.on_conflict_do_update(constraint=constraint, set_=set_)
+
+
+def _postgres_upsert_add_updated(
+    value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    updated: Mapping[str, dt.datetime],
+    /,
+) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
+    if isinstance(value_or_values, Mapping):
+        return _postgres_upsert_add_updated_to_mapping(value_or_values, updated)
+    return [
+        _postgres_upsert_add_updated_to_mapping(v, updated) for v in value_or_values
+    ]
+
+
+def _postgres_upsert_add_updated_to_mapping(
+    value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
+) -> Mapping[str, Any]:
+    return {**value, **updated_at}
 
 
 def reflect_table(
