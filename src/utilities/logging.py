@@ -70,4 +70,4 @@ class LogLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-__all__ = ["LogLevel", "basic_config"]
+__all__ = ["GetLoggingLevelError", "LogLevel", "basic_config", "get_logging_level"]
