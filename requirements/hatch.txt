@@ -113,7 +113,7 @@ tomli==2.0.1
     #   pytest
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via hatch
 trove-classifiers==2024.4.10
     # via hatchling
@@ -121,7 +121,7 @@ typing-extensions==4.11.0
     # via anyio
 userpath==1.9.2
     # via hatch
-uv==0.1.41
+uv==0.1.42
     # via hatch
 virtualenv==20.26.1
     # via hatch
