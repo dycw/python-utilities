@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from re import escape, search
+from typing import TYPE_CHECKING
 
 from tests.rich.funcs import func1
 from utilities.rich import get_printed_exception
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 
 class TestGetPrintedException:
@@ -45,3 +49,23 @@ ZeroDivisionError: integer division or modulo by zero
             for exp in expected:
                 pattern = escape(exp.strip("\n"))
                 assert search(pattern, result)
+
+    def test_before(self) -> None:
+        def before(console: Console, /) -> None:
+            console.log("before called")
+
+        try:
+            _ = func1(1)
+        except ZeroDivisionError:
+            result = get_printed_exception(before=before)
+            assert search("before called", result)
+
+    def test_after(self) -> None:
+        def after(console: Console, /) -> None:
+            console.log("after called")
+
+        try:
+            _ = func1(1)
+        except ZeroDivisionError:
+            result = get_printed_exception(after=after)
+            assert search("after called", result)
