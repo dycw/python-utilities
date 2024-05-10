@@ -33,3 +33,6 @@ def get_printed_exception(
         if after is not None:
             after(console)
     return capture.get()
+
+
+__all__ = ["get_printed_exception"]
