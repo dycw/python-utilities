@@ -42,7 +42,7 @@ def get_logging_level(level: str, /) -> int:
             "VERBOSE": 19,
             "TRACE": 9,
         }
-    else:  # pragma: version-le-310
+    else:  # pragma: no cover
         mapping = getLevelNamesMapping()
     try:
         return mapping[level]
