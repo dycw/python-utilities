@@ -29,7 +29,7 @@ def get_logging_level(level: str, /) -> int:
     """
     try:
         from logging import getLevelNamesMapping  # type: ignore[]
-    except ImportError:
+    except ImportError:  # pragma: version-le-310
         mapping = {
             "CRITICAL": 50,
             "FATAL": 50,
@@ -42,7 +42,7 @@ def get_logging_level(level: str, /) -> int:
             "VERBOSE": 19,
             "TRACE": 9,
         }
-    else:
+    else:  # pragma: version-ge-311
         mapping = getLevelNamesMapping()
     try:
         return mapping[level]
