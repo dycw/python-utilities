@@ -353,7 +353,6 @@ start-pypi-server = "utilities.scripts.pypi_server:main"
 
 [tool.coverage.coverage_conditional_plugin.rules]
 ci-in-environ = '"CI" in os_environ'
-ci-not-in-environ = '"CI" not in os_environ'
 os-eq-linux = 'sys_platform == "linux"'
 os-eq-macos = 'sys_platform == "darwin"'
 os-eq-windows = 'sys_platform == "windows"'
@@ -361,6 +360,7 @@ os-ne-linux = 'sys_platform != "linux"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-windows = 'sys_platform != "windows"'
 version-ge-311 = "sys_version_info >= (3, 11)"
+version-le-310 = "sys_version_info <= (3, 10)"
 
 [tool.coverage.html]
 directory = ".coverage/html"
