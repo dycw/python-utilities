@@ -9,14 +9,14 @@ coverage==7.5.1
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
-cvxpy==1.4.3
+cvxpy==1.4.4
 ecos==2.0.13
     # via cvxpy
 exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.100.5
+hypothesis==6.100.6
 iniconfig==2.0.0
     # via pytest
 numpy==1.26.4

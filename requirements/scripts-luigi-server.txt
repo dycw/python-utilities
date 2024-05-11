@@ -14,7 +14,7 @@ exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.100.5
+hypothesis==6.100.6
 iniconfig==2.0.0
     # via pytest
 lockfile==0.12.2
