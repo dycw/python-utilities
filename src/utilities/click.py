@@ -46,7 +46,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.date | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -62,7 +62,7 @@ class DateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
@@ -85,7 +85,9 @@ class Enum(ParamType, Generic[_E]):
         super().__init__()
 
     @override
-    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
+    def convert(
+        self, value: _E | str, param: Parameter | None, ctx: Context | None
+    ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
@@ -105,9 +107,11 @@ class ListInts(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: list[int] | str, param: Parameter | None, ctx: Context | None
     ) -> list[int]:
         """Convert a value into the `ListInts` type."""
+        if isinstance(value, list):
+            return value
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(int, strs))
@@ -122,7 +126,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.time | str, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -138,7 +142,7 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.timedelta | str, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:

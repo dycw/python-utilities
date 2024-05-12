@@ -286,7 +286,6 @@ class TestParameters:
 
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
-    @reproduce_failure("6.100.6", b"AAA=")
     def test_option(
         self,
         *,
