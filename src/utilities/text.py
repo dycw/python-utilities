@@ -6,6 +6,7 @@ from typing import Any, Literal, overload
 
 from typing_extensions import override
 
+from utilities.sentinel import sentinel
 from utilities.types import EnsureClassError, ensure_class, get_class_name
 
 
@@ -32,9 +33,16 @@ class EnsureStrError(Exception):
         return f"Object {self.obj} must be a string{desc}; got {get_class_name(self.obj)} instead"
 
 
+def split_str(
+    text: str, /, separator: str = ",", empty: str = str(sentinel)
+) -> list[str]:
+    """Split a string, with a special provision for the empty string."""
+    return [] if text == empty else text.split(separator)
+
+
 def strip_and_dedent(text: str, /) -> str:
     """Strip and dedent a string."""
     return dedent(text.strip("\n")).strip("\n")
 
 
-__all__ = ["EnsureStrError", "ensure_str", "strip_and_dedent"]
+__all__ = ["EnsureStrError", "ensure_str", "split_str", "strip_and_dedent"]

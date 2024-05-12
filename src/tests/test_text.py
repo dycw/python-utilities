@@ -3,7 +3,7 @@ from __future__ import annotations
 from pytest import mark, param, raises
 
 from utilities.sentinel import sentinel
-from utilities.text import EnsureStrError, ensure_str, strip_and_dedent
+from utilities.text import EnsureStrError, ensure_str, split_str, strip_and_dedent
 
 
 class TestEnsureStr:
@@ -23,6 +23,21 @@ class TestEnsureStr:
     def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureStrError, match=f"{match}; got .* instead"):
             _ = ensure_str(sentinel, nullable=nullable)
+
+
+class TestSplitStr:
+    @mark.parametrize(
+        ("text", "expected"),
+        [
+            param("", [""]),
+            param("1", ["1"]),
+            param("1,2", ["1", "2"]),
+            param(",", ["", ""]),
+            param(str(sentinel), []),
+        ],
+    )
+    def test_main(self, *, text: str, expected: list[str]) -> None:
+        assert split_str(text) == expected
 
 
 class TestStripAndDedent:

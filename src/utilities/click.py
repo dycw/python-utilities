@@ -20,6 +20,8 @@ from utilities.datetime import (
 )
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
+from utilities.sentinel import sentinel
+from utilities.text import split_str
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -69,6 +71,51 @@ class DateTime(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
+_E = TypeVar("_E", bound=enum.Enum)
+
+
+class Enum(ParamType, Generic[_E]):
+    """An enum-valued parameter."""
+
+    name = "enum"
+
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+        self._enum = enum
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
+        """Convert a value into the `Enum` type."""
+        try:
+            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
+        except ParseEnumError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class ListInts(ParamType):
+    """A list-of-ints-valued parameter."""
+
+    name = "ints"
+
+    def __init__(self, *, separator: str = ",", empty: str = str(sentinel)) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: Any, param: Parameter | None, ctx: Context | None
+    ) -> list[int]:
+        """Convert a value into the `ListInts` type."""
+        try:
+            return list(
+                map(int, split_str(value, separator=self._separator, empty=self._empty))
+            )
+        except (ValueError, TypeError):
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+
 class Time(ParamType):
     """A time-valued parameter."""
 
@@ -99,28 +146,6 @@ class Timedelta(ParamType):
             return ensure_timedelta(value)
         except ParseTimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
-
-
-_E = TypeVar("_E", bound=enum.Enum)
-
-
-class Enum(ParamType, Generic[_E]):
-    """An enum-valued parameter."""
-
-    name = "enum"
-
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
-        super().__init__()
-        self._enum = enum
-        self._case_sensitive = case_sensitive
-
-    @override
-    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
-        """Convert a value into the `Enum` type."""
-        try:
-            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
-        except ParseEnumError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 log_level_option = option(

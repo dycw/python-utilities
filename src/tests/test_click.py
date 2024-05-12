@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
     just,
+    lists,
     none,
     sampled_from,
     timedeltas,
@@ -33,6 +34,7 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
+    ListInts,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -246,6 +248,7 @@ class TestParameters:
             sqlite_engines(),
             serialize_engine,
         ),
+        param(ListInts(), list, lists(integers()).map(",".join), serialize_time),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )
