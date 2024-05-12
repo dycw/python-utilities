@@ -39,7 +39,7 @@ def memoize(
 
 
 async def refresh_memoized(
-    func: _AsyncFunc[_P, _R], /, *args: Any, **kwargs: Any
+    func: _AsyncFunc[_P, _R], /, *args: _P.args, **kwargs: _P.kwargs
 ) -> _R:
     """Refresh a memoized, asynchronous function."""
 
