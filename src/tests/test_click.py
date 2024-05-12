@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -52,9 +52,10 @@ from utilities.datetime import (
 from utilities.hypothesis import sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
+from utilities.text import join_strs
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
     from pathlib import Path
 
     from utilities.types import SequenceStrs
@@ -236,6 +237,10 @@ class TestLogLevelOption:
         assert result.stdout == f"log_level = {log_level}\n"
 
 
+def _serialize_iterable_ints(values: Iterable[int], /) -> str:
+    return join_strs(map(str, values))
+
+
 class TestParameters:
     cases = (
         param(Date(), dt.date, dates(), serialize_date),
@@ -248,7 +253,7 @@ class TestParameters:
             sqlite_engines(),
             serialize_engine,
         ),
-        param(ListInts(), list, lists(integers()).map(",".join), serialize_time),
+        param(ListInts(), list, lists(integers()), _serialize_iterable_ints),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )
@@ -281,6 +286,7 @@ class TestParameters:
 
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @reproduce_failure("6.100.6", b"AAA=")
     def test_option(
         self,
         *,

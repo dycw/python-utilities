@@ -35,7 +35,7 @@ from utilities.datetime import (
 from utilities.enum import ensure_enum, parse_enum
 from utilities.iterables import one
 from utilities.sentinel import sentinel
-from utilities.text import ensure_str, split_str
+from utilities.text import ensure_str, join_strs, split_str
 
 if TYPE_CHECKING:
     from luigi.interface import LuigiRunResult
@@ -170,9 +170,9 @@ class FrozenSetIntsParameter(Parameter):
 
     @override
     def serialize(self, x: frozenset[int]) -> str:
-        if len(x) >= 1:
-            return self._separator.join(sorted(map(str, x)))
-        return self._empty
+        return join_strs(
+            sorted(map(str, x)), separator=self._separator, empty=self._empty
+        )
 
 
 class FrozenSetStrsParameter(Parameter):
@@ -191,14 +191,11 @@ class FrozenSetStrsParameter(Parameter):
 
     @override
     def parse(self, x: str) -> frozenset[str]:
-        split = [] if x == self._empty else x.split(self._separator)
-        return frozenset(split)
+        return frozenset(split_str(x, separator=self._separator, empty=self._empty))
 
     @override
     def serialize(self, x: frozenset[str]) -> str:
-        if len(x) >= 1:
-            return self._separator.join(sorted(x))
-        return self._empty
+        return join_strs(sorted(x))
 
 
 class TableParameter(Parameter):

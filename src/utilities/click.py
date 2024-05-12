@@ -108,11 +108,10 @@ class ListInts(ParamType):
         self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> list[int]:
         """Convert a value into the `ListInts` type."""
+        strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
-            return list(
-                map(int, split_str(value, separator=self._separator, empty=self._empty))
-            )
-        except (ValueError, TypeError):
+            return list(map(int, strs))
+        except ValueError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
 
