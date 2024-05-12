@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     datetimes,
     integers,
     just,
+    lists,
     none,
     sampled_from,
     timedeltas,
@@ -33,6 +34,7 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
+    ListInts,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -50,9 +52,10 @@ from utilities.datetime import (
 from utilities.hypothesis import sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
+from utilities.text import join_strs
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
     from pathlib import Path
 
     from utilities.types import SequenceStrs
@@ -234,6 +237,10 @@ class TestLogLevelOption:
         assert result.stdout == f"log_level = {log_level}\n"
 
 
+def _serialize_iterable_ints(values: Iterable[int], /) -> str:
+    return join_strs(map(str, values))
+
+
 class TestParameters:
     cases = (
         param(Date(), dt.date, dates(), serialize_date),
@@ -246,6 +253,7 @@ class TestParameters:
             sqlite_engines(),
             serialize_engine,
         ),
+        param(ListInts(), list, lists(integers(0, 10)), _serialize_iterable_ints),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )

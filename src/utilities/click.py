@@ -20,6 +20,8 @@ from utilities.datetime import (
 )
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.logging import LogLevel
+from utilities.sentinel import sentinel
+from utilities.text import split_str
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -44,7 +46,7 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.date | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         try:
@@ -60,13 +62,61 @@ class DateTime(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
         try:
             return ensure_datetime(value)
         except ParseDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
+
+
+_E = TypeVar("_E", bound=enum.Enum)
+
+
+class Enum(ParamType, Generic[_E]):
+    """An enum-valued parameter."""
+
+    name = "enum"
+
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+        self._enum = enum
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: _E | str, param: Parameter | None, ctx: Context | None
+    ) -> _E:
+        """Convert a value into the `Enum` type."""
+        try:
+            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
+        except ParseEnumError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class ListInts(ParamType):
+    """A list-of-ints-valued parameter."""
+
+    name = "ints"
+
+    def __init__(self, *, separator: str = ",", empty: str = str(sentinel)) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: list[int] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[int]:
+        """Convert a value into the `ListInts` type."""
+        if isinstance(value, list):
+            return value
+        strs = split_str(value, separator=self._separator, empty=self._empty)
+        try:
+            return list(map(int, strs))
+        except ValueError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 class Time(ParamType):
@@ -76,7 +126,7 @@ class Time(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.time | str, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
         try:
@@ -92,35 +142,13 @@ class Timedelta(ParamType):
 
     @override
     def convert(
-        self, value: Any, param: Parameter | None, ctx: Context | None
+        self, value: dt.timedelta | str, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
         try:
             return ensure_timedelta(value)
         except ParseTimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
-
-
-_E = TypeVar("_E", bound=enum.Enum)
-
-
-class Enum(ParamType, Generic[_E]):
-    """An enum-valued parameter."""
-
-    name = "enum"
-
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
-        super().__init__()
-        self._enum = enum
-        self._case_sensitive = case_sensitive
-
-    @override
-    def convert(self, value: Any, param: Parameter | None, ctx: Context | None) -> _E:
-        """Convert a value into the `Enum` type."""
-        try:
-            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
-        except ParseEnumError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 log_level_option = option(
