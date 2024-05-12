@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
 
 from atools import memoize as _memoize
+from atools._memoize_decorator import _AsyncMemoize
+from typing_extensions import override
+
+from utilities.types import ensure_class
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -29,7 +34,32 @@ def memoize(
     *,
     duration: float | dt.timedelta | None = None,
 ) -> _AsyncFunc[_P, _R] | Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]:
+    """Memoize an asynchronous function."""
     return cast(Any, _memoize(func, duration=duration))
 
 
-__all__ = ["memoize"]
+async def refresh_memoized(
+    func: _AsyncFunc[_P, _R], /, *args: Any, **kwargs: Any
+) -> _R:
+    """Refresh a memoized, asynchronous function."""
+
+    func_any = cast(Any, func)
+    try:
+        memoize = func_any.memoize
+    except AttributeError:
+        raise RefreshMemoizedError(func=func) from None
+    memoize = ensure_class(memoize, _AsyncMemoize)
+    await memoize.remove(*args, **kwargs)
+    return await func(*args, **kwargs)
+
+
+@dataclass(kw_only=True)
+class RefreshMemoizedError(Exception):
+    func: _AsyncFunc[..., Any]
+
+    @override
+    def __str__(self) -> str:
+        return f"Asynchronous function {self.func} must be memoized"
+
+
+__all__ = ["RefreshMemoizedError", "memoize", "refresh_memoized"]
