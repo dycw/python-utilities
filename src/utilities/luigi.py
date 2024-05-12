@@ -195,7 +195,7 @@ class FrozenSetStrsParameter(Parameter):
 
     @override
     def serialize(self, x: frozenset[str]) -> str:
-        return join_strs(sorted(x))
+        return join_strs(sorted(x), separator=self._separator, empty=self._empty)
 
 
 class TableParameter(Parameter):
