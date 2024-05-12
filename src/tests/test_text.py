@@ -4,9 +4,7 @@ from hypothesis import given
 from hypothesis.strategies import lists
 from pytest import mark, param, raises
 
-from utilities.hypothesis import (
-    text_ascii,
-)
+from utilities.hypothesis import text_ascii
 from utilities.sentinel import sentinel
 from utilities.text import (
     EnsureStrError,
