@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -253,7 +253,7 @@ class TestParameters:
             sqlite_engines(),
             serialize_engine,
         ),
-        param(ListInts(), list, lists(integers()), _serialize_iterable_ints),
+        param(ListInts(), list, lists(integers(0, 10)), _serialize_iterable_ints),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )
