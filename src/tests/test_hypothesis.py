@@ -805,6 +805,10 @@ class TestStrArrays:
         allow_none=booleans(),
         unique=booleans(),
     )
+    @mark.xfail(
+        raises=AssertionError,
+        reason="hypothesis 6.100.8: isinstance(Overrun, ConjectureResult)",
+    )
     def test_main(
         self,
         *,
@@ -848,6 +852,10 @@ class TestStrDataArrays:
         allow_none=booleans(),
         unique=booleans(),
         name=text_ascii() | none(),
+    )
+    @mark.xfail(
+        raises=AssertionError,
+        reason="hypothesis 6.100.8: isinstance(Overrun, ConjectureResult)",
     )
     def test_main(
         self,

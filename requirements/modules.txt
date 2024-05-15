@@ -11,7 +11,9 @@ anyio==4.3.0
 asciitree==0.3.3
     # via zarr
 ast-comments==1.2.2
+    # via dycw-utilities (pyproject.toml)
 atomicwrites==1.4.1
+    # via dycw-utilities (pyproject.toml)
 attrs==23.2.0
     # via
     #   hypothesis
@@ -20,7 +22,9 @@ attrs==23.2.0
 backports-tarfile==1.1.1
     # via jaraco-context
 beartype==0.18.5
+    # via dycw-utilities (pyproject.toml)
 beautifulsoup4==4.12.3
+    # via dycw-utilities (pyproject.toml)
 bleach==6.1.0
     # via panel
 blinker==1.8.2
@@ -30,7 +34,9 @@ bokeh==3.4.1
 bounded-pool-executor==0.0.3
     # via pqdm
 cachetools==5.3.3
-    # via streamlit
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   streamlit
 certifi==2024.2.2
     # via
     #   httpcore
@@ -44,6 +50,7 @@ clarabel==0.7.1
     # via cvxpy
 click==8.1.7
     # via
+    #   dycw-utilities (pyproject.toml)
     #   hatch
     #   streamlit
     #   userpath
@@ -56,8 +63,11 @@ coverage==7.5.1
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
+    # via dycw-utilities (pyproject.toml)
 cryptography==42.0.7
-cvxpy==1.5.1
+    # via dycw-utilities (pyproject.toml)
+cvxpy==1.4.4
+    # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
@@ -68,10 +78,12 @@ ecos==2.0.13
     # via cvxpy
 exceptiongroup==1.2.1
     # via
+    #   dycw-utilities (pyproject.toml)
     #   anyio
     #   hypothesis
     #   pytest
 fastapi-slim==0.111.0
+    # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
 filelock==3.14.0
@@ -79,16 +91,19 @@ filelock==3.14.0
 fonttools==4.51.0
     # via fpdf2
 fpdf2==2.7.8
+    # via dycw-utilities (pyproject.toml)
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
 h11==0.14.0
     # via httpcore
-hatch==1.11.0
+hatch==1.10.0
+    # via dycw-utilities (pyproject.toml)
 hatchling==1.24.2
     # via hatch
 holoviews==1.18.3
+    # via dycw-utilities (pyproject.toml)
 httpcore==1.0.5
     # via httpx
 httpx==0.27.0
@@ -96,6 +111,7 @@ httpx==0.27.0
 hyperlink==21.0.0
     # via hatch
 hypothesis==6.100.8
+    # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
     #   anyio
@@ -128,7 +144,9 @@ linkify-it-py==2.0.3
 lockfile==0.12.2
     # via python-daemon
 loguru==0.7.2
+    # via dycw-utilities (pyproject.toml)
 luigi==3.5.0
+    # via dycw-utilities (pyproject.toml)
 markdown==3.6
     # via panel
 markdown-it-py==3.0.0
@@ -143,15 +161,19 @@ mdit-py-plugins==0.4.1
 mdurl==0.1.2
     # via markdown-it-py
 mdutils==1.6.0
+    # via dycw-utilities (pyproject.toml)
 memory-profiler==0.61.0
+    # via dycw-utilities (pyproject.toml)
 more-itertools==10.2.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
 numcodecs==0.12.1
     # via zarr
 numpy==1.26.4
     # via
+    #   dycw-utilities (pyproject.toml)
     #   altair
     #   bokeh
     #   clarabel
@@ -202,6 +224,7 @@ param==2.1.0
 pathspec==0.12.1
     # via hatchling
 pathvalidate==3.2.0
+    # via dycw-utilities (pyproject.toml)
 pexpect==4.9.0
     # via hatch
 pillow==10.3.0
@@ -217,8 +240,10 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.26
+polars-lts-cpu==0.20.26
+    # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
+    # via dycw-utilities (pyproject.toml)
 protobuf==4.25.3
     # via streamlit
 psutil==5.9.8
@@ -230,7 +255,9 @@ pyarrow==16.1.0
 pycparser==2.22
     # via cffi
 pydantic==2.7.1
-    # via fastapi-slim
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   fastapi-slim
 pydantic-core==2.18.2
     # via pydantic
 pydeck==0.9.1
@@ -238,17 +265,24 @@ pydeck==0.9.1
 pygments==2.18.0
     # via rich
 pyhumps==3.8.0
+    # via dycw-utilities (pyproject.toml)
 pyinstrument==4.6.2
+    # via dycw-utilities (pyproject.toml)
 pytest==8.2.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   pytest-check
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
 pytest-check==2.3.1
+    # via dycw-utilities (pyproject.toml)
 pytest-cov==5.0.0
+    # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
+    # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
+    # via dycw-utilities (pyproject.toml)
 python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
@@ -283,6 +317,7 @@ rpds-py==0.18.1
     #   referencing
 scipy==1.13.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   clarabel
     #   cvxpy
     #   ecos
@@ -292,6 +327,7 @@ scipy==1.13.0
 scs==3.2.4.post1
     # via cvxpy
 semver==3.0.2
+    # via dycw-utilities (pyproject.toml)
 setuptools==69.5.1
     # via python-daemon
 shellingham==1.5.4
@@ -311,9 +347,11 @@ sortedcontainers==2.4.0
 soupsieve==2.5
     # via beautifulsoup4
 sqlalchemy==2.0.30
+    # via dycw-utilities (pyproject.toml)
 starlette==0.37.2
     # via fastapi-slim
 streamlit==1.34.0
+    # via dycw-utilities (pyproject.toml)
 tenacity==8.3.0
     # via
     #   luigi
@@ -343,9 +381,11 @@ tqdm==4.66.4
     #   pqdm
 trove-classifiers==2024.4.10
     # via hatchling
-typed-settings==24.3.0
+typed-settings==24.2.0
+    # via dycw-utilities (pyproject.toml)
 typing-extensions==4.11.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   altair
     #   anyio
     #   fastapi-slim
@@ -369,13 +409,16 @@ virtualenv==20.26.2
     # via hatch
 webencodings==0.5.1
     # via bleach
-xarray==2024.5.0
+xarray==2024.3.0
+    # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
+    # via dycw-utilities (pyproject.toml)
 xyzservices==2024.4.0
     # via
     #   bokeh
     #   panel
 zarr==2.18.0
+    # via dycw-utilities (pyproject.toml)
 zipp==3.18.1
     # via importlib-metadata
 zstandard==0.22.0

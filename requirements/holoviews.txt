@@ -19,12 +19,16 @@ coverage==7.5.1
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
+    # via dycw-utilities (pyproject.toml)
 exceptiongroup==1.2.1
     # via
+    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 holoviews==1.18.3
+    # via dycw-utilities (pyproject.toml)
 hypothesis==6.100.8
+    # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
 iniconfig==2.0.0
@@ -50,6 +54,7 @@ mdurl==0.1.2
 numba==0.59.1
     # via numbagg
 numbagg==0.8.1
+    # via dycw-utilities (pyproject.toml)
 numpy==1.26.4
     # via
     #   bokeh
@@ -86,12 +91,16 @@ pluggy==1.5.0
     # via pytest
 pytest==8.2.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
 pytest-cov==5.0.0
+    # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
+    # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
+    # via dycw-utilities (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
@@ -119,7 +128,9 @@ tornado==6.4
 tqdm==4.66.4
     # via panel
 typing-extensions==4.11.0
-    # via panel
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   panel
 tzdata==2024.1
     # via pandas
 uc-micro-py==1.0.3
@@ -128,7 +139,8 @@ urllib3==2.2.1
     # via requests
 webencodings==0.5.1
     # via bleach
-xarray==2024.5.0
+xarray==2024.3.0
+    # via dycw-utilities (pyproject.toml)
 xyzservices==2024.4.0
     # via
     #   bokeh
