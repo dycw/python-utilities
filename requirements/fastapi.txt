@@ -17,7 +17,7 @@ exceptiongroup==1.2.1
     #   hypothesis
     #   pytest
 fastapi-slim==0.111.0
-hypothesis==6.100.6
+hypothesis==6.102.4
 idna==3.7
     # via anyio
 iniconfig==2.0.0

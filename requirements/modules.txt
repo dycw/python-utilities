@@ -57,7 +57,7 @@ coverage==7.5.1
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
 cryptography==42.0.7
-cvxpy==1.4.4
+cvxpy==1.5.1
 defusedxml==0.7.1
     # via fpdf2
 distlib==0.3.8
@@ -85,7 +85,7 @@ gitpython==3.1.43
     # via streamlit
 h11==0.14.0
     # via httpcore
-hatch==1.10.0
+hatch==1.11.0
 hatchling==1.24.2
     # via hatch
 holoviews==1.18.3
@@ -95,7 +95,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.100.6
+hypothesis==6.102.4
 idna==3.7
     # via
     #   anyio
@@ -121,7 +121,7 @@ jsonschema==4.22.0
     # via altair
 jsonschema-specifications==2023.12.1
     # via jsonschema
-keyring==25.2.0
+keyring==25.2.1
     # via hatch
 linkify-it-py==2.0.3
     # via panel
@@ -138,7 +138,7 @@ markdown-it-py==3.0.0
     #   rich
 markupsafe==2.1.5
     # via jinja2
-mdit-py-plugins==0.4.0
+mdit-py-plugins==0.4.1
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
@@ -209,7 +209,7 @@ pillow==10.3.0
     #   bokeh
     #   fpdf2
     #   streamlit
-platformdirs==4.2.1
+platformdirs==4.2.2
     # via
     #   hatch
     #   virtualenv
@@ -217,7 +217,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars==0.20.25
+polars==0.20.26
 pqdm==0.2.0
 protobuf==4.25.3
     # via streamlit
@@ -225,10 +225,8 @@ psutil==5.9.8
     # via memory-profiler
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.0.0
+pyarrow==16.1.0
     # via streamlit
-pybind11==2.12.0
-    # via cvxpy
 pycparser==2.22
     # via cffi
 pydantic==2.7.1
@@ -345,7 +343,7 @@ tqdm==4.66.4
     #   pqdm
 trove-classifiers==2024.4.10
     # via hatchling
-typed-settings==24.2.0
+typed-settings==24.3.0
 typing-extensions==4.11.0
     # via
     #   altair
@@ -365,13 +363,13 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.1.42
+uv==0.1.44
     # via hatch
-virtualenv==20.26.1
+virtualenv==20.26.2
     # via hatch
 webencodings==0.5.1
     # via bleach
-xarray==2024.3.0
+xarray==2024.5.0
 xlrd==2.0.1
 xyzservices==2024.4.0
     # via

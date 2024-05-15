@@ -29,7 +29,7 @@ fonttools==4.51.0
     # via fpdf2
 fpdf2==2.7.8
 holoviews==1.18.3
-hypothesis==6.100.6
+hypothesis==6.102.4
 idna==3.7
     # via requests
 iniconfig==2.0.0
@@ -46,7 +46,7 @@ markdown-it-py==3.0.0
     #   panel
 markupsafe==2.1.5
     # via jinja2
-mdit-py-plugins==0.4.0
+mdit-py-plugins==0.4.1
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
