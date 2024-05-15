@@ -25,6 +25,7 @@ from utilities.types import (
     EnsureNumberError,
     EnsureSizedError,
     EnsureSizedNotStrError,
+    EnsureTimeError,
     IsFunctionAsyncError,
     IterableStrs,
     Number,
@@ -41,6 +42,7 @@ from utilities.types import (
     ensure_number,
     ensure_sized,
     ensure_sized_not_str,
+    ensure_time,
     get_class,
     get_class_name,
     if_not_none,
@@ -247,6 +249,30 @@ class TestEnsureSizedNotStr:
             EnsureSizedNotStrError, match="Object .* must be sized, but not a string"
         ):
             _ = ensure_sized_not_str(obj)
+
+
+class TestEnsureTime:
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [
+            param(get_now().time(), False),
+            param(get_now().time(), True),
+            param(None, True),
+        ],
+    )
+    def test_main(self, *, obj: dt.time | None, nullable: bool) -> None:
+        _ = ensure_time(obj, nullable=nullable)
+
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a time"),
+            param(True, "Object .* must be a time or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureTimeError, match=f"{match}; got .* instead"):
+            _ = ensure_time(sentinel, nullable=nullable)
 
 
 class TestGetClass:

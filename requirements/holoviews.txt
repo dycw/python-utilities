@@ -24,7 +24,7 @@ exceptiongroup==1.2.1
     #   hypothesis
     #   pytest
 holoviews==1.18.3
-hypothesis==6.102.4
+hypothesis==6.100.8
 idna==3.7
     # via requests
 iniconfig==2.0.0

@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   hypothesis
     #   pytest
 freezegun==1.5.1
-hypothesis==6.102.4
+hypothesis==6.100.8
 iniconfig==2.0.0
     # via pytest
 loguru==0.7.2

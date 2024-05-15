@@ -15,7 +15,7 @@ exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.102.4
+hypothesis==6.100.8
 iniconfig==2.0.0
     # via pytest
 mako==1.3.5

@@ -310,6 +310,29 @@ class EnsureSizedNotStrError(Exception):
 
 
 @overload
+def ensure_time(obj: Any, /, *, nullable: bool) -> dt.time | None: ...
+@overload
+def ensure_time(obj: Any, /, *, nullable: Literal[False] = False) -> dt.time: ...
+def ensure_time(obj: Any, /, *, nullable: bool = False) -> dt.time | None:
+    """Ensure an object is a time."""
+    try:
+        return ensure_class(obj, dt.time, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsureTimeError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True)
+class EnsureTimeError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        desc = " or None" if self.nullable else ""
+        return f"Object {self.obj} must be a time{desc}; got {get_class_name(self.obj)} instead"
+
+
+@overload
 def get_class(obj: type[_T], /) -> type[_T]: ...
 
 
@@ -392,6 +415,7 @@ __all__ = [
     "EnsureNumberError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
+    "EnsureTimeError",
     "IsFunctionAsyncError",
     "IterableStrs",
     "Number",
@@ -408,6 +432,7 @@ __all__ = [
     "ensure_number",
     "ensure_sized",
     "ensure_sized_not_str",
+    "ensure_time",
     "get_class",
     "get_class_name",
     "if_not_none",
