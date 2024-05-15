@@ -19,7 +19,7 @@ exceptiongroup==1.2.1
     #   pytest
 fasteners==0.19
     # via zarr
-hypothesis==6.100.8
+hypothesis==6.102.4
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

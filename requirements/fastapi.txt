@@ -20,7 +20,7 @@ exceptiongroup==1.2.1
     #   pytest
 fastapi-slim==0.111.0
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.100.8
+hypothesis==6.102.4
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via anyio
