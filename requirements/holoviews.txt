@@ -139,7 +139,7 @@ urllib3==2.2.1
     # via requests
 webencodings==0.5.1
     # via bleach
-xarray==2024.3.0
+xarray==2024.5.0
     # via dycw-utilities (pyproject.toml)
 xyzservices==2024.4.0
     # via

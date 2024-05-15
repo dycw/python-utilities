@@ -65,7 +65,7 @@ tomli==2.0.1
     #   typed-settings
 tornado==6.4
     # via luigi
-typed-settings==24.2.0
+typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.11.0
     # via dycw-utilities (pyproject.toml)

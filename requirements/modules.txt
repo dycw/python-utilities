@@ -66,7 +66,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==42.0.7
     # via dycw-utilities (pyproject.toml)
-cvxpy==1.4.4
+cvxpy==1.5.1
     # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
     # via fpdf2
@@ -98,7 +98,7 @@ gitpython==3.1.43
     # via streamlit
 h11==0.14.0
     # via httpcore
-hatch==1.10.0
+hatch==1.11.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -381,7 +381,7 @@ tqdm==4.66.4
     #   pqdm
 trove-classifiers==2024.4.10
     # via hatchling
-typed-settings==24.2.0
+typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.11.0
     # via
@@ -409,7 +409,7 @@ virtualenv==20.26.2
     # via hatch
 webencodings==0.5.1
     # via bleach
-xarray==2024.3.0
+xarray==2024.5.0
     # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
     # via dycw-utilities (pyproject.toml)

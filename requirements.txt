@@ -81,7 +81,7 @@ coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==42.0.7
     # via dycw-utilities (pyproject.toml)
-cvxpy==1.4.4
+cvxpy==1.5.1
     # via dycw-utilities (pyproject.toml)
 defusedxml==0.7.1
     # via fpdf2
@@ -125,7 +125,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   wsproto
-hatch==1.10.0
+hatch==1.11.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -475,7 +475,7 @@ trio-websocket==0.11.1
     # via selenium
 trove-classifiers==2024.4.10
     # via hatchling
-typed-settings==24.2.0
+typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.11.0
     # via
@@ -511,7 +511,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wsproto==1.2.0
     # via trio-websocket
-xarray==2024.3.0
+xarray==2024.5.0
     # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
     # via dycw-utilities (pyproject.toml)
