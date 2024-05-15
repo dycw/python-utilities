@@ -11,7 +11,7 @@ exceptiongroup==1.2.1
     # via
     #   hypothesis
     #   pytest
-hypothesis==6.100.6
+hypothesis==6.102.4
 iniconfig==2.0.0
     # via pytest
 packaging==24.0
@@ -21,7 +21,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars==0.20.25
+polars==0.20.26
 pyhumps==3.8.0
 pytest==8.2.0
     # via
