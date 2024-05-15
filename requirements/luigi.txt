@@ -7,19 +7,24 @@ coverage==7.5.1
     #   coverage-conditional-plugin
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
+    # via dycw-utilities (pyproject.toml)
 docutils==0.21.2
     # via python-daemon
 exceptiongroup==1.2.1
     # via
+    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 freezegun==1.5.1
+    # via dycw-utilities (pyproject.toml)
 hypothesis==6.102.4
+    # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
 lockfile==0.12.2
     # via python-daemon
 luigi==3.5.0
+    # via dycw-utilities (pyproject.toml)
 packaging==24.0
     # via
     #   coverage-conditional-plugin
@@ -29,12 +34,16 @@ pluggy==1.5.0
     # via pytest
 pytest==8.2.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
 pytest-cov==5.0.0
+    # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
+    # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
+    # via dycw-utilities (pyproject.toml)
 python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
@@ -42,6 +51,7 @@ python-dateutil==2.9.0.post0
     #   freezegun
     #   luigi
 semver==3.0.2
+    # via dycw-utilities (pyproject.toml)
 setuptools==69.5.1
     # via python-daemon
 six==1.16.0
@@ -49,6 +59,7 @@ six==1.16.0
 sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.30
+    # via dycw-utilities (pyproject.toml)
 tenacity==8.3.0
     # via luigi
 tomli==2.0.1
@@ -58,4 +69,6 @@ tomli==2.0.1
 tornado==6.4
     # via luigi
 typing-extensions==4.11.0
-    # via sqlalchemy
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   sqlalchemy
