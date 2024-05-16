@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import NoneType
-from typing import Any
+from typing import Any, TypeVar
 
+from beartype import beartype
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
+    Dataclass,
     GetDataClassClassError,
     get_dataclass_class,
     is_dataclass_class,
@@ -15,6 +17,21 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
+
+
+class TestDataClassProtocol:
+    def test_main(self) -> None:
+        T = TypeVar("T", bound=Dataclass)
+
+        @beartype
+        def identity(x: T, /) -> T:
+            return x
+
+        @dataclass
+        class Example:
+            x: None = None
+
+        _ = identity(Example())
 
 
 class TestGetDataClassClass:
