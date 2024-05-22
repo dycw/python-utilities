@@ -26,8 +26,6 @@ def memoize(
 def memoize(
     func: None = ..., /, *, duration: float | dt.timedelta | None = ...
 ) -> Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]: ...
-
-
 def memoize(
     func: _AsyncFunc[_P, _R] | None = None,
     /,
