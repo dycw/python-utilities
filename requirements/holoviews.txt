@@ -89,7 +89,7 @@ pillow==10.3.0
     # via bokeh
 pluggy==1.5.0
     # via pytest
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -111,7 +111,7 @@ pyviz-comms==3.0.2
     #   panel
 pyyaml==6.0.1
     # via bokeh
-requests==2.31.0
+requests==2.32.2
     # via panel
 six==1.16.0
     # via

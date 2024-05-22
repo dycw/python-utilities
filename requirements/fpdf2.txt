@@ -29,7 +29,7 @@ exceptiongroup==1.2.1
     #   pytest
 fonttools==4.51.0
     # via fpdf2
-fpdf2==2.7.8
+fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
@@ -86,7 +86,7 @@ pillow==10.3.0
     #   fpdf2
 pluggy==1.5.0
     # via pytest
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -108,7 +108,7 @@ pyviz-comms==3.0.2
     #   panel
 pyyaml==6.0.1
     # via bokeh
-requests==2.31.0
+requests==2.32.2
     # via panel
 six==1.16.0
     # via

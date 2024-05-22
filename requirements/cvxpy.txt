@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-cvxpy --prerelease=disallow --output-file=requirements/cvxpy.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-clarabel==0.7.1
+clarabel==0.8.1
     # via cvxpy
 coverage==7.5.1
     # via
@@ -44,7 +44,7 @@ pandas==2.2.2
     # via dycw-utilities (pyproject.toml)
 pluggy==1.5.0
     # via pytest
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
