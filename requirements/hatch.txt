@@ -92,7 +92,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.18.0
     # via rich
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -123,7 +123,7 @@ tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.5
     # via hatch
-trove-classifiers==2024.4.10
+trove-classifiers==2024.5.17
     # via hatchling
 typing-extensions==4.11.0
     # via
@@ -131,11 +131,11 @@ typing-extensions==4.11.0
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.1.44
+uv==0.1.45
     # via hatch
 virtualenv==20.26.2
     # via hatch
-zipp==3.18.1
+zipp==3.18.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

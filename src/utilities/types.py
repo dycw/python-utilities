@@ -334,12 +334,8 @@ class EnsureTimeError(Exception):
 
 @overload
 def get_class(obj: type[_T], /) -> type[_T]: ...
-
-
 @overload
 def get_class(obj: _T, /) -> type[_T]: ...
-
-
 def get_class(obj: _T | type[_T], /) -> type[_T]:
     """Get the class of an object, unless it is already a class."""
     return obj if isinstance(obj, type) else type(obj)

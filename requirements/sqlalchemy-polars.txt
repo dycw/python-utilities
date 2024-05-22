@@ -24,11 +24,11 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==0.20.26
+polars-lts-cpu==0.20.27
     # via dycw-utilities (pyproject.toml)
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov

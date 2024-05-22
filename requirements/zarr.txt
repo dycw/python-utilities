@@ -36,7 +36,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -56,5 +56,5 @@ tomli==2.0.1
     #   pytest
 typing-extensions==4.11.0
     # via dycw-utilities (pyproject.toml)
-zarr==2.18.0
+zarr==2.18.1
     # via dycw-utilities (pyproject.toml)

@@ -418,8 +418,6 @@ def build(
     log_level: LogLevel | None = None,
     workers: int | None = None,
 ) -> bool: ...
-
-
 @overload
 def build(
     task: Iterable[Task],
@@ -430,8 +428,6 @@ def build(
     log_level: LogLevel | None = None,
     workers: int | None = None,
 ) -> LuigiRunResult: ...
-
-
 def build(
     task: Iterable[Task],
     /,
@@ -458,14 +454,10 @@ _Task = TypeVar("_Task", bound=Task)
 def clone(
     task: Task, cls: type[_Task], /, *, await_: Literal[True], **kwargs: Any
 ) -> AwaitTask[_Task]: ...
-
-
 @overload
 def clone(
     task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
 ) -> _Task: ...
-
-
 def clone(
     task: Task, cls: type[_Task], /, *, await_: bool = False, **kwargs: Any
 ) -> _Task | AwaitTask[_Task]:

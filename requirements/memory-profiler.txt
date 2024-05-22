@@ -28,7 +28,7 @@ pluggy==1.5.0
     # via pytest
 psutil==5.9.8
     # via memory-profiler
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov

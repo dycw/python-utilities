@@ -535,10 +535,8 @@ _MDF = TypeVar("_MDF")
 class _MaybeDrawFn(Protocol):
     @overload
     def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
-
     @overload
     def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
-
     def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
         raise NotImplementedError(obj)  # pragma: no cover
 

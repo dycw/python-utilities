@@ -925,56 +925,30 @@ def is_zero_or_non_micro_or_nan(
 
 @overload
 def maximum(x: float, /) -> float: ...
-
-
 @overload
 def maximum(x0: float, x1: float, /) -> float: ...
-
-
 @overload
 def maximum(x0: float, x1: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: float, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: float, x1: float, x2: float, /) -> float: ...
-
-
 @overload
 def maximum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 def maximum(*xs: float | NDArrayF) -> float | NDArrayF:
     """Compute the maximum of a number of quantities."""
     return reduce(np.maximum, xs)
@@ -982,56 +956,30 @@ def maximum(*xs: float | NDArrayF) -> float | NDArrayF:
 
 @overload
 def minimum(x: float, /) -> float: ...
-
-
 @overload
 def minimum(x0: float, x1: float, /) -> float: ...
-
-
 @overload
 def minimum(x0: float, x1: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: float, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: float, x1: float, x2: float, /) -> float: ...
-
-
 @overload
 def minimum(x0: float, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: float, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: float, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: float, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: float, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: NDArrayF, x2: float, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x0: NDArrayF, x1: NDArrayF, x2: NDArrayF, /) -> NDArrayF: ...
-
-
 def minimum(*xs: float | NDArrayF) -> float | NDArrayF:
     """Compute the minimum of a number of quantities."""
     return reduce(np.minimum, xs)
@@ -1109,12 +1057,8 @@ def shift_bool(
 
 @overload
 def year(date: datetime64, /) -> int: ...
-
-
 @overload
 def year(date: NDArrayDD, /) -> NDArrayI: ...
-
-
 def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
     """Convert a date/array of dates into a year/array of years."""
     years = 1970 + date.astype(datetime64Y).astype(int)

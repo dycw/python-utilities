@@ -49,7 +49,7 @@ pure-eval==0.2.2
     # via stack-data
 pygments==2.18.0
     # via ipython
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov

@@ -173,8 +173,6 @@ def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> DataFrame: ...
-
-
 @overload
 def select_to_dataframe(
     sel: Select[Any],
@@ -189,8 +187,6 @@ def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> DataFrame: ...
-
-
 @overload
 def select_to_dataframe(
     sel: Select[Any],
@@ -205,8 +201,6 @@ def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> Iterator[DataFrame]: ...
-
-
 @overload
 def select_to_dataframe(
     sel: Select[Any],
@@ -221,8 +215,6 @@ def select_to_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     **kwargs: Any,
 ) -> Iterator[DataFrame]: ...
-
-
 def select_to_dataframe(
     sel: Select[Any],
     engine_or_conn: Engine | Connection,

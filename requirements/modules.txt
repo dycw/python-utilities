@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-modules --prerelease=disallow --output-file=requirements/modules.txt --python-version=3.10 pyproject.toml
 altair==5.3.0
     # via streamlit
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
 anyio==4.3.0
     # via
@@ -46,7 +46,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-clarabel==0.7.1
+clarabel==0.8.1
     # via cvxpy
 click==8.1.7
     # via
@@ -90,7 +90,7 @@ filelock==3.14.0
     # via virtualenv
 fonttools==4.51.0
     # via fpdf2
-fpdf2==2.7.8
+fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 gitdb==4.0.11
     # via gitpython
@@ -145,7 +145,7 @@ lockfile==0.12.2
     # via python-daemon
 loguru==0.7.2
     # via dycw-utilities (pyproject.toml)
-luigi==3.5.0
+luigi==3.5.1
     # via dycw-utilities (pyproject.toml)
 markdown==3.6
     # via panel
@@ -240,7 +240,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.26
+polars-lts-cpu==0.20.27
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -268,7 +268,7 @@ pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
 pyinstrument==4.6.2
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-check
@@ -303,7 +303,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.2
     # via
     #   panel
     #   streamlit
@@ -328,7 +328,7 @@ scs==3.2.4.post1
     # via cvxpy
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==69.5.1
+setuptools==70.0.0
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -379,7 +379,7 @@ tqdm==4.66.4
     # via
     #   panel
     #   pqdm
-trove-classifiers==2024.4.10
+trove-classifiers==2024.5.17
     # via hatchling
 typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
@@ -403,7 +403,7 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.1.44
+uv==0.1.45
     # via hatch
 virtualenv==20.26.2
     # via hatch
@@ -417,9 +417,9 @@ xyzservices==2024.4.0
     # via
     #   bokeh
     #   panel
-zarr==2.18.0
+zarr==2.18.1
     # via dycw-utilities (pyproject.toml)
-zipp==3.18.1
+zipp==3.18.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

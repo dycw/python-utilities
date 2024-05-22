@@ -30,7 +30,7 @@ psycopg2-binary==2.9.9
     # via dycw-utilities (pyproject.toml)
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
