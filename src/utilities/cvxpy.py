@@ -20,24 +20,14 @@ if TYPE_CHECKING:
 
 @overload
 def abs_(x: float, /) -> float: ...
-
-
 @overload
 def abs_(x: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def abs_(x: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def abs_(x: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def abs_(x: Expression, /) -> Expression: ...
-
-
 def abs_(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
@@ -56,40 +46,22 @@ def abs_(
 
 @overload
 def add(x: float, y: float, /) -> float: ...
-
-
 @overload
 def add(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def add(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def add(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def add(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def add(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def add(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def add(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def add(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def add(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
@@ -101,40 +73,22 @@ def add(
 
 @overload
 def divide(x: float, y: float, /) -> float: ...
-
-
 @overload
 def divide(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def divide(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def divide(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def divide(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def divide(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def divide(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def divide(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def divide(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def divide(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
@@ -146,8 +100,6 @@ def divide(
 
 @overload
 def max_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float: ...
-
-
 @overload
 def max_(x: Expression, /) -> Expression: ...
 
@@ -170,96 +122,50 @@ def max_(
 
 @overload
 def maximum(x: float, y: float, /) -> float: ...
-
-
 @overload
 def maximum(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x: SeriesF, y: float, /) -> SeriesF: ...
-
-
 @overload
 def maximum(x: DataFrame, y: float, /) -> DataFrame: ...
-
-
 @overload
 def maximum(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def maximum(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def maximum(x: SeriesF, y: NDArrayF, /) -> SeriesF: ...
-
-
 @overload
 def maximum(x: DataFrame, y: NDArrayF, /) -> DataFrame: ...
-
-
 @overload
 def maximum(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def maximum(x: float, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def maximum(x: NDArrayF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def maximum(x: SeriesF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def maximum(x: Expression, y: SeriesF, /) -> Expression: ...
-
-
 @overload
 def maximum(x: float, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def maximum(x: NDArrayF, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def maximum(x: DataFrame, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def maximum(x: Expression, y: DataFrame, /) -> Expression: ...
-
-
 @overload
 def maximum(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def maximum(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def maximum(x: SeriesF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def maximum(x: DataFrame, y: Expression, /) -> Expression: ...
-
-
 @overload
 def maximum(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def maximum(
     x: float | NDArrayF | SeriesF | DataFrame | Expression,
     y: float | NDArrayF | SeriesF | DataFrame | Expression,
@@ -297,12 +203,8 @@ class MaximumError(Exception):
 
 @overload
 def min_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float: ...
-
-
 @overload
 def min_(x: Expression, /) -> Expression: ...
-
-
 def min_(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | Expression:
@@ -321,96 +223,50 @@ def min_(
 
 @overload
 def minimum(x: float, y: float, /) -> float: ...
-
-
 @overload
 def minimum(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x: SeriesF, y: float, /) -> SeriesF: ...
-
-
 @overload
 def minimum(x: DataFrame, y: float, /) -> DataFrame: ...
-
-
 @overload
 def minimum(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def minimum(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def minimum(x: SeriesF, y: NDArrayF, /) -> SeriesF: ...
-
-
 @overload
 def minimum(x: DataFrame, y: NDArrayF, /) -> DataFrame: ...
-
-
 @overload
 def minimum(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def minimum(x: float, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def minimum(x: NDArrayF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def minimum(x: SeriesF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def minimum(x: Expression, y: SeriesF, /) -> Expression: ...
-
-
 @overload
 def minimum(x: float, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def minimum(x: NDArrayF, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def minimum(x: DataFrame, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def minimum(x: Expression, y: DataFrame, /) -> Expression: ...
-
-
 @overload
 def minimum(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def minimum(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def minimum(x: SeriesF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def minimum(x: DataFrame, y: Expression, /) -> Expression: ...
-
-
 @overload
 def minimum(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def minimum(
     x: float | NDArrayF | SeriesF | DataFrame | Expression,
     y: float | NDArrayF | SeriesF | DataFrame | Expression,
@@ -448,96 +304,50 @@ class MinimumError(Exception):
 
 @overload
 def multiply(x: float, y: float, /) -> float: ...
-
-
 @overload
 def multiply(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def multiply(x: SeriesF, y: float, /) -> SeriesF: ...
-
-
 @overload
 def multiply(x: DataFrame, y: float, /) -> DataFrame: ...
-
-
 @overload
 def multiply(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def multiply(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def multiply(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def multiply(x: SeriesF, y: NDArrayF, /) -> SeriesF: ...
-
-
 @overload
 def multiply(x: DataFrame, y: NDArrayF, /) -> DataFrame: ...
-
-
 @overload
 def multiply(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def multiply(x: float, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def multiply(x: NDArrayF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def multiply(x: SeriesF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def multiply(x: Expression, y: SeriesF, /) -> Expression: ...
-
-
 @overload
 def multiply(x: float, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def multiply(x: NDArrayF, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def multiply(x: DataFrame, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def multiply(x: Expression, y: DataFrame, /) -> Expression: ...
-
-
 @overload
 def multiply(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def multiply(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def multiply(x: SeriesF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def multiply(x: DataFrame, y: Expression, /) -> Expression: ...
-
-
 @overload
 def multiply(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def multiply(
     x: float | NDArrayF | SeriesF | DataFrame | Expression,
     y: float | NDArrayF | SeriesF | DataFrame | Expression,
@@ -575,24 +385,14 @@ class MultiplyError(Exception):
 
 @overload
 def negate(x: float, /) -> float: ...
-
-
 @overload
 def negate(x: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def negate(x: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def negate(x: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def negate(x: Expression, /) -> Expression: ...
-
-
 def negate(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
@@ -602,24 +402,14 @@ def negate(
 
 @overload
 def negative(x: float, /) -> float: ...
-
-
 @overload
 def negative(x: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def negative(x: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def negative(x: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def negative(x: Expression, /) -> Expression: ...
-
-
 def negative(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
@@ -640,12 +430,8 @@ def negative(
 
 @overload
 def norm(x: NDArrayF1 | SeriesF, /) -> float: ...
-
-
 @overload
 def norm(x: Expression, /) -> Expression: ...
-
-
 def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
     """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
@@ -662,24 +448,14 @@ def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
 
 @overload
 def positive(x: float, /) -> float: ...
-
-
 @overload
 def positive(x: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def positive(x: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def positive(x: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def positive(x: Expression, /) -> Expression: ...
-
-
 def positive(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
@@ -700,28 +476,16 @@ def positive(
 
 @overload
 def power(x: float, p: float, /) -> float: ...
-
-
 @overload
 def power(x: NDArrayF, p: float, /) -> NDArrayF: ...
-
-
 @overload
 def power(x: Expression, p: float, /) -> Expression: ...
-
-
 @overload
 def power(x: float, p: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def power(x: NDArrayF, p: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def power(x: Expression, p: NDArrayF, /) -> Expression: ...
-
-
 def power(
     x: float | NDArrayF | Expression, p: float | NDArrayF, /
 ) -> float | NDArrayF | Expression:
@@ -732,15 +496,9 @@ def power(
 
 
 @overload
-def quad_form(x: NDArrayF1, P: NDArrayF2, /) -> float:  # noqa: N803
-    ...
-
-
+def quad_form(x: NDArrayF1, P: NDArrayF2, /) -> float: ...  # noqa: N803
 @overload
-def quad_form(x: Expression, P: NDArrayF2, /) -> Expression:  # noqa: N803
-    ...
-
-
+def quad_form(x: Expression, P: NDArrayF2, /) -> Expression: ...  # noqa: N803
 def quad_form(
     x: NDArrayF1 | Expression,
     P: NDArrayF2,  # noqa: N803
@@ -754,96 +512,50 @@ def quad_form(
 
 @overload
 def scalar_product(x: float, y: float, /) -> float: ...
-
-
 @overload
 def scalar_product(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def scalar_product(x: SeriesF, y: float, /) -> SeriesF: ...
-
-
 @overload
 def scalar_product(x: DataFrame, y: float, /) -> DataFrame: ...
-
-
 @overload
 def scalar_product(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def scalar_product(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def scalar_product(x: SeriesF, y: NDArrayF, /) -> SeriesF: ...
-
-
 @overload
 def scalar_product(x: DataFrame, y: NDArrayF, /) -> DataFrame: ...
-
-
 @overload
 def scalar_product(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: float, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def scalar_product(x: NDArrayF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def scalar_product(x: SeriesF, y: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def scalar_product(x: Expression, y: SeriesF, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: float, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def scalar_product(x: NDArrayF, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def scalar_product(x: DataFrame, y: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def scalar_product(x: Expression, y: DataFrame, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: SeriesF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: DataFrame, y: Expression, /) -> Expression: ...
-
-
 @overload
 def scalar_product(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def scalar_product(
     x: float | NDArrayF | SeriesF | DataFrame | Expression,
     y: float | NDArrayF | SeriesF | DataFrame | Expression,
@@ -928,24 +640,14 @@ class SolveUnboundedError(SolveError): ...
 
 @overload
 def sqrt(x: float, /) -> float: ...
-
-
 @overload
 def sqrt(x: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def sqrt(x: SeriesF, /) -> SeriesF: ...
-
-
 @overload
 def sqrt(x: DataFrame, /) -> DataFrame: ...
-
-
 @overload
 def sqrt(x: Expression, /) -> Expression: ...
-
-
 def sqrt(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | NDArrayF | SeriesF | DataFrame | Expression:
@@ -963,40 +665,22 @@ def sqrt(
 
 @overload
 def subtract(x: float, y: float, /) -> float: ...
-
-
 @overload
 def subtract(x: NDArrayF, y: float, /) -> NDArrayF: ...
-
-
 @overload
 def subtract(x: Expression, y: float, /) -> Expression: ...
-
-
 @overload
 def subtract(x: float, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def subtract(x: NDArrayF, y: NDArrayF, /) -> NDArrayF: ...
-
-
 @overload
 def subtract(x: Expression, y: NDArrayF, /) -> Expression: ...
-
-
 @overload
 def subtract(x: float, y: Expression, /) -> Expression: ...
-
-
 @overload
 def subtract(x: NDArrayF, y: Expression, /) -> Expression: ...
-
-
 @overload
 def subtract(x: Expression, y: Expression, /) -> Expression: ...
-
-
 def subtract(
     x: float | NDArrayF | Expression, y: float | NDArrayF | Expression, /
 ) -> float | NDArrayF | Expression:
@@ -1008,12 +692,8 @@ def subtract(
 
 @overload
 def sum_(x: float | NDArrayF | SeriesF | DataFrame, /) -> float: ...
-
-
 @overload
 def sum_(x: Expression, /) -> Expression: ...
-
-
 def sum_(
     x: float | NDArrayF | SeriesF | DataFrame | Expression, /
 ) -> float | Expression:
@@ -1034,16 +714,10 @@ def sum_(
 
 @overload
 def sum_axis0(x: NDArrayF2, /) -> NDArrayF1: ...
-
-
 @overload
 def sum_axis0(x: DataFrame, /) -> SeriesF: ...
-
-
 @overload
 def sum_axis0(x: Expression, /) -> Expression: ...
-
-
 def sum_axis0(
     x: NDArrayF2 | DataFrame | Expression, /
 ) -> NDArrayF1 | SeriesF | Expression:
@@ -1053,16 +727,10 @@ def sum_axis0(
 
 @overload
 def sum_axis1(x: NDArrayF2, /) -> NDArrayF1: ...
-
-
 @overload
 def sum_axis1(x: DataFrame, /) -> SeriesF: ...
-
-
 @overload
 def sum_axis1(x: Expression, /) -> Expression: ...
-
-
 def sum_axis1(
     x: NDArrayF2 | DataFrame | Expression, /
 ) -> NDArrayF1 | SeriesF | Expression:
