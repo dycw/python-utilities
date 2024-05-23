@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from utilities.types import IterableStrs
 
 
-def check_polars_dataframe(
+def check_polars_dataframe(  # noqa: C901
     df: DataFrame,
     /,
     *,
@@ -41,8 +41,9 @@ def check_polars_dataframe(
     min_height: int | None = None,
     max_height: int | None = None,
     predicates: Mapping[str, Callable[[Any], bool]] | None = None,
-    schema: SchemaDict | None = None,
-    schema_inc: SchemaDict | None = None,
+    schema_list: SchemaDict | None = None,
+    schema_set: SchemaDict | None = None,
+    schema_subset: SchemaDict | None = None,
     shape: tuple[int, int] | None = None,
     sorted: IntoExpr | Iterable[IntoExpr] | None = None,  # noqa: A002
     unique: IntoExpr | Iterable[IntoExpr] | None = None,
@@ -58,10 +59,12 @@ def check_polars_dataframe(
         _check_polars_dataframe_dtypes(df, dtypes)
     if predicates is not None:
         _check_polars_dataframe_predicates(df, predicates)
-    if schema is not None:
-        _check_polars_dataframe_schema(df, schema)
-    if schema_inc is not None:
-        _check_polars_dataframe_schema_inc(df, schema_inc)
+    if schema_list is not None:
+        _check_polars_dataframe_schema_list(df, schema_list)
+    if schema_set is not None:
+        _check_polars_dataframe_schema_set(df, schema_set)
+    if schema_subset is not None:
+        _check_polars_dataframe_schema_subset(df, schema_subset)
     if shape is not None:
         _check_polars_dataframe_shape(df, shape)
     if sorted is not None:
@@ -175,19 +178,19 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
             yield f"failed predicates were {self.failed}"
 
 
-def _check_polars_dataframe_schema(df: DataFrame, schema: SchemaDict, /) -> None:
+def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) -> None:
     try:
-        check_mappings_equal(df.schema, schema)
-    except CheckMappingsEqualError as error:
-        raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
+        _check_polars_dataframe_schema_set(df, schema)
+    except _CheckPolarsDataFrameSchemaSetError as error:
+        raise _CheckPolarsDataFrameSchemaListError(df=df, schema=schema) from error
     try:
         _check_polars_dataframe_columns(df, schema)
     except _CheckPolarsDataFrameColumnsError as error:
-        raise _CheckPolarsDataFrameSchemaError(df=df, schema=schema) from error
+        raise _CheckPolarsDataFrameSchemaListError(df=df, schema=schema) from error
 
 
 @dataclass(kw_only=True)
-class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
+class _CheckPolarsDataFrameSchemaListError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
     @override
@@ -195,15 +198,31 @@ class _CheckPolarsDataFrameSchemaError(CheckPolarsDataFrameError):
         return f"DataFrame must have schema {self.schema}; got {self.df.columns}\n\n{self.df}"
 
 
-def _check_polars_dataframe_schema_inc(df: DataFrame, schema: SchemaDict, /) -> None:
+def _check_polars_dataframe_schema_set(df: DataFrame, schema: SchemaDict, /) -> None:
     try:
-        check_supermapping(df.schema, schema)
-    except CheckSuperMappingError as error:
-        raise _CheckPolarsDataFrameSchemaIncError(df=df, schema=schema) from error
+        check_mappings_equal(df.schema, schema)
+    except CheckMappingsEqualError as error:
+        raise _CheckPolarsDataFrameSchemaSetError(df=df, schema=schema) from error
 
 
 @dataclass(kw_only=True)
-class _CheckPolarsDataFrameSchemaIncError(CheckPolarsDataFrameError):
+class _CheckPolarsDataFrameSchemaSetError(CheckPolarsDataFrameError):
+    schema: SchemaDict
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have schema {self.schema}; got {self.df.columns}\n\n{self.df}"
+
+
+def _check_polars_dataframe_schema_subset(df: DataFrame, schema: SchemaDict, /) -> None:
+    try:
+        check_supermapping(df.schema, schema)
+    except CheckSuperMappingError as error:
+        raise _CheckPolarsDataFrameSchemaSubsetError(df=df, schema=schema) from error
+
+
+@dataclass(kw_only=True)
+class _CheckPolarsDataFrameSchemaSubsetError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
     @override
