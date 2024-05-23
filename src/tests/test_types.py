@@ -21,6 +21,7 @@ from utilities.types import (
     EnsureFloatError,
     EnsureHashableError,
     EnsureIntError,
+    EnsureMemberError,
     EnsureNotNoneError,
     EnsureNumberError,
     EnsureSizedError,
@@ -38,6 +39,7 @@ from utilities.types import (
     ensure_float,
     ensure_hashable,
     ensure_int,
+    ensure_member,
     ensure_not_none,
     ensure_number,
     ensure_sized,
@@ -104,7 +106,7 @@ class TestEnsureClass:
             param(True, "Object .* must be an instance of .* or None"),
         ],
     )
-    def test_single_error(self, *, nullable: bool, match: str) -> None:
+    def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureClassError, match=f"{match}; got .* instead"):
             _ = ensure_class(sentinel, bool, nullable=nullable)
 
@@ -195,6 +197,32 @@ class TestEnsureInt:
     def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureIntError, match=f"{match}; got .* instead"):
             _ = ensure_int(sentinel, nullable=nullable)
+
+
+class TestEnsureMember:
+    @mark.parametrize(
+        ("obj", "nullable"),
+        [
+            param(True, True),
+            param(True, False),
+            param(False, True),
+            param(False, False),
+            param(None, True),
+        ],
+    )
+    def test_main(self, *, obj: Any, nullable: bool) -> None:
+        _ = ensure_member(obj, {True, False}, nullable=nullable)
+
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a member of .*"),
+            param(True, "Object .* must be a member of .* or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bool, match: str) -> None:
+        with raises(EnsureMemberError, match=match):
+            _ = ensure_member(sentinel, {True, False}, nullable=nullable)
 
 
 class TestEnsureNotNone:

@@ -238,22 +238,6 @@ class EnsureIntError(Exception):
         return f"Object {self.obj} must be an integer{desc}; got {get_class_name(self.obj)} instead"
 
 
-def ensure_not_none(obj: _T | None, /) -> _T:
-    """Ensure an object is not None."""
-    if obj is None:
-        raise EnsureNotNoneError(obj=obj)
-    return obj
-
-
-@dataclass(kw_only=True)
-class EnsureNotNoneError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object {self.obj} must not be None"
-
-
 @overload
 def ensure_member(
     obj: Any, container: Container[_T], /, *, nullable: bool
@@ -268,7 +252,7 @@ def ensure_member(
     """Ensure an object is a member of the container."""
     if (obj in container) or ((obj is None) and nullable):
         return obj
-    raise TypeError
+    raise EnsureMemberError(obj=obj, container=container, nullable=nullable)
 
 
 @dataclass(kw_only=True)
@@ -280,7 +264,23 @@ class EnsureMemberError(Exception):
     @override
     def __str__(self) -> str:
         desc = " or None" if self.nullable else ""
-        return f"Object {self.obj} must be a member of the container {self.container}{desc}"
+        return f"Object {self.obj} must be a member of {self.container}{desc}"
+
+
+def ensure_not_none(obj: _T | None, /) -> _T:
+    """Ensure an object is not None."""
+    if obj is None:
+        raise EnsureNotNoneError(obj=obj)
+    return obj
+
+
+@dataclass(kw_only=True)
+class EnsureNotNoneError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must not be None"
 
 
 @overload
