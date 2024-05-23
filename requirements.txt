@@ -137,7 +137,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.102.4
+hypothesis==6.102.5
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -238,7 +238,7 @@ numpy==1.26.4
     #   zarr
 optuna==3.6.1
     # via dycw-utilities (pyproject.toml)
-osqp==0.6.4
+osqp==0.6.7
     # via cvxpy
 outcome==1.3.0.post0
     # via trio
@@ -295,7 +295,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.27
+polars-lts-cpu==0.20.28
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -405,7 +405,7 @@ scipy==1.13.0
     #   scs
 scs==3.2.4.post1
     # via cvxpy
-selenium==4.20.0
+selenium==4.21.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
@@ -473,7 +473,7 @@ trio==0.25.1
     #   trio-websocket
 trio-websocket==0.11.1
     # via selenium
-trove-classifiers==2024.5.17
+trove-classifiers==2024.5.22
     # via hatchling
 typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
@@ -501,7 +501,7 @@ urllib3==2.2.1
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.1.45
+uv==0.2.2
     # via hatch
 virtualenv==20.26.2
     # via hatch

@@ -42,7 +42,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.102.4
+hypothesis==6.102.5
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -123,7 +123,7 @@ tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.5
     # via hatch
-trove-classifiers==2024.5.17
+trove-classifiers==2024.5.22
     # via hatchling
 typing-extensions==4.11.0
     # via
@@ -131,7 +131,7 @@ typing-extensions==4.11.0
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.1.45
+uv==0.2.2
     # via hatch
 virtualenv==20.26.2
     # via hatch
