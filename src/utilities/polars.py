@@ -180,8 +180,8 @@ class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
 
 def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) -> None:
     try:
-        check_mappings_equal(df.schema, schema)
-    except CheckMappingsEqualError as error:
+        _check_polars_dataframe_schema_set(df, schema)
+    except _CheckPolarsDataFrameSchemaSetError as error:
         raise _CheckPolarsDataFrameSchemaListError(df=df, schema=schema) from error
     try:
         _check_polars_dataframe_columns(df, schema)
