@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Hashable, Mapping, Sized
+from collections.abc import Container, Hashable, Mapping, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from inspect import iscoroutinefunction, isfunction
@@ -255,6 +255,35 @@ class EnsureNotNoneError(Exception):
 
 
 @overload
+def ensure_member(
+    obj: Any, container: Container[_T], /, *, nullable: bool
+) -> _T | None: ...
+@overload
+def ensure_member(
+    obj: Any, container: Container[_T], /, *, nullable: Literal[False] = False
+) -> _T: ...
+def ensure_member(
+    obj: Any, container: Container[_T], /, *, nullable: bool = False
+) -> _T | None:
+    """Ensure an object is a member of the container."""
+    if (obj in container) or ((obj is None) and nullable):
+        return obj
+    raise TypeError
+
+
+@dataclass(kw_only=True)
+class EnsureMemberError(Exception):
+    obj: Any
+    container: Container[Any]
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        desc = " or None" if self.nullable else ""
+        return f"Object {self.obj} must be a member of the container {self.container}{desc}"
+
+
+@overload
 def ensure_number(obj: Any, /, *, nullable: bool) -> Number | None: ...
 @overload
 def ensure_number(obj: Any, /, *, nullable: Literal[False] = False) -> Number: ...
@@ -407,6 +436,7 @@ __all__ = [
     "EnsureFloatError",
     "EnsureHashableError",
     "EnsureIntError",
+    "EnsureMemberError",
     "EnsureNotNoneError",
     "EnsureNumberError",
     "EnsureSizedError",
@@ -424,6 +454,7 @@ __all__ = [
     "ensure_float",
     "ensure_hashable",
     "ensure_int",
+    "ensure_member",
     "ensure_not_none",
     "ensure_number",
     "ensure_sized",
