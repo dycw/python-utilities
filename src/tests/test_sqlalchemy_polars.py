@@ -381,7 +381,7 @@ class TestSelectToDataFrame:
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
-        check_polars_dataframe(df, height=len(in_values), schema={"value": Int64})
+        check_polars_dataframe(df, height=len(in_values), schema_set={"value": Int64})
         assert set(df["value"].to_list()) == in_values
 
     @given(engine=sqlite_engines())
@@ -395,7 +395,7 @@ class TestSelectToDataFrame:
         ensure_tables_created(engine, table)
         sel = select(table.c["value"])
         df = select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
-        check_polars_dataframe(df, height=0, schema={"value": Int64})
+        check_polars_dataframe(df, height=0, schema_set={"value": Int64})
 
     @given(
         engine=sqlite_engines(),
@@ -421,7 +421,7 @@ class TestSelectToDataFrame:
                     df_i,
                     min_height=1,
                     max_height=batch_size,
-                    schema={"value": pl.Boolean},
+                    schema_set={"value": pl.Boolean},
                 )
 
     @given(
@@ -465,7 +465,7 @@ class TestSelectToDataFrame:
             )
             for df_i in dfs:
                 check_polars_dataframe(
-                    df_i, max_height=max_height, schema={"value": Int64}
+                    df_i, max_height=max_height, schema_set={"value": Int64}
                 )
                 assert df_i["value"].is_in(in_values).all()
                 seen.update(df_i["value"].to_list())
