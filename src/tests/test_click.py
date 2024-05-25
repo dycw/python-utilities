@@ -69,6 +69,11 @@ class _Truth(enum.Enum):
 
 
 class TestEnum:
+    def test_repr(self) -> None:
+        param = utilities.click.Enum(_Truth)
+        expected = f"Enum({_Truth})"
+        assert repr(param) == expected
+
     @given(truth=sampled_from(_Truth))
     def test_command(self, *, truth: _Truth) -> None:
         @command()

@@ -87,6 +87,10 @@ class Enum(ParamType, Generic[_E]):
         super().__init__()
 
     @override
+    def __repr__(self) -> str:
+        return f"Enum({self._enum})"
+
+    @override
     def convert(
         self, value: _E | str, param: Parameter | None, ctx: Context | None
     ) -> _E:
