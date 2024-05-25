@@ -7,14 +7,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
-from utilities.enum import (
-    StrEnum,
-    _ParseEnumCaseInsensitiveBijectionError,
-    _ParseEnumCaseInsensitiveEmptyError,
-    _ParseEnumCaseSensitiveEmptyError,
-    ensure_enum,
-    parse_enum,
-)
+from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
 
 
 class TestParseEnum:
@@ -45,10 +38,7 @@ class TestParseEnum:
             true = auto()
             false = auto()
 
-        with raises(
-            _ParseEnumCaseSensitiveEmptyError,
-            match=r"Enum .* does not contain 'invalid'",
-        ):
+        with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
             _ = parse_enum(Example, "invalid")
 
     @given(data=data())
@@ -59,7 +49,7 @@ class TestParseEnum:
 
         member = data.draw(sampled_from(Example))
         with raises(
-            _ParseEnumCaseInsensitiveBijectionError,
+            ParseEnumError,
             match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
         ):
             _ = parse_enum(Example, member.name, case_sensitive=False)
@@ -70,7 +60,7 @@ class TestParseEnum:
             false = auto()
 
         with raises(
-            _ParseEnumCaseInsensitiveEmptyError,
+            ParseEnumError,
             match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
         ):
             _ = parse_enum(Example, "invalid", case_sensitive=False)
