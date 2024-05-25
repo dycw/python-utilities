@@ -4,10 +4,9 @@ from collections import Counter
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import partial
 from itertools import islice, product
-from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
+from typing import Any, Generic, Literal, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
@@ -70,11 +69,6 @@ class CheckDuplicatesError(Exception):
         )
 
 
-class _CheckIterablesEqualState(Enum):
-    left_longer = auto()
-    right_longer = auto()
-
-
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of iterables are equal."""
 
@@ -90,9 +84,9 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         msg = ensure_str(one(error.args))
         match msg:
             case "zip() argument 2 is longer than argument 1":
-                state = _CheckIterablesEqualState.right_longer
+                state = "right_longer"
             case "zip() argument 2 is shorter than argument 1":
-                state = _CheckIterablesEqualState.left_longer
+                state = "left_longer"
             case _:  # pragma: no cover
                 raise
     else:
@@ -101,6 +95,9 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckIterablesEqualError(
             left=left_list, right=right_list, errors=errors, state=state
         )
+
+
+_CheckIterablesEqualState = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True)
@@ -126,9 +123,9 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
             error_descs = (f"({lv}, {rv}, i={i})" for i, lv, rv in self.errors)
             yield "differing items were {}".format(", ".join(error_descs))
         match self.state:
-            case _CheckIterablesEqualState.left_longer:
+            case "left_longer":
                 yield "left was longer"
-            case _CheckIterablesEqualState.right_longer:
+            case "right_longer":
                 yield "right was longer"
             case None:
                 pass
@@ -547,6 +544,19 @@ def one_str(
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
+    check_duplicates(as_list)
+    if case_sensitive:
+        try:
+            return one(t for t in as_list if t == text)
+        except OneEmptyError:
+            raise OneStrCaseSentitiveEmptyError(iterable=iterable, text=text) from None
+    mapping = {t: t.casefold() for t in as_list}
+    try:
+        check_bijection(mapping)
+    except CheckBijectionError as error:
+
+
+    as_list = list(iterable)
     if case_sensitive:
         check_duplicates(as_list)
     else:
@@ -560,6 +570,34 @@ def one_str(
     except StopIteration:
         return first
     raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+
+
+def _one_str_case_sensitive(sequence: Sequence[str], text: str, /) -> str:
+    """Find the unique string in an iterable (case sensitive)."""
+    try:
+        return one(t == text for t in sequence)
+    except OneEmptyError:
+        raise
+    except OneNonUniqueError:
+        raise
+
+
+@dataclass(kw_only=True)
+class OneStrError(Exception):
+    iterable: Iterable[str]
+    text: str
+
+
+@dataclass(kw_only=True)
+class OneStrCaseSentitiveEmptyError(OneStrError): ...
+
+
+@dataclass(kw_only=True)
+class OneStrCaseInsensitiveEmptyError(OneStrError): ...
+
+
+@dataclass(kw_only=True)
+class OneStrCaseInsensitiveNonUniqueError(OneStrError): ...
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
