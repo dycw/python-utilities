@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import click
 from click import Context, Parameter, ParamType, option
@@ -19,12 +19,14 @@ from utilities.datetime import (
     ensure_timedelta,
 )
 from utilities.enum import ParseEnumError, ensure_enum
+from utilities.iterables import CheckSubSetError, check_subset
 from utilities.logging import LogLevel
 from utilities.sentinel import sentinel
 from utilities.text import split_str
 
 if TYPE_CHECKING:
     import datetime as dt
+    from collections.abc import Sequence
 
     from sqlalchemy import Engine as _Engine
 
@@ -93,6 +95,59 @@ class Enum(ParamType, Generic[_E]):
             return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
         except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
+
+
+_Str = TypeVar("_Str", bound=str)
+
+
+class ListChoices(Generic[_Str], ParamType):
+    """A list-of-choices-valued parameter."""
+
+    name = "choices"
+
+    def __init__(
+        self,
+        choices: Sequence[_Str],
+        /,
+        *,
+        separator: str = ",",
+        empty: str = str(sentinel),
+        case_sensitive: bool = True,
+    ) -> None:
+        self._choices = choices
+        self._separator = separator
+        self._empty = empty
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        return f"ListChoices({list(self._choices)})"
+
+    @override
+    def convert(
+        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[_Str]:
+        """Convert a value into the `ListInts` type."""
+        if isinstance(value, list):
+            return self._convert_list_of_strs(value, param, ctx)
+        strs = split_str(value, separator=self._separator, empty=self._empty)
+        return self._convert_list_of_strs(strs, param, ctx)
+
+    def _convert_list_of_strs(
+        self, value: list[str], param: Parameter | None, ctx: Context | None, /
+    ) -> list[_Str]:
+        if self._case_sensitive:
+            left = value
+            right = self._choices
+        else:
+            left = [v.casefold() for v in value]
+            right = [c.casefold() for c in self._choices]
+        try:
+            check_subset(left, right)
+        except CheckSubSetError:
+            return self.fail(f"{left} must be a subset of {right}", param, ctx)
+        return cast(list[_Str], left)
 
 
 class ListInts(ParamType):
@@ -215,6 +270,8 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "ListChoices",
+    "ListInts",
     "Time",
     "Timedelta",
     "local_scheduler_option_default_central",

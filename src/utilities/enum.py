@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
@@ -47,47 +48,27 @@ def ensure_enum(
 
 def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
     """Parse a string into the enum."""
-    names = {e.name for e in enum}
+    enum_ = cast(Iterable[Any], enum)
+    if case_sensitive:
+        els = {el for el in enum_ if el.name == member}
+    else:
+        els = {el for el in enum_ if el.name.casefold() == member.casefold()}
     try:
-        match = one_str(names, member, case_sensitive=case_sensitive)
-    except _OneStrCaseSensitiveEmptyError:
-        raise _ParseEnumCaseSensitiveEmptyError(enum=enum, member=member) from None
-    except _OneStrCaseInsensitiveBijectionError as error:
-        raise _ParseEnumCaseInsensitiveBijectionError(
-            enum=enum, member=member, counts=error.counts
-        ) from None
-    except _OneStrCaseInsensitiveEmptyError:
-        raise _ParseEnumCaseInsensitiveEmptyError(enum=enum, member=member) from None
-    return enum[match]
+        (el,) = els
+    except ValueError:
+        raise ParseEnumError(enum=enum, member=member) from None
+    else:
+        return el
 
 
 @dataclass(kw_only=True)
-class ParseEnumError(Exception, Generic[_E]):
-    enum: type[_E]
+class ParseEnumError(Exception):
+    enum: type[Enum]
     member: str
 
-
-@dataclass(kw_only=True)
-class _ParseEnumCaseSensitiveEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
         return f"Enum {self.enum} does not contain {self.member!r}."
-
-
-@dataclass(kw_only=True)
-class _ParseEnumCaseInsensitiveBijectionError(ParseEnumError):
-    counts: Mapping[str, int]
-
-    @override
-    def __str__(self) -> str:
-        return f"Enum {self.enum} must not contain duplicates (case insensitive); got {self.counts}."
-
-
-@dataclass(kw_only=True)
-class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
-    @override
-    def __str__(self) -> str:
-        return f"Enum {self.enum} does not contain {self.member!r} (case insensitive)."
 
 
 __all__ = ["ParseEnumError", "StrEnum", "ensure_enum", "parse_enum"]
