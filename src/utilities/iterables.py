@@ -542,6 +542,26 @@ class OneNonUniqueError(OneError[_T]):
         return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
 
 
+def one_str(
+    iterable: Iterable[str], text: str, /, *, case_sensitive: bool = True
+) -> str:
+    """Find the unique string in an iterable."""
+    as_list = list(iterable)
+    if case_sensitive:
+        check_duplicates(as_list)
+    else:
+        folded
+    try:
+        first = next(it)
+    except StopIteration:
+        raise OneEmptyError(iterable=iterable) from None
+    try:
+        second = next(it)
+    except StopIteration:
+        return first
+    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+
+
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
     """The cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
