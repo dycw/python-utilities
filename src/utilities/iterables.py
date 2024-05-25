@@ -548,26 +548,26 @@ def one_str(
     try:
         check_duplicates(as_list)
     except CheckDuplicatesError as error:
-        raise OneStrDuplicatesError(
+        raise _OneStrDuplicatesError(
             iterable=iterable, text=text, counts=error.counts
         ) from None
     if case_sensitive:
         try:
             return one(t for t in as_list if t == text)
         except OneEmptyError:
-            raise OneStrCaseSentitiveEmptyError(iterable=iterable, text=text) from None
+            raise _OneStrCaseSentitiveEmptyError(iterable=iterable, text=text) from None
     mapping = {t: t.casefold() for t in as_list}
     try:
         check_bijection(mapping)
     except CheckBijectionError as error:
         error = cast(CheckBijectionError[str], error)
-        raise OneStrCaseInsensitiveBijectionError(
+        raise _OneStrCaseInsensitiveBijectionError(
             iterable=iterable, text=text, counts=error.counts
         ) from None
     try:
         return one(k for k, v in mapping.items() if v == text.casefold())
     except OneEmptyError:
-        raise OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
+        raise _OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
 
 
 @dataclass(kw_only=True)
@@ -577,7 +577,7 @@ class OneStrError(Exception):
 
 
 @dataclass(kw_only=True)
-class OneStrDuplicatesError(OneStrError):
+class _OneStrDuplicatesError(OneStrError):
     counts: Mapping[str, int]
 
     @override
@@ -588,23 +588,23 @@ class OneStrDuplicatesError(OneStrError):
 
 
 @dataclass(kw_only=True)
-class OneStrCaseSentitiveEmptyError(OneStrError):
+class _OneStrCaseSentitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} does not contain {self.text!r}."
 
 
 @dataclass(kw_only=True)
-class OneStrCaseInsensitiveBijectionError(OneStrError):
+class _OneStrCaseInsensitiveBijectionError(OneStrError):
     counts: Mapping[str, int]
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} must not contain duplicates (case insensitive); got {self.counts}"
+        return f"Iterable {self.iterable} must not contain duplicates (case insensitive); got {self.counts}."
 
 
 @dataclass(kw_only=True)
-class OneStrCaseInsensitiveEmptyError(OneStrError):
+class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} does not contain {self.text!r} (case insensitive)."
