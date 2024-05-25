@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import click
 from click import Context, Parameter, ParamType, option
@@ -19,7 +19,7 @@ from utilities.datetime import (
     ensure_timedelta,
 )
 from utilities.enum import ParseEnumError, ensure_enum
-from utilities.iterables import CheckSubSetError, check_subset
+from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import sentinel
 from utilities.text import split_str
@@ -97,17 +97,14 @@ class Enum(ParamType, Generic[_E]):
             return self.fail(f"Unable to parse {value}", param, ctx)
 
 
-_Str = TypeVar("_Str", bound=str)
-
-
-class ListChoices(Generic[_Str], ParamType):
+class ListChoices(ParamType):
     """A list-of-choices-valued parameter."""
 
     name = "choices"
 
     def __init__(
         self,
-        choices: Sequence[_Str],
+        choices: Sequence[str],
         /,
         *,
         separator: str = ",",
@@ -127,27 +124,32 @@ class ListChoices(Generic[_Str], ParamType):
     @override
     def convert(
         self, value: list[str] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[_Str]:
-        """Convert a value into the `ListInts` type."""
+    ) -> list[str]:
+        """Convert a value into the `ListChoices` type."""
         if isinstance(value, list):
             return self._convert_list_of_strs(value, param, ctx)
-        strs = split_str(value, separator=self._separator, empty=self._empty)
-        return self._convert_list_of_strs(strs, param, ctx)
+        texts = split_str(value, separator=self._separator, empty=self._empty)
+        return self._convert_list_of_strs(texts, param, ctx)
 
     def _convert_list_of_strs(
-        self, value: list[str], param: Parameter | None, ctx: Context | None, /
-    ) -> list[_Str]:
-        if self._case_sensitive:
-            left = value
-            right = self._choices
-        else:
-            left = [v.casefold() for v in value]
-            right = [c.casefold() for c in self._choices]
-        try:
-            check_subset(left, right)
-        except CheckSubSetError:
-            return self.fail(f"{left} must be a subset of {right}", param, ctx)
-        return cast(list[_Str], left)
+        self, texts: list[str], param: Parameter | None, ctx: Context | None, /
+    ) -> list[str]:
+        results: list[str] = []
+        errors: list[str] = []
+        for text in texts:
+            try:
+                result = one_str(
+                    self._choices, text, case_sensitive=self._case_sensitive
+                )
+            except OneStrError:  # noqa: PERF203
+                errors.append(text)
+            else:
+                results.append(result)
+        if len(errors) >= 1:
+            return self.fail(
+                f"{errors} must be a subset of {self._choices}", param, ctx
+            )
+        return results
 
 
 class ListInts(ParamType):
