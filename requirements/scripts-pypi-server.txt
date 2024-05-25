@@ -15,7 +15,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.102.5
+hypothesis==6.102.6
     # via dycw-utilities (pyproject.toml)
 importlib-resources==6.4.0
     # via pypiserver

@@ -27,7 +27,7 @@ exceptiongroup==1.2.1
     #   pytest
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.102.5
+hypothesis==6.102.6
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -78,7 +78,7 @@ pandas==2.2.2
     #   holoviews
     #   panel
     #   xarray
-panel==1.4.2
+panel==1.4.3
     # via holoviews
 param==2.1.0
     # via

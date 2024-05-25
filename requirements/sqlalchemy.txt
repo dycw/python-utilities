@@ -2,8 +2,6 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-sqlalchemy --prerelease=disallow --output-file=requirements/sqlalchemy.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-bidict==0.23.1
-    # via dycw-utilities (pyproject.toml)
 coverage==7.5.1
     # via
     #   coverage-conditional-plugin
@@ -15,7 +13,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.102.5
+hypothesis==6.102.6
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
