@@ -28,6 +28,7 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
+_THashable = TypeVar("_THashable", bound=Hashable)
 
 
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
@@ -39,9 +40,9 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
 
 
 @dataclass(kw_only=True)
-class CheckBijectionError(Exception):
-    mapping: Mapping[Any, Hashable]
-    counts: dict[Hashable, int]
+class CheckBijectionError(Exception, Generic[_THashable]):
+    mapping: Mapping[Any, _THashable]
+    counts: dict[_THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -58,9 +59,9 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
 
 
 @dataclass(kw_only=True)
-class CheckDuplicatesError(Exception):
-    iterable: Iterable[Hashable]
-    counts: dict[Hashable, int]
+class CheckDuplicatesError(Exception, Generic[_THashable]):
+    iterable: Iterable[_THashable]
+    counts: dict[_THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -554,32 +555,14 @@ def one_str(
     try:
         check_bijection(mapping)
     except CheckBijectionError as error:
-
-
-    as_list = list(iterable)
-    if case_sensitive:
-        check_duplicates(as_list)
-    else:
-        folded
+        error = cast(CheckBijectionError[str], error)
+        raise OneStrCaseInsensitiveBijectionError(
+            iterable=iterable, text=text, counts=error.counts
+        ) from None
     try:
-        first = next(it)
-    except StopIteration:
-        raise OneEmptyError(iterable=iterable) from None
-    try:
-        second = next(it)
-    except StopIteration:
-        return first
-    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
-
-
-def _one_str_case_sensitive(sequence: Sequence[str], text: str, /) -> str:
-    """Find the unique string in an iterable (case sensitive)."""
-    try:
-        return one(t == text for t in sequence)
+        return one(k for k, v in mapping.items() if v == text.casefold())
     except OneEmptyError:
-        raise
-    except OneNonUniqueError:
-        raise
+        raise OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
 
 
 @dataclass(kw_only=True)
@@ -593,11 +576,12 @@ class OneStrCaseSentitiveEmptyError(OneStrError): ...
 
 
 @dataclass(kw_only=True)
-class OneStrCaseInsensitiveEmptyError(OneStrError): ...
+class OneStrCaseInsensitiveBijectionError(OneStrError):
+    counts: dict[str, int]
 
 
 @dataclass(kw_only=True)
-class OneStrCaseInsensitiveNonUniqueError(OneStrError): ...
+class OneStrCaseInsensitiveEmptyError(OneStrError): ...
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
