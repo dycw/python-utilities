@@ -19,7 +19,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.102.5
+hypothesis==6.102.6
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -62,7 +62,7 @@ pytz==2024.1
     # via pandas
 qdldl==0.1.7.post2
     # via osqp
-scipy==1.13.0
+scipy==1.13.1
     # via
     #   clarabel
     #   cvxpy
