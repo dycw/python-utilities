@@ -4,6 +4,7 @@ import datetime as dt
 import enum
 from enum import auto
 from re import search
+from string import ascii_lowercase
 from typing import TYPE_CHECKING, Any
 
 import sqlalchemy
@@ -34,6 +35,7 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
+    ListChoices,
     ListInts,
     Time,
     Timedelta,
@@ -78,7 +80,7 @@ class TestEnum:
         assert result.exit_code == 0
         assert result.stdout == f"truth = {truth}\n"
 
-        result = CliRunner().invoke(cli, ["not_an_element"])
+        result = CliRunner().invoke(cli, ["invalid"])
         assert result.exit_code == 2
 
     @given(data=data(), truth=sampled_from(_Truth))
@@ -192,6 +194,50 @@ class TestFileAndDirPaths:
         non_existent = tmp_path.joinpath("non-existent")
         result = CliRunner().invoke(cli, [str(non_existent)])
         assert result.exit_code == 0
+
+
+class TestListChoices:
+    @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
+    def test_command(self, *, choices: list[str]) -> None:
+        @command()
+        @argument("choices", type=ListChoices(ascii_lowercase))
+        def cli(*, choices: list[str]) -> None:
+            echo(f"choices = {choices}")
+
+        joined = join_strs(choices)
+        result = CliRunner().invoke(cli, [joined])
+        assert result.exit_code == 0
+        assert result.stdout == f"choices = {choices}\n"
+
+        result = CliRunner().invoke(cli, ["invalid"])
+        assert result.exit_code == 2
+
+    @given(
+        data=data(),
+        choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True),
+    )
+    def test_case_insensitive(self, *, data: DataObject, choices: list[str]) -> None:
+        @command()
+        @argument("choices", type=ListChoices(ascii_lowercase, case_sensitive=False))
+        def cli(*, choices: list[str]) -> None:
+            echo(f"choices = {choices}")
+
+        variable = [data.draw(sampled_from([c, c.upper()])) for c in choices]
+        joined = join_strs(variable)
+        result = CliRunner().invoke(cli, [joined])
+        assert result.exit_code == 0
+        assert result.stdout == f"choices = {choices}\n"
+
+    @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
+    def test_option(self, *, choices: list[str]) -> None:
+        @command()
+        @option("--choices", type=ListChoices(ascii_lowercase), default=choices)
+        def cli(*, choices: list[str]) -> None:
+            echo(f"choices = {choices}")
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0
+        assert result.stdout == f"choices = {choices}\n"
 
 
 class TestLocalSchedulerOption:
