@@ -73,7 +73,7 @@ class TestCheckDuplicates:
     def test_error(self) -> None:
         with raises(
             CheckDuplicatesError,
-            match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)\.",
+            match=r"Iterable .* must not contain duplicates; got {None: 2}\.",
         ):
             check_duplicates([None, None])
 
