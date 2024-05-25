@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, sets
+from hypothesis.strategies import DataObject, data, integers, sampled_from, sets
 from pytest import mark, param, raises
 
 from utilities.iterables import (
@@ -430,12 +430,16 @@ class TestOne:
 
 
 class TestOneStr:
-    def test_case_sensitive(self) -> None:
-        assert one_str(["a", "b", "c"], "a") == "a"
+    @given(text=sampled_from(["a", "b", "c"]))
+    def test_case_sensitive(self, *, text: str) -> None:
+        assert one_str(["a", "b", "c"], text) == text
 
-    @mark.parametrize("text", [param("a"), param("A")])
-    def test_case_insensitive(self, *, text: str) -> None:
-        assert one_str(["a", "b", "c"], text, case_sensitive=False) == "a"
+    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["upper", "lower"]))
+    def test_case_insensitive(
+        self, *, text: str, case: Literal["upper", "lower"]
+    ) -> None:
+        text_use = text if case == "lower" else text.upper()
+        assert one_str(["a", "b", "c"], text_use, case_sensitive=False) == text
 
     def test_error_duplicates(self) -> None:
         with raises(

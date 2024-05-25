@@ -555,7 +555,7 @@ def one_str(
         try:
             return one(t for t in as_list if t == text)
         except OneEmptyError:
-            raise _OneStrCaseSentitiveEmptyError(iterable=iterable, text=text) from None
+            raise _OneStrCaseSensitiveEmptyError(iterable=iterable, text=text) from None
     mapping = {t: t.casefold() for t in as_list}
     try:
         check_bijection(mapping)
@@ -588,7 +588,7 @@ class _OneStrDuplicatesError(OneStrError):
 
 
 @dataclass(kw_only=True)
-class _OneStrCaseSentitiveEmptyError(OneStrError):
+class _OneStrCaseSensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} does not contain {self.text!r}."
