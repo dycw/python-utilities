@@ -544,11 +544,7 @@ def one_str(
     iterable: Iterable[str], text: str, /, *, case_sensitive: bool = True
 ) -> str:
     """Find the unique string in an iterable."""
-    list(iterable)
-    if case_sensitive:
-        check_duplicates(iterable)
-    else:
-        folded
+    as_list = list(iterable)
     try:
         check_duplicates(as_list)
     except CheckDuplicatesError as error:
