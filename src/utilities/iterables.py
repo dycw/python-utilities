@@ -42,7 +42,7 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
 @dataclass(kw_only=True)
 class CheckBijectionError(Exception, Generic[_THashable]):
     mapping: Mapping[Any, _THashable]
-    counts: dict[_THashable, int]
+    counts: Mapping[_THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -61,12 +61,12 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
 @dataclass(kw_only=True)
 class CheckDuplicatesError(Exception, Generic[_THashable]):
     iterable: Iterable[_THashable]
-    counts: dict[_THashable, int]
+    counts: Mapping[_THashable, int]
 
     @override
     def __str__(self) -> str:
-        return "Iterable {} must not contain duplicates; got {}.".format(
-            self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
+        return (
+            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
         )
 
 
@@ -545,7 +545,12 @@ def one_str(
 ) -> str:
     """Find the unique string in an iterable."""
     as_list = list(iterable)
-    check_duplicates(as_list)
+    try:
+        check_duplicates(as_list)
+    except CheckDuplicatesError as error:
+        raise OneStrDuplicatesError(
+            iterable=iterable, text=text, counts=error.counts
+        ) from None
     if case_sensitive:
         try:
             return one(t for t in as_list if t == text)
@@ -572,16 +577,37 @@ class OneStrError(Exception):
 
 
 @dataclass(kw_only=True)
-class OneStrCaseSentitiveEmptyError(OneStrError): ...
+class OneStrDuplicatesError(OneStrError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
+        )
+
+
+@dataclass(kw_only=True)
+class OneStrCaseSentitiveEmptyError(OneStrError):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} does not contain {self.text!r}."
 
 
 @dataclass(kw_only=True)
 class OneStrCaseInsensitiveBijectionError(OneStrError):
-    counts: dict[str, int]
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} must not contain duplicates (case insensitive); got {self.counts}"
 
 
 @dataclass(kw_only=True)
-class OneStrCaseInsensitiveEmptyError(OneStrError): ...
+class OneStrCaseInsensitiveEmptyError(OneStrError):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} does not contain {self.text!r} (case insensitive)."
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:

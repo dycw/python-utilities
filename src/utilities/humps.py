@@ -15,7 +15,7 @@ from utilities.iterables import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable
+    from collections.abc import Hashable, Mapping
 
     from utilities.types import IterableStrs
 
@@ -53,7 +53,7 @@ def snake_case_mappings(text: IterableStrs, /) -> dict[str, str]:
 @dataclass(kw_only=True)
 class SnakeCaseMappingsError(Exception):
     text: list[str]
-    counts: dict[Hashable, int]
+    counts: Mapping[Hashable, int]
 
 
 @dataclass(kw_only=True)
