@@ -4,10 +4,9 @@ from collections import Counter
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
-from enum import Enum, auto
 from functools import partial
 from itertools import islice, product
-from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
+from typing import Any, Generic, Literal, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
 
@@ -29,6 +28,7 @@ _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
+_THashable = TypeVar("_THashable", bound=Hashable)
 
 
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
@@ -40,9 +40,9 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
 
 
 @dataclass(kw_only=True)
-class CheckBijectionError(Exception):
-    mapping: Mapping[Any, Hashable]
-    counts: dict[Hashable, int]
+class CheckBijectionError(Exception, Generic[_THashable]):
+    mapping: Mapping[Any, _THashable]
+    counts: Mapping[_THashable, int]
 
     @override
     def __str__(self) -> str:
@@ -59,20 +59,15 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
 
 
 @dataclass(kw_only=True)
-class CheckDuplicatesError(Exception):
-    iterable: Iterable[Hashable]
-    counts: dict[Hashable, int]
+class CheckDuplicatesError(Exception, Generic[_THashable]):
+    iterable: Iterable[_THashable]
+    counts: Mapping[_THashable, int]
 
     @override
     def __str__(self) -> str:
-        return "Iterable {} must not contain duplicates; got {}.".format(
-            self.iterable, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
+        return (
+            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
         )
-
-
-class _CheckIterablesEqualState(Enum):
-    left_longer = auto()
-    right_longer = auto()
 
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -90,9 +85,9 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         msg = ensure_str(one(error.args))
         match msg:
             case "zip() argument 2 is longer than argument 1":
-                state = _CheckIterablesEqualState.right_longer
+                state = "right_longer"
             case "zip() argument 2 is shorter than argument 1":
-                state = _CheckIterablesEqualState.left_longer
+                state = "left_longer"
             case _:  # pragma: no cover
                 raise
     else:
@@ -101,6 +96,9 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckIterablesEqualError(
             left=left_list, right=right_list, errors=errors, state=state
         )
+
+
+_CheckIterablesEqualState = Literal["left_longer", "right_longer"]
 
 
 @dataclass(kw_only=True)
@@ -126,9 +124,9 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
             error_descs = (f"({lv}, {rv}, i={i})" for i, lv, rv in self.errors)
             yield "differing items were {}".format(", ".join(error_descs))
         match self.state:
-            case _CheckIterablesEqualState.left_longer:
+            case "left_longer":
                 yield "left was longer"
-            case _CheckIterablesEqualState.right_longer:
+            case "right_longer":
                 yield "right was longer"
             case None:
                 pass
@@ -540,6 +538,76 @@ class OneNonUniqueError(OneError[_T]):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
+
+
+def one_str(
+    iterable: Iterable[str], text: str, /, *, case_sensitive: bool = True
+) -> str:
+    """Find the unique string in an iterable."""
+    as_list = list(iterable)
+    try:
+        check_duplicates(as_list)
+    except CheckDuplicatesError as error:
+        raise _OneStrDuplicatesError(
+            iterable=iterable, text=text, counts=error.counts
+        ) from None
+    if case_sensitive:
+        try:
+            return one(t for t in as_list if t == text)
+        except OneEmptyError:
+            raise _OneStrCaseSensitiveEmptyError(iterable=iterable, text=text) from None
+    mapping = {t: t.casefold() for t in as_list}
+    try:
+        check_bijection(mapping)
+    except CheckBijectionError as error:
+        error = cast(CheckBijectionError[str], error)
+        raise _OneStrCaseInsensitiveBijectionError(
+            iterable=iterable, text=text, counts=error.counts
+        ) from None
+    try:
+        return one(k for k, v in mapping.items() if v == text.casefold())
+    except OneEmptyError:
+        raise _OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
+
+
+@dataclass(kw_only=True)
+class OneStrError(Exception):
+    iterable: Iterable[str]
+    text: str
+
+
+@dataclass(kw_only=True)
+class _OneStrDuplicatesError(OneStrError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
+        )
+
+
+@dataclass(kw_only=True)
+class _OneStrCaseSensitiveEmptyError(OneStrError):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} does not contain {self.text!r}."
+
+
+@dataclass(kw_only=True)
+class _OneStrCaseInsensitiveBijectionError(OneStrError):
+    counts: Mapping[str, int]
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} must not contain duplicates (case insensitive); got {self.counts}."
+
+
+@dataclass(kw_only=True)
+class _OneStrCaseInsensitiveEmptyError(OneStrError):
+    @override
+    def __str__(self) -> str:
+        return f"Iterable {self.iterable} does not contain {self.text!r} (case insensitive)."
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:

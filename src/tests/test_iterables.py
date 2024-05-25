@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, sets
+from hypothesis.strategies import DataObject, data, integers, sampled_from, sets
 from pytest import mark, param, raises
 
 from utilities.iterables import (
@@ -22,6 +22,7 @@ from utilities.iterables import (
     EnsureIterableNotStrError,
     OneEmptyError,
     OneNonUniqueError,
+    OneStrError,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -40,6 +41,7 @@ from utilities.iterables import (
     is_iterable,
     is_iterable_not_str,
     one,
+    one_str,
     product_dicts,
     take,
     transpose,
@@ -73,7 +75,7 @@ class TestCheckDuplicates:
     def test_error(self) -> None:
         with raises(
             CheckDuplicatesError,
-            match=r"Iterable .* must not contain duplicates; got \(.*, n=2\)\.",
+            match=r"Iterable .* must not contain duplicates; got {None: 2}\.",
         ):
             check_duplicates([None, None])
 
@@ -425,6 +427,42 @@ class TestOne:
             match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
         ):
             _ = one([1, 2])
+
+
+class TestOneStr:
+    @given(text=sampled_from(["a", "b", "c"]))
+    def test_case_sensitive(self, *, text: str) -> None:
+        assert one_str(["a", "b", "c"], text) == text
+
+    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["upper", "lower"]))
+    def test_case_insensitive(
+        self, *, text: str, case: Literal["upper", "lower"]
+    ) -> None:
+        text_use = text if case == "lower" else text.upper()
+        assert one_str(["a", "b", "c"], text_use, case_sensitive=False) == text
+
+    def test_error_duplicates(self) -> None:
+        with raises(
+            OneStrError, match=r"Iterable .* must not contain duplicates; got {'a': 2}"
+        ):
+            _ = one_str(["a", "a"], "a")
+
+    def test_error_case_sensitive_empty_error(self) -> None:
+        with raises(OneStrError, match=r"Iterable .* does not contain 'd'"):
+            _ = one_str(["a", "b", "c"], "d")
+
+    def test_error_bijection_error(self) -> None:
+        with raises(
+            OneStrError,
+            match=r"Iterable .* must not contain duplicates \(case insensitive\); got {'a': 2}",
+        ):
+            _ = one_str(["a", "A"], "a", case_sensitive=False)
+
+    def test_error_case_insensitive_empty_error(self) -> None:
+        with raises(
+            OneStrError, match=r"Iterable .* does not contain 'd' \(case insensitive\)"
+        ):
+            _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
 
 
 class TestProductDicts:
