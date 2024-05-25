@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING
 from humps import decamelize
 from typing_extensions import override
 
-from utilities.iterables import CheckDuplicatesError, check_duplicates
+from utilities.iterables import (
+    CheckBijectionError,
+    CheckDuplicatesError,
+    check_bijection,
+    check_duplicates,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
@@ -35,13 +40,14 @@ def snake_case_mappings(text: IterableStrs, /) -> dict[str, str]:
             text=keys, counts=error.counts
         ) from None
     values = list(map(snake_case, keys))
+    mapping = dict(zip(keys, values, strict=True))
     try:
-        check_duplicates(values)
-    except CheckDuplicatesError as error:
+        check_bijection(mapping)
+    except CheckBijectionError as error:
         raise _SnakeCaseMappingsDuplicateValuesError(
             text=values, counts=error.counts
         ) from None
-    return dict(zip(keys, values, strict=True))
+    return mapping
 
 
 @dataclass(kw_only=True)
