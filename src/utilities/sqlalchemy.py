@@ -95,8 +95,11 @@ def _check_column_collections_equal(
         msg = f"{x=}, {y=}"
         raise _CheckColumnCollectionsEqualError(msg)
     if snake:
+        name_to_snake_x, name_to_snake_y = (
+            snake_case_mappings(i) for i in [name_to_col_x, name_to_col_y]
+        )
         snake_to_name_x, snake_to_name_y = (
-            snake_case_mappings(i).inv for i in [name_to_col_x, name_to_col_y]
+            {v: k for k, v in nts.items()} for nts in [name_to_snake_x, name_to_snake_y]
         )
         key_to_col_x, key_to_col_y = (
             {key: name_to_col[snake_to_name[key]] for key in snake_to_name}

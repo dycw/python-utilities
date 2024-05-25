@@ -12,8 +12,6 @@ from utilities.iterables import CheckDuplicatesError, check_duplicates
 if TYPE_CHECKING:
     from collections.abc import Hashable
 
-    from bidict import bidict
-
     from utilities.types import IterableStrs
 
 
@@ -26,10 +24,8 @@ def snake_case(text: str, /) -> str:
     return text.lower()
 
 
-def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
+def snake_case_mappings(text: IterableStrs, /) -> dict[str, str]:
     """Map a set of text into their snake cases."""
-
-    from bidict import bidict
 
     keys = list(text)
     try:
@@ -45,7 +41,7 @@ def snake_case_mappings(text: IterableStrs, /) -> bidict[str, str]:
         raise _SnakeCaseMappingsDuplicateValuesError(
             text=values, counts=error.counts
         ) from None
-    return bidict(zip(keys, values, strict=True))
+    return dict(zip(keys, values, strict=True))
 
 
 @dataclass(kw_only=True)
