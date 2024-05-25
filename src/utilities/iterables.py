@@ -31,6 +31,26 @@ _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 
 
+def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
+    """Check if a mapping is a bijection."""
+    try:
+        check_duplicates(mapping.values())
+    except CheckDuplicatesError as error:
+        raise CheckBijectionError(mapping=mapping, counts=error.counts) from None
+
+
+@dataclass(kw_only=True)
+class CheckBijectionError(Exception):
+    mapping: Mapping[Any, Hashable]
+    counts: dict[Hashable, int]
+
+    @override
+    def __str__(self) -> str:
+        return "Mapping {} must be a bijection; got duplicates {}.".format(
+            self.mapping, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
+        )
+
+
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
     """Check if an iterable contains any duplicates."""
     counts = {k: v for k, v in Counter(iterable).items() if v > 1}
@@ -486,6 +506,20 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return is_iterable(obj) and not isinstance(obj, str)
 
 
+def one(iterable: Iterable[_T], /) -> _T:
+    """Custom version of `one` with separate exceptions."""
+    it = iter(iterable)
+    try:
+        first = next(it)
+    except StopIteration:
+        raise OneEmptyError(iterable=iterable) from None
+    try:
+        second = next(it)
+    except StopIteration:
+        return first
+    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
+
+
 @dataclass(kw_only=True)
 class OneError(Exception, Generic[_T]):
     iterable: Iterable[_T]
@@ -506,20 +540,6 @@ class OneNonUniqueError(OneError[_T]):
     @override
     def __str__(self) -> str:
         return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
-
-
-def one(iterable: Iterable[_T], /) -> _T:
-    """Custom version of `one` with separate exceptions."""
-    it = iter(iterable)
-    try:
-        first = next(it)
-    except StopIteration:
-        raise OneEmptyError(iterable=iterable) from None
-    try:
-        second = next(it)
-    except StopIteration:
-        return first
-    raise OneNonUniqueError(iterable=iterable, first=first, second=second)
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
@@ -560,6 +580,7 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
 
 
 __all__ = [
+    "CheckBijectionError",
     "CheckDuplicatesError",
     "CheckIterablesEqualError",
     "CheckLengthsEqualError",
@@ -574,6 +595,7 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "check_bijection",
     "check_duplicates",
     "check_iterables_equal",
     "check_lengths_equal",

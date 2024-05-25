@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
-from hypothesis.strategies import integers, sets
+from hypothesis.strategies import DataObject, data, integers, sets
 from pytest import mark, param, raises
 
 from utilities.iterables import (
+    CheckBijectionError,
     CheckDuplicatesError,
     CheckIterablesEqualError,
     CheckLengthError,
@@ -21,6 +22,7 @@ from utilities.iterables import (
     EnsureIterableNotStrError,
     OneEmptyError,
     OneNonUniqueError,
+    check_bijection,
     check_duplicates,
     check_iterables_equal,
     check_length,
@@ -45,6 +47,22 @@ from utilities.iterables import (
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+
+
+class TestCheckBijection:
+    @given(data=data(), n=integers(0, 10))
+    def test_main(self, *, data: DataObject, n: int) -> None:
+        keys = data.draw(sets(integers(0, 100), min_size=n, max_size=n))
+        values = data.draw(sets(integers(0, 100), min_size=n, max_size=n))
+        mapping = dict(zip(keys, values, strict=True))
+        check_bijection(mapping)
+
+    def test_error(self) -> None:
+        with raises(
+            CheckBijectionError,
+            match=r"Mapping .* must be a bijection; got duplicates \(.*, n=2\)\.",
+        ):
+            check_bijection({True: None, False: None})
 
 
 class TestCheckDuplicates:
