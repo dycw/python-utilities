@@ -197,6 +197,11 @@ class TestFileAndDirPaths:
 
 
 class TestListChoices:
+    def test_repr(self) -> None:
+        param = ListChoices(ascii_lowercase)
+        expected = f"ListChoices({list(ascii_lowercase)})"
+        assert repr(param) == expected
+
     @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
     def test_command(self, *, choices: list[str]) -> None:
         @command()
