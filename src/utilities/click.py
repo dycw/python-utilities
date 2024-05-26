@@ -100,6 +100,15 @@ class Enum(ParamType, Generic[_E]):
         except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = "|".join(e.name for e in self._enum)
+
+        if param.required and param.param_type_name == "argument":
+            return f"{{{desc}}}"
+
+        return f"[{desc}]"
+
 
 class ListChoices(ParamType):
     """A list-of-choices-valued parameter."""
@@ -155,6 +164,16 @@ class ListChoices(ParamType):
             )
         return results
 
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        joined = "|".join(self._choices)
+        desc = f"{joined}; sep={self._separator!r}"
+
+        if param.required and param.param_type_name == "argument":
+            return f"{{{desc}}}"
+
+        return f"[{desc}]"
+
 
 class ListInts(ParamType):
     """A list-of-ints-valued parameter."""
@@ -178,6 +197,15 @@ class ListInts(ParamType):
             return list(map(int, strs))
         except ValueError:
             return self.fail(f"Unable to parse {value}", param, ctx)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = f"INTS; sep={self._separator!r}"
+
+        if param.required and param.param_type_name == "argument":
+            return f"{{{desc}}}"
+
+        return f"[{desc}]"
 
 
 class Time(ParamType):
