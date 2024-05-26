@@ -19,12 +19,14 @@ from utilities.datetime import (
     ensure_timedelta,
 )
 from utilities.enum import ParseEnumError, ensure_enum
+from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import sentinel
 from utilities.text import split_str
 
 if TYPE_CHECKING:
     import datetime as dt
+    from collections.abc import Sequence
 
     from sqlalchemy import Engine as _Engine
 
@@ -85,6 +87,10 @@ class Enum(ParamType, Generic[_E]):
         super().__init__()
 
     @override
+    def __repr__(self) -> str:
+        return f"Enum({self._enum})"
+
+    @override
     def convert(
         self, value: _E | str, param: Parameter | None, ctx: Context | None
     ) -> _E:
@@ -93,6 +99,61 @@ class Enum(ParamType, Generic[_E]):
             return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
         except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class ListChoices(ParamType):
+    """A list-of-choices-valued parameter."""
+
+    name = "choices"
+
+    def __init__(
+        self,
+        choices: Sequence[str],
+        /,
+        *,
+        separator: str = ",",
+        empty: str = str(sentinel),
+        case_sensitive: bool = True,
+    ) -> None:
+        self._choices = choices
+        self._separator = separator
+        self._empty = empty
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        return f"ListChoices({list(self._choices)})"
+
+    @override
+    def convert(
+        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[str]:
+        """Convert a value into the `ListChoices` type."""
+        if isinstance(value, list):
+            return self._convert_list_of_strs(value, param, ctx)
+        texts = split_str(value, separator=self._separator, empty=self._empty)
+        return self._convert_list_of_strs(texts, param, ctx)
+
+    def _convert_list_of_strs(
+        self, texts: list[str], param: Parameter | None, ctx: Context | None, /
+    ) -> list[str]:
+        results: list[str] = []
+        errors: list[str] = []
+        for text in texts:
+            try:
+                result = one_str(
+                    self._choices, text, case_sensitive=self._case_sensitive
+                )
+            except OneStrError:  # noqa: PERF203
+                errors.append(text)
+            else:
+                results.append(result)
+        if len(errors) >= 1:
+            return self.fail(
+                f"{errors} must be a subset of {self._choices}", param, ctx
+            )
+        return results
 
 
 class ListInts(ParamType):
@@ -215,6 +276,8 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "ListChoices",
+    "ListInts",
     "Time",
     "Timedelta",
     "local_scheduler_option_default_central",
