@@ -103,11 +103,8 @@ class Enum(ParamType, Generic[_E]):
     @override
     def get_metavar(self, param: Parameter) -> str | None:
         desc = "|".join(e.name for e in self._enum)
-
-        if param.required and param.param_type_name == "argument":
-            return f"{{{desc}}}"
-
-        return f"[{desc}]"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
 class ListChoices(ParamType):
@@ -168,11 +165,8 @@ class ListChoices(ParamType):
     def get_metavar(self, param: Parameter) -> str | None:
         joined = "|".join(self._choices)
         desc = f"{joined}; sep={self._separator!r}"
-
-        if param.required and param.param_type_name == "argument":
-            return f"{{{desc}}}"
-
-        return f"[{desc}]"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
 class ListInts(ParamType):
@@ -201,11 +195,8 @@ class ListInts(ParamType):
     @override
     def get_metavar(self, param: Parameter) -> str | None:
         desc = f"INTS; sep={self._separator!r}"
-
-        if param.required and param.param_type_name == "argument":
-            return f"{{{desc}}}"
-
-        return f"[{desc}]"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
 class Time(ParamType):
