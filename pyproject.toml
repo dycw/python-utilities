@@ -484,7 +484,6 @@ ignore = [
   "ISC001",  # single-line-implicit-string-concatenation
   "ISC002",  # multi-line-implicit-string-concatenation
 ]
-ignore-init-module-imports = false
 select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
