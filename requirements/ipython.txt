@@ -4,7 +4,7 @@ asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.1
+coverage==7.5.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -41,7 +41,7 @@ pexpect==4.9.0
     # via ipython
 pluggy==1.5.0
     # via pytest
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.45
     # via ipython
 ptyprocess==0.7.0
     # via pexpect

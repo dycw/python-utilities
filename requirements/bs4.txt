@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 beautifulsoup4==4.12.3
     # via dycw-utilities (pyproject.toml)
-coverage==7.5.1
+coverage==7.5.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -26,7 +26,7 @@ packaging==24.0
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==0.20.29
+polars-lts-cpu==0.20.30
     # via dycw-utilities (pyproject.toml)
 pytest==8.2.1
     # via
