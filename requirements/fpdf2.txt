@@ -14,7 +14,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.1
+coverage==7.5.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -27,7 +27,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-fonttools==4.52.1
+fonttools==4.52.4
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)

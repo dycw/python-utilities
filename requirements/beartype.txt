@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
-coverage==7.5.1
+coverage==7.5.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
