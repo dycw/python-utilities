@@ -6,6 +6,7 @@ altair==5.3.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
+    #   vegafusion
 annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
@@ -262,6 +263,7 @@ pandas==2.2.2
     #   holoviews
     #   panel
     #   streamlit
+    #   vegafusion
     #   xarray
 panel==1.4.3
     # via holoviews
@@ -298,17 +300,22 @@ polars-lts-cpu==0.20.30
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
 protobuf==4.25.3
-    # via streamlit
+    # via
+    #   streamlit
+    #   vegafusion
 psutil==5.9.8
     # via
     #   dycw-utilities (pyproject.toml)
     #   memory-profiler
+    #   vegafusion
 psycopg2-binary==2.9.9
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
 pyarrow==16.1.0
-    # via streamlit
+    # via
+    #   streamlit
+    #   vegafusion
 pycparser==2.22
     # via cffi
 pydantic==2.7.2
@@ -501,8 +508,14 @@ userpath==1.9.2
     # via hatch
 uv==0.2.5
     # via hatch
+vegafusion==1.6.9
+    # via dycw-utilities (pyproject.toml)
+vegafusion-python-embed==1.6.9
+    # via dycw-utilities (pyproject.toml)
 virtualenv==20.26.2
     # via hatch
+vl-convert-python==1.4.0
+    # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1
     # via bleach
 win32-setctime==1.1.0
