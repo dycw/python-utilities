@@ -64,6 +64,8 @@ dev = [
   "streamlit >= 1.34.0, < 1.35",
   "typed-settings >= 24.3.0, < 24.4",
   "xarray >= 2024.5.0, < 2024.6",
+  "vegafusion >= 1.6.9, < 1.7",
+  "vegafusion-python-embed >= 1.6.9, < 1.7",
   "xlrd >= 2.0.1, < 2.1",
   "zarr >= 2.18.2, < 2.19",
   # test
