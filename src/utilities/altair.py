@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from math import isfinite
 from typing import TYPE_CHECKING, Any, cast
 
@@ -9,6 +10,7 @@ from altair import (
     Chart,
     Color,
     HConcatChart,
+    Tooltip,
     VConcatChart,
     X,
     Y,
@@ -21,13 +23,110 @@ from altair import (
 )
 from polars import col, int_range
 
+from utilities.more_itertools import always_iterable
 from utilities.types import ensure_number
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from altair import LayerChart
     from polars import DataFrame
 
+_HEIGHT = 400
 _WIDTH = 800
+
+
+@dataclass(frozen=True, kw_only=True)
+class _PlotDataFramesSpec:
+    y: Sequence[str]
+    height: int = _HEIGHT
+
+
+def plot_dataframes(
+    data: DataFrame,
+    /,
+    *,
+    x: str | None = None,
+    y: str
+    | tuple[str, int]
+    | tuple[list[str], int]
+    | list[str | list[str] | tuple[str, int] | tuple[list[str], int]]
+    | None = None,
+    var_name: str = "variable",
+    value_name: str = "value",
+    height: int = _HEIGHT,
+    width: int = _WIDTH,
+) -> VConcatChart:
+    """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
+    if x is None:
+        data = data.with_columns(_index=int_range(end=pl.len()))
+        x_use = "_index"
+    else:
+        x_use = x
+    if y is None:
+        columns = [col for col in data.columns if col != x_use]
+        specs = [_plot_dataframes_get_spec(columns, height=height)]
+    elif isinstance(y, str | tuple):
+        specs = [_plot_dataframes_get_spec(y, height=height)]
+    else:
+        specs = [_plot_dataframes_get_spec(y_i, height=height) for y_i in y]
+    dfs_long = [
+        data.select(x_use, *spec.y).melt(
+            id_vars=x_use,
+            value_vars=spec.y,
+            variable_name=var_name,
+            value_name=value_name,
+        )
+        for spec in specs
+    ]
+    charts = [Chart(df_long) for df_long in dfs_long]
+    lines = [
+        chart.mark_line().encode(
+            x=x_use, y=Y(value_name).scale(zero=False), color=f"{var_name}:N"
+        )
+        for chart in charts
+    ]
+    nearest = selection_point(
+        nearest=True, on="pointerover", fields=[x_use], empty=False
+    )
+    points = [
+        line.mark_point().encode(
+            opacity=cast(Any, condition(nearest, value(1), value(0)))
+        )
+        for line in lines
+    ]
+    rules = [
+        chart.transform_pivot(var_name, value=value_name, groupby=[x_use])
+        .mark_rule(color="gray")
+        .encode(
+            x=x_use,
+            opacity=cast(Any, condition(nearest, value(0.3), value(0))),
+            tooltip=[Tooltip(x_use, title=x_use)]
+            + [Tooltip(c, type="quantitative") for c in spec.y],
+        )
+        .add_params(nearest)
+        for chart, spec in zip(charts, specs, strict=True)
+    ]
+    layers = [
+        layer(line, pts, rls).properties(width=width, height=spec.height)
+        for line, pts, rls, spec in zip(lines, points, rules, specs, strict=True)
+    ]
+    zoom = selection_interval(bind="scales", encodings=["x"])
+    return (
+        vconcat(*layers).add_params(zoom).resolve_scale(color="independent", x="shared")
+    )
+
+
+def _plot_dataframes_get_spec(
+    y: str | list[str] | tuple[str, int] | tuple[list[str], int],
+    /,
+    *,
+    height: int = _HEIGHT,
+) -> _PlotDataFramesSpec:
+    if isinstance(y, str | list):
+        return _PlotDataFramesSpec(y=list(always_iterable(y)), height=height)
+    y0, height_use = y
+    return _PlotDataFramesSpec(y=list(always_iterable(y0)), height=height_use)
 
 
 def plot_intraday_dataframe(
@@ -38,7 +137,7 @@ def plot_intraday_dataframe(
     value_name: str = "value",
     interactive: bool = True,
     bind_y: bool = False,
-    width: int | None = _WIDTH,
+    width: int = _WIDTH,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
     other_cols = [c for c in data.columns if c != datetime]
@@ -110,26 +209,20 @@ def plot_intraday_dataframe(
         )
     )
 
-    chart = layer(lines, hover_line, text, span)
+    chart = layer(lines, hover_line, text, span).properties(width=width)
     if interactive:
         chart = chart.interactive(bind_y=bind_y)
-    if width is not None:
-        chart = chart.properties(width=width)
     return chart
 
 
 def vconcat_charts(
-    *charts: Chart | HConcatChart | LayerChart | VConcatChart,
-    width: int | None = _WIDTH,
+    *charts: Chart | HConcatChart | LayerChart | VConcatChart, width: int = _WIDTH
 ) -> VConcatChart:
     """Vertically concatenate a set of charts."""
-    if width is None:
-        charts_use = charts
-    else:
-        charts_use = (c.properties(width=width) for c in charts)
+    charts_use = (c.properties(width=width) for c in charts)
     resize = selection_interval(bind="scales", encodings=["x"])
     charts_use = (c.add_params(resize) for c in charts_use)
-    return vconcat(*charts_use).resolve_scale(color="independent")
+    return vconcat(*charts_use).resolve_scale(color="independent", x="shared")
 
 
-__all__ = ["plot_intraday_dataframe", "vconcat_charts"]
+__all__ = ["plot_dataframes", "plot_intraday_dataframe", "vconcat_charts"]
