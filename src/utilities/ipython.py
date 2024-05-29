@@ -15,8 +15,8 @@ def check_ipython_class(cls: type[Any], /) -> bool:
 def is_ipython() -> bool:
     """Check if `ipython` is running."""
     try:
-        from IPython.terminal.interactiveshell import (  # type: ignore[]
-            TerminalInteractiveShell,
+        from IPython.terminal.interactiveshell import (
+            TerminalInteractiveShell,  # type: ignore[]
         )
     except ImportError:
         return False
