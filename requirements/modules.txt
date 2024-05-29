@@ -19,7 +19,7 @@ attrs==23.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-backports-tarfile==1.1.1
+backports-tarfile==1.2.0
     # via jaraco-context
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
@@ -58,7 +58,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.2
+coverage==7.5.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -254,11 +254,11 @@ pyarrow==16.1.0
     # via streamlit
 pycparser==2.22
     # via cffi
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi-slim
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pydeck==0.9.1
     # via streamlit
@@ -403,7 +403,7 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via hatch
 virtualenv==20.26.2
     # via hatch

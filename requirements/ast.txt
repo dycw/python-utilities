@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-ast --prerelease=disallow --output-file=requirements/ast.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.2
+coverage==7.5.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov

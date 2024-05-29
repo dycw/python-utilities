@@ -4,7 +4,7 @@ anyio==4.4.0
     # via httpx
 attrs==23.2.0
     # via hypothesis
-backports-tarfile==1.1.1
+backports-tarfile==1.2.0
     # via jaraco-context
 certifi==2024.2.2
     # via
@@ -14,7 +14,7 @@ click==8.1.7
     # via
     #   hatch
     #   userpath
-coverage==7.5.2
+coverage==7.5.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -131,7 +131,7 @@ typing-extensions==4.11.0
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via hatch
 virtualenv==20.26.2
     # via hatch

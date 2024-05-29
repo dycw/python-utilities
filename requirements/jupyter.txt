@@ -38,7 +38,7 @@ charset-normalizer==3.3.2
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.5.2
+coverage==7.5.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
