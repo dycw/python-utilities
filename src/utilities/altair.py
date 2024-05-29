@@ -10,6 +10,7 @@ from altair import (
     Chart,
     Color,
     HConcatChart,
+    Tooltip,
     VConcatChart,
     X,
     Y,
@@ -37,7 +38,6 @@ _WIDTH = 800
 
 @dataclass(frozen=True, kw_only=True)
 class _PlotDataFramesSpec:
-    x: str
     y: Sequence[str]
     height: int = _HEIGHT
 
@@ -52,11 +52,11 @@ def plot_dataframes(
     | tuple[list[str], int]
     | list[str | list[str] | tuple[str, int] | tuple[list[str], int]]
     | None = None,
-    interactive: bool = True,
-    bind_y: bool = False,
+    var_name: str = "variable",
+    value_name: str = "value",
     height: int = _HEIGHT,
     width: int = _WIDTH,
-) -> None:
+) -> VConcatChart:
     """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
     if x is None:
         data = data.with_columns(_index=int_range(end=pl.len()))
@@ -65,25 +65,68 @@ def plot_dataframes(
         x_use = x
     if y is None:
         columns = [col for col in data.columns if col != x_use]
-        specs = [_plot_dataframes_get_spec(x_use, columns, height=height)]
+        specs = [_plot_dataframes_get_spec(columns, height=height)]
     elif isinstance(y, str | tuple):
-        specs = [_plot_dataframes_get_spec(x_use, y, height=height)]
+        specs = [_plot_dataframes_get_spec(y, height=height)]
     else:
-        specs = [_plot_dataframes_get_spec(x_use, y_i, height=height) for y_i in y]
-    return specs
+        specs = [_plot_dataframes_get_spec(y_i, height=height) for y_i in y]
+    dfs_long = [
+        data.select(x_use, *spec.y).melt(
+            id_vars=x_use,
+            value_vars=spec.y,
+            variable_name=var_name,
+            value_name=value_name,
+        )
+        for spec in specs
+    ]
+    charts = [Chart(df_long) for df_long in dfs_long]
+    lines = [
+        chart.mark_line().encode(
+            x=x_use, y=Y(value_name).scale(zero=False), color=f"{var_name}:N"
+        )
+        for chart in charts
+    ]
+    nearest = selection_point(
+        nearest=True, on="pointerover", fields=[x_use], empty=False
+    )
+    points = [
+        line.mark_point().encode(
+            opacity=cast(Any, condition(nearest, value(1), value(0)))
+        )
+        for line in lines
+    ]
+    rules = [
+        chart.transform_pivot(var_name, value=value_name, groupby=[x_use])
+        .mark_rule(color="gray")
+        .encode(
+            x=x_use,
+            opacity=cast(Any, condition(nearest, value(0.3), value(0))),
+            tooltip=[Tooltip(x_use, title=x_use)]
+            + [Tooltip(c, type="quantitative") for c in spec.y],
+        )
+        .add_params(nearest)
+        for chart, spec in zip(charts, specs, strict=True)
+    ]
+    layers = [
+        layer(line, pts, rls).properties(width=width, height=spec.height)
+        for line, pts, rls, spec in zip(lines, points, rules, specs, strict=True)
+    ]
+    zoom = selection_interval(bind="scales", encodings=["x"])
+    return (
+        vconcat(*layers).add_params(zoom).resolve_scale(color="independent", x="shared")
+    )
 
 
 def _plot_dataframes_get_spec(
-    x: str,
     y: str | list[str] | tuple[str, int] | tuple[list[str], int],
     /,
     *,
     height: int = _HEIGHT,
 ) -> _PlotDataFramesSpec:
     if isinstance(y, str | list):
-        return _PlotDataFramesSpec(x=x, y=list(always_iterable(y)), height=height)
+        return _PlotDataFramesSpec(y=list(always_iterable(y)), height=height)
     y0, height_use = y
-    return _PlotDataFramesSpec(x=x, y=list(always_iterable(y0)), height=height_use)
+    return _PlotDataFramesSpec(y=list(always_iterable(y0)), height=height_use)
 
 
 def plot_intraday_dataframe(
@@ -179,7 +222,7 @@ def vconcat_charts(
     charts_use = (c.properties(width=width) for c in charts)
     resize = selection_interval(bind="scales", encodings=["x"])
     charts_use = (c.add_params(resize) for c in charts_use)
-    return vconcat(*charts_use).resolve_scale(color="independent")
+    return vconcat(*charts_use).resolve_scale(color="independent", x="shared")
 
 
 __all__ = ["plot_dataframes", "plot_intraday_dataframe", "vconcat_charts"]
