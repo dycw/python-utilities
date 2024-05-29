@@ -5,11 +5,11 @@ from math import inf
 
 import polars as pl
 from hypothesis import HealthCheck, given, settings
-from hypothesis.strategies import booleans, integers, none
+from hypothesis.strategies import booleans, integers, just, none, sampled_from
 from polars import DataFrame, Datetime, Float64, datetime_range, int_range
 from pytest import fixture
 
-from utilities.altair import plot_intraday_dataframe, vconcat_charts
+from utilities.altair import plot_dataframes, plot_intraday_dataframe, vconcat_charts
 from utilities.datetime import UTC, get_now
 
 
@@ -28,11 +28,47 @@ def time_series() -> DataFrame:
     )
 
 
-class TestPlotIntradayDataFrame:
-    @given(interactive=booleans(), width=integers(1, 100) | none())
+class TestPlotDataFrame:
+    @given(
+        x=just("datetime") | none(),
+        y=sampled_from(
+            [
+                "x",
+                "y",
+                ("x", 50),
+                ("y", 50),
+                (["x", "y"], 50),
+                ["x", "y"],
+                [["x"], ["y"]],
+                [["x"], ("y", 50)],
+            ]
+        )
+        | none(),
+        height=integers(1, 100),
+        width=integers(1, 100),
+    )
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
     def test_main(
-        self, *, time_series: DataFrame, interactive: bool, width: int | None
+        self,
+        *,
+        time_series: DataFrame,
+        x: str | None,
+        y: str
+        | tuple[str, int]
+        | tuple[list[str], int]
+        | list[str | list[str] | tuple[str, int] | tuple[list[str], int]]
+        | None,
+        height: int,
+        width: int,
+    ) -> None:
+        _ = plot_dataframes(time_series, x=x, y=y, height=height, width=width)
+
+
+class TestPlotIntradayDataFrame:
+    @given(interactive=booleans(), width=integers(1, 100))
+    @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
+    def test_main(
+        self, *, time_series: DataFrame, interactive: bool, width: int
     ) -> None:
         _ = plot_intraday_dataframe(time_series, interactive=interactive, width=width)
 
@@ -45,9 +81,9 @@ class TestPlotIntradayDataFrame:
 
 
 class TestVConcatCharts:
-    @given(width=integers(1, 100) | none())
+    @given(width=integers(1, 100))
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_main(self, *, time_series: DataFrame, width: int | None) -> None:
+    def test_main(self, *, time_series: DataFrame, width: int) -> None:
         chart1 = plot_intraday_dataframe(time_series, interactive=False)
         chart2 = plot_intraday_dataframe(time_series, interactive=False)
         _ = vconcat_charts(chart1, chart2, width=width)
