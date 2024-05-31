@@ -16,8 +16,8 @@ from utilities.loguru import (
     _FILES_ENV_VAR,
     _augment_levels,
     _get_files_path,
-    log_and_sleep_async,
-    log_and_sleep_sync,
+    logged_sleep_async,
+    logged_sleep_sync,
     setup_loguru,
 )
 from utilities.os import temp_environ
@@ -31,11 +31,11 @@ if TYPE_CHECKING:
 
 class TestLogAndSleep:
     def test_sync(self) -> None:
-        log_and_sleep_sync(0.1)
+        logged_sleep_sync(0.1)
 
     @mark.asyncio
     async def test_async(self) -> None:
-        await log_and_sleep_async(0.1)
+        await logged_sleep_async(0.1)
 
 
 class TestSetupLoguru:

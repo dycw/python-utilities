@@ -30,20 +30,20 @@ _ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
 
 
-def log_and_sleep_sync(
+def logged_sleep_sync(
     seconds: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
 ) -> None:
-    """Log & sleep (synchronously)."""
+    """Logged sleep (synchronously)."""
     logger.opt(depth=depth).log(
         level, "Sleeping for {seconds} seconds...", seconds=seconds
     )
     time.sleep(seconds)
 
 
-async def log_and_sleep_async(
+async def logged_sleep_async(
     delay: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
 ) -> None:
-    """Log & sleep (asynchronously)."""
+    """Logged sleep (asynchronously)."""
     logger.opt(depth=depth).log(level, "Sleeping for {delay} seconds...", delay=delay)
     await asyncio.sleep(delay)
 
@@ -274,4 +274,4 @@ def _add_live_file_sink(
     )
 
 
-__all__ = ["log_and_sleep_async", "log_and_sleep_sync", "setup_loguru"]
+__all__ = ["logged_sleep_async", "logged_sleep_sync", "setup_loguru"]
