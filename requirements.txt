@@ -386,7 +386,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.2
+requests==2.32.3
     # via
     #   panel
     #   streamlit
@@ -408,7 +408,7 @@ scipy==1.13.1
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.4.post1
+scs==3.2.4.post2
     # via cvxpy
 selenium==4.21.0
     # via dycw-utilities (pyproject.toml)

@@ -108,7 +108,7 @@ pyviz-comms==3.0.2
     #   panel
 pyyaml==6.0.1
     # via bokeh
-requests==2.32.2
+requests==2.32.3
     # via panel
 six==1.16.0
     # via
