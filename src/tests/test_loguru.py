@@ -16,6 +16,7 @@ from utilities.loguru import (
     _FILES_ENV_VAR,
     _augment_levels,
     _get_files_path,
+    log_and_sleep_async,
     log_and_sleep_sync,
     setup_loguru,
 )
@@ -34,7 +35,7 @@ class TestLogAndSleep:
 
     @mark.asyncio
     async def test_async(self) -> None:
-        log_and_sleep_sync(0.1)
+        await log_and_sleep_async(0.1)
 
 
 class TestSetupLoguru:
