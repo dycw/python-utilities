@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import given
@@ -39,6 +40,7 @@ from utilities.iterables import (
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
+    filter_include_and_exclude,
     is_iterable,
     is_iterable_not_str,
     one,
@@ -397,6 +399,56 @@ class TestEnsureIterableNotStr:
             _ = ensure_iterable_not_str(obj)
 
 
+class TestFilterIncludeAndExclude:
+    def test_none(self) -> None:
+        rng = list(range(5))
+        result = list(filter_include_and_exclude(rng))
+        assert result == rng
+
+    def test_include(self) -> None:
+        result = list(filter_include_and_exclude(range(5), include=[0, 1, 2]))
+        expected = [0, 1, 2]
+        assert result == expected
+
+    def test_exclude(self) -> None:
+        result = list(filter_include_and_exclude(range(5), exclude=[0, 1, 2]))
+        expected = [3, 4]
+        assert result == expected
+
+    def test_both(self) -> None:
+        result = list(
+            filter_include_and_exclude(range(5), include=[0, 1], exclude=[3, 4])
+        )
+        expected = [0, 1]
+        assert result == expected
+
+    def test_include_key(self) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            n: int
+
+        result = list(
+            filter_include_and_exclude(
+                [Example(n=n) for n in range(5)], include=[0, 1, 2], key=lambda x: x.n
+            )
+        )
+        expected = [Example(n=n) for n in [0, 1, 2]]
+        assert result == expected
+
+    def test_exclude_key(self) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            n: int
+
+        result = list(
+            filter_include_and_exclude(
+                [Example(n=n) for n in range(5)], exclude=[0, 1, 2], key=lambda x: x.n
+            )
+        )
+        expected = [Example(n=n) for n in [3, 4]]
+        assert result == expected
+
+
 class TestIsIterable:
     @mark.parametrize(
         ("obj", "expected"),
@@ -488,12 +540,12 @@ class TestResolveIncludeAndExclude:
         assert include is None
         assert exclude is None
 
-    def test_include_only(self) -> None:
+    def test_include(self) -> None:
         include, exclude = resolve_include_and_exclude(include=[1, 2, 3])
         assert include == {1, 2, 3}
         assert exclude is None
 
-    def test_exclude_only(self) -> None:
+    def test_exclude(self) -> None:
         include, exclude = resolve_include_and_exclude(exclude=[1, 2, 3])
         assert include is None
         assert exclude == {1, 2, 3}
