@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from polars import (
     DataFrame,
+    Expr,
     Float64,
     Int64,
     Series,
@@ -33,6 +34,7 @@ from utilities.polars import (
     check_polars_dataframe,
     collect_series,
     columns_to_dict,
+    ensure_expr_or_series,
     join,
     nan_sum_agg,
     nan_sum_cols,
@@ -43,7 +45,7 @@ from utilities.polars import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-    from polars.type_aliases import PolarsDataType, SchemaDict
+    from polars.type_aliases import IntoExprColumn, PolarsDataType, SchemaDict
 
 
 class TestCeilDatetime:
@@ -350,6 +352,15 @@ class TestColumnsToDict:
         )
         with raises(ColumnsToDictError, match="DataFrame must be unique on 'a'"):
             _ = columns_to_dict(df, "a", "b")
+
+
+class TestEnsureExprOrSeries:
+    @mark.parametrize(
+        "column", [param("column"), param(col("column")), param(int_range(end=10))]
+    )
+    def test_main(self, *, column: IntoExprColumn) -> None:
+        result = ensure_expr_or_series(column)
+        assert isinstance(result, Expr | Series)
 
 
 class TestJoin:
