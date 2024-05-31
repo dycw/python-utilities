@@ -27,6 +27,7 @@ from utilities.iterables import (
     check_mappings_equal,
     check_supermapping,
     is_iterable_not_str,
+    one,
 )
 from utilities.math import CheckIntegerError, check_integer
 
@@ -48,7 +49,7 @@ def ceil_datetime(column: IntoExprColumn, every: str | Expr, /) -> Expr | Series
     rounded = column.dt.round(every)
     ceil = (
         when(column <= rounded)
-        .then(column)
+        .then(rounded)
         .otherwise(column.dt.offset_by(every).dt.round(every))
     )
     if isinstance(column, Expr):
@@ -328,6 +329,12 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         )
 
 
+def collect_series(expr: Expr, /) -> Series:
+    """Collect a column expression into a Series."""
+    data = DataFrame().with_columns(expr)
+    return data[one(data.columns)]
+
+
 def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     """Map a pair of columns into a dictionary. Must be unique on `key`."""
     col_key = df[key]
@@ -431,6 +438,7 @@ __all__ = [
     "SetFirstRowAsColumnsError",
     "ceil_datetime",
     "check_polars_dataframe",
+    "collect_series",
     "columns_to_dict",
     "ensure_expr_or_series",
     "join",

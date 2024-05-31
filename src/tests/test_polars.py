@@ -1,12 +1,25 @@
 from __future__ import annotations
 
+import datetime as dt
 from math import isfinite, nan
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from polars import DataFrame, Float64, Int64, Utf8, col, concat, lit
-from polars.testing import assert_frame_equal
+from polars import (
+    DataFrame,
+    Float64,
+    Int64,
+    Series,
+    Utf8,
+    col,
+    concat,
+    datetime_range,
+    int_range,
+    lit,
+)
+from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
+from utilities.datetime import UTC
 from utilities.polars import (
     CheckPolarsDataFrameError,
     ColumnsToDictError,
@@ -16,7 +29,9 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
+    ceil_datetime,
     check_polars_dataframe,
+    collect_series,
     columns_to_dict,
     join,
     nan_sum_agg,
@@ -29,6 +44,44 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from polars.type_aliases import PolarsDataType, SchemaDict
+
+
+class TestCeilDatetime:
+    start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
+    end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
+    expected: ClassVar[Series] = Series(
+        [
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        ]
+    )
+
+    def test_expr(self) -> None:
+        data = datetime_range(self.start, self.end, interval="10s")
+        result = collect_series(ceil_datetime(data, "1m"))
+        assert_series_equal(result, self.expected, check_names=False)
+
+    def test_series(self) -> None:
+        data = datetime_range(self.start, self.end, interval="10s", eager=True)
+        result = ceil_datetime(data, "1m")
+        assert_series_equal(result, self.expected, check_names=False)
 
 
 class TestCheckPolarsDataFrame:
@@ -271,6 +324,14 @@ class TestCheckPolarsDataFrameSchemaSubset:
         df = DataFrame({"foo": [0.0]})
         with raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema_subset(df, schema_inc)
+
+
+class TestCollectSeries:
+    def test_main(self) -> None:
+        expr = int_range(end=10)
+        series = collect_series(expr)
+        expected = int_range(end=10, eager=True)
+        assert_series_equal(series, expected)
 
 
 class TestColumnsToDict:
