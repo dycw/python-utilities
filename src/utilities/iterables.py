@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
+from collections.abc import (
+    Callable,
+    Hashable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+    Sized,
+)
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import partial
@@ -22,6 +30,7 @@ from utilities.types import ensure_hashable
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
+_U = TypeVar("_U")
 _V = TypeVar("_V")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
@@ -490,6 +499,47 @@ class EnsureIterableNotStrError(Exception):
         return f"Object {self.obj} must be iterable, but not a string."
 
 
+@overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: Iterable[_U] | None = None,
+    exclude: Iterable[_U] | None = None,
+    key: Callable[[_T], _U],
+) -> Iterable[_T]: ...
+@overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: Iterable[_T] | None = None,
+    exclude: Iterable[_T] | None = None,
+    key: Callable[[_T], Any] | None = None,
+) -> Iterable[_T]: ...
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: Iterable[_U] | None = None,
+    exclude: Iterable[_U] | None = None,
+    key: Callable[[_T], _U] | None = None,
+) -> Iterable[_T]:
+    """Filter an iterable based on an inclusion/exclusion pair."""
+    include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
+    if include is not None:
+        if key is None:
+            iterable = (x for x in iterable if x in include)
+        else:
+            iterable = (x for x in iterable if key(x) in include)
+    if exclude is not None:
+        if key is None:
+            iterable = (x for x in iterable if x not in exclude)
+        else:
+            iterable = (x for x in iterable if key(x) not in exclude)
+    return iterable
+
+
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -706,6 +756,7 @@ __all__ = [
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
+    "filter_include_and_exclude",
     "is_iterable",
     "is_iterable_not_str",
     "one",
