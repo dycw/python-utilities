@@ -4,12 +4,18 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, overload
 
-from polars import Boolean, DataFrame, Expr, PolarsDataType, col, lit, when
+from polars import Boolean, DataFrame, Expr, PolarsDataType, Series, col, lit, when
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
-from polars.type_aliases import IntoExpr, JoinStrategy, JoinValidation, SchemaDict
+from polars.type_aliases import (
+    IntoExpr,
+    IntoExprColumn,
+    JoinStrategy,
+    JoinValidation,
+    SchemaDict,
+)
 from typing_extensions import Never, assert_never, override
 
 from utilities.errors import redirect_error
@@ -29,6 +35,25 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
     from utilities.types import IterableStrs
+
+
+@overload
+def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
+@overload
+def ceil_datetime(column: Series, every: Expr | str, /) -> Series: ...
+def ceil_datetime(column: IntoExprColumn, every: str | Expr, /) -> Expr | Series:
+    """Compute the `ceil` of a datetime column."""
+
+    column = ensure_expr_or_series(column)
+    rounded = column.dt.round(every)
+    ceil = (
+        when(column <= rounded)
+        .then(column)
+        .otherwise(column.dt.offset_by(every).dt.round(every))
+    )
+    if isinstance(column, Expr):
+        return ceil
+    return DataFrame().with_columns(ceil.alias(column.name))[column.name]
 
 
 def check_polars_dataframe(  # noqa: C901
@@ -322,6 +347,11 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
+    """Ensure a column expression or Series is returned."""
+    return col(column) if isinstance(column, str) else column
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -399,8 +429,10 @@ __all__ = [
     "ColumnsToDictError",
     "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
+    "ceil_datetime",
     "check_polars_dataframe",
     "columns_to_dict",
+    "ensure_expr_or_series",
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
