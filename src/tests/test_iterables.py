@@ -23,6 +23,7 @@ from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
+    ResolveIncludeAndExcludeError,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -43,6 +44,7 @@ from utilities.iterables import (
     one,
     one_str,
     product_dicts,
+    resolve_include_and_exclude,
     take,
     transpose,
 )
@@ -478,6 +480,37 @@ class TestProductDicts:
             {"x": 2, "y": 9},
         ]
         assert result == expected
+
+
+class TestResolveIncludeAndExclude:
+    def test_none(self) -> None:
+        include, exclude = resolve_include_and_exclude()
+        assert include is None
+        assert exclude is None
+
+    def test_include_only(self) -> None:
+        include, exclude = resolve_include_and_exclude(include=[1, 2, 3])
+        assert include == {1, 2, 3}
+        assert exclude is None
+
+    def test_exclude_only(self) -> None:
+        include, exclude = resolve_include_and_exclude(exclude=[1, 2, 3])
+        assert include is None
+        assert exclude == {1, 2, 3}
+
+    def test_both(self) -> None:
+        include, exclude = resolve_include_and_exclude(
+            include=[1, 2, 3], exclude=[4, 5, 6]
+        )
+        assert include == {1, 2, 3}
+        assert exclude == {4, 5, 6}
+
+    def test_error(self) -> None:
+        with raises(
+            ResolveIncludeAndExcludeError,
+            match="Iterables .* and .* must not overlap; got .*",
+        ):
+            _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
 
 
 class TestTake:
