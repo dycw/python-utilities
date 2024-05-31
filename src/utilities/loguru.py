@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import logging
+import time
 from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
 from pathlib import Path
@@ -26,6 +28,24 @@ _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
 _ROTATION = int(1e6)
 _RETENTION = dt.timedelta(weeks=1)
+
+
+def logged_sleep_sync(
+    seconds: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
+) -> None:
+    """Logged sleep (synchronously)."""
+    logger.opt(depth=depth).log(
+        level, "Sleeping for {seconds} seconds...", seconds=seconds
+    )
+    time.sleep(seconds)
+
+
+async def logged_sleep_async(
+    delay: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
+) -> None:
+    """Logged sleep (asynchronously)."""
+    logger.opt(depth=depth).log(level, "Sleeping for {delay} seconds...", delay=delay)
+    await asyncio.sleep(delay)
 
 
 def setup_loguru(
@@ -254,4 +274,4 @@ def _add_live_file_sink(
     )
 
 
-__all__ = ["setup_loguru"]
+__all__ = ["logged_sleep_async", "logged_sleep_sync", "setup_loguru"]

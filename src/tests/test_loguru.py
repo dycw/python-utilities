@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
+from pytest import mark
 
 from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
 from utilities.logging import LogLevel
@@ -15,6 +16,8 @@ from utilities.loguru import (
     _FILES_ENV_VAR,
     _augment_levels,
     _get_files_path,
+    logged_sleep_async,
+    logged_sleep_sync,
     setup_loguru,
 )
 from utilities.os import temp_environ
@@ -24,6 +27,15 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
 
     from utilities.types import PathLike
+
+
+class TestLoggedSleep:
+    def test_sync(self) -> None:
+        logged_sleep_sync(0.1)
+
+    @mark.asyncio
+    async def test_async(self) -> None:
+        await logged_sleep_async(0.1)
 
 
 class TestSetupLoguru:
