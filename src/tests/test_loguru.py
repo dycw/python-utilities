@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from utilities.types import PathLike
 
 
-class TestLogAndSleep:
+class TestLoggedSleep:
     def test_sync(self) -> None:
         logged_sleep_sync(0.1)
 
