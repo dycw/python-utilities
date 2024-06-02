@@ -48,7 +48,7 @@ cachetools==5.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2024.2.2
+certifi==2024.6.2
     # via
     #   httpcore
     #   httpx
@@ -58,7 +58,7 @@ cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
     # via requests
-clarabel==0.8.1
+clarabel==0.9.0
     # via cvxpy
 click==8.1.7
     # via
@@ -106,7 +106,7 @@ fasteners==0.19
     # via zarr
 filelock==3.14.0
     # via virtualenv
-fonttools==4.52.4
+fonttools==4.53.0
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
@@ -265,7 +265,7 @@ pandas==2.2.2
     #   streamlit
     #   vegafusion
     #   xarray
-panel==1.4.3
+panel==1.4.4
     # via holoviews
 param==2.1.0
     # via
@@ -295,7 +295,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.30
+polars-lts-cpu==0.20.31
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -532,7 +532,7 @@ xyzservices==2024.4.0
     #   panel
 zarr==2.18.2
     # via dycw-utilities (pyproject.toml)
-zipp==3.19.0
+zipp==3.19.1
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

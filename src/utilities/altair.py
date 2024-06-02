@@ -21,6 +21,7 @@ from altair import (
     value,
     vconcat,
 )
+from altair.utils.schemapi import Undefined
 from polars import col, int_range
 
 from utilities.more_itertools import always_iterable
@@ -56,6 +57,7 @@ def plot_dataframes(
     value_name: str = "value",
     height: int = _HEIGHT,
     width: int = _WIDTH,
+    interpolate: Any = Undefined,
 ) -> VConcatChart:
     """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
     if x is None:
@@ -81,7 +83,7 @@ def plot_dataframes(
     ]
     charts = [Chart(df_long) for df_long in dfs_long]
     lines = [
-        chart.mark_line().encode(
+        chart.mark_line(interpolate=interpolate).encode(
             x=x_use, y=Y(value_name).scale(zero=False), color=f"{var_name}:N"
         )
         for chart in charts

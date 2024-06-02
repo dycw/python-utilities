@@ -6,7 +6,7 @@ attrs==23.2.0
     # via hypothesis
 backports-tarfile==1.2.0
     # via jaraco-context
-certifi==2024.2.2
+certifi==2024.6.2
     # via
     #   httpcore
     #   httpx
@@ -135,7 +135,7 @@ uv==0.2.5
     # via hatch
 virtualenv==20.26.2
     # via hatch
-zipp==3.19.0
+zipp==3.19.1
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch
