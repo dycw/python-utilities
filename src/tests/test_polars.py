@@ -35,6 +35,7 @@ from utilities.polars import (
     collect_series,
     columns_to_dict,
     ensure_expr_or_series,
+    floor_datetime,
     join,
     nan_sum_agg,
     nan_sum_cols,
@@ -361,6 +362,44 @@ class TestEnsureExprOrSeries:
     def test_main(self, *, column: IntoExprColumn) -> None:
         result = ensure_expr_or_series(column)
         assert isinstance(result, Expr | Series)
+
+
+class TestFloorDatetime:
+    start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
+    end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
+    expected: ClassVar[Series] = Series(
+        [
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        ]
+    )
+
+    def test_expr(self) -> None:
+        data = datetime_range(self.start, self.end, interval="10s")
+        result = collect_series(floor_datetime(data, "1m"))
+        assert_series_equal(result, self.expected, check_names=False)
+
+    def test_series(self) -> None:
+        data = datetime_range(self.start, self.end, interval="10s", eager=True)
+        result = floor_datetime(data, "1m")
+        assert_series_equal(result, self.expected, check_names=False)
 
 
 class TestJoin:

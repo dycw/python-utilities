@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 @overload
 def ceil_datetime(column: Series, every: Expr | str, /) -> Series: ...
-def ceil_datetime(column: IntoExprColumn, every: str | Expr, /) -> Expr | Series:
+def ceil_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
     """Compute the `ceil` of a datetime column."""
 
     column = ensure_expr_or_series(column)
@@ -359,6 +359,25 @@ def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     return col(column) if isinstance(column, str) else column
 
 
+@overload
+def floor_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
+@overload
+def floor_datetime(column: Series, every: Expr | str, /) -> Series: ...
+def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
+    """Compute the `floor` of a datetime column."""
+
+    column = ensure_expr_or_series(column)
+    rounded = column.dt.round(every)
+    floor = (
+        when(column >= rounded)
+        .then(rounded)
+        .otherwise(column.dt.offset_by("-" + every).dt.round(every))
+    )
+    if isinstance(column, Expr):
+        return floor
+    return DataFrame().with_columns(floor.alias(column.name))[column.name]
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -441,6 +460,7 @@ __all__ = [
     "collect_series",
     "columns_to_dict",
     "ensure_expr_or_series",
+    "floor_datetime",
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
