@@ -124,7 +124,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   wsproto
-hatch==1.11.1
+hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -136,7 +136,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -442,7 +442,7 @@ sqlalchemy==2.0.30
     #   optuna
 starlette==0.37.2
     # via fastapi-slim
-streamlit==1.34.0
+streamlit==1.35.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.3.0
     # via
@@ -482,7 +482,7 @@ trove-classifiers==2024.5.22
     # via hatchling
 typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   alembic

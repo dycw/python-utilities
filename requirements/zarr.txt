@@ -19,7 +19,7 @@ exceptiongroup==1.2.1
     #   pytest
 fasteners==0.19
     # via zarr
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -54,7 +54,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 zarr==2.18.2
     # via dycw-utilities (pyproject.toml)

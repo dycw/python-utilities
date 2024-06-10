@@ -20,7 +20,7 @@ exceptiongroup==1.2.1
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -75,7 +75,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   ipython

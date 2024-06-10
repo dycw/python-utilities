@@ -27,7 +27,7 @@ exceptiongroup==1.2.1
     #   pytest
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -127,7 +127,7 @@ tornado==6.4.1
     # via bokeh
 tqdm==4.66.4
     # via panel
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   panel
