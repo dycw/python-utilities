@@ -33,7 +33,7 @@ fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -61,7 +61,7 @@ numpy==1.26.4
     #   contourpy
     #   holoviews
     #   pandas
-packaging==24.0
+packaging==24.1
     # via
     #   bokeh
     #   coverage-conditional-plugin
@@ -86,7 +86,7 @@ pillow==10.3.0
     #   fpdf2
 pluggy==1.5.0
     # via pytest
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -120,11 +120,11 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tornado==6.4
+tornado==6.4.1
     # via bokeh
 tqdm==4.66.4
     # via panel
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   panel
@@ -136,7 +136,7 @@ urllib3==2.2.1
     # via requests
 webencodings==0.5.1
     # via bleach
-xyzservices==2024.4.0
+xyzservices==2024.6.0
     # via
     #   bokeh
     #   panel

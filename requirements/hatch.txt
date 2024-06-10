@@ -32,7 +32,7 @@ filelock==3.14.0
     # via virtualenv
 h11==0.14.0
     # via httpcore
-hatch==1.11.1
+hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -42,7 +42,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -69,7 +69,7 @@ more-itertools==10.2.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   hatch
@@ -92,7 +92,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.18.0
     # via rich
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -125,17 +125,17 @@ tomlkit==0.12.5
     # via hatch
 trove-classifiers==2024.5.22
     # via hatchling
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.2.5
+uv==0.2.9
     # via hatch
 virtualenv==20.26.2
     # via hatch
-zipp==3.19.1
+zipp==3.19.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

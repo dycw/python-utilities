@@ -15,7 +15,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 importlib-resources==6.4.0
     # via pypiserver
@@ -23,7 +23,7 @@ iniconfig==2.0.0
     # via pytest
 loguru==0.7.2
     # via dycw-utilities (pyproject.toml)
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   pypiserver
@@ -37,7 +37,7 @@ pluggy==1.5.0
     # via pytest
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -58,5 +58,5 @@ tomli==2.0.1
     #   typed-settings
 typed-settings==24.3.0
     # via dycw-utilities (pyproject.toml)
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

@@ -15,11 +15,11 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -28,7 +28,7 @@ pluggy==1.5.0
     # via pytest
 pyinstrument==4.6.2
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -46,5 +46,5 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

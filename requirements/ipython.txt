@@ -20,7 +20,7 @@ exceptiongroup==1.2.1
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.102.6
+hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -30,7 +30,7 @@ jedi==0.19.1
     # via ipython
 matplotlib-inline==0.1.7
     # via ipython
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -41,7 +41,7 @@ pexpect==4.9.0
     # via ipython
 pluggy==1.5.0
     # via pytest
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.47
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -49,7 +49,7 @@ pure-eval==0.2.2
     # via stack-data
 pygments==2.18.0
     # via ipython
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -75,7 +75,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   ipython
