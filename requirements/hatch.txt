@@ -69,7 +69,7 @@ more-itertools==10.2.0
     # via
     #   jaraco-classes
     #   jaraco-functools
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   hatch
@@ -92,7 +92,7 @@ ptyprocess==0.7.0
     # via pexpect
 pygments==2.18.0
     # via rich
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -131,11 +131,11 @@ typing-extensions==4.11.0
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.2.5
+uv==0.2.9
     # via hatch
 virtualenv==20.26.2
     # via hatch
-zipp==3.19.1
+zipp==3.19.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

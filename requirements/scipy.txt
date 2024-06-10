@@ -19,14 +19,14 @@ iniconfig==2.0.0
     # via pytest
 numpy==1.26.4
     # via scipy
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov

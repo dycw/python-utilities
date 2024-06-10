@@ -35,7 +35,7 @@ numpy==1.26.4
     #   scs
 osqp==0.6.7
     # via cvxpy
-packaging==24.0
+packaging==24.1
     # via
     #   coverage-conditional-plugin
     #   pytest
@@ -44,7 +44,7 @@ pandas==2.2.2
     # via dycw-utilities (pyproject.toml)
 pluggy==1.5.0
     # via pytest
-pytest==8.2.1
+pytest==8.2.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
