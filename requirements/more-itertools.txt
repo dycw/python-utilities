@@ -17,7 +17,7 @@ hypothesis==6.103.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-more-itertools==10.2.0
+more-itertools==10.3.0
     # via dycw-utilities (pyproject.toml)
 packaging==24.1
     # via
