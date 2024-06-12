@@ -354,6 +354,10 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+@overload
+def ensure_expr_or_series(column: Expr | str, /) -> Expr: ...
+@overload
+def ensure_expr_or_series(column: Series, /) -> Series: ...
 def ensure_expr_or_series(column: IntoExprColumn, /) -> Expr | Series:
     """Ensure a column expression or Series is returned."""
     return col(column) if isinstance(column, str) else column

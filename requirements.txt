@@ -199,7 +199,7 @@ mdutils==1.6.0
     # via dycw-utilities (pyproject.toml)
 memory-profiler==0.61.0
     # via dycw-utilities (pyproject.toml)
-more-itertools==10.2.0
+more-itertools==10.3.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
@@ -506,7 +506,7 @@ urllib3==2.2.1
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.9
+uv==0.2.11
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
