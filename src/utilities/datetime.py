@@ -5,6 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from re import sub
 from typing import TYPE_CHECKING, cast
+from zoneinfo import ZoneInfo
 
 from typing_extensions import Never, assert_never, override
 
@@ -114,6 +115,16 @@ def get_now_tokyo() -> dt.datetime:
 
 
 NOW_TOKYO = get_now_tokyo()
+
+
+def get_time_zone_name(time_zone: dt.tzinfo, /) -> str:
+    """Get the name of a time zone."""
+
+    if time_zone is UTC:
+        return "UTC"
+    if isinstance(time_zone, ZoneInfo):
+        return time_zone.key
+    raise NotImplementedError(time_zone)  # pragma: no cover
 
 
 def get_today(*, tz: dt.tzinfo | None = UTC) -> dt.date:
@@ -416,6 +427,7 @@ __all__ = [
     "get_now",
     "get_now_hk",
     "get_now_tokyo",
+    "get_time_zone_name",
     "get_today",
     "get_today_hk",
     "get_today_tokyo",

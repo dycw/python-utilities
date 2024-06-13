@@ -50,6 +50,7 @@ from utilities.datetime import (
     get_now,
     get_now_hk,
     get_now_tokyo,
+    get_time_zone_name,
     get_today,
     get_today_hk,
     get_today_tokyo,
@@ -71,7 +72,7 @@ from utilities.datetime import (
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, text_clean
-from utilities.zoneinfo import HONG_KONG
+from utilities.zoneinfo import HONG_KONG, TOKYO
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -197,6 +198,20 @@ class TestGetNow:
     @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)])
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
+
+
+class TestGetTimeZoneName:
+    @mark.parametrize(
+        ("time_zone", "expected"),
+        [
+            param(HONG_KONG, "Asia/Hong_Kong"),
+            param(TOKYO, "Asia/Tokyo"),
+            param(UTC, "UTC"),
+        ],
+    )
+    def test_main(self, *, time_zone: dt.tzinfo, expected: str) -> None:
+        result = get_time_zone_name(time_zone)
+        assert result == expected
 
 
 class TestGetToday:
