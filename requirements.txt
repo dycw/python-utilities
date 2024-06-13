@@ -104,7 +104,7 @@ fastapi-slim==0.111.0
     # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
-filelock==3.14.0
+filelock==3.15.1
     # via virtualenv
 fonttools==4.53.0
     # via fpdf2
@@ -318,7 +318,7 @@ pyarrow==16.1.0
     #   vegafusion
 pycparser==2.22
     # via cffi
-pydantic==2.7.3
+pydantic==2.7.4
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi-slim
