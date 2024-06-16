@@ -15,13 +15,13 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.103.1
+hypothesis==6.103.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-llvmlite==0.42.0
+llvmlite==0.43.0
     # via numba
-numba==0.59.1
+numba==0.60.0
     # via numbagg
 numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)

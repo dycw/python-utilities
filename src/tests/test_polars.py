@@ -415,7 +415,7 @@ class TestJoin:
 
 class TestNanSumAgg:
     @mark.parametrize(
-        ("data", "expected"),
+        ("values", "expected"),
         [
             param([None], None, id="one None"),
             param([None, None], None, id="two Nones"),
@@ -432,14 +432,12 @@ class TestNanSumAgg:
     def test_main(
         self,
         *,
-        data: list[Any],
+        values: list[Any],
         expected: int | None,
         dtype: PolarsDataType,
         mode: Literal["str", "column"],
     ) -> None:
-        df = DataFrame({"value": data}, schema={"value": dtype}).with_columns(
-            lit("id").alias("id")
-        )
+        df = DataFrame(data=values, schema={"value": dtype}).with_columns(id=lit("id"))
         match mode:
             case "str":
                 agg = "value"
@@ -468,7 +466,7 @@ class TestNanSumCols:
         x_use = "x" if x_kind == "str" else col("x")
         y_use = "y" if y_kind == "str" else col("y")
         df = DataFrame([(x, y)], schema={"x": Int64, "y": Int64}).with_columns(
-            nan_sum_cols(x_use, y_use).alias("z")
+            z=nan_sum_cols(x_use, y_use)
         )
         assert df["z"].item() == expected
 
