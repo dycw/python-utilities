@@ -136,7 +136,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.103.1
+hypothesis==6.103.2
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -170,7 +170,7 @@ keyring==25.2.1
     # via hatch
 linkify-it-py==2.0.3
     # via panel
-llvmlite==0.42.0
+llvmlite==0.43.0
     # via numba
 lockfile==0.12.2
     # via python-daemon
@@ -204,7 +204,7 @@ more-itertools==10.3.0
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
-numba==0.59.1
+numba==0.60.0
     # via numbagg
 numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)

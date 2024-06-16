@@ -33,7 +33,7 @@ fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.103.1
+hypothesis==6.103.2
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
