@@ -6,7 +6,17 @@ from functools import reduce
 from itertools import chain
 from typing import TYPE_CHECKING, Any, cast, overload
 
-from polars import Boolean, DataFrame, Expr, PolarsDataType, Series, col, lit, when
+from polars import (
+    Boolean,
+    DataFrame,
+    Expr,
+    PolarsDataType,
+    Series,
+    Struct,
+    col,
+    lit,
+    when,
+)
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from polars.type_aliases import (
@@ -454,11 +464,31 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
 class SetFirstRowAsColumnsError(Exception): ...
 
 
+def yield_struct_series_elements(
+    series: Series, /
+) -> Iterator[Mapping[str, Any] | None]:
+    """Yield the elements of a struct-dtype Series as optional mappings."""
+    if not isinstance(series.dtype, Struct):
+        raise YieldStructSeriesElementsError(series=series)
+    for is_null, value in zip(series.is_null(), series, strict=False):
+        yield None if is_null else value
+
+
+@dataclass(kw_only=True)
+class YieldStructSeriesElementsError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
 __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
+    "YieldStructSeriesElementsError",
     "ceil_datetime",
     "check_polars_dataframe",
     "collect_series",
@@ -470,4 +500,5 @@ __all__ = [
     "nan_sum_cols",
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
+    "yield_struct_series_elements",
 ]
