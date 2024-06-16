@@ -10,6 +10,7 @@ from polars import (
     Float64,
     Int64,
     Series,
+    Struct,
     Utf8,
     col,
     concat,
@@ -26,6 +27,7 @@ from utilities.polars import (
     ColumnsToDictError,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
+    YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -41,6 +43,7 @@ from utilities.polars import (
     nan_sum_cols,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
+    yield_struct_series_elements,
 )
 
 if TYPE_CHECKING:
@@ -494,3 +497,47 @@ class TestSetFirstRowAsColumns:
         check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
+
+
+class TestYieldStructSeriesElements:
+    def test_main(self) -> None:
+        series = Series(
+            name="series",
+            values=[
+                (None, None),
+                (None, None),
+                (1, 1),
+                (2, None),
+                (None, None),
+                (None, 3),
+                (4, 4),
+                (None, None),
+                (None, None),
+            ],
+            dtype=Struct({"lower": Int64, "upper": Int64}),
+        )
+        result = list(yield_struct_series_elements(series))
+        expected = [
+            None,
+            None,
+            {"lower": 1, "upper": 1},
+            {"lower": 2, "upper": None},
+            None,
+            {"lower": None, "upper": 3},
+            {"lower": 4, "upper": 4},
+            None,
+            None,
+        ]
+        assert result == expected
+
+    def test_error(self) -> None:
+        series = Series(
+            name="series",
+            values=[None, None, 1, 2, None, 3, 4, None, None],
+            dtype=Int64,
+        )
+        with raises(
+            YieldStructSeriesElementsError,
+            match="Series must have Struct-dtype; got Int64",
+        ):
+            _ = list(yield_struct_series_elements(series))
