@@ -26,7 +26,6 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.errors import redirect_error
 from utilities.types import get_class_name
 
 _T = TypeVar("_T")
@@ -179,14 +178,14 @@ class _JsonSerializationTimeZoneError(JsonSerializationError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid timezone: {self.tzinfo}."
+        return f"Invalid timezone: {self.tzinfo}"
 
 
 @dataclass(kw_only=True)
 class _JsonSerializationTypeError(JsonSerializationError):
     @override
     def __str__(self) -> str:
-        return f"Unsupported type: {get_class_name(self.obj)}."
+        return f"Unsupported type: {get_class_name(self.obj)}"
 
 
 def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
@@ -203,79 +202,81 @@ def _object_hook(
     value = mapping[_VALUE]
     match cls:
         case "bytes":
-            value = cast(str, value)
-            return value.encode()
+            return cast(str, value).encode()
         case "complex":
-            value = cast(list[int], value)
-            real, imag = value
+            real, imag = cast(list[int], value)
             return complex(real, imag)
         case "Decimal":
-            value = cast(str, value)
-            return Decimal(value)
+            return Decimal(cast(str, value))
         case "dict":
-            value = cast(list[list[Any]], value)
-            return dict(value)
+            return dict(cast(list[list[Any]], value))
         case "dt.date":
-            value = cast(str, value)
-            return parse_date(value)
+            return parse_date(cast(str, value))
         case "dt.datetime|naive":
-            value = cast(str, value)
-            return dt.datetime.fromisoformat(value)
+            return dt.datetime.fromisoformat(cast(str, value))
         case "dt.datetime|UTC":
-            value = cast(str, value)
-            return parse_datetime(value)
+            return parse_datetime(cast(str, value))
         case "dt.time":
-            value = cast(str, value)
-            return parse_time(value)
+            return parse_time(cast(str, value))
         case "dt.timedelta":
-            value = cast(str, value)
-            return parse_timedelta(value)
+            return parse_timedelta(cast(str, value))
         case "Fraction":
-            value = cast(list[int], value)
-            numerator, denominator = value
+            numerator, denominator = cast(list[int], value)
             return Fraction(numerator=numerator, denominator=denominator)
         case "frozenset":
-            value = cast(list[Any], value)
-            return frozenset(value)
+            return frozenset(cast(list[Any], value))
         case "IPv4Address":
-            value = cast(str, value)
-            return IPv4Address(value)
+            return IPv4Address(cast(str, value))
         case "IPv6Address":
-            value = cast(str, value)
-            return IPv6Address(value)
+            return IPv6Address(cast(str, value))
         case "Path":
-            value = cast(str, value)
-            return Path(value)
+            return Path(cast(str, value))
         case "set":
-            value = cast(list[Any], value)
-            return set(value)
+            return set(cast(list[Any], value))
         case "slice":
-            value = cast(list[int | None], value)
-            start, stop, step = value
+            start, stop, step = cast(list[int | None], value)
             return slice(start, stop, step)
         case "tuple":
-            value = cast(list[Any], value)
-            return tuple(value)
+            return tuple(cast(list[Any], value))
         case "UUID":
-            value = cast(str, value)
-            return UUID(value)
+            return UUID(cast(str, value))
         case "sqlalchemy.Engine":
             from sqlalchemy import create_engine
 
-            value = cast(str, value)
-            return create_engine(value)
+            return create_engine(cast(str, value))
         case _:
             if extra is not None:
-                with redirect_error(
-                    KeyError, JsonDeserializationError(f"{cls=}, {extra=}")
-                ):
+                try:
                     func = extra[cls]
+                except KeyError:
+                    raise _JsonDeserializationWithExtraTypeError(
+                        cls=cls, extra=extra
+                    ) from None
                 return func(value)
-            msg = f"{cls=}, {value=}"
-            raise JsonDeserializationError(msg)
+            raise _JsonDeserializationTypeError(cls=cls, value=value)
 
 
-class JsonDeserializationError(Exception): ...
+@dataclass(kw_only=True)
+class JsonDeserializationError(Exception):
+    cls: str
 
 
-__all__ = ["deserialize", "serialize"]
+@dataclass(kw_only=True)
+class _JsonDeserializationWithExtraTypeError(JsonDeserializationError):
+    extra: _ExtraDes
+
+    @override
+    def __str__(self) -> str:
+        return f"Unsupported type: {self.cls}; extras were {set(self.extra)}"
+
+
+@dataclass(kw_only=True)
+class _JsonDeserializationTypeError(JsonDeserializationError):
+    value: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unsupported type: {self.cls}; value was {self.value}"
+
+
+__all__ = ["JsonDeserializationError", "deserialize", "serialize"]

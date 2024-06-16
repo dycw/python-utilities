@@ -212,13 +212,11 @@ class TestSerializeAndDeserialize:
         assert res is expected
 
     def test_error_timezone(self) -> None:
-        with raises(
-            JsonSerializationError, match=r"Invalid timezone: Asia/Hong_Kong\."
-        ):
+        with raises(JsonSerializationError, match="Invalid timezone: Asia/Hong_Kong"):
             _ = serialize(NOW_HK)
 
     def test_error(self) -> None:
-        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel\."):
+        with raises(JsonSerializationError, match=r"Unsupported type: Sentinel"):
             _ = serialize(sentinel)
 
     def _assert_standard(
@@ -247,7 +245,7 @@ class TestSerialize:
         class Example2: ...
 
         extra = {Example2: ("example", neg)}
-        with raises(JsonSerializationError, match=r"Unsupported type: Example1\."):
+        with raises(JsonSerializationError, match="Unsupported type: Example1"):
             _ = serialize(x, extra=extra)
 
 
@@ -259,7 +257,9 @@ class TestDeserialization:
 
     def test_error_unknown_class(self) -> None:
         ser = dumps({_CLASS: "unknown", _VALUE: None})
-        with raises(JsonDeserializationError):
+        with raises(
+            JsonDeserializationError, match="Unsupported type: unknown; value was None"
+        ):
             _ = deserialize(ser)
 
     @given(n=integers())
@@ -276,5 +276,8 @@ class TestDeserialization:
         extra_ser = {Example: ("example", f_ser)}
         ser = serialize(x, extra=extra_ser)
         extra_des = {"wrong": neg}
-        with raises(JsonDeserializationError):
+        with raises(
+            JsonDeserializationError,
+            match="Unsupported type: example; extras were {'wrong'}",
+        ):
             _ = deserialize(ser, extra=extra_des)

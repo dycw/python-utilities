@@ -467,6 +467,7 @@ ignore = [
   "E501",  # line-too-long
   "F403",  # undefined-local-with-import-star
   "F405",  # undefined-local-with-import-star-usage
+  "PD901",  # pandas-df-variable-name
   "PLE1142",  # await-outside-async
   "PLR0911",  # too-many-return-statements
   "PLR0913",  # too-many-arguments
@@ -499,7 +500,6 @@ unfixable = [
 
 [tool.ruff.lint.extend-per-file-ignores]
 "src/tests/**/*.py" = [
-  "PD901",  # pandas-df-variable-name
   "S101",  # assert-used
 ]
 "src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
