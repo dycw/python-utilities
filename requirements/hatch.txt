@@ -131,7 +131,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.2.11
+uv==0.2.12
     # via hatch
 virtualenv==20.26.2
     # via hatch

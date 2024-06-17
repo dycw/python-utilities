@@ -17,7 +17,7 @@ hypothesis==6.103.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-numpy==1.26.4
+numpy==2.0.0
     # via pandas
 packaging==24.1
     # via
