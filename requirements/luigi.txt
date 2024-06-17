@@ -60,7 +60,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.30
     # via dycw-utilities (pyproject.toml)
-tenacity==8.3.0
+tenacity==8.4.1
     # via luigi
 tomli==2.0.1
     # via

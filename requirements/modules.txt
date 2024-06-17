@@ -297,7 +297,7 @@ pyviz-comms==3.0.2
     #   panel
 pyyaml==6.0.1
     # via bokeh
-qdldl==0.1.7.post2
+qdldl==0.1.7.post3
     # via osqp
 referencing==0.35.1
     # via
@@ -352,7 +352,7 @@ starlette==0.37.2
     # via fastapi-slim
 streamlit==1.35.0
     # via dycw-utilities (pyproject.toml)
-tenacity==8.3.0
+tenacity==8.4.1
     # via
     #   luigi
     #   streamlit
@@ -399,11 +399,11 @@ tzdata==2024.1
     # via pandas
 uc-micro-py==1.0.3
     # via linkify-it-py
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.11
+uv==0.2.12
     # via hatch
 virtualenv==20.26.2
     # via hatch
