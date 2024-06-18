@@ -10,9 +10,9 @@ coverage==7.5.3
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-cvxpy==1.5.1
+cvxpy==1.5.2
     # via dycw-utilities (pyproject.toml)
-ecos==2.0.13
+ecos==2.0.14
     # via cvxpy
 exceptiongroup==1.2.1
     # via
