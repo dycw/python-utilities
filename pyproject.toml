@@ -452,7 +452,6 @@ xfail_strict = true
 
 # ruff
 [tool.ruff]
-extend-exclude = ["**/*.ipynb"]
 src = ["src"]
 target-version = "py310"
 unsafe-fixes = true
