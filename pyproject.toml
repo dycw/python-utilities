@@ -495,6 +495,7 @@ ignore = [
 select = ["ALL"]
 unfixable = [
   "B007",  # unused-loop-sontrol-variable
+  "F601",  # multi-value-repeated-key-literal
   "PIE794",  # duplicate-class-field-definition
   "PLR5501",  # collapsible-else-if
   "SIM114",  # if-with-same-arms
