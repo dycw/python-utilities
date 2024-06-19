@@ -1,10 +1,24 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+import datetime as dt
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Set as AbstractSet
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
+from enum import Enum
 from functools import reduce
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast, overload
+from types import NoneType, UnionType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 
 from polars import (
     Boolean,
@@ -496,7 +510,7 @@ def _struct_data_type_one(
         return Datetime(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
-    if isinstance(ann, type) and issubclass(ann, enum.Enum):
+    if isinstance(ann, type) and issubclass(ann, Enum):
         return Utf8
     if (origin := get_origin(ann)) in {frozenset, list, set}:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))

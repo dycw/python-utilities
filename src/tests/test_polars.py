@@ -1,8 +1,9 @@
-import datetime as dt  # noqa: I002
+import datetime as dt
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from enum import Enum, auto
 from math import isfinite, nan
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal, cast
 
 from polars import (
     Boolean,
@@ -543,7 +544,7 @@ class TestStructDataType:
         assert result == expected
 
     def test_enum(self) -> None:
-        class Truth(enum.Enum):
+        class Truth(Enum):
             true = auto()
             false = auto()
 
