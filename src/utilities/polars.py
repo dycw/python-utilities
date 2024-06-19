@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
+from types import NoneType, UnionType
 from typing import Any, cast, get_args, get_origin, get_type_hints, overload
 
 from polars import (
@@ -495,8 +496,11 @@ def _struct_data_type_one(
         return Utf8
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
-    if get_origin(ann) is list:
+    if (origin := get_origin(ann)) is list:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
+    if origin is UnionType:
+        inner = one(arg for arg in get_args(ann) if arg is not NoneType)
+        return _struct_data_type_one(inner, time_zone=time_zone)
     raise _StructDataTypeTypeError(ann=ann)
 
 

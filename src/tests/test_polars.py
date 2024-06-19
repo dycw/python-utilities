@@ -502,16 +502,29 @@ class TestSetFirstRowAsColumns:
 
 class TestStructDataType:
     def test_simple(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             date: dt.date
+            date_maybe: dt.date | None = None
             float_: float
+            float_maybe: float | None = None
             int_: int
+            int_maybe: int | None = None
             str_: str
+            str_maybe: str | None = None
 
         result = struct_data_type(Example)
         expected = Struct(
-            {"date": Date, "float_": Float64, "int_": Int64, "str_": Utf8}
+            {
+                "date": Date,
+                "date_maybe": Date,
+                "float_": Float64,
+                "float_maybe": Float64,
+                "int_": Int64,
+                "int_maybe": Int64,
+                "str_": Utf8,
+                "str_maybe": Utf8,
+            }
         )
         assert result == expected
 
