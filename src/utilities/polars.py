@@ -479,9 +479,11 @@ def struct_data_type(
     return Struct(data_types)
 
 
-def _struct_data_type_one(
+def _struct_data_type_one(  # noqa: C901
     ann: Any, /, *, time_zone: str | dt.timezone | None = None
 ) -> DataType:
+    if ann is bool:
+        return Boolean
     if ann is dt.date:
         return Date
     if ann is dt.datetime:

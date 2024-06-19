@@ -5,6 +5,7 @@ from math import isfinite, nan
 from typing import Any, ClassVar, Literal, cast
 
 from polars import (
+    Boolean,
     DataFrame,
     Date,
     Datetime,
@@ -504,6 +505,8 @@ class TestStructDataType:
     def test_simple(self) -> None:
         @dataclass(kw_only=True)
         class Example:
+            bool_: bool
+            bool_maybe: bool | None = None
             date: dt.date
             date_maybe: dt.date | None = None
             float_: float
@@ -516,6 +519,8 @@ class TestStructDataType:
         result = struct_data_type(Example)
         expected = Struct(
             {
+                "bool_": Boolean,
+                "bool_maybe": Boolean,
                 "date": Date,
                 "date_maybe": Date,
                 "float_": Float64,
