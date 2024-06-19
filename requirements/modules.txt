@@ -246,7 +246,7 @@ pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
 protobuf==4.25.3
     # via streamlit
-psutil==5.9.8
+psutil==6.0.0
     # via memory-profiler
 ptyprocess==0.7.0
     # via pexpect
@@ -346,7 +346,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==2.0.30
+sqlalchemy==2.0.31
     # via dycw-utilities (pyproject.toml)
 starlette==0.37.2
     # via fastapi-slim
@@ -403,7 +403,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.12
+uv==0.2.13
     # via hatch
 virtualenv==20.26.2
     # via hatch
