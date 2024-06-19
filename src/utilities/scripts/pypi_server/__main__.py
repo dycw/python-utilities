@@ -1,5 +1,4 @@
-# pragma: no cover
-from __future__ import annotations
+from __future__ import annotations  # pragma: no cover
 
 from utilities.scripts.pypi_server import main  # pragma: no cover
 

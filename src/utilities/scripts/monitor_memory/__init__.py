@@ -5,6 +5,7 @@ import datetime as dt
 from contextlib import contextmanager
 from csv import DictWriter
 from dataclasses import fields
+from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, cast
 
