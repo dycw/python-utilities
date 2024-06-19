@@ -636,7 +636,7 @@ def setup_hypothesis_profiles(
 def settings_with_reduced_examples(
     frac: FloatFinPos = 0.1, /, **kwargs: Any
 ) -> settings:
-    """A `settings` decorator for fewer max examples."""
+    """Set a test to fewer max examples."""
     curr = settings()
     max_examples = max(round(frac * curr.max_examples), 1)
     return settings(max_examples=max_examples, **kwargs)

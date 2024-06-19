@@ -470,6 +470,7 @@ ignore = [
   "D105",  # undocumented-magic-method
   "D106",  # undocumented-public-nested-class
   "D107",  # undocumented-public-init
+  "D203", # one-blank-line-before-class
   "E501",  # line-too-long
   "F403",  # undefined-local-with-import-star
   "F405",  # undefined-local-with-import-star-usage

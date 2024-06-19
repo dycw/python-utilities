@@ -33,7 +33,7 @@ _RETENTION = dt.timedelta(weeks=1)
 def logged_sleep_sync(
     seconds: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
 ) -> None:
-    """Logged sleep (synchronously)."""
+    """Log a sleep operation, synchronously."""
     logger.opt(depth=depth).log(
         level, "Sleeping for {seconds} seconds...", seconds=seconds
     )
@@ -43,7 +43,7 @@ def logged_sleep_sync(
 async def logged_sleep_async(
     delay: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 2
 ) -> None:
-    """Logged sleep (asynchronously)."""
+    """Log a sleep operation, asynchronously."""
     logger.opt(depth=depth).log(level, "Sleeping for {delay} seconds...", delay=delay)
     await asyncio.sleep(delay)
 

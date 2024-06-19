@@ -46,9 +46,10 @@ else:
 
     @fixture(autouse=True)
     def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
-        """Log current test; usage:
+        """Log current test.
 
-        PYTEST_TIMER=1 pytest -s .
+        Usage:
+            PYTEST_TIMER=1 pytest -s .
         """
         if getenv("PYTEST_TIMER") == "1":
             name = request.node.nodeid
@@ -72,7 +73,7 @@ else:
 
     @fixture(scope="session")
     def create_postgres_engine() -> Callable[..., Engine]:
-        """A Postgres engine."""
+        """Create a Postgres engine."""
 
         def inner(*tables_or_mapped_classes: Table | type[Any]) -> Engine:
             from utilities.sqlalchemy import (

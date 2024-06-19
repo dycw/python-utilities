@@ -402,7 +402,7 @@ def ffill_non_nan_slices(
 def _ffill_non_nan_slices_helper(
     arrays: Iterator[NDArrayF], /, *, limit: int | None = None
 ) -> Iterator[tuple[int, NDArrayF]]:
-    """Iterator yielding the slices to be pasted in."""
+    """Yield the slices to be pasted in."""
     last: tuple[int, NDArrayF] | None = None
     for i, arr_i in enumerate(arrays):
         if (~isnan(arr_i)).any():

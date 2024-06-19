@@ -195,11 +195,6 @@ class AssignBetweenIndicesError(AssignBetweenError):
         return f"DataFrame must specify consecutive indices; got {self.index_left} and {self.index_right}"
 
 
-def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
-    """Wrapper around `.astype`."""
-    return cast(Any, df).astype(dtype)
-
-
 def check_index(
     index: IndexA,
     /,

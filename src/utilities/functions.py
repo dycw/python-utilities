@@ -30,7 +30,7 @@ class CheckNameError(Exception):
 
 
 def identity(obj: _T, /) -> _T:
-    """The identity function."""
+    """Return the object itself."""
     return obj
 
 
