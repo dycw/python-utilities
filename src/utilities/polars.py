@@ -1,18 +1,27 @@
+import datetime as dt
+import enum
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from typing import Any, cast, overload
+from types import NoneType, UnionType
+from typing import Any, Literal, cast, get_args, get_origin, get_type_hints, overload
 
 from polars import (
     Boolean,
     DataFrame,
+    Date,
+    Datetime,
     Expr,
+    Float64,
+    Int64,
+    List,
     PolarsDataType,
     Series,
     Struct,
+    Utf8,
     col,
     lit,
     when,
@@ -26,8 +35,10 @@ from polars.type_aliases import (
     JoinValidation,
     SchemaDict,
 )
+from pyarrow import DataType
 from typing_extensions import Never, assert_never, override
 
+from utilities.dataclasses import Dataclass, is_dataclass_class
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -392,6 +403,8 @@ def join(
     how: JoinStrategy = "inner",
     validate: JoinValidation = "m:m",
 ) -> DataFrame:
+    """Join a set of DataFrames."""
+
     def inner(left: DataFrame, right: DataFrame, /) -> DataFrame:
         return left.join(right, on=on, how=how, validate=validate)
 
@@ -454,6 +467,85 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
 class SetFirstRowAsColumnsError(Exception): ...
 
 
+def struct_data_type(
+    cls: type[Dataclass], /, *, time_zone: str | dt.timezone | None = None
+) -> Struct:
+    """Construct the Struct data type for a dataclass."""
+    if not is_dataclass_class(cls):
+        raise _StructDataTypeNotADataclassError(cls=cls)
+    anns = get_type_hints(cls)
+    data_types = {
+        k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
+    }
+    return Struct(data_types)
+
+
+def _struct_data_type_one(
+    ann: Any, /, *, time_zone: str | dt.timezone | None = None
+) -> DataType:
+    with suppress(KeyError):
+        return {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}[
+            ann
+        ]
+    if ann is dt.datetime:
+        if time_zone is None:
+            raise _StructDataTypeTimeZoneMissingError
+        return Datetime(time_zone=time_zone)
+    if is_dataclass_class(ann):
+        return struct_data_type(ann, time_zone=time_zone)
+    if isinstance(ann, type) and issubclass(ann, enum.Enum):
+        return Utf8
+    if (origin := get_origin(ann)) in {frozenset, list, set}:
+        return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
+    if origin is Literal:
+        args = get_args(ann)
+        if all(isinstance(arg, str) for arg in args):
+            return Utf8
+        raise _StructDataTypeNonStringLiteralError(args=args)
+    if origin is UnionType:
+        inner = one(arg for arg in get_args(ann) if arg is not NoneType)
+        return _struct_data_type_one(inner, time_zone=time_zone)
+    raise _StructDataTypeTypeError(ann=ann)
+
+
+@dataclass(kw_only=True)
+class StructDataTypeError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeNotADataclassError(StructDataTypeError):
+    cls: type[Dataclass]
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass; got {self.cls}"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeTimeZoneMissingError(StructDataTypeError):
+    @override
+    def __str__(self) -> str:
+        return "Time-zone must be given"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeNonStringLiteralError(StructDataTypeError):
+    args: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return f"Literal arguments must be strings; got {self.args}"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeTypeError(StructDataTypeError):
+    ann: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unsupported type: {self.ann}"
+
+
 def yield_struct_series_elements(
     series: Series, /
 ) -> Iterator[Mapping[str, Any] | None]:
@@ -490,5 +582,6 @@ __all__ = [
     "nan_sum_cols",
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
+    "struct_data_type",
     "yield_struct_series_elements",
 ]

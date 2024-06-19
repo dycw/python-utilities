@@ -1,13 +1,20 @@
 import datetime as dt
+import enum
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from enum import auto
 from math import isfinite, nan
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 from polars import (
+    Boolean,
     DataFrame,
+    Date,
+    Datetime,
     Expr,
     Float64,
     Int64,
+    List,
     Series,
     Struct,
     Utf8,
@@ -27,6 +34,7 @@ from utilities.polars import (
     ColumnsToDictError,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
+    StructDataTypeError,
     YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
@@ -43,6 +51,7 @@ from utilities.polars import (
     nan_sum_cols,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
+    struct_data_type,
     yield_struct_series_elements,
 )
 
@@ -492,6 +501,155 @@ class TestSetFirstRowAsColumns:
         check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
+
+
+class TestStructDataType:
+    def test_simple(self) -> None:
+        @dataclass(kw_only=True)
+        class Example:
+            bool_: bool
+            bool_maybe: bool | None = None
+            date: dt.date
+            date_maybe: dt.date | None = None
+            float_: float
+            float_maybe: float | None = None
+            int_: int
+            int_maybe: int | None = None
+            str_: str
+            str_maybe: str | None = None
+
+        result = struct_data_type(Example)
+        expected = Struct(
+            {
+                "bool_": Boolean,
+                "bool_maybe": Boolean,
+                "date": Date,
+                "date_maybe": Date,
+                "float_": Float64,
+                "float_maybe": Float64,
+                "int_": Int64,
+                "int_maybe": Int64,
+                "str_": Utf8,
+                "str_maybe": Utf8,
+            }
+        )
+        assert result == expected
+
+    def test_datetime(self) -> None:
+        @dataclass
+        class Example:
+            field: dt.datetime
+
+        result = struct_data_type(Example, time_zone=UTC)
+        expected = Struct({"field": Datetime(time_zone=UTC)})
+        assert result == expected
+
+    def test_enum(self) -> None:
+        class Truth(enum.Enum):
+            true = auto()
+            false = auto()
+
+        @dataclass
+        class Example:
+            field: Truth
+
+        result = struct_data_type(Example)
+        expected = Struct({"field": Utf8})
+        assert result == expected
+
+    def test_literal(self) -> None:
+        LowOrHigh = Literal["low", "high"]  # noqa: N806
+
+        @dataclass
+        class Example:
+            field: LowOrHigh  # type: ignore[]
+
+        result = struct_data_type(Example)
+        expected = Struct({"field": Utf8})
+        assert result == expected
+
+    def test_containers(self) -> None:
+        @dataclass
+        class Example:
+            frozenset_: frozenset[int]
+            list_: list[int]
+            set_: set[int]
+
+        result = struct_data_type(Example, time_zone=UTC)
+        expected = Struct(
+            {"frozenset_": List(Int64), "list_": List(Int64), "set_": List(Int64)}
+        )
+        assert result == expected
+
+    def test_list_of_struct(self) -> None:
+        @dataclass
+        class Inner:
+            field: int
+
+        @dataclass
+        class Outer:
+            inner: list[Inner]
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": List(Struct({"field": Int64}))})
+        assert result == expected
+
+    def test_struct(self) -> None:
+        @dataclass
+        class Inner:
+            field: int
+
+        @dataclass
+        class Outer:
+            inner: Inner
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": Struct({"field": Int64})})
+        assert result == expected
+
+    def test_struct_of_list(self) -> None:
+        @dataclass
+        class Inner:
+            field: list[int]
+
+        @dataclass
+        class Outer:
+            inner: Inner
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": Struct({"field": List(Int64)})})
+        assert result == expected
+
+    def test_not_a_dataclass_error(self) -> None:
+        with raises(StructDataTypeError, match="Object must be a dataclass; got None"):
+            _ = struct_data_type(cast(Any, None))
+
+    def test_missing_time_zone_error(self) -> None:
+        @dataclass
+        class Example:
+            field: dt.datetime
+
+        with raises(StructDataTypeError, match="Time-zone must be given"):
+            _ = struct_data_type(Example)
+
+    def test_non_string_literal_error(self) -> None:
+        @dataclass
+        class Example:
+            field: Literal[1, 2, 3]
+
+        with raises(
+            StructDataTypeError,
+            match=r"Literal arguments must be strings; got \(1, 2, 3\)",
+        ):
+            _ = struct_data_type(Example)
+
+    def test_missing_type_error(self) -> None:
+        @dataclass
+        class Example:
+            field: None
+
+        with raises(StructDataTypeError, match="Unsupported type: <class 'NoneType'>"):
+            _ = struct_data_type(Example)
 
 
 class TestYieldStructSeriesElements:
