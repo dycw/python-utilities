@@ -28,7 +28,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-psutil==5.9.8
+psutil==6.0.0
     # via dycw-utilities (pyproject.toml)
 pytest==8.2.2
     # via

@@ -305,7 +305,7 @@ protobuf==4.25.3
     # via
     #   streamlit
     #   vegafusion
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   memory-profiler
