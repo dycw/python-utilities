@@ -1,18 +1,25 @@
+import datetime as dt
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from functools import reduce
 from itertools import chain
-from typing import Any, cast, overload
+from typing import Any, cast, get_args, get_origin, get_type_hints, overload
 
 from polars import (
     Boolean,
     DataFrame,
+    Date,
+    Datetime,
     Expr,
+    Float64,
+    Int64,
+    List,
     PolarsDataType,
     Series,
     Struct,
+    Utf8,
     col,
     lit,
     when,
@@ -26,8 +33,10 @@ from polars.type_aliases import (
     JoinValidation,
     SchemaDict,
 )
+from pyarrow import DataType
 from typing_extensions import Never, assert_never, override
 
+from utilities.dataclasses import Dataclass, is_dataclass_class
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -392,6 +401,8 @@ def join(
     how: JoinStrategy = "inner",
     validate: JoinValidation = "m:m",
 ) -> DataFrame:
+    """Join a set of DataFrames."""
+
     def inner(left: DataFrame, right: DataFrame, /) -> DataFrame:
         return left.join(right, on=on, how=how, validate=validate)
 
@@ -452,6 +463,47 @@ def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
 
 
 class SetFirstRowAsColumnsError(Exception): ...
+
+
+def struct_data_type(
+    cls: type[Dataclass], /, *, time_zone: str | dt.timezone | None = None
+) -> Struct:
+    """Construct the Struct data type for a dataclass."""
+    if not is_dataclass_class(cls):
+        raise ValueError
+
+    anns = get_type_hints(cls)
+    data_types = {
+        k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
+    }
+    return Struct(data_types)
+
+    return anns
+    return anns
+    return cls.__annotations__
+    return fields(cls)
+
+
+def _struct_data_type_one(
+    cls: Any, /, *, time_zone: str | dt.timezone | None = None
+) -> DataType:
+    if cls is dt.date:
+        return Date
+    if cls is dt.datetime:
+        if time_zone is None:
+            raise ValueError
+        return Datetime(time_zone=time_zone)
+    if cls is float:
+        return Float64
+    if cls is int:
+        return Int64
+    if cls is str:
+        return Utf8
+    if is_dataclass_class(cls):
+        return struct_data_type(cls, time_zone=time_zone)
+    if get_origin(cls) is list:
+        return List(_struct_data_type_one(one(get_args(cls)), time_zone=time_zone))
+    raise NotImplementedError(cls)
 
 
 def yield_struct_series_elements(

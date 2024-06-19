@@ -1,13 +1,17 @@
 import datetime as dt
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from math import isfinite, nan
 from typing import Any, ClassVar, Literal
 
 from polars import (
     DataFrame,
+    Date,
+    Datetime,
     Expr,
     Float64,
     Int64,
+    List,
     Series,
     Struct,
     Utf8,
@@ -43,6 +47,7 @@ from utilities.polars import (
     nan_sum_cols,
     redirect_empty_polars_concat,
     set_first_row_as_columns,
+    struct_data_type,
     yield_struct_series_elements,
 )
 
@@ -492,6 +497,79 @@ class TestSetFirstRowAsColumns:
         check_polars_dataframe(df, height=3, schema_list={"column_0": Utf8})
         result = set_first_row_as_columns(df)
         check_polars_dataframe(result, height=2, schema_list={"foo": Utf8})
+
+
+class TestStructDataType:
+    def test_simple(self) -> None:
+        @dataclass
+        class Example:
+            date: dt.date
+            float_: float
+            int_: int
+            str_: str
+
+        result = struct_data_type(Example)
+        expected = Struct(
+            {"date": Date, "float_": Float64, "int_": Int64, "str_": Utf8}
+        )
+        assert result == expected
+
+    def test_datetime(self) -> None:
+        @dataclass
+        class Example:
+            datetime: dt.datetime
+
+        result = struct_data_type(Example, time_zone=UTC)
+        expected = Struct({"datetime": Datetime(time_zone=UTC)})
+        assert result == expected
+
+    def test_list(self) -> None:
+        @dataclass
+        class Example:
+            field: list[int]
+
+        result = struct_data_type(Example, time_zone=UTC)
+        expected = Struct({"field": List(Int64)})
+        assert result == expected
+
+    def test_list_of_struct(self) -> None:
+        @dataclass
+        class Inner:
+            field: int
+
+        @dataclass
+        class Outer:
+            inner: list[Inner]
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": List(Struct({"field": Int64}))})
+        assert result == expected
+
+    def test_struct(self) -> None:
+        @dataclass
+        class Inner:
+            field: int
+
+        @dataclass
+        class Outer:
+            inner: Inner
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": Struct({"field": Int64})})
+        assert result == expected
+
+    def test_struct_of_list(self) -> None:
+        @dataclass
+        class Inner:
+            field: list[int]
+
+        @dataclass
+        class Outer:
+            inner: Inner
+
+        result = struct_data_type(Outer, time_zone=UTC)
+        expected = Struct({"inner": Struct({"field": List(Int64)})})
+        assert result == expected
 
 
 class TestYieldStructSeriesElements:
