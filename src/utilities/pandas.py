@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, reduce
@@ -57,15 +56,6 @@ from utilities.sentinel import Sentinel, sentinel
 from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import (
-        Callable,
-        Hashable,
-        Iterable,
-        Iterator,
-        Mapping,
-        Sequence,
-    )
-
     IndexA: TypeAlias = Index[Any]  # type: ignore[]
     IndexB: TypeAlias = Index[bool]  # type: ignore[]
     IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore[]

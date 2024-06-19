@@ -1,8 +1,7 @@
-from __future__ import annotations
-
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import polars as pl
 from altair import (
@@ -10,6 +9,7 @@ from altair import (
     Chart,
     Color,
     HConcatChart,
+    LayerChart,
     Tooltip,
     VConcatChart,
     X,
@@ -22,16 +22,10 @@ from altair import (
     vconcat,
 )
 from altair.utils.schemapi import Undefined
-from polars import col, int_range
+from polars import DataFrame, col, int_range
 
 from utilities.more_itertools import always_iterable
 from utilities.types import ensure_number
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from altair import LayerChart
-    from polars import DataFrame
 
 _HEIGHT = 400
 _WIDTH = 800

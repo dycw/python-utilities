@@ -1,8 +1,8 @@
-from __future__ import annotations
-
+import datetime as dt
+from collections.abc import Iterable
 from enum import Enum, auto
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
 from freezegun import freeze_time
 from hypothesis import assume, given
@@ -20,6 +20,7 @@ from hypothesis.strategies import (
 )
 from luigi import BoolParameter, Parameter, Task
 from pytest import mark, param
+from semver import VersionInfo
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 from typing_extensions import override
@@ -58,14 +59,7 @@ from utilities.luigi import (
 )
 from utilities.pathlib import ensure_path
 from utilities.sqlalchemy import insert_items
-
-if TYPE_CHECKING:
-    import datetime as dt
-    from collections.abc import Iterable
-
-    from semver import VersionInfo
-
-    from utilities.types import IterableStrs
+from utilities.types import IterableStrs
 
 
 class TestAwaitTask:

@@ -1,17 +1,13 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial as _partial
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any, TypeVar
 
 from typing_extensions import override
 
 from utilities.iterables import one
 from utilities.text import ensure_str
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 _T = TypeVar("_T")
 

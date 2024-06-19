@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from utilities.sys import VERSION_MAJOR_MINOR, is_pytest
 
 

@@ -1,16 +1,15 @@
-from __future__ import annotations
-
 import datetime as dt
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
 from numpy import array, datetime64, isin, ndarray, prod
 from numpy.typing import ArrayLike, NDArray
 from typing_extensions import override
 from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
+from zarr.core import Attributes
 
 from utilities.atomicwrites import writer
 from utilities.datetime import ensure_date, ensure_datetime
@@ -34,9 +33,6 @@ from utilities.pathlib import ensure_path
 from utilities.re import extract_group
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import PathLike, get_class_name, is_sized_not_str
-
-if TYPE_CHECKING:
-    from zarr.core import Attributes
 
 IselIndexer = int | slice | Sequence[int] | NDArrayB1 | NDArrayI1
 

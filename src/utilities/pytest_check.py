@@ -1,13 +1,8 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from contextlib import contextmanager
 from os import getenv
-from typing import TYPE_CHECKING
 
 from pytest_check import check as _check
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 @contextmanager

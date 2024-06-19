@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 import datetime as dt
 import re
+from collections.abc import Callable
 from re import DOTALL
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import Any, Literal, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import none
@@ -65,9 +64,6 @@ from utilities.pandas import (
     to_numpy,
     union_indexes,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class TestAssignBeforeOrAfter:

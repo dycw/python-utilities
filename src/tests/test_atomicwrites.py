@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 from contextlib import suppress
+from pathlib import Path
 from re import escape
-from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
 from utilities.atomicwrites import DirectoryExistsError, WriterError, writer
 from utilities.pathlib import ensure_path
 from utilities.platform import IS_WINDOWS
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestWriter:

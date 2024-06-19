@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable
 from functools import partial, wraps
 from inspect import signature
 from operator import itemgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 from utilities.cachetools import cache
 from utilities.datetime import duration_to_timedelta, get_now
@@ -14,9 +13,6 @@ from utilities.hashlib import md5_hash
 from utilities.pathlib import ensure_path, get_modified_time
 from utilities.pickle import read_pickle, write_pickle
 from utilities.types import Duration, PathLike, ensure_class
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

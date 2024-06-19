@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from collections.abc import Iterable, Iterator
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
@@ -14,9 +12,6 @@ from utilities.more_itertools import (
     yield_splits,
 )
 from utilities.text import strip_and_dedent
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
 
 
 class TestAlwaysIterable:

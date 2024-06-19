@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from logging import getLogger
 
 from pytest import mark, param, raises

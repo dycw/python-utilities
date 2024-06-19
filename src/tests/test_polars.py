@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable, Mapping
 from math import isfinite, nan
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 from polars import (
     DataFrame,
@@ -19,6 +18,7 @@ from polars import (
     lit,
 )
 from polars.testing import assert_frame_equal, assert_series_equal
+from polars.type_aliases import IntoExprColumn, PolarsDataType, SchemaDict
 from pytest import mark, param, raises
 
 from utilities.datetime import UTC
@@ -45,11 +45,6 @@ from utilities.polars import (
     set_first_row_as_columns,
     yield_struct_series_elements,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
-
-    from polars.type_aliases import IntoExprColumn, PolarsDataType, SchemaDict
 
 
 class TestCeilDatetime:

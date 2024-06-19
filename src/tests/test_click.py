@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 import datetime as dt
 import enum
+from collections.abc import Callable, Iterable
 from enum import auto
+from pathlib import Path
 from re import search
 from string import ascii_lowercase
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
@@ -55,12 +55,7 @@ from utilities.hypothesis import sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-    from pathlib import Path
-
-    from utilities.types import SequenceStrs
+from utilities.types import SequenceStrs
 
 
 class _Truth(enum.Enum):

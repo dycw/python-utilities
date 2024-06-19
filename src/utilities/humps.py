@@ -1,8 +1,6 @@
-from __future__ import annotations
-
+from collections.abc import Hashable, Mapping
 from dataclasses import dataclass
 from re import search
-from typing import TYPE_CHECKING
 
 from humps import decamelize
 from typing_extensions import override
@@ -13,11 +11,7 @@ from utilities.iterables import (
     check_bijection,
     check_duplicates,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping
-
-    from utilities.types import IterableStrs
+from utilities.types import IterableStrs
 
 
 def snake_case(text: str, /) -> str:

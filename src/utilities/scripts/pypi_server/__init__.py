@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -11,9 +9,7 @@ from utilities.pathlib import ensure_path
 from utilities.scripts.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
-
-if TYPE_CHECKING:
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 _CONFIG = Config()
 

@@ -1,13 +1,14 @@
-from __future__ import annotations
-
 import datetime as dt
 import enum
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import MISSING, dataclass, field
 from itertools import starmap
 from operator import attrgetter, itemgetter
+from pathlib import Path
 from re import search
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import Any, TypeVar, cast
 
+from click import ParamType
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
 from typed_settings.cli_click import ClickHandler
@@ -21,6 +22,7 @@ from typed_settings.cli_utils import (
 )
 from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 from typed_settings.converters import TSConverter
+from typed_settings.loaders import Loader
 from typed_settings.types import AUTO, _Auto
 from typing_extensions import override
 
@@ -37,13 +39,6 @@ from utilities.datetime import (
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.pathlib import ensure_path
 from utilities.types import PathLike, ensure_class
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping
-    from pathlib import Path
-
-    from click import ParamType
-    from typed_settings.loaders import Loader
 
 _T = TypeVar("_T")
 

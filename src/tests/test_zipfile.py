@@ -1,8 +1,6 @@
-from __future__ import annotations
-
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from string import ascii_letters
-from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
 from hypothesis import given
@@ -12,9 +10,6 @@ from utilities.hypothesis import temp_paths
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.zipfile import yield_zip_file_contents
-
-if TYPE_CHECKING:
-    from collections.abc import Set as AbstractSet
 
 
 class TestYieldZipFileContents:

@@ -1,16 +1,11 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, unique
 from platform import system
-from typing import TYPE_CHECKING
 
 from typing_extensions import assert_never, override
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import IterableStrs
+from utilities.types import IterableStrs
 
 
 @unique

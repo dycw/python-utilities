@@ -1,17 +1,12 @@
-from __future__ import annotations
-
+from collections.abc import Hashable, Mapping
 from dataclasses import asdict
-from typing import TYPE_CHECKING, Annotated, Any, cast
+from typing import Annotated, Any, cast
 
 from numpy import bool_, float64, int64, object_
 from xarray import DataArray
 
+from utilities.dataclasses import Dataclass
 from utilities.numpy import datetime64ns
-
-if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping
-
-    from utilities.dataclasses import Dataclass
 
 # annotations - dtype
 DataArrayB = Annotated[DataArray, bool_]

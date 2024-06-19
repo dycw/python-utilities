@@ -1,18 +1,14 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass
 from numbers import Number
 from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from typing_extensions import Self, override
 
 from utilities.types import EnsureClassError, ensure_class, get_class_name
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class Timer:

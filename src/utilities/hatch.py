@@ -1,13 +1,7 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from utilities.pathlib import PWD
 from utilities.re import extract_groups
 from utilities.subprocess import get_shell_output
-
-if TYPE_CHECKING:
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 
 def get_hatch_version(

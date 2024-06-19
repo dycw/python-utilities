@@ -1,19 +1,13 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from shutil import move, rmtree
-from typing import TYPE_CHECKING
 
 from atomicwrites import move_atomic, replace_atomic
 
 from utilities.pathlib import ensure_path
 from utilities.tempfile import TemporaryDirectory
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 
 class DirectoryExistsError(Exception): ...

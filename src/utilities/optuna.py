@@ -1,14 +1,9 @@
-from __future__ import annotations
+from collections.abc import Callable
+from typing import TypeVar
 
-from typing import TYPE_CHECKING, TypeVar
+from optuna import Study, Trial
 
 from utilities.dataclasses import Dataclass
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from optuna import Study, Trial
-
 
 _T = TypeVar("_T", bound=Dataclass)
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pytest import mark, param, raises
 
 from utilities.fastapi import APIRouter

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
@@ -7,12 +5,15 @@ from contextlib import suppress
 from enum import Enum
 from pathlib import Path
 from re import search
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
+from typing import Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
 from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
+from luigi.interface import LuigiRunResult
 from luigi.task import flatten
+from semver import Version
+from sqlalchemy import Engine, Select
 from sqlalchemy.exc import DatabaseError
 from typing_extensions import override
 
@@ -34,17 +35,10 @@ from utilities.datetime import (
 )
 from utilities.enum import ensure_enum, parse_enum
 from utilities.iterables import one
+from utilities.logging import LogLevel
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str, join_strs, split_str
-
-if TYPE_CHECKING:
-    from luigi.interface import LuigiRunResult
-    from semver import Version
-    from sqlalchemy import Engine, Select
-
-    from utilities.logging import LogLevel
-    from utilities.types import IterableStrs, PathLike
-
+from utilities.types import IterableStrs, PathLike
 
 # parameters
 

@@ -507,6 +507,7 @@ unfixable = [
   "F601",  # multi-value-repeated-key-literal
   "PIE794",  # duplicate-class-field-definition
   "PLR5501",  # collapsible-else-if
+  "RET502", # unnecessary-assign
   "SIM114",  # if-with-same-arms
 ]
 
@@ -521,6 +522,3 @@ extend-immutable-calls = ["utilities.typed_settings.click_field"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
-
-[tool.ruff.lint.isort]
-required-imports = ["from __future__ import annotations"]

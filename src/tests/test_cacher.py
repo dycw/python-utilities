@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from operator import itemgetter
+from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING
 
 from pytest import raises
 
@@ -11,9 +9,6 @@ from utilities.cacher import cache_to_disk
 from utilities.functions import identity
 from utilities.iterables import one
 from utilities.types import EnsureClassError
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestCacheToDisk:
