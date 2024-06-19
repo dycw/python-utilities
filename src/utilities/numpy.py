@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
+from typing import Annotated, Any, Literal, cast, overload
 
 import numpy as np
 from numpy import (
@@ -45,11 +44,7 @@ from typing_extensions import override
 from utilities.datetime import EPOCH_UTC, UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
-    from utilities.math import FloatFinPos
+from utilities.math import FloatFinPos
 
 # RNG
 DEFAULT_RNG = default_rng()

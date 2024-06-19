@@ -1,15 +1,9 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-from optuna import create_study
+from optuna import Trial, create_study
 from pytest import approx
 
 from utilities.optuna import get_best_params, make_objective, suggest_bool
-
-if TYPE_CHECKING:
-    from optuna import Trial
 
 
 class TestGetBestParams:

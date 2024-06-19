@@ -1,14 +1,10 @@
-from __future__ import annotations
-
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from memory_profiler import memory_usage
 from typing_extensions import ParamSpec
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")

@@ -1,7 +1,6 @@
-from __future__ import annotations
-
+from collections.abc import Callable
 from operator import eq
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 import sqlalchemy
@@ -32,6 +31,7 @@ from polars import (
     PolarsDataType,
     Utf8,
 )
+from polars.datatypes import DataTypeClass
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -103,11 +103,6 @@ from utilities.sqlalchemy_polars import (
     insert_dataframe,
     select_to_dataframe,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from polars.datatypes import DataTypeClass
 
 
 class TestInsertDataFrame:

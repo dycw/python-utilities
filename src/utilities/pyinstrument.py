@@ -1,17 +1,11 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
 from utilities.datetime import get_now, local_timezone
 from utilities.pathlib import PWD, ensure_path
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 
 @contextmanager

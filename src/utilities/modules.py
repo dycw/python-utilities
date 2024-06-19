@@ -1,12 +1,8 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Iterator
 from importlib import import_module
 from pkgutil import iter_modules
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
-    from types import ModuleType
+from types import ModuleType
+from typing import Any
 
 
 def yield_modules(

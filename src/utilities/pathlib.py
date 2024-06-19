@@ -1,19 +1,13 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from os import chdir
 from os import walk as _walk
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from utilities.datetime import UTC
 from utilities.re import extract_group
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
-
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 PWD = Path.cwd()
 

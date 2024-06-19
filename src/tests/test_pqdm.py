@@ -1,17 +1,13 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Mapping
 from functools import partial
 from operator import neg, pow
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from pytest import mark, param
 
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import get_class_name
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
 
 
 class TestGetDesc:

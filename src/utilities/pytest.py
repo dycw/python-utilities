@@ -1,8 +1,8 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Iterable
 from functools import cache, wraps
 from os import environ
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 
 from utilities.datetime import UTC, duration_to_float, get_now
 from utilities.hashlib import md5_hash
@@ -15,13 +15,7 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import is_function_async
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-    from pathlib import Path
-
-    from utilities.types import Duration, IterableStrs, PathLike
+from utilities.types import Duration, IterableStrs, PathLike, is_function_async
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config

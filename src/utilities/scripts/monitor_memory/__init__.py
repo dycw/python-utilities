@@ -1,13 +1,12 @@
-from __future__ import annotations
-
 import dataclasses
 import datetime as dt
+from collections.abc import Iterator
 from contextlib import contextmanager
 from csv import DictWriter
 from dataclasses import fields
-from pathlib import Path  # noqa: TCH003
+from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from click import command
 from loguru import logger
@@ -20,9 +19,6 @@ from utilities.platform import SYSTEM, System
 from utilities.scripts.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 _CONFIG = Config()
 

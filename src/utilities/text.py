@@ -1,16 +1,12 @@
-from __future__ import annotations
-
+from collections.abc import Iterable
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from typing_extensions import override
 
 from utilities.sentinel import sentinel
 from utilities.types import EnsureClassError, ensure_class, get_class_name
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
 
 
 @overload

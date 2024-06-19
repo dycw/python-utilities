@@ -1,7 +1,6 @@
-from __future__ import annotations
-
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from, sets
@@ -50,9 +49,6 @@ from utilities.iterables import (
     take,
     transpose,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
 
 
 class TestCheckBijection:

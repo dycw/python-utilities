@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from pathlib import Path  # noqa: TCH003
+from pathlib import Path
 
 from utilities.pathlib import ensure_path
 from utilities.typed_settings import click_field

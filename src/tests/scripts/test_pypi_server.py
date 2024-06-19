@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from click.testing import CliRunner
 from hypothesis import given
@@ -10,9 +8,6 @@ from pytest import raises
 from utilities.hypothesis import temp_paths, text_ascii
 from utilities.pathlib import ensure_path, temp_cwd
 from utilities.scripts.pypi_server import _check_password_file, _get_args, main
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestPypiServer:

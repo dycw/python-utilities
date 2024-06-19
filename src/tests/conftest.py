@@ -1,16 +1,12 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Iterator
 from os import environ, getenv
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from _pytest.fixtures import SubRequest
 from pytest import LogCaptureFixture, fixture, mark
+from sqlalchemy import Engine, Table
 
 from utilities.timer import Timer
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
-
-    from _pytest.fixtures import SubRequest
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
@@ -65,8 +61,7 @@ else:
 
 
 try:
-    if TYPE_CHECKING:
-        from sqlalchemy import Engine, Table
+    pass
 except ModuleNotFoundError:
     pass
 else:

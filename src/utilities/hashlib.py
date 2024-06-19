@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from hashlib import md5
 from pickle import dumps
 from typing import Any

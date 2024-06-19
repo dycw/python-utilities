@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from hypothesis import given
 from pytest import mark, param, raises
 

@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 from re import DOTALL
-from typing import TYPE_CHECKING
 
 from pytest import mark, param, raises
 
@@ -16,9 +13,7 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-
-if TYPE_CHECKING:
-    from utilities.types import IterableStrs
+from utilities.types import IterableStrs
 
 
 class TestExtractGroup:

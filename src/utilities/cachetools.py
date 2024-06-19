@@ -1,16 +1,12 @@
-from __future__ import annotations
-
 from collections.abc import Callable
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from cachetools.func import ttl_cache
 
 from utilities.datetime import duration_to_float
 from utilities.functions import identity
-
-if TYPE_CHECKING:
-    from utilities.types import Duration
+from utilities.types import Duration
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 

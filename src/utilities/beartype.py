@@ -1,18 +1,11 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import Any, cast, overload
 
 from beartype import BeartypeConf, BeartypeStrategy, beartype
+from beartype._data.hint.datahinttyping import BeartypeableT, BeartypeConfedDecorator
 
 from utilities.ipython import is_ipython
 from utilities.jupyter import is_jupyter
 from utilities.sys import is_pytest
-
-if TYPE_CHECKING:
-    from beartype._data.hint.datahinttyping import (
-        BeartypeableT,
-        BeartypeConfedDecorator,
-    )
 
 _STRATEGY = (
     BeartypeStrategy.O1

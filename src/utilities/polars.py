@@ -1,10 +1,10 @@
-from __future__ import annotations
-
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import Any, cast, overload
 
 from polars import (
     Boolean,
@@ -40,12 +40,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.math import CheckIntegerError, check_integer
-
-if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-    from collections.abc import Set as AbstractSet
-
-    from utilities.types import IterableStrs
+from utilities.types import IterableStrs
 
 
 @overload

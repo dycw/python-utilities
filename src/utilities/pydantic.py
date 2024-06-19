@@ -1,17 +1,12 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeVar
+from pathlib import Path
+from typing import TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import override
 
 from utilities.pathlib import ensure_path
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from utilities.types import PathLike
+from utilities.types import PathLike
 
 _BM = TypeVar("_BM", bound=BaseModel)
 

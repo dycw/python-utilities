@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime as dt
 from re import escape
 from types import NoneType

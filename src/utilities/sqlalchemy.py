@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import datetime as dt
 import enum
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
@@ -10,7 +9,7 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast
+from typing import Any, Literal, TypeGuard, cast
 
 import sqlalchemy
 from sqlalchemy import (
@@ -48,6 +47,7 @@ from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
+from sqlalchemy.sql.base import ReadOnlyColumnCollection
 from sqlalchemy.sql.functions import now
 from sqlalchemy.sql.schema import ColumnElementColumnDefault
 from typing_extensions import assert_never, override
@@ -62,15 +62,9 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
+from utilities.math import FloatFinNonNeg, IntNonNeg
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
-
-if TYPE_CHECKING:
-    import datetime as dt
-
-    from sqlalchemy.sql.base import ReadOnlyColumnCollection
-
-    from utilities.math import FloatFinNonNeg, IntNonNeg
 
 CHUNK_SIZE_FRAC = 0.95
 

@@ -1,11 +1,12 @@
-from __future__ import annotations
-
+import datetime as dt
 import enum
 import pathlib
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 import click
 from click import Context, Parameter, ParamType, option
+from sqlalchemy import Engine as _Engine
 from typing_extensions import override
 
 from utilities.datetime import (
@@ -23,13 +24,6 @@ from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import sentinel
 from utilities.text import split_str
-
-if TYPE_CHECKING:
-    import datetime as dt
-    from collections.abc import Sequence
-
-    from sqlalchemy import Engine as _Engine
-
 
 FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
 DirPath = click.Path(file_okay=False, dir_okay=True, path_type=pathlib.Path)

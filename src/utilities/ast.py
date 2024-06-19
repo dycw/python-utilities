@@ -1,10 +1,6 @@
-from __future__ import annotations
-
 from ast import Assign, AugAssign, Constant, List, Name, Try, expr, parse
-from typing import TYPE_CHECKING, cast
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
+from collections.abc import Iterator
+from typing import cast
 
 
 def yield_dunder_all(text: str, /) -> Iterator[list[str]]:

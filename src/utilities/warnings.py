@@ -1,11 +1,7 @@
-from __future__ import annotations
-
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import TYPE_CHECKING, Literal, TypedDict, cast
+from typing import Literal, TypedDict, cast
 from warnings import catch_warnings, filterwarnings
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
 
 
 @contextmanager
