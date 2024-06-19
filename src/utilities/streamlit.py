@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hmac import compare_digest
-from typing import TYPE_CHECKING, Literal, NoReturn
+from typing import TYPE_CHECKING, Literal
 
 from streamlit import (
     button,
@@ -14,7 +14,6 @@ from streamlit import (
     session_state,
     text_input,
 )
-from streamlit import stop as _stop
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -36,7 +35,7 @@ def centered_button(
     disabled: bool = False,
     use_container_width: bool = False,
 ) -> bool:
-    """A centered button."""
+    """Create a centered button."""
     style = r"<style>.row-widget.stButton {text-align: center;}</style>"
     _ = markdown(style, unsafe_allow_html=True)
     with empty():
@@ -66,7 +65,7 @@ def ensure_logged_in(
 ) -> None:
     """Ensure the user is logged in."""
     if not (skip or _check_password(before_form=before_form, after_form=after_form)):
-        _stop()
+        stop()
 
 
 def _check_password(
@@ -74,7 +73,7 @@ def _check_password(
     before_form: Callable[..., None] | None = None,
     after_form: Callable[..., None] | None = None,
 ) -> bool:
-    """Returns `True` if the user had a correct password."""
+    """Return `True` if the user had a correct password."""
     if session_state.get("password_correct", False):
         return True
     if before_form is not None:
@@ -91,7 +90,7 @@ def _check_password(
 
 
 def _password_entered() -> None:
-    """Checks whether a password entered by the user is correct."""
+    """Check whether a password entered by the user is correct."""
     if (session_state[_USERNAME] in secrets["passwords"]) and compare_digest(
         session_state[_PASSWORD], secrets.passwords[session_state[_USERNAME]]
     ):
@@ -102,11 +101,4 @@ def _password_entered() -> None:
         session_state[_PASSWORD_CORRECT] = False
 
 
-def stop() -> NoReturn:
-    """Wrapper around `stop`."""
-    _stop()
-    msg = "Failed to stop the `streamlit` document"
-    raise RuntimeError(msg)
-
-
-__all__ = ["ensure_logged_in", "stop"]
+__all__ = ["ensure_logged_in"]

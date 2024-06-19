@@ -759,7 +759,6 @@ __all__ = [
     "assign_after",
     "assign_before",
     "assign_between",
-    "astype",
     "boolean",
     "category",
     "check_index",

@@ -109,12 +109,12 @@ def throttle(
         root_use = ensure_path(root, validate=validate)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
-        """Decorator to throttle a test function/method."""
+        """Throttle a test function/method."""
         if is_function_async(func):
 
             @wraps(func)
             async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-                """The throttled async test function/method."""
+                """Call the throttled async test function/method."""
                 path, now = _throttle_path_and_now(
                     root_use, duration=duration, validate=validate
                 )
@@ -129,7 +129,7 @@ def throttle(
 
         @wraps(func)
         def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-            """The throttled sync test function/method."""
+            """Call the throttled sync test function/method."""
             path, now = _throttle_path_and_now(
                 root_use, duration=duration, validate=validate
             )
