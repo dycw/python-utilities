@@ -81,7 +81,6 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of iterables are equal."""
-
     left_list, right_list = map(list, [left, right])
     errors: list[tuple[int, Any, Any]] = []
     state: _CheckIterablesEqualState | None

@@ -15,7 +15,6 @@ class _HasName(Protocol):
 
 def check_name(obj: _HasName, name: Any, /) -> None:
     """Check if an object has the required name."""
-
     if obj.name != name:
         raise CheckNameError(obj=obj, name=name)
 

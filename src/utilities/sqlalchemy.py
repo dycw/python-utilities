@@ -506,7 +506,6 @@ def ensure_tables_created(
     engine: Engine, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-
     match dialect := get_dialect(engine):
         case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
@@ -554,7 +553,6 @@ def get_chunk_size(
     scaling: float = 1.0,
 ) -> int:
     """Get the maximum chunk size for an engine."""
-
     dialect = get_dialect(engine_or_conn)
     max_params = dialect.max_params
     return max(floor(chunk_size_frac * max_params / scaling), 1)
@@ -679,7 +677,6 @@ def insert_items(
      - [dict[str, Any], table
      - Model
     """
-
     dialect = get_dialect(engine)
     to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
@@ -764,7 +761,6 @@ def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
 
 def is_mapped_class(obj: type[Any], /) -> bool:
     """Check if an object is a mapped class."""
-
     try:
         _ = class_mapper(cast(Any, obj))
     except (ArgumentError, UnmappedClassError):
@@ -774,7 +770,6 @@ def is_mapped_class(obj: type[Any], /) -> bool:
 
 def is_table_or_mapped_class(obj: Table | type[Any], /) -> bool:
     """Check if an object is a Table or a mapped class."""
-
     return isinstance(obj, Table) or is_mapped_class(obj)
 
 

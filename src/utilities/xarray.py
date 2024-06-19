@@ -61,7 +61,6 @@ def ewma(
     **halflife_kwargs: int,
 ) -> DataArrayF:
     """Compute the EWMA of an array."""
-
     rolling_exp = array.rolling_exp(halflife, window_type="halflife", **halflife_kwargs)
     return array.reduce(
         _ewma_move_exp_helper,

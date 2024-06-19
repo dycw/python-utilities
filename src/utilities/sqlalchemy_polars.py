@@ -229,7 +229,6 @@ def select_to_dataframe(
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
-
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
@@ -329,7 +328,6 @@ class SelectToDataFrameError(Exception): ...
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
     """Apply snake-case to a selectable."""
-
     from utilities.humps import snake_case
 
     alias = sel.alias()

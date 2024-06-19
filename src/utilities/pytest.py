@@ -103,7 +103,6 @@ def throttle(
     validate: bool = False,
 ) -> Any:
     """Throttle a test. On success by default, on try otherwise."""
-
     if root is None:
         root_use = ensure_path(".pytest_cache", "throttle", validate=validate)
     else:
@@ -111,7 +110,6 @@ def throttle(
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Decorator to throttle a test function/method."""
-
         if is_function_async(func):
 
             @wraps(func)

@@ -382,7 +382,6 @@ def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
 
 def is_function_async(obj: Any, /) -> bool:
     """Check if a function is asynchronous."""
-
     if iscoroutinefunction(obj):
         return True
     if isfunction(obj):

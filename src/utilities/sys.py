@@ -7,7 +7,6 @@ VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)
 
 def is_pytest() -> bool:
     """Check if `pytest` is running."""
-
     return "pytest" in modules
 
 

@@ -46,7 +46,6 @@ def cache_to_disk(
     max_duration: Duration | None = None,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Factory for decorators which caches locally using pickles."""
-
     return partial(
         _cache_to_disk,
         root=root,
@@ -76,7 +75,6 @@ def _cache_to_disk(
     max_duration: Duration | None = None,
 ) -> Callable[_P, _R]:
     """Decorator which caches locally using pickles."""
-
     root_use = Path(root, func.__module__, func.__name__)
     sig = signature(func)
     md5_hash_use = cache(

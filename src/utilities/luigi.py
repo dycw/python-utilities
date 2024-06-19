@@ -209,7 +209,6 @@ class TableParameter(Parameter):
     @override
     def serialize(self, x: Any) -> str:
         """Serialize a `Table` or model argument."""
-
         from utilities.sqlalchemy import get_table_name
 
         return get_table_name(x)
@@ -468,7 +467,6 @@ def clone(
 
 def yield_dependencies(task: Task, /, *, recursive: bool = False) -> Iterator[Task]:
     """Yield the upstream dependencies of a task."""
-
     for t in cast(Iterable[Task], flatten(task.requires())):
         yield t
         if recursive:

@@ -20,7 +20,6 @@ class Dataclass(Protocol):
 
 def get_dataclass_class(obj: Dataclass | type[Dataclass], /) -> type[Dataclass]:
     """Get the underlying dataclass, if possible."""
-
     if is_dataclass_class(obj):
         return obj
     if is_dataclass_instance(obj):
@@ -34,13 +33,11 @@ class GetDataClassClassError(Exception): ...
 
 def is_dataclass_class(obj: Any, /) -> TypeGuard[type[Dataclass]]:
     """Check if an object is a dataclass."""
-
     return isinstance(obj, type) and is_dataclass(obj)
 
 
 def is_dataclass_instance(obj: Any, /) -> TypeGuard[Dataclass]:
     """Check if an object is an instance of a dataclass."""
-
     return (not isinstance(obj, type)) and is_dataclass(obj)
 
 
@@ -56,7 +53,6 @@ def replace_non_sentinel(obj: _T, **kwargs: Any) -> _T:
 
 def yield_field_names(obj: Dataclass | type[Dataclass], /) -> Iterator[str]:
     """Yield the field names of a dataclass."""
-
     for field in fields(obj):
         yield field.name
 

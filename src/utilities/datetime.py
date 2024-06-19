@@ -119,7 +119,6 @@ NOW_TOKYO = get_now_tokyo()
 
 def get_time_zone_name(time_zone: dt.tzinfo, /) -> str:
     """Get the name of a time zone."""
-
     if time_zone is UTC:
         return "UTC"
     if isinstance(time_zone, ZoneInfo):

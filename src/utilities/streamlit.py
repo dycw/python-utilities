@@ -65,7 +65,6 @@ def ensure_logged_in(
     after_form: Callable[..., None] | None = None,
 ) -> None:
     """Ensure the user is logged in."""
-
     if not (skip or _check_password(before_form=before_form, after_form=after_form)):
         _stop()
 
@@ -105,7 +104,6 @@ def _password_entered() -> None:
 
 def stop() -> NoReturn:
     """Wrapper around `stop`."""
-
     _stop()
     msg = "Failed to stop the `streamlit` document"
     raise RuntimeError(msg)
