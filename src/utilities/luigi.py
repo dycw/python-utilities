@@ -349,7 +349,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[]
+    def output(self) -> "_ExternalTaskDummyTarget":  # type: ignore[]
         return _ExternalTaskDummyTarget(self)
 
 
