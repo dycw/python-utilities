@@ -113,13 +113,11 @@ _Index = TypeVar("_Index", bound=Index)
 
 def assign_after(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
     """Assign a series after an existing column."""
-
     return _assign_before_or_after(df, key, value, le, gt)
 
 
 def assign_before(df: DataFrame, key: Hashable, value: SeriesA, /) -> DataFrame:
     """Assign a series before an existing column."""
-
     return _assign_before_or_after(df, key, value, lt, ge)
 
 
@@ -195,11 +193,6 @@ class AssignBetweenIndicesError(AssignBetweenError):
     @override
     def __str__(self) -> str:
         return f"DataFrame must specify consecutive indices; got {self.index_left} and {self.index_right}"
-
-
-def astype(df: DataFrame, dtype: Any, /) -> DataFrame:
-    """Wrapper around `.astype`."""
-    return cast(Any, df).astype(dtype)
 
 
 def check_index(
@@ -766,7 +759,6 @@ __all__ = [
     "assign_after",
     "assign_before",
     "assign_between",
-    "astype",
     "boolean",
     "category",
     "check_index",

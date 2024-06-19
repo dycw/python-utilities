@@ -382,7 +382,6 @@ def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
 
 def is_function_async(obj: Any, /) -> bool:
     """Check if a function is asynchronous."""
-
     if iscoroutinefunction(obj):
         return True
     if isfunction(obj):
@@ -409,7 +408,7 @@ def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
 
 
 def issubclass_except_bool_int(x: type[Any], y: type[Any], /) -> bool:
-    """Checks for the subclass relation, except bool < int."""
+    """Check for the subclass relation, except bool < int."""
     return issubclass(x, y) and not (issubclass(x, bool) and issubclass(int, y))
 
 

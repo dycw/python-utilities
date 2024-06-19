@@ -176,7 +176,6 @@ def dates_pd(
     max_value: MaybeSearchStrategy[dt.date] | None = None,
 ) -> dt.date:
     """Strategy for generating dates which can become Timestamps."""
-
     from utilities.pandas import TIMESTAMP_MAX_AS_DATE, TIMESTAMP_MIN_AS_DATE
 
     min_value_use = TIMESTAMP_MIN_AS_DATE if min_value is None else min_value
@@ -442,7 +441,6 @@ def int_arrays(
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayI:
     """Strategy for generating arrays of ints."""
-
     from hypothesis.extra.numpy import array_shapes, arrays
     from numpy import iinfo, int64
 
@@ -498,7 +496,6 @@ def int_indexes(
     sort: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[IndexI]:
     """Strategy for generating integer Indexes."""
-
     from numpy import int64
 
     return indexes(
@@ -512,7 +509,6 @@ def int32s(
     max_value: MaybeSearchStrategy[int | None] = None,
 ) -> SearchStrategy[int]:
     """Strategy for generating int32s."""
-
     from numpy import int32
 
     return _fixed_width_ints(int32, min_value=min_value, max_value=max_value)
@@ -640,7 +636,7 @@ def setup_hypothesis_profiles(
 def settings_with_reduced_examples(
     frac: FloatFinPos = 0.1, /, **kwargs: Any
 ) -> settings:
-    """A `settings` decorator for fewer max examples."""
+    """Set a test to fewer max examples."""
     curr = settings()
     max_examples = max(round(frac * curr.max_examples), 1)
     return settings(max_examples=max_examples, **kwargs)
@@ -671,7 +667,6 @@ def sqlite_engines(
     _draw: DrawFn, /, *, metadata: MetaData | None = None, base: Any = None
 ) -> Engine:
     """Strategy for generating SQLite engines."""
-
     from utilities.sqlalchemy import create_engine
 
     temp_path = _draw(temp_paths())
@@ -902,7 +897,6 @@ def versions(  # noqa: PLR0912
     max_version: MaybeSearchStrategy[Version | None] = None,
 ) -> Version:
     """Strategy for generating `Version`s."""
-
     from semver import Version
 
     draw = lift_draw(_draw)

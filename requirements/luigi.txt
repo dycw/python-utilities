@@ -58,7 +58,7 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.30
+sqlalchemy==2.0.31
     # via dycw-utilities (pyproject.toml)
 tenacity==8.4.1
     # via luigi

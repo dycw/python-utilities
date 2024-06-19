@@ -15,7 +15,6 @@ class _HasName(Protocol):
 
 def check_name(obj: _HasName, name: Any, /) -> None:
     """Check if an object has the required name."""
-
     if obj.name != name:
         raise CheckNameError(obj=obj, name=name)
 
@@ -31,7 +30,7 @@ class CheckNameError(Exception):
 
 
 def identity(obj: _T, /) -> _T:
-    """The identity function."""
+    """Return the object itself."""
     return obj
 
 

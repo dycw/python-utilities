@@ -16,7 +16,6 @@ def yield_modules(
 
     Optionally, recurse into sub-packages.
     """
-
     try:
         path = module.__path__
     except AttributeError:

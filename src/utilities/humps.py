@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 def snake_case(text: str, /) -> str:
     """Convert text into snake case."""
-
     text = decamelize(text)
     while search("__", text):
         text = text.replace("__", "_")
@@ -31,7 +30,6 @@ def snake_case(text: str, /) -> str:
 
 def snake_case_mappings(text: IterableStrs, /) -> dict[str, str]:
     """Map a set of text into their snake cases."""
-
     keys = list(text)
     try:
         check_duplicates(keys)

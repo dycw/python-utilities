@@ -95,7 +95,6 @@ def yield_splits(
     freq: int | None = None,
 ) -> Iterator[Split[Sequence[_T]]]:
     """Yield the splits of an iterable."""
-
     it1 = _yield_splits1(iterable, head + tail)
     it2 = _yield_splits2(it1, head, tail, min_frac=min_frac)
     it3 = _yield_splits3(it2)

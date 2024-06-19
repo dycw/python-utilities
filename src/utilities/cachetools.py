@@ -19,7 +19,6 @@ def cache(
     *, max_size: int | None = None, max_duration: Duration | None = None
 ) -> Callable[[_F], _F]:
     """Decorate a function with `max_size` and/or `ttl` settings."""
-
     if max_duration is not None:
         return ttl_cache(maxsize=max_size, ttl=duration_to_float(max_duration))
     if max_size is not None:

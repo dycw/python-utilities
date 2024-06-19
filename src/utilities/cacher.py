@@ -45,8 +45,7 @@ def cache_to_disk(
     max_size: int | None = None,
     max_duration: Duration | None = None,
 ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
-    """Factory for decorators which caches locally using pickles."""
-
+    """Create a decorator which caches locally using pickles."""
     return partial(
         _cache_to_disk,
         root=root,
@@ -75,8 +74,7 @@ def _cache_to_disk(
     max_size: int | None = None,
     max_duration: Duration | None = None,
 ) -> Callable[_P, _R]:
-    """Decorator which caches locally using pickles."""
-
+    """Cache locally using pickles."""
     root_use = Path(root, func.__module__, func.__name__)
     sig = signature(func)
     md5_hash_use = cache(
@@ -91,7 +89,7 @@ def _cache_to_disk(
 
     @wraps(func)
     def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-        """The decorated function."""
+        """Call the throttled test."""
         if skip:
             return func(*args, **kwargs)
         rerun = ensure_class(kwargs.pop("rerun", False), bool)

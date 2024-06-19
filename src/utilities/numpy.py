@@ -250,7 +250,6 @@ class AsIntError(Exception): ...
 
 def date_to_datetime64(date: dt.date, /) -> datetime64:
     """Convert a `dt.date` to `numpy.datetime64`."""
-
     return datetime64(date, "D")
 
 
@@ -260,7 +259,6 @@ DATE_MAX_AS_DATETIME64 = date_to_datetime64(dt.date.max)
 
 def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
     """Convert a `dt.datetime` to `numpy.datetime64`."""
-
     if (tz := datetime.tzinfo) is None:
         datetime_use = datetime
     elif tz is UTC:
@@ -288,7 +286,6 @@ DATETIME_MAX_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.max)
 
 def datetime64_to_date(datetime: datetime64, /) -> dt.date:
     """Convert a `numpy.datetime64` to a `dt.date`."""
-
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == datetime64D:
         with redirect_error(
@@ -304,7 +301,6 @@ class DateTime64ToDateError(Exception): ...
 
 def datetime64_to_int(datetime: datetime64, /) -> int:
     """Convert a `numpy.datetime64` to an `int`."""
-
     return datetime.astype(int64).item()
 
 
@@ -316,7 +312,6 @@ DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIME64)
 
 def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
     """Convert a `numpy.datetime64` to a `dt.datetime`."""
-
     as_int = datetime64_to_int(datetime)
     if (dtype := datetime.dtype) == datetime64ms:
         with redirect_error(
@@ -394,7 +389,6 @@ def ffill_non_nan_slices(
     array: NDArrayF, /, *, limit: int | None = None, axis: int = -1
 ) -> NDArrayF:
     """Forward fill the slices in an array which contain non-nan values."""
-
     ndim = array.ndim
     arrays = (
         array[array_indexer(i, ndim, axis=axis)] for i in range(array.shape[axis])
@@ -408,7 +402,7 @@ def ffill_non_nan_slices(
 def _ffill_non_nan_slices_helper(
     arrays: Iterator[NDArrayF], /, *, limit: int | None = None
 ) -> Iterator[tuple[int, NDArrayF]]:
-    """Iterator yielding the slices to be pasted in."""
+    """Yield the slices to be pasted in."""
     last: tuple[int, NDArrayF] | None = None
     for i, arr_i in enumerate(arrays):
         if (~isnan(arr_i)).any():

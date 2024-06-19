@@ -49,7 +49,6 @@ from utilities.pandas import (
     assign_after,
     assign_before,
     assign_between,
-    astype,
     boolean,
     check_index,
     check_pandas_dataframe,
@@ -123,14 +122,6 @@ class TestAssignBetween:
             match="DataFrame must specify consecutive indices; got 0 and 2",
         ):
             _ = assign_between(df, "a", "c", Series(9, name="z"))
-
-
-class TestAsType:
-    def test_main(self) -> None:
-        df = DataFrame(0, index=RangeIndex(1), columns=Index(["value"]), dtype=int)
-        check_pandas_dataframe(df, dtypes={"value": int})
-        result = astype(df, float)
-        check_pandas_dataframe(result, dtypes={"value": float})
 
 
 class TestCheckIndex:

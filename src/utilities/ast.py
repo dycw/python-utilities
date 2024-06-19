@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 def yield_dunder_all(text: str, /) -> Iterator[list[str]]:
     """Yield all the `__all__` terms in a source file."""
-
     module = parse(text)
     for stmt in module.body:
         if isinstance(stmt, Assign):
@@ -20,7 +19,6 @@ def yield_dunder_all(text: str, /) -> Iterator[list[str]]:
 
 def _yield_from_assign(assign: Assign, /) -> Iterator[list[str]]:
     """Yield the `__all__` terms from an `Assign`."""
-
     match assign.targets:
         case [target]:
             yield from _yield_from_target_and_value(target, assign.value)

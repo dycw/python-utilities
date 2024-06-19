@@ -81,7 +81,6 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
     """Check that a pair of iterables are equal."""
-
     left_list, right_list = map(list, [left, right])
     errors: list[tuple[int, Any, Any]] = []
     state: _CheckIterablesEqualState | None
@@ -555,7 +554,7 @@ def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
 
 
 def one(iterable: Iterable[_T], /) -> _T:
-    """Custom version of `one` with separate exceptions."""
+    """Return the unique value in an iterable."""
     it = iter(iterable)
     try:
         first = next(it)
@@ -661,7 +660,7 @@ class _OneStrCaseInsensitiveEmptyError(OneStrError):
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
-    """The cartesian product of the values in a mapping, as mappings."""
+    """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
     for values in product(*mapping.values()):
         yield dict(zip(keys, values, strict=True))

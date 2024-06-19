@@ -54,7 +54,6 @@ def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 def ceil_datetime(column: Series, every: Expr | str, /) -> Series: ...
 def ceil_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
     """Compute the `ceil` of a datetime column."""
-
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
     ceil = (
@@ -379,7 +378,6 @@ def floor_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 def floor_datetime(column: Series, every: Expr | str, /) -> Series: ...
 def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series:
     """Compute the `floor` of a datetime column."""
-
     column = ensure_expr_or_series(column)
     rounded = column.dt.round(every)
     floor = (
@@ -407,7 +405,6 @@ def join(
 
 def nan_sum_agg(column: str | Expr, /, *, dtype: PolarsDataType | None = None) -> Expr:
     """Nan sum aggregation."""
-
     col_use = col(column) if isinstance(column, str) else column
     return (
         when(col_use.is_not_null().any())
@@ -420,7 +417,6 @@ def nan_sum_cols(
     column: str | Expr, *columns: str | Expr, dtype: PolarsDataType | None = None
 ) -> Expr:
     """Nan sum across columns."""
-
     all_columns = chain([column], columns)
     all_exprs = (
         col(column) if isinstance(column, str) else column for column in all_columns
@@ -454,7 +450,6 @@ class EmptyPolarsConcatError(Exception): ...
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
-
     with redirect_error(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
         row = df.row(0)
     mapping = dict(zip(df.columns, row, strict=True))

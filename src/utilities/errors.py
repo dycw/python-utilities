@@ -33,7 +33,6 @@ def redirect_error(
     match: str | None = None,
 ) -> Iterator[None]:
     """Context-manager for redirecting a specific type of error."""
-
     try:
         yield
     except Exception as error:
