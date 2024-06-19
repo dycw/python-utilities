@@ -1,9 +1,12 @@
 import datetime as dt
+import enum
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from enum import auto
 from math import isfinite, nan
 from typing import Any, ClassVar, Literal, cast
 
+import polars as pl
 from polars import (
     Boolean,
     DataFrame,
@@ -540,6 +543,19 @@ class TestStructDataType:
 
         result = struct_data_type(Example, time_zone=UTC)
         expected = Struct({"field": Datetime(time_zone=UTC)})
+        assert result == expected
+
+    def test_enum(self) -> None:
+        class Truth(enum.Enum):
+            true = auto()
+            false = auto()
+
+        @dataclass
+        class Example:
+            field: Truth
+
+        result = struct_data_type(Example)
+        expected = Struct({"field": pl.Enum(["false", "true"])})
         assert result == expected
 
     def test_list(self) -> None:

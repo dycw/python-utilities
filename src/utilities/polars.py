@@ -1,4 +1,5 @@
 import datetime as dt
+import enum
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
@@ -8,6 +9,7 @@ from itertools import chain
 from types import NoneType, UnionType
 from typing import Any, cast, get_args, get_origin, get_type_hints, overload
 
+import polars as pl
 from polars import (
     Boolean,
     DataFrame,
@@ -498,6 +500,8 @@ def _struct_data_type_one(  # noqa: C901
         return Utf8
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
+    if isinstance(ann, type) and issubclass(ann, enum.Enum):
+        return pl.Enum(sorted(ann.__members__))
     if (origin := get_origin(ann)) is list:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
     if origin is UnionType:
