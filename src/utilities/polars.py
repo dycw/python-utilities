@@ -2,14 +2,13 @@ import datetime as dt
 import enum
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
 from types import NoneType, UnionType
 from typing import Any, Literal, cast, get_args, get_origin, get_type_hints, overload
 
-import polars as pl
 from polars import (
     Boolean,
     DataFrame,
@@ -481,31 +480,28 @@ def struct_data_type(
     return Struct(data_types)
 
 
-def _struct_data_type_one(  # noqa: C901
+def _struct_data_type_one(
     ann: Any, /, *, time_zone: str | dt.timezone | None = None
 ) -> DataType:
-    if ann is bool:
-        return Boolean
-    if ann is dt.date:
-        return Date
+    with suppress(KeyError):
+        return {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}[
+            ann
+        ]
     if ann is dt.datetime:
         if time_zone is None:
             raise _StructDataTypeTimeZoneMissingError
         return Datetime(time_zone=time_zone)
-    if ann is float:
-        return Float64
-    if ann is int:
-        return Int64
-    if ann is str:
-        return Utf8
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
     if isinstance(ann, type) and issubclass(ann, enum.Enum):
-        return pl.Enum(list(ann.__members__))
+        return Utf8
     if (origin := get_origin(ann)) in {frozenset, list, set}:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
     if origin is Literal:
-        return pl.Enum(get_args(ann))
+        args = get_args(ann)
+        if all(isinstance(arg, str) for arg in args):
+            return Utf8
+        raise _StructDataTypeNonStringLiteralError(args=args)
     if origin is UnionType:
         inner = one(arg for arg in get_args(ann) if arg is not NoneType)
         return _struct_data_type_one(inner, time_zone=time_zone)
@@ -530,6 +526,15 @@ class _StructDataTypeTimeZoneMissingError(StructDataTypeError):
     @override
     def __str__(self) -> str:
         return "Time-zone must be given"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeNonStringLiteralError(StructDataTypeError):
+    args: tuple[Any, ...]
+
+    @override
+    def __str__(self) -> str:
+        return f"Literal arguments must be strings; got {self.args}"
 
 
 @dataclass(kw_only=True)
