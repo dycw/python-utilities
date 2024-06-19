@@ -555,7 +555,18 @@ class TestStructDataType:
             field: Truth
 
         result = struct_data_type(Example)
-        expected = Struct({"field": pl.Enum(["false", "true"])})
+        expected = Struct({"field": pl.Enum(["true", "false"])})
+        assert result == expected
+
+    def test_literal(self) -> None:
+        LowOrHigh = Literal["low", "high"]  # noqa: N806
+
+        @dataclass
+        class Example:
+            field: LowOrHigh  # type: ignore[]
+
+        result = struct_data_type(Example)
+        expected = Struct({"field": pl.Enum(["low", "high"])})
         assert result == expected
 
     def test_containers(self) -> None:

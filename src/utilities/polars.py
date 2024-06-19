@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
 from types import NoneType, UnionType
-from typing import Any, cast, get_args, get_origin, get_type_hints, overload
+from typing import Any, Literal, cast, get_args, get_origin, get_type_hints, overload
 
 import polars as pl
 from polars import (
@@ -501,9 +501,11 @@ def _struct_data_type_one(  # noqa: C901
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
     if isinstance(ann, type) and issubclass(ann, enum.Enum):
-        return pl.Enum(sorted(ann.__members__))
+        return pl.Enum(list(ann.__members__))
     if (origin := get_origin(ann)) in {frozenset, list, set}:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
+    if origin is Literal:
+        return pl.Enum(get_args(ann))
     if origin is UnionType:
         inner = one(arg for arg in get_args(ann) if arg is not NoneType)
         return _struct_data_type_one(inner, time_zone=time_zone)
