@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import contextmanager
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
 from typing import Any, cast, get_args, get_origin, get_type_hints, overload
@@ -470,40 +470,63 @@ def struct_data_type(
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
-        raise ValueError
-
+        raise _StructDataTypeNotADataclassError(cls=cls)
     anns = get_type_hints(cls)
     data_types = {
         k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
     }
     return Struct(data_types)
 
-    return anns
-    return anns
-    return cls.__annotations__
-    return fields(cls)
-
 
 def _struct_data_type_one(
-    cls: Any, /, *, time_zone: str | dt.timezone | None = None
+    ann: Any, /, *, time_zone: str | dt.timezone | None = None
 ) -> DataType:
-    if cls is dt.date:
+    if ann is dt.date:
         return Date
-    if cls is dt.datetime:
+    if ann is dt.datetime:
         if time_zone is None:
-            raise ValueError
+            raise _StructDataTypeTimeZoneMissingError
         return Datetime(time_zone=time_zone)
-    if cls is float:
+    if ann is float:
         return Float64
-    if cls is int:
+    if ann is int:
         return Int64
-    if cls is str:
+    if ann is str:
         return Utf8
-    if is_dataclass_class(cls):
-        return struct_data_type(cls, time_zone=time_zone)
-    if get_origin(cls) is list:
-        return List(_struct_data_type_one(one(get_args(cls)), time_zone=time_zone))
-    raise NotImplementedError(cls)
+    if is_dataclass_class(ann):
+        return struct_data_type(ann, time_zone=time_zone)
+    if get_origin(ann) is list:
+        return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
+    raise _StructDataTypeTypeError(ann=ann)
+
+
+@dataclass(kw_only=True)
+class StructDataTypeError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeNotADataclassError(StructDataTypeError):
+    cls: type[Dataclass]
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be a dataclass; got {self.cls}"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeTimeZoneMissingError(StructDataTypeError):
+    @override
+    def __str__(self) -> str:
+        return "Time-zone must be given"
+
+
+@dataclass(kw_only=True)
+class _StructDataTypeTypeError(StructDataTypeError):
+    ann: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unsupported type: {self.ann}"
 
 
 def yield_struct_series_elements(
@@ -542,5 +565,6 @@ __all__ = [
     "nan_sum_cols",
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
+    "struct_data_type",
     "yield_struct_series_elements",
 ]

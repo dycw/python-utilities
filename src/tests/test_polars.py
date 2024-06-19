@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from math import isfinite, nan
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 from polars import (
     DataFrame,
@@ -31,6 +31,7 @@ from utilities.polars import (
     ColumnsToDictError,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
+    StructDataTypeError,
     YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
@@ -517,10 +518,10 @@ class TestStructDataType:
     def test_datetime(self) -> None:
         @dataclass
         class Example:
-            datetime: dt.datetime
+            field: dt.datetime
 
         result = struct_data_type(Example, time_zone=UTC)
-        expected = Struct({"datetime": Datetime(time_zone=UTC)})
+        expected = Struct({"field": Datetime(time_zone=UTC)})
         assert result == expected
 
     def test_list(self) -> None:
@@ -570,6 +571,26 @@ class TestStructDataType:
         result = struct_data_type(Outer, time_zone=UTC)
         expected = Struct({"inner": Struct({"field": List(Int64)})})
         assert result == expected
+
+    def test_not_a_dataclass_error(self) -> None:
+        with raises(StructDataTypeError, match="Object must be a dataclass; got None"):
+            _ = struct_data_type(cast(Any, None))
+
+    def test_missing_time_zone_error(self) -> None:
+        @dataclass
+        class Example:
+            field: dt.datetime
+
+        with raises(StructDataTypeError, match="Time-zone must be given"):
+            _ = struct_data_type(Example)
+
+    def test_missing_type_error(self) -> None:
+        @dataclass
+        class Example:
+            field: None
+
+        with raises(StructDataTypeError, match="Unsupported type: <class 'NoneType'>"):
+            _ = struct_data_type(Example)
 
 
 class TestYieldStructSeriesElements:
