@@ -502,7 +502,7 @@ def _struct_data_type_one(  # noqa: C901
         return struct_data_type(ann, time_zone=time_zone)
     if isinstance(ann, type) and issubclass(ann, enum.Enum):
         return pl.Enum(sorted(ann.__members__))
-    if (origin := get_origin(ann)) is list:
+    if (origin := get_origin(ann)) in {frozenset, list, set}:
         return List(_struct_data_type_one(one(get_args(ann)), time_zone=time_zone))
     if origin is UnionType:
         inner = one(arg for arg in get_args(ann) if arg is not NoneType)

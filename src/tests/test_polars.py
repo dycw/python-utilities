@@ -558,13 +558,17 @@ class TestStructDataType:
         expected = Struct({"field": pl.Enum(["false", "true"])})
         assert result == expected
 
-    def test_list(self) -> None:
+    def test_containers(self) -> None:
         @dataclass
         class Example:
-            field: list[int]
+            frozenset_: frozenset[int]
+            list_: list[int]
+            set_: set[int]
 
         result = struct_data_type(Example, time_zone=UTC)
-        expected = Struct({"field": List(Int64)})
+        expected = Struct(
+            {"frozenset_": List(Int64), "list_": List(Int64), "set_": List(Int64)}
+        )
         assert result == expected
 
     def test_list_of_struct(self) -> None:
