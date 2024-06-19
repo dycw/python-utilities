@@ -32,7 +32,6 @@ from polars.type_aliases import (
     JoinValidation,
     SchemaDict,
 )
-from pyarrow import DataType
 from typing_extensions import Never, assert_never, override
 
 from utilities.dataclasses import Dataclass, is_dataclass_class
@@ -52,6 +51,8 @@ from utilities.math import CheckIntegerError, check_integer
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
+
+    from pyarrow import DataType
 
     from utilities.types import IterableStrs
 
