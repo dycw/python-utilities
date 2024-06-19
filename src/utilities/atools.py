@@ -1,13 +1,17 @@
-import datetime as dt
+from __future__ import annotations
+
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, ParamSpec, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
 
 from atools import memoize as _memoize
 from atools._memoize_decorator import _AsyncMemoize
 from typing_extensions import override
 
 from utilities.types import ensure_class
+
+if TYPE_CHECKING:
+    import datetime as dt
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")

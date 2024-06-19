@@ -1,8 +1,7 @@
 import datetime as dt
-import enum
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from enum import auto
+from enum import Enum, auto
 from math import isfinite, nan
 from typing import Any, ClassVar, Literal, cast
 
@@ -545,7 +544,7 @@ class TestStructDataType:
         assert result == expected
 
     def test_enum(self) -> None:
-        class Truth(enum.Enum):
+        class Truth(Enum):
             true = auto()
             false = auto()
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sys import modules, version_info
 
 VERSION_MAJOR_MINOR = (version_info.major, version_info.minor)

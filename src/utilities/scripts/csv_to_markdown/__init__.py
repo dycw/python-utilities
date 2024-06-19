@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from csv import reader
 from itertools import chain
-from pathlib import Path
+from pathlib import Path  # noqa: TCH003
 
 from click import command
 from loguru import logger

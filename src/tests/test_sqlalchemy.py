@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import enum
 import typing
-from collections.abc import Callable
 from enum import auto
-from pathlib import Path
 from time import sleep
 from typing import Any, Literal, TypedDict, cast
 
@@ -148,6 +148,10 @@ from utilities.sqlalchemy import (
     serialize_engine,
 )
 from utilities.types import get_class_name
+
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 class TestCheckColumnCollectionsEqual:

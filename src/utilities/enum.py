@@ -1,7 +1,8 @@
-from collections.abc import Mapping
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from typing_extensions import override
 
@@ -11,6 +12,9 @@ from utilities.iterables import (
     _OneStrCaseSensitiveEmptyError,
     one_str,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 try:
     from enum import StrEnum as _StrEnum  # type: ignore[]

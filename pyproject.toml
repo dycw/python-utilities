@@ -500,6 +500,7 @@ unfixable = [
 "src/tests/**/*.py" = [
   "S101",  # assert-used
 ]
+"src/tests/test_polars.py" = ["I002"]  # missing-required-import
 "src/tests/test_typed_settings.py" = ["I002"]  # missing-required-import
 
 [tool.ruff.lint.flake8-bugbear]
@@ -507,3 +508,6 @@ extend-immutable-calls = ["utilities.typed_settings.click_field"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.ruff.lint.isort]
+required-imports = ["from __future__ import annotations"]

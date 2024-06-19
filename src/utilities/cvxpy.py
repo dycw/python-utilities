@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import cvxpy
 import numpy as np
 import numpy.linalg
 from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
-from pandas import DataFrame
 from typing_extensions import override
 
 from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
-from utilities.pandas import SeriesF
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
+    from utilities.pandas import SeriesF
 
 
 @overload

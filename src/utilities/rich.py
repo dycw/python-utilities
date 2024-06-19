@@ -1,7 +1,11 @@
-from collections.abc import Callable
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from rich.console import Console
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def get_printed_exception(

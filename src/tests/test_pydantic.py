@@ -1,4 +1,6 @@
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import integers
@@ -9,6 +11,9 @@ from utilities.hypothesis import temp_paths
 from utilities.pathlib import ensure_path
 from utilities.pydantic import HashableBaseModel, LoadModelError, load_model, save_model
 from utilities.pytest import skipif_windows
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestHashableBaseModel:

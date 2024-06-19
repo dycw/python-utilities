@@ -1,7 +1,8 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
 from dataclasses import dataclass
 from math import isfinite
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import polars as pl
 from altair import (
@@ -26,6 +27,9 @@ from polars import DataFrame, col, int_range
 
 from utilities.more_itertools import always_iterable
 from utilities.types import ensure_number
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 _HEIGHT = 400
 _WIDTH = 800

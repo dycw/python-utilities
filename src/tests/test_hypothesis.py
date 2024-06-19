@@ -1,11 +1,10 @@
-import datetime as dt
-from collections.abc import Hashable, Mapping
-from collections.abc import Set as AbstractSet
+from __future__ import annotations
+
 from itertools import pairwise
 from pathlib import Path
 from re import search
 from subprocess import PIPE, check_output
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
@@ -102,7 +101,13 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items
-from utilities.tempfile import TemporaryDirectory
+
+if TYPE_CHECKING:
+    import datetime as dt
+    from collections.abc import Hashable, Mapping
+    from collections.abc import Set as AbstractSet
+
+    from utilities.tempfile import TemporaryDirectory
 
 
 class TestAssumeDoesNotRaise:

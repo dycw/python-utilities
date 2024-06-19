@@ -1,8 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
 from scipy.stats import norm
 
-from utilities.math import FloatFinNonNeg
 from utilities.numpy import NDArrayF, NDArrayF1, is_zero
+
+if TYPE_CHECKING:
+    from utilities.math import FloatFinNonNeg
 
 
 def ppf(array: NDArrayF, cutoff: FloatFinNonNeg, /, *, axis: int = -1) -> NDArrayF:

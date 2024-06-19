@@ -1,15 +1,20 @@
-from collections.abc import Callable, Iterable
+from __future__ import annotations
+
 from functools import partial
 from multiprocessing import cpu_count
-from typing import Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from pqdm import processes, threads
-from tqdm import tqdm as tqdm_type
 from tqdm.auto import tqdm as tqdm_auto
 from typing_extensions import assert_never
 
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import get_class_name
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from tqdm import tqdm as tqdm_type
 
 _T = TypeVar("_T")
 

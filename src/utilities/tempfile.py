@@ -1,10 +1,16 @@
-from pathlib import Path
+from __future__ import annotations
+
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
-from types import TracebackType
+from typing import TYPE_CHECKING
 
 from utilities.pathlib import ensure_path
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from types import TracebackType
+
+    from utilities.types import PathLike
 
 
 class TemporaryDirectory:

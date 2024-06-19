@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import datetime as dt
 from collections.abc import Hashable, Iterable, Iterator, Mapping
@@ -9,7 +11,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import Any, Protocol, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -30,20 +32,24 @@ from hypothesis.strategies import (
     text,
     uuids,
 )
-from pandas import Timestamp
-from semver import Version
-from sqlalchemy import Engine, MetaData
 from typing_extensions import assert_never
 
 from utilities.datetime import UTC
-from utilities.math import FloatFinPos, IntNonNeg
-from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
-from utilities.pandas import IndexA, IndexI, IndexS
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
-from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
+
+if TYPE_CHECKING:
+    from pandas import Timestamp
+    from semver import Version
+    from sqlalchemy import Engine, MetaData
+
+    from utilities.math import FloatFinPos, IntNonNeg
+    from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
+    from utilities.pandas import IndexA, IndexI, IndexS
+    from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
+
 
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]

@@ -1,10 +1,14 @@
-from re import escape, search
+from __future__ import annotations
 
-from rich.console import Console
+from re import escape, search
+from typing import TYPE_CHECKING
 
 from tests.rich.funcs import func1
 from utilities.pytest import skipif_windows
 from utilities.rich import get_printed_exception
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 
 class TestGetPrintedException:
@@ -16,28 +20,29 @@ class TestGetPrintedException:
             result = get_printed_exception()
             expected = [
                 """
-│    1 def func1(x: int, /) -> int:                                                                │
-│    2 │   y = 2                                                                                   │
-│ ❱  3 │   return func2(x, y)                                                                      │
-│    4                                                                                             │
-│    5                                                                                             │
-│    6 def func2(x: int, y: int, /) -> int:                                                        │
+│    3                                                                                             │
+│    4 def func1(x: int, /) -> int:                                                                │
+│    5 │   y = 2                                                                                   │
+│ ❱  6 │   return func2(x, y)                                                                      │
+│    7                                                                                             │
+│    8                                                                                             │
+│    9 def func2(x: int, y: int, /) -> int:                                                        │
 """,
                 """
-│    5                                                                                             │
-│    6 def func2(x: int, y: int, /) -> int:                                                        │
-│    7 │   z = 3                                                                                   │
-│ ❱  8 │   return func3(x, y, z)                                                                   │
-│    9                                                                                             │
-│   10                                                                                             │
-│   11 def func3(x: int, y: int, z: int, /) -> int:                                                │
-""",
-                """
-│    9                                                                                             │
-│   10                                                                                             │
-│   11 def func3(x: int, y: int, z: int, /) -> int:                                                │
-│ ❱ 12 │   return (x + y + z) // 0                                                                 │
+│    8                                                                                             │
+│    9 def func2(x: int, y: int, /) -> int:                                                        │
+│   10 │   z = 3                                                                                   │
+│ ❱ 11 │   return func3(x, y, z)                                                                   │
+│   12                                                                                             │
 │   13                                                                                             │
+│   14 def func3(x: int, y: int, z: int, /) -> int:                                                │
+""",
+                """
+│   12                                                                                             │
+│   13                                                                                             │
+│   14 def func3(x: int, y: int, z: int, /) -> int:                                                │
+│ ❱ 15 │   return (x + y + z) // 0                                                                 │
+│   16                                                                                             │
 """,
                 """
 ZeroDivisionError: integer division or modulo by zero
