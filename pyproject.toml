@@ -507,7 +507,7 @@ unfixable = [
   "F601",  # multi-value-repeated-key-literal
   "PIE794",  # duplicate-class-field-definition
   "PLR5501",  # collapsible-else-if
-  "RET502", # unnecessary-assign
+  "RET504",  # unnecessary-assign
   "SIM114",  # if-with-same-arms
 ]
 

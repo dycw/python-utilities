@@ -5,7 +5,6 @@ from getpass import getuser
 from itertools import islice
 from pathlib import Path
 from shutil import rmtree
-from typing import TYPE_CHECKING
 
 from click import command
 from loguru import logger

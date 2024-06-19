@@ -6,7 +6,7 @@ from csv import DictWriter
 from dataclasses import fields
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from click import command
 from loguru import logger

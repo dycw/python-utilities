@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from click import command
 from loguru import logger

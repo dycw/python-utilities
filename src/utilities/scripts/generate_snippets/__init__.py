@@ -5,7 +5,7 @@ from enum import Enum, auto
 from operator import itemgetter
 from sys import stdout
 from types import ModuleType
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import click
 from ast_comments import Comment, unparse
