@@ -1,13 +1,17 @@
-import datetime as dt
+from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import tzinfo
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from typing_extensions import override
 from xlrd import Book, xldate_as_datetime
 
 from utilities.datetime import UTC
 from utilities.platform import SYSTEM, System
+
+if TYPE_CHECKING:
+    import datetime as dt
+    from datetime import tzinfo
 
 
 def get_date_mode() -> Literal[0, 1]:

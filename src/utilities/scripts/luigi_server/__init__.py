@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from click import command
 from loguru import logger
@@ -7,7 +10,9 @@ from utilities.loguru import setup_loguru
 from utilities.scripts.luigi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from utilities.types import PathLike
 
 _CONFIG = Config()
 

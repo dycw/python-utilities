@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from csv import reader
 from itertools import chain
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from click import command
 from loguru import logger
@@ -12,6 +14,9 @@ from utilities.pathlib import ensure_path
 from utilities.scripts.csv_to_markdown.classes import Config
 from utilities.tempfile import TemporaryDirectory
 from utilities.typed_settings import click_options
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _CONFIG = Config()
 

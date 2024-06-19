@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import datetime as dt
 import decimal
-from collections.abc import Iterable, Iterator, Mapping
 from contextlib import suppress
 from datetime import timezone
 from itertools import chain
@@ -25,7 +26,6 @@ from polars import (
 from polars.type_aliases import ConnectionOrCursor, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.sql import ColumnCollection
 
 from utilities.datetime import UTC
 from utilities.errors import redirect_error
@@ -47,6 +47,9 @@ from utilities.sqlalchemy import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Mapping
+
+    from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 

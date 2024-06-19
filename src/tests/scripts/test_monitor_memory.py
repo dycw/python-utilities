@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from csv import reader
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
 from utilities.pathlib import ensure_path
 from utilities.scripts.monitor_memory import _get_memory_usage, _monitor_memory, main
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestMonitorMemory:

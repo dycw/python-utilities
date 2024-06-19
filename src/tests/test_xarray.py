@@ -1,5 +1,7 @@
-from collections.abc import Mapping
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -18,8 +20,12 @@ from utilities.hypothesis import (
     int_indexes,
     text_ascii,
 )
-from utilities.pandas import IndexA
 from utilities.xarray import ewma, exp_moving_sum, rename_data_arrays
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from utilities.pandas import IndexA
 
 
 class TestBottleNeckInstalled:

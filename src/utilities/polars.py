@@ -1,13 +1,10 @@
-import datetime as dt
-import enum
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from collections.abc import Set as AbstractSet
-from contextlib import contextmanager, suppress
+from __future__ import annotations
+
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import chain
-from types import NoneType, UnionType
-from typing import Any, Literal, cast, get_args, get_origin, get_type_hints, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from polars import (
     Boolean,
@@ -51,7 +48,12 @@ from utilities.iterables import (
     one,
 )
 from utilities.math import CheckIntegerError, check_integer
-from utilities.types import IterableStrs
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Set as AbstractSet
+
+    from utilities.types import IterableStrs
 
 
 @overload

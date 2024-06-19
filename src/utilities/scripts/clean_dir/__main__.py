@@ -1,4 +1,5 @@
 # pragma: no cover
+from __future__ import annotations
 
 from utilities.scripts.clean_dir import main  # pragma: no cover
 

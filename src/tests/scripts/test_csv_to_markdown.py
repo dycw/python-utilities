@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from csv import writer
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 from pytest import fixture
@@ -8,6 +10,9 @@ from utilities.pathlib import ensure_path
 from utilities.platform import IS_WINDOWS
 from utilities.scripts.csv_to_markdown import _csv_to_markdown, main
 from utilities.text import strip_and_dedent
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @fixture()

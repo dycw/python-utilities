@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import given
 from hypothesis.strategies import integers, none
 from pandas import get_option

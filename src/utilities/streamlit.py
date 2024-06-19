@@ -1,6 +1,7 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from hmac import compare_digest
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from streamlit import (
     button,
@@ -14,8 +15,12 @@ from streamlit import (
     stop,
     text_input,
 )
-from streamlit.runtime.state import WidgetArgs, WidgetCallback, WidgetKwargs
-from streamlit.type_util import Key
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from streamlit.runtime.state import WidgetArgs, WidgetCallback, WidgetKwargs
+    from streamlit.type_util import Key
 
 
 def centered_button(

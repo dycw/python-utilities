@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 import datetime as dt
-from collections.abc import Callable, Mapping
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
@@ -21,6 +21,10 @@ from utilities.zarr import (
     ffill_non_nan_slices,
     yield_array_with_indexes,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+    from pathlib import Path
 
 indexes_1d = int_arrays(shape=integers(0, 10), unique=True).map(sort)
 

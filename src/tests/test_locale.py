@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from locale import LC_CTYPE, LC_TIME, setlocale
 
 from pytest import mark, param

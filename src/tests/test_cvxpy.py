@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Callable
 from re import DOTALL
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import cvxpy
 import numpy as np
@@ -43,8 +44,12 @@ from utilities.cvxpy import (
     sum_axis0,
     sum_axis1,
 )
-from utilities.numpy import NDArrayF
-from utilities.pandas import SeriesF
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from utilities.numpy import NDArrayF
+    from utilities.pandas import SeriesF
 
 
 def _get_variable(

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from types import NoneType
 from typing import Any, TypeVar

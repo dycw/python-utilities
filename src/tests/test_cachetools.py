@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hypothesis import example, given
 from hypothesis.strategies import floats, integers, none
 

@@ -1,9 +1,9 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from functools import partial
 from operator import le, lt
 from re import search
-from types import ModuleType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param
 
@@ -14,6 +14,10 @@ from utilities.modules import (
     yield_modules,
 )
 from utilities.types import get_class_name
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from types import ModuleType
 
 
 class TestYieldModules:

@@ -1,4 +1,5 @@
 # pragma: no cover
+from __future__ import annotations
 
 from utilities.scripts.luigi_server import main  # pragma: no cover
 

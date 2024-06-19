@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def func1(x: int, /) -> int:
     y = 2
     return func2(x, y)

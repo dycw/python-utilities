@@ -1,12 +1,17 @@
-from collections.abc import Callable, Iterator
-from os import environ, getenv
-from typing import Any
+from __future__ import annotations
 
-from _pytest.fixtures import SubRequest
+from os import environ, getenv
+from typing import TYPE_CHECKING, Any
+
 from pytest import LogCaptureFixture, fixture, mark
-from sqlalchemy import Engine, Table
 
 from utilities.timer import Timer
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
+    from _pytest.fixtures import SubRequest
+    from sqlalchemy import Engine, Table
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")

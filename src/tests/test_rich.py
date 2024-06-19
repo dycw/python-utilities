@@ -1,10 +1,14 @@
-from re import escape, search
+from __future__ import annotations
 
-from rich.console import Console
+from re import escape, search
+from typing import TYPE_CHECKING
 
 from tests.rich.funcs import func1
 from utilities.pytest import skipif_windows
 from utilities.rich import get_printed_exception
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 
 class TestGetPrintedException:

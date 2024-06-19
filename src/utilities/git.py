@@ -1,11 +1,16 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from utilities.pathlib import PWD
-from utilities.types import PathLike
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from utilities.types import PathLike
 
 _GET_BRANCH_NAME = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
 _T = TypeVar("_T")

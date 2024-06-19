@@ -1,6 +1,7 @@
-from collections.abc import Iterator
+from __future__ import annotations
+
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
@@ -9,6 +10,9 @@ from typing_extensions import override
 from utilities.datetime import get_now, local_timezone
 from utilities.pathlib import ensure_path
 from utilities.tempfile import TemporaryDirectory
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class _BasePDF(FPDF):
