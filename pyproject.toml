@@ -493,6 +493,7 @@ unfixable = [
   "PIE794",  # duplicate-class-field-definition
   "PLR5501",  # collapsible-else-if
   "RET504",  # unnecessary-assign
+  "SIM102",  # collapsible-if
   "SIM114",  # if-with-same-arms
 ]
 
