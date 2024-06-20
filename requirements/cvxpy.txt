@@ -70,7 +70,7 @@ scipy==1.13.1
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.4.post2
+scs==3.2.4.post3
     # via cvxpy
 six==1.16.0
     # via python-dateutil
