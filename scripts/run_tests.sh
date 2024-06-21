@@ -15,4 +15,4 @@ while IFS= read -r _PACKAGE; do
 		break
 	fi
 done <"$_PATH"
-uv pip sync requirementst.txt
+uv pip sync requirements.txt
