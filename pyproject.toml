@@ -188,7 +188,10 @@ zzz-test-jupyter = [
 ]
 zzz-test-locale = []
 zzz-test-logging = []
-zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
+zzz-test-loguru = [
+  "loguru >= 0.7.2, < 0.8",
+  "pytest-asyncio >= 0.23.7, < 0.24",
+]
 zzz-test-luigi = [
   "freezegun >= 1.5.1, < 1.6",
   "luigi >= 3.5.1, < 3.6",
