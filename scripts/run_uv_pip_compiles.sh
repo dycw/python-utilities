@@ -34,6 +34,7 @@ packages=(
 	timer
 	# third-party
 	atomicwrites
+	atools
 	beartype
 	bs4
 	cacher

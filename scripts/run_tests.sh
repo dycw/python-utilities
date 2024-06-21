@@ -33,8 +33,8 @@ packages=(
 	text
 	timer
 	# third-party
-	atools
 	atomicwrites
+	atools
 	beartype
 	bs4
 	cacher
