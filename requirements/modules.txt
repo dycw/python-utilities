@@ -118,7 +118,7 @@ idna==3.7
     #   httpx
     #   hyperlink
     #   requests
-importlib-metadata==7.1.0
+importlib-metadata==7.2.0
     # via keyring
 iniconfig==2.0.0
     # via pytest
@@ -244,7 +244,7 @@ polars-lts-cpu==0.20.31
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==4.25.3
+protobuf==5.27.1
     # via streamlit
 psutil==6.0.0
     # via memory-profiler
@@ -350,7 +350,7 @@ sqlalchemy==2.0.31
     # via dycw-utilities (pyproject.toml)
 starlette==0.37.2
     # via fastapi-slim
-streamlit==1.35.0
+streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.4.1
     # via

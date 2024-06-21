@@ -147,7 +147,7 @@ idna==3.7
     #   hyperlink
     #   requests
     #   trio
-importlib-metadata==7.1.0
+importlib-metadata==7.2.0
     # via keyring
 importlib-resources==6.4.0
     # via pypiserver
@@ -287,7 +287,7 @@ pillow==10.3.0
     #   bokeh
     #   fpdf2
     #   streamlit
-pip==24.0
+pip==24.1
     # via pypiserver
 platformdirs==4.2.2
     # via
@@ -301,7 +301,7 @@ polars-lts-cpu==0.20.31
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==4.25.3
+protobuf==5.27.1
     # via
     #   streamlit
     #   vegafusion
@@ -412,7 +412,7 @@ scipy==1.13.1
     #   scs
 scs==3.2.4.post3
     # via cvxpy
-selenium==4.21.0
+selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
@@ -444,7 +444,7 @@ sqlalchemy==2.0.31
     #   optuna
 starlette==0.37.2
     # via fastapi-slim
-streamlit==1.35.0
+streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.4.1
     # via
@@ -516,10 +516,12 @@ vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
 virtualenv==20.26.2
     # via hatch
-vl-convert-python==1.4.0
+vl-convert-python==1.5.0
     # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1
     # via bleach
+websocket-client==1.8.0
+    # via selenium
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wsproto==1.2.0
