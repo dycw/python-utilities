@@ -1,89 +1,14 @@
 #!/usr/bin/env bash
 
-packages=(
-	# standard library
-	ast
-	dataclasses
-	datetime
-	email
-	enum
-	errors
-	functions
-	functools
-	getpass
-	git
-	hashlib
-	iterables
-	json
-	locale
-	logging
-	math
-	modules
-	os
-	pathlib
-	pickle
-	platform
-	random
-	re
-	sentinel
-	socket
-	subprocess
-	sys
-	tempfile
-	text
-	timer
-	# third-party
-	atomicwrites
-	beartype
-	bs4
-	cacher
-	cachetools
-	click
-	cryptography
-	cvxpy
-	fastapi
-	fpdf2
-	hatch
-	holoviews
-	humps
-	ipython
-	jupyter
-	loguru
-	luigi
-	memory-profiler
-	more-itertools
-	numpy
-	optuna
-	pandas
-	pathvalidate
-	polars
-	pqdm
-	pydantic
-	pyinstrument
-	pytest
-	pytest-check
-	scipy
-	scripts-clean-dir
-	scripts-csv-to-markdown
-	scripts-luigi-server
-	scripts-monitor-memory
-	scripts-pypi-server
-	semver
-	sqlalchemy
-	sqlalchemy-polars
-	typed-settings
-	xarray
-	xlrd
-	zarr
-)
-for package in "${packages[@]}"; do
+_PATH='scripts/packages.txt'
+while IFS= read -r _PACKAGE; do
 	uv pip compile \
 		"--extra=zzz-test-defaults" \
-		"--extra=zzz-test-${package}" \
+		"--extra=zzz-test-${_PACKAGE}" \
 		--quiet \
 		--prerelease=disallow \
-		"--output-file=requirements/${package}.txt" \
+		"--output-file=requirements/${_PACKAGE}.txt" \
 		--upgrade \
 		--python-version=3.10 \
 		pyproject.toml
-done
+done <"$_PATH"
