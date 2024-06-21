@@ -2,7 +2,11 @@
 
 _PATH='scripts/packages.txt'
 while IFS= read -r _PACKAGE; do
+	echo ""
+	echo ""
 	echo "Running $_PACKAGE..."
+	echo ""
+	echo ""
 	uv pip sync "requirements/${_PACKAGE}.txt"
 	if [[ "${_PACKAGE}" == scripts-* ]]; then
 		name="${_PACKAGE#scripts-}"
