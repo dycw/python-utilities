@@ -143,7 +143,9 @@ zzz-test-cvxpy = [
   "cvxpy >= 1.5.2, < 1.6",
   "pandas >= 2.2.2, < 2.3",
 ]
-zzz-test-dataclasses = []
+zzz-test-dataclasses = [
+  "beartype >= 0.18.5, < 0.19",
+]
 zzz-test-datetime = []
 zzz-test-defaults = [
   "coverage-conditional-plugin >= 0.9.0, < 0.10",

@@ -2,6 +2,8 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-dataclasses --prerelease=disallow --output-file=requirements/dataclasses.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
+beartype==0.18.5
+    # via dycw-utilities (pyproject.toml)
 coverage==7.5.3
     # via
     #   coverage-conditional-plugin
