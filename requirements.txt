@@ -212,7 +212,7 @@ numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.12.1
     # via zarr
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
