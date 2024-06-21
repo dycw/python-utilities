@@ -5,11 +5,7 @@ asttokens==2.4.1
 attrs==23.2.0
     # via hypothesis
 coverage==7.5.3
-    # via
-    #   coverage-conditional-plugin
-    #   pytest-cov
-coverage-conditional-plugin==0.9.0
-    # via dycw-utilities (pyproject.toml)
+    # via pytest-cov
 decorator==5.1.1
     # via ipython
 exceptiongroup==1.2.1
@@ -32,7 +28,6 @@ matplotlib-inline==0.1.7
     # via ipython
 packaging==24.1
     # via
-    #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
 parso==0.8.4

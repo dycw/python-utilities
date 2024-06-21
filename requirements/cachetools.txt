@@ -5,11 +5,7 @@ attrs==23.2.0
 cachetools==5.3.3
     # via dycw-utilities (pyproject.toml)
 coverage==7.5.3
-    # via
-    #   coverage-conditional-plugin
-    #   pytest-cov
-coverage-conditional-plugin==0.9.0
-    # via dycw-utilities (pyproject.toml)
+    # via pytest-cov
 exceptiongroup==1.2.1
     # via
     #   dycw-utilities (pyproject.toml)
@@ -21,7 +17,6 @@ iniconfig==2.0.0
     # via pytest
 packaging==24.1
     # via
-    #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
 pluggy==1.5.0

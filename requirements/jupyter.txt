@@ -39,11 +39,7 @@ charset-normalizer==3.3.2
 comm==0.2.2
     # via ipykernel
 coverage==7.5.3
-    # via
-    #   coverage-conditional-plugin
-    #   pytest-cov
-coverage-conditional-plugin==0.9.0
-    # via dycw-utilities (pyproject.toml)
+    # via pytest-cov
 debugpy==1.8.1
     # via ipykernel
 decorator==5.1.1
@@ -165,7 +161,6 @@ overrides==7.7.0
     # via jupyter-server
 packaging==24.1
     # via
-    #   coverage-conditional-plugin
     #   ipykernel
     #   jupyter-server
     #   jupyterlab

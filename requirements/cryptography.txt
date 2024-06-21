@@ -5,11 +5,7 @@ attrs==23.2.0
 cffi==1.16.0
     # via cryptography
 coverage==7.5.3
-    # via
-    #   coverage-conditional-plugin
-    #   pytest-cov
-coverage-conditional-plugin==0.9.0
-    # via dycw-utilities (pyproject.toml)
+    # via pytest-cov
 cryptography==42.0.8
     # via dycw-utilities (pyproject.toml)
 exceptiongroup==1.2.1
@@ -23,7 +19,6 @@ iniconfig==2.0.0
     # via pytest
 packaging==24.1
     # via
-    #   coverage-conditional-plugin
     #   pytest
     #   pytest-rerunfailures
 pluggy==1.5.0
