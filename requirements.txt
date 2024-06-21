@@ -301,7 +301,7 @@ polars-lts-cpu==0.20.31
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==4.25.3
+protobuf==5.27.1
     # via
     #   streamlit
     #   vegafusion
@@ -444,7 +444,7 @@ sqlalchemy==2.0.31
     #   optuna
 starlette==0.37.2
     # via fastapi-slim
-streamlit==1.35.0
+streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.4.1
     # via
@@ -516,7 +516,7 @@ vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
 virtualenv==20.26.2
     # via hatch
-vl-convert-python==1.4.0
+vl-convert-python==1.5.0
     # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1
     # via bleach
