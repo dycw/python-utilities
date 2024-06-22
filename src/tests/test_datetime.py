@@ -271,7 +271,7 @@ class TestMaybeSubPctY:
     @given(text=text_clean())
     def test_main(self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
-        _ = assume(result != "%Y")
+        _ = assume(not search("%Y", result))
         assert not search("%Y", result)
 
 
