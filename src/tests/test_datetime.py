@@ -271,7 +271,7 @@ class TestMaybeSubPctY:
     @given(text=text_clean())
     def test_main(self, *, text: str) -> None:
         result = maybe_sub_pct_y(text)
-        _ = assume(result != "%Y")
+        _ = assume(not search("%Y", result))
         assert not search("%Y", result)
 
 
@@ -297,7 +297,7 @@ class TestParseDate:
         assert result == date
 
     def test_error(self) -> None:
-        with raises(ParseDateError):
+        with raises(ParseDateError, match="Unable to parse date; got 'error'"):
             _ = parse_date("error")
 
 
@@ -391,7 +391,7 @@ class TestParseDateTime:
         assert result == datetime
 
     def test_error(self) -> None:
-        with raises(ParseDateTimeError):
+        with raises(ParseDateTimeError, match="Unable to parse datetime; got 'error'"):
             _ = parse_datetime("error")
 
 
@@ -430,7 +430,7 @@ class TestParseTime:
         assert result == time
 
     def test_error(self) -> None:
-        with raises(ParseTimeError):
+        with raises(ParseTimeError, match="Unable to parse time; got 'error'"):
             _ = parse_time("error")
 
 
@@ -441,7 +441,9 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
+        with raises(
+            ParseTimedeltaError, match="Unable to parse timedelta; got 'error'"
+        ):
             _ = parse_timedelta("error")
 
 
