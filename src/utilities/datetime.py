@@ -226,7 +226,7 @@ def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
-    raise ParseDateTimeError(datetime)
+    raise ParseDateTimeError(datetime=datetime)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -236,28 +236,6 @@ class ParseDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse datetime; got {self.datetime!r}"
-
-
-def _parse_datetime_yield_formats() -> Iterator[str]:
-    parts: list[list[str]] = [["%Y%m%d", "%Y-%m-%d", "%Y_%m_%d"]]
-    for fmt_parts in product(*parts):
-        yield "".join(fmt_parts)
-    parts.append([" ", "", "-", "T"])
-    parts_hour = parts.copy()
-    parts_hour.append(["%H"])
-    for fmt_parts in product(*parts_hour):
-        yield "".join(fmt_parts)
-    parts_minute = parts.copy()
-    parts_minute.append(["%H%M", "%H-%M", "%H:%M", "%H_%M"])
-    for fmt_parts in product(*parts_minute):
-        yield "".join(fmt_parts)
-    parts.append(["%H%M%S", "%H-%M-%S", "%H:%M:%S", "%H_%M_%S"])
-    for fmt_parts in product(*parts):
-        yield "".join(fmt_parts)
-    parts.append(["", " ", "."])
-    parts.append(["%f%z", "%f", "%z"])
-    for fmt_parts in product(*parts):
-        yield "".join(fmt_parts)
 
 
 def parse_time(time: str, /) -> dt.time:
