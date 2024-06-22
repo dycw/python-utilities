@@ -297,7 +297,7 @@ class TestParseDate:
         assert result == date
 
     def test_error(self) -> None:
-        with raises(ParseDateError):
+        with raises(ParseDateError, match="Unable to parse date; got 'error'"):
             _ = parse_date("error")
 
 
@@ -318,21 +318,46 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M%S.%f", "%Y-%m-%d %H:%M:%S.%f"]).map(
-            maybe_sub_pct_y
-        ),
+        fmt=sampled_from(
+            [
+                "%Y%m%d%H%M%S%f",
+                "%Y%m%d%H%M%S.%f",
+                "%Y%m%d%H-%M-%S%f",
+                "%Y%m%d%H-%M-%S.%f",
+                "%Y%m%d%H:%M:%S%f",
+                "%Y%m%d%H:%M:%S.%f",
+                "%Y%m%d-%H%M%S%f",
+                "%Y%m%d-%H%M%S.%f",
+                "%Y%m%d-%H-%M-%S%f",
+                "%Y%m%d-%H-%M-%S.%f",
+                "%Y%m%d-%H:%M:%S%f",
+                "%Y%m%d-%H:%M:%S.%f",
+                "%Y%m%dT%H%M%S%f",
+                "%Y%m%dT%H%M%S.%f",
+                "%Y%m%dT%H-%M-%S%f",
+                "%Y%m%dT%H-%M-%S.%f",
+                "%Y%m%dT%H:%M:%S%f",
+                "%Y%m%dT%H:%M:%S.%f",
+                "%Y-%m-%d%H%M%S%f",
+                "%Y-%m-%d%H%M%S.%f",
+                "%Y-%m-%d%H-%M-%S%f",
+                "%Y-%m-%d%H-%M-%S.%f",
+                "%Y-%m-%d%H:%M:%S%f",
+                "%Y-%m-%d%H:%M:%S.%f",
+                "%Y-%m-%d-%H%M%S%f",
+                "%Y-%m-%d-%H%M%S.%f",
+                "%Y-%m-%d-%H-%M-%S%f",
+                "%Y-%m-%d-%H-%M-%S.%f",
+                "%Y-%m-%d-%H:%M:%S%f",
+                "%Y-%m-%d-%H:%M:%S.%f",
+                "%Y-%m-%dT%H%M%S%f",
+                "%Y-%m-%dT%H%M%S.%f",
+                "%Y-%m-%dT%H-%M-%S%f",
+                "%Y-%m-%dT%H-%M-%S.%f",
+                "%Y-%m-%dT%H:%M:%S%f",
+                "%Y-%m-%dT%H:%M:%S.%f",
+            ]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
         tzinfo = datetime.tzinfo
@@ -343,7 +368,26 @@ class TestParseDateTime:
     @given(
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
         fmt=sampled_from(
-            ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
+            [
+                "%Y%m%d%H%M%S",
+                "%Y%m%d%H-%M-%S",
+                "%Y%m%d%H:%M:%S",
+                "%Y%m%d-%H%M%S",
+                "%Y%m%d-%H-%M-%S",
+                "%Y%m%d-%H:%M:%S",
+                "%Y%m%dT%H%M%S",
+                "%Y%m%dT%H-%M-%S",
+                "%Y%m%dT%H:%M:%S",
+                "%Y-%m-%d%H%M%S",
+                "%Y-%m-%d%H-%M-%S",
+                "%Y-%m-%d%H:%M:%S",
+                "%Y-%m-%d-%H%M%S",
+                "%Y-%m-%d-%H-%M-%S",
+                "%Y-%m-%d-%H:%M:%S",
+                "%Y-%m-%dT%H%M%S",
+                "%Y-%m-%dT%H-%M-%S",
+                "%Y-%m-%dT%H:%M:%S",
+            ]
         ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
@@ -355,9 +399,27 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
-            maybe_sub_pct_y
-        ),
+        fmt=sampled_from(
+            [
+                "%Y%m%d%H%M",
+                "%Y%m%d%H-%M",
+                "%Y%m%d%H:%M",
+                "%Y%m%d-%H%M",
+                "%Y%m%d-%H-%M",
+                "%Y%m%d-%H:%M",
+                "%Y%m%dT%H%M",
+                "%Y%m%dT%H-%M",
+                "%Y-%m-%d%H%M",
+                "%Y-%m-%d%H-%M",
+                "%Y-%m-%d%H:%M",
+                "%Y-%m-%d-%H%M",
+                "%Y-%m-%d-%H-%M",
+                "%Y-%m-%d-%H:%M",
+                "%Y-%m-%dT%H%M",
+                "%Y-%m-%dT%H-%M",
+                "%Y-%m-%dT%H:%M",
+            ]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
@@ -368,9 +430,16 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H", "%Y-%m-%d %H", "%Y-%m-%dT%H"]).map(
-            maybe_sub_pct_y
-        ),
+        fmt=sampled_from(
+            [
+                "%Y%m%d%H",
+                "%Y%m%d-%H",
+                "%Y%m%dT%H",
+                "%Y-%m-%d%H",
+                "%Y-%m-%d-%H",
+                "%Y-%m-%dT%H",
+            ]
+        ).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
@@ -391,7 +460,7 @@ class TestParseDateTime:
         assert result == datetime
 
     def test_error(self) -> None:
-        with raises(ParseDateTimeError):
+        with raises(ParseDateTimeError, match="Unable to parse datetime; got 'error'"):
             _ = parse_datetime("error")
 
 
@@ -430,7 +499,7 @@ class TestParseTime:
         assert result == time
 
     def test_error(self) -> None:
-        with raises(ParseTimeError):
+        with raises(ParseTimeError, match="Unable to parse time; got 'error'"):
             _ = parse_time("error")
 
 
@@ -441,7 +510,9 @@ class TestParseTimedelta:
         assert result == timedelta
 
     def test_error(self) -> None:
-        with raises(ParseTimedeltaError, match=r"Pattern .* must match against .*\."):
+        with raises(
+            ParseTimedeltaError, match="Unable to parse timedelta; got 'error'"
+        ):
             _ = parse_timedelta("error")
 
 

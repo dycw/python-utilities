@@ -198,10 +198,16 @@ def parse_date(date: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.date:
     for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(date, fmt).replace(tzinfo=tzinfo).date()
-    raise ParseDateError(date)
+    raise ParseDateError(date=date)
 
 
-class ParseDateError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class ParseDateError(Exception):
+    date: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse date; got {self.date!r}"
 
 
 def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
@@ -209,21 +215,103 @@ def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
     with suppress(ValueError):
         return dt.datetime.fromisoformat(datetime).replace(tzinfo=tzinfo)
     for fmt in [
+        # date only
         "%Y%m%d",
+        "%Y-%m-%d",
+        # date+H
+        "%Y%m%d%H",
+        "%Y%m%d-%H",
         "%Y%m%dT%H",
+        "%Y-%m-%d%H",
+        "%Y-%m-%d-%H",
+        "%Y-%m-%dT%H",
+        # date+HM
+        "%Y%m%d%H%M",
+        "%Y%m%d%H-%M",
+        "%Y%m%d%H:%M",
+        "%Y%m%d-%H%M",
+        "%Y%m%d-%H-%M",
+        "%Y%m%d-%H:%M",
         "%Y%m%dT%H%M",
+        "%Y%m%dT%H-%M",
+        "%Y-%m-%d%H%M",
+        "%Y-%m-%d%H-%M",
+        "%Y-%m-%d%H:%M",
+        "%Y-%m-%d-%H%M",
+        "%Y-%m-%d-%H-%M",
+        "%Y-%m-%d-%H:%M",
+        "%Y-%m-%dT%H%M",
+        "%Y-%m-%dT%H-%M",
+        "%Y-%m-%dT%H:%M",
+        # date+HMS
+        "%Y%m%d%H%M%S",
+        "%Y%m%d%H-%M-%S",
+        "%Y%m%d%H:%M:%S",
+        "%Y%m%d-%H%M%S",
+        "%Y%m%d-%H-%M-%S",
+        "%Y%m%d-%H:%M:%S",
         "%Y%m%dT%H%M%S",
+        "%Y%m%dT%H-%M-%S",
+        "%Y%m%dT%H:%M:%S",
+        "%Y-%m-%d%H%M%S",
+        "%Y-%m-%d%H-%M-%S",
+        "%Y-%m-%d%H:%M:%S",
+        "%Y-%m-%d-%H%M%S",
+        "%Y-%m-%d-%H-%M-%S",
+        "%Y-%m-%d-%H:%M:%S",
+        "%Y-%m-%dT%H%M%S",
+        "%Y-%m-%dT%H-%M-%S",
+        "%Y-%m-%dT%H:%M:%S",
+        # date+HMSf
+        "%Y%m%d%H%M%S%f",
+        "%Y%m%d%H%M%S.%f",
+        "%Y%m%d%H-%M-%S%f",
+        "%Y%m%d%H-%M-%S.%f",
+        "%Y%m%d%H:%M:%S%f",
+        "%Y%m%d%H:%M:%S.%f",
+        "%Y%m%d-%H%M%S%f",
+        "%Y%m%d-%H%M%S.%f",
+        "%Y%m%d-%H-%M-%S%f",
+        "%Y%m%d-%H-%M-%S.%f",
+        "%Y%m%d-%H:%M:%S%f",
+        "%Y%m%d-%H:%M:%S.%f",
+        "%Y%m%dT%H%M%S%f",
         "%Y%m%dT%H%M%S.%f",
+        "%Y%m%dT%H-%M-%S%f",
+        "%Y%m%dT%H-%M-%S.%f",
+        "%Y%m%dT%H:%M:%S%f",
+        "%Y%m%dT%H:%M:%S.%f",
+        "%Y-%m-%d%H%M%S%f",
+        "%Y-%m-%d%H%M%S.%f",
+        "%Y-%m-%d%H-%M-%S%f",
+        "%Y-%m-%d%H-%M-%S.%f",
+        "%Y-%m-%d%H:%M:%S%f",
+        "%Y-%m-%d%H:%M:%S.%f",
+        "%Y-%m-%d-%H%M%S%f",
+        "%Y-%m-%d-%H%M%S.%f",
+        "%Y-%m-%d-%H-%M-%S%f",
+        "%Y-%m-%d-%H-%M-%S.%f",
+        "%Y-%m-%d-%H:%M:%S%f",
+        "%Y-%m-%d-%H:%M:%S.%f",
+        "%Y-%m-%dT%H%M%S%f",
+        "%Y-%m-%dT%H%M%S.%f",
+        "%Y-%m-%dT%H-%M-%S%f",
+        "%Y-%m-%dT%H-%M-%S.%f",
+        "%Y-%m-%dT%H:%M:%S%f",
+        "%Y-%m-%dT%H:%M:%S.%f",
     ]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(datetime, fmt).replace(tzinfo=tzinfo)
-    for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
-        with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
-    raise ParseDateTimeError(datetime)
+    raise ParseDateTimeError(datetime=datetime)
 
 
-class ParseDateTimeError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class ParseDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse datetime; got {self.datetime!r}"
 
 
 def parse_time(time: str, /) -> dt.time:
@@ -233,10 +321,16 @@ def parse_time(time: str, /) -> dt.time:
     for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:  # pragma: version-ge-311
         with suppress(ValueError):
             return dt.datetime.strptime(time, fmt).replace(tzinfo=UTC).time()
-    raise ParseTimeError(time)
+    raise ParseTimeError(time=time)
 
 
-class ParseTimeError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class ParseTimeError(Exception):
+    time: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse time; got {self.time!r}"
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
@@ -265,19 +359,18 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
         )
     try:
         days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
-    except ExtractGroupsError as error:
-        raise ParseTimedeltaError(pattern=error.pattern, timedelta=timedelta) from None
+    except ExtractGroupsError:
+        raise ParseTimedeltaError(timedelta=timedelta) from None
     return dt.timedelta(days=int(days)) + parse_timedelta(tail)
 
 
 @dataclass(kw_only=True, slots=True)
 class ParseTimedeltaError(Exception):
-    pattern: str
     timedelta: str
 
     @override
     def __str__(self) -> str:
-        return f"Pattern {self.pattern} must match against {self.timedelta}."
+        return f"Unable to parse timedelta; got {self.timedelta!r}"
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
