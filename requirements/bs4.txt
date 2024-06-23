@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 beautifulsoup4==4.12.3
     # via dycw-utilities (pyproject.toml)
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 exceptiongroup==1.2.1
     # via

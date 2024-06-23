@@ -6,7 +6,7 @@ anyio==4.4.0
     # via starlette
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 exceptiongroup==1.2.1
     # via

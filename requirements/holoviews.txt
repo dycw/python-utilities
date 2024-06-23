@@ -14,7 +14,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 exceptiongroup==1.2.1
     # via

@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-luigi --prerelease=disallow --output-file=requirements/luigi.txt --python-version=3.10 pyproject.toml
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 docutils==0.21.2
     # via python-daemon

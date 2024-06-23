@@ -14,7 +14,7 @@ click==8.1.7
     # via
     #   hatch
     #   userpath
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 distlib==0.3.8
     # via virtualenv
@@ -24,13 +24,13 @@ exceptiongroup==1.2.1
     #   anyio
     #   hypothesis
     #   pytest
-filelock==3.15.3
+filelock==3.15.4
     # via virtualenv
 h11==0.14.0
     # via httpcore
 hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.24.2
+hatchling==1.25.0
     # via hatch
 httpcore==1.0.5
     # via httpx
@@ -45,7 +45,7 @@ idna==3.7
     #   anyio
     #   httpx
     #   hyperlink
-importlib-metadata==7.2.0
+importlib-metadata==7.2.1
     # via keyring
 iniconfig==2.0.0
     # via pytest
