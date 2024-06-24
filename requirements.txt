@@ -74,7 +74,7 @@ colorlog==6.8.2
     # via optuna
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.3
+coverage==7.5.4
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -106,7 +106,7 @@ fastapi-slim==0.111.0
     # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
-filelock==3.15.3
+filelock==3.15.4
     # via virtualenv
 fonttools==4.53.0
     # via fpdf2
@@ -128,7 +128,7 @@ h11==0.14.0
     #   wsproto
 hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
-hatchling==1.24.2
+hatchling==1.25.0
     # via hatch
 holoviews==1.19.0
     # via dycw-utilities (pyproject.toml)
@@ -147,7 +147,7 @@ idna==3.7
     #   hyperlink
     #   requests
     #   trio
-importlib-metadata==7.2.0
+importlib-metadata==7.2.1
     # via keyring
 importlib-resources==6.4.0
     # via pypiserver
@@ -382,7 +382,7 @@ pyyaml==6.0.1
     # via
     #   bokeh
     #   optuna
-qdldl==0.1.7.post3
+qdldl==0.1.7.post4
     # via osqp
 referencing==0.35.1
     # via
