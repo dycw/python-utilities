@@ -28,6 +28,47 @@ def always_iterable(
     return _always_iterable(obj, base_type=base_type)
 
 
+@overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: _U | Iterable[_U] | None = None,
+    exclude: _U | Iterable[_U] | None = None,
+    key: Callable[[_T], _U],
+) -> Iterable[_T]: ...
+@overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: _T | Iterable[_T] | None = None,
+    exclude: _T | Iterable[_T] | None = None,
+    key: Callable[[_T], Any] | None = None,
+) -> Iterable[_T]: ...
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: _U | Iterable[_U] | None = None,
+    exclude: _U | Iterable[_U] | None = None,
+    key: Callable[[_T], _U] | None = None,
+) -> Iterable[_T]:
+    """Filter an iterable based on an inclusion/exclusion pair."""
+    include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
+    if include is not None:
+        if key is None:
+            iterable = (x for x in iterable if x in include)
+        else:
+            iterable = (x for x in iterable if key(x) in include)
+    if exclude is not None:
+        if key is None:
+            iterable = (x for x in iterable if x not in exclude)
+        else:
+            iterable = (x for x in iterable if key(x) not in exclude)
+    return iterable
+
+
 class peekable(_peekable, Generic[_T]):  # noqa: N801
     """Peekable which supports dropwhile/takewhile methods."""
 
@@ -55,6 +96,36 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
     def takewhile(self, predicate: Callable[[_T], bool], /) -> Iterator[_T]:
         while bool(self) and predicate(self.peek()):
             yield next(self)
+
+
+def resolve_include_and_exclude(
+    *,
+    include: _T | Iterable[_T] | None = None,
+    exclude: _T | Iterable[_T] | None = None,
+) -> tuple[set[_T] | None, set[_T] | None]:
+    """Resolve an inclusion/exclusion pair."""
+    include_use = include if include is None else set(always_iterable(include))
+    exclude_use = exclude if exclude is None else set(always_iterable(exclude))
+    if (
+        (include_use is not None)
+        and (exclude_use is not None)
+        and (len(include_use & exclude_use) >= 1)
+    ):
+        raise ResolveIncludeAndExcludeError(include=include_use, exclude=exclude_use)
+    return include_use, exclude_use
+
+
+@dataclass(kw_only=True)
+class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
+    include: Iterable[_T]
+    exclude: Iterable[_T]
+
+    @override
+    def __str__(self) -> str:
+        include = list(self.include)
+        exclude = list(self.exclude)
+        overlap = set(include) & set(exclude)
+        return f"Iterables {include} and {exclude} must not overlap; got {overlap}."
 
 
 def windowed_complete(
@@ -150,4 +221,13 @@ def _yield_splits3(
         yield Split(head=list(head_win), tail=list(tail_win))
 
 
-__all__ = ["Split", "always_iterable", "peekable", "windowed_complete", "yield_splits"]
+__all__ = [
+    "ResolveIncludeAndExcludeError",
+    "Split",
+    "always_iterable",
+    "filter_include_and_exclude",
+    "peekable",
+    "resolve_include_and_exclude",
+    "windowed_complete",
+    "yield_splits",
+]

@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 bleach==6.1.0
     # via panel
-bokeh==3.4.1
+bokeh==3.4.2
     # via panel
 certifi==2024.6.2
     # via requests
@@ -29,7 +29,7 @@ fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 holoviews==1.18.3
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.103.2
+hypothesis==6.103.5
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -70,7 +70,7 @@ pandas==2.2.2
     #   panel
 panel==1.4.4
     # via holoviews
-param==2.1.0
+param==2.1.1
     # via
     #   holoviews
     #   panel

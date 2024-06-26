@@ -24,7 +24,6 @@ from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
-    ResolveIncludeAndExcludeError,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -46,9 +45,12 @@ from utilities.iterables import (
     one,
     one_str,
     product_dicts,
-    resolve_include_and_exclude,
     take,
     transpose,
+)
+from utilities.more_itertools import (
+    ResolveIncludeAndExcludeError,
+    resolve_include_and_exclude,
 )
 
 if TYPE_CHECKING:
