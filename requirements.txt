@@ -38,7 +38,7 @@ bleach==6.1.0
     # via panel
 blinker==1.8.2
     # via streamlit
-bokeh==3.4.1
+bokeh==3.4.2
     # via
     #   holoviews
     #   panel
@@ -138,7 +138,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.103.2
+hypothesis==6.104.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -147,7 +147,7 @@ idna==3.7
     #   hyperlink
     #   requests
     #   trio
-importlib-metadata==7.2.1
+importlib-metadata==8.0.0
     # via keyring
 importlib-resources==6.4.0
     # via pypiserver
@@ -239,7 +239,7 @@ numpy==2.0.0
     #   zarr
 optuna==3.6.1
     # via dycw-utilities (pyproject.toml)
-osqp==0.6.7
+osqp==0.6.7.post0
     # via cvxpy
 outcome==1.3.0.post0
     # via trio
@@ -269,7 +269,7 @@ pandas==2.2.2
     #   xarray
 panel==1.4.4
     # via holoviews
-param==2.1.0
+param==2.1.1
     # via
     #   holoviews
     #   panel
@@ -301,7 +301,7 @@ polars-lts-cpu==0.20.31
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.27.1
+protobuf==5.27.2
     # via
     #   streamlit
     #   vegafusion
@@ -401,7 +401,7 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-scipy==1.13.1
+scipy==1.14.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   clarabel
@@ -416,7 +416,7 @@ selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.1.0
+setuptools==70.1.1
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -446,7 +446,7 @@ starlette==0.37.2
     # via fastapi-slim
 streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
-tenacity==8.4.1
+tenacity==8.4.2
     # via
     #   luigi
     #   streamlit
@@ -508,7 +508,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.13
+uv==0.2.15
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

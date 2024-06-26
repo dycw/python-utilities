@@ -9,7 +9,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.103.2
+hypothesis==6.104.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -33,7 +33,7 @@ pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
-scipy==1.13.1
+scipy==1.14.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis

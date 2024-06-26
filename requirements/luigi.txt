@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   pytest
 freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.103.2
+hypothesis==6.104.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -47,7 +47,7 @@ python-dateutil==2.9.0.post0
     #   luigi
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.1.0
+setuptools==70.1.1
     # via python-daemon
 six==1.16.0
     # via python-dateutil
@@ -55,7 +55,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.31
     # via dycw-utilities (pyproject.toml)
-tenacity==8.4.1
+tenacity==8.4.2
     # via luigi
 tomli==2.0.1
     # via
