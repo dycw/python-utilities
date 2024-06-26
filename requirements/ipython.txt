@@ -16,7 +16,7 @@ exceptiongroup==1.2.1
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.103.5
+hypothesis==6.104.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
