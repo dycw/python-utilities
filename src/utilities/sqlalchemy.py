@@ -759,16 +759,18 @@ def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
     )
 
 
-def is_mapped_class(obj: type[Any], /) -> bool:
+def is_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a mapped class."""
-    try:
-        _ = class_mapper(cast(Any, obj))
-    except (ArgumentError, UnmappedClassError):
-        return False
-    return True
+    if isinstance(obj, type):
+        try:
+            _ = class_mapper(cast(Any, obj))
+        except (ArgumentError, UnmappedClassError):
+            return False
+        return True
+    return is_mapped_class(type(obj))
 
 
-def is_table_or_mapped_class(obj: Table | type[Any], /) -> bool:
+def is_table_or_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a Table or a mapped class."""
     return isinstance(obj, Table) or is_mapped_class(obj)
 

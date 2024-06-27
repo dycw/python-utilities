@@ -1191,7 +1191,7 @@ class TestInsertItemsCollectValid:
 
 
 class TestIsMappedClass:
-    def test_mapped_class(self) -> None:
+    def test_mapped_class_instance(self) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
@@ -1199,9 +1199,10 @@ class TestIsMappedClass:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert is_mapped_class(Example)
+        assert is_mapped_class(Example(id_=1))
 
     def test_other(self) -> None:
-        assert not is_mapped_class(int)
+        assert not is_mapped_class(None)
 
 
 class TestIsTableOrMappedClass:
@@ -1218,9 +1219,10 @@ class TestIsTableOrMappedClass:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert is_table_or_mapped_class(Example)
+        assert is_table_or_mapped_class(Example(id_=1))
 
     def test_other(self) -> None:
-        assert not is_table_or_mapped_class(int)
+        assert not is_table_or_mapped_class(None)
 
 
 class TestMappedClassToDict:
