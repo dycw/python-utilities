@@ -4,7 +4,7 @@ import enum
 import typing
 from enum import auto
 from time import sleep
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, cast
 
 import sqlalchemy
 from hypothesis import Phase, assume, given, settings
@@ -72,7 +72,12 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    MappedAsDataclass,
+    mapped_column,
+)
 
 from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
@@ -671,10 +676,12 @@ class TestCheckTablesEqual:
         _check_tables_equal(x, y, snake_columns=True)
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            Id = Column(Integer, primary_key=True)
+            id_ = Column(Integer, primary_key=True)
 
         _check_tables_equal(Example, Example)
 
@@ -698,21 +705,27 @@ class TestCheckTableOrColumnNamesEqual:
             with raises(_CheckTableOrColumnNamesEqualError):
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
-    @mark.parametrize(("name", "expected"), [param(None, "Id"), param("x", "x")])
-    def test_quoted_name(self, *, name: str | None, expected: str) -> None:
-        class Kwargs(TypedDict, total=False):
-            name: str
+    def test_id(self) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
-        class Example(declarative_base()):
+        class Example(Base):
             __tablename__ = "example"
 
-            Id = Column(
-                Integer,
-                primary_key=True,
-                **(cast(Kwargs, {} if name is None else {"name": name})),
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        _check_table_or_column_names_equal(Example.id_.name, "id_")
+
+    def test_id_as_x(self) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id_: Mapped[int] = mapped_column(
+                Integer, kw_only=True, primary_key=True, name="name"
             )
 
-        _check_table_or_column_names_equal(Example.Id.name, expected)
+        _check_table_or_column_names_equal(Example.id_.name, "name")
 
 
 class TestColumnwiseMinMax:
@@ -812,10 +825,12 @@ class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         self._run_test(Example, engine, runs)
 
@@ -839,10 +854,12 @@ class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         self._run_test(Example, engine, runs)
 
@@ -880,10 +897,12 @@ class TestGetColumnNames:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         self._run_test(Example)
 
@@ -897,10 +916,12 @@ class TestGetColumns:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         self._run_test(Example)
 
@@ -924,10 +945,12 @@ class TestGetTable:
         assert result is table
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         table = get_table(Example)
         result = get_table(table)
@@ -954,10 +977,12 @@ class TestGetTableName:
         assert result == expected
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         result = get_table_name(Example)
         expected = "example"
@@ -1031,10 +1056,12 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         self._run_test(engine, {id_}, Example(id_=id_))
 
@@ -1095,10 +1122,12 @@ class TestInsertItemsCollect:
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         item = Example(id_=id_)
         result = list(_insert_items_collect(item))
@@ -1163,10 +1192,11 @@ class TestInsertItemsCollectValid:
 
 class TestIsMappedClass:
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
-            __tablename__ = "example"
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
-            id_ = Column(Integer, primary_key=True)
+        class Example(Base):
+            __tablename__ = "example"
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert is_mapped_class(Example)
 
@@ -1180,10 +1210,12 @@ class TestIsTableOrMappedClass:
         assert is_table_or_mapped_class(table)
 
     def test_mapped_class(self) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
 
-            id_ = Column(Integer, primary_key=True)
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert is_table_or_mapped_class(Example)
 
@@ -1194,9 +1226,12 @@ class TestIsTableOrMappedClass:
 class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
-            id_ = Column(Integer, primary_key=True)
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         example = Example(id_=id_)
         result = mapped_class_to_dict(example)
@@ -1205,9 +1240,14 @@ class TestMappedClassToDict:
 
     @given(id_=integers())
     def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Example(declarative_base()):
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
             __tablename__ = "example"
-            ID = Column(Integer, primary_key=True, name="id")
+
+            ID: Mapped[int] = mapped_column(
+                Integer, kw_only=True, primary_key=True, name="id"
+            )
 
         example = Example(ID=id_)
         result = mapped_class_to_dict(example)
@@ -1304,6 +1344,47 @@ class TestPostgresUpsert:
         ]
         with assume_does_not_raise(OneEmptyError):
             ups = postgres_upsert(table, values)
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            assert conn.execute(
+                select(func.count()).select_from(table)
+            ).scalar_one() == len(id_ins)
+        new = data.draw(lists_fixed_length(booleans(), len(ids)))
+        rows = list(zip(sorted(ids), new, strict=True))
+        ups = postgres_upsert(table, [{"id_": id_, "value": v} for id_, v in rows])
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            results = conn.execute(select(table).order_by(table.c.id_)).all()
+        assert results == rows
+
+    @given(data=data(), ids=sets(integers(0, 10)))
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_mapped_class(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        data: DataObject,
+        ids: set[int],
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+
+        engine = create_postgres_engine(Example)
+        with assume_does_not_raise(InvalidArgument):
+            id_ins = data.draw(sets(sampled_from(sorted(ids))))
+        old = data.draw(lists_fixed_length(booleans(), len(id_ins)))
+        values = [
+            {"id_": id_, "value": v} for (id_, v) in zip(id_ins, old, strict=True)
+        ]
+        with assume_does_not_raise(OneEmptyError):
+            ups = postgres_upsert(Example, values)
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
@@ -1491,7 +1572,9 @@ class TestSerializeEngine:
 
 class TestTablenameMixin:
     def test_main(self) -> None:
-        class Example(declarative_base(cls=TablenameMixin)):
-            Id = Column(Integer, primary_key=True)
+        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...
+
+        class Example(Base):
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
