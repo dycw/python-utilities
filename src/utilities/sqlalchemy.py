@@ -759,7 +759,7 @@ class _InsertItemsCollectIterableError(Exception): ...
 
 
 def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
-    """Check if an insertion item being collected is valid."""
+    """Check if an item being collected is valid."""
     return isinstance(obj, tuple) or (
         isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
     )
