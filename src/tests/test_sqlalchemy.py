@@ -1480,7 +1480,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapped_class.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapped_class.__name__}_{selected_or_all}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
