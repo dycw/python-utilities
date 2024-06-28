@@ -1422,7 +1422,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all.__name__}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all.__name__}_{selected_or_all}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("value1", Boolean, nullable=True),
