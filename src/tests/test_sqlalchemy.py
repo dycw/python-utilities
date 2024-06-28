@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import typing
 from enum import auto
+from re import escape
 from time import sleep
 from typing import Any, Literal, cast
 
@@ -90,6 +91,7 @@ from utilities.sqlalchemy import (
     Dialect,
     GetTableError,
     ParseEngineError,
+    PostgresUpsertError,
     TablenameMixin,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -1509,6 +1511,13 @@ class TestPostgresUpsert:
         ups = postgres_upsert(table, values=new_values)
         _, _, update2 = one(self._run_upsert(engine, table, ups))
         assert update1 < update2
+
+    def test_error(self) -> None:
+        with raises(
+            PostgresUpsertError,
+            match=escape("Unsupported item and values; got None and []"),
+        ):
+            _ = postgres_upsert(cast(Any, None), values=[])
 
     def _run_upsert(
         self, engine: Engine, table: Any, ups: Insert
