@@ -10,7 +10,7 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload
 
 import sqlalchemy
 from sqlalchemy import (
@@ -45,7 +45,12 @@ from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
-from sqlalchemy.orm import InstrumentedAttribute, class_mapper, declared_attr
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    InstrumentedAttribute,
+    class_mapper,
+    declared_attr,
+)
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.functions import now
@@ -62,6 +67,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
+from utilities.more_itertools import always_iterable
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
 
@@ -595,12 +601,12 @@ class GetDialectError(Exception):
         )
 
 
-def get_table(obj: Table | type[Any], /) -> Table:
+def get_table(obj: Any, /) -> Table:
     """Get the table from a Table or mapped class."""
     if isinstance(obj, Table):
         return obj
     if is_mapped_class(obj):
-        return cast(Any, obj).__table__
+        return obj.__table__
     raise GetTableError(obj=obj)
 
 
@@ -753,22 +759,24 @@ class _InsertItemsCollectIterableError(Exception): ...
 
 
 def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
-    """Check if an insertion item being collected is valid."""
+    """Check if an item being collected is valid."""
     return isinstance(obj, tuple) or (
         isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
     )
 
 
-def is_mapped_class(obj: type[Any], /) -> bool:
+def is_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a mapped class."""
-    try:
-        _ = class_mapper(cast(Any, obj))
-    except (ArgumentError, UnmappedClassError):
-        return False
-    return True
+    if isinstance(obj, type):
+        try:
+            _ = class_mapper(cast(Any, obj))
+        except (ArgumentError, UnmappedClassError):
+            return False
+        return True
+    return is_mapped_class(type(obj))
 
 
-def is_table_or_mapped_class(obj: Table | type[Any], /) -> bool:
+def is_table_or_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a Table or a mapped class."""
     return isinstance(obj, Table) or is_mapped_class(obj)
 
@@ -801,25 +809,65 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
+@overload
+def postgres_upsert(
+    item: Table,
+    /,
+    *,
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> Insert: ...
+@overload
+def postgres_upsert(
+    item: DeclarativeBase | Sequence[DeclarativeBase],
+    /,
+    *,
+    values: None = None,
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> Insert: ...
 def postgres_upsert(  # pragma: ci-in-environ
-    table_or_mapped_class: Table | type[Any],
-    value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    item: Any,
+    /,
+    *,
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    """Upsert statement for a database (postgres only).
+
+    These can be:
+
+    - tuple[Table, Mapping[str, Any]]
+    - tuple[Table, Sequence[Mapping[str, Any]]]
+    - Model
+    - Sequence[Model]
+    """
+    if isinstance(item, Table) and (values is not None):
+        return _postgres_upsert_core(item, values, selected_or_all=selected_or_all)
+    items = list(always_iterable(item))
+    if all(is_mapped_class(i) for i in items) and (values is None):
+        table = one(set(map(get_table, items)))
+        values = list(map(mapped_class_to_dict, items))
+        return _postgres_upsert_core(table, values, selected_or_all=selected_or_all)
+    raise PostgresUpsertError(item=item, values=values)
+
+
+def _postgres_upsert_core(  # pragma: ci-in-environ
+    table: Table,
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
     *,
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
-    """Construct an `upsert` statement (postgres only)."""
-    table = get_table(table_or_mapped_class)
     if (updated_col := get_table_updated_column(table)) is not None:
         updated_mapping = {updated_col: get_now()}
-        value_or_values = _postgres_upsert_add_updated(value_or_values, updated_mapping)
+        values = _postgres_upsert_add_updated(values, updated_mapping)
     constraint = cast(Any, table.primary_key)
-    ins = postgresql_insert(table).values(value_or_values)
+    ins = postgresql_insert(table).values(values)
     if selected_or_all == "selected":
-        if isinstance(value_or_values, Mapping):
-            columns = set(value_or_values)
+        if isinstance(values, Mapping):
+            columns = set(values)
         else:
-            all_columns = set(map(frozenset, value_or_values))
+            all_columns = set(map(frozenset, values))
             columns = one(all_columns)
     elif selected_or_all == "all":
         columns = {c.name for c in ins.excluded}
@@ -830,21 +878,29 @@ def postgres_upsert(  # pragma: ci-in-environ
 
 
 def _postgres_upsert_add_updated(  # pragma: ci-in-environ
-    value_or_values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     updated: Mapping[str, dt.datetime],
     /,
 ) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
-    if isinstance(value_or_values, Mapping):
-        return _postgres_upsert_add_updated_to_mapping(value_or_values, updated)
-    return [
-        _postgres_upsert_add_updated_to_mapping(v, updated) for v in value_or_values
-    ]
+    if isinstance(values, Mapping):
+        return _postgres_upsert_add_updated_to_mapping(values, updated)
+    return [_postgres_upsert_add_updated_to_mapping(v, updated) for v in values]
 
 
 def _postgres_upsert_add_updated_to_mapping(  # pragma: ci-in-environ
     value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
 ) -> Mapping[str, Any]:
     return {**value, **updated_at}
+
+
+@dataclass(kw_only=True)
+class PostgresUpsertError(Exception):
+    item: Any
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
+
+    @override
+    def __str__(self) -> str:  # pragma: ci-in-environ
+        return f"Unsupported item and values; got {self.item} and {self.values}"
 
 
 def reflect_table(
@@ -883,6 +939,7 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "ParseEngineError",
+    "PostgresUpsertError",
     "TablenameMixin",
     "check_engine",
     "check_table_against_reflection",
