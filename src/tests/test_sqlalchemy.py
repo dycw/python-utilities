@@ -1351,7 +1351,7 @@ class TestPostgresUpsert:
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
-    def test_mapped_class(
+    def test_mapped_class_and_mapping(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1362,7 +1362,31 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_and_mapping.__name__}"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+
+        engine = create_postgres_engine(Example)
+        ups = postgres_upsert(Example, values={"id_": id_, "value": old})
+        assert one(self._run_upsert(engine, Example, ups)) == (id_, old)
+        ups = postgres_upsert(Example, values={"id_": id_, "value": new})
+        assert one(self._run_upsert(engine, Example, ups)) == (id_, new)
+
+    @given(id_=integers(0, 10), old=booleans(), new=booleans())
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_mapped_class_instance(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        id_: int,
+        old: bool,
+        new: bool,
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_instance.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
