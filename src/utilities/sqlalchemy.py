@@ -834,7 +834,12 @@ def postgres_upsert(  # pragma: ci-in-environ
 ) -> Insert:
     """Upsert statement for a database (postgres only).
 
-    These can be
+    These can be:
+
+    - tuple[Table, Mapping[str, Any]]
+    - tuple[Table, Sequence[Mapping[str, Any]]]
+    - Model
+    - Sequence[Model]
     """
     if isinstance(item, Table) and (values is not None):
         return _postgres_upsert_core(item, values, selected_or_all=selected_or_all)
