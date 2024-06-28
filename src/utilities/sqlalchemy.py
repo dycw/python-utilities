@@ -67,7 +67,6 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.more_itertools import always_iterable
 from utilities.text import ensure_str
 from utilities.types import IterableStrs, get_class_name
 
@@ -846,12 +845,20 @@ def postgres_upsert(  # pragma: ci-in-environ
         or (isinstance(item, type) and issubclass(item, DeclarativeBase))
     ) and (values is not None):
         return _postgres_upsert_core(item, values, selected_or_all=selected_or_all)
-    items = list(always_iterable(item))
-    if all(is_mapped_class(i) for i in items) and (values is None):
-        table = one(set(map(get_table, items)))
-        values = list(map(mapped_class_to_dict, items))
-        return _postgres_upsert_core(table, values, selected_or_all=selected_or_all)
-    raise PostgresUpsertError(item=item, values=values)
+    if is_mapped_class(item) and (values is None):
+        table = get_table(item)
+        mappings = [mapped_class_to_dict(item)]
+    elif (
+        is_iterable_not_str(item)
+        and all(map(is_mapped_class, item))
+        and (values is None)
+    ):
+        table = one(set(map(get_table, item)))
+        mappings = map(mapped_class_to_dict, item)
+    else:
+        raise PostgresUpsertError(item=item, values=values)
+    mappings2 = [{k: v for k, v in m.items() if v is not None} for m in mappings]
+    return _postgres_upsert_core(table, mappings2, selected_or_all=selected_or_all)
 
 
 def _postgres_upsert_core(  # pragma: ci-in-environ

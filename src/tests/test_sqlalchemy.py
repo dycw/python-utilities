@@ -1365,7 +1365,7 @@ class TestPostgresUpsert:
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_and_mapping.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         engine = create_postgres_engine(Example)
         ups = postgres_upsert(Example, values={"id_": id_, "value": old})
@@ -1389,7 +1389,7 @@ class TestPostgresUpsert:
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_instance.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         engine = create_postgres_engine(Example)
         ups = postgres_upsert(Example(id_=id_, value=old))
@@ -1412,7 +1412,7 @@ class TestPostgresUpsert:
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_of_mapped_classes.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         engine = create_postgres_engine(Example)
         with assume_does_not_raise(InvalidArgument):
@@ -1431,40 +1431,74 @@ class TestPostgresUpsert:
         ups = postgres_upsert([Example(id_=id_, value=v) for id_, v in rows])
         assert self._run_upsert(engine, Example, ups) == rows
 
-    @given(id_=integers(0, 10), old1=booleans(), old2=booleans(), new1=booleans())
+    @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @settings(max_examples=1, phases={Phase.generate})
-    def test_selected_or_all(
+    def test_selected_or_all_with_mapping(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
         selected_or_all: Literal["selected", "all"],
         id_: int,
-        old1: bool,
-        old2: bool,
-        new1: bool,
+        x_old: bool,
+        x_new: bool,
+        y: bool,
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all.__name__}_{selected_or_all}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapping.__name__}_{selected_or_all}",
             metadata,
             Column("id_", Integer, primary_key=True),
-            Column("value1", Boolean, nullable=True),
-            Column("value2", Boolean, nullable=True),
+            Column("x", Boolean, nullable=False),
+            Column("y", Boolean, nullable=True),
         )
         engine = create_postgres_engine(table)
+        ups = postgres_upsert(table, values={"id_": id_, "x": x_old, "y": y})
+        assert one(self._run_upsert(engine, table, ups)) == (id_, x_old, y)
         ups = postgres_upsert(
-            table, values={"id_": id_, "value1": old1, "value2": old2}
-        )
-        assert one(self._run_upsert(engine, table, ups)) == (id_, old1, old2)
-        ups = postgres_upsert(
-            table, values={"id_": id_, "value1": new1}, selected_or_all=selected_or_all
+            table, values={"id_": id_, "x": x_new}, selected_or_all=selected_or_all
         )
         if selected_or_all == "selected":
-            expected = (id_, new1, old2)
+            expected = (id_, x_new, y)
         else:
-            expected = (id_, new1, None)
+            expected = (id_, x_new, None)
         assert one(self._run_upsert(engine, table, ups)) == expected
+
+    @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_selected_or_all_with_mapped_class(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        x_old: bool,
+        x_new: bool,
+        y: bool,
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapped_class.__name__}"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+            y: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+
+        engine = create_postgres_engine(Example)
+        ups = postgres_upsert(Example(id_=id_, x=x_old, y=y))
+        assert one(self._run_upsert(engine, Example, ups)) == (id_, x_old, y)
+        ups = postgres_upsert(
+            Example(id_=id_, x=x_new), selected_or_all=selected_or_all
+        )
+        if selected_or_all == "selected":
+            expected = (id_, x_new, y)
+        else:
+            expected = (id_, x_new, None)
+        assert one(self._run_upsert(engine, Example, ups)) == expected
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})

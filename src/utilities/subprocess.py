@@ -36,13 +36,7 @@ def get_shell_output(
         cmd = f"source {activate}; {cmd}"  # pragma: os-ne-windows
 
     with temp_environ(env):
-        return check_output(
-            cmd,
-            stderr=PIPE,
-            shell=True,  # noqa: S602
-            cwd=cwd,
-            text=True,
-        )
+        return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
 class GetShellOutputError(Exception): ...
