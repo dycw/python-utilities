@@ -810,7 +810,7 @@ class ParseEngineError(Exception): ...
 
 
 @overload
-def postgres_upsert(  # pragma: ci-in-environ
+def postgres_upsert(
     item: Table,
     /,
     *,
@@ -818,7 +818,7 @@ def postgres_upsert(  # pragma: ci-in-environ
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
 @overload
-def postgres_upsert(  # pragma: ci-in-environ
+def postgres_upsert(
     item: DeclarativeBase | Sequence[DeclarativeBase],
     /,
     *,
@@ -851,7 +851,7 @@ def postgres_upsert(  # pragma: ci-in-environ
     raise PostgresUpsertError(item=item, values=values)
 
 
-def _postgres_upsert_core(
+def _postgres_upsert_core(  # pragma: ci-in-environ
     table: Table,
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
@@ -899,7 +899,7 @@ class PostgresUpsertError(Exception):
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
 
     @override
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: ci-in-environ
         return f"Unsupported item and values; got {self.item} and {self.values}"
 
 
