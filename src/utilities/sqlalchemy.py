@@ -934,6 +934,7 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "ParseEngineError",
+    "PostgresUpsertError",
     "TablenameMixin",
     "check_engine",
     "check_table_against_reflection",
