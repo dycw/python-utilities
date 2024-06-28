@@ -1467,7 +1467,7 @@ class TestPostgresUpsert:
     @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @settings(max_examples=1, phases={Phase.generate})
-    def test_selected_or_all_2(
+    def test_selected_or_all_with_mapped_class(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1480,7 +1480,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_2.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapped_class.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
