@@ -65,7 +65,7 @@ scipy==1.14.0
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.4.post3
+scs==3.2.5
     # via cvxpy
 six==1.16.0
     # via python-dateutil
