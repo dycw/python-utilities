@@ -55,11 +55,13 @@ from sqlalchemy import (
     Double,
     Engine,
     Float,
+    Insert,
     Integer,
     Interval,
     LargeBinary,
     MetaData,
     Numeric,
+    Row,
     SmallInteger,
     String,
     Table,
@@ -72,12 +74,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    MappedAsDataclass,
-    mapped_column,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
@@ -155,7 +152,7 @@ from utilities.sqlalchemy import (
 from utilities.types import get_class_name
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
 
@@ -1310,20 +1307,14 @@ class TestPostgresUpsert:
             Column("value", Boolean, nullable=True),
         )
         engine = create_postgres_engine(table)
-        ups = postgres_upsert(table, {"id_": id_, "value": old})
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            assert conn.execute(select(table)).one() == (id_, old)
-        ups = postgres_upsert(table, {"id_": id_, "value": new})
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            assert conn.execute(select(table)).one() == (id_, new)
+        ups = postgres_upsert(table, values={"id_": id_, "value": old})
+        assert one(self._run_upsert(engine, table, ups)) == (id_, old)
+        ups = postgres_upsert(table, values={"id_": id_, "value": new})
+        assert one(self._run_upsert(engine, table, ups)) == (id_, new)
 
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
-    def test_sequence(
+    def test_sequence_of_mappings(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1332,7 +1323,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence.__name__}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_of_mappings.__name__}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
@@ -1345,25 +1336,44 @@ class TestPostgresUpsert:
             {"id_": id_, "value": v} for (id_, v) in zip(id_ins, old, strict=True)
         ]
         with assume_does_not_raise(OneEmptyError):
-            ups = postgres_upsert(table, values)
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            assert conn.execute(
-                select(func.count()).select_from(table)
-            ).scalar_one() == len(id_ins)
+            ups = postgres_upsert(table, values=values)
+        assert self._run_upsert(engine, table, ups) == [
+            tuple(v.values()) for v in values
+        ]
         new = data.draw(lists_fixed_length(booleans(), len(ids)))
         rows = list(zip(sorted(ids), new, strict=True))
-        ups = postgres_upsert(table, [{"id_": id_, "value": v} for id_, v in rows])
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            results = conn.execute(select(table).order_by(table.c.id_)).all()
-        assert results == rows
+        ups = postgres_upsert(
+            table, values=[{"id_": id_, "value": v} for id_, v in rows]
+        )
+        assert self._run_upsert(engine, table, ups) == rows
+
+    @given(id_=integers(0, 10), old=booleans(), new=booleans())
+    @settings(max_examples=1, phases={Phase.generate})
+    def test_mapped_class(
+        self,
+        *,
+        create_postgres_engine: Callable[..., Engine],
+        id_: int,
+        old: bool,
+        new: bool,
+    ) -> None:
+        class Base(DeclarativeBase, MappedAsDataclass): ...
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+
+        engine = create_postgres_engine(Example)
+        ups = postgres_upsert(Example(id_=id_, value=old))
+        assert one(self._run_upsert(engine, Example, ups)) == (id_, old)
+        ups = postgres_upsert(Example(id_=id_, value=new))
+        assert one(self._run_upsert(engine, Example, ups)) == (id_, new)
 
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
-    def test_mapped_class(
+    def test_sequence_of_mapped_classes(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1383,24 +1393,17 @@ class TestPostgresUpsert:
             id_ins = data.draw(sets(sampled_from(sorted(ids))))
         old = data.draw(lists_fixed_length(booleans(), len(id_ins)))
         values = [
-            {"id_": id_, "value": v} for (id_, v) in zip(id_ins, old, strict=True)
+            Example(id_=id_, value=v) for (id_, v) in zip(id_ins, old, strict=True)
         ]
         with assume_does_not_raise(OneEmptyError):
-            ups = postgres_upsert(Example, values)
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            assert conn.execute(
-                select(func.count()).select_from(table)
-            ).scalar_one() == len(id_ins)
+            ups = postgres_upsert(values)
+        assert self._run_upsert(engine, Example, ups) == [
+            (v.id_, v.value) for v in values
+        ]
         new = data.draw(lists_fixed_length(booleans(), len(ids)))
         rows = list(zip(sorted(ids), new, strict=True))
-        ups = postgres_upsert(table, [{"id_": id_, "value": v} for id_, v in rows])
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            results = conn.execute(select(table).order_by(table.c.id_)).all()
-        assert results == rows
+        ups = postgres_upsert([Example(id_=id_, value=v) for id_, v in rows])
+        assert self._run_upsert(engine, Example, ups) == rows
 
     @given(id_=integers(0, 10), old1=booleans(), old2=booleans(), new1=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
@@ -1424,23 +1427,18 @@ class TestPostgresUpsert:
             Column("value2", Boolean, nullable=True),
         )
         engine = create_postgres_engine(table)
-        ups = postgres_upsert(table, {"id_": id_, "value1": old1, "value2": old2})
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            assert conn.execute(select(table)).one() == (id_, old1, old2)
         ups = postgres_upsert(
-            table, {"id_": id_, "value1": new1}, selected_or_all=selected_or_all
+            table, values={"id_": id_, "value1": old1, "value2": old2}
         )
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            result = conn.execute(select(table)).one()
+        assert one(self._run_upsert(engine, table, ups)) == (id_, old1, old2)
+        ups = postgres_upsert(
+            table, values={"id_": id_, "value1": new1}, selected_or_all=selected_or_all
+        )
         if selected_or_all == "selected":
             expected = (id_, new1, old2)
         else:
             expected = (id_, new1, None)
-        assert result == expected
+        assert one(self._run_upsert(engine, table, ups)) == expected
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
@@ -1466,17 +1464,11 @@ class TestPostgresUpsert:
             ),
         )
         engine = create_postgres_engine(table)
-        ups = postgres_upsert(table, {"id_": id_, "value": old})
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            update1 = conn.execute(select(table.c.updated_at)).scalar_one()
+        ups = postgres_upsert(table, values={"id_": id_, "value": old})
+        _, _, update1 = one(self._run_upsert(engine, table, ups))
         sleep(0.1)
-        ups = postgres_upsert(table, {"id_": id_, "value": new})
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            update2 = conn.execute(select(table.c.updated_at)).scalar_one()
+        ups = postgres_upsert(table, values={"id_": id_, "value": new})
+        _, _, update2 = one(self._run_upsert(engine, table, ups))
         assert update1 < update2
 
     @given(data=data(), ids=sets(integers(0, 10)))
@@ -1507,22 +1499,24 @@ class TestPostgresUpsert:
             {"id_": id_, "value": v} for (id_, v) in zip(ids, old, strict=True)
         ]
         with assume_does_not_raise(OneEmptyError):
-            ups = postgres_upsert(table, old_values)
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            update1 = conn.execute(select(table.c.updated_at)).scalar_one()
+            ups = postgres_upsert(table, values=old_values)
+        _, _, update1 = one(self._run_upsert(engine, table, ups))
         sleep(0.1)
         new = data.draw(lists_fixed_length(booleans(), len(ids)))
         new_values = [
             {"id_": id_, "value": v} for (id_, v) in zip(ids, new, strict=True)
         ]
-        ups = postgres_upsert(table, new_values)
+        ups = postgres_upsert(table, values=new_values)
+        _, _, update2 = one(self._run_upsert(engine, table, ups))
+        assert update1 < update2
+
+    def _run_upsert(
+        self, engine: Engine, table: Any, ups: Insert
+    ) -> Sequence[Row[Any]]:
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
-            update2 = conn.execute(select(table.c.updated_at)).scalar_one()
-        assert update1 < update2
+            return conn.execute(select(table)).all()
 
 
 class TestRedirectToNoSuchSequenceError:
