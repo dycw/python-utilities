@@ -811,7 +811,7 @@ class ParseEngineError(Exception): ...
 
 @overload
 def postgres_upsert(
-    item: Table,
+    item: Table | type[DeclarativeBase],
     /,
     *,
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
@@ -841,7 +841,10 @@ def postgres_upsert(  # pragma: ci-in-environ
     - Model
     - Sequence[Model]
     """
-    if isinstance(item, Table) and (values is not None):
+    if (
+        isinstance(item, Table)
+        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
+    ) and (values is not None):
         return _postgres_upsert_core(item, values, selected_or_all=selected_or_all)
     items = list(always_iterable(item))
     if all(is_mapped_class(i) for i in items) and (values is None):
@@ -852,12 +855,13 @@ def postgres_upsert(  # pragma: ci-in-environ
 
 
 def _postgres_upsert_core(  # pragma: ci-in-environ
-    table: Table,
+    table_or_mapped_class: Table | type[DeclarativeBase],
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
     *,
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
+    table = get_table(table_or_mapped_class)
     if (updated_col := get_table_updated_column(table)) is not None:
         updated_mapping = {updated_col: get_now()}
         values = _postgres_upsert_add_updated(values, updated_mapping)
