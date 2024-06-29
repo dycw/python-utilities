@@ -451,20 +451,18 @@ class FlatN0MultipleError(FlatN0Error):
 
 def get_fill_value(dtype_: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
-    try:
-        dtype_use = dtype(dtype_)
-    except TypeError:
-        raise GetFillValueError(dtype_=dtype_) from None
-    if isdtype(dtype_use, bool_):
+    if dtype == bool_:
         return False
     if isdtype(dtype_use, (datetime64D, datetime64Y, datetime64ns)):
         return datetime64("NaT")
-    if isdtype(dtype_use, float64):
+    if dtype == float64:
         return nan
-    if isdtype(dtype_use, int64):
+    if dtype == int64:
         return 0
-    return None
-
+    if dtype == object_:
+        return None
+    msg = f"{dtype=}"
+    raise GetFillValueError(msg)
 
 @dataclass(kw_only=True)
 class GetFillValueError(Exception):
