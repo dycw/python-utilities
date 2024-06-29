@@ -31,18 +31,16 @@ def time_series() -> DataFrame:
 class TestPlotDataFrame:
     @given(
         x=just("datetime") | none(),
-        y=sampled_from(
-            [
-                "x",
-                "y",
-                ("x", 50),
-                ("y", 50),
-                (["x", "y"], 50),
-                ["x", "y"],
-                [["x"], ["y"]],
-                [["x"], ("y", 50)],
-            ]
-        )
+        y=sampled_from([
+            "x",
+            "y",
+            ("x", 50),
+            ("y", 50),
+            (["x", "y"], 50),
+            ["x", "y"],
+            [["x"], ["y"]],
+            [["x"], ("y", 50)],
+        ])
         | none(),
         height=integers(1, 100),
         width=integers(1, 100),

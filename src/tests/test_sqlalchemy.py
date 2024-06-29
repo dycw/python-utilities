@@ -1597,20 +1597,18 @@ class TestRedirectToNoSuchSequenceError:
 class TestReflectTable:
     @given(
         engine=sqlite_engines(),
-        col_type=sampled_from(
-            [
-                INTEGER,
-                INTEGER(),
-                NVARCHAR,
-                NVARCHAR(),
-                NVARCHAR(1),
-                Integer,
-                Integer(),
-                String,
-                String(),
-                String(1),
-            ]
-        ),
+        col_type=sampled_from([
+            INTEGER,
+            INTEGER(),
+            NVARCHAR,
+            NVARCHAR(),
+            NVARCHAR(1),
+            Integer,
+            Integer(),
+            String,
+            String(),
+            String(1),
+        ]),
     )
     def test_main(self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))

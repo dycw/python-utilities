@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from numpy import array, datetime64, isin, ndarray, prod
+from numpy import array, datetime64, isin, ndarray, object_, prod
 from numpy.typing import ArrayLike, NDArray
 from typing_extensions import override
 from zarr import JSON, Array, Group, group
@@ -251,7 +251,7 @@ def yield_group_and_array(
     """
 
     def _codec(dtype: Any, /) -> dict[str, Any]:
-        return {"object_codec": JSON()} if dtype == object else {}
+        return {"object_codec": JSON()} if dtype == object_ else {}
 
     with writer(path, overwrite=overwrite) as temp:
         root = group(store=temp)

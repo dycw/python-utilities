@@ -342,9 +342,11 @@ class TestParseDateTime:
 
     @given(
         datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(
-            ["%Y%m%dT%H%M%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]
-        ).map(maybe_sub_pct_y),
+        fmt=sampled_from([
+            "%Y%m%dT%H%M%S",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+        ]).map(maybe_sub_pct_y),
     )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)

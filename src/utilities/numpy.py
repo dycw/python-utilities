@@ -450,15 +450,15 @@ class FlatN0MultipleError(FlatN0Error):
 
 def get_fill_value(dtype: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
-    if dtype == bool:
+    if dtype == bool_:
         return False
     if dtype in (datetime64D, datetime64Y, datetime64ns):
         return datetime64("NaT")
-    if dtype == float:
+    if dtype == float64:
         return nan
-    if dtype == int:
+    if dtype == int64:
         return 0
-    if dtype == object:
+    if dtype == object_:
         return None
     msg = f"{dtype=}"
     raise GetFillValueError(msg)
@@ -1268,7 +1268,6 @@ NDArrayF3ZrNonMicNan = Annotated[NDArrayF3, is_zero_or_non_micro_or_nan]
 
 
 __all__ = [
-    "AsIntError",
     "DATETIME_MAX_AS_DATETIME64",
     "DATETIME_MAX_AS_INT",
     "DATETIME_MIN_AS_DATETIME64",
@@ -1278,14 +1277,15 @@ __all__ = [
     "DATE_MIN_AS_DATETIME64",
     "DATE_MIN_AS_INT",
     "DEFAULT_RNG",
+    "AsIntError",
     "DateTime64ToDateError",
     "DateTime64ToDateTimeError",
     "Datetime64Kind",
     "Datetime64Unit",
     "EmptyNumpyConcatenateError",
+    "FlatN0EmptyError",
     "FlatN0Error",
     "FlatN0MultipleError",
-    "FlatN0EmptyError",
     "GetFillValueError",
     "NDArray0",
     "NDArray1",

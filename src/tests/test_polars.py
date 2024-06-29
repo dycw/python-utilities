@@ -58,29 +58,27 @@ from utilities.polars import (
 class TestCeilDatetime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series(
-        [
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        ]
-    )
+    expected: ClassVar[Series] = Series([
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+    ])
 
     def test_expr(self) -> None:
         data = datetime_range(self.start, self.end, interval="10s")
@@ -373,29 +371,27 @@ class TestEnsureExprOrSeries:
 class TestFloorDatetime:
     start: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC)
     end: ClassVar[dt.datetime] = dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC)
-    expected: ClassVar[Series] = Series(
-        [
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
-            dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
-        ]
-    )
+    expected: ClassVar[Series] = Series([
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 0, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 1, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 2, tzinfo=UTC),
+        dt.datetime(2000, 1, 1, 0, 3, tzinfo=UTC),
+    ])
 
     def test_expr(self) -> None:
         data = datetime_range(self.start, self.end, interval="10s")
@@ -518,20 +514,18 @@ class TestStructDataType:
             str_maybe: str | None = None
 
         result = struct_data_type(Example)
-        expected = Struct(
-            {
-                "bool_": Boolean,
-                "bool_maybe": Boolean,
-                "date": Date,
-                "date_maybe": Date,
-                "float_": Float64,
-                "float_maybe": Float64,
-                "int_": Int64,
-                "int_maybe": Int64,
-                "str_": Utf8,
-                "str_maybe": Utf8,
-            }
-        )
+        expected = Struct({
+            "bool_": Boolean,
+            "bool_maybe": Boolean,
+            "date": Date,
+            "date_maybe": Date,
+            "float_": Float64,
+            "float_maybe": Float64,
+            "int_": Int64,
+            "int_maybe": Int64,
+            "str_": Utf8,
+            "str_maybe": Utf8,
+        })
         assert result == expected
 
     def test_datetime(self) -> None:
@@ -575,9 +569,11 @@ class TestStructDataType:
             set_: set[int]
 
         result = struct_data_type(Example, time_zone=UTC)
-        expected = Struct(
-            {"frozenset_": List(Int64), "list_": List(Int64), "set_": List(Int64)}
-        )
+        expected = Struct({
+            "frozenset_": List(Int64),
+            "list_": List(Int64),
+            "set_": List(Int64),
+        })
         assert result == expected
 
     def test_list_of_struct(self) -> None:

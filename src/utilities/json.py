@@ -64,9 +64,7 @@ def _positive_zero(x: float, /) -> float:
     return abs(x) if x == 0.0 else x
 
 
-def _default(  # noqa: C901, PLR0912
-    obj: Any, /, *, extra: _ExtraSer[Any] | None = None
-) -> Any:
+def _default(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> Any:
     """Extension for the JSON serializer."""
     if isinstance(obj, bytes):
         return {_CLASS: "bytes", _VALUE: obj.decode()}

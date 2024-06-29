@@ -89,7 +89,7 @@ def ceil_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Series
     return DataFrame().with_columns(ceil.alias(column.name))[column.name]
 
 
-def check_polars_dataframe(  # noqa: C901
+def check_polars_dataframe(
     df: DataFrame,
     /,
     *,

@@ -52,7 +52,7 @@ class _LoadModelFileNotFoundError(LoadModelError):
 class _LoadModelIsADirectoryError(LoadModelError):
     @override
     def __str__(self) -> str:
-        return f"Unable to load {self.model  }; path {str(self.path)!r} must not be a directory."  # pragma: os-ne-windows
+        return f"Unable to load {self.model}; path {str(self.path)!r} must not be a directory."  # pragma: os-ne-windows
 
 
 def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:

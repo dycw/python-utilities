@@ -890,7 +890,7 @@ def uint64s(
 
 
 @composite
-def versions(  # noqa: PLR0912
+def versions(
     _draw: DrawFn,
     /,
     *,

@@ -349,7 +349,7 @@ def _select_to_dataframe_map_select_to_df_schema(
     }
 
 
-def _select_to_dataframe_map_table_column_type_to_dtype(  # noqa: C901
+def _select_to_dataframe_map_table_column_type_to_dtype(
     type_: Any, /, *, time_zone: timezone = UTC
 ) -> PolarsDataType:
     """Map a table column type to a polars type."""
