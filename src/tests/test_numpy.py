@@ -493,12 +493,16 @@ class TestGetFillValue:
     @mark.parametrize(
         "dtype",
         [
+            param(bool),
             param(bool_),
             param(datetime64D),
             param(datetime64Y),
             param(datetime64ns),
+            param(float),
             param(float64),
+            param(int),
             param(int64),
+            param(object),
             param(object_),
         ],
     )
