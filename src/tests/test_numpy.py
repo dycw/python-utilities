@@ -18,15 +18,19 @@ from hypothesis.strategies import (
 from numpy import (
     arange,
     array,
+    bool_,
     concatenate,
     datetime64,
     eye,
+    float64,
     full,
     inf,
+    int64,
     isclose,
     median,
     nan,
     ndarray,
+    object_,
     ones,
     zeros,
     zeros_like,
@@ -489,13 +493,13 @@ class TestGetFillValue:
     @mark.parametrize(
         "dtype",
         [
-            param(bool),
+            param(bool_),
             param(datetime64D),
             param(datetime64Y),
             param(datetime64ns),
-            param(float),
-            param(int),
-            param(object),
+            param(float64),
+            param(int64),
+            param(object_),
         ],
     )
     def test_main(self, *, dtype: Any) -> None:
