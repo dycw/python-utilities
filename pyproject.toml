@@ -479,6 +479,8 @@ ignore = [
   "PT013",  # pytest-incorrect-pytest-import
   "S603",  # subprocess-without-shell-equals-true
   "S607",  # start-process-with-partial-path
+  # preview
+  "S101",  # assert
   # formatter
   "W191",  # tab-indentation
   "E111",  # indentation-with-invalid-multiple
