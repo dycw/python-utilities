@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, dictionaries, floats, integers
-from numpy import arange, array, errstate, int64, isclose, nan, sort, zeros
+from numpy import arange, array, errstate, isclose, nan, sort, zeros
 from numpy.testing import assert_equal
 from pytest import mark, param, raises
 from zarr import open_array
@@ -84,7 +84,7 @@ class TestNDArrayWithIndexes:
     @given(root=temp_paths())
     def test_dtype(self, *, root: Path) -> None:
         path = ensure_path(root, "array")
-        with yield_array_with_indexes({}, path, dtype=int64):
+        with yield_array_with_indexes({}, path, dtype=int):
             pass
         view = NDArrayWithIndexes(path)
         assert view.dtype == int
@@ -126,7 +126,7 @@ class TestNDArrayWithIndexes:
     ) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
         assert_equal(view.isel(indexer), expected)
@@ -135,7 +135,7 @@ class TestNDArrayWithIndexes:
     def test_isel_error(self, *, tmp_path: Path, indexer: Mapping[str, Any]) -> None:
         indexes = {"x": arange(2), "y": arange(3)}
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
         with raises(BoundsCheckError):
@@ -165,7 +165,7 @@ class TestNDArrayWithIndexes:
     ) -> None:
         indexes = {"x": array(["x0", "x1"]), "y": array(["y0", "y1", "y2"])}
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(6, dtype=int).reshape(2, 3)
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
@@ -183,7 +183,7 @@ class TestNDArrayWithIndexes:
     ) -> None:
         indexes = {"x": index}
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(2, dtype=int)
         view = NDArrayWithIndexes(path)
         with raises(GetSelIndexerError):
@@ -213,7 +213,7 @@ class TestNDArrayWithIndexes:
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64D)
         }
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3)
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)
@@ -252,7 +252,7 @@ class TestNDArrayWithIndexes:
             "x": array([dt.date(2000, 1, i) for i in range(1, 4)], dtype=datetime64ns)
         }
         path = ensure_path(tmp_path, "array")
-        with yield_array_with_indexes(indexes, path, dtype=int64) as z_array:
+        with yield_array_with_indexes(indexes, path, dtype=int) as z_array:
             z_array[:] = arange(3, dtype=int)
         view = NDArrayWithIndexes(path)
         assert_equal(view.sel(indexer), expected)

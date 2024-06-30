@@ -474,7 +474,7 @@ class GetFillValueError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid data type; got {self.dtype_}"
+        return f"Invalid data type; got {self.dtype_!r}"
 
 
 def has_dtype(x: Any, dtype: Any, /) -> bool:
