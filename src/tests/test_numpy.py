@@ -493,12 +493,16 @@ class TestGetFillValue:
     @mark.parametrize(
         "dtype",
         [
+            param(bool),
             param(bool_),
             param(datetime64D),
             param(datetime64Y),
             param(datetime64ns),
+            param(float),
             param(float64),
+            param(int),
             param(int64),
+            param(object),
             param(object_),
         ],
     )
@@ -508,8 +512,8 @@ class TestGetFillValue:
         assert has_dtype(array, dtype)
 
     def test_error(self) -> None:
-        with raises(GetFillValueError):
-            _ = get_fill_value(None)
+        with raises(GetFillValueError, match="Invalid data type; got 'invalid'"):
+            _ = get_fill_value("invalid")
 
 
 class TestHasDtype:

@@ -23,6 +23,7 @@ from numpy import (
     inf,
     int64,
     isclose,
+    isdtype,
     isfinite,
     isinf,
     isnan,
@@ -448,23 +449,32 @@ class FlatN0MultipleError(FlatN0Error):
         return f"Array {self.array} must contain at most one True."
 
 
-def get_fill_value(dtype: Any, /) -> Any:
+def get_fill_value(dtype_: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
-    if dtype == bool_:
+    try:
+        dtype_use = dtype(dtype_)
+    except TypeError:
+        raise GetFillValueError(dtype_=dtype_) from None
+    if isdtype(dtype_use, bool_):
         return False
-    if dtype in (datetime64D, datetime64Y, datetime64ns):
+    if isdtype(dtype_use, (datetime64D, datetime64Y, datetime64ns)):
         return datetime64("NaT")
-    if dtype == float64:
+    if isdtype(dtype_use, float64):
         return nan
-    if dtype == int64:
+    if isdtype(dtype_use, int64):
         return 0
-    if dtype == object_:
+    if isdtype(dtype_use, object_):
         return None
-    msg = f"{dtype=}"
-    raise GetFillValueError(msg)
+    raise GetFillValueError(dtype_=dtype_)
 
 
-class GetFillValueError(Exception): ...
+@dataclass(kw_only=True)
+class GetFillValueError(Exception):
+    dtype_: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid data type; got {self.dtype_}"
 
 
 def has_dtype(x: Any, dtype: Any, /) -> bool:
