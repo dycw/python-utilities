@@ -92,18 +92,16 @@ class TestYieldTables:
         """
         soup = BeautifulSoup(strip_and_dedent(html), features="html.parser")
         (df,) = list(yield_tables(soup))
-        expected = DataFrame(
-            [
-                (
-                    "Alfreds Futterkiste",
-                    "Centro comercial Moctezuma",
-                    "Ernst Handel",
-                    "Island Trading",
-                ),
-                ("Maria Anders", "Francisco Chang", "Roland Mendel", "Helen Bennett"),
-                ("Germany", "Mexico", "Austria", "UK"),
-            ]
-        )
+        expected = DataFrame([
+            (
+                "Alfreds Futterkiste",
+                "Centro comercial Moctezuma",
+                "Ernst Handel",
+                "Island Trading",
+            ),
+            ("Maria Anders", "Francisco Chang", "Roland Mendel", "Helen Bennett"),
+            ("Germany", "Mexico", "Austria", "UK"),
+        ])
         assert_frame_equal(df, expected)
 
     def test_multiple_th_rows_error(self) -> None:

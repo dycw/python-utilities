@@ -21,9 +21,11 @@ class TestCheck:
         )
         result = testdir.runpytest()
         result.assert_outcomes(failed=1)
-        result.stdout.fnmatch_lines(
-            ["FAILURE: first", "FAILURE: second", "Failed Checks: 2"]
-        )
+        result.stdout.fnmatch_lines([
+            "FAILURE: first",
+            "FAILURE: second",
+            "Failed Checks: 2",
+        ])
 
     def test_fail_on_first(self, *, testdir: Testdir) -> None:
         _ = testdir.makepyfile(

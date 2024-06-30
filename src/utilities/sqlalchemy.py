@@ -152,7 +152,7 @@ def _check_columns_equal(
 class _CheckColumnsEqualError(Exception): ...
 
 
-def _check_column_types_equal(x: Any, y: Any, /) -> None:  # noqa: C901
+def _check_column_types_equal(x: Any, y: Any, /) -> None:
     """Check that a pair of column types are equal."""
     x_inst, y_inst = (i() if isinstance(i, type) else i for i in [x, y])
     x_cls, y_cls = (i._type_affinity for i in [x_inst, y_inst])  # noqa: SLF001

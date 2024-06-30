@@ -23,6 +23,7 @@ from numpy import (
     inf,
     int64,
     isclose,
+    isdtype,
     isfinite,
     isinf,
     isnan,
@@ -448,23 +449,30 @@ class FlatN0MultipleError(FlatN0Error):
         return f"Array {self.array} must contain at most one True."
 
 
-def get_fill_value(dtype: Any, /) -> Any:
+def get_fill_value(dtype_: Any, /) -> Any:
     """Get the default fill value for a given dtype."""
-    if dtype == bool:
+    try:
+        dtype_use = dtype(dtype_)
+    except TypeError:
+        raise GetFillValueError(dtype_=dtype_) from None
+    if isdtype(dtype_use, bool_):
         return False
-    if dtype in (datetime64D, datetime64Y, datetime64ns):
+    if isdtype(dtype_use, (datetime64D, datetime64Y, datetime64ns)):
         return datetime64("NaT")
-    if dtype == float:
+    if isdtype(dtype_use, float64):
         return nan
-    if dtype == int:
+    if isdtype(dtype_use, int64):
         return 0
-    if dtype == object:
-        return None
-    msg = f"{dtype=}"
-    raise GetFillValueError(msg)
+    return None
 
 
-class GetFillValueError(Exception): ...
+@dataclass(kw_only=True)
+class GetFillValueError(Exception):
+    dtype_: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid data type; got {self.dtype_!r}"
 
 
 def has_dtype(x: Any, dtype: Any, /) -> bool:
@@ -1268,7 +1276,6 @@ NDArrayF3ZrNonMicNan = Annotated[NDArrayF3, is_zero_or_non_micro_or_nan]
 
 
 __all__ = [
-    "AsIntError",
     "DATETIME_MAX_AS_DATETIME64",
     "DATETIME_MAX_AS_INT",
     "DATETIME_MIN_AS_DATETIME64",
@@ -1278,14 +1285,15 @@ __all__ = [
     "DATE_MIN_AS_DATETIME64",
     "DATE_MIN_AS_INT",
     "DEFAULT_RNG",
+    "AsIntError",
     "DateTime64ToDateError",
     "DateTime64ToDateTimeError",
     "Datetime64Kind",
     "Datetime64Unit",
     "EmptyNumpyConcatenateError",
+    "FlatN0EmptyError",
     "FlatN0Error",
     "FlatN0MultipleError",
-    "FlatN0EmptyError",
     "GetFillValueError",
     "NDArray0",
     "NDArray1",

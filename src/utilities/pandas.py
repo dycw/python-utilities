@@ -713,6 +713,10 @@ class UnionIndexesError(Exception):
 
 
 __all__ = [
+    "TIMESTAMP_MAX_AS_DATE",
+    "TIMESTAMP_MAX_AS_DATETIME",
+    "TIMESTAMP_MIN_AS_DATE",
+    "TIMESTAMP_MIN_AS_DATETIME",
     "AssignBeforeOrAfterError",
     "AssignBetweenError",
     "AssignBetweenIndexError",
@@ -750,10 +754,6 @@ __all__ = [
     "SeriesMinMaxError",
     "SeriesS",
     "SeriesSt",
-    "TIMESTAMP_MAX_AS_DATE",
-    "TIMESTAMP_MAX_AS_DATETIME",
-    "TIMESTAMP_MIN_AS_DATE",
-    "TIMESTAMP_MIN_AS_DATETIME",
     "TimestampToDateTimeError",
     "UnionIndexesError",
     "assign_after",

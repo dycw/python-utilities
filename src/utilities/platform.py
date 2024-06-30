@@ -68,7 +68,6 @@ def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
 
 
 __all__ = [
-    "GetSystemError",
     "IS_LINUX",
     "IS_MAC",
     "IS_NOT_LINUX",
@@ -76,6 +75,7 @@ __all__ = [
     "IS_NOT_WINDOWS",
     "IS_WINDOWS",
     "SYSTEM",
+    "GetSystemError",
     "System",
     "get_system",
     "maybe_yield_lower_case",

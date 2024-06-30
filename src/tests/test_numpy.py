@@ -18,15 +18,19 @@ from hypothesis.strategies import (
 from numpy import (
     arange,
     array,
+    bool_,
     concatenate,
     datetime64,
     eye,
+    float64,
     full,
     inf,
+    int64,
     isclose,
     median,
     nan,
     ndarray,
+    object_,
     ones,
     zeros,
     zeros_like,
@@ -490,12 +494,16 @@ class TestGetFillValue:
         "dtype",
         [
             param(bool),
+            param(bool_),
             param(datetime64D),
             param(datetime64Y),
             param(datetime64ns),
             param(float),
+            param(float64),
             param(int),
+            param(int64),
             param(object),
+            param(object_),
         ],
     )
     def test_main(self, *, dtype: Any) -> None:
@@ -504,8 +512,8 @@ class TestGetFillValue:
         assert has_dtype(array, dtype)
 
     def test_error(self) -> None:
-        with raises(GetFillValueError):
-            _ = get_fill_value(None)
+        with raises(GetFillValueError, match="Invalid data type; got 'invalid'"):
+            _ = get_fill_value("invalid")
 
 
 class TestHasDtype:

@@ -1316,7 +1316,7 @@ class TestPostgresUpsert:
 
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
-    def test_sequence_of_mappings(
+    def test_mappings(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1325,7 +1325,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_of_mappings.__name__}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mappings.__name__}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
@@ -1351,7 +1351,7 @@ class TestPostgresUpsert:
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
-    def test_mapped_class_and_mapping(
+    def test_class_and_mapping(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1362,7 +1362,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_and_mapping.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_and_mapping.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
@@ -1375,7 +1375,7 @@ class TestPostgresUpsert:
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
-    def test_mapped_class_instance(
+    def test_class(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1386,7 +1386,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapped_class_instance.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
@@ -1399,7 +1399,7 @@ class TestPostgresUpsert:
 
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
-    def test_sequence_of_mapped_classes(
+    def test_classes(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1409,7 +1409,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_of_mapped_classes.__name__}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_classes.__name__}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
@@ -1434,7 +1434,7 @@ class TestPostgresUpsert:
     @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @settings(max_examples=1, phases={Phase.generate})
-    def test_selected_or_all_with_mapping(
+    def test_table_sel_or_all(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1446,7 +1446,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapping.__name__}_{selected_or_all}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_table_sel_or_all.__name__}_{selected_or_all}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("x", Boolean, nullable=False),
@@ -1467,7 +1467,7 @@ class TestPostgresUpsert:
     @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @settings(max_examples=1, phases={Phase.generate})
-    def test_selected_or_all_with_mapped_class(
+    def test_class_sel_or_all(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1480,7 +1480,7 @@ class TestPostgresUpsert:
         class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_selected_or_all_with_mapped_class.__name__}_{selected_or_all}"
+            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_sel_or_all.__name__}_{selected_or_all}"
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
             x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
@@ -1502,7 +1502,7 @@ class TestPostgresUpsert:
 
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
-    def test_mapping_with_updated(
+    def test_mapping_updated(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1512,7 +1512,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapping_with_updated.__name__}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapping_updated.__name__}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
@@ -1533,7 +1533,7 @@ class TestPostgresUpsert:
 
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
-    def test_sequence_with_updated(
+    def test_mappings_updated(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
@@ -1542,7 +1542,7 @@ class TestPostgresUpsert:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_sequence_with_updated.__name__}",
+            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mappings_updated.__name__}",
             metadata,
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=True),
@@ -1597,20 +1597,18 @@ class TestRedirectToNoSuchSequenceError:
 class TestReflectTable:
     @given(
         engine=sqlite_engines(),
-        col_type=sampled_from(
-            [
-                INTEGER,
-                INTEGER(),
-                NVARCHAR,
-                NVARCHAR(),
-                NVARCHAR(1),
-                Integer,
-                Integer(),
-                String,
-                String(),
-                String(1),
-            ]
-        ),
+        col_type=sampled_from([
+            INTEGER,
+            INTEGER(),
+            NVARCHAR,
+            NVARCHAR(),
+            NVARCHAR(1),
+            Integer,
+            Integer(),
+            String,
+            String(),
+            String(1),
+        ]),
     )
     def test_main(self, *, engine: Engine, col_type: Any) -> None:
         table = Table("example", MetaData(), Column("Id", col_type, primary_key=True))
