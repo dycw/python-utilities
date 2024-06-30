@@ -463,9 +463,7 @@ def get_fill_value(dtype_: Any, /) -> Any:
         return nan
     if isdtype(dtype_use, int64):
         return 0
-    if isdtype(dtype_use, object_):
-        return None
-    raise GetFillValueError(dtype_=dtype_)
+    return None
 
 
 @dataclass(kw_only=True)
