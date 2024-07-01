@@ -17,13 +17,12 @@ from polars import (
     Duration,
     Float64,
     Int64,
-    PolarsDataType,
     Time,
     Utf8,
     concat,
     read_database,
 )
-from polars.type_aliases import ConnectionOrCursor, SchemaDict
+from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
 

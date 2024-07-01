@@ -29,7 +29,6 @@ from polars import (
     Float64,
     Int64,
     List,
-    PolarsDataType,
     Series,
     Struct,
     Utf8,
@@ -42,6 +41,7 @@ from polars._typing import (
     IntoExprColumn,
     JoinStrategy,
     JoinValidation,
+    PolarsDataType,
     SchemaDict,
 )
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
