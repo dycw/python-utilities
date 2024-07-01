@@ -222,7 +222,7 @@ pathvalidate==3.2.0
     # via dycw-utilities (pyproject.toml)
 pexpect==4.9.0
     # via hatch
-pillow==10.3.0
+pillow==10.4.0
     # via
     #   bokeh
     #   fpdf2
@@ -235,7 +235,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==0.20.31
+polars-lts-cpu==1.0.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
