@@ -467,9 +467,9 @@ class TestNanSumCols:
     ) -> None:
         x_use = "x" if x_kind == "str" else col("x")
         y_use = "y" if y_kind == "str" else col("y")
-        df = DataFrame([(x, y)], schema={"x": Int64, "y": Int64}).with_columns(
-            z=nan_sum_cols(x_use, y_use)
-        )
+        df = DataFrame(
+            [(x, y)], schema={"x": Int64, "y": Int64}, orient="row"
+        ).with_columns(z=nan_sum_cols(x_use, y_use))
         assert df["z"].item() == expected
 
 
