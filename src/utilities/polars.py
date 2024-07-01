@@ -29,7 +29,6 @@ from polars import (
     Float64,
     Int64,
     List,
-    PolarsDataType,
     Series,
     Struct,
     Utf8,
@@ -37,15 +36,16 @@ from polars import (
     lit,
     when,
 )
-from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
-from polars.testing import assert_frame_equal
-from polars.type_aliases import (
+from polars._typing import (
     IntoExpr,
     IntoExprColumn,
     JoinStrategy,
     JoinValidation,
+    PolarsDataType,
     SchemaDict,
 )
+from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
+from polars.testing import assert_frame_equal
 from typing_extensions import Never, assert_never, override
 
 from utilities.dataclasses import Dataclass, is_dataclass_class

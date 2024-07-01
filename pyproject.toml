@@ -47,7 +47,7 @@ dev = [
   "optuna >= 3.6.1, < 3.7",
   "pandas >= 2.2.2, < 2.3",
   "pathvalidate >= 3.2.0, < 3.3",
-  "polars-lts-cpu >= 0.20.31, < 0.21",
+  "polars-lts-cpu >= 1.0.0, < 1.1",
   "pqdm >= 0.2.0, < 0.3",
   "psutil >= 6.0.0, < 6.1",
   "pydantic >= 2.7.4, < 2.8",
@@ -130,7 +130,7 @@ zzz-test-atools = [
 zzz-test-beartype = ["beartype >= 0.18.5, < 0.19"]
 zzz-test-bs4 = [
   "beautifulsoup4 >= 4.12.3, < 4.13",
-  "polars-lts-cpu >= 0.20.31, < 0.21",
+  "polars-lts-cpu >= 1.0.0, < 1.1",
 ]
 zzz-test-cacher = [
   "atomicwrites >= 1.4.1, < 1.5",
@@ -184,7 +184,7 @@ zzz-test-json = ["sqlalchemy >= 2.0.31, < 2.1"]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 0.20.31, < 0.21",
+  "polars-lts-cpu >= 1.0.0, < 1.1",
 ]
 zzz-test-locale = []
 zzz-test-logging = []
@@ -220,7 +220,7 @@ zzz-test-modules = [
   "more-itertools >= 10.3.0, < 10.4",
   "numpy >= 2.0.0, < 2.1",
   "pathvalidate >= 3.2.0, < 3.3",
-  "polars-lts-cpu >= 0.20.31, < 0.21",
+  "polars-lts-cpu >= 1.0.0, < 1.1",
   "pqdm >= 0.2.0, < 0.3",
   "pydantic >= 2.7.4, < 2.8",
   "pyhumps >= 3.8.0, < 3.9",
@@ -248,7 +248,7 @@ zzz-test-pathlib = ["pathvalidate >= 3.2.0, < 3.3"]
 zzz-test-pathvalidate = ["pathvalidate >= 3.2.0, < 3.3"]
 zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
-zzz-test-polars = ["polars-lts-cpu >= 0.20.31, < 0.21"]
+zzz-test-polars = ["polars-lts-cpu >= 1.0.0, < 1.1"]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
   "atomicwrites >= 1.4.1, < 1.5",
@@ -306,7 +306,7 @@ zzz-test-sqlalchemy = [
   "sqlalchemy >= 2.0.31, < 2.1",
 ]
 zzz-test-sqlalchemy-polars = [
-  "polars-lts-cpu >= 0.20.31, < 0.21",
+  "polars-lts-cpu >= 1.0.0, < 1.1",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.31, < 2.1",
 ]

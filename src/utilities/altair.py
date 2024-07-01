@@ -71,11 +71,8 @@ def plot_dataframes(
     else:
         specs = [_plot_dataframes_get_spec(y_i, height=height) for y_i in y]
     dfs_long = [
-        data.select(x_use, *spec.y).melt(
-            id_vars=x_use,
-            value_vars=spec.y,
-            variable_name=var_name,
-            value_name=value_name,
+        data.select(x_use, *spec.y).unpivot(
+            on=spec.y, index=x_use, variable_name=var_name, value_name=value_name
         )
         for spec in specs
     ]
@@ -149,17 +146,19 @@ def plot_intraday_dataframe(
         data2.select("_date").unique().with_columns(_date_index=int_range(end=pl.len()))
     )
     data3 = data2.join(dates, on=["_date"])
-    melted = data3.select(
+    unpivoted = data3.select(
         col(f"_{datetime}_index").alias(f"{datetime} index"), *other_cols
-    ).melt(id_vars=f"{datetime} index", value_name=value_name)
+    ).unpivot(index=f"{datetime} index", value_name=value_name)
 
     y = Y(value_name).scale(zero=False)
-    melted_value = melted[value_name]
-    value_min, value_max = map(ensure_number, [melted_value.min(), melted_value.max()])
+    unpivoted_value = unpivoted[value_name]
+    value_min, value_max = map(
+        ensure_number, [unpivoted_value.min(), unpivoted_value.max()]
+    )
     if isfinite(value_min) and isfinite(value_max):
         y = y.scale(domain=(value_min, value_max))
     lines = (
-        Chart(melted)
+        Chart(unpivoted)
         .mark_line()
         .encode(
             x=X(f"{datetime} index").scale(domain=(0, data3.height), nice=False),
@@ -173,7 +172,7 @@ def plot_intraday_dataframe(
         nearest=True, on="pointerover", fields=[f"{datetime} index"], empty=False
     )
     hover_line = (
-        Chart(melted)
+        Chart(unpivoted)
         .transform_pivot("variable", value=value_name, groupby=[f"{datetime} index"])
         .mark_rule(color="black")
         .encode(

@@ -21,17 +21,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
 )
-from polars import (
-    Binary,
-    DataFrame,
-    Datetime,
-    Decimal,
-    Duration,
-    Float64,
-    Int64,
-    PolarsDataType,
-    Utf8,
-)
+from polars import Binary, DataFrame, Datetime, Decimal, Duration, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -107,6 +97,7 @@ from utilities.sqlalchemy_polars import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
 
 
