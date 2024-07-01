@@ -477,6 +477,7 @@ ignore = [
   "PLR0915",  # too-many-statements
   "PLR2004",  # magic-value-comparison
   "PT013",  # pytest-incorrect-pytest-import
+  "S311",  # suspicious-non-cryptographic-random-usage
   "S603",  # subprocess-without-shell-equals-true
   "S607",  # start-process-with-partial-path
   # preview
