@@ -56,6 +56,7 @@ dev = [
   "pypiserver[passlib] >= 2.1.1, < 2.2",
   "pytest >= 8.2.2, < 8.3",
   "pytest-check >= 2.3.1, < 2.4",
+  "python-dotenv >= 1.0.1, < 1.1",
   "rich >= 13.7.1, < 13.8",
   "scipy >= 1.14.0, < 1.15",
   "selenium >= 4.22.0, < 4.23",
@@ -263,6 +264,7 @@ zzz-test-pytest = [
   "pytest-asyncio >= 0.23.7, < 0.24",
 ]
 zzz-test-pytest-check = ["pytest-check >= 2.3.1, < 2.4"]
+zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-rich = ["rich >= 13.7.1, < 13.8"]
@@ -471,6 +473,7 @@ ignore = [
   "D213",  # multi-line-summary-second-line
   "E501",  # line-too-long
   "PD901",  # pandas-df-variable-name
+  "PERF203",  # try-except-in-loop
   "PLR0911",  # too-many-return-statements
   "PLR0912",  # too-many-branches
   "PLR0913",  # too-many-arguments

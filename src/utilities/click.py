@@ -151,7 +151,7 @@ class ListChoices(ParamType):
                 result = one_str(
                     self._choices, text, case_sensitive=self._case_sensitive
                 )
-            except OneStrError:  # noqa: PERF203
+            except OneStrError:
                 errors.append(text)
             else:
                 results.append(result)

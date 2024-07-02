@@ -58,6 +58,7 @@ pydantic
 pyinstrument
 pytest
 pytest-check
+python-dotenv
 scipy
 scripts-clean-dir
 scripts-csv-to-markdown

@@ -201,7 +201,7 @@ def _check_polars_dataframe_predicates(
     for column, predicate in predicates.items():
         try:
             sr = df[column]
-        except ColumnNotFoundError:  # noqa: PERF203
+        except ColumnNotFoundError:
             missing.add(column)
         else:
             if not sr.map_elements(predicate, return_dtype=Boolean).all():

@@ -118,7 +118,7 @@ tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.5
     # via hatch
-trove-classifiers==2024.5.22
+trove-classifiers==2024.7.2
     # via hatchling
 typing-extensions==4.12.2
     # via
@@ -126,7 +126,7 @@ typing-extensions==4.12.2
     #   anyio
 userpath==1.9.2
     # via hatch
-uv==0.2.18
+uv==0.2.20
     # via hatch
 virtualenv==20.26.3
     # via hatch
