@@ -57,5 +57,5 @@ class TestSaveAndLoadModel:
         class Example(BaseModel):
             x: int
 
-        with raises(LoadModelError, match=r"Unable to load '.*'; path .* must exist\."):
+        with raises(LoadModelError, match=r"Unable to load .*; path '.*' must exist\."):
             _ = load_model(Example, tmp_path.joinpath("model.json"))
