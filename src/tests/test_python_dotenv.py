@@ -91,9 +91,7 @@ class TestLoadSettings:
 
         root.joinpath(".env").touch()
 
-        with raises(
-            LoadSettingsError, match=r"Field 'key' must exist exactly one; got .*\."
-        ):
+        with raises(LoadSettingsError, match=r"Field 'key' must exist\."):
             _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
