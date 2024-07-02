@@ -473,6 +473,7 @@ ignore = [
   "D213",  # multi-line-summary-second-line
   "E501",  # line-too-long
   "PD901",  # pandas-df-variable-name
+  "PERF203",  # try-except-in-loop
   "PLR0911",  # too-many-return-statements
   "PLR0912",  # too-many-branches
   "PLR0913",  # too-many-arguments
