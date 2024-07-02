@@ -48,7 +48,8 @@ class TestSaveAndLoadModel:
             x: int
 
         with raises(
-            LoadModelError, match="Unable to load .*; path '.*' must not be a directory"
+            LoadModelError,
+            match=r"Unable to load .*; path '.*' must not be a directory\.",
         ):
             _ = load_model(Example, path)
 
@@ -56,5 +57,5 @@ class TestSaveAndLoadModel:
         class Example(BaseModel):
             x: int
 
-        with raises(LoadModelError, match="Unable to load .*; path '.*' must exist"):
+        with raises(LoadModelError, match=r"Unable to load '.*'; path .* must exist\."):
             _ = load_model(Example, tmp_path.joinpath("model.json"))
