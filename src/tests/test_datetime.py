@@ -190,7 +190,8 @@ class TestGetNow:
     def test_local(self) -> None:
         now = get_now(time_zone="local")
         assert isinstance(now, dt.datetime)
-        assert now.tzinfo in {HONG_KONG, TOKYO, UTC}
+        ETC = ZoneInfo("etc/UTC")  # noqa: N806
+        assert now.tzinfo in {ETC, HONG_KONG, TOKYO, UTC}
 
     @mark.parametrize(
         "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
