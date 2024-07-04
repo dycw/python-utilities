@@ -74,7 +74,7 @@ class TestPlotIntradayDataFrame:
     def test_non_finite(self) -> None:
         data = DataFrame(
             data=[(get_now(), inf)],
-            schema={"datetime": Datetime(time_zone=UTC), "value": Float64},
+            schema={"datetime": Datetime(time_zone="UTC"), "value": Float64},
             orient="row",
         )
         _ = plot_intraday_dataframe(data)

@@ -7,7 +7,7 @@ from typing_extensions import override
 from xlrd import Book, xldate_as_datetime
 
 from utilities.platform import SYSTEM, System
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, ensure_time_zone
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -47,7 +47,10 @@ def to_datetime(
 ) -> dt.datetime:
     """Convert to a dt.datetime object."""
     date_mode = get_date_mode() if book is None else book.datemode  # os-eq-linux
-    return xldate_as_datetime(date, date_mode).replace(tzinfo=time_zone)  # os-eq-linux
+    time_zone_use = ensure_time_zone(time_zone)  # os-eq-linux
+    return xldate_as_datetime(date, date_mode).replace(  # os-eq-linux
+        tzinfo=time_zone_use
+    )
 
 
 __all__ = ["GetDateModeError", "get_date_mode", "to_date", "to_datetime"]

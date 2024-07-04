@@ -103,7 +103,7 @@ def get_now(*, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
     return dt.datetime.now(tz=time_zone_use)
 
 
-NOW_UTC = get_now()
+NOW_UTC = get_now(time_zone=UTC)
 
 
 def get_now_hk() -> dt.datetime:
@@ -127,7 +127,7 @@ def get_today(*, time_zone: ZoneInfo | str = UTC) -> dt.date:
     return get_now(time_zone=time_zone).date()
 
 
-TODAY_UTC = get_today()
+TODAY_UTC = get_today(time_zone=UTC)
 
 
 def get_today_hk() -> dt.date:
@@ -179,13 +179,14 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def parse_date(date: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.date:
+def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
+    time_zone_use = ensure_time_zone(time_zone)
     for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(date, fmt).replace(tzinfo=tzinfo).date()
+            return dt.datetime.strptime(date, fmt).replace(tzinfo=time_zone_use).date()
     raise ParseDateError(date=date)
 
 

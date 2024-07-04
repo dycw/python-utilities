@@ -112,7 +112,7 @@ class TestInsertDataFrame:
             param(datetimes() | none(), Datetime, DateTime, eq),
             param(
                 datetimes(timezones=just(UTC)) | none(),
-                Datetime(time_zone=UTC),
+                Datetime(time_zone="UTC"),
                 DateTime(timezone=True),
                 is_equal_mod_tz,
             ),
@@ -295,7 +295,7 @@ class TestSelectToDataFrame:
             param(datetimes() | none(), Datetime, DateTime),
             param(
                 datetimes(timezones=just(UTC)) | none(),
-                Datetime(time_zone=UTC),
+                Datetime(time_zone="UTC"),
                 DateTime(timezone=True),
             ),
             param(floats(allow_nan=False) | none(), Float64, Float),
