@@ -37,7 +37,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.datetime import NOW_HK, UTC
+from utilities.datetime import NOW_HK
 from utilities.hypothesis import (
     assume_does_not_raise,
     sqlite_engines,
@@ -53,6 +53,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable

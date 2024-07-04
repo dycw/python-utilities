@@ -72,7 +72,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError
 
-from utilities.datetime import UTC, is_equal_mod_tz
+from utilities.datetime import is_equal_mod_tz
 from utilities.hypothesis import sqlite_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
@@ -93,6 +93,7 @@ from utilities.sqlalchemy_polars import (
     insert_dataframe,
     select_to_dataframe,
 )
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
