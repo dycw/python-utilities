@@ -12,7 +12,6 @@ from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
 from utilities.zoneinfo import HONG_KONG, TOKYO, UTC, ensure_time_zone
 
-UTC = NotImplementedError
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from zoneinfo import ZoneInfo
