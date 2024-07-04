@@ -27,7 +27,6 @@ from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.datetime import UTC
 from utilities.polars import (
     CheckPolarsDataFrameError,
     ColumnsToDictError,
@@ -53,6 +52,7 @@ from utilities.polars import (
     struct_data_type,
     yield_struct_series_elements,
 )
+from utilities.zoneinfo import UTC
 
 
 class TestCeilDatetime:
@@ -534,7 +534,7 @@ class TestStructDataType:
             field: dt.datetime
 
         result = struct_data_type(Example, time_zone=UTC)
-        expected = Struct({"field": Datetime(time_zone=UTC)})
+        expected = Struct({"field": Datetime(time_zone="UTC")})
         assert result == expected
 
     def test_enum(self) -> None:

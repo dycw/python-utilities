@@ -5,21 +5,19 @@ from contextlib import suppress
 from dataclasses import dataclass
 from re import sub
 from typing import TYPE_CHECKING, cast
-from zoneinfo import ZoneInfo
 
 from typing_extensions import Never, assert_never, override
 
-from utilities.errors import ImpossibleCaseError
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
-from utilities.zoneinfo import HONG_KONG, TOKYO
+from utilities.zoneinfo import HONG_KONG, TOKYO, UTC, ensure_time_zone
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from zoneinfo import ZoneInfo
 
     from utilities.types import Duration
 
-UTC = dt.timezone.utc
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 
 
@@ -44,11 +42,12 @@ class AddWeekdaysError(Exception): ...
 
 
 def date_to_datetime(
-    date: dt.date, /, *, time: dt.time | None = None, tzinfo: dt.tzinfo | None = UTC
+    date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
     time_use = dt.time(0) if time is None else time
-    return dt.datetime.combine(date, time_use, tzinfo=tzinfo)
+    time_zone_use = ensure_time_zone(time_zone)
+    return dt.datetime.combine(date, time_use, tzinfo=time_zone_use)
 
 
 def duration_to_float(duration: Duration, /) -> float:
@@ -73,12 +72,12 @@ def ensure_date(date: dt.date | str, /) -> dt.date:
 
 
 def ensure_datetime(
-    datetime: dt.datetime | str, /, *, tzinfo: dt.tzinfo = UTC
+    datetime: dt.datetime | str, /, *, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
     """Ensure the object is a datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
-    return parse_datetime(datetime, tzinfo=tzinfo)
+    return parse_datetime(datetime, time_zone=time_zone)
 
 
 def ensure_time(time: dt.time | str, /) -> dt.time:
@@ -93,12 +92,18 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     return parse_timedelta(timedelta)
 
 
-def get_now(*, tz: dt.tzinfo | None = UTC) -> dt.datetime:
+def get_now(*, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
-    return dt.datetime.now(tz=tz)
+    if time_zone == "local":
+        from tzlocal import get_localzone
+
+        time_zone_use = get_localzone()
+    else:
+        time_zone_use = ensure_time_zone(time_zone)
+    return dt.datetime.now(tz=time_zone_use)
 
 
-NOW_UTC = get_now()
+NOW_UTC = get_now(time_zone=UTC)
 
 
 def get_now_hk() -> dt.datetime:
@@ -117,21 +122,12 @@ def get_now_tokyo() -> dt.datetime:
 NOW_TOKYO = get_now_tokyo()
 
 
-def get_time_zone_name(time_zone: dt.tzinfo, /) -> str:
-    """Get the name of a time zone."""
-    if time_zone is UTC:
-        return "UTC"
-    if isinstance(time_zone, ZoneInfo):
-        return time_zone.key
-    raise NotImplementedError(time_zone)  # pragma: no cover
-
-
-def get_today(*, tz: dt.tzinfo | None = UTC) -> dt.date:
+def get_today(*, time_zone: ZoneInfo | str = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
-    return get_now(tz=tz).date()
+    return get_now(time_zone=time_zone).date()
 
 
-TODAY_UTC = get_today()
+TODAY_UTC = get_today(time_zone=UTC)
 
 
 def get_today_hk() -> dt.date:
@@ -170,14 +166,6 @@ def is_weekday(date: dt.date, /) -> bool:
     return date.isoweekday() <= friday
 
 
-def local_timezone() -> dt.tzinfo:
-    """Get the local timezone."""
-    tz = get_now(tz=None).astimezone().tzinfo
-    if tz is None:  # pragma: no cover
-        raise ImpossibleCaseError(case=[])
-    return tz
-
-
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
     match SYSTEM:
@@ -191,13 +179,14 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def parse_date(date: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.date:
+def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
     """Parse a string into a date."""
     with suppress(ValueError):
         return dt.date.fromisoformat(date)
+    time_zone_use = ensure_time_zone(time_zone)
     for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(date, fmt).replace(tzinfo=tzinfo).date()
+            return dt.datetime.strptime(date, fmt).replace(tzinfo=time_zone_use).date()
     raise ParseDateError(date=date)
 
 
@@ -210,10 +199,11 @@ class ParseDateError(Exception):
         return f"Unable to parse date; got {self.date!r}"
 
 
-def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
+def parse_datetime(datetime: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
     """Parse a string into a datetime."""
+    time_zone_use = ensure_time_zone(time_zone)
     with suppress(ValueError):
-        return dt.datetime.fromisoformat(datetime).replace(tzinfo=tzinfo)
+        return dt.datetime.fromisoformat(datetime).replace(tzinfo=time_zone_use)
     for fmt in [
         "%Y%m%d",
         "%Y%m%dT%H",
@@ -222,7 +212,7 @@ def parse_datetime(datetime: str, /, *, tzinfo: dt.tzinfo = UTC) -> dt.datetime:
         "%Y%m%dT%H%M%S.%f",
     ]:
         with suppress(ValueError):  # pragma: version-ge-311
-            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=tzinfo)
+            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=time_zone_use)
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
         with suppress(ValueError):  # pragma: version-ge-311
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
@@ -424,7 +414,6 @@ __all__ = [
     "TODAY_HK",
     "TODAY_TOKYO",
     "TODAY_UTC",
-    "UTC",
     "AddWeekdaysError",
     "ParseDateError",
     "ParseDateTimeError",
@@ -443,12 +432,10 @@ __all__ = [
     "get_now",
     "get_now_hk",
     "get_now_tokyo",
-    "get_time_zone_name",
     "get_today",
     "get_today_hk",
     "get_today_tokyo",
     "is_weekday",
-    "local_timezone",
     "maybe_sub_pct_y",
     "parse_date",
     "parse_datetime",

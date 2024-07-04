@@ -4,10 +4,10 @@ import datetime as dt
 
 from pytest import mark, param, raises
 
-from utilities.datetime import UTC
 from utilities.platform import SYSTEM, System
 from utilities.pytest import skipif_not_mac, skipif_not_windows
 from utilities.xlrd import GetDateModeError, get_date_mode, to_date, to_datetime
+from utilities.zoneinfo import UTC
 
 
 class TestGetDateMode:

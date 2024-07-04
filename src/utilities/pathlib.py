@@ -7,8 +7,8 @@ from os import walk as _walk
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from utilities.datetime import UTC
 from utilities.re import extract_group
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Sequence

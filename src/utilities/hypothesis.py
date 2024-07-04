@@ -34,11 +34,11 @@ from hypothesis.strategies import (
 )
 from typing_extensions import assert_never
 
-from utilities.datetime import UTC
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from pandas import Timestamp

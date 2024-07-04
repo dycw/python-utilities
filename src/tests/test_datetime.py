@@ -5,6 +5,7 @@ from math import isclose
 from operator import eq, gt, lt
 from re import search
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
@@ -31,7 +32,6 @@ from utilities.datetime import (
     TODAY_HK,
     TODAY_TOKYO,
     TODAY_UTC,
-    UTC,
     AddWeekdaysError,
     ParseDateError,
     ParseDateTimeError,
@@ -50,13 +50,11 @@ from utilities.datetime import (
     get_now,
     get_now_hk,
     get_now_tokyo,
-    get_time_zone_name,
     get_today,
     get_today_hk,
     get_today_tokyo,
     is_equal_mod_tz,
     is_weekday,
-    local_timezone,
     maybe_sub_pct_y,
     parse_date,
     parse_datetime,
@@ -72,7 +70,8 @@ from utilities.datetime import (
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, text_clean
-from utilities.zoneinfo import HONG_KONG, TOKYO
+from utilities.types import ensure_class
+from utilities.zoneinfo import HONG_KONG, TOKYO, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -175,19 +174,24 @@ class TestEnsure:
 
     @given(data=data(), datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_datetime(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        str_or_datetime = data.draw(sampled_from([datetime, str(datetime)]))
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = ensure_datetime(str_or_datetime, tzinfo=tzinfo)
+        datetime_or_str = data.draw(sampled_from([datetime, str(datetime)]))
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = ensure_datetime(datetime_or_str, time_zone=time_zone)
         assert result == datetime
 
 
 class TestGetNow:
-    @given(tz=timezones())
-    def test_main(self, *, tz: dt.tzinfo) -> None:
-        now = get_now(tz=tz)
+    @given(time_zone=timezones())
+    def test_main(self, *, time_zone: ZoneInfo) -> None:
+        now = get_now(time_zone=time_zone)
         assert isinstance(now, dt.datetime)
-        assert now.tzinfo is tz
+        assert now.tzinfo is time_zone
+
+    def test_local(self) -> None:
+        now = get_now(time_zone="local")
+        assert isinstance(now, dt.datetime)
+        ETC = ZoneInfo("Etc/UTC")  # noqa: N806
+        assert now.tzinfo in {ETC, HONG_KONG, TOKYO, UTC}
 
     @mark.parametrize(
         "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
@@ -200,24 +204,10 @@ class TestGetNow:
         assert isinstance(now, dt.date)
 
 
-class TestGetTimeZoneName:
-    @mark.parametrize(
-        ("time_zone", "expected"),
-        [
-            param(HONG_KONG, "Asia/Hong_Kong"),
-            param(TOKYO, "Asia/Tokyo"),
-            param(UTC, "UTC"),
-        ],
-    )
-    def test_main(self, *, time_zone: dt.tzinfo, expected: str) -> None:
-        result = get_time_zone_name(time_zone)
-        assert result == expected
-
-
 class TestGetToday:
-    @given(tz=timezones())
-    def test_main(self, *, tz: dt.tzinfo) -> None:
-        today = get_today(tz=tz)
+    @given(time_zone=timezones())
+    def test_main(self, *, time_zone: ZoneInfo) -> None:
+        today = get_today(time_zone=time_zone)
         assert isinstance(today, dt.date)
 
     @mark.parametrize(
@@ -258,15 +248,6 @@ class TestIsWeekday:
         assert result is expected
 
 
-class TestLocalTimeZone:
-    def test_main(self) -> None:
-        tz = local_timezone()
-        now = get_now(tz=UTC)
-        result = tz.tzname(now)
-        expected = {"Coordinated Universal Time", "HKT", "JST", "UTC"}
-        assert result in expected
-
-
 class TestMaybeSubPctY:
     @given(text=text_clean())
     def test_main(self, *, text: str) -> None:
@@ -304,16 +285,14 @@ class TestParseDate:
 class TestParseDateTime:
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_str(self, *, datetime: dt.datetime) -> None:
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(str(datetime), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(str(datetime), time_zone=time_zone)
         assert result == datetime
 
     @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
     def test_isoformat(self, *, datetime: dt.datetime) -> None:
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.isoformat(), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.isoformat(), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -323,9 +302,8 @@ class TestParseDateTime:
         ),
     )
     def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -335,9 +313,8 @@ class TestParseDateTime:
         ),
     )
     def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -350,9 +327,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(microsecond=0)
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -363,9 +339,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(second=0, microsecond=0)
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -376,9 +351,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(minute=0, second=0, microsecond=0)
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     @given(
@@ -387,9 +361,8 @@ class TestParseDateTime:
     )
     def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
         datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
-        tzinfo = datetime.tzinfo
-        assert tzinfo is not None
-        result = parse_datetime(datetime.strftime(fmt), tzinfo=tzinfo)
+        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
+        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
         assert result == datetime
 
     def test_error(self) -> None:

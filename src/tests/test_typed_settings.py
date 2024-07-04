@@ -29,7 +29,6 @@ from typed_settings.exceptions import InvalidSettingsError
 
 from tests.conftest import FLAKY
 from utilities.datetime import (
-    UTC,
     serialize_date,
     serialize_datetime,
     serialize_time,
@@ -46,6 +45,7 @@ from utilities.typed_settings import (
     click_options,
     load_settings,
 )
+from utilities.zoneinfo import UTC
 
 app_names = text_ascii(min_size=1).map(str.lower)
 

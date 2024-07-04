@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime as dt
 import decimal
 from contextlib import suppress
-from datetime import timezone
 from itertools import chain
 from typing import TYPE_CHECKING, Any, cast, overload
 from uuid import UUID
@@ -26,7 +25,6 @@ from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
 
-from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import identity
 from utilities.iterables import (
@@ -44,9 +42,11 @@ from utilities.sqlalchemy import (
     get_columns,
     insert_items,
 )
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Mapping
+    from zoneinfo import ZoneInfo
 
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
@@ -165,7 +165,7 @@ def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: timezone = ...,
+    time_zone: ZoneInfo | str = ...,
     batch_size: None = ...,
     in_clauses: None = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -179,7 +179,7 @@ def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: timezone = ...,
+    time_zone: ZoneInfo | str = ...,
     batch_size: int | None = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -193,7 +193,7 @@ def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: timezone = ...,
+    time_zone: ZoneInfo | str = ...,
     batch_size: int = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -207,7 +207,7 @@ def select_to_dataframe(
     /,
     *,
     snake: bool = ...,
-    time_zone: timezone = ...,
+    time_zone: ZoneInfo | str = ...,
     batch_size: int | None = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
     in_clauses_chunk_size: int | None = ...,
@@ -220,7 +220,7 @@ def select_to_dataframe(
     /,
     *,
     snake: bool = False,
-    time_zone: timezone = UTC,
+    time_zone: ZoneInfo | str = UTC,
     batch_size: int | None = None,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
     in_clauses_chunk_size: int | None = None,
@@ -335,7 +335,7 @@ def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
 
 
 def _select_to_dataframe_map_select_to_df_schema(
-    sel: Select[Any], /, *, time_zone: timezone = UTC
+    sel: Select[Any], /, *, time_zone: ZoneInfo | str = UTC
 ) -> SchemaDict:
     """Map a select to a DataFrame schema."""
     columns: ReadOnlyColumnCollection = cast(Any, sel).selected_columns
@@ -349,7 +349,7 @@ def _select_to_dataframe_map_select_to_df_schema(
 
 
 def _select_to_dataframe_map_table_column_type_to_dtype(
-    type_: Any, /, *, time_zone: timezone = UTC
+    type_: Any, /, *, time_zone: ZoneInfo | str = UTC
 ) -> PolarsDataType:
     """Map a table column type to a polars type."""
     type_use = type_() if isinstance(type_, type) else type_
@@ -364,7 +364,9 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
         return pl.Date
     if issubclass(py_type, dt.datetime):
         has_tz: bool = type_use.timezone
-        return Datetime(time_zone=time_zone) if has_tz else Datetime()
+        return (
+            Datetime(time_zone=get_time_zone_name(time_zone)) if has_tz else Datetime()
+        )
     if issubclass(py_type, dt.time):
         return Time
     if issubclass(py_type, dt.timedelta):

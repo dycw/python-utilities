@@ -12,10 +12,11 @@ from click import command
 from loguru import logger
 from typed_settings import find
 
-from utilities.datetime import UTC, get_now
+from utilities.datetime import get_now
 from utilities.loguru import setup_loguru
 from utilities.scripts.clean_dir.classes import Config, Item
 from utilities.typed_settings import click_options
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -105,7 +106,7 @@ def _is_empty(path: Path, /) -> bool:
 
 
 def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
-    age = get_now(tz=UTC) - dt.datetime.fromtimestamp(  # pragma: os-ne-windows
+    age = get_now(time_zone=UTC) - dt.datetime.fromtimestamp(  # pragma: os-ne-windows
         path.stat().st_mtime, tz=UTC
     )
     return age >= dt.timedelta(days=days)  # pragma: os-ne-windows

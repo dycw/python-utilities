@@ -40,7 +40,6 @@ from numpy.testing import assert_allclose, assert_equal
 from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
 
-from utilities.datetime import UTC
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc, float_arrays
 from utilities.numpy import (
     DEFAULT_RNG,
@@ -132,10 +131,11 @@ from utilities.numpy import (
     shift_bool,
     year,
 )
-from utilities.zoneinfo import HONG_KONG
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from zoneinfo import ZoneInfo
 
 
 class TestArrayIndexer:
@@ -223,10 +223,10 @@ class TestDateToDatetime64ns:
 
 
 class TestDatetimeToDatetime64:
-    @mark.parametrize("tzinfo", [param(UTC), param(None)])
-    def test_example(self, *, tzinfo: dt.tzinfo) -> None:
+    @mark.parametrize("time_zone", [param(UTC), param(None)])
+    def test_example(self, *, time_zone: ZoneInfo | None) -> None:
         result = datetime_to_datetime64(
-            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=tzinfo)
+            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=time_zone)
         )
         assert result == datetime64("2000-01-01 00:00:00.123456", "us")
         assert result.dtype == datetime64us

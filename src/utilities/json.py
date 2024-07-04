@@ -16,7 +16,6 @@ from uuid import UUID
 from typing_extensions import override
 
 from utilities.datetime import (
-    UTC,
     parse_date,
     parse_datetime,
     parse_time,
@@ -27,6 +26,7 @@ from utilities.datetime import (
     serialize_timedelta,
 )
 from utilities.types import get_class_name
+from utilities.zoneinfo import UTC
 
 _T = TypeVar("_T")
 _ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]

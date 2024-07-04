@@ -23,7 +23,7 @@ from pandas import (
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.datetime import TODAY_UTC, UTC
+from utilities.datetime import TODAY_UTC
 from utilities.hypothesis import text_ascii, timestamps
 from utilities.numpy import datetime64ns
 from utilities.pandas import (
@@ -65,6 +65,7 @@ from utilities.pandas import (
     to_numpy,
     union_indexes,
 )
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable

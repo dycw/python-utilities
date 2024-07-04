@@ -46,7 +46,6 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 
 from tests.conftest import FLAKY
-from utilities.datetime import UTC
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
@@ -101,6 +100,7 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     import datetime as dt

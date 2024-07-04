@@ -27,7 +27,6 @@ from pandas import (
 from pandas.testing import assert_frame_equal, assert_index_equal
 from typing_extensions import assert_never, override
 
-from utilities.datetime import UTC
 from utilities.errors import redirect_error
 from utilities.functions import CheckNameError, check_name
 from utilities.iterables import (
@@ -54,7 +53,7 @@ from utilities.numpy import (
     has_dtype,
 )
 from utilities.sentinel import Sentinel, sentinel
-from utilities.zoneinfo import HONG_KONG
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import (

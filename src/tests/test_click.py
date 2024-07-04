@@ -45,7 +45,6 @@ from utilities.click import (
     workers_option,
 )
 from utilities.datetime import (
-    UTC,
     serialize_date,
     serialize_datetime,
     serialize_time,
@@ -55,6 +54,7 @@ from utilities.hypothesis import sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

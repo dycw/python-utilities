@@ -18,7 +18,6 @@ from typing_extensions import override
 
 from utilities.datetime import (
     EPOCH_UTC,
-    UTC,
     ensure_date,
     ensure_datetime,
     ensure_time,
@@ -36,6 +35,7 @@ from utilities.enum import ensure_enum, parse_enum
 from utilities.iterables import one
 from utilities.sentinel import sentinel
 from utilities.text import ensure_str, join_strs, split_str
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from luigi.interface import LuigiRunResult
@@ -390,7 +390,7 @@ class AwaitTime(ExternalTask):
 
     @override
     def exists(self) -> bool:
-        return get_now(tz=UTC) >= self.datetime
+        return get_now(time_zone=UTC) >= self.datetime
 
 
 class ExternalFile(ExternalTask):

@@ -10,7 +10,8 @@ from polars import DataFrame, Datetime, Float64, datetime_range, int_range
 from pytest import fixture
 
 from utilities.altair import plot_dataframes, plot_intraday_dataframe, vconcat_charts
-from utilities.datetime import UTC, get_now
+from utilities.datetime import get_now
+from utilities.zoneinfo import UTC
 
 
 @fixture()
@@ -73,7 +74,7 @@ class TestPlotIntradayDataFrame:
     def test_non_finite(self) -> None:
         data = DataFrame(
             data=[(get_now(), inf)],
-            schema={"datetime": Datetime(time_zone=UTC), "value": Float64},
+            schema={"datetime": Datetime(time_zone="UTC"), "value": Float64},
             orient="row",
         )
         _ = plot_intraday_dataframe(data)

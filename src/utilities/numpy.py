@@ -43,9 +43,10 @@ from numpy.random import default_rng
 from numpy.typing import NDArray
 from typing_extensions import override
 
-from utilities.datetime import EPOCH_UTC, UTC
+from utilities.datetime import EPOCH_UTC
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator

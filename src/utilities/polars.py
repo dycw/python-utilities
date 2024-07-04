@@ -61,10 +61,12 @@ from utilities.iterables import (
     one,
 )
 from utilities.math import CheckIntegerError, check_integer
+from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from collections.abc import Set as AbstractSet
+    from zoneinfo import ZoneInfo
 
     from pyarrow import DataType
 
@@ -485,7 +487,7 @@ class SetFirstRowAsColumnsError(Exception): ...
 
 
 def struct_data_type(
-    cls: type[Dataclass], /, *, time_zone: str | dt.timezone | None = None
+    cls: type[Dataclass], /, *, time_zone: ZoneInfo | str | None = None
 ) -> Struct:
     """Construct the Struct data type for a dataclass."""
     if not is_dataclass_class(cls):
@@ -498,7 +500,7 @@ def struct_data_type(
 
 
 def _struct_data_type_one(
-    ann: Any, /, *, time_zone: str | dt.timezone | None = None
+    ann: Any, /, *, time_zone: ZoneInfo | str | None = None
 ) -> DataType:
     with suppress(KeyError):
         return {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}[
@@ -507,7 +509,7 @@ def _struct_data_type_one(
     if ann is dt.datetime:
         if time_zone is None:
             raise _StructDataTypeTimeZoneMissingError
-        return Datetime(time_zone=time_zone)
+        return Datetime(time_zone=get_time_zone_name(time_zone))
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
     if isinstance(ann, type) and issubclass(ann, Enum):
