@@ -60,7 +60,7 @@ def yield_pdf(*, header: str | None = None) -> Iterator[_BasePDF]:
         def footer(self) -> None:
             self.set_y(-15)
             self.set_font(family="Helvetica", style="I", size=8)
-            page_no, now = self.page_no(), get_now(tz=local_timezone())
+            page_no, now = self.page_no(), get_now(time_zone=local_timezone())
             text = f"page {page_no}/{{}}; {now}"
             _ = self.cell(
                 w=0,

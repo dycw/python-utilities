@@ -39,3 +39,5 @@ tomli==2.0.1
     #   pytest
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
+tzlocal==5.2
+    # via dycw-utilities (pyproject.toml)

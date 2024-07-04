@@ -502,6 +502,8 @@ typing-extensions==4.12.2
     #   streamlit
 tzdata==2024.1
     # via pandas
+tzlocal==5.2
+    # via dycw-utilities (pyproject.toml)
 uc-micro-py==1.0.3
     # via linkify-it-py
 urllib3==2.2.2
@@ -510,7 +512,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.20
+uv==0.2.21
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

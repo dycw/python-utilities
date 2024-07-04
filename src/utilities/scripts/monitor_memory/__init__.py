@@ -14,12 +14,13 @@ from loguru import logger
 from psutil import swap_memory, virtual_memory
 from typing_extensions import assert_never
 
-from utilities.datetime import UTC, get_now
+from utilities.datetime import get_now
 from utilities.loguru import setup_loguru
 from utilities.platform import SYSTEM, System
 from utilities.scripts.monitor_memory.classes import Config, Item
 from utilities.timer import Timer
 from utilities.typed_settings import click_options
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -86,7 +87,7 @@ def _get_memory_usage() -> Item:  # type: ignore[]
             assert_never(never)
     swap = swap_memory()
     return Item(
-        datetime=get_now(tz=UTC),
+        datetime=get_now(time_zone=UTC),
         virtual_total=virtual.total,
         virtual_available=virtual.available,
         virtual_percent=virtual.percent,

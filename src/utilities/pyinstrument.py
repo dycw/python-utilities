@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pyinstrument.profiler import Profiler
 
-from utilities.datetime import get_now, local_timezone
+from utilities.datetime import get_now
 from utilities.pathlib import PWD, ensure_path
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ def profile(*, path: PathLike = PWD, validate: bool = False) -> Iterator[None]:
 
     with Profiler() as profiler:
         yield
-    now = get_now(tz=local_timezone())
+    now = get_now(time_zone="local")
     filename = ensure_path(
         path, f"profile__{now:%Y%m%dT%H%M%S}.html", validate=validate
     )

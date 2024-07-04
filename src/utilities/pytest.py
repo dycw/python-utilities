@@ -4,7 +4,7 @@ from functools import cache, wraps
 from os import environ
 from typing import TYPE_CHECKING, Any
 
-from utilities.datetime import UTC, duration_to_float, get_now
+from utilities.datetime import duration_to_float, get_now
 from utilities.hashlib import md5_hash
 from utilities.pathlib import ensure_path
 from utilities.platform import (
@@ -16,6 +16,7 @@ from utilities.platform import (
     IS_WINDOWS,
 )
 from utilities.types import Duration, IterableStrs, PathLike, is_function_async
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -154,7 +155,7 @@ def _throttle_path_and_now(
         prev = float(contents)
     else:
         prev = None
-    now = get_now(tz=UTC).timestamp()
+    now = get_now(time_zone=UTC).timestamp()
     if (
         (skip is not None)
         and (prev is not None)

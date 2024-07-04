@@ -390,7 +390,7 @@ class AwaitTime(ExternalTask):
 
     @override
     def exists(self) -> bool:
-        return get_now(tz=UTC) >= self.datetime
+        return get_now(time_zone=UTC) >= self.datetime
 
 
 class ExternalFile(ExternalTask):
