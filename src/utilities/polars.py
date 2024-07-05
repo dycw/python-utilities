@@ -73,6 +73,9 @@ if TYPE_CHECKING:
     from utilities.types import IterableStrs
 
 
+DatetimeUTC = Datetime(time_zone="UTC")
+
+
 @overload
 def ceil_datetime(column: Expr | str, every: Expr | str, /) -> Expr: ...
 @overload
@@ -587,6 +590,7 @@ class YieldStructSeriesElementsError(Exception):
 __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
+    "DatetimeUTC",
     "EmptyPolarsConcatError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",

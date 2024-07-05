@@ -39,7 +39,7 @@ except ModuleNotFoundError:
 else:
     setup_loguru()
 
-    @fixture()
+    @fixture
     def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
         handler_id = logger.add(caplog.handler, format="{message}")
         yield caplog

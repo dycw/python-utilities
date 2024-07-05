@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@fixture()
+@fixture
 def path_csv(*, tmp_path: Path) -> Path:
     path = ensure_path(tmp_path, "input.csv")
     with path.open(mode="w", newline="" if IS_WINDOWS else None) as fh:

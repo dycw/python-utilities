@@ -50,7 +50,7 @@ cachetools==5.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2024.6.2
+certifi==2024.7.4
     # via
     #   httpcore
     #   httpx
@@ -108,7 +108,7 @@ fasteners==0.19
     # via zarr
 filelock==3.15.4
     # via virtualenv
-fonttools==4.53.0
+fonttools==4.53.1
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
@@ -130,7 +130,7 @@ hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.25.0
     # via hatch
-holoviews==1.19.0
+holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
 httpcore==1.0.5
     # via httpx
@@ -138,7 +138,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -320,11 +320,11 @@ pyarrow==16.1.0
     #   vegafusion
 pycparser==2.22
     # via cffi
-pydantic==2.7.4
+pydantic==2.8.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   fastapi-slim
-pydantic-core==2.18.4
+pydantic-core==2.20.1
     # via pydantic
 pydeck==0.9.1
     # via streamlit
@@ -448,7 +448,7 @@ starlette==0.37.2
     # via fastapi-slim
 streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
-tenacity==8.4.2
+tenacity==8.5.0
     # via
     #   luigi
     #   streamlit
@@ -476,7 +476,7 @@ tqdm==4.66.4
     #   optuna
     #   panel
     #   pqdm
-trio==0.25.1
+trio==0.26.0
     # via
     #   selenium
     #   trio-websocket
@@ -484,7 +484,7 @@ trio-websocket==0.11.1
     # via selenium
 trove-classifiers==2024.7.2
     # via hatchling
-typed-settings==24.3.0
+typed-settings==24.4.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via
