@@ -5,8 +5,10 @@ attrs==23.2.0
 bleach==6.1.0
     # via panel
 bokeh==3.4.2
-    # via panel
-certifi==2024.6.2
+    # via
+    #   holoviews
+    #   panel
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -21,9 +23,9 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-holoviews==1.18.3
+holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests

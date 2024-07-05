@@ -180,6 +180,12 @@ class TestEnsure:
         assert result == datetime
 
 
+class TestEpochUTC:
+    def test_main(self) -> None:
+        assert isinstance(EPOCH_UTC, dt.datetime)
+        assert EPOCH_UTC.tzinfo is UTC
+
+
 class TestGetNow:
     @given(time_zone=timezones())
     def test_main(self, *, time_zone: ZoneInfo) -> None:
@@ -476,12 +482,6 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
-
-
-class TestTimes:
-    def test_main(self) -> None:
-        assert isinstance(EPOCH_UTC, dt.datetime)
-        assert EPOCH_UTC.tzinfo is UTC
 
 
 class TestTimeZones:

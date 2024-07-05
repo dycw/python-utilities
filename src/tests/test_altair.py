@@ -14,7 +14,7 @@ from utilities.datetime import get_now
 from utilities.zoneinfo import UTC
 
 
-@fixture()
+@fixture
 def time_series() -> DataFrame:
     return (
         datetime_range(

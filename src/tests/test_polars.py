@@ -30,6 +30,7 @@ from pytest import mark, param, raises
 from utilities.polars import (
     CheckPolarsDataFrameError,
     ColumnsToDictError,
+    DatetimeUTC,
     EmptyPolarsConcatError,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
@@ -357,6 +358,12 @@ class TestColumnsToDict:
         )
         with raises(ColumnsToDictError, match="DataFrame must be unique on 'a'"):
             _ = columns_to_dict(df, "a", "b")
+
+
+class TestDatetimeUTC:
+    def test_main(self) -> None:
+        assert isinstance(DatetimeUTC, Datetime)
+        assert DatetimeUTC.time_zone == "UTC"
 
 
 class TestEnsureExprOrSeries:

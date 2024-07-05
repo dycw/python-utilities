@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -23,9 +23,9 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pydantic==2.7.4
+pydantic==2.8.2
     # via dycw-utilities (pyproject.toml)
-pydantic-core==2.18.4
+pydantic-core==2.20.1
     # via pydantic
 pytest==8.2.2
     # via

@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -51,7 +51,7 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
-tenacity==8.4.2
+tenacity==8.5.0
     # via luigi
 tomli==2.0.1
     # via
@@ -60,7 +60,7 @@ tomli==2.0.1
     #   typed-settings
 tornado==6.4.1
     # via luigi
-typed-settings==24.3.0
+typed-settings==24.4.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)

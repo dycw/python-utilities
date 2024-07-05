@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   pytest
 freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -48,7 +48,7 @@ tomli==2.0.1
     #   coverage
     #   pytest
     #   typed-settings
-typed-settings==24.3.0
+typed-settings==24.4.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
