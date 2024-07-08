@@ -66,7 +66,7 @@ def _yield_writer(
         yield DictWriter(fh, fieldnames=fieldnames)
 
 
-def _get_memory_usage() -> Item:  # type: ignore[]
+def _get_memory_usage() -> Item:  # type: ignore[reportInvalidTypeForm]
     virtual = cast(Any, virtual_memory())
     virtual_kwargs: dict[str, Any] = {}
     match SYSTEM:
