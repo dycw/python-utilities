@@ -327,7 +327,7 @@ def check_engine(
             query = "select * from all_objects"
         case Dialect.sqlite:
             query = "select * from sqlite_master where type='table'"
-        case _ as never:  # type: ignore[]
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
             assert_never(never)
     statement = text(query)
     with engine.begin() as conn:
@@ -496,7 +496,7 @@ class Dialect(enum.Enum):
                 return 32767
             case Dialect.sqlite:
                 return 100
-            case _ as never:  # type: ignore[]
+            case _ as never:  # type: ignore[reportUnnecesaryComparison]
                 assert_never(never)
 
 
@@ -522,7 +522,7 @@ def ensure_tables_created(
             match = "ORA-00955: name is already used by an existing object"
         case Dialect.sqlite:
             match = "table .* already exists"
-        case _ as never:  # type: ignore[]
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
             assert_never(never)
 
     for table_or_mapped_class in tables_or_mapped_classes:
@@ -634,7 +634,7 @@ def get_table_does_not_exist_message(engine: Engine, /) -> str:
             return "ORA-00942: table or view does not exist"
         case Dialect.sqlite:
             return "no such table"
-        case _ as never:  # type: ignore[]
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
             assert_never(never)
 
 

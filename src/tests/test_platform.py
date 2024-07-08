@@ -36,7 +36,7 @@ class TestMaybeYieldLowerCase:
                 assert all(text == text.lower() for text in result)
             case System.linux:  # pragma: os-ne-linux
                 assert result == text
-            case _ as never:  # type: ignore[]
+            case _ as never:  # type: ignore[reportUnnecesaryComparison]
                 assert_never(never)
 
 

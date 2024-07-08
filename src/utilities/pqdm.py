@@ -85,7 +85,7 @@ def pstarmap(
                 **_get_desc(desc, func),
                 **kwargs,
             )
-        case _ as never:  # type: ignore[]
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
             assert_never(never)
     return list(result)
 

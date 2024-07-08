@@ -342,11 +342,11 @@ start-pypi-server = "utilities.scripts.pypi_server:main"
 # basedpyright
 [tool.basedpyright]
 reportAny = false
-reportMissingTypeStubs = false
 reportMissingTypeArgument = false
+reportMissingTypeStubs = false
 reportUnknownArgumentType = false
-reportUnknownParameterType = false
 reportUnknownMemberType = false
+reportUnknownParameterType = false
 reportUnknownVariableType = false
 reportUnusedImport = false
 reportUnusedVariable = false
