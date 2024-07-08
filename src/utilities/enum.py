@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from typing_extensions import override
 
 from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,
-    _OneStrCaseInsensitiveEmptyError,
-    _OneStrCaseSensitiveEmptyError,
+    _OneStrCaseInsensitiveBijectionError,  # type: ignore[reportPrivateUsage]
+    _OneStrCaseInsensitiveEmptyError,  # type: ignore[reportPrivateUsage]
+    _OneStrCaseSensitiveEmptyError,  # type: ignore[reportPrivateUsage]
     one_str,
 )
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
 try:
-    from enum import StrEnum as _StrEnum  # type: ignore[]
+    from enum import StrEnum as _StrEnum  # type: ignore[reportAttributeAccessIssue]
 except ImportError:  # pragma: version-ge-311
 
     class _StrEnum(str, Enum):
