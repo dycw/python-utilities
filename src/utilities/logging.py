@@ -28,7 +28,9 @@ def get_logging_level(level: str, /) -> int:
     Hard-coded mapping only needed for Python 3.10.
     """
     try:
-        from logging import getLevelNamesMapping  # type: ignore[]
+        from logging import (
+            getLevelNamesMapping,  # type: ignore[reportAttributeAccessIssue],
+        )
     except ImportError:  # pragma: version-ge-311
         mapping = {
             "CRITICAL": 50,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime as dt
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator
 from contextlib import suppress
@@ -38,12 +37,17 @@ from utilities.text import ensure_str, join_strs, split_str
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    import datetime as dt
+
     from luigi.interface import LuigiRunResult
     from semver import Version
     from sqlalchemy import Engine, Select
 
     from utilities.logging import LogLevel
     from utilities.types import IterableStrs, PathLike
+
+_STR_SENTINEL = str(sentinel)
+
 
 # parameters
 
@@ -151,7 +155,7 @@ class FrozenSetIntsParameter(Parameter):
     """A parameter which takes the value of a frozen set of integers."""
 
     def __init__(
-        self, *, separator: str = ",", empty: str = str(sentinel), **kwargs: Any
+        self, *, separator: str = ",", empty: str = _STR_SENTINEL, **kwargs: Any
     ) -> None:
         self._separator = separator
         self._empty = empty
@@ -292,7 +296,7 @@ class PathTarget(Target):
         self.path = Path(path)
 
     @override
-    def exists(self) -> bool:  # type: ignore[]
+    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
         """Check if the target exists."""
         return self.path.exists()
 
@@ -305,7 +309,7 @@ class DatabaseTarget(Target):
         self._sel = sel.limit(1)
         self._engine = engine
 
-    def exists(self) -> bool:  # type: ignore[]
+    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
         from utilities.sqlalchemy import get_table_does_not_exist_message
 
         engine = self._engine
@@ -354,7 +358,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[]
+    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[reportIncompatibleMethodOverride]
         return _ExternalTaskDummyTarget(self)
 
 
@@ -366,7 +370,7 @@ class _ExternalTaskDummyTarget(Target):
         self._task = task
 
     @override
-    def exists(self) -> bool:  # type: ignore[]
+    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
         return self._task.exists()
 
 
@@ -376,7 +380,7 @@ _Task = TypeVar("_Task", bound=Task)
 class AwaitTask(ExternalTask, Generic[_Task]):
     """Await the completion of another task."""
 
-    task = cast(_Task, TaskParameter())
+    task: _Task = cast(Any, TaskParameter())
 
     @override
     def exists(self) -> bool:
@@ -386,7 +390,7 @@ class AwaitTask(ExternalTask, Generic[_Task]):
 class AwaitTime(ExternalTask):
     """Await a specific moment of time."""
 
-    datetime = cast(dt.datetime, DateSecondParameter())
+    datetime: dt.datetime = cast(Any, DateSecondParameter())
 
     @override
     def exists(self) -> bool:
@@ -396,7 +400,7 @@ class AwaitTime(ExternalTask):
 class ExternalFile(ExternalTask):
     """Await an external file on the local disk."""
 
-    path = cast(Path, PathParameter())
+    path: Path = cast(Any, PathParameter())
 
     @override
     def exists(self) -> bool:
