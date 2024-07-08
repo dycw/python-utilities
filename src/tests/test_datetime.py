@@ -494,7 +494,7 @@ class TestYieldDays:
     def test_start_and_end(self, *, start: dt.date, days: int) -> None:
         with assume_does_not_raise(OverflowError):
             end = start + dt.timedelta(days=days)
-        dates = list(yield_days(start=start, end=end))
+            dates = list(yield_days(start=start, end=end))
         assert all(start <= d <= end for d in dates)
 
     @given(start=dates(), days=integers(0, 10))
