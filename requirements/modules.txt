@@ -5,9 +5,7 @@ altair==5.3.0
 annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
-    # via
-    #   httpx
-    #   starlette
+    # via httpx
 asciitree==0.3.3
     # via zarr
 ast-comments==1.2.2
@@ -80,8 +78,6 @@ exceptiongroup==1.2.1
     #   anyio
     #   hypothesis
     #   pytest
-fastapi-slim==0.111.0
-    # via dycw-utilities (pyproject.toml)
 fasteners==0.19
     # via zarr
 filelock==3.15.4
@@ -108,7 +104,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.105.0
+hypothesis==6.105.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -252,9 +248,7 @@ pyarrow==16.1.0
 pycparser==2.22
     # via cffi
 pydantic==2.8.2
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   fastapi-slim
+    # via dycw-utilities (pyproject.toml)
 pydantic-core==2.20.1
     # via pydantic
 pydeck==0.9.1
@@ -308,7 +302,7 @@ rich==13.7.1
     # via
     #   hatch
     #   streamlit
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing
@@ -321,7 +315,7 @@ scipy==1.14.0
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.5
+scs==3.2.6
     # via cvxpy
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
@@ -345,8 +339,6 @@ soupsieve==2.5
     # via beautifulsoup4
 sqlalchemy==2.0.31
     # via dycw-utilities (pyproject.toml)
-starlette==0.37.2
-    # via fastapi-slim
 streamlit==1.36.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
@@ -385,7 +377,6 @@ typing-extensions==4.12.2
     #   dycw-utilities (pyproject.toml)
     #   altair
     #   anyio
-    #   fastapi-slim
     #   panel
     #   pqdm
     #   pydantic
@@ -400,7 +391,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.21
+uv==0.2.22
     # via hatch
 virtualenv==20.26.3
     # via hatch

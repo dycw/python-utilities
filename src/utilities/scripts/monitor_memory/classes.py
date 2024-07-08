@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path  # noqa: TCH003
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import assert_never
 
@@ -22,7 +22,7 @@ class Config:
         default=ensure_path("memory.csv"), param_decls=("-p", "--path")
     )
     freq: int = click_field(default=60, help="in seconds", param_decls=("-f", "--freq"))
-    duration: Optional[int] = click_field(  # noqa: UP007
+    duration: int | None = click_field(
         default=None, help="in seconds", param_decls=("-d", "--duration")
     )
 
@@ -97,5 +97,5 @@ match SYSTEM:
         Item = ItemMacOS
     case System.linux:  # pragma: os-ne-linux
         Item = ItemLinux
-    case _ as never:  # type: ignore[]
+    case _ as never:  # type: ignore[reportUnnecesaryComparison]
         assert_never(never)

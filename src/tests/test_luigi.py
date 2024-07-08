@@ -72,7 +72,7 @@ class TestAwaitTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
     def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, Task):
-            is_complete = cast(bool, BoolParameter())
+            is_complete: bool = cast(Any, BoolParameter())
 
             @override
             def complete(self) -> bool:
@@ -107,10 +107,10 @@ class TestClone:
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
     def test_main(self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
-            truth = cast(bool, BoolParameter())
+            truth: bool = cast(Any, BoolParameter())
 
         class B(namespace_mixin, Task):
-            truth = cast(bool, BoolParameter())
+            truth: bool = cast(Any, BoolParameter())
 
         a = A(truth)
         result = clone(a, B)
@@ -120,10 +120,10 @@ class TestClone:
     @given(namespace_mixin=namespace_mixins(), truth=booleans())
     def test_await(self, *, namespace_mixin: Any, truth: bool) -> None:
         class A(namespace_mixin, Task):
-            truth = cast(bool, BoolParameter())
+            truth: bool = cast(Any, BoolParameter())
 
         class B(namespace_mixin, Task):
-            truth = cast(bool, BoolParameter())
+            truth: bool = cast(Any, BoolParameter())
 
         a = A(truth)
         result = clone(a, B, await_=True)
@@ -214,7 +214,7 @@ class TestExternalTask:
     @given(namespace_mixin=namespace_mixins(), is_complete=booleans())
     def test_main(self, *, namespace_mixin: Any, is_complete: bool) -> None:
         class Example(namespace_mixin, ExternalTask):
-            is_complete = cast(bool, BoolParameter())
+            is_complete: bool = cast(Any, BoolParameter())
 
             @override
             def exists(self) -> bool:

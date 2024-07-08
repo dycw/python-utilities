@@ -435,7 +435,7 @@ def norm(x: Expression, /) -> Expression: ...
 def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
     """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
-        return cast(float, numpy.linalg.norm(x))
+        return numpy.linalg.norm(x).item()
     try:
         from pandas import Series
     except ModuleNotFoundError:  # pragma: no cover
@@ -506,7 +506,7 @@ def quad_form(
 ) -> float | Expression:
     """Compute the quadratic form of a vector & matrix."""
     if isinstance(x, ndarray):
-        return cast(float, x.T @ P @ x)
+        return (x.T @ P @ x).item()
     return cvxpy.quad_form(x, P)
 
 

@@ -21,7 +21,7 @@ from utilities.datetime import (
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
-from utilities.sentinel import sentinel
+from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
 
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ class ListChoices(ParamType):
         /,
         *,
         separator: str = ",",
-        empty: str = str(sentinel),
+        empty: str = SENTINEL_REPR,
         case_sensitive: bool = True,
     ) -> None:
         self._choices = choices
@@ -174,7 +174,7 @@ class ListInts(ParamType):
 
     name = "ints"
 
-    def __init__(self, *, separator: str = ",", empty: str = str(sentinel)) -> None:
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
         self._separator = separator
         self._empty = empty
         super().__init__()

@@ -65,31 +65,31 @@ if TYPE_CHECKING:  # pragma: no cover
         Sequence,
     )
 
-    IndexA: TypeAlias = Index[Any]  # type: ignore[]
-    IndexB: TypeAlias = Index[bool]  # type: ignore[]
-    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore[]
-    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore[]
-    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore[]
-    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[]
-    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[]
-    IndexF: TypeAlias = Index[float]  # type: ignore[]
-    IndexI: TypeAlias = Index[int]  # type: ignore[]
-    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore[]
-    IndexS: TypeAlias = Index[str]  # type: ignore[]
-    IndexSt: TypeAlias = Index[StringDtype]  # type: ignore[]
+    IndexA: TypeAlias = Index[Any]  # type: ignore[reportInvalidTypeArguments]
+    IndexB: TypeAlias = Index[bool]  # type: ignore[reportInvalidTypeArguments]
+    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore[reportInvalidTypeArguments]
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexF: TypeAlias = Index[float]  # type: ignore[reportInvalidTypeArguments]
+    IndexI: TypeAlias = Index[int]  # type: ignore[reportInvalidTypeArguments]
+    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexS: TypeAlias = Index[str]  # type: ignore[reportInvalidTypeArguments]
+    IndexSt: TypeAlias = Index[StringDtype]  # type: ignore[reportInvalidTypeArguments]
 
-    SeriesA: TypeAlias = Series[Any]  # type: ignore[]
-    SeriesB: TypeAlias = Series[bool]  # type: ignore[]
-    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore[]
-    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore[]
-    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore[]
-    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[]
-    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[]
-    SeriesF: TypeAlias = Series[float]  # type: ignore[]
-    SeriesI: TypeAlias = Series[int]  # type: ignore[]
-    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore[]
-    SeriesS: TypeAlias = Series[str]  # type: ignore[]
-    SeriesSt: TypeAlias = Series[StringDtype]  # type: ignore[]
+    SeriesA: TypeAlias = Series[Any]  # type: ignore[reportInvalidTypeArguments]
+    SeriesB: TypeAlias = Series[bool]  # type: ignore[reportInvalidTypeArguments]
+    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore[reportInvalidTypeArguments]
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesF: TypeAlias = Series[float]  # type: ignore[reportInvalidTypeArguments]
+    SeriesI: TypeAlias = Series[int]  # type: ignore[reportInvalidTypeArguments]
+    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesS: TypeAlias = Series[str]  # type: ignore[reportInvalidTypeArguments]
+    SeriesSt: TypeAlias = Series[StringDtype]  # type: ignore[reportInvalidTypeArguments]
 else:
     IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = IndexDutc = IndexF = (
         IndexI
@@ -694,7 +694,7 @@ def union_indexes(
                     name = rname
                 case "raise":
                     raise UnionIndexesError(left=left, right=right)
-                case _ as never:  # type: ignore[]
+                case _ as never:  # type: ignore[reportUnnecesaryComparison]
                     assert_never(never)
         return left.union(right).rename(name)
 

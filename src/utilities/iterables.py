@@ -11,10 +11,10 @@ from typing import Any, Generic, Literal, TypeGuard, TypeVar, cast, overload
 from typing_extensions import Never, assert_never, override
 
 from utilities.math import (
-    _CheckIntegerEqualError,
-    _CheckIntegerEqualOrApproxError,
-    _CheckIntegerMaxError,
-    _CheckIntegerMinError,
+    _CheckIntegerEqualError,  # type: ignore[reportPrivateUsage]
+    _CheckIntegerEqualOrApproxError,  # type: ignore[reportPrivateUsage]
+    _CheckIntegerMaxError,  # type: ignore[reportPrivateUsage]
+    _CheckIntegerMinError,  # type: ignore[reportPrivateUsage]
     check_integer,
 )
 from utilities.text import ensure_str
@@ -129,7 +129,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:  # type: ignore[]
+            case _ as never:  # type: ignore[reportUnnecessaryComparison]
                 assert_never(never)
 
 

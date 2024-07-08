@@ -17,7 +17,7 @@ class _Meta(type):
         return cls.instance
 
 
-_REPR = "<sentinel>"
+SENTINEL_REPR = "<sentinel>"
 
 
 class Sentinel(metaclass=_Meta):
@@ -25,7 +25,7 @@ class Sentinel(metaclass=_Meta):
 
     @override
     def __repr__(self) -> str:
-        return _REPR
+        return SENTINEL_REPR
 
     @override
     def __str__(self) -> str:
@@ -35,4 +35,4 @@ class Sentinel(metaclass=_Meta):
 sentinel = Sentinel()
 
 
-__all__ = ["Sentinel", "sentinel"]
+__all__ = ["SENTINEL_REPR", "Sentinel", "sentinel"]

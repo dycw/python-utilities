@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path  # noqa: TCH003
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from utilities.tempfile import TEMP_DIR
 from utilities.typed_settings import click_field
@@ -19,7 +19,7 @@ class Config:
         default=frozenset([TEMP_DIR]), param_decls=("-p", "--path")
     )
     days: int = click_field(default=7, param_decls=("-d", "--days"))
-    chunk_size: Optional[int] = click_field(  # noqa: UP007
+    chunk_size: int | None = click_field(
         default=None, param_decls=("-cs", "--chunk-size")
     )
     dry_run: bool = click_field(default=False, param_decls=("-dr", "--dry-run"))

@@ -8,7 +8,10 @@ from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
 from pathlib import Path
 from re import search
-from sys import _getframe, stdout
+from sys import (
+    _getframe,  # type: ignore[reportPrivateUsage]
+    stdout,
+)
 from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from loguru import logger
@@ -171,6 +174,11 @@ def _get_files_path(
     return None
 
 
+class _Kwargs(TypedDict, total=False):
+    rotation: str | int | dt.time | dt.timedelta | None
+    retention: str | int | dt.timedelta | None
+
+
 def _add_sink(
     sink: Any,
     level: LogLevel,
@@ -184,14 +192,11 @@ def _add_sink(
     """Add a sink."""
     filter_ = {name: level.name for name, level in levels.items()}
 
-    class Kwargs(TypedDict, total=False):
-        rotation: str | int | dt.time | dt.timedelta | None
-        retention: str | int | dt.timedelta | None
-
+    kwargs: _Kwargs
     if isinstance(sink, Path | str):
-        kwargs = cast(Kwargs, {"rotation": rotation, "retention": retention})
+        kwargs = {"rotation": rotation, "retention": retention}
     else:
-        kwargs = cast(Kwargs, {})
+        kwargs = {}
     _ = logger.add(
         sink,
         level=level.name,

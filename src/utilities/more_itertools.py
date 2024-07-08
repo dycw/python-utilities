@@ -88,7 +88,7 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
     @overload
     def peek(self, *, default: _U) -> _T | _U: ...
     @override
-    def peek(self, *, default: Any = sentinel) -> Any:  # type: ignore[]
+    def peek(self, *, default: Any = sentinel) -> Any:  # type: ignore[reportIncompatibleMethodOverride]
         if isinstance(default, Sentinel):
             return super().peek()
         return super().peek(default=default)
@@ -209,7 +209,7 @@ def _yield_splits2(
                 len_tail = max(len_win - head, 0)
                 if len_tail >= 1:
                     yield window, head, len_tail
-            case _ as never:  # type: ignore[]
+            case _ as never:  # type: ignore[reportUnnecessaryComparison]
                 assert_never(never)
 
 

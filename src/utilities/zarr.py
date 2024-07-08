@@ -21,7 +21,7 @@ from utilities.numpy import (
     NDArray1,
     NDArrayB1,
     NDArrayI1,
-    _ffill_non_nan_slices_helper,
+    _ffill_non_nan_slices_helper,  # type: ignore[reportPrivateUsage]
     array_indexer,
     datetime64D,
     datetime64ns,

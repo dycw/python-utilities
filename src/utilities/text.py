@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from typing_extensions import override
 
-from utilities.sentinel import sentinel
+from utilities.sentinel import SENTINEL_REPR
 from utilities.types import EnsureClassError, ensure_class, get_class_name
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ class EnsureStrError(Exception):
 
 
 def join_strs(
-    texts: Iterable[str], /, *, separator: str = ",", empty: str = str(sentinel)
+    texts: Iterable[str], /, *, separator: str = ",", empty: str = SENTINEL_REPR
 ) -> str:
     """Join a collection of strings, with a special provision for the empty list."""
     texts = list(texts)
@@ -47,7 +47,7 @@ def join_strs(
 
 
 def split_str(
-    text: str, /, *, separator: str = ",", empty: str = str(sentinel)
+    text: str, /, *, separator: str = ",", empty: str = SENTINEL_REPR
 ) -> list[str]:
     """Split a string, with a special provision for the empty string."""
     return [] if text == empty else text.split(separator)

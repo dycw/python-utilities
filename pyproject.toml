@@ -31,7 +31,6 @@ dev = [
   "click >= 8.1.7, < 8.2",
   "cryptography >= 42.0.7, < 42.1",
   "cvxpy >= 1.5.2, < 1.6",
-  "fastapi-slim >= 0.111.0, < 0.112",
   "fpdf2 >= 2.7.9, < 2.8",
   "frozendict >= 2.4.4, < 2.5",
   "hatch >= 1.12.0, < 1.13",
@@ -161,7 +160,6 @@ zzz-test-defaults = [
 zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
-zzz-test-fastapi = ["fastapi-slim >= 0.111.0, < 0.112"]
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.7.9, < 2.8",
   "holoviews >= 1.19.1, < 1.20",
@@ -209,7 +207,6 @@ zzz-test-modules = [
   "click >= 8.1.7, < 8.2",
   "cryptography >= 42.0.7, < 42.1",
   "cvxpy >= 1.5.2, < 1.6",
-  "fastapi-slim >= 0.111.0, < 0.112",
   "fpdf2 >= 2.7.9, < 2.8",
   "hatch >= 1.12.0, < 1.13",
   "holoviews >= 1.19.1, < 1.20",
@@ -339,6 +336,20 @@ monitor-memory = "utilities.scripts.monitor_memory:main"
 start-luigi-server = "utilities.scripts.luigi.server:main"
 start-pypi-server = "utilities.scripts.pypi_server:main"
 
+# basedpyright
+[tool.basedpyright]
+pythonVersion = "3.10"
+reportAny = false
+reportMissingTypeArgument = false
+reportMissingTypeStubs = false
+reportPrivateUsage = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnusedImport = false
+reportUnusedVariable = false
+
 # coverage
 [tool.coverage]
 
@@ -396,30 +407,6 @@ style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
-
-# pyright
-[tool.pyright]
-executionEnvironments = [{root = "src"}]
-include = ["src"]
-pythonVersion = "3.10"
-reportImplicitOverride = "error"
-reportImportCycles = "error"
-reportMissingSuperCall = "error"
-reportMissingTypeArgument = false
-reportMissingTypeStubs = false
-reportPrivateImportUsage = false
-reportPrivateUsage = false
-reportPropertyTypeMismatch = "error"
-reportShadowedImports = "error"
-reportUninitializedInstanceVariable = "error"
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUnnecessaryTypeIgnoreComment = "error"
-reportUntypedBaseClass = false
-reportUnusedCallResult = "error"
-typeCheckingMode = "strict"
 
 # pytest
 [tool.pytest]
@@ -504,19 +491,6 @@ preview = true
 select = [
   "ALL",
   "RUF022",  # unsorted-dunder-all
-]
-unfixable = [
-  "B007",  # unused-loop-control-variable
-  "F541",  # f-string-missing-placeholders
-  "F601",  # multi-value-repeated-key-literal
-  "PIE794",  # duplicate-class-field-definition
-  "PLR5501",  # collapsible-else-if
-  "PT014",  # pytest-duplicate-parametrize-test-cases
-  "RET504",  # unnecessary-assign
-  "SIM102",  # collapsible-if
-  "SIM105",  # suppressible-exception
-  "SIM114",  # if-with-same-arms
-  "T201",  # print
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

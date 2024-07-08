@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any, cast
 
 from beartype.roar import BeartypeCallHintParamViolation
 from pytest import raises
@@ -23,15 +24,15 @@ class TestBeartypeIfDev:
     def test_main(self) -> None:
         assert identity(0) == 0
         with raises(BeartypeCallHintParamViolation):
-            _ = identity(0.0)  # type: ignore[]
+            _ = identity(cast(Any, 0.0))
 
     def test_dataclass(self) -> None:
         assert Example(0).x == 0
         with raises(BeartypeCallHintParamViolation):
-            _ = Example(0.0)  # type: ignore[]
+            _ = Example(cast(Any, 0.0))
 
 
 if __name__ == "__main__":
     # these should pass:
-    _ = identity(0.0)  # type: ignore[]
-    _ = Example(0.0)  # type: ignore[]
+    _ = identity(cast(Any, 0.0))
+    _ = Example(cast(Any, 0.0))

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import enum
-import typing
 from enum import auto
 from re import escape
 from time import sleep
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
 from hypothesis import Phase, assume, given, settings
@@ -153,7 +152,7 @@ from utilities.sqlalchemy import (
 )
 from utilities.types import get_class_name
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from pathlib import Path
 
@@ -332,9 +331,7 @@ class TestCheckColumnTypesEqual:
 
 class TestCheckColumnTypesBooleanEqual:
     @given(create_constraints=lists_fixed_length(booleans(), 2))
-    def test_create_constraint(
-        self, *, create_constraints: typing.Sequence[bool]
-    ) -> None:
+    def test_create_constraint(self, *, create_constraints: Sequence[bool]) -> None:
         create_constraint_x, create_constraint_y = create_constraints
         x, y = (Boolean(create_constraint=cs) for cs in create_constraints)
         if create_constraint_x is create_constraint_y:
@@ -344,7 +341,7 @@ class TestCheckColumnTypesBooleanEqual:
                 _check_column_types_boolean_equal(x, y)
 
     @given(names=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_name(self, *, names: typing.Sequence[str | None]) -> None:
+    def test_name(self, *, names: Sequence[str | None]) -> None:
         name_x, name_y = names
         x, y = (Boolean(name=n) for n in names)
         if name_x == name_y:
@@ -356,7 +353,7 @@ class TestCheckColumnTypesBooleanEqual:
 
 class TestCheckColumnTypesDateTimeEqual:
     @given(timezones=lists_fixed_length(booleans(), 2))
-    def test_main(self, *, timezones: typing.Sequence[bool]) -> None:
+    def test_main(self, *, timezones: Sequence[bool]) -> None:
         timezone_x, timezone_y = timezones
         x, y = (DateTime(timezone=tz) for tz in timezones)
         if timezone_x is timezone_y:
@@ -394,9 +391,7 @@ class TestCheckColumnTypesEnumEqual:
             _check_column_types_enum_equal(x, y)
 
     @given(create_constraints=lists_fixed_length(booleans(), 2))
-    def test_create_constraint(
-        self, *, create_constraints: typing.Sequence[bool]
-    ) -> None:
+    def test_create_constraint(self, *, create_constraints: Sequence[bool]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -411,7 +406,7 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(native_enums=lists_fixed_length(booleans(), 2))
-    def test_native_enum(self, *, native_enums: typing.Sequence[bool]) -> None:
+    def test_native_enum(self, *, native_enums: Sequence[bool]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -424,7 +419,7 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(lengths=lists_fixed_length(integers(6, 10), 2))
-    def test_length(self, *, lengths: typing.Sequence[int]) -> None:
+    def test_length(self, *, lengths: Sequence[int]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -437,7 +432,7 @@ class TestCheckColumnTypesEnumEqual:
                 _check_column_types_enum_equal(x, y)
 
     @given(inherit_schemas=lists_fixed_length(booleans(), 2))
-    def test_inherit_schema(self, *, inherit_schemas: typing.Sequence[bool]) -> None:
+    def test_inherit_schema(self, *, inherit_schemas: Sequence[bool]) -> None:
         class Example(enum.Enum):
             member = auto()
 
@@ -452,7 +447,7 @@ class TestCheckColumnTypesEnumEqual:
 
 class TestCheckColumnTypesFloatEqual:
     @given(precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_precision(self, *, precisions: typing.Sequence[int | None]) -> None:
+    def test_precision(self, *, precisions: Sequence[int | None]) -> None:
         precision_x, precision_y = precisions
         x, y = (Float(precision=p) for p in precisions)
         if precision_x == precision_y:
@@ -462,7 +457,7 @@ class TestCheckColumnTypesFloatEqual:
                 _check_column_types_float_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
-    def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
+    def test_asdecimal(self, *, asdecimals: Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Float(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
@@ -473,7 +468,7 @@ class TestCheckColumnTypesFloatEqual:
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
-        self, *, dec_ret_scales: typing.Sequence[int | None]
+        self, *, dec_ret_scales: Sequence[int | None]
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Float(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -486,7 +481,7 @@ class TestCheckColumnTypesFloatEqual:
 
 class TestCheckColumnTypesIntervalEqual:
     @given(natives=lists_fixed_length(booleans(), 2))
-    def test_native(self, *, natives: typing.Sequence[bool]) -> None:
+    def test_native(self, *, natives: Sequence[bool]) -> None:
         native_x, native_y = natives
         x, y = (Interval(native=n) for n in natives)
         if native_x is native_y:
@@ -496,9 +491,7 @@ class TestCheckColumnTypesIntervalEqual:
                 _check_column_types_interval_equal(x, y)
 
     @given(second_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_second_precision(
-        self, *, second_precisions: typing.Sequence[int | None]
-    ) -> None:
+    def test_second_precision(self, *, second_precisions: Sequence[int | None]) -> None:
         second_precision_x, second_precision_y = second_precisions
         x, y = (Interval(second_precision=sp) for sp in second_precisions)
         if second_precision_x == second_precision_y:
@@ -508,9 +501,7 @@ class TestCheckColumnTypesIntervalEqual:
                 _check_column_types_interval_equal(x, y)
 
     @given(day_precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_day_precision(
-        self, *, day_precisions: typing.Sequence[int | None]
-    ) -> None:
+    def test_day_precision(self, *, day_precisions: Sequence[int | None]) -> None:
         day_precision_x, day_precision_y = day_precisions
         x, y = (Interval(day_precision=dp) for dp in day_precisions)
         if day_precision_x == day_precision_y:
@@ -522,7 +513,7 @@ class TestCheckColumnTypesIntervalEqual:
 
 class TestCheckColumnTypesLargeBinaryEqual:
     @given(lengths=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_main(self, *, lengths: typing.Sequence[int | None]) -> None:
+    def test_main(self, *, lengths: Sequence[int | None]) -> None:
         length_x, length_y = lengths
         x, y = (LargeBinary(length=l_) for l_ in lengths)
         if length_x == length_y:
@@ -534,7 +525,7 @@ class TestCheckColumnTypesLargeBinaryEqual:
 
 class TestCheckColumnTypesNumericEqual:
     @given(precisions=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_precision(self, *, precisions: typing.Sequence[int | None]) -> None:
+    def test_precision(self, *, precisions: Sequence[int | None]) -> None:
         precision_x, precision_y = precisions
         x, y = (Numeric(precision=p) for p in precisions)
         if precision_x == precision_y:
@@ -544,7 +535,7 @@ class TestCheckColumnTypesNumericEqual:
                 _check_column_types_numeric_equal(x, y)
 
     @given(asdecimals=lists_fixed_length(booleans(), 2))
-    def test_asdecimal(self, *, asdecimals: typing.Sequence[bool]) -> None:
+    def test_asdecimal(self, *, asdecimals: Sequence[bool]) -> None:
         asdecimal_x, asdecimal_y = asdecimals
         x, y = (Numeric(asdecimal=cast(Any, a)) for a in asdecimals)
         if asdecimal_x is asdecimal_y:
@@ -554,7 +545,7 @@ class TestCheckColumnTypesNumericEqual:
                 _check_column_types_numeric_equal(x, y)
 
     @given(scales=lists_fixed_length(integers(0, 10) | none(), 2))
-    def test_numeric_scale(self, *, scales: typing.Sequence[int | None]) -> None:
+    def test_numeric_scale(self, *, scales: Sequence[int | None]) -> None:
         scale_x, scale_y = scales
         x, y = (Numeric(scale=s) for s in scales)
         if scale_x == scale_y:
@@ -565,7 +556,7 @@ class TestCheckColumnTypesNumericEqual:
 
     @given(dec_ret_scales=lists_fixed_length(integers(0, 10) | none(), 2))
     def test_decimal_return_scale(
-        self, *, dec_ret_scales: typing.Sequence[int | None]
+        self, *, dec_ret_scales: Sequence[int | None]
     ) -> None:
         dec_ret_scale_x, dec_ret_scale_y = dec_ret_scales
         x, y = (Numeric(decimal_return_scale=drs) for drs in dec_ret_scales)
@@ -585,7 +576,7 @@ class TestCheckColumnTypesStringEqual:
         self,
         *,
         cls: type[String | Unicode | UnicodeText],
-        lengths: typing.Sequence[int | None],
+        lengths: Sequence[int | None],
     ) -> None:
         length_x, length_y = lengths
         x, y = (cls(length=l_) for l_ in lengths)
@@ -596,7 +587,7 @@ class TestCheckColumnTypesStringEqual:
                 _check_column_types_string_equal(x, y)
 
     @given(collations=lists_fixed_length(text_ascii(min_size=1) | none(), 2))
-    def test_collation(self, *, collations: typing.Sequence[str | None]) -> None:
+    def test_collation(self, *, collations: Sequence[str | None]) -> None:
         collation_x, collation_y = collations
         x, y = (String(collation=c) for c in collations)
         if collation_x == collation_y:
@@ -608,7 +599,7 @@ class TestCheckColumnTypesStringEqual:
 
 class TestCheckColumnTypesUuidEqual:
     @given(as_uuids=lists_fixed_length(booleans(), 2))
-    def test_as_uuid(self, *, as_uuids: typing.Sequence[bool]) -> None:
+    def test_as_uuid(self, *, as_uuids: Sequence[bool]) -> None:
         as_uuid_x, as_uuid_y = as_uuids
         x, y = (Uuid(as_uuid=cast(Any, au)) for au in as_uuids)
         if as_uuid_x is as_uuid_y:
@@ -618,7 +609,7 @@ class TestCheckColumnTypesUuidEqual:
                 _check_column_types_uuid_equal(x, y)
 
     @given(native_uuids=lists_fixed_length(booleans(), 2))
-    def test_native_uuid(self, *, native_uuids: typing.Sequence[bool]) -> None:
+    def test_native_uuid(self, *, native_uuids: Sequence[bool]) -> None:
         native_uuid_x, native_uuid_y = native_uuids
         x, y = (Uuid(native_uuid=nu) for nu in native_uuids)
         if native_uuid_x is native_uuid_y:
@@ -675,7 +666,7 @@ class TestCheckTablesEqual:
         _check_tables_equal(x, y, snake_columns=True)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -705,7 +696,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     def test_id(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -715,7 +706,7 @@ class TestCheckTableOrColumnNamesEqual:
         _check_table_or_column_names_equal(Example.id_.name, "id_")
 
     def test_id_as_x(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -824,7 +815,7 @@ class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -853,7 +844,7 @@ class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -896,7 +887,7 @@ class TestGetColumnNames:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -915,7 +906,7 @@ class TestGetColumns:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -944,7 +935,7 @@ class TestGetTable:
         assert result is table
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -976,7 +967,7 @@ class TestGetTableName:
         assert result == expected
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1055,7 +1046,7 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1121,7 +1112,7 @@ class TestInsertItemsCollect:
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1191,7 +1182,7 @@ class TestInsertItemsCollectValid:
 
 class TestIsMappedClass:
     def test_mapped_class_instance(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1210,7 +1201,7 @@ class TestIsTableOrMappedClass:
         assert is_table_or_mapped_class(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1227,7 +1218,7 @@ class TestIsTableOrMappedClass:
 class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1241,7 +1232,7 @@ class TestMappedClassToDict:
 
     @given(id_=integers())
     def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1359,7 +1350,7 @@ class TestPostgresUpsert:
         old: bool,
         new: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_and_mapping.__name__}"
@@ -1383,7 +1374,7 @@ class TestPostgresUpsert:
         old: bool,
         new: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class.__name__}"
@@ -1406,7 +1397,7 @@ class TestPostgresUpsert:
         data: DataObject,
         ids: set[int],
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_classes.__name__}"
@@ -1477,7 +1468,7 @@ class TestPostgresUpsert:
         x_new: bool,
         y: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_sel_or_all.__name__}_{selected_or_all}"
@@ -1633,7 +1624,7 @@ class TestSerializeEngine:
 
 class TestTablenameMixin:
     def test_main(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...
+        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...  # type: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
