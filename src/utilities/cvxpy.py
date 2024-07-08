@@ -435,7 +435,7 @@ def norm(x: Expression, /) -> Expression: ...
 def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
     """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
-        return cast(float, numpy.linalg.norm(x))
+        return numpy.linalg.norm(x).item()
     try:
         from pandas import Series
     except ModuleNotFoundError:  # pragma: no cover

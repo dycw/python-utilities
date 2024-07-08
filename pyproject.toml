@@ -339,6 +339,18 @@ monitor-memory = "utilities.scripts.monitor_memory:main"
 start-luigi-server = "utilities.scripts.luigi.server:main"
 start-pypi-server = "utilities.scripts.pypi_server:main"
 
+# basedpyright
+[tool.basedpyright]
+reportAny = false
+reportMissingTypeStubs = false
+reportMissingTypeArgument = false
+reportUnknownArgumentType = false
+reportUnknownParameterType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnusedImport = false
+reportUnusedVariable = false
+
 # coverage
 [tool.coverage]
 
@@ -396,30 +408,6 @@ style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
-
-# pyright
-[tool.pyright]
-executionEnvironments = [{root = "src"}]
-include = ["src"]
-pythonVersion = "3.10"
-reportImplicitOverride = "error"
-reportImportCycles = "error"
-reportMissingSuperCall = "error"
-reportMissingTypeArgument = false
-reportMissingTypeStubs = false
-reportPrivateImportUsage = false
-reportPrivateUsage = false
-reportPropertyTypeMismatch = "error"
-reportShadowedImports = "error"
-reportUninitializedInstanceVariable = "error"
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUnnecessaryTypeIgnoreComment = "error"
-reportUntypedBaseClass = false
-reportUnusedCallResult = "error"
-typeCheckingMode = "strict"
 
 # pytest
 [tool.pytest]
@@ -504,19 +492,6 @@ preview = true
 select = [
   "ALL",
   "RUF022",  # unsorted-dunder-all
-]
-unfixable = [
-  "B007",  # unused-loop-control-variable
-  "F541",  # f-string-missing-placeholders
-  "F601",  # multi-value-repeated-key-literal
-  "PIE794",  # duplicate-class-field-definition
-  "PLR5501",  # collapsible-else-if
-  "PT014",  # pytest-duplicate-parametrize-test-cases
-  "RET504",  # unnecessary-assign
-  "SIM102",  # collapsible-if
-  "SIM105",  # suppressible-exception
-  "SIM114",  # if-with-same-arms
-  "T201",  # print
 ]
 
 [tool.ruff.lint.extend-per-file-ignores]

@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine as _Engine
 
 
+_STR_SENTINEL = str(sentinel)
 FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
 DirPath = click.Path(file_okay=False, dir_okay=True, path_type=pathlib.Path)
 ExistingFilePath = click.Path(
@@ -118,7 +119,7 @@ class ListChoices(ParamType):
         /,
         *,
         separator: str = ",",
-        empty: str = str(sentinel),
+        empty: str = _STR_SENTINEL,
         case_sensitive: bool = True,
     ) -> None:
         self._choices = choices
@@ -174,7 +175,7 @@ class ListInts(ParamType):
 
     name = "ints"
 
-    def __init__(self, *, separator: str = ",", empty: str = str(sentinel)) -> None:
+    def __init__(self, *, separator: str = ",", empty: str = _STR_SENTINEL) -> None:
         self._separator = separator
         self._empty = empty
         super().__init__()
