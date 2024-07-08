@@ -78,8 +78,7 @@ class TestSetupLoguru:
         with Path(files_dir, "log").open() as fh:
             (line,) = fh.read().splitlines()
         assert search(
-            r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}  INFO  \w+\-\d+  "
-            r"[\w\.\-]+  message$",
+            r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}  INFO  \w+\-\d+  [\w\.\-]+  message$",
             line,
         )
 
