@@ -107,7 +107,7 @@ def ensure_class(
     *,
     nullable: Literal[False] = False,
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
-def ensure_class(  # type: ignore[]
+def ensure_class(  # type: ignore[reportInconsistentOverload]
     obj: Any, cls: type[_T] | tuple[type[_T], ...], /, *, nullable: bool = False
 ) -> _T:
     """Ensure an object is of the required class."""
@@ -290,7 +290,7 @@ def ensure_number(obj: Any, /, *, nullable: Literal[False] = False) -> Number: .
 def ensure_number(obj: Any, /, *, nullable: bool = False) -> Number | None:
     """Ensure an object is a number."""
     try:
-        return ensure_class(obj, Number, nullable=nullable)
+        return ensure_class(obj, (int, float), nullable=nullable)
     except EnsureClassError as error:
         raise EnsureNumberError(obj=error.obj, nullable=nullable) from None
 

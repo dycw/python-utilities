@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
-from typing import TYPE_CHECKING, Literal, TypedDict, cast
+from typing import TYPE_CHECKING, Literal, TypedDict
 from warnings import catch_warnings, filterwarnings
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ def _handle_warnings_1(
         category: type[Warning]
 
     with catch_warnings():
-        kwargs = cast(Kwargs, {} if category is None else {"category": category})
+        kwargs: Kwargs = {} if category is None else {"category": category}
         filterwarnings(action, message=message, **kwargs)
         yield
 
