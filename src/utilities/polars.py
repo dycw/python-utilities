@@ -625,11 +625,9 @@ def yield_struct_series_dataclasses(
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
 
-    for mapping in yield_struct_series_elements(series, strict=strict):
-        if mapping is None:
-            yield mapping
-        else:
-            yield from_dict(cls, mapping, config=Config(strict=True))
+    config = Config(strict=True)
+    for value in yield_struct_series_elements(series, strict=strict):
+        yield None if value is None else from_dict(cls, value, config=config)
 
 
 __all__ = [
