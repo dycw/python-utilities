@@ -51,6 +51,7 @@ from utilities.polars import (
     redirect_empty_polars_concat,
     set_first_row_as_columns,
     struct_data_type,
+    yield_struct_series_dataclasses,
     yield_struct_series_elements,
 )
 from utilities.zoneinfo import UTC
@@ -536,7 +537,7 @@ class TestStructDataType:
         assert result == expected
 
     def test_datetime(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             field: dt.datetime
 
@@ -549,7 +550,7 @@ class TestStructDataType:
             true = auto()
             false = auto()
 
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             field: Truth
 
@@ -560,16 +561,16 @@ class TestStructDataType:
     def test_literal(self) -> None:
         LowOrHigh = Literal["low", "high"]  # noqa: N806
 
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
-            field: LowOrHigh  # type: ignore[]
+            field: LowOrHigh  # type: ignore[reportInvalidTypeForm]
 
         result = struct_data_type(Example)
         expected = Struct({"field": Utf8})
         assert result == expected
 
     def test_containers(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             frozenset_: frozenset[int]
             list_: list[int]
@@ -584,11 +585,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_list_of_struct(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Inner:
             field: int
 
-        @dataclass
+        @dataclass(kw_only=True)
         class Outer:
             inner: list[Inner]
 
@@ -597,11 +598,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_struct(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Inner:
             field: int
 
-        @dataclass
+        @dataclass(kw_only=True)
         class Outer:
             inner: Inner
 
@@ -610,11 +611,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_struct_of_list(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Inner:
             field: list[int]
 
-        @dataclass
+        @dataclass(kw_only=True)
         class Outer:
             inner: Inner
 
@@ -627,7 +628,7 @@ class TestStructDataType:
             _ = struct_data_type(cast(Any, None))
 
     def test_missing_time_zone_error(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             field: dt.datetime
 
@@ -635,7 +636,7 @@ class TestStructDataType:
             _ = struct_data_type(Example)
 
     def test_non_string_literal_error(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             field: Literal[1, 2, 3]
 
@@ -646,12 +647,49 @@ class TestStructDataType:
             _ = struct_data_type(Example)
 
     def test_missing_type_error(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True)
         class Example:
             field: None
 
         with raises(StructDataTypeError, match="Unsupported type: <class 'NoneType'>"):
             _ = struct_data_type(Example)
+
+
+class TestYieldStructSeriesDataclasses:
+    def test_main(self) -> None:
+        @dataclass(kw_only=True)
+        class Row:
+            lower: int | None = None
+            upper: int | None = None
+
+        series = Series(
+            name="series",
+            values=[
+                (None, None),
+                (None, None),
+                (1, 1),
+                (2, None),
+                (None, None),
+                (None, 3),
+                (4, 4),
+                (None, None),
+                (None, None),
+            ],
+            dtype=Struct({"lower": Int64, "upper": Int64}),
+        )
+        result = list(yield_struct_series_dataclasses(series, Row))
+        expected = [
+            None,
+            None,
+            Row(lower=1, upper=1),
+            Row(lower=2, upper=None),
+            None,
+            Row(lower=None, upper=3),
+            Row(lower=4, upper=4),
+            None,
+            None,
+        ]
+        assert result == expected
 
 
 class TestYieldStructSeriesElements:
@@ -685,7 +723,7 @@ class TestYieldStructSeriesElements:
         ]
         assert result == expected
 
-    def test_error(self) -> None:
+    def test_error_struct_dtype(self) -> None:
         series = Series(
             name="series",
             values=[None, None, 1, 2, None, 3, 4, None, None],
@@ -696,3 +734,24 @@ class TestYieldStructSeriesElements:
             match="Series must have Struct-dtype; got Int64",
         ):
             _ = list(yield_struct_series_elements(series))
+
+    def test_error_null_elements(self) -> None:
+        series = Series(
+            name="series",
+            values=[
+                None,
+                None,
+                {"value": 1},
+                {"value": 2},
+                None,
+                {"value": 3},
+                {"value": 4},
+                None,
+                None,
+            ],
+            dtype=Struct({"value": Int64}),
+        )
+        with raises(
+            YieldStructSeriesElementsError, match="Series must not have nulls; got .*"
+        ):
+            _ = list(yield_struct_series_elements(series, strict=True))

@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    TypeVar,
     cast,
     get_args,
     get_origin,
@@ -568,12 +569,22 @@ class _StructDataTypeTypeError(StructDataTypeError):
         return f"Unsupported type: {self.ann}"
 
 
+@overload
 def yield_struct_series_elements(
-    series: Series, /
+    series: Series, /, *, strict: Literal[True]
+) -> Iterator[Mapping[str, Any]]: ...
+@overload
+def yield_struct_series_elements(
+    series: Series, /, *, strict: bool = False
+) -> Iterator[Mapping[str, Any] | None]: ...
+def yield_struct_series_elements(
+    series: Series, /, *, strict: bool = False
 ) -> Iterator[Mapping[str, Any] | None]:
     """Yield the elements of a struct-dtype Series as optional mappings."""
     if not isinstance(series.dtype, Struct):
-        raise YieldStructSeriesElementsError(series=series)
+        raise _YieldStructSeriesElementsDTypeError(series=series)
+    if strict and series.is_null().any():
+        raise _YieldStructSeriesElementsNullElementsError(series=series)
     for is_null, value in zip(series.is_null(), series, strict=False):
         yield None if is_null else value
 
@@ -582,9 +593,41 @@ def yield_struct_series_elements(
 class YieldStructSeriesElementsError(Exception):
     series: Series
 
+
+@dataclass(kw_only=True)
+class _YieldStructSeriesElementsDTypeError(YieldStructSeriesElementsError):
     @override
     def __str__(self) -> str:
         return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
+@dataclass(kw_only=True)
+class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError):
+    @override
+    def __str__(self) -> str:
+        return f"Series must not have nulls; got {self.series}"
+
+
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
+
+
+@overload
+def yield_struct_series_dataclasses(
+    series: Series, cls: type[_TDataclass], /, *, strict: Literal[True]
+) -> Iterator[_TDataclass]: ...
+@overload
+def yield_struct_series_dataclasses(
+    series: Series, cls: type[_TDataclass], /, *, strict: bool = False
+) -> Iterator[_TDataclass | None]: ...
+def yield_struct_series_dataclasses(
+    series: Series, cls: type[_TDataclass], /, *, strict: bool = False
+) -> Iterator[_TDataclass | None]:
+    """Yield the elements of a struct-dtype Series as dataclasses."""
+    from dacite import Config, from_dict
+
+    config = Config(strict=True)
+    for value in yield_struct_series_elements(series, strict=strict):
+        yield None if value is None else from_dict(cls, value, config=config)
 
 
 __all__ = [
@@ -606,5 +649,6 @@ __all__ = [
     "redirect_empty_polars_concat",
     "set_first_row_as_columns",
     "struct_data_type",
+    "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
 ]
