@@ -166,6 +166,7 @@ zzz-test-errors = []
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.7.9, < 2.8",
   "holoviews >= 1.19.1, < 1.20",
+  "tzlocal >= 5.2, < 5.3",
 ]
 zzz-test-functions = []
 zzz-test-functools = []
