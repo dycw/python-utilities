@@ -19,7 +19,7 @@ def module_to_source(module: Module, /) -> str:
         path = temp.joinpath("temp.py")
         with path.open(mode="w") as fh:
             _ = fh.write(src)
-        with suppress(CalledProcessError):
+        with suppress(CalledProcessError, FileNotFoundError):
             _ = check_call(["ruff", "format", str(path)])
         with path.open() as fh:
             return fh.read()
