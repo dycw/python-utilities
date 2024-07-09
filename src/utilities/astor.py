@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from contextlib import suppress
-from subprocess import CalledProcessError, check_call
+from subprocess import check_call
 from typing import TYPE_CHECKING
 
 from astor import to_source
@@ -19,8 +18,7 @@ def module_to_source(module: Module, /) -> str:
         path = temp.joinpath("temp.py")
         with path.open(mode="w") as fh:
             _ = fh.write(src)
-        with suppress(CalledProcessError, FileNotFoundError):
-            _ = check_call(["ruff", "format", str(path)])
+        _ = check_call(["ruff", "format", str(path)])
         with path.open() as fh:
             return fh.read()
 

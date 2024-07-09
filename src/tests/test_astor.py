@@ -21,13 +21,9 @@ class TestModuleToSource:
         )
         module = Module(body=[import_dt, assign], type_ignores=[])
         result = module_to_source(module)
-        expected_with_ruff = """\
+        expected = """\
 import datetime as dt
 
 now = dt.datetime.now()
 """
-        expected_without_ruff = """\
-import datetime as dt
-now = dt.datetime.now()
-"""
-        assert result in {expected_with_ruff, expected_without_ruff}
+        assert result == expected
