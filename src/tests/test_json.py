@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from json import dumps
 from math import isnan
 from operator import eq, neg
@@ -23,9 +24,9 @@ from hypothesis.strategies import (
     frozensets,
     integers,
     ip_addresses,
-    just,
     lists,
     none,
+    sampled_from,
     sets,
     slices,
     text,
@@ -70,7 +71,7 @@ class TestSerializeAndDeserialize:
             param(booleans()),
             param(characters()),
             param(dates()),
-            param(datetimes(timezones=just(UTC) | none())),
+            param(datetimes(timezones=sampled_from([UTC, dt.timezone.utc]) | none())),
             param(fractions()),
             param(ip_addresses(v=4)),
             param(ip_addresses(v=6)),
