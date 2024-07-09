@@ -425,8 +425,9 @@ addopts = [
 ]
 filterwarnings = [
   "error",
-  "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",
+  "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
