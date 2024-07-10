@@ -594,10 +594,12 @@ def _yield_struct_series_element_remove_nulls(obj: Any, /) -> Any:
     if not _yield_struct_series_element_is_mapping_of_str(obj):
         return obj
     if any(_yield_struct_series_element_is_mapping_of_str(v) for v in obj.values()):
-        bla = {k: _yield_struct_series_element_remove_nulls(v) for k, v in obj.items()}
-        if bla == obj:
-            return bla
-        return _yield_struct_series_element_remove_nulls(bla)
+        result = {
+            k: _yield_struct_series_element_remove_nulls(v) for k, v in obj.items()
+        }
+        if result == obj:
+            return result
+        return _yield_struct_series_element_remove_nulls(result)
     return None if all(v is None for v in obj.values()) else obj
 
 
