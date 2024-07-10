@@ -39,6 +39,7 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
+    _yield_struct_series_element_remove_nulls,
     ceil_datetime,
     check_polars_dataframe,
     collect_series,
@@ -691,10 +692,10 @@ class TestYieldStructSeriesDataclasses:
         series = Series(
             name="series",
             values=[
-                (1, 1, (1, 1)),
-                (2, 2, None),
-                (None, None, (3, 3)),
-                (None, None, None),
+                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+                {"a": 1, "b": 2, "inner": None},
+                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+                {"a": None, "b": None, "inner": None},
             ],
             dtype=Struct({
                 "a": Int64,
@@ -704,10 +705,10 @@ class TestYieldStructSeriesDataclasses:
         )
         result = list(yield_struct_series_dataclasses(series, Outer))
         expected = [
-            Outer(a=1, b=1, inner=Inner(lower=1, upper=1)),
-            Outer(a=2, b=2, inner=None),
-            Outer(a=None, b=None, inner=Inner(lower=3, upper=3)),
-            Outer(a=None, b=None, inner=None),
+            Outer(a=1, b=2, inner=Inner(lower=3, upper=4)),
+            Outer(a=1, b=2, inner=None),
+            Outer(a=None, b=None, inner=Inner(lower=3, upper=4)),
+            None,
         ]
         assert result == expected
 
@@ -716,18 +717,69 @@ class TestYieldStructSeriesElements:
     def test_main(self) -> None:
         series = Series(
             name="series",
-            values=[(None, None), (1, 1), (2, None), (None, 3), (4, 4), (None, None)],
+            values=[(1, 1), (2, None), (None, 3), (None, None)],
             dtype=Struct({"lower": Int64, "upper": Int64}),
         )
         result = list(yield_struct_series_elements(series))
         expected = [
-            None,
             {"lower": 1, "upper": 1},
             {"lower": 2, "upper": None},
             {"lower": None, "upper": 3},
-            {"lower": 4, "upper": 4},
             None,
         ]
+        assert result == expected
+
+    def test_nested(self) -> None:
+        series = Series(
+            name="series",
+            values=[
+                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+                {"a": 1, "b": 2, "inner": None},
+                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+                {"a": None, "b": None, "inner": None},
+            ],
+            dtype=Struct({
+                "a": Int64,
+                "b": Int64,
+                "inner": Struct({"lower": Int64, "upper": Int64}),
+            }),
+        )
+        result = list(yield_struct_series_elements(series))
+        expected = [
+            {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+            {"a": 1, "b": 2, "inner": None},
+            {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+            None,
+        ]
+        assert result == expected
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, None),
+            param(1, 1),
+            param({"a": 1, "b": 2}, {"a": 1, "b": 2}),
+            param({"a": 1, "b": None}, {"a": 1, "b": None}),
+            param({"a": None, "b": None}, None),
+            param(
+                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+            ),
+            param(
+                {"a": 1, "b": 2, "inner": {"lower": None, "upper": None}},
+                {"a": 1, "b": 2, "inner": None},
+            ),
+            param(
+                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+            ),
+            param(
+                {"a": None, "b": None, "inner": {"lower": None, "upper": None}}, None
+            ),
+        ],
+    )
+    def test_remove_nulls(self, *, obj: Any, expected: Any) -> None:
+        result = _yield_struct_series_element_remove_nulls(obj)
         assert result == expected
 
     def test_error_struct_dtype(self) -> None:

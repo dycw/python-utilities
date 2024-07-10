@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    TypeGuard,
     TypeVar,
     cast,
     get_args,
@@ -65,7 +66,7 @@ from utilities.math import CheckIntegerError, check_integer
 from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
@@ -585,8 +586,25 @@ def yield_struct_series_elements(
         raise _YieldStructSeriesElementsDTypeError(series=series)
     if strict and series.is_null().any():
         raise _YieldStructSeriesElementsNullElementsError(series=series)
-    for is_null, value in zip(series.is_null(), series, strict=False):
-        yield None if is_null else value
+    for value in series:
+        yield _yield_struct_series_element_remove_nulls(value)
+
+
+def _yield_struct_series_element_remove_nulls(obj: Any, /) -> Any:
+    if not _yield_struct_series_element_is_mapping_of_str(obj):
+        return obj
+    if any(_yield_struct_series_element_is_mapping_of_str(v) for v in obj.values()):
+        bla = {k: _yield_struct_series_element_remove_nulls(v) for k, v in obj.items()}
+        if bla == obj:
+            return bla
+        return _yield_struct_series_element_remove_nulls(bla)
+    return None if all(v is None for v in obj.values()) else obj
+
+
+def _yield_struct_series_element_is_mapping_of_str(
+    obj: Any, /
+) -> TypeGuard[Mapping[str, Any]]:
+    return isinstance(obj, Mapping) and all(isinstance(k, str) for k in obj)
 
 
 @dataclass(kw_only=True)
