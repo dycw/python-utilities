@@ -397,9 +397,17 @@ class TestEnsureIterableNotStr:
 
 
 class TestExpandingWindow:
-    def test_main(self) -> None:
-        result = list(expanding_window([1, 2, 3, 4, 5]))
-        expected = [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5]]
+    @mark.parametrize(
+        ("iterable", "expected"),
+        [
+            param(
+                [1, 2, 3, 4, 5], [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5]]
+            ),
+            param([], []),
+        ],
+    )
+    def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
+        result = list(expanding_window(iterable))
         assert result == expected
 
 
