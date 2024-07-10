@@ -38,6 +38,7 @@ from utilities.iterables import (
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
+    expanding_window,
     is_iterable,
     is_iterable_not_str,
     one,
@@ -393,6 +394,21 @@ class TestEnsureIterableNotStr:
             match=r"Object .* must be iterable, but not a string\.",
         ):
             _ = ensure_iterable_not_str(obj)
+
+
+class TestExpandingWindow:
+    @mark.parametrize(
+        ("iterable", "expected"),
+        [
+            param(
+                [1, 2, 3, 4, 5], [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5]]
+            ),
+            param([], []),
+        ],
+    )
+    def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
+        result = list(expanding_window(iterable))
+        assert result == expected
 
 
 class TestIsIterable:

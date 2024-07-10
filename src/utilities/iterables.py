@@ -5,7 +5,7 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Siz
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import partial
-from itertools import islice, product
+from itertools import accumulate, chain, islice, product
 from typing import Any, Generic, Literal, TypeGuard, TypeVar, cast, overload
 
 from typing_extensions import Never, assert_never, override
@@ -489,6 +489,15 @@ class EnsureIterableNotStrError(Exception):
         return f"Object {self.obj} must be iterable, but not a string."
 
 
+def expanding_window(iterable: Iterable[_T], /) -> Iterator[list[_T]]:
+    """Yield an expanding window over an iterable."""
+
+    def func(acc: Iterable[_T], el: _T, /) -> list[_T]:
+        return list(chain(acc, [el]))
+
+    return islice(accumulate(iterable, func=func, initial=[]), 1, None)
+
+
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -676,6 +685,7 @@ __all__ = [
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",
+    "expanding_window",
     "is_iterable",
     "is_iterable_not_str",
     "one",
