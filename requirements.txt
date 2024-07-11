@@ -416,7 +416,7 @@ selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.2.0
+setuptools==70.3.0
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -458,7 +458,7 @@ tomli==2.0.1
     #   typed-settings
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.5
+tomlkit==0.13.0
     # via hatch
 toolz==0.12.1
     # via altair
@@ -507,7 +507,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.23
+uv==0.2.24
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
