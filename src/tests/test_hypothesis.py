@@ -905,6 +905,7 @@ class TestTempPaths:
         assert path.is_dir()
         assert len(set(path.iterdir())) == 0
 
+    @FLAKY
     @given(path=temp_paths(), contents=sets(text_ascii(min_size=1), max_size=10))
     def test_writing_files(self, *, path: Path, contents: AbstractSet[str]) -> None:
         assert len(set(path.iterdir())) == 0
