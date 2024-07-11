@@ -45,7 +45,7 @@ python-daemon==3.0.1
     # via luigi
 python-dateutil==2.9.0.post0
     # via luigi
-setuptools==70.2.0
+setuptools==70.3.0
     # via python-daemon
 six==1.16.0
     # via python-dateutil
