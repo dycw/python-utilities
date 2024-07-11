@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import Hashable, Iterable, Iterator, Mapping
+from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -32,6 +32,7 @@ from hypothesis.strategies import (
     text,
     uuids,
 )
+from hypothesis.utils.conventions import not_set
 from typing_extensions import assert_never
 
 from utilities.pathlib import temp_cwd
@@ -41,6 +42,7 @@ from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from hypothesis.database import ExampleDatabase
     from pandas import Timestamp
     from semver import Version
     from sqlalchemy import Engine, MetaData
@@ -635,12 +637,36 @@ def setup_hypothesis_profiles(
 
 
 def settings_with_reduced_examples(
-    frac: FloatFinPos = 0.1, /, **kwargs: Any
+    frac: FloatFinPos = 0.1,
+    /,
+    *,
+    derandomize: bool = not_set,  # type: ignore[reportArgumentType]
+    database: ExampleDatabase | None = not_set,  # type: ignore[reportArgumentType]
+    verbosity: Verbosity = not_set,  # type: ignore[reportArgumentType]
+    phases: Collection[Phase] = not_set,  # type: ignore[reportArgumentType]
+    stateful_step_count: int = not_set,  # type: ignore[reportArgumentType]
+    report_multiple_bugs: bool = not_set,  # type: ignore[reportArgumentType]
+    suppress_health_check: Collection[HealthCheck] = not_set,  # type: ignore[reportArgumentType]
+    deadline: float | dt.timedelta | None = not_set,  # type: ignore[reportArgumentType]
+    print_blob: bool = not_set,  # type: ignore[reportArgumentType]
+    backend: str = not_set,  # type: ignore[reportArgumentType]
 ) -> settings:
     """Set a test to fewer max examples."""
     curr = settings()
     max_examples = max(round(frac * curr.max_examples), 1)
-    return settings(max_examples=max_examples, **kwargs)
+    return settings(
+        max_examples=max_examples,
+        derandomize=derandomize,
+        database=database,
+        verbosity=verbosity,
+        phases=phases,
+        stateful_step_count=stateful_step_count,
+        report_multiple_bugs=report_multiple_bugs,
+        suppress_health_check=suppress_health_check,
+        deadline=deadline,
+        print_blob=print_blob,
+        backend=backend,
+    )
 
 
 @composite
