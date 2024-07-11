@@ -443,9 +443,9 @@ class CheckSuperSetError(Exception, Generic[_T]):
         return f"Set {self.left} must be a superset of {self.right}; right had extra items {self.extra}."
 
 
-def chunked(iterable: Iterable[_T], n: int, /) -> Iterable[Sequence[_T]]:
+def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     """Break an iterable into lists of length n."""
-    return cast(Iterable[Sequence[_T]], iter(partial(take, n, iter(iterable)), []))
+    return iter(partial(take, n, iter(iterable)), [])
 
 
 def ensure_hashables(
@@ -489,7 +489,7 @@ class EnsureIterableNotStrError(Exception):
         return f"Object {self.obj} must be iterable, but not a string."
 
 
-def expanding_window(iterable: Iterable[_T], /) -> Iterator[list[_T]]:
+def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
     """Yield an expanding window over an iterable."""
 
     def func(acc: Iterable[_T], el: _T, /) -> list[_T]:
@@ -618,7 +618,7 @@ class _OneStrCaseInsensitiveEmptyError(OneStrError):
         return f"Iterable {self.iterable} does not contain {self.text!r} (case insensitive)."
 
 
-def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterable[Mapping[_K, _V]]:
+def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K, _V]]:
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
     for values in product(*mapping.values()):
