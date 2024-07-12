@@ -22,6 +22,6 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
       - run: python -m pip install uv
-      - run: uv pip install --system loguru pytest pytest-cov coverage_conditional_plugin
+      - run: uv pip sync --system --compile requirements.txt
       - run: pytest --cov-report=term-missing:skip-covered src/tests/test_loguru.py -k augment
     timeout-minutes: 60
