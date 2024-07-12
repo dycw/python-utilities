@@ -19,7 +19,7 @@ hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-numcodecs==0.12.1
+numcodecs==0.13.0
     # via zarr
 numpy==2.0.0
     # via

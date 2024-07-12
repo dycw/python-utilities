@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.10
+  python: python3.11
 
 repos:
   # fixers
@@ -16,7 +16,7 @@ repos:
       - id: run-hatch-version
       - id: run-ruff-format
       - id: run-uv-pip-compile
-        args: [--python-version=3.10]
+        args: [--python-version=3.11]
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.13.0
     hooks:

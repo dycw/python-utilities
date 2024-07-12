@@ -12,7 +12,7 @@ dependencies = ["typing-extensions >= 4.12.2, < 4.13"]
 dynamic = ["version"]
 name = "dycw-utilities"
 readme = "README.md"
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 cacher = [
@@ -315,7 +315,7 @@ start-pypi-server = "utilities.scripts.pypi_server:main"
 
 # basedpyright
 [tool.basedpyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 reportAny = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
@@ -381,7 +381,7 @@ float_to_top = true
 # nitpick
 [tool.nitpick]
 style = [
-  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.10.toml",
+  "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.11.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
 
@@ -411,7 +411,7 @@ xfail_strict = true
 # ruff
 [tool.ruff]
 src = ["src"]
-target-version = "py310"
+target-version = "py311"
 unsafe-fixes = true
 
 [tool.ruff.format]
