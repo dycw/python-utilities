@@ -8,7 +8,6 @@ docutils==0.21.2
     # via python-daemon
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 freezegun==1.5.1

@@ -20,7 +20,6 @@ distlib==0.3.8
     # via virtualenv
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   anyio
     #   hypothesis
     #   pytest

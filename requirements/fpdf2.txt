@@ -22,7 +22,6 @@ defusedxml==0.7.1
     # via fpdf2
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 fonttools==4.53.1

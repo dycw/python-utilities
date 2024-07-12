@@ -20,7 +20,6 @@ coverage==7.6.0
     # via pytest-cov
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 holoviews==1.19.1

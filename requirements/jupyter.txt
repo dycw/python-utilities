@@ -48,7 +48,6 @@ defusedxml==0.7.1
     # via nbconvert
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   anyio
     #   hypothesis
     #   ipython

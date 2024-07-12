@@ -10,7 +10,6 @@ docutils==0.21.2
     # via python-daemon
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 hypothesis==6.106.1

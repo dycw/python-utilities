@@ -102,8 +102,6 @@ docutils==0.21.2
     # via python-daemon
 ecos==2.0.14
     # via cvxpy
-exceptiongroup==1.2.1
-    # via dycw-utilities (pyproject.toml)
 execnet==2.1.1
     # via pytest-xdist
 fasteners==0.19

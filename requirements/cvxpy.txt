@@ -12,7 +12,6 @@ ecos==2.0.14
     # via cvxpy
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
 hypothesis==6.106.1

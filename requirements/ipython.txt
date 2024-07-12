@@ -10,7 +10,6 @@ decorator==5.1.1
     # via ipython
 exceptiongroup==1.2.1
     # via
-    #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   ipython
     #   pytest
