@@ -22,7 +22,7 @@ cacher = [
 dev = [
   "coverage_conditional_plugin",
   "loguru",
-  "tzdata",
+  "tzdata >= 2024.1, < 2024.2",
   "hypothesis >= 6.106.1, < 6.107",
   "pytest-asyncio",
   "pytest-cov",
@@ -244,6 +244,9 @@ zzz-test-xlrd = ["xlrd >= 2.0.1, < 2.1"]
 zzz-test-zarr = [
   "atomicwrites >= 1.4.1, < 1.5",
   "zarr >= 2.18.2, < 2.19",
+]
+zzz-test-zoneinfo = [
+  "tzdata >= 2024.1, < 2024.2",
 ]
 
 [project.scripts]
