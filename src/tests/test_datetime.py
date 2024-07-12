@@ -445,10 +445,10 @@ class TestParseTime:
         result = parse_time(time.strftime(fmt))
         assert result == time
 
-    @given(time=times(), fmt=sampled_from(["%H", "%H"]))
-    def test_hh(self, *, time: dt.time, fmt: str) -> None:
+    @given(time=times())
+    def test_hh(self, *, time: dt.time) -> None:
         time = time.replace(minute=0, second=0, microsecond=0)
-        result = parse_time(time.strftime(fmt))
+        result = parse_time(time.strftime("%H"))
         assert result == time
 
     def test_error(self) -> None:

@@ -218,8 +218,10 @@ def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
         return dt.date.fromisoformat(date)
     time_zone_use = ensure_time_zone(time_zone)
     for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
-        with suppress(ValueError):
+        try:
             return dt.datetime.strptime(date, fmt).replace(tzinfo=time_zone_use).date()
+        except ValueError:
+            pass
     raise ParseDateError(date=date)
 
 
@@ -244,11 +246,15 @@ def parse_datetime(datetime: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.d
         "%Y%m%dT%H%M%S",
         "%Y%m%dT%H%M%S.%f",
     ]:
-        with suppress(ValueError):
+        try:
             return dt.datetime.strptime(datetime, fmt).replace(tzinfo=time_zone_use)
+        except ValueError:
+            pass
     for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
-        with suppress(ValueError):
+        try:
             return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
+        except ValueError:
+            pass
     raise ParseDateTimeError(datetime=datetime)
 
 
@@ -266,8 +272,10 @@ def parse_time(time: str, /) -> dt.time:
     with suppress(ValueError):
         return dt.time.fromisoformat(time)
     for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:
-        with suppress(ValueError):
+        try:
             return dt.datetime.strptime(time, fmt).replace(tzinfo=UTC).time()
+        except ValueError:
+            pass
     raise ParseTimeError(time=time)
 
 
