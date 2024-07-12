@@ -10,7 +10,13 @@ from typing_extensions import Never, assert_never, override
 
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups
-from utilities.zoneinfo import HONG_KONG, TOKYO, UTC, ensure_time_zone
+from utilities.zoneinfo import (
+    HONG_KONG,
+    TOKYO,
+    UTC,
+    ensure_time_zone,
+    get_time_zone_name,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -90,6 +96,33 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     if isinstance(timedelta, dt.timedelta):
         return timedelta
     return parse_timedelta(timedelta)
+
+
+def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
+    """Format a local datetime locally & in UTC."""
+    if (tzinfo := datetime.tzinfo) is None:
+        raise FormatDatetimeLocalAndUTCError(datetime=datetime)
+    time_zone = ensure_time_zone(tzinfo)
+    if time_zone is UTC:
+        return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
+    as_utc = datetime.astimezone(UTC)
+    local = get_time_zone_name(time_zone)
+    if datetime.year != as_utc.year:
+        return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%Y-%m-%d %H:%M:%S} UTC)"
+    if (datetime.month != as_utc.month) or (datetime.day != as_utc.day):
+        return (
+            f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%m-%d %H:%M:%S} UTC)"
+        )
+    return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%H:%M:%S} UTC)"
+
+
+@dataclass(kw_only=True)
+class FormatDatetimeLocalAndUTCError(Exception):
+    datetime: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Datetime must have a time zone; got {self.datetime}"
 
 
 def get_now(*, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
@@ -415,6 +448,7 @@ __all__ = [
     "TODAY_TOKYO",
     "TODAY_UTC",
     "AddWeekdaysError",
+    "FormatDatetimeLocalAndUTCError",
     "ParseDateError",
     "ParseDateTimeError",
     "ParseTimeError",
