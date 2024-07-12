@@ -463,6 +463,7 @@ __all__ = [
     "ensure_datetime",
     "ensure_time",
     "ensure_timedelta",
+    "format_datetime_local_and_utc",
     "get_now",
     "get_now_hk",
     "get_now_tokyo",
