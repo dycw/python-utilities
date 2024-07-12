@@ -23,10 +23,7 @@ def basic_config(
 
 
 def get_logging_level(level: str, /) -> int:
-    """Get the logging level.
-
-    Hard-coded mapping only needed for Python 3.10.
-    """
+    """Get the logging level."""
     mapping = getLevelNamesMapping()
     try:
         return mapping[level]
