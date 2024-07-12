@@ -22,6 +22,7 @@ cacher = [
 dev = [
   "coverage_conditional_plugin",
   "loguru",
+  "tzdata",
   "hypothesis >= 6.106.1, < 6.107",
   "pytest-asyncio",
   "pytest-cov",
