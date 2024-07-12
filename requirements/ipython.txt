@@ -4,7 +4,7 @@ asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 decorator==5.1.1
     # via ipython
@@ -16,7 +16,7 @@ exceptiongroup==1.2.1
     #   pytest
 executing==2.0.1
     # via stack-data
-hypothesis==6.105.1
+hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

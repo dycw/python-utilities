@@ -45,6 +45,7 @@ from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -73,6 +74,7 @@ from utilities.types import IterableStrs, get_class_name
 if TYPE_CHECKING:
     import datetime as dt
 
+    from sqlalchemy.ext.asyncio import AsyncEngine
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
     from utilities.math import FloatFinNonNeg, IntNonNeg
@@ -441,6 +443,48 @@ def _columnwise_minmax(*columns: Any, op: Callable[[Any, Any], Any]) -> Any:
     return reduce(func, columns)
 
 
+@overload
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = ...,
+    password: str | None = ...,
+    host: str | None = ...,
+    port: int | None = ...,
+    database: str | None = ...,
+    query: Mapping[str, IterableStrs | str] | None = ...,
+    poolclass: type[Pool] | None = ...,
+    async_: Literal[True],
+) -> AsyncEngine: ...
+@overload
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = ...,
+    password: str | None = ...,
+    host: str | None = ...,
+    port: int | None = ...,
+    database: str | None = ...,
+    query: Mapping[str, IterableStrs | str] | None = ...,
+    poolclass: type[Pool] | None = ...,
+    async_: Literal[False] = False,
+) -> Engine: ...
+@overload
+def create_engine(
+    drivername: str,
+    /,
+    *,
+    username: str | None = ...,
+    password: str | None = ...,
+    host: str | None = ...,
+    port: int | None = ...,
+    database: str | None = ...,
+    query: Mapping[str, IterableStrs | str] | None = ...,
+    poolclass: type[Pool] | None = ...,
+    async_: bool = False,
+) -> Engine | AsyncEngine: ...
 def create_engine(
     drivername: str,
     /,
@@ -452,7 +496,8 @@ def create_engine(
     database: str | None = None,
     query: Mapping[str, IterableStrs | str] | None = None,
     poolclass: type[Pool] | None = NullPool,
-) -> Engine:
+    async_: bool = False,
+) -> Engine | AsyncEngine:
     """Create a SQLAlchemy engine."""
     if query is None:
         kwargs = {}
@@ -471,6 +516,8 @@ def create_engine(
         database=database,
         **kwargs,
     )
+    if async_:
+        return create_async_engine(url, poolclass=poolclass)
     return _create_engine(url, poolclass=poolclass)
 
 
