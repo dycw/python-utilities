@@ -33,6 +33,7 @@ from utilities.datetime import (
     TODAY_TOKYO,
     TODAY_UTC,
     AddWeekdaysError,
+    FormatDatetimeLocalAndUTCError,
     ParseDateError,
     ParseDateTimeError,
     ParseTimedeltaError,
@@ -47,6 +48,7 @@ from utilities.datetime import (
     ensure_datetime,
     ensure_time,
     ensure_timedelta,
+    format_datetime_local_and_utc,
     get_now,
     get_now_hk,
     get_now_tokyo,
@@ -184,6 +186,45 @@ class TestEpochUTC:
     def test_main(self) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
         assert EPOCH_UTC.tzinfo is UTC
+
+
+class TestFormatDatetimeLocalAndUTC:
+    @mark.parametrize(
+        ("datetime", "expected"),
+        [
+            param(
+                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=UTC),
+                "2000-01-01 02:03:04 (Sat, UTC)",
+            ),
+            param(
+                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=HONG_KONG),
+                "2000-01-01 02:03:04 (Sat, Asia/Hong_Kong, 1999-12-31 18:03:04 UTC)",
+            ),
+            param(
+                dt.datetime(2000, 2, 1, 2, 3, 4, tzinfo=HONG_KONG),
+                "2000-02-01 02:03:04 (Tue, Asia/Hong_Kong, 01-31 18:03:04 UTC)",
+            ),
+            param(
+                dt.datetime(2000, 2, 2, 2, 3, 4, tzinfo=HONG_KONG),
+                "2000-02-02 02:03:04 (Wed, Asia/Hong_Kong, 02-01 18:03:04 UTC)",
+            ),
+            param(
+                dt.datetime(2000, 2, 2, 14, 3, 4, tzinfo=HONG_KONG),
+                "2000-02-02 14:03:04 (Wed, Asia/Hong_Kong, 06:03:04 UTC)",
+            ),
+        ],
+    )
+    def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
+        result = format_datetime_local_and_utc(datetime)
+        assert result == expected
+
+    def test_error(self) -> None:
+        datetime = dt.datetime(2000, 1, 1)  # noqa: DTZ001
+        with raises(
+            FormatDatetimeLocalAndUTCError,
+            match="Datetime must have a time zone; got 2000-01-01 00:00:00",
+        ):
+            _ = format_datetime_local_and_utc(datetime)
 
 
 class TestGetNow:
