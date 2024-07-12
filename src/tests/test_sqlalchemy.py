@@ -74,6 +74,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
@@ -775,9 +776,15 @@ class TestColumnwiseMinMax:
 
 class TestCreateEngine:
     @given(temp_path=temp_paths())
-    def test_main(self, *, temp_path: Path) -> None:
+    def test_sync(self, *, temp_path: Path) -> None:
         engine = create_engine("sqlite", database=temp_path.name)
         assert isinstance(engine, Engine)
+
+    @given(temp_path=temp_paths())
+    @mark.only
+    def test_async(self, *, temp_path: Path) -> None:
+        engine = create_engine("sqlite", database=temp_path.name, sync_=True)
+        assert isinstance(engine, AsyncEngine)
 
     @given(temp_path=temp_paths())
     def test_query(self, *, temp_path: Path) -> None:
