@@ -39,7 +39,7 @@ class TestEnsureZoneInfo:
             param(HONG_KONG, HONG_KONG),
             param(TOKYO, TOKYO),
             param(UTC, UTC),
-            param(dt.timezone.utc, UTC),
+            param(dt.UTC, UTC),
         ],
     )
     def test_main(

@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, unique
 from platform import system
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
-from typing_extensions import assert_never, override
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

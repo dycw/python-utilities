@@ -4,9 +4,9 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass
 from re import sub
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Never, assert_never, cast
 
-from typing_extensions import Never, assert_never, override
+from typing_extensions import override
 
 from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupsError, extract_groups

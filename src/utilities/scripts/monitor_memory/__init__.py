@@ -7,12 +7,11 @@ from csv import DictWriter
 from dataclasses import fields
 from pathlib import Path  # noqa: TCH003
 from time import sleep
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
 from click import command
 from loguru import logger
 from psutil import swap_memory, virtual_memory
-from typing_extensions import assert_never
 
 from utilities.datetime import get_now
 from utilities.loguru import setup_loguru

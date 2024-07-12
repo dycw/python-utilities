@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path  # noqa: TCH003
-from typing import TYPE_CHECKING
-
-from typing_extensions import assert_never
+from typing import TYPE_CHECKING, assert_never
 
 from utilities.pathlib import ensure_path
 from utilities.platform import SYSTEM, System

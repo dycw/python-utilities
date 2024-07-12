@@ -6,15 +6,25 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import partial
 from itertools import accumulate, chain, islice, product
-from typing import Any, Generic, Literal, TypeGuard, TypeVar, cast, overload
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    Never,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
-from typing_extensions import Never, assert_never, override
+from typing_extensions import override
 
 from utilities.math import (
-    _CheckIntegerEqualError,  # type: ignore[reportPrivateUsage]
-    _CheckIntegerEqualOrApproxError,  # type: ignore[reportPrivateUsage]
-    _CheckIntegerMaxError,  # type: ignore[reportPrivateUsage]
-    _CheckIntegerMinError,  # type: ignore[reportPrivateUsage]
+    _CheckIntegerEqualError,
+    _CheckIntegerEqualOrApproxError,
+    _CheckIntegerMaxError,
+    _CheckIntegerMinError,
     check_integer,
 )
 from utilities.text import ensure_str

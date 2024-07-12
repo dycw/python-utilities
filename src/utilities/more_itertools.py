@@ -4,13 +4,13 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
-from typing import Any, Generic, Literal, TypeVar, cast, overload
+from typing import Any, Generic, Literal, TypeVar, assert_never, cast, overload
 
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import peekable as _peekable
 from more_itertools import split_into
 from more_itertools import windowed_complete as _windowed_complete
-from typing_extensions import assert_never, override
+from typing_extensions import override
 
 from utilities.sentinel import Sentinel, sentinel
 

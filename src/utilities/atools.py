@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
 
 from atools import memoize as _memoize
-from atools._memoize_decorator import _AsyncMemoize  # type: ignore[reportPrivateUsage]
+from atools._memoize_decorator import _AsyncMemoize
 from typing_extensions import override
 
 from utilities.types import ensure_class

@@ -3,9 +3,7 @@ from __future__ import annotations
 from contextlib import ExitStack
 from dataclasses import dataclass, field, replace
 from itertools import chain
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import Self
+from typing import TYPE_CHECKING, Any, Self
 
 from utilities.ipython import check_ipython_class
 

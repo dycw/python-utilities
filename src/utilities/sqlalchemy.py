@@ -10,7 +10,7 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
 
 import sqlalchemy
 from sqlalchemy import (
@@ -56,7 +56,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.pool import NullPool, Pool
 from sqlalchemy.sql.functions import now
 from sqlalchemy.sql.schema import ColumnElementColumnDefault
-from typing_extensions import assert_never, override
+from typing_extensions import override
 
 from utilities.datetime import get_now
 from utilities.errors import redirect_error

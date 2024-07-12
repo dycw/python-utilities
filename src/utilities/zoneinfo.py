@@ -19,7 +19,7 @@ def ensure_time_zone(time_zone: ZoneInfo | dt.tzinfo | str, /) -> ZoneInfo:
         return time_zone
     if isinstance(time_zone, str):
         return ZoneInfo(time_zone)
-    if time_zone is dt.timezone.utc:
+    if time_zone is dt.UTC:
         return UTC
     raise EnsureTimeZoneError(time_zone=time_zone)
 

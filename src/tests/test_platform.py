@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_never
 
 from hypothesis import given
 from hypothesis.strategies import sets
 from pytest import mark, param
-from typing_extensions import assert_never
 
 from utilities.hypothesis import text_ascii
 from utilities.platform import (

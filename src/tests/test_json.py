@@ -71,7 +71,7 @@ class TestSerializeAndDeserialize:
             param(booleans()),
             param(characters()),
             param(dates()),
-            param(datetimes(timezones=sampled_from([UTC, dt.timezone.utc]) | none())),
+            param(datetimes(timezones=sampled_from([UTC, dt.UTC]) | none())),
             param(fractions()),
             param(ip_addresses(v=4)),
             param(ip_addresses(v=6)),

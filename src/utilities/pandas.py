@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial, reduce
 from itertools import chain, permutations
 from operator import ge, gt, le, lt
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar, assert_never, cast
 
 from numpy import arange, where
 from pandas import (
@@ -25,7 +25,7 @@ from pandas import (
     concat,
 )
 from pandas.testing import assert_frame_equal, assert_index_equal
-from typing_extensions import assert_never, override
+from typing_extensions import override
 
 from utilities.errors import redirect_error
 from utilities.functions import CheckNameError, check_name

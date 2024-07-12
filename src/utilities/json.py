@@ -115,7 +115,7 @@ def _default_datetime(obj: dt.datetime, /) -> Any:
         return {_CLASS: "dt.datetime|naive", _VALUE: obj.isoformat()}
     if tzinfo is UTC:
         return {_CLASS: "dt.datetime|UTC", _VALUE: serialize_datetime(obj)}
-    if tzinfo is dt.timezone.utc:
+    if tzinfo is dt.UTC:
         return {
             _CLASS: "dt.datetime|UTC",
             _VALUE: serialize_datetime(obj.astimezone(UTC)),

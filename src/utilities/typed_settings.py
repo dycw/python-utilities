@@ -21,10 +21,7 @@ from typed_settings.cli_utils import (
 )
 from typed_settings.constants import CLICK_METADATA_KEY, METADATA_KEY
 from typed_settings.converters import TSConverter
-from typed_settings.types import (
-    AUTO,
-    _Auto,  # type: ignore[reportPrivateUsage]
-)
+from typed_settings.types import AUTO, _Auto
 from typing_extensions import override
 
 import utilities.click

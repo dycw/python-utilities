@@ -11,7 +11,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -33,7 +33,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from typing_extensions import assert_never
 
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS

@@ -8,10 +8,7 @@ from logging import Handler, LogRecord, basicConfig, getLogger
 from os import environ, getenv
 from pathlib import Path
 from re import search
-from sys import (
-    _getframe,  # type: ignore[reportPrivateUsage]
-    stdout,
-)
+from sys import _getframe, stdout
 from typing import TYPE_CHECKING, Any, TypedDict, cast
 
 from loguru import logger
