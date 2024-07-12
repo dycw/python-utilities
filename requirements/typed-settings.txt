@@ -11,8 +11,6 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-greenlet==3.0.3
-    # via sqlalchemy
 hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
