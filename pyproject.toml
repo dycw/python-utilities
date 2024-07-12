@@ -25,6 +25,7 @@ dev = [
   "tzdata >= 2024.1, < 2024.2",
   "hypothesis >= 6.106.1, < 6.107",
   "pytest-asyncio",
+  'win32_setctime',
   "pytest-cov",
   "pytest >= 8.2.2, < 8.3",
   "pytest-randomly >= 3.15.0, < 3.16",

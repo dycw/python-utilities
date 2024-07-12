@@ -47,3 +47,5 @@ typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 tzdata==2024.1
     # via dycw-utilities (pyproject.toml)
+win32-setctime==1.1.0
+    # via dycw-utilities (pyproject.toml)
