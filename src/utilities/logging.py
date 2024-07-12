@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, unique
+from enum import StrEnum, unique
 from logging import basicConfig, getLevelNamesMapping
 
 from typing_extensions import override
@@ -44,7 +44,7 @@ class GetLoggingLevelError(Exception):
 
 
 @unique
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """An enumeration of the logging levels."""
 
     DEBUG = "DEBUG"

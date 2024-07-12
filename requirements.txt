@@ -13,6 +13,8 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.4.0
     # via httpx
+argcomplete==3.4.0
+    # via nox
 asciitree==0.3.3
     # via zarr
 ast-comments==1.2.2
@@ -75,7 +77,9 @@ click==8.1.7
 colorcet==3.1.0
     # via holoviews
 colorlog==6.8.2
-    # via optuna
+    # via
+    #   nox
+    #   optuna
 contourpy==1.2.1
     # via bokeh
 coverage==7.6.0
@@ -206,6 +210,8 @@ more-itertools==10.3.0
     #   jaraco-functools
 nodejs-wheel-binaries==20.15.1
     # via basedpyright
+nox==2024.4.15
+    # via dycw-utilities (pyproject.toml)
 numba==0.60.0
     # via numbagg
 numbagg==0.8.1
@@ -251,6 +257,7 @@ packaging==24.1
     #   hatch
     #   hatchling
     #   holoviews
+    #   nox
     #   optuna
     #   pypiserver
     #   pytest
@@ -507,7 +514,9 @@ vegafusion==1.6.9
 vegafusion-python-embed==1.6.9
     # via dycw-utilities (pyproject.toml)
 virtualenv==20.26.3
-    # via hatch
+    # via
+    #   hatch
+    #   nox
 vl-convert-python==1.5.0
     # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1

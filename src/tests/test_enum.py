@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from typing import cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import raises
 
-from utilities.enum import ParseEnumError, StrEnum, ensure_enum, parse_enum
+from utilities.enum import ParseEnumError, ensure_enum, parse_enum
 
 
 class TestParseEnum:
@@ -77,16 +76,3 @@ class TestEnsureEnum:
         input_ = data.draw(sampled_from([truth, truth.name]))
         result = ensure_enum(Truth, input_)
         assert result is truth
-
-
-class TestStrEnum:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        class Truth(cast(type[Enum], StrEnum)):
-            true = auto()
-            false = auto()
-
-        truth = data.draw(sampled_from(Truth))
-        assert isinstance(truth, Enum)
-        assert isinstance(truth, str)
-        assert truth == truth.name
