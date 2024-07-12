@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PWD, ensure_path
-from utilities.platform import IS_WINDOWS, SYSTEM, System
+from utilities.platform import SYSTEM, System
 from utilities.re import ExtractGroupError, extract_group
 
 if TYPE_CHECKING:
