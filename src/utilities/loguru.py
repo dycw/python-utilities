@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from utilities.logging import LogLevel
 from utilities.pathlib import PWD, ensure_path
-from utilities.platform import IS_WINDOWS
+from utilities.platform import IS_WINDOWS, SYSTEM, System
 from utilities.re import ExtractGroupError, extract_group
 
 if TYPE_CHECKING:
@@ -128,21 +128,24 @@ def _augment_levels(
     if levels is not None:
         out |= levels
     if env_var_prefix is not None:
-        env_var_prefix_use = env_var_prefix.upper() if IS_WINDOWS else env_var_prefix
+        match SYSTEM:
+            case System.windows:
+                env_var_prefix_use = env_var_prefix.upper()
+            case System.mac | System.linux:
+                env_var_prefix_use = env_var_prefix
         for key, value in environ.items():
-            key_use = key.upper() if IS_WINDOWS else key
+            match SYSTEM:
+                case System.windows:
+                    key_use = key.upper()
+                case System.mac | System.linux:
+                    key_use = key
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
             except ExtractGroupError:
                 pass
             else:
                 module = suffix.replace("__", ".").lower()
-                value_use = (
-                    extract_group(r"^LogLevel\.([A-Z]+)$", value)
-                    if IS_WINDOWS
-                    else value
-                )
-                out[module] = LogLevel[value_use]
+                out[module] = LogLevel[value]
     return out
 
 
