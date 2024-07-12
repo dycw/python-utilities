@@ -781,9 +781,8 @@ class TestCreateEngine:
         assert isinstance(engine, Engine)
 
     @given(temp_path=temp_paths())
-    @mark.only
     def test_async(self, *, temp_path: Path) -> None:
-        engine = create_engine("sqlite", database=temp_path.name, sync_=True)
+        engine = create_engine("sqlite+aiosqlite", database=temp_path.name, async_=True)
         assert isinstance(engine, AsyncEngine)
 
     @given(temp_path=temp_paths())

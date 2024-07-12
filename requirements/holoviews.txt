@@ -16,7 +16,7 @@ colorcet==3.1.0
     # via holoviews
 contourpy==1.2.1
     # via bokeh
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 exceptiongroup==1.2.1
     # via
@@ -25,7 +25,7 @@ exceptiongroup==1.2.1
     #   pytest
 holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.105.1
+hypothesis==6.105.2
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests

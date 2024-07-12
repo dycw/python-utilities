@@ -4,14 +4,14 @@ astor==0.8.1
     # via dycw-utilities (pyproject.toml)
 attrs==23.2.0
     # via hypothesis
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 exceptiongroup==1.2.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.105.1
+hypothesis==6.105.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

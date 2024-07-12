@@ -4,7 +4,7 @@ attrs==23.2.0
     # via hypothesis
 cffi==1.16.0
     # via cryptography
-coverage==7.5.4
+coverage==7.6.0
     # via pytest-cov
 cryptography==42.0.8
     # via dycw-utilities (pyproject.toml)
@@ -13,7 +13,7 @@ exceptiongroup==1.2.1
     #   dycw-utilities (pyproject.toml)
     #   hypothesis
     #   pytest
-hypothesis==6.105.1
+hypothesis==6.105.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
