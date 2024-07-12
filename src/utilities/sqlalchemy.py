@@ -469,7 +469,7 @@ def create_engine(
     database: str | None = ...,
     query: Mapping[str, IterableStrs | str] | None = ...,
     poolclass: type[Pool] | None = ...,
-    async_: Literal[False],
+    async_: Literal[False] = False,
 ) -> Engine: ...
 @overload
 def create_engine(
@@ -483,7 +483,7 @@ def create_engine(
     database: str | None = ...,
     query: Mapping[str, IterableStrs | str] | None = ...,
     poolclass: type[Pool] | None = ...,
-    async_: bool = ...,
+    async_: bool = False,
 ) -> Engine | AsyncEngine: ...
 def create_engine(
     drivername: str,
