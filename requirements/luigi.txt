@@ -15,7 +15,7 @@ freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
 greenlet==3.0.3
     # via sqlalchemy
-hypothesis==6.105.2
+hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

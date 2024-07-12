@@ -146,7 +146,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.105.2
+hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -311,7 +311,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.0.0
+polars-lts-cpu==1.1.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
