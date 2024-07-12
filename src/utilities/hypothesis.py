@@ -33,6 +33,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from sqlalchemy.ext.asyncio import AsyncEngine
 from typing_extensions import assert_never
 
 from utilities.pathlib import temp_cwd
@@ -691,17 +692,27 @@ def slices(
 
 @composite
 def sqlite_engines(
-    _draw: DrawFn, /, *, metadata: MetaData | None = None, base: Any = None
-) -> Engine:
+    _draw: DrawFn,
+    /,
+    *,
+    async_: bool = False,
+    metadata: MetaData | None = None,
+    base: Any = None,
+) -> Engine | AsyncEngine:
     """Strategy for generating SQLite engines."""
     from utilities.sqlalchemy import create_engine
 
     temp_path = _draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
-    engine = create_engine("sqlite", database=str(path))
+    drivername = "sqlite+aiosqlite" if async_ else "sqlite"
+    engine = create_engine(drivername, database=str(path), async_=async_)
     if metadata is not None:
+        if isinstance(engine, AsyncEngine):  # pragma: no cover
+            raise NotImplementedError
         metadata.create_all(engine)
     if base is not None:
+        if isinstance(engine, AsyncEngine):  # pragma: no cover
+            raise NotImplementedError
         base.metadata.create_all(engine)
 
     # attach temp_path to the engine, so as to keep it alive
