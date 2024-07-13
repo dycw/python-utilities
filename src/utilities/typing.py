@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from types import NoneType, UnionType
 from typing import Any, Literal, get_origin
@@ -18,6 +18,9 @@ def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
     if (TypeAliasType is not None) and isinstance(obj, TypeAliasType):
         return get_args(obj.__value__)
+    if is_optional_type(obj):
+        args = _get_args(obj)
+        return tuple(a for a in args if a is not NoneType)
     return _get_args(obj)
 
 
@@ -64,7 +67,12 @@ def is_mapping_type(obj: Any, /) -> bool:
 
 def is_optional_type(obj: Any, /) -> bool:
     """Check if an object is an optional type annotation."""
-    return is_union_type(obj) and any(a is NoneType for a in get_args(obj))
+    return is_union_type(obj) and any(a is NoneType for a in _get_args(obj))
+
+
+def is_sequence_type(obj: Any, /) -> bool:
+    """Check if an object is a sequence type annotation."""
+    return _is_annotation_of_type(obj, Sequence)
 
 
 def is_set_type(obj: Any, /) -> bool:
@@ -95,6 +103,7 @@ __all__ = [
     "is_literal_type",
     "is_mapping_type",
     "is_optional_type",
+    "is_sequence_type",
     "is_set_type",
     "is_union_type",
 ]
