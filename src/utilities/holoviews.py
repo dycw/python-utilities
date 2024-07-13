@@ -7,10 +7,7 @@ from holoviews import Curve, Layout, save
 from holoviews.plotting import bokeh
 from typing_extensions import override
 
-from utilities.iterables import (
-    _CheckLengthMinError,  # type: ignore[reportPrivateUsage]
-    check_length,
-)
+from utilities.iterables import _CheckLengthMinError, check_length
 from utilities.text import EnsureStrError, ensure_str
 from utilities.types import PathLike, get_class_name
 

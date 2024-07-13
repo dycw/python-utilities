@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum, unique
-from logging import basicConfig
+from enum import StrEnum, unique
+from logging import basicConfig, getLevelNamesMapping
 
 from typing_extensions import override
 
@@ -23,29 +23,8 @@ def basic_config(
 
 
 def get_logging_level(level: str, /) -> int:
-    """Get the logging level.
-
-    Hard-coded mapping only needed for Python 3.10.
-    """
-    try:
-        from logging import (
-            getLevelNamesMapping,  # type: ignore[reportAttributeAccessIssue],
-        )
-    except ImportError:  # pragma: version-ge-311
-        mapping = {
-            "CRITICAL": 50,
-            "FATAL": 50,
-            "ERROR": 40,
-            "WARN": 30,
-            "WARNING": 30,
-            "INFO": 20,
-            "DEBUG": 10,
-            "NOTSET": 0,
-            "VERBOSE": 19,
-            "TRACE": 9,
-        }
-    else:  # pragma: no cover
-        mapping = getLevelNamesMapping()
+    """Get the logging level."""
+    mapping = getLevelNamesMapping()
     try:
         return mapping[level]
     except KeyError:
@@ -62,7 +41,7 @@ class GetLoggingLevelError(Exception):
 
 
 @unique
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """An enumeration of the logging levels."""
 
     DEBUG = "DEBUG"

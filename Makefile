@@ -1,7 +1,7 @@
 nox:
-	pyenv global 3.10.13 3.11.6
+	pyenv global 3.11.9 3.12.2
 	nox -r
 
 nox-full:
-	pyenv global 3.10.13 3.11.6
+	pyenv global 3.11.9 3.12.2
 	nox

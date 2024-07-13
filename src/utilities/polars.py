@@ -13,8 +13,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Never,
     TypeGuard,
     TypeVar,
+    assert_never,
     cast,
     get_args,
     get_origin,
@@ -48,7 +50,7 @@ from polars._typing import (
 )
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
-from typing_extensions import Never, assert_never, override
+from typing_extensions import override
 
 from utilities.dataclasses import Dataclass, is_dataclass_class
 from utilities.errors import redirect_error

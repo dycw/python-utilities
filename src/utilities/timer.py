@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from numbers import Number
 from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from utilities.types import EnsureClassError, ensure_class, get_class_name
 

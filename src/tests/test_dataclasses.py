@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import NoneType
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from beartype import beartype
 from pytest import mark, param, raises
@@ -45,7 +45,7 @@ class TestGetDataClassClass:
 
     def test_error(self) -> None:
         with raises(GetDataClassClassError):
-            _ = get_dataclass_class(None)  # type: ignore[]
+            _ = get_dataclass_class(cast(Any, None))
 
 
 class TestIsDataClassClass:

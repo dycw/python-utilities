@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from functools import partial
 from multiprocessing import cpu_count
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never
 
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
-from typing_extensions import assert_never
 
 from utilities.sentinel import Sentinel, sentinel
 from utilities.types import get_class_name

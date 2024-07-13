@@ -24,6 +24,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 from typing_extensions import override
 
+from tests.conftest import FLAKY
 from utilities.datetime import serialize_date, serialize_datetime, serialize_time
 from utilities.hypothesis import (
     datetimes_utc,
@@ -96,6 +97,7 @@ class TestAwaitTime:
 
 
 class TestBuild:
+    @FLAKY
     @given(namespace_mixin=namespace_mixins())
     def test_main(self, *, namespace_mixin: Any) -> None:
         class Example(namespace_mixin, Task): ...

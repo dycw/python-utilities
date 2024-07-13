@@ -2,37 +2,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from typing_extensions import override
 
 from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,  # type: ignore[reportPrivateUsage]
-    _OneStrCaseInsensitiveEmptyError,  # type: ignore[reportPrivateUsage]
-    _OneStrCaseSensitiveEmptyError,  # type: ignore[reportPrivateUsage]
+    _OneStrCaseInsensitiveBijectionError,
+    _OneStrCaseInsensitiveEmptyError,
+    _OneStrCaseSensitiveEmptyError,
     one_str,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-try:
-    from enum import StrEnum as _StrEnum  # type: ignore[reportAttributeAccessIssue]
-except ImportError:  # pragma: version-ge-311
 
-    class _StrEnum(str, Enum):
-        """An enum whose elements are themselves strings."""
-
-        @staticmethod
-        @override
-        def _generate_next_value_(
-            name: str, start: Any, count: int, last_values: Any
-        ) -> str:
-            _ = start, count, last_values
-            return name
-
-
-StrEnum = _StrEnum
 _E = TypeVar("_E", bound=Enum)
 
 
@@ -90,4 +74,4 @@ class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
         return f"Enum {self.enum} does not contain {self.member!r} (case insensitive)."
 
 
-__all__ = ["ParseEnumError", "StrEnum", "ensure_enum", "parse_enum"]
+__all__ = ["ParseEnumError", "ensure_enum", "parse_enum"]

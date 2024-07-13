@@ -9,6 +9,6 @@ while IFS= read -r _PACKAGE; do
 		--prerelease=disallow \
 		"--output-file=requirements/${_PACKAGE}.txt" \
 		--upgrade \
-		--python-version=3.10 \
+		--python-version=3.11 \
 		pyproject.toml
 done <"$_PATH"

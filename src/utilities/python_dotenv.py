@@ -9,8 +9,8 @@ from typing_extensions import override
 from utilities.dataclasses import Dataclass
 from utilities.git import get_repo_root
 from utilities.iterables import (
-    _OneStrCaseInsensitiveBijectionError,  # type: ignore[reportPrivateUsage]
-    _OneStrCaseInsensitiveEmptyError,  # type: ignore[reportPrivateUsage]
+    _OneStrCaseInsensitiveBijectionError,
+    _OneStrCaseInsensitiveEmptyError,
     one_str,
 )
 from utilities.pathlib import PWD
