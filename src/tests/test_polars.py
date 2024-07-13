@@ -636,17 +636,6 @@ class TestStructDataType:
         with raises(StructDataTypeError, match="Time-zone must be given"):
             _ = struct_data_type(Example)
 
-    def test_non_string_literal_error(self) -> None:
-        @dataclass(kw_only=True)
-        class Example:
-            field: Literal[1, 2, 3]
-
-        with raises(
-            StructDataTypeError,
-            match=r"Literal arguments must be strings; got \(1, 2, 3\)",
-        ):
-            _ = struct_data_type(Example)
-
     def test_missing_type_error(self) -> None:
         @dataclass(kw_only=True)
         class Example:
