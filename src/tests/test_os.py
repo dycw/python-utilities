@@ -4,7 +4,7 @@ from os import getenv
 from typing import Literal
 
 from hypothesis import given
-from hypothesis.strategies import sampled_from
+from hypothesis.strategies import booleans, sampled_from
 
 from utilities.hypothesis import text_ascii
 from utilities.os import CPU_COUNT, get_cpu_count, get_env_var, temp_environ
@@ -42,6 +42,13 @@ class TestGetEnvVar:
                 key_use = key.upper()
         with temp_environ({key: value}):
             assert get_env_var(key_use, case_sensitive=False) == value
+
+    @given(key=text.map(_prefix), value=text, case_sensitive=booleans())
+    def test_error_case_sensitive_empty(
+        self, *, key: str, value: str, case_sensitive: bool
+    ) -> None:
+        with temp_environ({key: value}):
+            assert get_env_var(_prefix(key), case_sensitive=case_sensitive) is None
 
 
 class TestTempEnviron:
