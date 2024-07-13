@@ -635,19 +635,34 @@ _TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 
 @overload
 def yield_struct_series_dataclasses(
-    series: Series, cls: type[_TDataclass], /, *, strict: Literal[True]
+    series: Series,
+    cls: type[_TDataclass],
+    /,
+    *,
+    check_types: bool = ...,
+    strict: Literal[True],
 ) -> Iterator[_TDataclass]: ...
 @overload
 def yield_struct_series_dataclasses(
-    series: Series, cls: type[_TDataclass], /, *, strict: bool = False
+    series: Series,
+    cls: type[_TDataclass],
+    /,
+    *,
+    check_types: bool = ...,
+    strict: bool = False,
 ) -> Iterator[_TDataclass | None]: ...
 def yield_struct_series_dataclasses(
-    series: Series, cls: type[_TDataclass], /, *, strict: bool = False
+    series: Series,
+    cls: type[_TDataclass],
+    /,
+    *,
+    check_types: bool = True,
+    strict: bool = False,
 ) -> Iterator[_TDataclass | None]:
     """Yield the elements of a struct-dtype Series as dataclasses."""
     from dacite import Config, from_dict
 
-    config = Config(strict=True)
+    config = Config(check_types=check_types, strict=True)
     for value in yield_struct_series_elements(series, strict=strict):
         yield None if value is None else from_dict(cls, value, config=config)
 
