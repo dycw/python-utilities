@@ -133,7 +133,7 @@ def _augment_levels(
                 env_var_prefix_use = env_var_prefix.upper()
             case System.mac:  # pragma: os-ne-macos
                 env_var_prefix_use = env_var_prefix
-            case System.linux:  # pragma: os-eq-linux
+            case System.linux:  # pragma: os-ne-linux
                 env_var_prefix_use = env_var_prefix
         for key, value in environ.items():
             match SYSTEM:
@@ -141,7 +141,7 @@ def _augment_levels(
                     key_use = key.upper()
                 case System.mac:  # pragma: os-ne-macos
                     key_use = key
-                case System.linux:  # pragma: os-eq-linux
+                case System.linux:  # pragma: os-ne-linux
                     key_use = key
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
