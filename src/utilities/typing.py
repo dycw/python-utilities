@@ -5,9 +5,18 @@ from typing import Any, Literal, get_args, get_origin
 
 from typing_extensions import override
 
+try:
+    from typing import TypeAliasType
+except ImportError:
+    TypeAliasType = None
+
 
 def get_literal_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of a Literal."""
+    if (TypeAliasType is not None) and isinstance(  # pragma: version-ge-311
+        obj, TypeAliasType
+    ):
+        return get_literal_args(obj.__value__)
     if (origin := get_origin(obj)) is not Literal:
         raise GetLiteralArgsError(obj=obj, origin=origin)
     return get_args(obj)
