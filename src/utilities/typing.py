@@ -7,13 +7,13 @@ from typing_extensions import override
 
 try:  # pragma: version-ge-312
     from typing import TypeAliasType  # type: ignore[reportAttributeAccessIssue]
-except ImportError:
+except ImportError:  # pragma: version-le-311
     TypeAliasType = None
 
 
 def get_literal_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of a Literal."""
-    if (TypeAliasType is not None) and isinstance(  # pragma: version-le-311
+    if (TypeAliasType is not None) and isinstance(  # pragma: version-ge-312
         obj, TypeAliasType
     ):
         return get_literal_args(obj.__value__)  # pragma: version-ge-312
