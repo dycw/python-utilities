@@ -5,8 +5,8 @@ from typing import Any, Literal, get_args, get_origin
 
 from typing_extensions import override
 
-try:
-    from typing import TypeAliasType
+try:  # pragma: versin-ge-312
+    from typing import TypeAliasType  # type: ignore[reportAttributeAccessIssue]
 except ImportError:
     TypeAliasType = None
 
