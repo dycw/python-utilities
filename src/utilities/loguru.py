@@ -9,7 +9,7 @@ from os import environ, getenv
 from pathlib import Path
 from re import search
 from sys import _getframe, stdout
-from typing import TYPE_CHECKING, Any, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TypedDict, assert_never, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -135,6 +135,8 @@ def _augment_levels(
                 env_var_prefix_use = env_var_prefix
             case System.linux:  # pragma: os-ne-linux
                 env_var_prefix_use = env_var_prefix
+            case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                assert_never(never)
         for key, value in environ.items():
             match SYSTEM:
                 case System.windows:  # pragma: os-ne-windows
@@ -143,6 +145,8 @@ def _augment_levels(
                     key_use = key
                 case System.linux:  # pragma: os-ne-linux
                     key_use = key
+                case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                    assert_never(never)
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)
             except ExtractGroupError:
