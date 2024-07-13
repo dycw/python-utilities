@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 from typing_extensions import override
 
@@ -42,6 +42,8 @@ def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
             error = _OneStrCaseSensitiveEmptyError
         case False:
             error = _OneStrCaseInsensitiveEmptyError
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+            assert_never(never)
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)
     except error:
