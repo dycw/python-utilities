@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from types import NoneType, UnionType
 from typing import Any, Literal, get_origin
 from typing import get_args as _get_args
-
-from typing_extensions import override
 
 try:  # pragma: version-ge-312
     from typing import TypeAliasType  # type: ignore[reportAttributeAccessIssue]
@@ -16,28 +13,14 @@ except ImportError:  # pragma: no cover
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
-    if (TypeAliasType is not None) and isinstance(obj, TypeAliasType):
-        return get_args(obj.__value__)
+    if (TypeAliasType is not None) and isinstance(  # pragma: version-ge-312
+        obj, TypeAliasType
+    ):
+        return get_args(obj.__value__)  # pragma: no cover
     if is_optional_type(obj):
         args = _get_args(obj)
         return tuple(a for a in args if a is not NoneType)
     return _get_args(obj)
-
-
-def get_literal_args(obj: Any, /) -> tuple[Any, ...]:
-    """Get the arguments of a Literal."""
-    if not is_literal_type(obj):
-        raise GetLiteralArgsError(obj=obj)
-    return get_args(obj)
-
-
-@dataclass(kw_only=True)
-class GetLiteralArgsError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be a Literal annotation; got {self.obj} instead"
 
 
 def is_dict_type(obj: Any, /) -> bool:
@@ -95,8 +78,6 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
-    "GetLiteralArgsError",
-    "get_literal_args",
     "is_dict_type",
     "is_frozenset_type",
     "is_list_type",
