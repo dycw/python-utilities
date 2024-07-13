@@ -5,7 +5,7 @@ from typing import Any, Literal, get_args, get_origin
 
 from typing_extensions import override
 
-try:  # pragma: versin-ge-312
+try:  # pragma: version-ge-312
     from typing import TypeAliasType  # type: ignore[reportAttributeAccessIssue]
 except ImportError:
     TypeAliasType = None
@@ -13,10 +13,10 @@ except ImportError:
 
 def get_literal_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of a Literal."""
-    if (TypeAliasType is not None) and isinstance(  # pragma: version-le-312
+    if (TypeAliasType is not None) and isinstance(  # pragma: version-le-311
         obj, TypeAliasType
     ):
-        return get_literal_args(obj.__value__)  # pragma: version-le-312
+        return get_literal_args(obj.__value__)  # pragma: version-ge-312
     if (origin := get_origin(obj)) is not Literal:
         raise GetLiteralArgsError(obj=obj, origin=origin)
     return get_args(obj)
