@@ -13,10 +13,10 @@ except ImportError:
 
 def get_literal_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of a Literal."""
-    if (TypeAliasType is not None) and isinstance(  # pragma: version-ge-311
+    if (TypeAliasType is not None) and isinstance(  # pragma: version-le-312
         obj, TypeAliasType
     ):
-        return get_literal_args(obj.__value__)
+        return get_literal_args(obj.__value__)  # pragma: version-le-312
     if (origin := get_origin(obj)) is not Literal:
         raise GetLiteralArgsError(obj=obj, origin=origin)
     return get_args(obj)
