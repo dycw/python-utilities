@@ -340,6 +340,8 @@ os-eq-windows = 'sys_platform == "windows"'
 os-ne-linux = 'sys_platform != "linux"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-windows = 'sys_platform != "windows"'
+version-ge-312 = "sys_version_info >= (3, 12)"
+version-le-311 = "sys_version_info <= (3, 11)"
 
 [tool.coverage.html]
 directory = ".coverage/html"
