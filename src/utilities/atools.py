@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
 
 from atools import memoize as _memoize
-from atools._memoize_decorator import _AsyncMemoize
+from atools._memoize_decorator import Keygen, Pickler, _AsyncMemoize
 from typing_extensions import override
 
 from utilities.types import ensure_class
 
 if TYPE_CHECKING:
     import datetime as dt
+    from pathlib import Path
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -20,20 +21,48 @@ _AsyncFunc = Callable[_P, Awaitable[_R]]
 
 @overload
 def memoize(
-    func: _AsyncFunc[_P, _R], /, *, duration: None = ...
+    func: _AsyncFunc[_P, _R],
+    /,
+    *,
+    db_path: Path | None = ...,
+    duration: float | dt.timedelta | None = ...,
+    keygen: Keygen | None = ...,
+    pickler: Pickler | None = ...,
+    size: int | None = ...,
 ) -> _AsyncFunc[_P, _R]: ...
 @overload
 def memoize(
-    func: None = ..., /, *, duration: float | dt.timedelta | None = ...
+    func: None = ...,
+    /,
+    *,
+    db_path: Path | None = ...,
+    duration: float | dt.timedelta | None = ...,
+    keygen: Keygen | None = ...,
+    pickler: Pickler | None = ...,
+    size: int | None = ...,
 ) -> Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]: ...
 def memoize(
     func: _AsyncFunc[_P, _R] | None = None,
     /,
     *,
+    db_path: Path | None = None,
     duration: float | dt.timedelta | None = None,
+    keygen: Keygen | None = None,
+    pickler: Pickler | None = None,
+    size: int | None = None,
 ) -> _AsyncFunc[_P, _R] | Callable[[_AsyncFunc[_P, _R]], _AsyncFunc[_P, _R]]:
     """Memoize an asynchronous function."""
-    return cast(Any, _memoize(func, duration=duration))
+    return cast(
+        Any,
+        _memoize(
+            func,
+            db_path=db_path,
+            duration=duration,
+            keygen=keygen,
+            pickler=pickler,
+            size=size,
+        ),
+    )
 
 
 async def refresh_memoized(
