@@ -17,6 +17,7 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
+    lists,
     sampled_from,
     timedeltas,
     times,
@@ -34,6 +35,8 @@ from utilities.datetime import (
     TODAY_UTC,
     AddWeekdaysError,
     FormatDatetimeLocalAndUTCError,
+    Month,
+    MonthError,
     ParseDateError,
     ParseDateTimeError,
     ParseTimedeltaError,
@@ -301,6 +304,69 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
+
+
+class TestMonth:
+    @mark.parametrize(
+        ("month", "n", "expected"),
+        [
+            param(Month(2000, 1), -2, Month(1999, 11)),
+            param(Month(2000, 1), -1, Month(1999, 12)),
+            param(Month(2000, 1), 0, Month(2000, 1)),
+            param(Month(2000, 1), 1, Month(2000, 2)),
+            param(Month(2000, 1), 2, Month(2000, 3)),
+            param(Month(2000, 1), 11, Month(2000, 12)),
+            param(Month(2000, 1), 12, Month(2001, 1)),
+        ],
+    )
+    def test_add(self, *, month: Month, n: int, expected: Month) -> None:
+        result = month + n
+        assert result == expected
+
+    def test_from_date(self) -> None:
+        result = Month.from_date(dt.date(2000, 1, 1))
+        expected = Month(2000, 1)
+        assert result == expected
+
+    def test_from_text(self) -> None:
+        result = Month.from_text("2000-12")
+        expected = Month(2000, 12)
+        assert result == expected
+
+    @given(dates=lists(dates()))
+    def test_hashable(self, *, dates: list[dt.date]) -> None:
+        _ = set(map(Month.from_date, dates))
+
+    @mark.parametrize("func", [param(repr), param(str)])
+    def test_repr(self, *, func: Callable[..., str]) -> None:
+        result = func(Month(2000, 12))
+        expected = "2000-12"
+        assert result == expected
+
+    @mark.parametrize(
+        ("month", "n", "expected"),
+        [
+            param(Month(2000, 1), -2, Month(2000, 3)),
+            param(Month(2000, 1), -1, Month(2000, 2)),
+            param(Month(2000, 1), 0, Month(2000, 1)),
+            param(Month(2000, 1), 1, Month(1999, 12)),
+            param(Month(2000, 1), 2, Month(1999, 11)),
+            param(Month(2000, 1), 12, Month(1999, 1)),
+            param(Month(2000, 1), 13, Month(1998, 12)),
+        ],
+    )
+    def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
+        result = month - n
+        assert result == expected
+
+    def test_to_date(self) -> None:
+        result = Month(2000, 1).to_date(day=1)
+        expected = dt.date(2000, 1, 1)
+        assert result == expected
+
+    def test_error(self) -> None:
+        with raises(MonthError, match=r"Invalid year and month: \d+, \d+"):
+            _ = Month(2000, 13)
 
 
 class TestParseDate:
