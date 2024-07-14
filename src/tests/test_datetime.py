@@ -307,9 +307,6 @@ class TestMaybeSubPctY:
 
 
 class TestMonth:
-    def test_main(self) -> None:
-        pass
-
     @mark.parametrize(
         ("month", "n", "expected"),
         [
@@ -342,8 +339,7 @@ class TestMonth:
 
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(self, *, func: Callable[..., str]) -> None:
-        month = Month(2000, 12)
-        result = func(month)
+        result = func(Month(2000, 12))
         expected = "2000-12"
         assert result == expected
 

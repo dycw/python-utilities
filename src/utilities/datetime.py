@@ -234,7 +234,7 @@ class Month:
         return repr(self)
 
     def __add__(self, other: Any, /) -> Self:
-        if not isinstance(other, int):
+        if not isinstance(other, int):  # pragma: no cover
             return NotImplemented
         years, month = divmod(self.month + other - 1, 12)
         month += 1
@@ -242,7 +242,7 @@ class Month:
         return replace(self, year=year, month=month)
 
     def __sub__(self, other: Any, /) -> Self:
-        if not isinstance(other, int):
+        if not isinstance(other, int):  # pragma: no cover
             return NotImplemented
         return self + (-other)
 
