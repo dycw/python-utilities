@@ -35,6 +35,7 @@ dev = [
   "cryptography >= 42.0.7, < 42.1",
   "cvxpy >= 1.5.2, < 1.6",
   "dacite >= 1.8.1, < 1.9",
+  "datetime-month >= 1.0.6, < 1.1",
   "fpdf2 >= 2.7.9, < 2.8",
   "frozendict >= 2.4.4, < 2.5",
   "hatch >= 1.12.0, < 1.13",
@@ -154,6 +155,7 @@ zzz-test-cvxpy = [
 ]
 zzz-test-dataclasses = ["beartype >= 0.18.5, < 0.19"]
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
+zzz-test-datetime-month = ["datetime-month >= 1.0.6, < 1.1"]
 zzz-test-defaults = [
   "hypothesis >= 6.106.1, < 6.107",
   "pytest >= 8.2.2, < 8.3",

@@ -11,6 +11,7 @@ cryptography
 cvxpy
 dataclasses
 datetime
+datetime-month
 email
 enum
 errors
