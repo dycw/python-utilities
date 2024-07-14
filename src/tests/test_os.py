@@ -8,6 +8,7 @@ from hypothesis.strategies import booleans, sampled_from
 
 from utilities.hypothesis import text_ascii
 from utilities.os import CPU_COUNT, get_cpu_count, get_env_var, temp_environ
+from utilities.pytest import skipif_windows
 
 text = text_ascii(min_size=1, max_size=10)
 
@@ -26,6 +27,7 @@ class TestCPUCount:
 
 class TestGetEnvVar:
     @given(key=text.map(_prefix), value=text)
+    @skipif_windows
     def test_case_sensitive(self, *, key: str, value: str) -> None:
         assert getenv(key) is None
         with temp_environ({key: value}):
