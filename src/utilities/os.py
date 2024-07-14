@@ -3,9 +3,15 @@ from __future__ import annotations
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from os import cpu_count, environ, getenv
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 
 from typing_extensions import override
+
+from utilities.iterables import (
+    _OneStrCaseInsensitiveEmptyError,
+    _OneStrCaseSensitiveEmptyError,
+    one_str,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -27,6 +33,22 @@ class GetCPUCountError(Exception):
 
 
 CPU_COUNT = get_cpu_count()
+
+
+def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
+    """Get an environment variable."""
+    match case_sensitive:
+        case True:
+            error = _OneStrCaseSensitiveEmptyError
+        case False:
+            error = _OneStrCaseInsensitiveEmptyError
+        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+            assert_never(never)
+    try:
+        key_use = one_str(environ, key, case_sensitive=case_sensitive)
+    except error:
+        return None
+    return environ[key_use]
 
 
 @contextmanager
@@ -52,4 +74,10 @@ def temp_environ(
         apply(prev)
 
 
-__all__ = ["CPU_COUNT", "GetCPUCountError", "get_cpu_count", "temp_environ"]
+__all__ = [
+    "CPU_COUNT",
+    "GetCPUCountError",
+    "get_cpu_count",
+    "get_env_var",
+    "temp_environ",
+]

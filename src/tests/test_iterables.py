@@ -450,11 +450,15 @@ class TestOneStr:
     def test_case_sensitive(self, *, text: str) -> None:
         assert one_str(["a", "b", "c"], text) == text
 
-    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["upper", "lower"]))
+    @given(text=sampled_from(["a", "b", "c"]), case=sampled_from(["lower", "upper"]))
     def test_case_insensitive(
-        self, *, text: str, case: Literal["upper", "lower"]
+        self, *, text: str, case: Literal["lower", "upper"]
     ) -> None:
-        text_use = text if case == "lower" else text.upper()
+        match case:
+            case "lower":
+                text_use = text.lower()
+            case "upper":
+                text_use = text.upper()
         assert one_str(["a", "b", "c"], text_use, case_sensitive=False) == text
 
     def test_error_duplicates(self) -> None:
