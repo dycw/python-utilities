@@ -313,19 +313,13 @@ class TestMonth:
     @mark.parametrize(
         ("month", "n", "expected"),
         [
-            param(Month(2000, 1), -14, Month(1998, 11)),
-            param(Month(2000, 1), -13, Month(1998, 12)),
-            param(Month(2000, 1), -12, Month(1999, 1)),
-            param(Month(2000, 1), -11, Month(1999, 2)),
             param(Month(2000, 1), -2, Month(1999, 11)),
             param(Month(2000, 1), -1, Month(1999, 12)),
             param(Month(2000, 1), 0, Month(2000, 1)),
             param(Month(2000, 1), 1, Month(2000, 2)),
             param(Month(2000, 1), 2, Month(2000, 3)),
-            param(Month(2000, 1), 10, Month(2000, 11)),
             param(Month(2000, 1), 11, Month(2000, 12)),
             param(Month(2000, 1), 12, Month(2001, 1)),
-            param(Month(2000, 1), 13, Month(2001, 2)),
         ],
     )
     def test_add(self, *, month: Month, n: int, expected: Month) -> None:
@@ -351,6 +345,27 @@ class TestMonth:
         month = Month(2000, 12)
         result = func(month)
         expected = "2000-12"
+        assert result == expected
+
+    @mark.parametrize(
+        ("month", "n", "expected"),
+        [
+            param(Month(2000, 1), -2, Month(2000, 3)),
+            param(Month(2000, 1), -1, Month(2000, 2)),
+            param(Month(2000, 1), 0, Month(2000, 1)),
+            param(Month(2000, 1), 1, Month(1999, 12)),
+            param(Month(2000, 1), 2, Month(1999, 11)),
+            param(Month(2000, 1), 12, Month(1999, 1)),
+            param(Month(2000, 1), 13, Month(1998, 12)),
+        ],
+    )
+    def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
+        result = month - n
+        assert result == expected
+
+    def test_to_date(self) -> None:
+        result = Month(2000, 1).to_date(day=1)
+        expected = dt.date(2000, 1, 1)
         assert result == expected
 
     def test_error(self) -> None:

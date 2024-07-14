@@ -242,7 +242,7 @@ class Month:
         return replace(self, year=year, month=month)
 
     def __sub__(self, other: Any, /) -> Self:
-        if isinstance(other, int):
+        if not isinstance(other, int):
             return NotImplemented
         return self + (-other)
 
