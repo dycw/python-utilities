@@ -515,7 +515,6 @@ __all__ = [
     "AddWeekdaysError",
     "FormatDatetimeLocalAndUTCError",
     "Month",
-    "Month",
     "MonthError",
     "ParseDateError",
     "ParseDateTimeError",
