@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import datetime as dt
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Never, assert_never, cast
+from typing import TYPE_CHECKING, Any, Never, Self, assert_never, cast
 
 from typing_extensions import override
 
@@ -210,6 +210,63 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return sub("%Y", "%4Y", text)
         case _ as never:  # type: ignore[reportUnnecessaryComparison]
             assert_never(never)
+
+
+@dataclass(order=True, frozen=True)
+class Month:
+    """Represents a month in time."""
+
+    year: int
+    month: int
+
+    def __post_init__(self) -> None:
+        try:
+            _ = dt.date(self.year, self.month, 1)
+        except ValueError:
+            raise MonthError(year=self.year, month=self.month) from None
+
+    @override
+    def __repr__(self) -> str:
+        return f"{self.year:04d}-{self.month:02d}"
+
+    @override
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __add__(self, other: Any, /) -> Self:
+        if not isinstance(other, int):
+            return NotImplemented
+        years, month = divmod(self.month + other - 1, 12)
+        month += 1
+        year = self.year + years
+        return replace(self, year=year, month=month)
+
+    def __sub__(self, other: Any, /) -> Self:
+        if isinstance(other, int):
+            return NotImplemented
+        return self + (-other)
+
+    @classmethod
+    def from_date(cls, date: dt.date, /) -> Self:
+        return cls(year=date.year, month=date.month)
+
+    @classmethod
+    def from_text(cls, text: str, /) -> Self:
+        year, month = extract_groups(r"^(\d{4})-(\d{2})$", text)
+        return cls(year=int(year), month=int(month))
+
+    def to_date(self, /, *, day: int = 1) -> dt.date:
+        return dt.date(self.year, self.month, day)
+
+
+@dataclass(kw_only=True)
+class MonthError(Exception):
+    year: int
+    month: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid year and month: {self.year}, {self.month}"
 
 
 def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
@@ -457,6 +514,9 @@ __all__ = [
     "TODAY_UTC",
     "AddWeekdaysError",
     "FormatDatetimeLocalAndUTCError",
+    "Month",
+    "Month",
+    "MonthError",
     "ParseDateError",
     "ParseDateTimeError",
     "ParseTimeError",
