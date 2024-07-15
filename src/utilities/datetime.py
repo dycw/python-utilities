@@ -252,7 +252,7 @@ class Month:
 
     @classmethod
     def from_text(cls, text: str, /) -> Self:
-        year, month = extract_groups(r"^(\d{4})-(\d{2})$", text)
+        year, month = extract_groups(r"^(\d{4})(?:-?)(\d{2})$", text)
         return cls(year=int(year), month=int(month))
 
     def to_date(self, /, *, day: int = 1) -> dt.date:

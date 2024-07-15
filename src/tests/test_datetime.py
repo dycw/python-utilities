@@ -328,8 +328,9 @@ class TestMonth:
         expected = Month(2000, 1)
         assert result == expected
 
-    def test_from_text(self) -> None:
-        result = Month.from_text("2000-12")
+    @mark.parametrize("text", [param("2000-12"), param("200012")])
+    def test_from_text(self, *, text: str) -> None:
+        result = Month.from_text(text)
         expected = Month(2000, 12)
         assert result == expected
 
