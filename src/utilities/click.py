@@ -11,10 +11,12 @@ from typing_extensions import override
 from utilities.datetime import (
     ParseDateError,
     ParseDateTimeError,
+    ParseMonthError,
     ParseTimedeltaError,
     ParseTimeError,
     ensure_date,
     ensure_datetime,
+    ensure_month,
     ensure_time,
     ensure_timedelta,
 )
@@ -29,6 +31,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from sqlalchemy import Engine as _Engine
+
+    import utilities.datetime
 
 
 FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
@@ -199,6 +203,25 @@ class ListInts(ParamType):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
+class Month(ParamType):
+    """A month-valued parameter."""
+
+    name = "month"
+
+    @override
+    def convert(
+        self,
+        value: utilities.datetime.Month | str,
+        param: Parameter | None,
+        ctx: Context | None,
+    ) -> utilities.datetime.Month:
+        """Convert a value into the `Month` type."""
+        try:
+            return ensure_month(value)
+        except ParseMonthError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
 class Time(ParamType):
     """A time-valued parameter."""
 
@@ -297,6 +320,7 @@ __all__ = [
     "FilePath",
     "ListChoices",
     "ListInts",
+    "Month",
     "Time",
     "Timedelta",
     "local_scheduler_option_default_central",

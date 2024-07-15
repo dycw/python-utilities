@@ -70,6 +70,7 @@ from utilities.hypothesis import (
     int_data_arrays,
     int_indexes,
     lists_fixed_length,
+    months,
     namespace_mixins,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
@@ -107,6 +108,7 @@ if TYPE_CHECKING:
     from collections.abc import Hashable, Mapping
     from collections.abc import Set as AbstractSet
 
+    from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
 
 
@@ -670,6 +672,21 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestMonths:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        _ = data.draw(months())
+
+    @given(data=data(), min_value=months(), max_value=months())
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_min_and_max_value(
+        self, *, data: DataObject, min_value: Month, max_value: Month
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        month = data.draw(months(min_value=min_value, max_value=max_value))
+        assert min_value <= month <= max_value
 
 
 class TestNamespaceMixins:

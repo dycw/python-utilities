@@ -28,6 +28,7 @@ from hypothesis.strategies import (
 from pytest import mark, param
 
 import utilities.click
+import utilities.datetime
 from utilities.click import (
     Date,
     DateTime,
@@ -47,10 +48,11 @@ from utilities.click import (
 from utilities.datetime import (
     serialize_date,
     serialize_datetime,
+    serialize_month,
     serialize_time,
     serialize_timedelta,
 )
-from utilities.hypothesis import sqlite_engines
+from utilities.hypothesis import months, sqlite_engines
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
@@ -310,6 +312,9 @@ class TestParameters:
             serialize_engine,
         ),
         param(ListInts(), list, lists(integers(0, 10)), _serialize_iterable_ints),
+        param(
+            utilities.click.Month(), utilities.datetime.Month, months(), serialize_month
+        ),
         param(Time(), dt.time, times(), serialize_time),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
     )
