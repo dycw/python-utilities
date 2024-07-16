@@ -237,7 +237,7 @@ class Month:
 
     @override
     def __repr__(self) -> str:
-        return f"{self.year:04d}-{self.month:02d}"
+        return serialize_month(self)
 
     @override
     def __str__(self) -> str:
@@ -255,6 +255,12 @@ class Month:
         if not isinstance(other, int):  # pragma: no cover
             return NotImplemented
         return self + (-other)
+
+    def isoformat(self) -> str:
+        return serialize_month(self)
+
+    def strftime(self, format_: str) -> str:
+        return self.to_date().strftime(format_)
 
     def to_date(self, /, *, day: int = 1) -> dt.date:
         return dt.date(self.year, self.month, day)
@@ -443,7 +449,7 @@ def serialize_datetime(datetime: dt.datetime, /) -> str:
 
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
-    return f"{month.year}-{month.month}"
+    return f"{month.year:04}-{month.month:02}"
 
 
 def serialize_time(time: dt.time, /) -> str:
