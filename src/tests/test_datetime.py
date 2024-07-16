@@ -72,6 +72,7 @@ from utilities.datetime import (
     round_to_prev_weekday,
     serialize_date,
     serialize_datetime,
+    serialize_month,
     serialize_time,
     serialize_timedelta,
     yield_days,
@@ -564,6 +565,7 @@ class TestSerialize:
         [
             param(dates(), serialize_date, parse_date),
             param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
+            param(months(), serialize_month, parse_month),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),
