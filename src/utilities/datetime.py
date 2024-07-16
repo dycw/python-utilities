@@ -56,6 +56,11 @@ def date_to_datetime(
     return dt.datetime.combine(date, time_use, tzinfo=time_zone_use)
 
 
+def date_to_month(date: dt.date, /) -> Month:
+    """Collapse a date into a month."""
+    return Month(year=date.year, month=date.month)
+
+
 def duration_to_float(duration: Duration, /) -> float:
     """Ensure the duration is a float."""
     if isinstance(duration, int):
@@ -84,6 +89,11 @@ def ensure_datetime(
     if isinstance(datetime, dt.datetime):
         return datetime
     return parse_datetime(datetime, time_zone=time_zone)
+
+
+def ensure_month(month: Month | str, /) -> Month:
+    """Ensure the object is a month."""
+    return month if isinstance(month, Month) else parse_month(month)
 
 
 def ensure_time(time: dt.time | str, /) -> dt.time:
@@ -227,7 +237,7 @@ class Month:
 
     @override
     def __repr__(self) -> str:
-        return f"{self.year:04d}-{self.month:02d}"
+        return serialize_month(self)
 
     @override
     def __str__(self) -> str:
@@ -246,14 +256,11 @@ class Month:
             return NotImplemented
         return self + (-other)
 
-    @classmethod
-    def from_date(cls, date: dt.date, /) -> Self:
-        return cls(year=date.year, month=date.month)
+    def isoformat(self) -> str:
+        return serialize_month(self)
 
-    @classmethod
-    def from_text(cls, text: str, /) -> Self:
-        year, month = extract_groups(r"^(\d{4})(?:-?)(\d{2})$", text)
-        return cls(year=int(year), month=int(month))
+    def strftime(self, format_: str) -> str:
+        return self.to_date().strftime(format_)
 
     def to_date(self, /, *, day: int = 1) -> dt.date:
         return dt.date(self.year, self.month, day)
@@ -267,6 +274,10 @@ class MonthError(Exception):
     @override
     def __str__(self) -> str:
         return f"Invalid year and month: {self.year}, {self.month}"
+
+
+MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
+MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 
 
 def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
@@ -322,6 +333,27 @@ class ParseDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse datetime; got {self.datetime!r}"
+
+
+def parse_month(month: str, /) -> Month:
+    """Parse a string into a month."""
+    for fmt in ["%Y-%m", "%Y%m", "%Y %m"]:
+        try:
+            date = dt.datetime.strptime(month, fmt).replace(tzinfo=UTC).date()
+        except ValueError:
+            pass
+        else:
+            return Month(date.year, date.month)
+    raise ParseMonthError(month=month)
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseMonthError(Exception):
+    month: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse month; got {self.month!r}"
 
 
 def parse_time(time: str, /) -> dt.time:
@@ -415,6 +447,11 @@ def serialize_datetime(datetime: dt.datetime, /) -> str:
     return datetime.isoformat()
 
 
+def serialize_month(month: Month, /) -> str:
+    """Serialize a month."""
+    return f"{month.year:04}-{month.month:02}"
+
+
 def serialize_time(time: dt.time, /) -> str:
     """Serialize a time."""
     return time.isoformat()
@@ -506,6 +543,8 @@ class YieldWeekdaysError(Exception):
 
 __all__ = [
     "EPOCH_UTC",
+    "MAX_MONTH",
+    "MIN_MONTH",
     "NOW_HK",
     "NOW_TOKYO",
     "NOW_UTC",
@@ -518,16 +557,19 @@ __all__ = [
     "MonthError",
     "ParseDateError",
     "ParseDateTimeError",
+    "ParseMonthError",
     "ParseTimeError",
     "ParseTimedeltaError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
     "date_to_datetime",
+    "date_to_month",
     "duration_to_float",
     "duration_to_timedelta",
     "ensure_date",
     "ensure_datetime",
+    "ensure_month",
     "ensure_time",
     "ensure_timedelta",
     "format_datetime_local_and_utc",
@@ -541,12 +583,14 @@ __all__ = [
     "maybe_sub_pct_y",
     "parse_date",
     "parse_datetime",
+    "parse_month",
     "parse_time",
     "parse_timedelta",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_date",
     "serialize_datetime",
+    "serialize_month",
     "serialize_time",
     "serialize_timedelta",
     "yield_days",

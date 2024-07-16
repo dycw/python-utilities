@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
-    lists,
     sampled_from,
     timedeltas,
     times,
@@ -39,16 +38,19 @@ from utilities.datetime import (
     MonthError,
     ParseDateError,
     ParseDateTimeError,
+    ParseMonthError,
     ParseTimedeltaError,
     ParseTimeError,
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
     date_to_datetime,
+    date_to_month,
     duration_to_float,
     duration_to_timedelta,
     ensure_date,
     ensure_datetime,
+    ensure_month,
     ensure_time,
     ensure_timedelta,
     format_datetime_local_and_utc,
@@ -63,18 +65,20 @@ from utilities.datetime import (
     maybe_sub_pct_y,
     parse_date,
     parse_datetime,
+    parse_month,
     parse_time,
     parse_timedelta,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_date,
     serialize_datetime,
+    serialize_month,
     serialize_time,
     serialize_timedelta,
     yield_days,
     yield_weekdays,
 )
-from utilities.hypothesis import assume_does_not_raise, text_clean
+from utilities.hypothesis import assume_does_not_raise, months, text_clean
 from utilities.types import ensure_class
 from utilities.zoneinfo import HONG_KONG, TOKYO, UTC
 
@@ -125,6 +129,13 @@ class TestDateToDatetime:
         assert result == date
 
 
+class TestDateToMonth:
+    @given(date=dates())
+    def test_main(self, *, date: dt.date) -> None:
+        result = date_to_month(date).to_date(day=date.day)
+        assert result == date
+
+
 class TestDurationToFloat:
     @given(duration=integers(0, 10) | floats(0.0, 10.0))
     def test_number(self, *, duration: Number) -> None:
@@ -161,6 +172,7 @@ class TestEnsure:
         ("strategy", "func"),
         [
             param(dates(), ensure_date),
+            param(months(), ensure_month),
             param(times(), ensure_time),
             param(timedeltas(), ensure_timedelta),
         ],
@@ -323,20 +335,9 @@ class TestMonth:
         result = month + n
         assert result == expected
 
-    def test_from_date(self) -> None:
-        result = Month.from_date(dt.date(2000, 1, 1))
-        expected = Month(2000, 1)
-        assert result == expected
-
-    @mark.parametrize("text", [param("2000-12"), param("200012")])
-    def test_from_text(self, *, text: str) -> None:
-        result = Month.from_text(text)
-        expected = Month(2000, 12)
-        assert result == expected
-
-    @given(dates=lists(dates()))
-    def test_hashable(self, *, dates: list[dt.date]) -> None:
-        _ = set(map(Month.from_date, dates))
+    @given(month=months())
+    def test_hashable(self, *, month: Month) -> None:
+        _ = hash(month)
 
     @mark.parametrize("func", [param(repr), param(str)])
     def test_repr(self, *, func: Callable[..., str]) -> None:
@@ -484,6 +485,27 @@ class TestParseDateTime:
             _ = parse_datetime("error")
 
 
+class TestParseMonth:
+    @given(month=months())
+    def test_str(self, *, month: Month) -> None:
+        result = parse_month(str(month))
+        assert result == month
+
+    @given(month=months())
+    def test_isoformat(self, *, month: Month) -> None:
+        result = parse_month(month.isoformat())
+        assert result == month
+
+    @given(month=months(), fmt=sampled_from(["%Y%m", "%Y %m"]).map(maybe_sub_pct_y))
+    def test_various_formats(self, *, month: Month, fmt: str) -> None:
+        result = parse_month(month.strftime(fmt))
+        assert result == month
+
+    def test_error(self) -> None:
+        with raises(ParseMonthError, match="Unable to parse month; got 'error'"):
+            _ = parse_month("error")
+
+
 class TestParseTime:
     @given(time=times())
     def test_str(self, *, time: dt.time) -> None:
@@ -543,6 +565,7 @@ class TestSerialize:
         [
             param(dates(), serialize_date, parse_date),
             param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
+            param(months(), serialize_month, parse_month),
             param(times(), serialize_time, parse_time),
             param(timedeltas(), str, parse_timedelta),
             param(timedeltas(), serialize_timedelta, parse_timedelta),

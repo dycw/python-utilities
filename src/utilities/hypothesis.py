@@ -34,6 +34,7 @@ from hypothesis.strategies import (
 )
 from hypothesis.utils.conventions import not_set
 
+from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -570,6 +571,22 @@ def lists_fixed_length(
 
 
 @composite
+def months(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Month] = MIN_MONTH,
+    max_value: MaybeSearchStrategy[Month] = MAX_MONTH,
+) -> Month:
+    """Strategy for generating datetimes with the UTC timezone."""
+    draw = lift_draw(_draw)
+    min_date = draw(min_value).to_date()
+    max_date = draw(max_value).to_date()
+    date = draw(dates(min_value=min_date, max_value=max_date))
+    return date_to_month(date)
+
+
+@composite
 def namespace_mixins(_draw: DrawFn, /) -> type:
     """Strategy for generating task namespace mixins."""
     draw = lift_draw(_draw)
@@ -1027,6 +1044,7 @@ __all__ = [
     "int_indexes",
     "lift_draw",
     "lists_fixed_length",
+    "months",
     "namespace_mixins",
     "setup_hypothesis_profiles",
     "slices",
