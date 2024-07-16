@@ -509,7 +509,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.24
+uv==0.2.25
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -541,5 +541,5 @@ zarr==2.18.2
     # via dycw-utilities (pyproject.toml)
 zipp==3.19.2
     # via importlib-metadata
-zstandard==0.22.0
+zstandard==0.23.0
     # via hatch
