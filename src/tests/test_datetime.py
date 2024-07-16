@@ -50,6 +50,7 @@ from utilities.datetime import (
     duration_to_timedelta,
     ensure_date,
     ensure_datetime,
+    ensure_month,
     ensure_time,
     ensure_timedelta,
     format_datetime_local_and_utc,
@@ -170,6 +171,7 @@ class TestEnsure:
         ("strategy", "func"),
         [
             param(dates(), ensure_date),
+            param(months(), ensure_month),
             param(times(), ensure_time),
             param(timedeltas(), ensure_timedelta),
         ],
