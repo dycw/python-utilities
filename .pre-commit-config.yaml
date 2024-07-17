@@ -4,7 +4,7 @@ default_language_version:
 repos:
   # fixers
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.1
+    rev: v0.5.2
     hooks:
       - id: ruff
         args: [--fix]
@@ -18,7 +18,7 @@ repos:
       - id: run-uv-pip-compile
         args: [--python-version=3.11]
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.13.0
+    rev: v2.14.0
     hooks:
       - id: pretty-format-toml
         args: [--autofix, --trailing-commas]

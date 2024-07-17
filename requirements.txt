@@ -319,7 +319,7 @@ psycopg2-binary==2.9.9
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via
     #   streamlit
     #   vegafusion
