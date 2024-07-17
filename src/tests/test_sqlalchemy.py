@@ -150,6 +150,7 @@ from utilities.sqlalchemy import (
     postgres_upsert,
     reflect_table,
     serialize_engine,
+    yield_primary_key_columns,
 )
 from utilities.types import get_class_name
 
@@ -1636,3 +1637,20 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+class TestYieldPrimaryKeyColumns:
+    def test_main(self) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id1", Integer, primary_key=True),
+            Column("id2", Integer, primary_key=True),
+        )
+        columns = list(yield_primary_key_columns(table))
+        expected = [
+            Column("id1", Integer, primary_key=True),
+            Column("id2", Integer, primary_key=True),
+        ]
+        for c, e in zip(columns, expected, strict=True):
+            _check_columns_equal(c, e)

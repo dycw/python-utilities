@@ -990,6 +990,12 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
+def yield_primary_key_columns(obj: Any, /) -> Iterator[Column]:
+    """Yield the primary key columns of a table."""
+    table = get_table(obj)
+    yield from table.primary_key
+
+
 __all__ = [
     "CHUNK_SIZE_FRAC",
     "CheckEngineError",
@@ -1022,4 +1028,5 @@ __all__ = [
     "parse_engine",
     "postgres_upsert",
     "serialize_engine",
+    "yield_primary_key_columns",
 ]
