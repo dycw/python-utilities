@@ -203,6 +203,32 @@ class ListInts(ParamType):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
+class ListStrs(ParamType):
+    """A list-of-strs-valued parameter."""
+
+    name = "strs"
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[str]:
+        """Convert a value into the `ListStrs` type."""
+        if isinstance(value, list):
+            return value
+        return split_str(value, separator=self._separator, empty=self._empty)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = f"STRS; sep={self._separator!r}"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
 class Month(ParamType):
     """A month-valued parameter."""
 
@@ -320,6 +346,7 @@ __all__ = [
     "FilePath",
     "ListChoices",
     "ListInts",
+    "ListStrs",
     "Month",
     "Time",
     "Timedelta",

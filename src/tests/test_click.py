@@ -38,6 +38,7 @@ from utilities.click import (
     FilePath,
     ListChoices,
     ListInts,
+    ListStrs,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -52,7 +53,7 @@ from utilities.datetime import (
     serialize_time,
     serialize_timedelta,
 )
-from utilities.hypothesis import months, sqlite_engines
+from utilities.hypothesis import months, sqlite_engines, text_ascii
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
@@ -299,28 +300,54 @@ def _serialize_iterable_ints(values: Iterable[int], /) -> str:
     return join_strs(map(str, values))
 
 
+def _serialize_iterable_strs(values: Iterable[str], /) -> str:
+    return join_strs(values)
+
+
 class TestParameters:
     cases = (
-        param(Date(), dt.date, dates(), serialize_date),
+        param(Date(), dt.date, dates(), serialize_date, True),
         param(
-            DateTime(), dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime
+            DateTime(),
+            dt.datetime,
+            datetimes(timezones=just(UTC)),
+            serialize_datetime,
+            True,
         ),
         param(
             utilities.click.Engine(),
             sqlalchemy.Engine,
             sqlite_engines(),
             serialize_engine,
+            True,
         ),
-        param(ListInts(), list, lists(integers(0, 10)), _serialize_iterable_ints),
         param(
-            utilities.click.Month(), utilities.datetime.Month, months(), serialize_month
+            ListInts(),
+            list[int],
+            lists(integers(0, 10)),
+            _serialize_iterable_ints,
+            True,
         ),
-        param(Time(), dt.time, times(), serialize_time),
-        param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta),
+        param(
+            ListStrs(),
+            list[str],
+            lists(text_ascii(), min_size=5),
+            _serialize_iterable_strs,
+            False,
+        ),
+        param(
+            utilities.click.Month(),
+            utilities.datetime.Month,
+            months(),
+            serialize_month,
+            True,
+        ),
+        param(Time(), dt.time, times(), serialize_time, True),
+        param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta, True),
     )
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
     def test_argument(
         self,
         *,
@@ -329,6 +356,7 @@ class TestParameters:
         cls: Any,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
+        failable: bool,
     ) -> None:
         runner = CliRunner()
 
@@ -343,10 +371,11 @@ class TestParameters:
         assert result.stdout == f"value = {value_str}\n"
 
         result = runner.invoke(cli, ["error"])
-        assert result.exit_code == 2
+        expected = 2 if failable else 0
+        assert result.exit_code == expected
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize"), cases)
+    @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
     def test_option(
         self,
         *,
@@ -355,6 +384,7 @@ class TestParameters:
         cls: Any,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
+        failable: bool,
     ) -> None:
         value = data.draw(strategy)
 
@@ -366,6 +396,8 @@ class TestParameters:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"value = {serialize(value)}\n"
+
+        _ = failable
 
 
 class TestWorkersOption:
