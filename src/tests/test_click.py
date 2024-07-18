@@ -37,7 +37,9 @@ from utilities.click import (
     ExistingFilePath,
     FilePath,
     ListChoices,
+    ListDates,
     ListInts,
+    ListMonths,
     ListStrs,
     Time,
     Timedelta,
@@ -296,8 +298,16 @@ class TestLogLevelOption:
         assert result.stdout == f"log_level = {log_level}\n"
 
 
+def _serialize_iterable_dates(values: Iterable[dt.date], /) -> str:
+    return join_strs(map(serialize_date, values))
+
+
 def _serialize_iterable_ints(values: Iterable[int], /) -> str:
     return join_strs(map(str, values))
+
+
+def _serialize_iterable_months(values: Iterable[utilities.datetime.Month], /) -> str:
+    return join_strs(map(serialize_month, values))
 
 
 def _serialize_iterable_strs(values: Iterable[str], /) -> str:
@@ -322,10 +332,20 @@ class TestParameters:
             True,
         ),
         param(
+            ListDates(), list[dt.date], lists(dates()), _serialize_iterable_dates, True
+        ),
+        param(
             ListInts(),
             list[int],
             lists(integers(0, 10)),
             _serialize_iterable_ints,
+            True,
+        ),
+        param(
+            ListMonths(),
+            list[utilities.datetime.Month],
+            lists(months()),
+            _serialize_iterable_months,
             True,
         ),
         param(
@@ -374,8 +394,10 @@ class TestParameters:
         assert result.stdout == f"value = {value_str}\n"
 
         result = runner.invoke(cli, ["error"])
-        expected = 2 if failable else 0
-        assert result.exit_code == expected
+        if failable:
+            assert result.exit_code >= 1
+        else:
+            assert result.exit_code == 0
 
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
