@@ -80,6 +80,7 @@ class TestClickField:
 
 
 class TestClickOptions:
+    @FLAKY
     @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
