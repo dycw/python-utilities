@@ -113,7 +113,7 @@ typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.2.25
+uv==0.2.26
     # via hatch
 virtualenv==20.26.3
     # via hatch
