@@ -195,7 +195,7 @@ class ListDates(ParamType):
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(parse_date, strs))
-        except ValueError:
+        except ParseDateError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
     @override
@@ -258,7 +258,7 @@ class ListMonths(ParamType):
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(parse_month, strs))
-        except ValueError:
+        except ParseMonthError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
     @override

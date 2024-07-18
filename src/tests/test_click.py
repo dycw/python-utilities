@@ -394,10 +394,8 @@ class TestParameters:
         assert result.stdout == f"value = {value_str}\n"
 
         result = runner.invoke(cli, ["error"])
-        if failable:
-            assert result.exit_code >= 1
-        else:
-            assert result.exit_code == 0
+        expected = 2 if failable else 0
+        assert result.exit_code == expected
 
     @given(data=data())
     @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
