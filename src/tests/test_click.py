@@ -365,6 +365,9 @@ class TestParameters:
         def cli(*, value: cls) -> None:
             echo(f"value = {serialize(value)}")
 
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0
+
         value_str = serialize(data.draw(strategy))
         result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
@@ -392,6 +395,9 @@ class TestParameters:
         @option("--value", type=param, default=value)
         def cli(*, value: cls) -> None:
             echo(f"value = {serialize(value)}")
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
