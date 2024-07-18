@@ -352,7 +352,7 @@ pytest==8.2.2
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via dycw-utilities (pyproject.toml)
 pytest-check==2.3.1
     # via dycw-utilities (pyproject.toml)
@@ -421,8 +421,10 @@ selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==71.0.1
-    # via python-daemon
+setuptools==70.3.0
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   python-daemon
 shellingham==1.5.4
     # via hatch
 six==1.16.0
