@@ -352,7 +352,7 @@ pytest==8.2.2
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.23.8
+pytest-asyncio==0.23.7
     # via dycw-utilities (pyproject.toml)
 pytest-check==2.3.1
     # via dycw-utilities (pyproject.toml)
