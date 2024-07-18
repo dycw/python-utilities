@@ -352,7 +352,7 @@ pytest==8.2.2
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.23.7
+pytest-asyncio==0.23.8
     # via dycw-utilities (pyproject.toml)
 pytest-check==2.3.1
     # via dycw-utilities (pyproject.toml)
@@ -421,7 +421,7 @@ selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.3.0
+setuptools==71.0.1
     # via python-daemon
 shellingham==1.5.4
     # via hatch
@@ -507,7 +507,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.25
+uv==0.2.26
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
