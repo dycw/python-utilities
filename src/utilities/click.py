@@ -19,6 +19,8 @@ from utilities.datetime import (
     ensure_month,
     ensure_time,
     ensure_timedelta,
+    parse_date,
+    parse_month,
 )
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
@@ -173,6 +175,36 @@ class ListChoices(ParamType):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
+class ListDates(ParamType):
+    """A list-of-dates-valued parameter."""
+
+    name = "dates"
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[dt.date]:
+        """Convert a value into the `ListDates` type."""
+        if isinstance(value, list):
+            return value
+        strs = split_str(value, separator=self._separator, empty=self._empty)
+        try:
+            return list(map(parse_date, strs))
+        except ParseDateError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = f"DATES; sep={self._separator!r}"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
 class ListInts(ParamType):
     """A list-of-ints-valued parameter."""
 
@@ -199,6 +231,65 @@ class ListInts(ParamType):
     @override
     def get_metavar(self, param: Parameter) -> str | None:
         desc = f"INTS; sep={self._separator!r}"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
+class ListMonths(ParamType):
+    """A list-of-months-valued parameter."""
+
+    name = "months"
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self,
+        value: list[utilities.datetime.Month] | str,
+        param: Parameter | None,
+        ctx: Context | None,
+    ) -> list[utilities.datetime.Month]:
+        """Convert a value into the `ListMonths` type."""
+        if isinstance(value, list):
+            return value
+        strs = split_str(value, separator=self._separator, empty=self._empty)
+        try:
+            return list(map(parse_month, strs))
+        except ParseMonthError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = f"MONTHS; sep={self._separator!r}"
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
+class ListStrs(ParamType):
+    """A list-of-strs-valued parameter."""
+
+    name = "strs"
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def convert(
+        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[str]:
+        """Convert a value into the `ListStrs` type."""
+        if isinstance(value, list):
+            return value
+        return split_str(value, separator=self._separator, empty=self._empty)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = f"STRS; sep={self._separator!r}"
         req_arg = param.required and param.param_type_name == "argument"
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
@@ -319,7 +410,10 @@ __all__ = [
     "ExistingFilePath",
     "FilePath",
     "ListChoices",
+    "ListDates",
     "ListInts",
+    "ListMonths",
+    "ListStrs",
     "Month",
     "Time",
     "Timedelta",
