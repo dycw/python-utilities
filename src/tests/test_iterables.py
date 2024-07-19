@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from itertools import repeat
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, integers, sampled_from, sets
@@ -40,6 +41,7 @@ from utilities.iterables import (
     ensure_iterable,
     ensure_iterable_not_str,
     expanding_window,
+    groupby_lists,
     is_iterable,
     is_iterable_not_str,
     one,
@@ -438,6 +440,34 @@ class TestExpandingWindow:
     )
     def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
         result = list(expanding_window(iterable))
+        assert result == expected
+
+
+class TestGroupbyLists:
+    iterable: ClassVar[str] = "AAAABBBCCDAABB"
+
+    def test_main(self) -> None:
+        result = list(groupby_lists(self.iterable))
+        expected = [
+            ("A", list(repeat("A", times=4))),
+            ("B", list(repeat("B", times=3))),
+            ("C", list(repeat("C", times=2))),
+            ("D", list(repeat("D", times=1))),
+            ("A", list(repeat("A", times=2))),
+            ("B", list(repeat("B", times=2))),
+        ]
+        assert result == expected
+
+    def test_key(self) -> None:
+        result = list(groupby_lists(self.iterable, key=ord))
+        expected = [
+            (65, list(repeat("A", times=4))),
+            (66, list(repeat("B", times=3))),
+            (67, list(repeat("C", times=2))),
+            (68, list(repeat("D", times=1))),
+            (65, list(repeat("A", times=2))),
+            (66, list(repeat("B", times=2))),
+        ]
         assert result == expected
 
 
