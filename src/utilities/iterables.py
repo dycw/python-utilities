@@ -14,7 +14,7 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import partial
 from inspect import signature
-from itertools import accumulate, chain, islice, product
+from itertools import accumulate, chain, groupby, islice, product
 from typing import (
     Any,
     Generic,
@@ -41,6 +41,7 @@ from utilities.types import ensure_hashable
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
+_U = TypeVar("_U")
 _V = TypeVar("_V")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
@@ -534,6 +535,21 @@ def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
     return islice(accumulate(iterable, func=func, initial=[]), 1, None)
 
 
+@overload
+def groupby_lists(
+    iterable: Iterable[_T], /, *, key: None = None
+) -> Iterator[tuple[_T, list[_T]]]: ...
+@overload
+def groupby_lists(
+    iterable: Iterable[_T], /, *, key: Callable[[_T], _U]
+) -> Iterator[tuple[_U, list[_T]]]: ...
+def groupby_lists(
+    iterable: Iterable[_T], /, *, key: Callable[[_T], _U] | None = None
+) -> Iterator[tuple[_T, list[_T]]] | Iterator[tuple[_U, list[_T]]]:
+    for k, group in groupby(iterable, key=key):
+        yield k, list(group)
+
+
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -723,6 +739,7 @@ __all__ = [
     "ensure_iterable",
     "ensure_iterable_not_str",
     "expanding_window",
+    "groupby_lists",
     "is_iterable",
     "is_iterable_not_str",
     "one",
