@@ -546,8 +546,13 @@ def groupby_lists(
 def groupby_lists(
     iterable: Iterable[_T], /, *, key: Callable[[_T], _U] | None = None
 ) -> Iterator[tuple[_T, list[_T]]] | Iterator[tuple[_U, list[_T]]]:
-    for k, group in groupby(iterable, key=key):
-        yield k, list(group)
+    """Yield consecutive keys and groups (as lists)."""
+    if key is None:
+        for k, group in groupby(iterable, key=key):
+            yield k, list(group)
+    else:
+        for k, group in groupby(iterable, key=key):
+            yield k, list(group)
 
 
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
