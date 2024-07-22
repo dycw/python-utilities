@@ -34,7 +34,7 @@ attrs==23.2.0
     #   trio
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.13.3
+basedpyright==1.14.0
     # via dycw-utilities (pyproject.toml)
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
@@ -52,7 +52,7 @@ bottleneck==1.4.0
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-cachetools==5.3.3
+cachetools==5.4.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
@@ -88,7 +88,7 @@ coverage==7.6.0
     #   pytest-cov
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
-cryptography==42.0.8
+cryptography==43.0.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   secretstorage
@@ -142,7 +142,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.106.1
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -310,7 +310,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.1.0
+polars-lts-cpu==1.2.1
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -349,7 +349,7 @@ pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
 pysocks==1.7.1
     # via urllib3
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

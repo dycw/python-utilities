@@ -10,7 +10,7 @@ freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
 greenlet==3.0.3
     # via sqlalchemy
-hypothesis==6.106.1
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -24,7 +24,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov

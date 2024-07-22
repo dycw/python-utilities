@@ -26,7 +26,7 @@ fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
 holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.106.1
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -78,7 +78,7 @@ pillow==10.4.0
     #   fpdf2
 pluggy==1.5.0
     # via pytest
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
