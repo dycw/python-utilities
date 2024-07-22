@@ -4,11 +4,20 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
-from typing import Any, Generic, Literal, TypeVar, assert_never, cast, overload
+from typing import (
+    Any,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
 from more_itertools import always_iterable as _always_iterable
+from more_itertools import partition, split_into
 from more_itertools import peekable as _peekable
-from more_itertools import split_into
 from more_itertools import windowed_complete as _windowed_complete
 from typing_extensions import override
 
@@ -67,6 +76,15 @@ def filter_include_and_exclude(
         else:
             iterable = (x for x in iterable if key(x) not in exclude)
     return iterable
+
+
+def partition_typeguard(
+    pred: Callable[[_T], TypeGuard[_U]], iterable: Iterable[_T], /
+) -> tuple[Iterator[_T], Iterator[_U]]:
+    """Partition with a typeguarded function."""
+    false, true = partition(pred, iterable)
+    true = cast(Iterator[_U], true)
+    return false, true
 
 
 class peekable(_peekable, Generic[_T]):  # noqa: N801
@@ -226,6 +244,7 @@ __all__ = [
     "Split",
     "always_iterable",
     "filter_include_and_exclude",
+    "partition_typeguard",
     "peekable",
     "resolve_include_and_exclude",
     "windowed_complete",

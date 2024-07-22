@@ -8,7 +8,9 @@ docutils==0.21.2
     # via python-daemon
 freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.106.1
+greenlet==3.0.3
+    # via sqlalchemy
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -22,7 +24,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -42,7 +44,7 @@ python-dateutil==2.9.0.post0
     #   luigi
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==71.0.3
+setuptools==71.1.0
     # via python-daemon
 six==1.16.0
     # via python-dateutil

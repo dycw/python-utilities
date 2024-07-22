@@ -10,12 +10,16 @@ certifi==2024.7.4
     # via
     #   httpcore
     #   httpx
+cffi==1.16.0
+    # via cryptography
 click==8.1.7
     # via
     #   hatch
     #   userpath
 coverage==7.6.0
     # via pytest-cov
+cryptography==43.0.0
+    # via secretstorage
 distlib==0.3.8
     # via virtualenv
 filelock==3.15.4
@@ -32,7 +36,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.106.1
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -49,6 +53,10 @@ jaraco-context==5.3.0
     # via keyring
 jaraco-functools==4.0.1
     # via keyring
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 keyring==25.2.1
     # via hatch
 markdown-it-py==3.0.0
@@ -79,9 +87,11 @@ pluggy==1.5.0
     #   pytest
 ptyprocess==0.7.0
     # via pexpect
+pycparser==2.22
+    # via cffi
 pygments==2.18.0
     # via rich
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
@@ -95,6 +105,8 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 rich==13.7.1
     # via hatch
+secretstorage==3.3.3
+    # via keyring
 shellingham==1.5.4
     # via hatch
 sniffio==1.3.1
@@ -113,7 +125,7 @@ typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 userpath==1.9.2
     # via hatch
-uv==0.2.26
+uv==0.2.27
     # via hatch
 virtualenv==20.26.3
     # via hatch

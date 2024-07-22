@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from hypothesis import given
 from hypothesis.strategies import binary, dictionaries, integers, lists, text
@@ -12,6 +12,7 @@ from utilities.more_itertools import (
     Split,
     always_iterable,
     filter_include_and_exclude,
+    partition_typeguard,
     peekable,
     resolve_include_and_exclude,
     windowed_complete,
@@ -127,6 +128,19 @@ class TestFilterIncludeAndExclude:
         )
         expected = [Example(n=n) for n in [3, 4]]
         assert result == expected
+
+
+class TestPartitionTypeguard:
+    def test_main(self) -> None:
+        def is_int(x: Any, /) -> TypeGuard[int]:
+            return isinstance(x, int)
+
+        iterable = [1, 2.0, 3, 4.0]
+        false, true = partition_typeguard(is_int, iterable)
+        for el in false:
+            assert isinstance(el, int | float)
+        for el in true:
+            assert isinstance(el, int)
 
 
 class TestPeekable:

@@ -4,7 +4,9 @@ attrs==23.2.0
     # via hypothesis
 coverage==7.6.0
     # via pytest-cov
-hypothesis==6.106.1
+greenlet==3.0.3
+    # via sqlalchemy
+hypothesis==6.108.3
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -14,11 +16,11 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.1.0
+polars-lts-cpu==1.2.1
     # via dycw-utilities (pyproject.toml)
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.2.2
+pytest==8.3.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
