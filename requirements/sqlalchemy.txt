@@ -6,6 +6,8 @@ attrs==23.2.0
     # via hypothesis
 coverage==7.6.0
     # via pytest-cov
+greenlet==3.0.3
+    # via sqlalchemy
 hypothesis==6.106.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0

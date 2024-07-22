@@ -16,7 +16,7 @@ numba==0.60.0
     # via numbagg
 numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)
-numpy==2.0.0
+numpy==2.0.1
     # via
     #   bottleneck
     #   numba

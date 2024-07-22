@@ -89,7 +89,9 @@ coverage==7.6.0
 coverage-conditional-plugin==0.9.0
     # via dycw-utilities (pyproject.toml)
 cryptography==42.0.8
-    # via dycw-utilities (pyproject.toml)
+    # via
+    #   dycw-utilities (pyproject.toml)
+    #   secretstorage
 cvxpy==1.5.2
     # via dycw-utilities (pyproject.toml)
 dacite==1.8.1
@@ -122,6 +124,8 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
+greenlet==3.0.3
+    # via sqlalchemy
 h11==0.14.0
     # via
     #   httpcore
@@ -159,6 +163,10 @@ jaraco-context==5.3.0
     # via keyring
 jaraco-functools==4.0.1
     # via keyring
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.4
     # via
     #   altair
@@ -216,7 +224,7 @@ numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)
 numcodecs==0.13.0
     # via zarr
-numpy==2.0.0
+numpy==2.0.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
@@ -417,14 +425,14 @@ scipy==1.14.0
     #   scs
 scs==3.2.6
     # via cvxpy
+secretstorage==3.3.3
+    # via keyring
 selenium==4.22.0
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.3.0
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   python-daemon
+setuptools==71.1.0
+    # via python-daemon
 shellingham==1.5.4
     # via hatch
 six==1.16.0
@@ -509,7 +517,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.26
+uv==0.2.27
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -521,6 +529,8 @@ virtualenv==20.26.3
     #   nox
 vl-convert-python==1.5.0
     # via dycw-utilities (pyproject.toml)
+watchdog==4.0.1
+    # via streamlit
 webencodings==0.5.1
     # via bleach
 websocket-client==1.8.0
