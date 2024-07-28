@@ -7,12 +7,33 @@ from pytest import mark, param, raises
 from utilities.hypothesis import text_ascii
 from utilities.sentinel import sentinel
 from utilities.text import (
+    EnsureBytesError,
     EnsureStrError,
+    ensure_bytes,
     ensure_str,
     join_strs,
     split_str,
     strip_and_dedent,
 )
+
+
+class TestEnsureBytes:
+    @mark.parametrize(
+        ("obj", "nullable"), [param(b"", False), param(b"", True), param(None, True)]
+    )
+    def test_main(self, *, obj: bytes | None, nullable: bytes) -> None:
+        _ = ensure_bytes(obj, nullable=nullable)
+
+    @mark.parametrize(
+        ("nullable", "match"),
+        [
+            param(False, "Object .* must be a byte string"),
+            param(True, "Object .* must be a byte string or None"),
+        ],
+    )
+    def test_error(self, *, nullable: bytes, match: str) -> None:
+        with raises(EnsureBytesError, match=f"{match}; got .* instead"):
+            _ = ensure_bytes(sentinel, nullable=nullable)
 
 
 class TestEnsureStr:

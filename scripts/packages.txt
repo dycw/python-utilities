@@ -1,3 +1,4 @@
+altair
 ast
 astor
 atomicwrites
@@ -23,7 +24,6 @@ hashlib
 hatch
 holoviews
 humps
-img2pdf
 ipython
 iterables
 json

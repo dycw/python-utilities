@@ -26,7 +26,9 @@ from altair.utils.schemapi import Undefined
 from polars import DataFrame, col, int_range
 
 from utilities.more_itertools import always_iterable
-from utilities.types import ensure_number
+from utilities.tempfile import TemporaryDirectory
+from utilities.text import ensure_bytes
+from utilities.types import PathLike, ensure_number
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -214,6 +216,29 @@ def plot_intraday_dataframe(
     return chart
 
 
+def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
+    """Atomically save a chart to disk."""
+    from utilities.atomicwrites import writer
+
+    with writer(path, overwrite=overwrite) as temp:
+        chart.save(str(temp), format="png")
+
+
+def save_charts_as_pdf(*charts: Chart, path: PathLike, overwrite: bool = False) -> None:
+    """Atomically save a chart/set of charts to disk."""
+    from img2pdf import convert
+
+    from utilities.atomicwrites import writer
+
+    with TemporaryDirectory() as temp_dir:
+        temp_paths = [temp_dir.joinpath(f"{i}.png") for i in range(len(charts))]
+        for chart, temp_path in zip(charts, temp_paths, strict=True):
+            save_chart(chart, temp_path)
+        data = ensure_bytes(convert(*temp_paths))
+    with writer(path, overwrite=overwrite) as temp, temp.open(mode="wb") as fh:
+        _ = fh.write(data)
+
+
 def vconcat_charts(
     *charts: Chart | HConcatChart | LayerChart | VConcatChart, width: int = _WIDTH
 ) -> VConcatChart:
@@ -224,4 +249,10 @@ def vconcat_charts(
     return vconcat(*charts_use).resolve_scale(color="independent", x="shared")
 
 
-__all__ = ["plot_dataframes", "plot_intraday_dataframe", "vconcat_charts"]
+__all__ = [
+    "plot_dataframes",
+    "plot_intraday_dataframe",
+    "save_chart",
+    "save_charts_as_pdf",
+    "vconcat_charts",
+]

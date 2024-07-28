@@ -134,6 +134,7 @@ test = [
   "pytest-rerunfailures >= 14.0, < 15",
   "pytest-xdist >= 3.6.1, < 3.7",
 ]
+zzz-test-altair = []
 zzz-test-ast = []
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
