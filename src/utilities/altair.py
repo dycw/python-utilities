@@ -33,6 +33,7 @@ from utilities.types import PathLike, ensure_number
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+_ChartLike = Chart | HConcatChart | LayerChart | VConcatChart
 _HEIGHT = 400
 _WIDTH = 800
 
@@ -216,7 +217,9 @@ def plot_intraday_dataframe(
     return chart
 
 
-def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> None:
+def save_chart(
+    chart: _ChartLike, path: PathLike, /, *, overwrite: bool = False
+) -> None:
     """Atomically save a chart to disk."""
     from utilities.atomicwrites import writer
 
@@ -224,7 +227,9 @@ def save_chart(chart: Chart, path: PathLike, /, *, overwrite: bool = False) -> N
         chart.save(str(temp), format="png")
 
 
-def save_charts_as_pdf(*charts: Chart, path: PathLike, overwrite: bool = False) -> None:
+def save_charts_as_pdf(
+    *charts: _ChartLike, path: PathLike, overwrite: bool = False
+) -> None:
     """Atomically save a chart/set of charts to disk."""
     from img2pdf import convert
 
@@ -239,9 +244,7 @@ def save_charts_as_pdf(*charts: Chart, path: PathLike, overwrite: bool = False) 
         _ = fh.write(data)
 
 
-def vconcat_charts(
-    *charts: Chart | HConcatChart | LayerChart | VConcatChart, width: int = _WIDTH
-) -> VConcatChart:
+def vconcat_charts(*charts: _ChartLike, width: int = _WIDTH) -> VConcatChart:
     """Vertically concatenate a set of charts."""
     charts_use = (c.properties(width=width) for c in charts)
     resize = selection_interval(bind="scales", encodings=["x"])

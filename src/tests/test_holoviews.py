@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from holoviews import Curve
@@ -25,6 +24,8 @@ from utilities.hypothesis import (
 from utilities.pytest import skipif_not_linux
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from utilities.xarray import DataArrayB1, DataArrayF1
 
 
@@ -121,4 +122,4 @@ class TestSavePlot:
     @skipif_not_linux
     def test_main(self, *, tmp_path: Path) -> None:
         curve = Curve([])
-        save_plot(curve, Path(tmp_path, "plot.png"))
+        save_plot(curve, tmp_path.joinpath("plot.png"))

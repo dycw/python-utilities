@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from math import inf
+from typing import TYPE_CHECKING
 
 import polars as pl
 from hypothesis import HealthCheck, given, settings
@@ -9,9 +10,18 @@ from hypothesis.strategies import booleans, integers, just, none, sampled_from
 from polars import DataFrame, Datetime, Float64, datetime_range, int_range
 from pytest import fixture
 
-from utilities.altair import plot_dataframes, plot_intraday_dataframe, vconcat_charts
+from utilities.altair import (
+    plot_dataframes,
+    plot_intraday_dataframe,
+    save_chart,
+    save_charts_as_pdf,
+    vconcat_charts,
+)
 from utilities.datetime import get_now
 from utilities.zoneinfo import UTC
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @fixture
@@ -78,6 +88,18 @@ class TestPlotIntradayDataFrame:
             orient="row",
         )
         _ = plot_intraday_dataframe(data)
+
+
+class TestSaveChart:
+    def test_main(self, *, time_series: DataFrame, tmp_path: Path) -> None:
+        chart = plot_dataframes(time_series)
+        save_chart(chart, tmp_path.joinpath("chart.png"))
+
+
+class TestSaveChartsAsPdf:
+    def test_main(self, *, time_series: DataFrame, tmp_path: Path) -> None:
+        chart = plot_dataframes(time_series)
+        save_charts_as_pdf(chart, path=tmp_path.joinpath("chart.pdf"))
 
 
 class TestVConcatCharts:
