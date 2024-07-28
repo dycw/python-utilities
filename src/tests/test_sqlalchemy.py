@@ -1357,7 +1357,7 @@ class TestPostgresUpsert:
         old: bool,
         new: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_and_mapping.__name__}"
@@ -1381,7 +1381,7 @@ class TestPostgresUpsert:
         old: bool,
         new: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class.__name__}"
@@ -1404,7 +1404,7 @@ class TestPostgresUpsert:
         data: DataObject,
         ids: set[int],
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_classes.__name__}"
@@ -1475,7 +1475,7 @@ class TestPostgresUpsert:
         x_new: bool,
         y: bool,
     ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_sel_or_all.__name__}_{selected_or_all}"
@@ -1631,7 +1631,7 @@ class TestSerializeEngine:
 
 class TestTablenameMixin:
     def test_main(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
