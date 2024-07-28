@@ -24,6 +24,12 @@ if TYPE_CHECKING:
 
     from utilities.types import Duration
 
+_DAYS_PER_YEAR = 365.25
+SECOND = dt.timedelta(seconds=1)
+MINUTE = dt.timedelta(minutes=1)
+HOUR = dt.timedelta(hours=1)
+DAY = dt.timedelta(days=1)
+WEEK = dt.timedelta(weeks=1)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
 
 
@@ -135,6 +141,15 @@ class FormatDatetimeLocalAndUTCError(Exception):
         return f"Datetime must have a time zone; got {self.datetime}"
 
 
+def get_months(*, n: int = 1) -> dt.timedelta:
+    """Get a number of months as a timedelta."""
+    days_per_month = _DAYS_PER_YEAR / 12
+    return dt.timedelta(days=round(n * days_per_month))
+
+
+MONTH = get_months(n=1)
+
+
 def get_now(*, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
     """Get the current, timezone-aware time."""
     if time_zone == "local":
@@ -165,6 +180,15 @@ def get_now_tokyo() -> dt.datetime:
 NOW_TOKYO = get_now_tokyo()
 
 
+def get_quarters(*, n: int = 1) -> dt.timedelta:
+    """Get a number of quarters as a timedelta."""
+    days_per_quarter = _DAYS_PER_YEAR / 4
+    return dt.timedelta(days=round(n * days_per_quarter))
+
+
+QUARTER = get_quarters(n=1)
+
+
 def get_today(*, time_zone: ZoneInfo | str = UTC) -> dt.date:
     """Get the current, timezone-aware date."""
     return get_now(time_zone=time_zone).date()
@@ -187,6 +211,14 @@ def get_today_tokyo() -> dt.date:
 
 
 TODAY_TOKYO = get_today_tokyo()
+
+
+def get_years(*, n: int = 1) -> dt.timedelta:
+    """Get a number of years as a timedelta."""
+    return dt.timedelta(days=round(n * _DAYS_PER_YEAR))
+
+
+YEAR = get_years(n=1)
 
 
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
@@ -542,15 +574,23 @@ class YieldWeekdaysError(Exception):
 
 
 __all__ = [
+    "DAY",
     "EPOCH_UTC",
+    "HOUR",
     "MAX_MONTH",
+    "MINUTE",
     "MIN_MONTH",
+    "MONTH",
     "NOW_HK",
     "NOW_TOKYO",
     "NOW_UTC",
+    "QUARTER",
+    "SECOND",
     "TODAY_HK",
     "TODAY_TOKYO",
     "TODAY_UTC",
+    "WEEK",
+    "YEAR",
     "AddWeekdaysError",
     "FormatDatetimeLocalAndUTCError",
     "Month",
@@ -573,12 +613,15 @@ __all__ = [
     "ensure_time",
     "ensure_timedelta",
     "format_datetime_local_and_utc",
+    "get_months",
     "get_now",
     "get_now_hk",
     "get_now_tokyo",
+    "get_quarters",
     "get_today",
     "get_today_hk",
     "get_today_tokyo",
+    "get_years",
     "is_weekday",
     "maybe_sub_pct_y",
     "parse_date",

@@ -25,13 +25,21 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.datetime import (
+    DAY,
     EPOCH_UTC,
+    HOUR,
+    MINUTE,
+    MONTH,
     NOW_HK,
     NOW_TOKYO,
     NOW_UTC,
+    QUARTER,
+    SECOND,
     TODAY_HK,
     TODAY_TOKYO,
     TODAY_UTC,
+    WEEK,
+    YEAR,
     AddWeekdaysError,
     FormatDatetimeLocalAndUTCError,
     Month,
@@ -54,12 +62,15 @@ from utilities.datetime import (
     ensure_time,
     ensure_timedelta,
     format_datetime_local_and_utc,
+    get_months,
     get_now,
     get_now_hk,
     get_now_tokyo,
+    get_quarters,
     get_today,
     get_today_hk,
     get_today_tokyo,
+    get_years,
     is_equal_mod_tz,
     is_weekday,
     maybe_sub_pct_y,
@@ -264,6 +275,21 @@ class TestGetNow:
     @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)])
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
+
+
+class TestGetTimedelta:
+    @given(n=integers(-10, 10))
+    @mark.parametrize(
+        "get_timedelta", [param(get_months), param(get_quarters), param(get_years)]
+    )
+    def test_getters(
+        self, *, get_timedelta: Callable[..., dt.timedelta], n: int
+    ) -> None:
+        assert isinstance(get_timedelta(n=n), dt.timedelta)
+
+    @mark.parametrize("timedelta", [param(MONTH), param(QUARTER), param(YEAR)])
+    def test_constants(self, *, timedelta: dt.timedelta) -> None:
+        assert isinstance(timedelta, dt.timedelta)
 
 
 class TestGetToday:
@@ -613,6 +639,15 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestTimedeltas:
+    @mark.parametrize(
+        "timedelta",
+        [param(SECOND), param(MINUTE), param(HOUR), param(DAY), param(WEEK)],
+    )
+    def test_main(self, *, timedelta: dt.timedelta) -> None:
+        assert isinstance(timedelta, dt.timedelta)
 
 
 class TestTimeZones:

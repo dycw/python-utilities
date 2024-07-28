@@ -10,7 +10,7 @@ cvxpy==1.5.2
     # via dycw-utilities (pyproject.toml)
 ecos==2.0.14
     # via cvxpy
-hypothesis==6.108.3
+hypothesis==6.108.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -24,7 +24,7 @@ numpy==2.0.1
     #   qdldl
     #   scipy
     #   scs
-osqp==0.6.7.post0
+osqp==0.6.7.post1
     # via cvxpy
 packaging==24.1
     # via
@@ -34,7 +34,7 @@ pandas==2.2.2
     # via dycw-utilities (pyproject.toml)
 pluggy==1.5.0
     # via pytest
-pytest==8.3.1
+pytest==8.3.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
