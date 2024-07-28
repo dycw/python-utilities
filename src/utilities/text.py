@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 
 @overload
-def ensure_bytes(obj: Any, /, *, nullable: bytes) -> bytes | None: ...
+def ensure_bytes(obj: Any, /, *, nullable: bool) -> bytes | None: ...
 @overload
 def ensure_bytes(obj: Any, /, *, nullable: Literal[False] = False) -> bytes: ...
-def ensure_bytes(obj: Any, /, *, nullable: bytes = False) -> bytes | None:
+def ensure_bytes(obj: Any, /, *, nullable: bool = False) -> bytes | None:
     """Ensure an object is a bytesean."""
     try:
         return ensure_class(obj, bytes, nullable=nullable)
