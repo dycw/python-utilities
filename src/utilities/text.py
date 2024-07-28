@@ -14,6 +14,29 @@ if TYPE_CHECKING:
 
 
 @overload
+def ensure_bytes(obj: Any, /, *, nullable: bool) -> bytes | None: ...
+@overload
+def ensure_bytes(obj: Any, /, *, nullable: Literal[False] = False) -> bytes: ...
+def ensure_bytes(obj: Any, /, *, nullable: bool = False) -> bytes | None:
+    """Ensure an object is a bytesean."""
+    try:
+        return ensure_class(obj, bytes, nullable=nullable)
+    except EnsureClassError as error:
+        raise EnsureBytesError(obj=error.obj, nullable=nullable) from None
+
+
+@dataclass(kw_only=True)
+class EnsureBytesError(Exception):
+    obj: Any
+    nullable: bool
+
+    @override
+    def __str__(self) -> str:
+        desc = " or None" if self.nullable else ""
+        return f"Object {self.obj} must be a byte string{desc}; got {get_class_name(self.obj)} instead"
+
+
+@overload
 def ensure_str(obj: Any, /, *, nullable: bool) -> str | None: ...
 @overload
 def ensure_str(obj: Any, /, *, nullable: Literal[False] = False) -> str: ...
@@ -58,4 +81,12 @@ def strip_and_dedent(text: str, /) -> str:
     return dedent(text.strip("\n")).strip("\n")
 
 
-__all__ = ["EnsureStrError", "ensure_str", "join_strs", "split_str", "strip_and_dedent"]
+__all__ = [
+    "EnsureBytesError",
+    "EnsureStrError",
+    "ensure_bytes",
+    "ensure_str",
+    "join_strs",
+    "split_str",
+    "strip_and_dedent",
+]
