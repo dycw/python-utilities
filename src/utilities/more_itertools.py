@@ -236,7 +236,7 @@ def _yield_splits3(
 ) -> Iterator[Split[Sequence[_T]]]:
     for window, len_head, len_tail in iterable:
         head_win, tail_win = split_into(window, [len_head, len_tail])
-        yield Split(head=list(head_win), tail=list(tail_win))
+        yield cast(Split[Sequence[_T]], Split(head=list(head_win), tail=list(tail_win)))
 
 
 __all__ = [
