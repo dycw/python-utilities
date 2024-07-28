@@ -21,7 +21,7 @@ class TestEnsureBytes:
     @mark.parametrize(
         ("obj", "nullable"), [param(b"", False), param(b"", True), param(None, True)]
     )
-    def test_main(self, *, obj: bytes | None, nullable: bytes) -> None:
+    def test_main(self, *, obj: bytes | None, nullable: bool) -> None:
         _ = ensure_bytes(obj, nullable=nullable)
 
     @mark.parametrize(
@@ -31,7 +31,7 @@ class TestEnsureBytes:
             param(True, "Object .* must be a byte string or None"),
         ],
     )
-    def test_error(self, *, nullable: bytes, match: str) -> None:
+    def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureBytesError, match=f"{match}; got .* instead"):
             _ = ensure_bytes(sentinel, nullable=nullable)
 
