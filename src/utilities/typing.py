@@ -6,7 +6,7 @@ from typing import Any, Literal, get_origin
 from typing import get_args as _get_args
 
 try:  # pragma: version-ge-312
-    from typing import TypeAliasType  # type: ignore[reportAttributeAccessIssue]
+    from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
 except ImportError:  # pragma: no cover
     TypeAliasType = None
 

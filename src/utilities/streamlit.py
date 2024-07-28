@@ -19,8 +19,8 @@ from streamlit import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from streamlit.elements.lib.utils import Key
     from streamlit.runtime.state import WidgetArgs, WidgetCallback, WidgetKwargs
-    from streamlit.type_util import Key
 
 
 def centered_button(

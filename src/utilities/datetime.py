@@ -250,7 +250,7 @@ def maybe_sub_pct_y(text: str, /) -> str:
             return text
         case System.linux:  # pragma: os-ne-linux
             return sub("%Y", "%4Y", text)
-        case _ as never:  # type: ignore[reportUnnecessaryComparison]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 
 

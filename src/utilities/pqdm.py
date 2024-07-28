@@ -26,7 +26,7 @@ def pmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[reportArgumentType]
+    tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:
@@ -53,7 +53,7 @@ def pstarmap(
     n_jobs: int | None = None,
     bounded: bool = False,
     exception_behaviour: Literal["ignore", "immediate", "deferred"] = "immediate",
-    tqdm_class: tqdm_type = tqdm_auto,  # type: ignore[reportArgumentType]
+    tqdm_class: tqdm_type = tqdm_auto,  # pyright: ignore[reportArgumentType]
     desc: str | None | Sentinel = sentinel,
     **kwargs: Any,
 ) -> list[_T]:
@@ -84,7 +84,7 @@ def pstarmap(
                 **_get_desc(desc, func),
                 **kwargs,
             )
-        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     return list(result)
 

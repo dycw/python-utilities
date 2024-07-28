@@ -296,7 +296,7 @@ class PathTarget(Target):
         self.path = Path(path)
 
     @override
-    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
+    def exists(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Check if the target exists."""
         return self.path.exists()
 
@@ -309,7 +309,8 @@ class DatabaseTarget(Target):
         self._sel = sel.limit(1)
         self._engine = engine
 
-    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
+    @override
+    def exists(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         from utilities.sqlalchemy import get_table_does_not_exist_message
 
         engine = self._engine
@@ -358,7 +359,7 @@ class ExternalTask(ABC, luigi.ExternalTask):
         raise NotImplementedError(msg)  # pragma: no cover
 
     @override
-    def output(self) -> _ExternalTaskDummyTarget:  # type: ignore[reportIncompatibleMethodOverride]
+    def output(self) -> _ExternalTaskDummyTarget:  # pyright: ignore[reportIncompatibleMethodOverride]
         return _ExternalTaskDummyTarget(self)
 
 
@@ -370,7 +371,7 @@ class _ExternalTaskDummyTarget(Target):
         self._task = task
 
     @override
-    def exists(self) -> bool:  # type: ignore[reportIncompatibleMethodOverride]
+    def exists(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._task.exists()
 
 

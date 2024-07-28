@@ -23,7 +23,7 @@ _CONF = BeartypeConf(is_color=is_pytest(), strategy=_STRATEGY)
 
 
 @overload
-def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT: ...  # type: ignore[reportNoOverloadImplementation]
+def beartype_if_dev(obj: BeartypeableT) -> BeartypeableT: ...  # pyright: ignore[reportNoOverloadImplementation]
 @overload
 def beartype_if_dev(*, conf: BeartypeConf) -> BeartypeConfedDecorator: ...
 

@@ -149,7 +149,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 yield "right was longer"
             case None:
                 pass
-            case _ as never:  # type: ignore[reportUnnecessaryComparison]
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
 
 
@@ -679,7 +679,7 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
     for values in product(*mapping.values()):
-        yield dict(zip(keys, values, strict=True))
+        yield cast(Mapping[_K, _V], dict(zip(keys, values, strict=True)))
 
 
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:

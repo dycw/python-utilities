@@ -564,7 +564,7 @@ class TestStructDataType:
 
         @dataclass(kw_only=True)
         class Example:
-            field: LowOrHigh  # type: ignore[reportInvalidTypeForm]
+            field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
         result = struct_data_type(Example)
         expected = Struct({"field": Utf8})

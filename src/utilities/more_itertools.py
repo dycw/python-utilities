@@ -106,7 +106,7 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
     @overload
     def peek(self, *, default: _U) -> _T | _U: ...
     @override
-    def peek(self, *, default: Any = sentinel) -> Any:  # type: ignore[reportIncompatibleMethodOverride]
+    def peek(self, *, default: Any = sentinel) -> Any:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(default, Sentinel):
             return super().peek()
         return super().peek(default=default)
@@ -227,7 +227,7 @@ def _yield_splits2(
                 len_tail = max(len_win - head, 0)
                 if len_tail >= 1:
                     yield window, head, len_tail
-            case _ as never:  # type: ignore[reportUnnecessaryComparison]
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
 
 
@@ -236,7 +236,7 @@ def _yield_splits3(
 ) -> Iterator[Split[Sequence[_T]]]:
     for window, len_head, len_tail in iterable:
         head_win, tail_win = split_into(window, [len_head, len_tail])
-        yield Split(head=list(head_win), tail=list(tail_win))
+        yield cast(Split[Sequence[_T]], Split(head=list(head_win), tail=list(tail_win)))
 
 
 __all__ = [
