@@ -28,7 +28,7 @@ def ensure_bytes(obj: Any, /, *, nullable: bool = False) -> bytes | None:
 @dataclass(kw_only=True)
 class EnsureBytesError(Exception):
     obj: Any
-    nullable: bytes
+    nullable: bool
 
     @override
     def __str__(self) -> str:
