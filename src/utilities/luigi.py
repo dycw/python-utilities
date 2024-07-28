@@ -309,6 +309,7 @@ class DatabaseTarget(Target):
         self._sel = sel.limit(1)
         self._engine = engine
 
+    @override
     def exists(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         from utilities.sqlalchemy import get_table_does_not_exist_message
 
