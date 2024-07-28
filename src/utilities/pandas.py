@@ -65,31 +65,31 @@ if TYPE_CHECKING:  # pragma: no cover
         Sequence,
     )
 
-    IndexA: TypeAlias = Index[Any]  # type: ignore[reportInvalidTypeArguments]
-    IndexB: TypeAlias = Index[bool]  # type: ignore[reportInvalidTypeArguments]
-    IndexBn: TypeAlias = Index[BooleanDtype]  # type: ignore[reportInvalidTypeArguments]
-    IndexC: TypeAlias = Index[CategoricalDtype]  # type: ignore[reportInvalidTypeArguments]
-    IndexD: TypeAlias = Index[dt.datetime]  # type: ignore[reportInvalidTypeArguments]
-    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
-    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
-    IndexF: TypeAlias = Index[float]  # type: ignore[reportInvalidTypeArguments]
-    IndexI: TypeAlias = Index[int]  # type: ignore[reportInvalidTypeArguments]
-    IndexI64: TypeAlias = Index[Int64Dtype]  # type: ignore[reportInvalidTypeArguments]
-    IndexS: TypeAlias = Index[str]  # type: ignore[reportInvalidTypeArguments]
-    IndexSt: TypeAlias = Index[StringDtype]  # type: ignore[reportInvalidTypeArguments]
+    IndexA: TypeAlias = Index[Any]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexB: TypeAlias = Index[bool]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexBn: TypeAlias = Index[BooleanDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexC: TypeAlias = Index[CategoricalDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexD: TypeAlias = Index[dt.datetime]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexDhk: TypeAlias = Index[DatetimeTZDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexDutc: TypeAlias = Index[DatetimeTZDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexF: TypeAlias = Index[float]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexI: TypeAlias = Index[int]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexI64: TypeAlias = Index[Int64Dtype]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexS: TypeAlias = Index[str]  # pyright: ignore[reportInvalidTypeArguments]
+    IndexSt: TypeAlias = Index[StringDtype]  # pyright: ignore[reportInvalidTypeArguments]
 
-    SeriesA: TypeAlias = Series[Any]  # type: ignore[reportInvalidTypeArguments]
-    SeriesB: TypeAlias = Series[bool]  # type: ignore[reportInvalidTypeArguments]
-    SeriesBn: TypeAlias = Series[BooleanDtype]  # type: ignore[reportInvalidTypeArguments]
-    SeriesC: TypeAlias = Series[CategoricalDtype]  # type: ignore[reportInvalidTypeArguments]
-    SeriesD: TypeAlias = Series[dt.datetime]  # type: ignore[reportInvalidTypeArguments]
-    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
-    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # type: ignore[reportInvalidTypeArguments]
-    SeriesF: TypeAlias = Series[float]  # type: ignore[reportInvalidTypeArguments]
-    SeriesI: TypeAlias = Series[int]  # type: ignore[reportInvalidTypeArguments]
-    SeriesI64: TypeAlias = Series[Int64Dtype]  # type: ignore[reportInvalidTypeArguments]
-    SeriesS: TypeAlias = Series[str]  # type: ignore[reportInvalidTypeArguments]
-    SeriesSt: TypeAlias = Series[StringDtype]  # type: ignore[reportInvalidTypeArguments]
+    SeriesA: TypeAlias = Series[Any]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesB: TypeAlias = Series[bool]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesBn: TypeAlias = Series[BooleanDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesC: TypeAlias = Series[CategoricalDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesD: TypeAlias = Series[dt.datetime]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesDhk: TypeAlias = Series[DatetimeTZDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesDutc: TypeAlias = Series[DatetimeTZDtype]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesF: TypeAlias = Series[float]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesI: TypeAlias = Series[int]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesI64: TypeAlias = Series[Int64Dtype]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesS: TypeAlias = Series[str]  # pyright: ignore[reportInvalidTypeArguments]
+    SeriesSt: TypeAlias = Series[StringDtype]  # pyright: ignore[reportInvalidTypeArguments]
 else:
     IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = IndexDutc = IndexF = (
         IndexI
@@ -694,7 +694,7 @@ def union_indexes(
                     name = rname
                 case "raise":
                     raise UnionIndexesError(left=left, right=right)
-                case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
         return left.union(right).rename(name)
 
