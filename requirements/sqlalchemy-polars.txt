@@ -6,7 +6,7 @@ coverage==7.6.0
     # via pytest-cov
 greenlet==3.0.3
     # via sqlalchemy
-hypothesis==6.108.3
+hypothesis==6.108.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -20,7 +20,7 @@ polars-lts-cpu==1.2.1
     # via dycw-utilities (pyproject.toml)
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.1
+pytest==8.3.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-cov
