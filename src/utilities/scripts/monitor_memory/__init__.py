@@ -65,7 +65,7 @@ def _yield_writer(
         yield DictWriter(fh, fieldnames=fieldnames)
 
 
-def _get_memory_usage() -> Item:  # type: ignore[reportInvalidTypeForm]
+def _get_memory_usage() -> Item:  # pyright: ignore[reportInvalidTypeForm]
     virtual = cast(Any, virtual_memory())
     virtual_kwargs: dict[str, Any] = {}
     match SYSTEM:
@@ -82,7 +82,7 @@ def _get_memory_usage() -> Item:  # type: ignore[reportInvalidTypeForm]
             virtual_kwargs["virtual_cached"] = virtual.cached
             virtual_kwargs["virtual_shared"] = virtual.shared
             virtual_kwargs["virtual_slab"] = virtual.slab
-        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     swap = swap_memory()
     return Item(

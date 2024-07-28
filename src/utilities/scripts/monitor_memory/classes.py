@@ -95,5 +95,5 @@ match SYSTEM:
         Item = ItemMacOS
     case System.linux:  # pragma: os-ne-linux
         Item = ItemLinux
-    case _ as never:  # type: ignore[reportUnnecesaryComparison]
+    case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
         assert_never(never)
