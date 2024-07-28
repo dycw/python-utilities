@@ -618,7 +618,7 @@ def setup_hypothesis_profiles(
                     return 100
                 case Profile.ci:
                     return 1000
-                case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
 
         @property
@@ -628,7 +628,7 @@ def setup_hypothesis_profiles(
                     return Verbosity.normal
                 case Profile.debug:
                     return Verbosity.debug
-                case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
 
     phases = {Phase.explicit, Phase.reuse, Phase.generate, Phase.target}
@@ -656,16 +656,16 @@ def settings_with_reduced_examples(
     frac: FloatFinPos = 0.1,
     /,
     *,
-    derandomize: bool = not_set,  # type: ignore[reportArgumentType]
-    database: ExampleDatabase | None = not_set,  # type: ignore[reportArgumentType]
-    verbosity: Verbosity = not_set,  # type: ignore[reportArgumentType]
-    phases: Collection[Phase] = not_set,  # type: ignore[reportArgumentType]
-    stateful_step_count: int = not_set,  # type: ignore[reportArgumentType]
-    report_multiple_bugs: bool = not_set,  # type: ignore[reportArgumentType]
-    suppress_health_check: Collection[HealthCheck] = not_set,  # type: ignore[reportArgumentType]
-    deadline: float | dt.timedelta | None = not_set,  # type: ignore[reportArgumentType]
-    print_blob: bool = not_set,  # type: ignore[reportArgumentType]
-    backend: str = not_set,  # type: ignore[reportArgumentType]
+    derandomize: bool = not_set,  # pyright: ignore[reportArgumentType]
+    database: ExampleDatabase | None = not_set,  # pyright: ignore[reportArgumentType]
+    verbosity: Verbosity = not_set,  # pyright: ignore[reportArgumentType]
+    phases: Collection[Phase] = not_set,  # pyright: ignore[reportArgumentType]
+    stateful_step_count: int = not_set,  # pyright: ignore[reportArgumentType]
+    report_multiple_bugs: bool = not_set,  # pyright: ignore[reportArgumentType]
+    suppress_health_check: Collection[HealthCheck] = not_set,  # pyright: ignore[reportArgumentType]
+    deadline: float | dt.timedelta | None = not_set,  # pyright: ignore[reportArgumentType]
+    print_blob: bool = not_set,  # pyright: ignore[reportArgumentType]
+    backend: str = not_set,  # pyright: ignore[reportArgumentType]
 ) -> settings:
     """Set a test to fewer max examples."""
     curr = settings()

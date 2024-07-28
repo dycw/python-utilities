@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def is_jupyter() -> bool:
     """Check if `jupyter` is running."""
     try:
-        from ipykernel.zmqshell import (  # type: ignore[reportMissingImports]
+        from ipykernel.zmqshell import (  # pyright: ignore[reportMissingImports]
             ZMQInteractiveShell,
         )
     except ImportError:

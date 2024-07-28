@@ -42,7 +42,7 @@ def get_env_var(key: str, /, *, case_sensitive: bool = True) -> str | None:
             error = _OneStrCaseSensitiveEmptyError
         case False:
             error = _OneStrCaseInsensitiveEmptyError
-        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     try:
         key_use = one_str(environ, key, case_sensitive=case_sensitive)

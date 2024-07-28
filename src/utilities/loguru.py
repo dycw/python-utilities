@@ -135,7 +135,7 @@ def _augment_levels(
                 env_var_prefix_use = env_var_prefix
             case System.linux:  # pragma: os-ne-linux
                 env_var_prefix_use = env_var_prefix
-            case _ as never:  # type: ignore[reportUnnecesaryComparison]
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
         for key, value in environ.items():
             match SYSTEM:
@@ -145,7 +145,7 @@ def _augment_levels(
                     key_use = key
                 case System.linux:  # pragma: os-ne-linux
                     key_use = key
-                case _ as never:  # type: ignore[reportUnnecesaryComparison]
+                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)
             try:
                 suffix = extract_group(rf"^{env_var_prefix_use}_(\w+)", key_use)

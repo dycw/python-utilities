@@ -63,7 +63,7 @@ def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
             yield from (t.lower() for t in text)
         case System.linux:  # pragma: os-ne-linux
             yield from text
-        case _ as never:  # type: ignore[reportUnnecesaryComparison]
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 
 

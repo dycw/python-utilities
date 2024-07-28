@@ -668,7 +668,7 @@ class TestCheckTablesEqual:
         _check_tables_equal(x, y, snake_columns=True)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -698,7 +698,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     def test_id(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -708,7 +708,7 @@ class TestCheckTableOrColumnNamesEqual:
         _check_table_or_column_names_equal(Example.id_.name, "id_")
 
     def test_id_as_x(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -822,7 +822,7 @@ class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -851,7 +851,7 @@ class TestEnsureTablesDropped:
     @given(engine=sqlite_engines())
     @mark.parametrize("runs", [param(1), param(2)])
     def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -894,7 +894,7 @@ class TestGetColumnNames:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -913,7 +913,7 @@ class TestGetColumns:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -942,7 +942,7 @@ class TestGetTable:
         assert result is table
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -974,7 +974,7 @@ class TestGetTableName:
         assert result == expected
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1053,7 +1053,7 @@ class TestInsertItems:
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1119,7 +1119,7 @@ class TestInsertItemsCollect:
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1189,7 +1189,7 @@ class TestInsertItemsCollectValid:
 
 class TestIsMappedClass:
     def test_mapped_class_instance(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1208,7 +1208,7 @@ class TestIsTableOrMappedClass:
         assert is_table_or_mapped_class(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1225,7 +1225,7 @@ class TestIsTableOrMappedClass:
 class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
@@ -1239,7 +1239,7 @@ class TestMappedClassToDict:
 
     @given(id_=integers())
     def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # type: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
             __tablename__ = "example"
