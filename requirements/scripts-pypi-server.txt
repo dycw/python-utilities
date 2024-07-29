@@ -21,7 +21,7 @@ packaging==24.1
     #   pytest-rerunfailures
 passlib==1.7.4
     # via pypiserver
-pip==24.1.2
+pip==24.2
     # via pypiserver
 pluggy==1.5.0
     # via pytest

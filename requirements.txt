@@ -311,7 +311,7 @@ pillow==10.4.0
     #   img2pdf
     #   pikepdf
     #   streamlit
-pip==24.1.2
+pip==24.2
     # via pypiserver
 platformdirs==4.2.2
     # via
