@@ -73,6 +73,8 @@ def plot_dataframes(
         specs = [_plot_dataframes_get_spec(y, height=height)]
     else:
         specs = [_plot_dataframes_get_spec(y_i, height=height) for y_i in y]
+
+    # charts
     dfs_long = [
         data.select(x_use, *spec.y).unpivot(
             on=spec.y, index=x_use, variable_name=var_name, value_name=value_name
@@ -80,12 +82,22 @@ def plot_dataframes(
         for spec in specs
     ]
     charts = [Chart(df_long) for df_long in dfs_long]
+
+    # lines
+    selection = selection_point(bind="legend", fields=[var_name], nearest=False)
     lines = [
-        chart.mark_line(interpolate=interpolate).encode(
-            x=x_use, y=Y(value_name).scale(zero=False), color=f"{var_name}:N"
+        chart.mark_line(interpolate=interpolate)
+        .encode(
+            x=x_use,
+            y=Y(value_name).scale(zero=False),
+            color=f"{var_name}:N",
+            opacity=cast(Any, condition(selection, value(1.0), value(0.01))),
         )
+        .add_params(selection)
         for chart in charts
     ]
+
+    # points
     nearest = selection_point(
         nearest=True, on="pointerover", fields=[x_use], empty=False
     )
@@ -95,6 +107,8 @@ def plot_dataframes(
         )
         for line in lines
     ]
+
+    # rules
     rules = [
         chart.transform_pivot(var_name, value=value_name, groupby=[x_use])
         .mark_rule(color="gray")
@@ -107,6 +121,8 @@ def plot_dataframes(
         .add_params(nearest)
         for chart, spec in zip(charts, specs, strict=True)
     ]
+
+    # together
     layers = [
         layer(line, pts, rls).properties(width=width, height=spec.height)
         for line, pts, rls, spec in zip(lines, points, rules, specs, strict=True)
