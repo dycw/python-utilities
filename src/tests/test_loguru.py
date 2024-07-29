@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
-from pytest import mark
 
 from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
 from utilities.logging import LogLevel
@@ -33,7 +32,6 @@ class TestLoggedSleep:
     def test_sync(self) -> None:
         logged_sleep_sync(0.1)
 
-    @mark.asyncio
     async def test_async(self) -> None:
         await logged_sleep_async(0.1)
 

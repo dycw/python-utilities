@@ -4,7 +4,7 @@ from asyncio import sleep
 from inspect import signature
 from typing import Annotated, Any
 
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.atools import (
     RefreshMemoizedError,
@@ -16,7 +16,6 @@ from utilities.atools import (
 
 
 class TestMemoize:
-    @mark.asyncio
     async def test_main(self) -> None:
         i = 0
 
@@ -29,7 +28,6 @@ class TestMemoize:
         for _ in range(2):
             assert (await increment()) == 1
 
-    @mark.asyncio
     async def test_with_duration(self) -> None:
         i = 0
 
@@ -45,7 +43,6 @@ class TestMemoize:
         for _ in range(2):
             assert (await increment()) == 2
 
-    @mark.asyncio
     async def test_with_keygen(self) -> None:
         i = 0
 
@@ -89,7 +86,6 @@ class TestMemoizeAutoKeygenIsParam:
 
 
 class TestRefreshMemoized:
-    @mark.asyncio
     async def test_main(self) -> None:
         i = 0
 
@@ -106,7 +102,6 @@ class TestRefreshMemoized:
             assert (await increment()) == 2
         assert await refresh_memoized(increment) == 3
 
-    @mark.asyncio
     async def test_error(self) -> None:
         async def none() -> None:
             return None
