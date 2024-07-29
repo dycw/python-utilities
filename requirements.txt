@@ -311,7 +311,7 @@ pillow==10.4.0
     #   img2pdf
     #   pikepdf
     #   streamlit
-pip==24.1.2
+pip==24.2
     # via pypiserver
 platformdirs==4.2.2
     # via
@@ -442,10 +442,8 @@ selenium==4.23.1
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==70.3.0
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   python-daemon
+setuptools==72.0.0
+    # via python-daemon
 shellingham==1.5.4
     # via hatch
 six==1.16.0

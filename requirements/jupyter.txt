@@ -240,7 +240,7 @@ rpds-py==0.19.1
     #   referencing
 send2trash==1.8.3
     # via jupyter-server
-setuptools==71.1.0
+setuptools==72.0.0
     # via jupyterlab
 six==1.16.0
     # via

@@ -90,12 +90,6 @@ dev = [
   "pytest-rerunfailures >= 14.0, < 15",
   "pytest-xdist >= 3.6.1, < 3.7",
   # CI
-  "setuptools >= 70.3.0, < 71.0",  # 2024-07-18:
-  # and: '  File "/Users/derekwan/work/python-utilities/.direnv/python-3.11/lib/python3.11/site-packages/setuptools/_vendor/typeguard/_importhook.py", line 35, in <module>'
-  # and: '    OPTIMIZATION = "typeguard" + "".join(version("typeguard").split(".")[:3])'
-  # and: '                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^'
-  # and: "AttributeError: 'NoneType' object has no attribute 'split'"
-  # remains unmatched: '.*unrecognized arguments.*'
   "win32_setctime >= 1.1.0, < 1.2",  # https://github.com/Delgan/loguru/issues/147
 ]
 scripts-clean-dir = [
