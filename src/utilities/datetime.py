@@ -141,6 +141,15 @@ class FormatDatetimeLocalAndUTCError(Exception):
         return f"Datetime must have a time zone; got {self.datetime}"
 
 
+def get_half_years(*, n: int = 1) -> dt.timedelta:
+    """Get a number of half-years as a timedelta."""
+    days_per_half_year = _DAYS_PER_YEAR / 2
+    return dt.timedelta(days=round(n * days_per_half_year))
+
+
+HALF_YEAR = get_half_years(n=1)
+
+
 def get_months(*, n: int = 1) -> dt.timedelta:
     """Get a number of months as a timedelta."""
     days_per_month = _DAYS_PER_YEAR / 12
@@ -576,6 +585,7 @@ class YieldWeekdaysError(Exception):
 __all__ = [
     "DAY",
     "EPOCH_UTC",
+    "HALF_YEAR",
     "HOUR",
     "MAX_MONTH",
     "MINUTE",
@@ -613,6 +623,7 @@ __all__ = [
     "ensure_time",
     "ensure_timedelta",
     "format_datetime_local_and_utc",
+    "get_half_years",
     "get_months",
     "get_now",
     "get_now_hk",

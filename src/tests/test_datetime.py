@@ -27,6 +27,7 @@ from pytest import mark, param, raises
 from utilities.datetime import (
     DAY,
     EPOCH_UTC,
+    HALF_YEAR,
     HOUR,
     MINUTE,
     MONTH,
@@ -62,6 +63,7 @@ from utilities.datetime import (
     ensure_time,
     ensure_timedelta,
     format_datetime_local_and_utc,
+    get_half_years,
     get_months,
     get_now,
     get_now_hk,
@@ -280,14 +282,22 @@ class TestGetNow:
 class TestGetTimedelta:
     @given(n=integers(-10, 10))
     @mark.parametrize(
-        "get_timedelta", [param(get_months), param(get_quarters), param(get_years)]
+        "get_timedelta",
+        [
+            param(get_months),
+            param(get_quarters),
+            param(get_half_years),
+            param(get_years),
+        ],
     )
     def test_getters(
         self, *, get_timedelta: Callable[..., dt.timedelta], n: int
     ) -> None:
         assert isinstance(get_timedelta(n=n), dt.timedelta)
 
-    @mark.parametrize("timedelta", [param(MONTH), param(QUARTER), param(YEAR)])
+    @mark.parametrize(
+        "timedelta", [param(MONTH), param(QUARTER), param(HALF_YEAR), param(YEAR)]
+    )
     def test_constants(self, *, timedelta: dt.timedelta) -> None:
         assert isinstance(timedelta, dt.timedelta)
 
