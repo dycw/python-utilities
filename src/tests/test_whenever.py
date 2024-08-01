@@ -63,6 +63,12 @@ class TestParseAndSerializeDate:
         result = parse_date(serialized)
         assert result == date
 
+    @given(date=dates())
+    def test_yyyymmdd(self, *, date: dt.date) -> None:
+        serialized = date.strftime("%4Y%m%d")
+        result = parse_date(serialized)
+        assert result == date
+
     @given(datetime=datetimes())
     def test_on_datetime(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_date(datetime)
