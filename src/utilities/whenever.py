@@ -34,6 +34,13 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     return parse_timedelta(timedelta)
 
 
+def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+    """Ensure the object is a zoned datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime
+    return parse_zoned_datetime(datetime)
+
+
 def parse_date(date: str, /) -> dt.date:
     """Parse a string into a date."""
     try:
@@ -111,6 +118,24 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
         return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
 
 
+def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
+    """Parse a string into a zoned datetime."""
+    try:
+        ztd = ZonedDateTime.parse_common_iso(datetime)
+    except ValueError:
+        raise ParseZonedDateTimeError(datetime=datetime) from None
+    return ztd.py_datetime()
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseZonedDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse zoned datetime; got {self.datetime!r}"
+
+
 def serialize_date(date: dt.date, /) -> str:
     """Serialize a date."""
     if isinstance(date, dt.datetime):
@@ -128,6 +153,11 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     return str(_to_datetime_delta(timedelta))
 
 
+def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
+    """Serialize a zoned datetime."""
+    return ZonedDateTime.from_py_datetime(datetime).format_common_iso()
+
+
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
     total_seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
@@ -141,12 +171,17 @@ __all__ = [
     "ParseDateError",
     "ParseLocalDateTimeError",
     "ParseTimedeltaError",
+    "ParseZonedDateTimeError",
     "ensure_date",
     "ensure_local_datetime",
     "ensure_timedelta",
+    "ensure_zoned_datetime",
     "parse_date",
     "parse_local_datetime",
     "parse_timedelta",
+    "parse_zoned_datetime",
     "serialize_date",
+    "serialize_local_datetime",
     "serialize_timedelta",
+    "serialize_zoned_datetime",
 ]
