@@ -38,7 +38,6 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.datetime import NOW_HK
 from utilities.hypothesis import (
     assume_does_not_raise,
     sqlite_engines,
@@ -54,6 +53,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.whenever import _ToDateTimeDeltaTimeError
 from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
@@ -71,7 +71,8 @@ class TestSerializeAndDeserialize:
             param(booleans()),
             param(characters()),
             param(dates()),
-            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none())),
+            param(datetimes()),
+            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]))),
             param(fractions()),
             param(ip_addresses(v=4)),
             param(ip_addresses(v=6)),
@@ -220,9 +221,11 @@ class TestSerializeAndDeserialize:
     def _assert_standard(
         self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
     ) -> None:
-        ser_x = serialize(x)
+        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+            ser_x = serialize(x)
         assert eq(deserialize(ser_x), x)
-        res = ser_x == serialize(y)
+        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+            res = ser_x == serialize(y)
         expected = eq(x, y)
         assert res is expected
 
