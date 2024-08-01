@@ -152,7 +152,7 @@ class TestParseAndSerializeTimedelta:
 
 
 class TestParseAndSerializeZonedDateTime:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
         result = parse_zoned_datetime(serialized)

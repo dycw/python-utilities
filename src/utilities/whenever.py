@@ -9,6 +9,7 @@ from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 from utilities.datetime import get_months
 from utilities.iterables import one
 from utilities.text import ensure_str
+from utilities.zoneinfo import UTC
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -192,6 +193,8 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a zoned datetime."""
+    if datetime.tzinfo is dt.UTC:
+        return serialize_zoned_datetime(datetime.replace(tzinfo=UTC))
     try:
         zdt = ZonedDateTime.from_py_datetime(datetime)
     except ValueError:
