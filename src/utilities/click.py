@@ -233,7 +233,7 @@ class ListMonths(ParamType):
             return value
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
-            return list(map(parse_month, strs))
+            return list(map(ensure_month, strs))
         except ParseMonthError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 

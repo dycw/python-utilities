@@ -13,6 +13,7 @@ from hypothesis.strategies import (
     integers,
     sampled_from,
     timedeltas,
+    times,
 )
 from pytest import raises
 from whenever import DateTimeDelta
@@ -22,20 +23,24 @@ from utilities.whenever import (
     ParseDateError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
+    ParseTimeError,
     ParseZonedDateTimeError,
     SerializeLocalDateTimeError,
     SerializeZonedDateTimeError,
     _to_datetime_delta,
     ensure_date,
     ensure_local_datetime,
+    ensure_time,
     ensure_timedelta,
     ensure_zoned_datetime,
     parse_date,
     parse_local_datetime,
+    parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
     serialize_local_datetime,
+    serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
@@ -91,6 +96,24 @@ class TestParseAndSerializeLocalDateTime:
         )
         result = ensure_local_datetime(str_or_value)
         assert result == datetime
+
+
+class TestParseAndSerializeTime:
+    @given(time=times())
+    def test_main(self, *, time: dt.time) -> None:
+        serialized = serialize_time(time)
+        result = parse_time(serialized)
+        assert result == time
+
+    def test_error_parse(self) -> None:
+        with raises(ParseTimeError, match="Unable to parse time; got 'invalid'"):
+            _ = parse_time("invalid")
+
+    @given(data=data(), time=times())
+    def test_ensure(self, *, data: DataObject, time: dt.time) -> None:
+        str_or_value = data.draw(sampled_from([time, serialize_time(time)]))
+        result = ensure_time(str_or_value)
+        assert result == time
 
 
 class TestParseAndSerializeTimedelta:
