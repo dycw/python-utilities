@@ -11,6 +11,13 @@ from whenever import DateTimeDelta, microseconds
 from utilities.datetime import _DAYS_PER_YEAR, get_months
 
 
+def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
+    """Ensure the object is a timedelta."""
+    if isinstance(timedelta, dt.timedelta):
+        return timedelta
+    return parse_timedelta(timedelta)
+
+
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
     try:
@@ -66,4 +73,9 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     )
 
 
-__all__ = ["ParseTimedeltaError", "parse_timedelta", "serialize_timedelta"]
+__all__ = [
+    "ParseTimedeltaError",
+    "ensure_timedelta",
+    "parse_timedelta",
+    "serialize_timedelta",
+]

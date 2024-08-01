@@ -106,11 +106,7 @@ def ensure_time(time: dt.time | str, /) -> dt.time:
     return time if isinstance(time, dt.time) else parse_time(time)
 
 
-def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
-    """Ensure the object is a timedelta."""
-    if isinstance(timedelta, dt.timedelta):
-        return timedelta
-    return parse_timedelta(timedelta)
+
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:

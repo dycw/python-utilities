@@ -186,7 +186,6 @@ class TestEnsure:
             param(dates(), ensure_date),
             param(months(), ensure_month),
             param(times(), ensure_time),
-            param(timedeltas(), ensure_timedelta),
         ],
     )
     def test_main(
