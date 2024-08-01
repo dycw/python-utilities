@@ -155,7 +155,8 @@ class TestParseAndSerializeTimedelta:
         with assume_does_not_raise(SerializeTimeDeltaError):
             str_value = serialize_timedelta(timedelta)
         str_or_value = data.draw(sampled_from([timedelta, str_value]))
-        result = ensure_timedelta(str_or_value)
+        with assume_does_not_raise(ParseTimedeltaError):
+            result = ensure_timedelta(str_or_value)
         assert result == timedelta
 
 

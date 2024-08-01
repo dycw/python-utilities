@@ -4,7 +4,6 @@ import datetime as dt
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
-from enum import StrEnum, unique
 from fractions import Fraction
 from functools import partial
 from ipaddress import IPv4Address, IPv6Address
@@ -16,43 +15,39 @@ from uuid import UUID
 
 from typing_extensions import override
 
-from utilities.types import EnsureClassError, ensure_class, get_class_name
-from utilities.zoneinfo import UTC
+from utilities.types import EnsureMemberError, ensure_member, get_class_name
+from utilities.typing import get_args
 
+_Class = Literal[
+    "bytes",
+    "complex",
+    "date",
+    "decimal",
+    "dict",
+    "fraction",
+    "frozenset",
+    "IPv4Address",
+    "IPv6Address",
+    "local_datetime",
+    "Path",
+    "set",
+    "slice",
+    "sqlalchemy.Engine",
+    "time",
+    "timedelta",
+    "tuple",
+    "UUID",
+    "zoned_datetime",
+]
 _T = TypeVar("_T")
-_StrLike = TypeVar("_StrLike", bound=str)
+_CLASSES: tuple[_Class, ...] = get_args(_Class)
 _CLASS = "CLASS"
 _VALUE = "VALUE"
 
 
-class _ClassValueMapping(Generic[_StrLike], TypedDict):
-    CLASS: _StrLike
+class _ClassValueMapping(Generic[_T], TypedDict):
+    CLASS: _T
     VALUE: Any
-
-
-@unique
-class _Class(StrEnum):
-    """An enumeration of the serializable classes."""
-
-    bytes = "bytes"
-    complex = "complex"
-    date = "date"
-    decimal = "decimal"
-    dict = "dict"
-    fraction = "fraction"
-    frozenset = "frozenset"
-    ipv4address = "IPv4Address"
-    ipv6address = "IPv6Address"
-    local_datetime = "local_datetime"
-    path = "Path"
-    set = "set"
-    slice = "slice"
-    sqlalchemy_engine = "sqlalchemy.Engine"
-    time = "time"
-    timedelta = "timedelta"
-    tuple = "tuple"
-    uuid = "UUID"
-    zoned_datetime = "zoned_datetime"
 
 
 _ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
@@ -90,47 +85,47 @@ def _positive_zero(x: float, /) -> float:
 
 def _default(
     obj: Any, /, *, extra: _ExtraSer[Any] | None = None
-) -> _ClassValueMapping[_Class]:
+) -> _ClassValueMapping[_Class] | _ClassValueMapping[str]:
     """Extension for the JSON serializer."""
     if isinstance(obj, bytes):
-        return {_CLASS: _Class.bytes, _VALUE: obj.decode()}
+        return {_CLASS: "bytes", _VALUE: obj.decode()}
     if isinstance(obj, complex):
         return {
-            _CLASS: _Class.complex,
+            _CLASS: "complex",
             _VALUE: (_positive_zero(obj.real), _positive_zero(obj.imag)),
         }
     if isinstance(obj, Decimal):
-        return {_CLASS: _Class.decimal, _VALUE: str(obj)}
+        return {_CLASS: "decimal", _VALUE: str(obj)}
     if isinstance(obj, _DictWrapper):
         return _default_dict(obj)
     if isinstance(obj, dt.date) and not isinstance(obj, dt.datetime):
         return _default_date(obj)
-    if isinstance(obj, dt.datetime):
-        if obj.tzinfo is None:
-            return _default_local_datetime(obj)
+    if isinstance(obj, dt.datetime) and (obj.tzinfo is None):
+        return _default_local_datetime(obj)
+    if isinstance(obj, dt.datetime) and (obj.tzinfo is not None):
         return _default_zoned_datetime(obj)
     if isinstance(obj, dt.time):
         return _default_time(obj)
     if isinstance(obj, dt.timedelta):
         return _default_timedelta(obj)
     if isinstance(obj, Fraction):
-        return {_CLASS: _Class.fraction, _VALUE: obj.as_integer_ratio()}
+        return {_CLASS: "fraction", _VALUE: obj.as_integer_ratio()}
     if isinstance(obj, frozenset):
         return _default_frozenset(obj)
     if isinstance(obj, IPv4Address):
-        return {_CLASS: _Class.ipv4address, _VALUE: str(obj)}
+        return {_CLASS: "ipv4address", _VALUE: str(obj)}
     if isinstance(obj, IPv6Address):
-        return {_CLASS: _Class.ipv6address, _VALUE: str(obj)}
+        return {_CLASS: "ipv6address", _VALUE: str(obj)}
     if isinstance(obj, Path):
-        return {_CLASS: _Class.path, _VALUE: str(obj)}
+        return {_CLASS: "path", _VALUE: str(obj)}
     if isinstance(obj, set) and not isinstance(obj, frozenset):
         return _default_set(obj)
     if isinstance(obj, slice):
-        return {_CLASS: _Class.slice, _VALUE: (obj.start, obj.stop, obj.step)}
+        return {_CLASS: "slice", _VALUE: (obj.start, obj.stop, obj.step)}
     if isinstance(obj, _TupleWrapper):
-        return {_CLASS: _Class.tuple, _VALUE: list(obj.value)}
+        return {_CLASS: "tuple", _VALUE: list(obj.value)}
     if isinstance(obj, UUID):
-        return {_CLASS: _Class.uuid, _VALUE: str(obj)}
+        return {_CLASS: "uuid", _VALUE: str(obj)}
     if extra is not None:
         return _default_extra(obj, extra)
     if (result := _default_engine(obj)) is not None:
@@ -141,7 +136,7 @@ def _default(
 def _default_date(obj: dt.date, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_date
 
-    return {_CLASS: _Class.date, _VALUE: serialize_date(obj)}
+    return {_CLASS: "date", _VALUE: serialize_date(obj)}
 
 
 def _default_dict(obj: _DictWrapper, /) -> _ClassValueMapping[_Class]:
@@ -149,7 +144,7 @@ def _default_dict(obj: _DictWrapper, /) -> _ClassValueMapping[_Class]:
         value = sorted(obj.value.items(), key=itemgetter(0))
     except TypeError:
         value = list(obj.value.items())
-    return {_CLASS: _Class.dict, _VALUE: value}
+    return {_CLASS: "dict", _VALUE: value}
 
 
 def _default_engine(obj: Any, /) -> _ClassValueMapping[_Class] | None:
@@ -160,7 +155,7 @@ def _default_engine(obj: Any, /) -> _ClassValueMapping[_Class] | None:
     else:
         if isinstance(obj, Engine):
             return {
-                _CLASS: _Class.sqlalchemy_engine,
+                _CLASS: "sqlalchemy.Engine",
                 _VALUE: obj.url.render_as_string(hide_password=False),
             }
     return None
@@ -180,13 +175,13 @@ def _default_frozenset(obj: frozenset[Any], /) -> _ClassValueMapping[_Class]:
         value = sorted(obj)
     except TypeError:
         value = list(obj)
-    return {_CLASS: _Class.frozenset, _VALUE: value}
+    return {_CLASS: "frozenset", _VALUE: value}
 
 
 def _default_local_datetime(obj: dt.datetime, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_local_datetime
 
-    return {_CLASS: _Class.local_datetime, _VALUE: serialize_local_datetime(obj)}
+    return {_CLASS: "local_datetime", _VALUE: serialize_local_datetime(obj)}
 
 
 def _default_set(obj: set[Any], /) -> _ClassValueMapping[_Class]:
@@ -194,25 +189,25 @@ def _default_set(obj: set[Any], /) -> _ClassValueMapping[_Class]:
         value = sorted(obj)
     except TypeError:
         value = list(obj)
-    return {_CLASS: _Class.set, _VALUE: value}
+    return {_CLASS: "set", _VALUE: value}
 
 
 def _default_time(obj: dt.time, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_time
 
-    return {_CLASS: _Class.time, _VALUE: serialize_time(obj)}
+    return {_CLASS: "time", _VALUE: serialize_time(obj)}
 
 
 def _default_timedelta(obj: dt.timedelta, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_timedelta
 
-    return {_CLASS: _Class.timedelta, _VALUE: serialize_timedelta(obj)}
+    return {_CLASS: "timedelta", _VALUE: serialize_timedelta(obj)}
 
 
 def _default_zoned_datetime(obj: dt.datetime, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_zoned_datetime
 
-    return {_CLASS: _Class.zoned_datetime, _VALUE: serialize_zoned_datetime(obj)}
+    return {_CLASS: "zoned_datetime", _VALUE: serialize_zoned_datetime(obj)}
 
 
 @dataclass(kw_only=True)
@@ -228,67 +223,63 @@ def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
     return loads(text, object_hook=partial(_object_hook, extra=extra))
 
 
-def _object_hook(
-    mapping: _ClassValueMapping[str], /, *, extra: _ExtraDes | None = None
-) -> Any:
+def _object_hook(mapping: Any, /, *, extra: _ExtraDes | None = None) -> Any:
     try:
         cls = mapping[_CLASS]
+        value = mapping[_VALUE]
     except KeyError:
         return mapping
     try:
-        cls = ensure_class(cls, _Class)
-    except EnsureClassError:
-        raise NotImplementedError
-    value = mapping[_VALUE]
+        cls = ensure_member(cls, _CLASSES)
+    except EnsureMemberError:
+        if extra is not None:
+            try:
+                func = extra[cls]
+            except KeyError:
+                raise _JsonDeserializationWithExtraTypeError(
+                    cls=cls, extra=extra
+                ) from None
+            return func(value)
+        raise _JsonDeserializationTypeError(cls=cls, value=value) from None
     match cls:
-        case _Class.bytes:
+        case "bytes":
             return cast(str, value).encode()
-        case _Class.complex:
+        case "complex":
             return _object_hook_complex(value)
-        case _Class.date:
+        case "date":
             return _object_hook_date(value)
-        case _Class.decimal:
+        case "decimal":
             return Decimal(value)
-        case _Class.dict:
+        case "dict":
             return dict(value)
-        case _Class.fraction:
+        case "fraction":
             return _object_hook_fraction(value)
-        case _Class.frozenset:
+        case "frozenset":
             return frozenset(value)
-        case _Class.ipv4address:
+        case "IPv4Address":
             return IPv4Address(value)
-        case _Class.ipv6address:
+        case "IPv6Address":
             return IPv6Address(value)
-        case _Class.local_datetime:
+        case "local_datetime":
             return _object_hook_local_datetime(value)
-        case _Class.path:
+        case "Path":
             return Path(value)
-        case _Class.set:
+        case "set":
             return set(value)
-        case _Class.slice:
+        case "slice":
             return _object_hook_slice(value)
-        case _Class.time:
+        case "time":
             return _object_hook_time(value)
-        case _Class.timedelta:
+        case "timedelta":
             return _object_hook_timedelta(value)
-        case _Class.tuple:
+        case "tuple":
             return tuple(value)
-        case _Class.uuid:
+        case "UUID":
             return UUID(value)
-        case _Class.zoned_datetime:
+        case "zoned_datetime":
             return _object_hook_zoned_datetime(value)
-        case _Class.sqlalchemy_engine:
+        case "sqlalchemy.Engine":
             return _object_hook_sqlalchemy_engine(value)
-        case _:  # pyright: ignore[reportUnnecessaryComparison]
-            if extra is not None:
-                try:
-                    func = extra[cls]
-                except KeyError:
-                    raise _JsonDeserializationWithExtraTypeError(
-                        cls=cls, extra=extra
-                    ) from None
-                return func(value)
-            raise _JsonDeserializationTypeError(cls=cls, value=value)
 
 
 def _object_hook_complex(value: tuple[int, int], /) -> complex:
