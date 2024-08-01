@@ -10,7 +10,7 @@ from ipaddress import IPv4Address, IPv6Address
 from json import dumps, loads
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Generic, Literal, TypedDict, TypeVar, cast
+from typing import Any, Generic, Literal, TypedDict, TypeVar, assert_never, cast
 from uuid import UUID
 
 from typing_extensions import override
@@ -287,6 +287,8 @@ def _object_hook(mapping: Any, /, *, extra: _ExtraDes | None = None) -> Any:
             return _object_hook_zoned_datetime(value)
         case "sqlalchemy.Engine":
             return _object_hook_sqlalchemy_engine(value)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def _object_hook_complex(value: tuple[int, int], /) -> complex:
