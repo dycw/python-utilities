@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _DAYS_PER_YEAR = 365.25
-_MICROSECONDS_PER_DAY = 24 * 60 * 60 * int(1e6)
+_MICROSECONDS_PER_SECOND = int(1e6)
+_MICROSECONDS_PER_DAY = 24 * 60 * 60 * _MICROSECONDS_PER_SECOND
 SECOND = dt.timedelta(seconds=1)
 MINUTE = dt.timedelta(minutes=1)
 HOUR = dt.timedelta(hours=1)

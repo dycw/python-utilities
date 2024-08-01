@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 
-from pandas._testing import at
-from pandas.core.indexes.datetimelike import DatetimeTimedeltaMixin
 from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
-from utilities.datetime import _MICROSECONDS_PER_DAY, get_months
+from utilities.datetime import (
+    _MICROSECONDS_PER_DAY,
+    _MICROSECONDS_PER_SECOND,
+    get_months,
+)
 from utilities.iterables import one
 from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
@@ -228,7 +230,11 @@ class SerializeZonedDateTimeError(Exception):
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
-    total_micro = _MICROSECONDS_PER_DAY * timedelta.days + timedelta.microseconds
+    total_micro = (
+        _MICROSECONDS_PER_DAY * timedelta.days
+        + _MICROSECONDS_PER_SECOND * timedelta.seconds
+        + timedelta.microseconds
+    )
     if total_micro == 0:
         return DateTimeDelta()
     if total_micro >= 1:

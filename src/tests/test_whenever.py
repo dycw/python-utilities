@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import datetime as dt
 from re import escape
-from typing import ClassVar
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -18,7 +17,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
-from utilities.datetime import _MICROSECONDS_PER_DAY, get_months, get_years
+from utilities.datetime import _MICROSECONDS_PER_DAY, _MICROSECONDS_PER_SECOND
 from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
     ParseDateError,
@@ -192,7 +191,6 @@ class TestParseAndSerializeZonedDateTime:
 
 class TestToDatetimeDelta:
     @given(days=integers(), microseconds=integers())
-    @mark.only
     def test_main(self, *, days: int, microseconds: int) -> None:
         with assume_does_not_raise(OverflowError):
             timedelta = dt.timedelta(days=days, microseconds=microseconds)
@@ -204,7 +202,9 @@ class TestToDatetimeDelta:
         comp_micro, remainder = divmod(comp_nano, 1000)
         assert remainder == 0
         result_total_micro = (
-            _MICROSECONDS_PER_DAY * comp_day + 1000 * comp_sec + comp_micro
+            _MICROSECONDS_PER_DAY * comp_day
+            + _MICROSECONDS_PER_SECOND * comp_sec
+            + comp_micro
         )
         assert init_total_micro == result_total_micro
 
