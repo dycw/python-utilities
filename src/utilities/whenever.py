@@ -148,7 +148,20 @@ def serialize_date(date: dt.date, /) -> str:
 
 def serialize_local_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a local datetime."""
-    return LocalDateTime.from_py_datetime(datetime).format_common_iso()
+    try:
+        ldt = LocalDateTime.from_py_datetime(datetime)
+    except ValueError:
+        raise SerializeLocalDateTimeError(datetime=datetime) from None
+    return ldt.format_common_iso()
+
+
+@dataclass(kw_only=True, slots=True)
+class SerializeLocalDateTimeError(Exception):
+    datetime: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize local datetime; got {self.datetime}"
 
 
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
@@ -188,6 +201,8 @@ __all__ = [
     "ParseLocalDateTimeError",
     "ParseTimedeltaError",
     "ParseZonedDateTimeError",
+    "SerializeLocalDateTimeError",
+    "SerializeZonedDateTimeError",
     "ensure_date",
     "ensure_local_datetime",
     "ensure_timedelta",

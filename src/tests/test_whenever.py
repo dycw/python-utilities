@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from re import escape
 from typing import TYPE_CHECKING, ClassVar
 
 from hypothesis import given, reproduce_failure
@@ -17,12 +18,13 @@ from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
 from utilities.click import DateTime
-from utilities.datetime import _DAYS_PER_YEAR, get_years
+from utilities.datetime import _DAYS_PER_YEAR, get_now, get_years
 from utilities.whenever import (
     ParseDateError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
     ParseZonedDateTimeError,
+    SerializeLocalDateTimeError,
     SerializeZonedDateTimeError,
     _to_datetime_delta,
     ensure_date,
@@ -74,11 +76,14 @@ class TestParseAndSerializeLocalDateTime:
             _ = parse_local_datetime("invalid")
 
     def test_error_serialize(self) -> None:
+        datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
         with raises(
-            ParseLocalDateTimeError,
-            match="Unable to parse local datetime; got 'invalid'",
+            SerializeLocalDateTimeError,
+            match=escape(
+                "Unable to serialize local datetime; got 2000-01-01 00:00:00+00:00"
+            ),
         ):
-            _ = parse_local_datetime("invalid")
+            _ = serialize_local_datetime(datetime)
 
     @given(data=data(), datetime=datetimes())
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
