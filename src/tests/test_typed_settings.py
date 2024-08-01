@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     dates,
     datetimes,
     integers,
-    just,
     sampled_from,
     timedeltas,
     times,
@@ -28,12 +27,6 @@ from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
 
 from tests.conftest import FLAKY
-from utilities.datetime import (
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-    serialize_timedelta,
-)
 from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
 from utilities.pathlib import ensure_path
 from utilities.pytest import skipif_windows
@@ -45,7 +38,12 @@ from utilities.typed_settings import (
     click_options,
     load_settings,
 )
-from utilities.zoneinfo import UTC
+from utilities.whenever import (
+    serialize_date,
+    serialize_local_datetime,
+    serialize_time,
+    serialize_timedelta,
+)
 
 app_names = text_ascii(min_size=1).map(str.lower)
 
@@ -80,13 +78,13 @@ class TestClickField:
 
 
 class TestClickOptions:
-    @FLAKY
+    # @FLAKY
     @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
@@ -180,7 +178,7 @@ class TestLoadSettings:
         ("test_cls", "strategy", "serialize"),
         [
             param(dt.date, dates(), serialize_date),
-            param(dt.datetime, datetimes(timezones=just(UTC)), serialize_datetime),
+            param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
             param(dt.timedelta, timedeltas(), serialize_timedelta),
         ],

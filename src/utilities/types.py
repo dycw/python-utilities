@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Container, Hashable, Mapping, Sized
+from collections.abc import Callable, Container, Hashable, Mapping, Sized
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from inspect import iscoroutinefunction, isfunction
@@ -426,6 +426,15 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
     return is_sized(obj) and not isinstance(obj, str)
 
 
+def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
+    """Check if an object is hashable."""
+
+    def inner(obj: Any, /) -> TypeGuard[_T]:
+        return isinstance(obj, cls)
+
+    return inner
+
+
 __all__ = [
     "Duration",
     "EnsureBoolError",
@@ -467,4 +476,5 @@ __all__ = [
     "is_sized",
     "is_sized_not_str",
     "issubclass_except_bool_int",
+    "make_isinstance",
 ]

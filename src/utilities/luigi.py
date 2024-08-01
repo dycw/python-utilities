@@ -22,11 +22,7 @@ from luigi.task import flatten
 from sqlalchemy.exc import DatabaseError
 from typing_extensions import override
 
-from utilities.datetime import (
-    get_now,
-    round_to_next_weekday,
-    round_to_prev_weekday,
-)
+from utilities.datetime import get_now, round_to_next_weekday, round_to_prev_weekday
 from utilities.enum import ensure_enum, parse_enum
 from utilities.iterables import one
 from utilities.sentinel import sentinel

@@ -4,7 +4,7 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Never, Self, assert_never, cast
+from typing import TYPE_CHECKING, Any, Never, Self, TypeGuard, assert_never, cast
 
 from typing_extensions import override
 
@@ -219,10 +219,20 @@ def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
             assert_never(cast(Never, never))
 
 
+def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a local datetime."""
+    return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
+
+
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     friday = 5
     return date.isoweekday() <= friday
+
+
+def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a zoned datetime."""
+    return isinstance(obj, dt.datetime) and (obj.tzinfo is not None)
 
 
 def maybe_sub_pct_y(text: str, /) -> str:
@@ -493,7 +503,9 @@ __all__ = [
     "get_today_hk",
     "get_today_tokyo",
     "get_years",
+    "is_local_datetime",
     "is_weekday",
+    "is_zoned_datetime",
     "maybe_sub_pct_y",
     "parse_datetime",
     "parse_month",

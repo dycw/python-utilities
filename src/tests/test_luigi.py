@@ -24,7 +24,6 @@ from sqlalchemy.orm import declarative_base
 from typing_extensions import override
 
 from tests.conftest import FLAKY
-from utilities.datetime import serialize_date, serialize_time
 from utilities.hypothesis import (
     datetimes_utc,
     namespace_mixins,
@@ -54,6 +53,7 @@ from utilities.luigi import (
 )
 from utilities.pathlib import ensure_path
 from utilities.sqlalchemy import insert_items
+from utilities.whenever import serialize_date, serialize_time
 
 if TYPE_CHECKING:
     import datetime as dt

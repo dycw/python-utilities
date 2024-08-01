@@ -34,6 +34,24 @@ ExistingDirPath = click.Path(
 )
 
 
+class Date(ParamType):
+    """A date-valued parameter."""
+
+    name = "date"
+
+    @override
+    def convert(
+        self, value: dt.date | str, param: Parameter | None, ctx: Context | None
+    ) -> dt.date:
+        """Convert a value into the `Date` type."""
+        from utilities.whenever import ParseDateError, ensure_date
+
+        try:
+            return ensure_date(value)
+        except ParseDateError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
 class LocalDateTime(ParamType):
     """A local-datetime-valued parameter."""
 
@@ -399,6 +417,7 @@ class Engine(ParamType):
 
 
 __all__ = [
+    "Date",
     "DirPath",
     "Engine",
     "Enum",

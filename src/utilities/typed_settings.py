@@ -3,12 +3,10 @@ from __future__ import annotations
 import datetime as dt
 import enum
 from dataclasses import MISSING, dataclass, field
-from itertools import starmap
-from operator import attrgetter, itemgetter
+from operator import attrgetter
 from re import search
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
-from click import Date
 from typed_settings import default_loaders
 from typed_settings import load_settings as _load_settings
 from typed_settings.cli_click import ClickHandler
@@ -27,14 +25,6 @@ from typing_extensions import override
 
 import utilities.click
 from utilities.click import Date, LocalDateTime, Time, Timedelta
-from utilities.datetime import (
-    ensure_date,
-    ensure_time,
-    ensure_timedelta,
-    serialize_date,
-    serialize_datetime,
-    serialize_time,
-)
 from utilities.git import get_repo_root_or_cwd_sub_path
 from utilities.pathlib import ensure_path
 from utilities.types import PathLike, ensure_class
@@ -68,11 +58,17 @@ class _ExtendedTSConverter(TSConverter):
         strlist_sep: str | Callable[[str], list] | None = ":",
     ) -> None:
         super().__init__(resolve_paths=resolve_paths, strlist_sep=strlist_sep)
-        cases: list[tuple[type[Any], Callable[..., Any]]] = [
-            (dt.date, ensure_date),
-            (dt.time, ensure_time),
-            (dt.timedelta, ensure_timedelta),
-        ]
+        cases: list[tuple[type[Any], Callable[..., Any]]] = []
+        try:
+            from utilities.whenever import ensure_date, ensure_time, ensure_timedelta
+        except ModuleNotFoundError:  # pragma: no cover
+            pass
+        else:
+            cases.extend([
+                (dt.date, ensure_date),
+                (dt.time, ensure_time),
+                (dt.timedelta, ensure_timedelta),
+            ])
         try:
             from sqlalchemy import Engine
 
@@ -169,12 +165,24 @@ def click_options(
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
     cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
-        (dt.datetime, LocalDateTime, serialize_datetime),
-        (dt.date, Date, serialize_date),
-        (dt.time, Time, serialize_time),
-        (dt.timedelta, Timedelta, str),
-        (enum.Enum, utilities.click.Enum, attrgetter("name")),
+        (enum.Enum, utilities.click.Enum, attrgetter("name"))
     ]
+    try:
+        from utilities.whenever import (
+            serialize_date,
+            serialize_local_datetime,
+            serialize_time,
+            serialize_timedelta,
+        )
+    except ModuleNotFoundError:  # pragma: no cover
+        pass
+    else:
+        cases.extend([
+            (dt.datetime, LocalDateTime, serialize_local_datetime),
+            (dt.date, Date, serialize_date),
+            (dt.time, Time, serialize_time),
+            (dt.timedelta, Timedelta, serialize_timedelta),
+        ])
     try:
         import sqlalchemy
 
@@ -183,13 +191,10 @@ def _make_click_handler() -> ClickHandler:
         pass
     else:
         cases.append((sqlalchemy.Engine, utilities.click.Engine, serialize_engine))
-    extra_types = dict(
-        zip(
-            map(itemgetter(0), cases),
-            starmap(_make_type_handler_func, cases),
-            strict=True,
-        )
-    )
+    extra_types = {
+        cls: _make_type_handler_func(cls, param, serialize)
+        for cls, param, serialize in cases
+    }
     return ClickHandler(extra_types=extra_types)
 
 

@@ -30,6 +30,7 @@ from pytest import mark, param
 import utilities.click
 import utilities.datetime
 from utilities.click import (
+    Date,
     DirPath,
     ExistingDirPath,
     ExistingFilePath,
@@ -323,6 +324,7 @@ def _serialize_iterable_strs(values: Iterable[str], /) -> str:
 
 class TestParameters:
     cases = (
+        param(Date(), dt.date, dates(), serialize_date, True),
         param(
             utilities.click.Engine(),
             sqlalchemy.Engine,
