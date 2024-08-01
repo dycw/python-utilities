@@ -11,21 +11,22 @@ from ipaddress import IPv4Address, IPv6Address
 from json import dumps, loads
 from operator import itemgetter
 from pathlib import Path
-from typing import Any, Literal, TypedDict, TypeVar, cast
+from typing import Any, Generic, Literal, TypedDict, TypeVar, cast
 from uuid import UUID
 
 from typing_extensions import override
 
-from utilities.types import get_class_name
+from utilities.types import EnsureClassError, ensure_class, get_class_name
 from utilities.zoneinfo import UTC
 
 _T = TypeVar("_T")
+_StrLike = TypeVar("_StrLike", bound=str)
 _CLASS = "CLASS"
 _VALUE = "VALUE"
 
 
-class _ClassValueMapping(TypedDict):
-    CLASS: _Class
+class _ClassValueMapping(Generic[_StrLike], TypedDict):
+    CLASS: _StrLike
     VALUE: Any
 
 
@@ -54,7 +55,7 @@ class _Class(StrEnum):
     zoned_datetime = "zoned_datetime"
 
 
-_ExtraSer = Mapping[type[_T], tuple[_Class, Callable[[_T], Any]]]
+_ExtraSer = Mapping[type[_T], tuple[str, Callable[[_T], Any]]]
 _ExtraDes = Mapping[str, Callable[[Any], Any]]
 
 
@@ -87,7 +88,9 @@ def _positive_zero(x: float, /) -> float:
     return abs(x) if x == 0.0 else x
 
 
-def _default(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> _ClassValueMapping:
+def _default(
+    obj: Any, /, *, extra: _ExtraSer[Any] | None = None
+) -> _ClassValueMapping[_Class]:
     """Extension for the JSON serializer."""
     if isinstance(obj, bytes):
         return {_CLASS: _Class.bytes, _VALUE: obj.decode()}
@@ -135,13 +138,13 @@ def _default(obj: Any, /, *, extra: _ExtraSer[Any] | None = None) -> _ClassValue
     raise JsonSerializationError(obj=obj)
 
 
-def _default_date(obj: dt.date, /) -> _ClassValueMapping:
+def _default_date(obj: dt.date, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_date
 
     return {_CLASS: _Class.date, _VALUE: serialize_date(obj)}
 
 
-def _default_dict(obj: _DictWrapper, /) -> _ClassValueMapping:
+def _default_dict(obj: _DictWrapper, /) -> _ClassValueMapping[_Class]:
     try:
         value = sorted(obj.value.items(), key=itemgetter(0))
     except TypeError:
@@ -149,7 +152,7 @@ def _default_dict(obj: _DictWrapper, /) -> _ClassValueMapping:
     return {_CLASS: _Class.dict, _VALUE: value}
 
 
-def _default_engine(obj: Any, /) -> _ClassValueMapping | None:
+def _default_engine(obj: Any, /) -> _ClassValueMapping[_Class] | None:
     try:
         from sqlalchemy import Engine
     except ModuleNotFoundError:  # pragma: no cover
@@ -163,7 +166,7 @@ def _default_engine(obj: Any, /) -> _ClassValueMapping | None:
     return None
 
 
-def _default_extra(obj: Any, extra: _ExtraSer[Any], /) -> _ClassValueMapping:
+def _default_extra(obj: Any, extra: _ExtraSer[Any], /) -> _ClassValueMapping[str]:
     cls = type(obj)
     try:
         key, func = extra[cls]
@@ -172,7 +175,7 @@ def _default_extra(obj: Any, extra: _ExtraSer[Any], /) -> _ClassValueMapping:
     return {_CLASS: key, _VALUE: func(obj)}
 
 
-def _default_frozenset(obj: frozenset[Any], /) -> _ClassValueMapping:
+def _default_frozenset(obj: frozenset[Any], /) -> _ClassValueMapping[_Class]:
     try:
         value = sorted(obj)
     except TypeError:
@@ -180,13 +183,13 @@ def _default_frozenset(obj: frozenset[Any], /) -> _ClassValueMapping:
     return {_CLASS: _Class.frozenset, _VALUE: value}
 
 
-def _default_local_datetime(obj: dt.datetime, /) -> _ClassValueMapping:
+def _default_local_datetime(obj: dt.datetime, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_local_datetime
 
     return {_CLASS: _Class.local_datetime, _VALUE: serialize_local_datetime(obj)}
 
 
-def _default_set(obj: set[Any], /) -> _ClassValueMapping:
+def _default_set(obj: set[Any], /) -> _ClassValueMapping[_Class]:
     try:
         value = sorted(obj)
     except TypeError:
@@ -194,19 +197,19 @@ def _default_set(obj: set[Any], /) -> _ClassValueMapping:
     return {_CLASS: _Class.set, _VALUE: value}
 
 
-def _default_time(obj: dt.time, /) -> _ClassValueMapping:
+def _default_time(obj: dt.time, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_time
 
     return {_CLASS: _Class.time, _VALUE: serialize_time(obj)}
 
 
-def _default_timedelta(obj: dt.timedelta, /) -> _ClassValueMapping:
+def _default_timedelta(obj: dt.timedelta, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_timedelta
 
     return {_CLASS: _Class.timedelta, _VALUE: serialize_timedelta(obj)}
 
 
-def _default_zoned_datetime(obj: dt.datetime, /) -> _ClassValueMapping:
+def _default_zoned_datetime(obj: dt.datetime, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_zoned_datetime
 
     return {_CLASS: _Class.zoned_datetime, _VALUE: serialize_zoned_datetime(obj)}
@@ -226,14 +229,18 @@ def deserialize(text: str | bytes, /, *, extra: _ExtraDes | None = None) -> Any:
 
 
 def _object_hook(
-    mapping: _ClassValueMapping, /, *, extra: _ExtraDes | None = None
+    mapping: _ClassValueMapping[str], /, *, extra: _ExtraDes | None = None
 ) -> Any:
     try:
-        cls = cast(str, mapping[_CLASS])
+        cls = mapping[_CLASS]
     except KeyError:
         return mapping
+    try:
+        cls = ensure_class(cls, _Class)
+    except EnsureClassError:
+        raise NotImplementedError
     value = mapping[_VALUE]
-    match mapping["CLASS"]:
+    match cls:
         case _Class.bytes:
             return cast(str, value).encode()
         case _Class.complex:

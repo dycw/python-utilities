@@ -53,7 +53,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
-from utilities.whenever import _ToDateTimeDeltaTimeError
+from utilities.whenever import SerializeTimeDeltaError
 from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
@@ -80,12 +80,11 @@ class TestSerializeAndDeserialize:
             param(none()),
             param(temp_paths()),
             param(text()),
-            param(timedeltas(), marks=mark.only),
+            param(timedeltas()),
             param(times()),
             param(uuids()),
         ],
     )
-    @reproduce_failure("6.108.5", b"AXicY2BgYJxuxQACjAxIAAAQVADU")
     def test_main(self, *, data: DataObject, elements: SearchStrategy[Any]) -> None:
         x, y = data.draw(tuples(elements, elements))
         self._assert_standard(x, y)
@@ -222,10 +221,10 @@ class TestSerializeAndDeserialize:
     def _assert_standard(
         self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
     ) -> None:
-        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+        with assume_does_not_raise(SerializeTimeDeltaError):
             ser_x = serialize(x)
         assert eq(deserialize(ser_x), x)
-        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+        with assume_does_not_raise(SerializeTimeDeltaError):
             res = ser_x == serialize(y)
         expected = eq(x, y)
         assert res is expected
