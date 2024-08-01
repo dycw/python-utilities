@@ -16,7 +16,7 @@ from hypothesis.strategies import (
     times,
 )
 from pytest import mark, param, raises
-from whenever import DateTimeDelta, microseconds
+from whenever import DateTimeDelta
 
 from utilities.datetime import get_years
 from utilities.hypothesis import assume_does_not_raise
@@ -136,6 +136,8 @@ class TestParseAndSerializeTimedelta:
         timedelta = dt.timedelta(days=104250, microseconds=1)
         serialized = serialize_timedelta(timedelta)
         result = parse_timedelta(serialized)
+        breakpoint()
+
         assert result == timedelta
 
     def test_error_parse(self) -> None:
@@ -209,6 +211,13 @@ class TestToDatetimeDelta:
         timedelta = dt.timedelta(days=-1, seconds=1)
         result = _to_datetime_delta(timedelta)
         expected = DateTimeDelta(seconds=timedelta.total_seconds())
+        assert result == expected
+
+    @mark.only
+    def test_close_to_overflow(self) -> None:
+        timedelta = dt.timedelta(days=104250, microseconds=1)
+        result = _to_datetime_delta(timedelta)
+        expected = DateTimeDelta(days=104250, microseconds=1)
         assert result == expected
 
     @given(microseconds=integers())

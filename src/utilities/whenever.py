@@ -114,7 +114,9 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
         raise _ParseTimedeltaNanosecondError(
             timedelta=timedelta, nanoseconds=nanoseconds
         )
-    total_micros = time_part.in_microseconds()
+    total_micros = int(time_part.in_microseconds())
+    breakpoint()
+
     return dt.timedelta(days=total_days, microseconds=total_micros)
 
 
@@ -197,6 +199,9 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
         raise _SerializeTimeDeltaMicrosecondsError(
             timedelta=error.timedelta, microseconds=error.microseconds
         ) from None
+    dtd.in_months_days_secs_nanos()
+    dtd
+    breakpoint()
     return dtd.format_common_iso()
 
 
