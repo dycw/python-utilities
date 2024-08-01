@@ -30,7 +30,6 @@ from pytest import mark, param
 import utilities.click
 import utilities.datetime
 from utilities.click import (
-    Date,
     DirPath,
     ExistingDirPath,
     ExistingFilePath,
@@ -43,22 +42,24 @@ from utilities.click import (
     LocalDateTime,
     Time,
     Timedelta,
+    ZonedDateTime,
     local_scheduler_option_default_central,
     local_scheduler_option_default_local,
     log_level_option,
     workers_option,
 )
-from utilities.datetime import (
-    serialize_date,
-    serialize_datetime,
-    serialize_month,
-    serialize_time,
-    serialize_timedelta,
-)
+from utilities.datetime import serialize_month
 from utilities.hypothesis import months, sqlite_engines, text_ascii
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
+from utilities.whenever import (
+    serialize_date,
+    serialize_local_datetime,
+    serialize_time,
+    serialize_timedelta,
+    serialize_zoned_datetime,
+)
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -316,14 +317,6 @@ def _serialize_iterable_strs(values: Iterable[str], /) -> str:
 
 class TestParameters:
     cases = (
-        param(Date(), dt.date, dates(), serialize_date, True),
-        param(
-            LocalDateTime(),
-            dt.datetime,
-            datetimes(timezones=just(UTC)),
-            serialize_datetime,
-            True,
-        ),
         param(
             utilities.click.Engine(),
             sqlalchemy.Engine,
@@ -356,6 +349,9 @@ class TestParameters:
             False,
         ),
         param(
+            LocalDateTime(), dt.datetime, datetimes(), serialize_local_datetime, True
+        ),
+        param(
             utilities.click.Month(),
             utilities.datetime.Month,
             months(),
@@ -364,6 +360,13 @@ class TestParameters:
         ),
         param(Time(), dt.time, times(), serialize_time, True),
         param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta, True),
+        param(
+            ZonedDateTime(),
+            dt.datetime,
+            datetimes(timezones=just(UTC)),
+            serialize_zoned_datetime,
+            True,
+        ),
     )
 
     @given(data=data())
