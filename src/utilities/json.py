@@ -85,7 +85,16 @@ def _positive_zero(x: float, /) -> float:
 
 def _default(
     obj: Any, /, *, extra: _ExtraSer[Any] | None = None
-) -> _ClassValueMapping[_Class] | _ClassValueMapping[str]:
+) -> _ClassValueMapping[str]:
+    """Extension for the JSON serializer."""
+    if (result := _default_standard(obj)) is not None:
+        return cast(_ClassValueMapping[str], result)
+    if extra is not None:
+        return _default_extra(obj, extra)
+    raise JsonSerializationError(obj=obj)
+
+
+def _default_standard(obj: Any, /) -> _ClassValueMapping[_Class] | None:
     """Extension for the JSON serializer."""
     if isinstance(obj, bytes):
         return {_CLASS: "bytes", _VALUE: obj.decode()}
@@ -113,11 +122,11 @@ def _default(
     if isinstance(obj, frozenset):
         return _default_frozenset(obj)
     if isinstance(obj, IPv4Address):
-        return {_CLASS: "ipv4address", _VALUE: str(obj)}
+        return {_CLASS: "IPv4Address", _VALUE: str(obj)}
     if isinstance(obj, IPv6Address):
-        return {_CLASS: "ipv6address", _VALUE: str(obj)}
+        return {_CLASS: "IPv6Address", _VALUE: str(obj)}
     if isinstance(obj, Path):
-        return {_CLASS: "path", _VALUE: str(obj)}
+        return {_CLASS: "Path", _VALUE: str(obj)}
     if isinstance(obj, set) and not isinstance(obj, frozenset):
         return _default_set(obj)
     if isinstance(obj, slice):
@@ -125,12 +134,10 @@ def _default(
     if isinstance(obj, _TupleWrapper):
         return {_CLASS: "tuple", _VALUE: list(obj.value)}
     if isinstance(obj, UUID):
-        return {_CLASS: "uuid", _VALUE: str(obj)}
-    if extra is not None:
-        return _default_extra(obj, extra)
+        return {_CLASS: "UUID", _VALUE: str(obj)}
     if (result := _default_engine(obj)) is not None:
         return result
-    raise JsonSerializationError(obj=obj)
+    return None
 
 
 def _default_date(obj: dt.date, /) -> _ClassValueMapping[_Class]:
