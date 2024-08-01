@@ -385,7 +385,7 @@ class TestMonth:
 
 class TestParseAndSerializeMonth:
     @given(month=months())
-    def test_str(self, *, month: Month) -> None:
+    def test_main(self, *, month: Month) -> None:
         serialized = serialize_month(month)
         result = parse_month(serialized)
         assert result == month
