@@ -129,7 +129,6 @@ class TestParseAndSerializeTimedelta:
         result = parse_timedelta(serialized)
         assert result == timedelta
 
-    @mark.only
     def test_example(self) -> None:
         timedelta = dt.timedelta(days=104250, microseconds=1)
         serialized = serialize_timedelta(timedelta)
@@ -199,6 +198,7 @@ class TestParseAndSerializeZonedDateTime:
         assert result == datetime
 
 
+@mark.only
 class TestToDatetimeDelta:
     def test_mixed_sign(self) -> None:
         timedelta = dt.timedelta(days=-1, seconds=1)
@@ -212,7 +212,6 @@ class TestToDatetimeDelta:
         expected = DateTimeDelta(days=104250, microseconds=1)
         assert result == expected
 
-    @mark.only
     @given(days=integers())
     def test_days_only(self, *, days: int) -> None:
         with assume_does_not_raise(OverflowError):

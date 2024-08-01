@@ -232,15 +232,23 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
     seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
     microseconds = int(1e6) * seconds + timedelta.microseconds
-    try:
-        return DateTimeDelta(days=timedelta.days, microseconds=timedelta.microseconds)
-    except OverflowError:
-        raise _ToDateTimeDeltaError(timedelta=timedelta) from None
-    except ValueError as error:
-        msg = ensure_str(one(error.args))
-        if msg in {"Out of range", "microseconds out of range"}:
+    if microseconds == 0:
+        return DateTimeDelta()
+    if microseconds >= 1:
+        try:
+            return DateTimeDelta(
+                days=timedelta.days,
+                seconds=timedelta.seconds,
+                microseconds=timedelta.microseconds,
+            )
+        except OverflowError:
             raise _ToDateTimeDeltaError(timedelta=timedelta) from None
-        raise
+        except ValueError as error:
+            msg = ensure_str(one(error.args))
+            if msg in {"Out of range", "microseconds out of range"}:
+                raise _ToDateTimeDeltaError(timedelta=timedelta) from None
+            raise
+    return -_to_datetime_delta(-timedelta)
 
 
 @dataclass(kw_only=True, slots=True)
