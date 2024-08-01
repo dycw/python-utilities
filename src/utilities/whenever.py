@@ -7,6 +7,8 @@ from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
 from utilities.datetime import get_months
+from utilities.iterables import one
+from utilities.text import ensure_str
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -208,9 +210,39 @@ class SerializeZonedDateTimeError(Exception):
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
-    total_seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
-    total_micros = int(1e6) * total_seconds + timedelta.microseconds
-    return DateTimeDelta(microseconds=total_micros)
+    seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
+    microseconds = int(1e6) * seconds + timedelta.microseconds
+    try:
+        return DateTimeDelta(microseconds=microseconds)
+    except OverflowError:
+        raise _ToDateTimeDeltaTimeOverflowError(timedelta=timedelta) from None
+    except ValueError as error:
+        if ensure_str(one(error.args)) == "microseconds out of range":
+            raise _ToDateTimeDeltaTimeMicrosecondsError(
+                timedelta=timedelta, microseconds=microseconds
+            ) from None
+        raise
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDateTimeDeltaTimeError(Exception):
+    timedelta: dt.timedelta
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDateTimeDeltaTimeOverflowError(_ToDateTimeDeltaTimeError):
+    @override
+    def __str__(self) -> str:
+        return "Unable to create DateTimeDelta; overflowed"
+
+
+@dataclass(kw_only=True, slots=True)
+class _ToDateTimeDeltaTimeMicrosecondsError(_ToDateTimeDeltaTimeError):
+    microseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to create DateTimeDelta; got {self.microseconds} microseconds"
 
 
 __all__ = [

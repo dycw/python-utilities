@@ -19,6 +19,7 @@ from pytest import raises
 from whenever import DateTimeDelta
 
 from utilities.datetime import get_years
+from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
     ParseDateError,
     ParseLocalDateTimeError,
@@ -28,6 +29,7 @@ from utilities.whenever import (
     SerializeLocalDateTimeError,
     SerializeZonedDateTimeError,
     _to_datetime_delta,
+    _ToDateTimeDeltaTimeError,
     ensure_date,
     ensure_local_datetime,
     ensure_time,
@@ -181,17 +183,33 @@ class TestParseAndSerializeZonedDateTime:
 
 
 class TestToDatetimeDelta:
-    max_microseconds: ClassVar[int] = int(1e9)
-
     def test_mixed_sign(self) -> None:
         timedelta = dt.timedelta(days=-1, seconds=1)
         result = _to_datetime_delta(timedelta)
         expected = DateTimeDelta(seconds=timedelta.total_seconds())
         assert result == expected
 
-    @given(microseconds=integers(-int(max_microseconds), int(max_microseconds)))
-    def test_next(self, *, microseconds: int) -> None:
-        timedelta = dt.timedelta(microseconds=microseconds)
-        result = _to_datetime_delta(timedelta)
+    @given(microseconds=integers())
+    def test_microseconds_only(self, *, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(microseconds=microseconds)
+        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+            result = _to_datetime_delta(timedelta)
         expected = DateTimeDelta(microseconds=microseconds)
         assert result == expected
+
+    def test_error_overflow(self) -> None:
+        timedelta = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
+        with raises(
+            _ToDateTimeDeltaTimeError,
+            match="Unable to create DateTimeDelta; overflowed",
+        ):
+            _ = _to_datetime_delta(timedelta)
+
+    def test_error_microseconds(self) -> None:
+        timedelta = dt.timedelta(microseconds=1e18)
+        with raises(
+            _ToDateTimeDeltaTimeError,
+            match="Unable to create DateTimeDelta; got 1000000000000000000 microseconds",
+        ):
+            _ = _to_datetime_delta(timedelta)

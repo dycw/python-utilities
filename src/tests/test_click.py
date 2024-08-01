@@ -49,11 +49,17 @@ from utilities.click import (
     workers_option,
 )
 from utilities.datetime import serialize_month
-from utilities.hypothesis import months, sqlite_engines, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    months,
+    sqlite_engines,
+    text_ascii,
+)
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
 from utilities.whenever import (
+    _ToDateTimeDeltaTimeError,
     serialize_date,
     serialize_local_datetime,
     serialize_time,
@@ -359,7 +365,13 @@ class TestParameters:
             True,
         ),
         param(Time(), dt.time, times(), serialize_time, True),
-        param(Timedelta(), dt.timedelta, timedeltas(), serialize_timedelta, True),
+        param(
+            Timedelta(),
+            dt.timedelta,
+            timedeltas(min_value=dt.timedelta(0)),
+            serialize_timedelta,
+            True,
+        ),
         param(
             ZonedDateTime(),
             dt.datetime,
@@ -383,6 +395,9 @@ class TestParameters:
     ) -> None:
         runner = CliRunner()
 
+        value = data.draw(strategy)
+        value_str = self._try_serialize(serialize, value)
+
         @command()
         @argument("value", type=param)
         def cli(*, value: cls) -> None:
@@ -391,7 +406,6 @@ class TestParameters:
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0
 
-        value_str = serialize(data.draw(strategy))
         result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
         assert result.stdout == f"value = {value_str}\n"
@@ -413,6 +427,7 @@ class TestParameters:
         failable: bool,
     ) -> None:
         value = data.draw(strategy)
+        _ = self._try_serialize(serialize, value)
 
         @command()
         @option("--value", type=param, default=value)
@@ -427,6 +442,10 @@ class TestParameters:
         assert result.stdout == f"value = {serialize(value)}\n"
 
         _ = failable
+
+    def _try_serialize(self, serialize: Callable[[Any], str], value: Any, /) -> str:
+        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+            return serialize(value)
 
 
 class TestWorkersOption:
