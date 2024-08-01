@@ -6,9 +6,25 @@ from typing import TYPE_CHECKING
 
 from numpy import datetime_data
 from typing_extensions import override
-from whenever import DateTimeDelta, microseconds
+from whenever import Date, DateTimeDelta, LocalDateTime, ZonedDateTime, microseconds
 
 from utilities.datetime import _DAYS_PER_YEAR, get_months
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+
+if TYPE_CHECKING:
+    from zoneinfo import ZoneInfo
+
+
+def ensure_date(date: dt.date | str, /) -> dt.date:
+    """Ensure the object is a date."""
+    return date if isinstance(date, dt.date) else parse_date(date)
+
+
+def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
+    """Ensure the object is a local datetime."""
+    if isinstance(datetime, dt.datetime):
+        return datetime
+    return parse_local_datetime(datetime)
 
 
 def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
@@ -16,6 +32,42 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     if isinstance(timedelta, dt.timedelta):
         return timedelta
     return parse_timedelta(timedelta)
+
+
+def parse_date(date: str, /) -> dt.date:
+    """Parse a string into a date."""
+    try:
+        delta = Date.parse_common_iso(date)
+    except ValueError:
+        raise ParseDateError(date=date) from None
+    return delta.py_date()
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseDateError(Exception):
+    date: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse date; got {self.date!r}"
+
+
+def parse_local_datetime(datetime: str, /) -> dt.datetime:
+    """Parse a string into a local datetime."""
+    try:
+        ldt = LocalDateTime.parse_common_iso(datetime)
+    except ValueError:
+        raise ParseLocalDateTimeError(datetime=datetime) from None
+    return ldt.py_datetime()
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseLocalDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse local datetime; got {self.datetime!r}"
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
@@ -59,6 +111,18 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
         return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
 
 
+def serialize_date(date: dt.date, /) -> str:
+    """Serialize a date."""
+    if isinstance(date, dt.datetime):
+        return serialize_date(date.date())
+    return Date.from_py_date(date).format_common_iso()
+
+
+def serialize_local_datetime(datetime: dt.datetime, /) -> str:
+    """Serialize a local datetime."""
+    return LocalDateTime.from_py_datetime(datetime).format_common_iso()
+
+
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
     return str(_to_datetime_delta(timedelta))
@@ -74,8 +138,15 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
 
 
 __all__ = [
+    "ParseDateError",
+    "ParseLocalDateTimeError",
     "ParseTimedeltaError",
+    "ensure_date",
+    "ensure_local_datetime",
     "ensure_timedelta",
+    "parse_date",
+    "parse_local_datetime",
     "parse_timedelta",
+    "serialize_date",
     "serialize_timedelta",
 ]

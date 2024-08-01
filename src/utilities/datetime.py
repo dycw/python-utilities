@@ -82,11 +82,6 @@ def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     return duration
 
 
-def ensure_date(date: dt.date | str, /) -> dt.date:
-    """Ensure the object is a date."""
-    return date if isinstance(date, dt.date) else parse_date(date)
-
-
 def ensure_datetime(
     datetime: dt.datetime | str, /, *, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
@@ -104,9 +99,6 @@ def ensure_month(month: Month | str, /) -> Month:
 def ensure_time(time: dt.time | str, /) -> dt.time:
     """Ensure the object is a time."""
     return time if isinstance(time, dt.time) else parse_time(time)
-
-
-
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
@@ -316,28 +308,6 @@ MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 
 
-def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
-    """Parse a string into a date."""
-    with suppress(ValueError):
-        return dt.date.fromisoformat(date)
-    time_zone_use = ensure_time_zone(time_zone)
-    for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
-        try:
-            return dt.datetime.strptime(date, fmt).replace(tzinfo=time_zone_use).date()
-        except ValueError:
-            pass
-    raise ParseDateError(date=date)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateError(Exception):
-    date: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
-
-
 def parse_datetime(datetime: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
     """Parse a string into a datetime."""
     time_zone_use = ensure_time_zone(time_zone)
@@ -431,18 +401,6 @@ def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
     return date
 
 
-def serialize_date(date: dt.date, /) -> str:
-    """Serialize a date."""
-    if isinstance(date, dt.datetime):
-        return serialize_date(date.date())
-    return date.isoformat()
-
-
-def serialize_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a datetime."""
-    return datetime.isoformat()
-
-
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
@@ -451,14 +409,6 @@ def serialize_month(month: Month, /) -> str:
 def serialize_time(time: dt.time, /) -> str:
     """Serialize a time."""
     return time.isoformat()
-
-
-def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
-    """Serialize a timedelta."""
-    if (days := timedelta.days) == 0:
-        return str(timedelta)
-    tail = serialize_timedelta(timedelta - dt.timedelta(days=days))
-    return f"d{days},{tail}"
 
 
 def yield_days(
@@ -560,7 +510,6 @@ __all__ = [
     "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
-    "ParseDateError",
     "ParseDateTimeError",
     "ParseMonthError",
     "ParseTimeError",
@@ -571,11 +520,9 @@ __all__ = [
     "date_to_month",
     "duration_to_float",
     "duration_to_timedelta",
-    "ensure_date",
     "ensure_datetime",
     "ensure_month",
     "ensure_time",
-    "ensure_timedelta",
     "format_datetime_local_and_utc",
     "get_half_years",
     "get_months",
@@ -589,17 +536,13 @@ __all__ = [
     "get_years",
     "is_weekday",
     "maybe_sub_pct_y",
-    "parse_date",
     "parse_datetime",
     "parse_month",
     "parse_time",
     "round_to_next_weekday",
     "round_to_prev_weekday",
-    "serialize_date",
-    "serialize_datetime",
     "serialize_month",
     "serialize_time",
-    "serialize_timedelta",
     "yield_days",
     "yield_weekdays",
 ]
