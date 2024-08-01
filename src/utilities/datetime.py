@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import sub
 from typing import TYPE_CHECKING, Any, Self, TypeGuard, assert_never
@@ -296,39 +295,6 @@ MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
 
 
-def parse_datetime(datetime: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
-    """Parse a string into a datetime."""
-    time_zone_use = ensure_time_zone(time_zone)
-    with suppress(ValueError):
-        return dt.datetime.fromisoformat(datetime).replace(tzinfo=time_zone_use)
-    for fmt in [
-        "%Y%m%d",
-        "%Y%m%dT%H",
-        "%Y%m%dT%H%M",
-        "%Y%m%dT%H%M%S",
-        "%Y%m%dT%H%M%S.%f",
-    ]:
-        try:
-            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=time_zone_use)
-        except ValueError:
-            pass
-    for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
-        try:
-            return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
-        except ValueError:
-            pass
-    raise ParseDateTimeError(datetime=datetime)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse datetime; got {self.datetime!r}"
-
-
 def parse_month(month: str, /) -> Month:
     """Parse a string into a month."""
     for fmt in ["%Y-%m", "%Y%m", "%Y %m"]:
@@ -472,7 +438,6 @@ __all__ = [
     "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
-    "ParseDateTimeError",
     "ParseMonthError",
     "YieldDaysError",
     "YieldWeekdaysError",
@@ -497,7 +462,6 @@ __all__ = [
     "is_weekday",
     "is_zoned_datetime",
     "maybe_sub_pct_y",
-    "parse_datetime",
     "parse_month",
     "round_to_next_weekday",
     "round_to_prev_weekday",
