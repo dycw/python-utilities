@@ -241,31 +241,29 @@ def _object_hook(
         case _Class.date:
             return _object_hook_date(value)
         case _Class.decimal:
-            return Decimal(cast(str, value))
+            return Decimal(value)
         case _Class.dict:
-            return dict(cast(list[list[Any]], value))
+            return dict(value)
+        case _Class.fraction:
+            return _object_hook_fraction(value)
+        case _Class.frozenset:
+            return frozenset(value)
+        case _Class.ipv4address:
+            return IPv4Address(value)
+        case _Class.ipv6address:
+            return IPv6Address(value)
         case _Class.local_datetime:
             return _object_hook_local_datetime(value)
-        case _Class.time:
-            return _object_hook_time(cast(str, value))
-        case _Class.timedelta:
-            return _object_hook_timedelta(cast(str, value))
-        case _Class.fraction:
-            numerator, denominator = cast(list[int], value)
-            return Fraction(numerator=numerator, denominator=denominator)
-        case _Class.frozenset:
-            return frozenset(cast(list[Any], value))
-        case _Class.ipv4address:
-            return IPv4Address(cast(str, value))
-        case _Class.ipv6address:
-            return IPv6Address(cast(str, value))
         case _Class.path:
-            return Path(cast(str, value))
+            return Path(value)
         case _Class.set:
-            return set(cast(list[Any], value))
+            return set(value)
         case _Class.slice:
-            start, stop, step = cast(list[int | None], value)
-            return slice(start, stop, step)
+            return _object_hook_slice(value)
+        case _Class.time:
+            return _object_hook_time(value)
+        case _Class.timedelta:
+            return _object_hook_timedelta(value)
         case _Class.tuple:
             return tuple(value)
         case _Class.uuid:
@@ -291,6 +289,11 @@ def _object_hook_complex(value: tuple[int, int], /) -> complex:
     return complex(real, imag)
 
 
+def _object_hook_fraction(value: tuple[int, int], /) -> Fraction:
+    numerator, denominator = value
+    return Fraction(numerator=numerator, denominator=denominator)
+
+
 def _object_hook_date(value: str, /) -> dt.date:
     from utilities.whenever import parse_date
 
@@ -303,10 +306,27 @@ def _object_hook_local_datetime(value: str, /) -> dt.date:
     return parse_local_datetime(value)
 
 
-def _object_hook_sqlalchemy_engine(value: str, /) -> dt.date:
+def _object_hook_slice(value: tuple[int | None, int | None, int | None], /) -> slice:
+    start, stop, step = value
+    return slice(start, stop, step)
+
+
+def _object_hook_sqlalchemy_engine(value: str, /) -> Any:
     from sqlalchemy import create_engine
 
     return create_engine(value)
+
+
+def _object_hook_time(value: str, /) -> dt.time:
+    from utilities.whenever import parse_time
+
+    return parse_time(value)
+
+
+def _object_hook_timedelta(value: str, /) -> dt.timedelta:
+    from utilities.whenever import parse_timedelta
+
+    return parse_timedelta(value)
 
 
 def _object_hook_zoned_datetime(value: str, /) -> dt.date:
