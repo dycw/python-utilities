@@ -85,7 +85,7 @@ from utilities.hypothesis import (
     text_ascii,
     text_clean,
     text_printable,
-    timedeltas_ser,
+    timedeltas_2w,
     timestamps,
     uint32s,
     uint64s,
@@ -105,7 +105,10 @@ from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
+    MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
+    MIN_TWO_WAY_TIMEDELTA,
+    parse_timedelta,
     serialize_timedelta,
 )
 from utilities.zoneinfo import UTC
@@ -1034,14 +1037,14 @@ class TestTextPrintable:
             assert text != "NA"
 
 
-class TestTimedeltasSer:
+class TestTimeDeltas2W:
     @given(
         data=data(),
         min_value=timedeltas(
-            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
+            min_value=MIN_TWO_WAY_TIMEDELTA, max_value=MAX_TWO_WAY_TIMEDELTA
         ),
         max_value=timedeltas(
-            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
+            min_value=MIN_TWO_WAY_TIMEDELTA, max_value=MAX_TWO_WAY_TIMEDELTA
         ),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
@@ -1049,8 +1052,9 @@ class TestTimedeltasSer:
         self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
     ) -> None:
         _ = assume(min_value <= max_value)
-        timedelta = data.draw(timedeltas_ser(min_value=min_value, max_value=max_value))
-        _ = serialize_timedelta(timedelta)
+        timedelta = data.draw(timedeltas_2w(min_value=min_value, max_value=max_value))
+        ser = serialize_timedelta(timedelta)
+        _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
 
 

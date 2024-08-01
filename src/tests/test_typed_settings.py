@@ -32,6 +32,7 @@ from utilities.hypothesis import (
     sqlite_engines,
     temp_paths,
     text_ascii,
+    timedeltas_2w,
 )
 from utilities.pathlib import ensure_path
 from utilities.pytest import skipif_windows
@@ -92,11 +93,15 @@ class TestClickOptions:
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas(), serialize_timedelta, marks=mark.only),
+            param(
+                dt.timedelta,
+                timedeltas_2w(),
+                serialize_timedelta,
+                marks=mark.only,
+            ),
             param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
         ],
     )
-    @reproduce_failure("6.108.5", b"AXicY2QgCvA7OUAYAAS3AJM=")
     def test_main(
         self,
         *,
@@ -191,7 +196,7 @@ class TestLoadSettings:
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas(), serialize_timedelta),
+            param(dt.timedelta, timedeltas_2w(), serialize_timedelta),
         ],
     )
     def test_main(

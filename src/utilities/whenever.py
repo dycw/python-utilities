@@ -4,7 +4,14 @@ import datetime as dt
 from dataclasses import dataclass
 
 from typing_extensions import override
-from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
+from whenever import (
+    Date,
+    DateTimeDelta,
+    LocalDateTime,
+    Time,
+    ZonedDateTime,
+    microseconds,
+)
 
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
@@ -17,6 +24,8 @@ from utilities.zoneinfo import UTC
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
+MAX_TWO_WAY_TIMEDELTA = dt.timedelta(days=1000000, microseconds=-1)
+MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -270,7 +279,9 @@ class _ToDateTimeDeltaError(Exception):
 
 __all__ = [
     "MAX_SERIALIZABLE_TIMEDELTA",
+    "MAX_TWO_WAY_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
+    "MIN_TWO_WAY_TIMEDELTA",
     "ParseDateError",
     "ParseLocalDateTimeError",
     "ParseTimeError",

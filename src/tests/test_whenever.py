@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from re import escape
 
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -21,7 +21,9 @@ from utilities.datetime import _MICROSECONDS_PER_DAY, _MICROSECONDS_PER_SECOND
 from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
+    MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
+    MIN_TWO_WAY_TIMEDELTA,
     ParseDateError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
@@ -128,7 +130,8 @@ class TestParseAndSerializeTimedelta:
     def test_main(self, *, timedelta: dt.timedelta) -> None:
         with assume_does_not_raise(SerializeTimeDeltaError):
             serialized = serialize_timedelta(timedelta)
-        result = parse_timedelta(serialized)
+        with assume_does_not_raise(ParseTimedeltaError):
+            result = parse_timedelta(serialized)
         assert result == timedelta
 
     @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
@@ -146,6 +149,28 @@ class TestParseAndSerializeTimedelta:
             offset = MAX_SERIALIZABLE_TIMEDELTA + timedelta
         with raises(SerializeTimeDeltaError):
             _ = serialize_timedelta(offset)
+
+    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    def test_min_two_way(self, *, timedelta: dt.timedelta) -> None:
+        ser = serialize_timedelta(MIN_TWO_WAY_TIMEDELTA)
+        _ = parse_timedelta(ser)
+        with assume_does_not_raise(OverflowError):
+            offset = MIN_TWO_WAY_TIMEDELTA - timedelta
+        with assume_does_not_raise(SerializeTimeDeltaError):
+            ser2 = serialize_timedelta(offset)
+        with raises(ParseTimedeltaError):
+            _ = parse_timedelta(ser2)
+
+    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    def test_max_two_way(self, *, timedelta: dt.timedelta) -> None:
+        ser = serialize_timedelta(MAX_TWO_WAY_TIMEDELTA)
+        _ = parse_timedelta(ser)
+        with assume_does_not_raise(OverflowError):
+            offset = MAX_TWO_WAY_TIMEDELTA + timedelta
+        with assume_does_not_raise(SerializeTimeDeltaError):
+            ser2 = serialize_timedelta(offset)
+        with raises(ParseTimedeltaError):
+            _ = parse_timedelta(ser2)
 
     def test_error_parse(self) -> None:
         with raises(

@@ -883,22 +883,22 @@ def text_printable(
 
 
 @composite
-def timedeltas_ser(
+def timedeltas_2w(
     _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[dt.timedelta] | None = None,
     max_value: MaybeSearchStrategy[dt.timedelta] | None = None,
 ) -> dt.timedelta:
-    """Strategy for generating timedeltas which can be serialized."""
+    """Strategy for generating timedeltas which can be se/deserialized."""
     from utilities.whenever import (
-        MAX_SERIALIZABLE_TIMEDELTA,
-        MIN_SERIALIZABLE_TIMEDELTA,
+        MAX_TWO_WAY_TIMEDELTA,
+        MIN_TWO_WAY_TIMEDELTA,
     )
 
     draw = lift_draw(_draw)
-    min_value_use = MIN_SERIALIZABLE_TIMEDELTA if min_value is None else min_value
-    max_value_use = MAX_SERIALIZABLE_TIMEDELTA if max_value is None else max_value
+    min_value_use = MIN_TWO_WAY_TIMEDELTA if min_value is None else min_value
+    max_value_use = MAX_TWO_WAY_TIMEDELTA if max_value is None else max_value
     return draw(
         timedeltas(min_value=draw(min_value_use), max_value=draw(max_value_use))
     )
@@ -1080,7 +1080,7 @@ __all__ = [
     "text_ascii",
     "text_clean",
     "text_printable",
-    "timedeltas_ser",
+    "timedeltas_2w",
     "timestamps",
     "uint32s",
     "uint64s",
