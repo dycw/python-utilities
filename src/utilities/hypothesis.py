@@ -891,10 +891,7 @@ def timedeltas_2w(
     max_value: MaybeSearchStrategy[dt.timedelta] | None = None,
 ) -> dt.timedelta:
     """Strategy for generating timedeltas which can be se/deserialized."""
-    from utilities.whenever import (
-        MAX_TWO_WAY_TIMEDELTA,
-        MIN_TWO_WAY_TIMEDELTA,
-    )
+    from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 
     draw = lift_draw(_draw)
     min_value_use = MIN_TWO_WAY_TIMEDELTA if min_value is None else min_value

@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 
 from click import command, echo
 from click.testing import CliRunner
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -18,7 +18,6 @@ from hypothesis.strategies import (
     datetimes,
     integers,
     sampled_from,
-    timedeltas,
     times,
     tuples,
 )
@@ -27,13 +26,7 @@ from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
 
 from tests.conftest import FLAKY
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    sqlite_engines,
-    temp_paths,
-    text_ascii,
-    timedeltas_2w,
-)
+from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii, timedeltas_2w
 from utilities.pathlib import ensure_path
 from utilities.pytest import skipif_windows
 from utilities.sqlalchemy import serialize_engine
@@ -45,7 +38,6 @@ from utilities.typed_settings import (
     load_settings,
 )
 from utilities.whenever import (
-    SerializeTimeDeltaError,
     serialize_date,
     serialize_local_datetime,
     serialize_time,
@@ -85,7 +77,7 @@ class TestClickField:
 
 
 class TestClickOptions:
-    # @FLAKY
+    @FLAKY
     @given(data=data(), appname=app_names, root=temp_paths())
     @mark.parametrize(
         ("test_cls", "strategy", "serialize"),
@@ -93,12 +85,7 @@ class TestClickOptions:
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
-            param(
-                dt.timedelta,
-                timedeltas_2w(),
-                serialize_timedelta,
-                marks=mark.only,
-            ),
+            param(dt.timedelta, timedeltas_2w(), serialize_timedelta),
             param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
         ],
     )
@@ -137,11 +124,6 @@ class TestClickOptions:
         cfg: _T,
         /,
     ) -> None:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            default_str = serialize(default)
-            value_str = serialize(value)
-            cfg_str = serialize(cfg)
-
         @dataclass(frozen=True)
         class Config:
             value: test_cls = default
@@ -154,7 +136,7 @@ class TestClickOptions:
         runner = CliRunner()
         result = runner.invoke(cli1)
         assert result.exit_code == 0
-        assert result.stdout == f"value = {default_str}\n"
+        assert result.stdout == f"value = {serialize(default)}\n"
 
         val_str = serialize(value)
         result = runner.invoke(cli1, f'--value="{val_str}"')
@@ -162,6 +144,7 @@ class TestClickOptions:
         assert result.stdout == f"value = {val_str}\n"
 
         file = ensure_path(root, "file.toml")
+        cfg_str = serialize(cfg)
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
 

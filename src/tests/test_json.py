@@ -30,7 +30,6 @@ from hypothesis.strategies import (
     sets,
     slices,
     text,
-    timedeltas,
     times,
     tuples,
     uuids,
@@ -43,6 +42,7 @@ from utilities.hypothesis import (
     sqlite_engines,
     temp_paths,
     text_ascii,
+    timedeltas_2w,
 )
 from utilities.json import (
     _CLASS,
@@ -53,7 +53,6 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
-from utilities.whenever import ParseTimedeltaError, SerializeTimeDeltaError
 from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
@@ -80,7 +79,7 @@ class TestSerializeAndDeserialize:
             param(none()),
             param(temp_paths()),
             param(text()),
-            param(timedeltas()),
+            param(timedeltas_2w()),
             param(times()),
             param(uuids()),
         ],
@@ -221,13 +220,9 @@ class TestSerializeAndDeserialize:
     def _assert_standard(
         self, x: Any, y: Any, /, *, eq: Callable[[Any, Any], bool] = eq
     ) -> None:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            ser_x = serialize(x)
-        with assume_does_not_raise(ParseTimedeltaError):
-            deser_x = deserialize(ser_x)
-        assert eq(deser_x, x)
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            res = ser_x == serialize(y)
+        ser_x = serialize(x)
+        assert eq(deserialize(ser_x), x)
+        res = ser_x == serialize(y)
         expected = eq(x, y)
         assert res is expected
 

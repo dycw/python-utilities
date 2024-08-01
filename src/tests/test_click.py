@@ -22,7 +22,6 @@ from hypothesis.strategies import (
     lists,
     none,
     sampled_from,
-    timedeltas,
     times,
 )
 from pytest import mark, param
@@ -55,6 +54,7 @@ from utilities.hypothesis import (
     months,
     sqlite_engines,
     text_ascii,
+    timedeltas_2w,
 )
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
@@ -370,7 +370,7 @@ class TestParameters:
         param(
             Timedelta(),
             dt.timedelta,
-            timedeltas(min_value=dt.timedelta(0)),
+            timedeltas_2w(min_value=dt.timedelta(0)),
             serialize_timedelta,
             True,
         ),
@@ -398,7 +398,6 @@ class TestParameters:
         runner = CliRunner()
 
         value = data.draw(strategy)
-        value_str = self._try_serialize(serialize, value)
 
         @command()
         @argument("value", type=param)
@@ -408,6 +407,7 @@ class TestParameters:
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0
 
+        value_str = serialize(value)
         result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
         assert result.stdout == f"value = {value_str}\n"
@@ -429,7 +429,6 @@ class TestParameters:
         failable: bool,
     ) -> None:
         value = data.draw(strategy)
-        _ = self._try_serialize(serialize, value)
 
         @command()
         @option("--value", type=param, default=value)
