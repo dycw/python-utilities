@@ -104,9 +104,7 @@ from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items
 from utilities.whenever import (
-    MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
-    MIN_SERIALIZABLE_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
     parse_timedelta,
     serialize_timedelta,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from re import escape
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     data,

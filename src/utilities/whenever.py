@@ -4,14 +4,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 from typing_extensions import override
-from whenever import (
-    Date,
-    DateTimeDelta,
-    LocalDateTime,
-    Time,
-    ZonedDateTime,
-    microseconds,
-)
+from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,

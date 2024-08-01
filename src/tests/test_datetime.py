@@ -61,7 +61,9 @@ from utilities.datetime import (
     get_today_tokyo,
     get_years,
     is_equal_mod_tz,
+    is_local_datetime,
     is_weekday,
+    is_zoned_datetime,
     maybe_sub_pct_y,
     parse_month,
     round_to_next_weekday,
@@ -283,12 +285,40 @@ class TestIsEqualModTz:
         assert is_equal_mod_tz(aware, naive) == expected
 
 
+class TestIsLocalDateTime:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(dt.datetime(2000, 1, 1).astimezone(None), True),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_local_datetime(obj)
+        assert result is expected
+
+
 class TestIsWeekday:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+        assert result is expected
+
+
+class TestIsZonedDateTime:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(dt.datetime(2000, 1, 1).astimezone(None), False),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_zoned_datetime(obj)
         assert result is expected
 
 

@@ -398,7 +398,7 @@ python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.2
+pyviz-comms==3.0.3
     # via
     #   holoviews
     #   panel
