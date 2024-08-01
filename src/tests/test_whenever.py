@@ -15,8 +15,8 @@ from hypothesis.strategies import (
     timedeltas,
     times,
 )
-from pytest import raises
-from whenever import DateTimeDelta
+from pytest import mark, param, raises
+from whenever import DateTimeDelta, microseconds
 
 from utilities.datetime import get_years
 from utilities.hypothesis import assume_does_not_raise
@@ -131,8 +131,12 @@ class TestParseAndSerializeTimedelta:
         result = parse_timedelta(serialized)
         assert result == timedelta
 
+    @mark.only
     def test_example(self) -> None:
-        da = 1
+        timedelta = dt.timedelta(days=104250, microseconds=1)
+        serialized = serialize_timedelta(timedelta)
+        result = parse_timedelta(serialized)
+        assert result == timedelta
 
     def test_error_parse(self) -> None:
         with raises(
