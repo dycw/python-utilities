@@ -190,6 +190,13 @@ zzz-test-holoviews = [
   "xarray >= 2024.5.0, < 2024.6",
 ]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
+zzz-test-hypothesis = [
+  "numpy >= 2.0.1, < 2.1",
+  "pandas >= 2.2.2, < 2.3",
+  "semver >= 3.0.2, < 3.1",
+  "sqlalchemy >= 2.0.31, < 2.1",
+  "whenever >= 0.6.6, < 0.7",
+]
 zzz-test-ipython = ["ipython >= 8.24.0, < 8.25"]
 zzz-test-iterables = []
 zzz-test-json = [

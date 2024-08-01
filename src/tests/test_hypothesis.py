@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     just,
     none,
     sets,
+    timedeltas,
 )
 from luigi import Task
 from numpy import (
@@ -84,6 +85,7 @@ from utilities.hypothesis import (
     text_ascii,
     text_clean,
     text_printable,
+    timedeltas_ser,
     timestamps,
     uint32s,
     uint64s,
@@ -101,6 +103,11 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items
+from utilities.whenever import (
+    MAX_SERIALIZABLE_TIMEDELTA,
+    MIN_SERIALIZABLE_TIMEDELTA,
+    serialize_timedelta,
+)
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -186,8 +193,12 @@ class TestConcatenatedArrays:
 class TestDatesPd:
     @given(
         data=data(),
-        min_value=dates(min_value=TIMESTAMP_MIN_AS_DATE),
-        max_value=dates(max_value=TIMESTAMP_MAX_AS_DATE),
+        min_value=dates(
+            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
+        ),
+        max_value=dates(
+            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
+        ),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
@@ -202,8 +213,12 @@ class TestDatesPd:
 class TestDatetimesPd:
     @given(
         data=data(),
-        min_value=datetimes_utc(min_value=TIMESTAMP_MIN_AS_DATETIME),
-        max_value=datetimes_utc(max_value=TIMESTAMP_MAX_AS_DATETIME),
+        min_value=datetimes_utc(
+            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
+        ),
+        max_value=datetimes_utc(
+            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
+        ),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
@@ -1019,11 +1034,35 @@ class TestTextPrintable:
             assert text != "NA"
 
 
+class TestTimedeltasSer:
+    @given(
+        data=data(),
+        min_value=timedeltas(
+            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
+        ),
+        max_value=timedeltas(
+            min_value=MIN_SERIALIZABLE_TIMEDELTA, max_value=MAX_SERIALIZABLE_TIMEDELTA
+        ),
+    )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_main(
+        self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        timedelta = data.draw(timedeltas_ser(min_value=min_value, max_value=max_value))
+        _ = serialize_timedelta(timedelta)
+        assert min_value <= timedelta <= max_value
+
+
 class TestTimestamps:
     @given(
         data=data(),
-        min_value=datetimes_utc(min_value=TIMESTAMP_MIN_AS_DATETIME),
-        max_value=datetimes_utc(max_value=TIMESTAMP_MAX_AS_DATETIME),
+        min_value=datetimes_utc(
+            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
+        ),
+        max_value=datetimes_utc(
+            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
+        ),
         allow_nanoseconds=booleans(),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})

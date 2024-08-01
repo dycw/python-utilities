@@ -15,6 +15,9 @@ from utilities.iterables import one
 from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
+MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
+MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
+
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
     """Ensure the object is a date."""
@@ -266,6 +269,8 @@ class _ToDateTimeDeltaError(Exception):
 
 
 __all__ = [
+    "MAX_SERIALIZABLE_TIMEDELTA",
+    "MIN_SERIALIZABLE_TIMEDELTA",
     "ParseDateError",
     "ParseLocalDateTimeError",
     "ParseTimeError",

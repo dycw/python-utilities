@@ -134,7 +134,7 @@ class TestClickOptions:
     ) -> None:
         with assume_does_not_raise(SerializeTimeDeltaError):
             default_str = serialize(default)
-            _ = serialize(value)
+            value_str = serialize(value)
             cfg_str = serialize(cfg)
 
         @dataclass(frozen=True)

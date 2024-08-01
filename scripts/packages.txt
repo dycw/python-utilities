@@ -24,6 +24,7 @@ hashlib
 hatch
 holoviews
 humps
+hypothesis
 ipython
 iterables
 json

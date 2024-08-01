@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from re import escape
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -20,6 +20,8 @@ from whenever import DateTimeDelta
 from utilities.datetime import _MICROSECONDS_PER_DAY, _MICROSECONDS_PER_SECOND
 from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
+    MAX_SERIALIZABLE_TIMEDELTA,
+    MIN_SERIALIZABLE_TIMEDELTA,
     ParseDateError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
@@ -128,6 +130,22 @@ class TestParseAndSerializeTimedelta:
             serialized = serialize_timedelta(timedelta)
         result = parse_timedelta(serialized)
         assert result == timedelta
+
+    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    def test_min_serializable(self, *, timedelta: dt.timedelta) -> None:
+        _ = serialize_timedelta(MIN_SERIALIZABLE_TIMEDELTA)
+        with assume_does_not_raise(OverflowError):
+            offset = MIN_SERIALIZABLE_TIMEDELTA - timedelta
+        with raises(SerializeTimeDeltaError):
+            _ = serialize_timedelta(offset)
+
+    @given(timedelta=timedeltas(min_value=dt.timedelta(microseconds=1)))
+    def test_max_serializable(self, *, timedelta: dt.timedelta) -> None:
+        _ = serialize_timedelta(MAX_SERIALIZABLE_TIMEDELTA)
+        with assume_does_not_raise(OverflowError):
+            offset = MAX_SERIALIZABLE_TIMEDELTA + timedelta
+        with raises(SerializeTimeDeltaError):
+            _ = serialize_timedelta(offset)
 
     def test_error_parse(self) -> None:
         with raises(
