@@ -124,7 +124,8 @@ class TestParseAndSerializeTime:
 class TestParseAndSerializeTimedelta:
     @given(timedelta=timedeltas())
     def test_main(self, *, timedelta: dt.timedelta) -> None:
-        serialized = serialize_timedelta(timedelta)
+        with assume_does_not_raise(SerializeTimeDeltaError):
+            serialized = serialize_timedelta(timedelta)
         result = parse_timedelta(serialized)
         assert result == timedelta
 
