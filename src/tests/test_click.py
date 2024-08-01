@@ -390,8 +390,6 @@ class TestParameters:
     ) -> None:
         runner = CliRunner()
 
-        value = data.draw(strategy)
-
         @command()
         @argument("value", type=param)
         def cli(*, value: cls) -> None:
@@ -400,7 +398,7 @@ class TestParameters:
         result = CliRunner().invoke(cli, ["--help"])
         assert result.exit_code == 0
 
-        value_str = serialize(value)
+        value_str = serialize(data.draw(strategy))
         result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
         assert result.stdout == f"value = {value_str}\n"
