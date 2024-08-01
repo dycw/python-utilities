@@ -193,14 +193,8 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
     try:
         dtd = _to_datetime_delta(timedelta)
-    except _ToDateTimeDeltaTimeOverflowError as error:
-        raise _SerializeTimeDeltaOverflowError(timedelta=error.timedelta) from None
-    except _ToDateTimeDeltaTimeMicrosecondsError as error:
-        raise _SerializeTimeDeltaMicrosecondsError(
-            timedelta=error.timedelta, microseconds=error.microseconds
-        ) from None
-    dtd.in_months_days_secs_nanos()
-    dtd
+    except _ToDateTimeDeltaError as error:
+        raise SerializeTimeDeltaError(timedelta=error.timedelta) from None
     breakpoint()
     return dtd.format_common_iso()
 
@@ -209,21 +203,9 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 class SerializeTimeDeltaError(Exception):
     timedelta: dt.timedelta
 
-
-@dataclass(kw_only=True, slots=True)
-class _SerializeTimeDeltaOverflowError(SerializeTimeDeltaError):
     @override
     def __str__(self) -> str:
-        return f"Unable to serialize timedelta due to overflow; got {self.timedelta}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _SerializeTimeDeltaMicrosecondsError(SerializeTimeDeltaError):
-    microseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to serialize timedelta due to microseconds; got {self.microseconds}"
+        return f"Unable to serialize timedelta; got {self.timedelta}"
 
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
@@ -251,36 +233,23 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
     microseconds = int(1e6) * seconds + timedelta.microseconds
     try:
-        return DateTimeDelta(microseconds=microseconds)
+        return DateTimeDelta(days=timedelta.days, microseconds=timedelta.microseconds)
     except OverflowError:
-        raise _ToDateTimeDeltaTimeOverflowError(timedelta=timedelta) from None
+        raise _ToDateTimeDeltaError(timedelta=timedelta) from None
     except ValueError as error:
-        if ensure_str(one(error.args)) == "microseconds out of range":
-            raise _ToDateTimeDeltaTimeMicrosecondsError(
-                timedelta=timedelta, microseconds=microseconds
-            ) from None
+        msg = ensure_str(one(error.args))
+        if msg in {"Out of range", "microseconds out of range"}:
+            raise _ToDateTimeDeltaError(timedelta=timedelta) from None
         raise
 
 
 @dataclass(kw_only=True, slots=True)
-class _ToDateTimeDeltaTimeError(Exception):
+class _ToDateTimeDeltaError(Exception):
     timedelta: dt.timedelta
 
-
-@dataclass(kw_only=True, slots=True)
-class _ToDateTimeDeltaTimeOverflowError(_ToDateTimeDeltaTimeError):
     @override
     def __str__(self) -> str:
-        return f"Unable to create DateTimeDelta due to overflow; got {self.timedelta}"
-
-
-@dataclass(kw_only=True, slots=True)
-class _ToDateTimeDeltaTimeMicrosecondsError(_ToDateTimeDeltaTimeError):
-    microseconds: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to create DateTimeDelta due to microseconds; got {self.microseconds}"
+        return f"Unable to create DateTimeDelta; got {self.timedelta}"
 
 
 __all__ = [
