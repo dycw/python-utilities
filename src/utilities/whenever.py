@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
+from re import search
 from typing import TYPE_CHECKING
 
 from numpy import datetime_data
@@ -9,6 +10,8 @@ from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, ZonedDateTime, microseconds
 
 from utilities.datetime import _DAYS_PER_YEAR, get_months
+from utilities.iterables import one
+from utilities.text import ensure_str
 from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -155,7 +158,20 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a zoned datetime."""
-    return ZonedDateTime.from_py_datetime(datetime).format_common_iso()
+    try:
+        zdt = ZonedDateTime.from_py_datetime(datetime)
+    except ValueError:
+        raise SerializeZonedDateTimeError(datetime=datetime) from None
+    return zdt.format_common_iso()
+
+
+@dataclass(kw_only=True, slots=True)
+class SerializeZonedDateTimeError(Exception):
+    datetime: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize zoned datetime; got {self.datetime}"
 
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:

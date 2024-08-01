@@ -22,17 +22,23 @@ from utilities.whenever import (
     ParseDateError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
+    ParseZonedDateTimeError,
+    SerializeZonedDateTimeError,
     _to_datetime_delta,
     ensure_date,
     ensure_local_datetime,
     ensure_timedelta,
+    ensure_zoned_datetime,
     parse_date,
     parse_local_datetime,
     parse_timedelta,
+    parse_zoned_datetime,
     serialize_date,
     serialize_local_datetime,
     serialize_timedelta,
+    serialize_zoned_datetime,
 )
+from utilities.zoneinfo import HONG_KONG, UTC
 
 
 class TestParseAndSerializeDate:
@@ -42,7 +48,7 @@ class TestParseAndSerializeDate:
         result = parse_date(serialized)
         assert result == date
 
-    def test_error(self) -> None:
+    def test_error_parse(self) -> None:
         with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
             _ = parse_date("invalid")
 
@@ -60,7 +66,14 @@ class TestParseAndSerializeLocalDateTime:
         result = parse_local_datetime(serialized)
         assert result == datetime
 
-    def test_error(self) -> None:
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseLocalDateTimeError,
+            match="Unable to parse local datetime; got 'invalid'",
+        ):
+            _ = parse_local_datetime("invalid")
+
+    def test_error_serialize(self) -> None:
         with raises(
             ParseLocalDateTimeError,
             match="Unable to parse local datetime; got 'invalid'",
@@ -91,7 +104,7 @@ class TestParseAndSerializeTimedelta:
         ):
             _ = parse_timedelta("invalid")
 
-    def test_error_nano_seconds(self) -> None:
+    def test_error_parse_nano_seconds(self) -> None:
         with raises(
             ParseTimedeltaError, match="Unable to parse timedelta; got 333 nanoseconds"
         ):
@@ -107,6 +120,37 @@ class TestParseAndSerializeTimedelta:
         )
         result = ensure_timedelta(str_or_value)
         assert result == timedelta
+
+
+class TestParseAndSerializeZonedDateTime:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        serialized = serialize_zoned_datetime(datetime)
+        result = parse_zoned_datetime(serialized)
+        assert result == datetime
+
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseZonedDateTimeError,
+            match="Unable to parse zoned datetime; got 'invalid'",
+        ):
+            _ = parse_zoned_datetime("invalid")
+
+    def test_error_serialize(self) -> None:
+        datetime = dt.datetime(2000, 1, 1).astimezone(None)
+        with raises(
+            SerializeZonedDateTimeError,
+            match="Unable to serialize zoned datetime; got 2000-01-01 00:00:00",
+        ):
+            _ = serialize_zoned_datetime(datetime)
+
+    @given(data=data(), datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
+    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
+        str_or_value = data.draw(
+            sampled_from([datetime, serialize_zoned_datetime(datetime)])
+        )
+        result = ensure_zoned_datetime(str_or_value)
+        assert result == datetime
 
 
 class TestToDatetimeDelta:
