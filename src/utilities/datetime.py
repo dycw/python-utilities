@@ -4,7 +4,7 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Never, Self, TypeGuard, assert_never, cast
+from typing import TYPE_CHECKING, Any, Self, TypeGuard, assert_never
 
 from typing_extensions import override
 
@@ -208,15 +208,11 @@ YEAR = get_years(n=1)
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    match x_aware, y_aware:
-        case (False, False) | (True, True):
-            return x == y
-        case True, False:
-            return x.astimezone(UTC).replace(tzinfo=None) == y
-        case False, True:
-            return x == y.astimezone(UTC).replace(tzinfo=None)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison] pragma: no cover
-            assert_never(cast(Never, never))  # pyright: ignore[reportUnnecessaryCast]
+    if x_aware and not y_aware:
+        return x.astimezone(UTC).replace(tzinfo=None) == y
+    if not x_aware and y_aware:
+        return x == y.astimezone(UTC).replace(tzinfo=None)
+    return x == y
 
 
 def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
