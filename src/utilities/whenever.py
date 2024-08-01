@@ -238,8 +238,10 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     if total_micro == 0:
         return DateTimeDelta()
     if total_micro >= 1:
+        days, rem_after_day = divmod(total_micro, _MICROSECONDS_PER_DAY)
+        seconds, microseconds = divmod(rem_after_day, _MICROSECONDS_PER_SECOND)
         try:
-            dtd = DateTimeDelta(microseconds=total_micro)
+            dtd = DateTimeDelta(days=days, seconds=seconds, microseconds=microseconds)
         except OverflowError:
             raise _ToDateTimeDeltaError(timedelta=timedelta) from None
         except ValueError as error:
