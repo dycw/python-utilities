@@ -8,28 +8,12 @@ import click
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
-from utilities.datetime import (
-    ParseDateTimeError,
-    ParseMonthError,
-    ParseTimeError,
-    ensure_datetime,
-    ensure_month,
-    ensure_time,
-    parse_month,
-)
+from utilities.datetime import ParseMonthError, ensure_month
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.whenever import (
-    ParseDateError,
-    ParseTimedeltaError,
-    ensure_date,
-    ensure_timedelta,
-    parse_date,
-    parse_timedelta,
-)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -50,35 +34,21 @@ ExistingDirPath = click.Path(
 )
 
 
-class Date(ParamType):
-    """A date-valued parameter."""
+class LocalDateTime(ParamType):
+    """A local-datetime-valued parameter."""
 
-    name = "date"
-
-    @override
-    def convert(
-        self, value: dt.date | str, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
-        """Convert a value into the `Date` type."""
-        try:
-            return ensure_date(value)
-        except ParseDateError:
-            self.fail(f"Unable to parse {value}", param, ctx)
-
-
-class DateTime(ParamType):
-    """A datetime-valued parameter."""
-
-    name = "datetime"
+    name = "local datetime"
 
     @override
     def convert(
         self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
-        """Convert a value into the `DateTime` type."""
+        """Convert a value into the `LocalDateTime` type."""
+        from utilities.whenever import ParseLocalDateTimeError, ensure_local_datetime
+
         try:
-            return ensure_datetime(value)
-        except ParseDateTimeError:
+            return ensure_local_datetime(value)
+        except ParseLocalDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -193,8 +163,11 @@ class ListDates(ParamType):
         self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
     ) -> list[dt.date]:
         """Convert a value into the `ListDates` type."""
+        from utilities.whenever import ParseDateError, parse_date
+
         if isinstance(value, list):
             return value
+
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(parse_date, strs))
@@ -326,6 +299,8 @@ class Time(ParamType):
         self, value: dt.time | str, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
+        from utilities.whenever import ParseTimeError, ensure_time
+
         try:
             return ensure_time(value)
         except ParseTimeError:
@@ -342,9 +317,29 @@ class Timedelta(ParamType):
         self, value: dt.timedelta | str, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
+        from utilities.whenever import ParseTimedeltaError, ensure_timedelta
+
         try:
             return ensure_timedelta(value)
         except ParseTimedeltaError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class ZonedDateTime(ParamType):
+    """A zoned-datetime-valued parameter."""
+
+    name = "zoned datetime"
+
+    @override
+    def convert(
+        self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
+    ) -> dt.date:
+        """Convert a value into the `DateTime` type."""
+        from utilities.whenever import ParseZonedDateTimeError, ensure_zoned_datetime
+
+        try:
+            return ensure_zoned_datetime(value)
+        except ParseZonedDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -404,8 +399,6 @@ class Engine(ParamType):
 
 
 __all__ = [
-    "Date",
-    "DateTime",
     "DirPath",
     "Engine",
     "Enum",
@@ -417,9 +410,11 @@ __all__ = [
     "ListInts",
     "ListMonths",
     "ListStrs",
+    "LocalDateTime",
     "Month",
     "Time",
     "Timedelta",
+    "ZonedDateTime",
     "local_scheduler_option_default_central",
     "local_scheduler_option_default_local",
     "log_level_option",

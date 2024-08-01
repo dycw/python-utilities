@@ -25,7 +25,7 @@ from typed_settings.types import AUTO, _Auto
 from typing_extensions import override
 
 import utilities.click
-from utilities.click import Date, DateTime, Time, Timedelta
+from utilities.click import Date, LocalDateTime, Time, Timedelta
 from utilities.datetime import (
     ensure_date,
     ensure_time,
@@ -168,7 +168,7 @@ def click_options(
 def _make_click_handler() -> ClickHandler:
     """Make the click handler."""
     cases: list[tuple[type[Any], type[ParamType], Callable[[Any], str]]] = [
-        (dt.datetime, DateTime, serialize_datetime),
+        (dt.datetime, LocalDateTime, serialize_datetime),
         (dt.date, Date, serialize_date),
         (dt.time, Time, serialize_time),
         (dt.timedelta, Timedelta, str),

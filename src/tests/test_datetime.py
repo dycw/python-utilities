@@ -45,7 +45,6 @@ from utilities.datetime import (
     FormatDatetimeLocalAndUTCError,
     Month,
     MonthError,
-    ParseDateTimeError,
     ParseMonthError,
     ParseTimeError,
     YieldDaysError,
@@ -75,11 +74,9 @@ from utilities.datetime import (
     parse_time,
     round_to_next_weekday,
     round_to_prev_weekday,
-    serialize_date,
     serialize_datetime,
     serialize_month,
     serialize_time,
-    serialize_timedelta,
     yield_days,
     yield_weekdays,
 )
@@ -175,10 +172,7 @@ class TestEnsure:
     @given(data=data())
     @mark.parametrize(
         ("strategy", "func"),
-        [
-            param(months(), ensure_month),
-            param(times(), ensure_time),
-        ],
+        [param(months(), ensure_month), param(times(), ensure_time)],
     )
     def test_main(
         self,

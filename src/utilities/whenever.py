@@ -2,20 +2,11 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from re import search
-from typing import TYPE_CHECKING
 
-from numpy import datetime_data
 from typing_extensions import override
-from whenever import Date, DateTimeDelta, LocalDateTime, ZonedDateTime, microseconds
+from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
-from utilities.datetime import _DAYS_PER_YEAR, get_months
-from utilities.iterables import one
-from utilities.text import ensure_str
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
-
-if TYPE_CHECKING:
-    from zoneinfo import ZoneInfo
+from utilities.datetime import get_months
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -28,6 +19,11 @@ def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     if isinstance(datetime, dt.datetime):
         return datetime
     return parse_local_datetime(datetime)
+
+
+def ensure_time(time: dt.time | str, /) -> dt.time:
+    """Ensure the object is a time."""
+    return time if isinstance(time, dt.time) else parse_time(time)
 
 
 def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
@@ -47,10 +43,10 @@ def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
 def parse_date(date: str, /) -> dt.date:
     """Parse a string into a date."""
     try:
-        delta = Date.parse_common_iso(date)
+        w_date = Date.parse_common_iso(date)
     except ValueError:
         raise ParseDateError(date=date) from None
-    return delta.py_date()
+    return w_date.py_date()
 
 
 @dataclass(kw_only=True, slots=True)
@@ -78,6 +74,24 @@ class ParseLocalDateTimeError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse local datetime; got {self.datetime!r}"
+
+
+def parse_time(time: str, /) -> dt.time:
+    """Parse a string into a time."""
+    try:
+        w_time = Time.parse_common_iso(time)
+    except ValueError:
+        raise ParseTimeError(time=time) from None
+    return w_time.py_time()
+
+
+@dataclass(kw_only=True, slots=True)
+class ParseTimeError(Exception):
+    time: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse time; got {self.time!r}"
 
 
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
@@ -164,9 +178,14 @@ class SerializeLocalDateTimeError(Exception):
         return f"Unable to serialize local datetime; got {self.datetime}"
 
 
+def serialize_time(time: dt.time, /) -> str:
+    """Serialize a time."""
+    return Time.from_py_time(time).format_common_iso()
+
+
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
-    return str(_to_datetime_delta(timedelta))
+    return _to_datetime_delta(timedelta).format_common_iso()
 
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
@@ -191,28 +210,30 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
     total_seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
     total_micros = int(1e6) * total_seconds + timedelta.microseconds
-    return DateTimeDelta(
-        microseconds=total_micros,
-    )
+    return DateTimeDelta(microseconds=total_micros)
 
 
 __all__ = [
     "ParseDateError",
     "ParseLocalDateTimeError",
+    "ParseTimeError",
     "ParseTimedeltaError",
     "ParseZonedDateTimeError",
     "SerializeLocalDateTimeError",
     "SerializeZonedDateTimeError",
     "ensure_date",
     "ensure_local_datetime",
+    "ensure_time",
     "ensure_timedelta",
     "ensure_zoned_datetime",
     "parse_date",
     "parse_local_datetime",
+    "parse_time",
     "parse_timedelta",
     "parse_zoned_datetime",
     "serialize_date",
     "serialize_local_datetime",
+    "serialize_time",
     "serialize_timedelta",
     "serialize_zoned_datetime",
 ]

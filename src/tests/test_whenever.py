@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import datetime as dt
 from re import escape
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -14,11 +14,10 @@ from hypothesis.strategies import (
     sampled_from,
     timedeltas,
 )
-from pytest import mark, param, raises
+from pytest import raises
 from whenever import DateTimeDelta
 
-from utilities.click import DateTime
-from utilities.datetime import _DAYS_PER_YEAR, get_now, get_years
+from utilities.datetime import get_years
 from utilities.whenever import (
     ParseDateError,
     ParseLocalDateTimeError,

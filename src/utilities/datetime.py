@@ -82,23 +82,9 @@ def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     return duration
 
 
-def ensure_datetime(
-    datetime: dt.datetime | str, /, *, time_zone: ZoneInfo | str = UTC
-) -> dt.datetime:
-    """Ensure the object is a datetime."""
-    if isinstance(datetime, dt.datetime):
-        return datetime
-    return parse_datetime(datetime, time_zone=time_zone)
-
-
 def ensure_month(month: Month | str, /) -> Month:
     """Ensure the object is a month."""
     return month if isinstance(month, Month) else parse_month(month)
-
-
-def ensure_time(time: dt.time | str, /) -> dt.time:
-    """Ensure the object is a time."""
-    return time if isinstance(time, dt.time) else parse_time(time)
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
@@ -362,27 +348,6 @@ class ParseMonthError(Exception):
         return f"Unable to parse month; got {self.month!r}"
 
 
-def parse_time(time: str, /) -> dt.time:
-    """Parse a string into a time."""
-    with suppress(ValueError):
-        return dt.time.fromisoformat(time)
-    for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:
-        try:
-            return dt.datetime.strptime(time, fmt).replace(tzinfo=UTC).time()
-        except ValueError:
-            pass
-    raise ParseTimeError(time=time)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimeError(Exception):
-    time: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse time; got {self.time!r}"
-
-
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, is_next=True)
@@ -404,11 +369,6 @@ def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
-
-
-def serialize_time(time: dt.time, /) -> str:
-    """Serialize a time."""
-    return time.isoformat()
 
 
 def yield_days(
@@ -512,7 +472,6 @@ __all__ = [
     "MonthError",
     "ParseDateTimeError",
     "ParseMonthError",
-    "ParseTimeError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
@@ -520,9 +479,7 @@ __all__ = [
     "date_to_month",
     "duration_to_float",
     "duration_to_timedelta",
-    "ensure_datetime",
     "ensure_month",
-    "ensure_time",
     "format_datetime_local_and_utc",
     "get_half_years",
     "get_months",
@@ -538,11 +495,9 @@ __all__ = [
     "maybe_sub_pct_y",
     "parse_datetime",
     "parse_month",
-    "parse_time",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",
-    "serialize_time",
     "yield_days",
     "yield_weekdays",
 ]

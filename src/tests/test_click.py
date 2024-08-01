@@ -31,7 +31,6 @@ import utilities.click
 import utilities.datetime
 from utilities.click import (
     Date,
-    DateTime,
     DirPath,
     ExistingDirPath,
     ExistingFilePath,
@@ -41,6 +40,7 @@ from utilities.click import (
     ListInts,
     ListMonths,
     ListStrs,
+    LocalDateTime,
     Time,
     Timedelta,
     local_scheduler_option_default_central,
@@ -318,7 +318,7 @@ class TestParameters:
     cases = (
         param(Date(), dt.date, dates(), serialize_date, True),
         param(
-            DateTime(),
+            LocalDateTime(),
             dt.datetime,
             datetimes(timezones=just(UTC)),
             serialize_datetime,
