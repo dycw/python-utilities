@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from numpy import datetime_data
 from typing_extensions import override
-from whenever import DateTimeDelta
+from whenever import DateTimeDelta, microseconds
 
 from utilities.datetime import _DAYS_PER_YEAR, get_months
 
@@ -14,13 +14,14 @@ from utilities.datetime import _DAYS_PER_YEAR, get_months
 def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     """Parse a string into a timedelta."""
     try:
-        datetime = DateTimeDelta.parse_common_iso(timedelta)
+        delta = DateTimeDelta.parse_common_iso(timedelta)
     except ValueError:
         raise _ParseTimedeltaParseError(timedelta=timedelta) from None
-    months, days = datetime.date_part().in_months_days()
+    date_part = delta.date_part()
+    months, days = date_part.in_months_days()
     months_as_days = get_months(n=months).days
     total_days = months_as_days + days
-    time_part = datetime.time_part()
+    time_part = delta.time_part()
     _, nanoseconds = divmod(time_part.in_nanoseconds(), 1000)
     if nanoseconds != 0:
         raise _ParseTimedeltaNanosecondError(
@@ -51,4 +52,18 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
         return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
 
 
-__all__ = ["ParseTimedeltaError", "parse_timedelta"]
+def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
+    """Serialize a timedelta."""
+    return str(_to_datetime_delta(timedelta))
+
+
+def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
+    """Serialize a timedelta."""
+    total_seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
+    total_micros = int(1e6) * total_seconds + timedelta.microseconds
+    return DateTimeDelta(
+        microseconds=total_micros,
+    )
+
+
+__all__ = ["ParseTimedeltaError", "parse_timedelta", "serialize_timedelta"]

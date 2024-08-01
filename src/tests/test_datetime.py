@@ -48,7 +48,6 @@ from utilities.datetime import (
     ParseDateError,
     ParseDateTimeError,
     ParseMonthError,
-    ParseTimedeltaError,
     ParseTimeError,
     YieldDaysError,
     YieldWeekdaysError,

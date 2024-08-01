@@ -12,7 +12,6 @@ from utilities.datetime import (
     ParseDateError,
     ParseDateTimeError,
     ParseMonthError,
-    ParseTimedeltaError,
     ParseTimeError,
     ensure_date,
     ensure_datetime,
@@ -27,6 +26,7 @@ from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
+from utilities.whenever import ParseTimedeltaError
 
 if TYPE_CHECKING:
     import datetime as dt

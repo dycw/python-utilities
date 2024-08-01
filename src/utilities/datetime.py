@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Never, Self, assert_never, cast
 from typing_extensions import override
 
 from utilities.platform import SYSTEM, System
-from utilities.re import ExtractGroupsError, extract_groups
 from utilities.zoneinfo import (
     HONG_KONG,
     TOKYO,
