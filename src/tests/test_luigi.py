@@ -18,7 +18,8 @@ from hypothesis.strategies import (
     times,
     tuples,
 )
-from luigi import BoolParameter, Task
+from luigi import BoolParameter, Parameter, Task
+from pytest import mark, param
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 from typing_extensions import override
@@ -36,6 +37,9 @@ from utilities.luigi import (
     AwaitTask,
     AwaitTime,
     DatabaseTarget,
+    DateHourParameter,
+    DateMinuteParameter,
+    DateSecondParameter,
     EngineParameter,
     EnumParameter,
     ExternalFile,
@@ -53,7 +57,7 @@ from utilities.luigi import (
 )
 from utilities.pathlib import ensure_path
 from utilities.sqlalchemy import insert_items
-from utilities.whenever import serialize_date, serialize_time
+from utilities.whenever import serialize_date, serialize_time, serialize_zoned_datetime
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -143,6 +147,25 @@ class TestDatabaseTarget:
         insert_items(engine, (rows, table))
         expected = any(first == 0 for first, _ in rows)
         assert target.exists() is expected
+
+
+class TestDateTimeParameter:
+    @given(data=data(), datetime=datetimes_utc())
+    @mark.parametrize(
+        "param_cls",
+        [
+            param(DateHourParameter),
+            param(DateMinuteParameter),
+            param(DateSecondParameter),
+        ],
+    )
+    def test_main(
+        self, *, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+    ) -> None:
+        param = param_cls()
+        input_ = data.draw(sampled_from([datetime, serialize_zoned_datetime(datetime)]))
+        norm = param.normalize(input_)
+        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestEngineParameter:

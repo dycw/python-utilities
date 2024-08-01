@@ -9,20 +9,18 @@ from re import search
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 import luigi
-from luigi import (
-    DateSecondParameter,
-    Parameter,
-    PathParameter,
-    Target,
-    Task,
-    TaskParameter,
-)
+from luigi import Parameter, PathParameter, Target, Task, TaskParameter
 from luigi import build as _build
 from luigi.task import flatten
 from sqlalchemy.exc import DatabaseError
 from typing_extensions import override
 
-from utilities.datetime import get_now, round_to_next_weekday, round_to_prev_weekday
+from utilities.datetime import (
+    EPOCH_UTC,
+    get_now,
+    round_to_next_weekday,
+    round_to_prev_weekday,
+)
 from utilities.enum import ensure_enum, parse_enum
 from utilities.iterables import one
 from utilities.sentinel import sentinel
@@ -43,6 +41,81 @@ _STR_SENTINEL = str(sentinel)
 
 
 # parameters
+
+
+class DateHourParameter(luigi.DateHourParameter):
+    """A parameter which takes the value of an hourly `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        from utilities.whenever import ensure_zoned_datetime
+
+        return ensure_zoned_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        from utilities.whenever import parse_zoned_datetime
+
+        return parse_zoned_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        from utilities.whenever import serialize_zoned_datetime
+
+        return serialize_zoned_datetime(dt)
+
+
+class DateMinuteParameter(luigi.DateMinuteParameter):
+    """A parameter which takes the value of a minutely `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval=interval, start=EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        from utilities.whenever import ensure_zoned_datetime
+
+        return ensure_zoned_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        from utilities.whenever import parse_zoned_datetime
+
+        return parse_zoned_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        from utilities.whenever import serialize_zoned_datetime
+
+        return serialize_zoned_datetime(dt)
+
+
+class DateSecondParameter(luigi.DateSecondParameter):
+    """A parameter which takes the value of a secondly `dt.datetime`."""
+
+    def __init__(self, interval: int = 1, **kwargs: Any) -> None:
+        super().__init__(interval, EPOCH_UTC, **kwargs)
+
+    @override
+    def normalize(self, dt: dt.datetime | str) -> dt.datetime:
+        from utilities.whenever import ensure_zoned_datetime
+
+        return ensure_zoned_datetime(dt)
+
+    @override
+    def parse(self, s: str) -> dt.datetime:
+        from utilities.whenever import parse_zoned_datetime
+
+        return parse_zoned_datetime(s)
+
+    @override
+    def serialize(self, dt: dt.datetime) -> str:
+        from utilities.whenever import serialize_zoned_datetime
+
+        return serialize_zoned_datetime(dt)
 
 
 _E = TypeVar("_E", bound=Enum)
@@ -414,6 +487,9 @@ __all__ = [
     "AwaitTask",
     "AwaitTime",
     "DatabaseTarget",
+    "DateHourParameter",
+    "DateMinuteParameter",
+    "DateSecondParameter",
     "EngineParameter",
     "EnumParameter",
     "ExternalFile",

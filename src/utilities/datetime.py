@@ -278,12 +278,6 @@ class Month:
             return NotImplemented
         return self + (-other)
 
-    def isoformat(self) -> str:
-        return serialize_month(self)
-
-    def strftime(self, format_: str) -> str:
-        return self.to_date().strftime(format_)
-
     def to_date(self, /, *, day: int = 1) -> dt.date:
         return dt.date(self.year, self.month, day)
 

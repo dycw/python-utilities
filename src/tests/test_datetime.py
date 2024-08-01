@@ -14,7 +14,6 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
-    sampled_from,
     timedeltas,
     timezones,
 )
@@ -68,6 +67,7 @@ from utilities.datetime import (
     parse_month,
     round_to_next_weekday,
     round_to_prev_weekday,
+    serialize_month,
     yield_days,
     yield_weekdays,
 )
@@ -290,7 +290,7 @@ class TestIsLocalDateTime:
         ("obj", "expected"),
         [
             param(None, False),
-            param(dt.datetime(2000, 1, 1).astimezone(None), True),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), True),
             param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
         ],
     )
@@ -313,13 +313,12 @@ class TestIsZonedDateTime:
         ("obj", "expected"),
         [
             param(None, False),
-            param(dt.datetime(2000, 1, 1).astimezone(None), False),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), False),
             param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_zoned_datetime(obj)
-
         assert result is expected
 
 
@@ -384,25 +383,16 @@ class TestMonth:
             _ = Month(2000, 13)
 
 
-class TestParseMonth:
+class TestParseAndSerializeMonth:
     @given(month=months())
     def test_str(self, *, month: Month) -> None:
-        result = parse_month(str(month))
+        serialized = serialize_month(month)
+        result = parse_month(serialized)
         assert result == month
 
-    @given(month=months())
-    def test_isoformat(self, *, month: Month) -> None:
-        result = parse_month(month.isoformat())
-        assert result == month
-
-    @given(month=months(), fmt=sampled_from(["%Y%m", "%Y %m"]).map(maybe_sub_pct_y))
-    def test_various_formats(self, *, month: Month, fmt: str) -> None:
-        result = parse_month(month.strftime(fmt))
-        assert result == month
-
-    def test_error(self) -> None:
-        with raises(ParseMonthError, match="Unable to parse month; got 'error'"):
-            _ = parse_month("error")
+    def test_error_parse(self) -> None:
+        with raises(ParseMonthError, match="Unable to parse month; got 'invalid'"):
+            _ = parse_month("invalid")
 
 
 class TestRoundToWeekday:
