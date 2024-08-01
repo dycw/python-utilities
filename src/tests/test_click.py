@@ -59,7 +59,7 @@ from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
 from utilities.whenever import (
-    _ToDateTimeDeltaTimeError,
+    SerializeTimeDeltaError,
     serialize_date,
     serialize_local_datetime,
     serialize_time,
@@ -444,7 +444,7 @@ class TestParameters:
         _ = failable
 
     def _try_serialize(self, serialize: Callable[[Any], str], value: Any, /) -> str:
-        with assume_does_not_raise(_ToDateTimeDeltaTimeError):
+        with assume_does_not_raise(SerializeTimeDeltaError):
             return serialize(value)
 
 
