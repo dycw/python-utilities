@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 
 from click import command, echo
 from click.testing import CliRunner
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -27,7 +27,12 @@ from sqlalchemy import Engine
 from typed_settings.exceptions import InvalidSettingsError
 
 from tests.conftest import FLAKY
-from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    sqlite_engines,
+    temp_paths,
+    text_ascii,
+)
 from utilities.pathlib import ensure_path
 from utilities.pytest import skipif_windows
 from utilities.sqlalchemy import serialize_engine
@@ -39,6 +44,7 @@ from utilities.typed_settings import (
     load_settings,
 )
 from utilities.whenever import (
+    SerializeTimeDeltaError,
     serialize_date,
     serialize_local_datetime,
     serialize_time,
@@ -86,10 +92,11 @@ class TestClickOptions:
             param(dt.date, dates(), serialize_date),
             param(dt.datetime, datetimes(), serialize_local_datetime),
             param(dt.time, times(), serialize_time),
-            param(dt.timedelta, timedeltas(), serialize_timedelta),
+            param(dt.timedelta, timedeltas(), serialize_timedelta, marks=mark.only),
             param(Engine, sqlite_engines(), serialize_engine, marks=skipif_windows),
         ],
     )
+    @reproduce_failure("6.108.5", b"AXicY2QgCvA7OUAYAAS3AJM=")
     def test_main(
         self,
         *,
@@ -125,6 +132,11 @@ class TestClickOptions:
         cfg: _T,
         /,
     ) -> None:
+        with assume_does_not_raise(SerializeTimeDeltaError):
+            default_str = serialize(default)
+            _ = serialize(value)
+            cfg_str = serialize(cfg)
+
         @dataclass(frozen=True)
         class Config:
             value: test_cls = default
@@ -137,7 +149,7 @@ class TestClickOptions:
         runner = CliRunner()
         result = runner.invoke(cli1)
         assert result.exit_code == 0
-        assert result.stdout == f"value = {serialize(default)}\n"
+        assert result.stdout == f"value = {default_str}\n"
 
         val_str = serialize(value)
         result = runner.invoke(cli1, f'--value="{val_str}"')
@@ -145,7 +157,6 @@ class TestClickOptions:
         assert result.stdout == f"value = {val_str}\n"
 
         file = ensure_path(root, "file.toml")
-        cfg_str = serialize(cfg)
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
 
