@@ -49,18 +49,11 @@ from utilities.click import (
     workers_option,
 )
 from utilities.datetime import serialize_month
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    months,
-    sqlite_engines,
-    text_ascii,
-    timedeltas_2w,
-)
+from utilities.hypothesis import months, sqlite_engines, text_ascii, timedeltas_2w
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
 from utilities.whenever import (
-    SerializeTimeDeltaError,
     serialize_date,
     serialize_local_datetime,
     serialize_time,
@@ -443,10 +436,6 @@ class TestParameters:
         assert result.stdout == f"value = {serialize(value)}\n"
 
         _ = failable
-
-    def _try_serialize(self, serialize: Callable[[Any], str], value: Any, /) -> str:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            return serialize(value)
 
 
 class TestWorkersOption:
