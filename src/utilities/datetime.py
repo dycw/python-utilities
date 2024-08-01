@@ -215,8 +215,8 @@ def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
             return x.astimezone(UTC).replace(tzinfo=None) == y
         case False, True:
             return x == y.astimezone(UTC).replace(tzinfo=None)
-        case _ as never:  # pragma: no cover
-            assert_never(cast(Never, never))
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison] pragma: no cover
+            assert_never(cast(Never, never))  # pyright: ignore[reportUnnecessaryCast]
 
 
 def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:

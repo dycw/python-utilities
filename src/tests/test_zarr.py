@@ -222,9 +222,9 @@ class TestNDArrayWithIndexes:
         ("indexer", "expected"),
         [
             param({"x": dt.datetime(2000, 1, 1)}, 0),  # noqa: DTZ001
-            param({"x": "2000-01-01"}, 0),
+            param({"x": "2000-01-01T00:00:00"}, 0),
             param({"x": [dt.datetime(2000, 1, 1)]}, array([0])),  # noqa: DTZ001
-            param({"x": ["2000-01-01"]}, array([0])),
+            param({"x": ["2000-01-01T00:00:00"]}, array([0])),
             param(
                 {
                     "x": [
@@ -235,14 +235,14 @@ class TestNDArrayWithIndexes:
                 array([0, 1]),
             ),
             param(
-                {"x": [dt.datetime(2000, 1, 1), "2000-01-02"]},  # noqa: DTZ001
+                {"x": [dt.datetime(2000, 1, 1), "2000-01-02T00:00:00"]},  # noqa: DTZ001
                 array([0, 1]),
             ),
             param(
-                {"x": ["2000-01-01", dt.datetime(2000, 1, 2)]},  # noqa: DTZ001
+                {"x": ["2000-01-01T00:00:00", dt.datetime(2000, 1, 2)]},  # noqa: DTZ001
                 array([0, 1]),
             ),
-            param({"x": ["2000-01-01", "2000-01-02"]}, array([0, 1])),
+            param({"x": ["2000-01-01T00:00:00", "2000-01-02T00:00:00"]}, array([0, 1])),
         ],
     )
     def test_sel_with_datetime(
