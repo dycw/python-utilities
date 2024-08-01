@@ -4,7 +4,7 @@ import datetime as dt
 from re import escape
 from typing import ClassVar
 
-from hypothesis import given
+from hypothesis import given, reproduce_failure
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -18,7 +18,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
-from utilities.datetime import get_years
+from utilities.datetime import _MICROSECONDS_PER_DAY, get_months, get_years
 from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
     ParseDateError,
@@ -129,14 +129,6 @@ class TestParseAndSerializeTimedelta:
         result = parse_timedelta(serialized)
         assert result == timedelta
 
-    def test_example(self) -> None:
-        timedelta = dt.timedelta(days=104250, microseconds=1)
-        serialized = serialize_timedelta(timedelta)
-        result = parse_timedelta(serialized)
-        breakpoint()
-
-        assert result == timedelta
-
     def test_error_parse(self) -> None:
         with raises(
             ParseTimedeltaError, match="Unable to parse timedelta; got 'invalid'"
@@ -198,8 +190,24 @@ class TestParseAndSerializeZonedDateTime:
         assert result == datetime
 
 
-@mark.only
 class TestToDatetimeDelta:
+    @given(days=integers(), microseconds=integers())
+    @mark.only
+    def test_main(self, *, days: int, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = dt.timedelta(days=days, microseconds=microseconds)
+        init_total_micro = _MICROSECONDS_PER_DAY * days + microseconds
+        with assume_does_not_raise(_ToDateTimeDeltaError):
+            result = _to_datetime_delta(timedelta)
+        comp_month, comp_day, comp_sec, comp_nano = result.in_months_days_secs_nanos()
+        assert comp_month == 0
+        comp_micro, remainder = divmod(comp_nano, 1000)
+        assert remainder == 0
+        result_total_micro = (
+            _MICROSECONDS_PER_DAY * comp_day + 1000 * comp_sec + comp_micro
+        )
+        assert init_total_micro == result_total_micro
+
     def test_mixed_sign(self) -> None:
         timedelta = dt.timedelta(days=-1, seconds=1)
         result = _to_datetime_delta(timedelta)
@@ -212,29 +220,11 @@ class TestToDatetimeDelta:
         expected = DateTimeDelta(days=104250, microseconds=1)
         assert result == expected
 
-    @given(days=integers())
-    def test_days_only(self, *, days: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(days=days)
-        with assume_does_not_raise(_ToDateTimeDeltaError):
-            result = _to_datetime_delta(timedelta)
-        expected = DateTimeDelta(days=days)
-        assert result == expected
-
-    @given(microseconds=integers())
-    def test_microseconds_only(self, *, microseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = dt.timedelta(microseconds=microseconds)
-        with assume_does_not_raise(_ToDateTimeDeltaError):
-            result = _to_datetime_delta(timedelta)
-        expected = DateTimeDelta(microseconds=microseconds)
-        assert result == expected
-
     @mark.parametrize(
         "timedelta", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
     )
     def test_error(self, *, timedelta: dt.timedelta) -> None:
         with raises(
-            _ToDateTimeDeltaError, match="Unable to serialize timedelta; got .*"
+            _ToDateTimeDeltaError, match="Unable to create DateTimeDelta; got .*"
         ):
             _ = _to_datetime_delta(timedelta)

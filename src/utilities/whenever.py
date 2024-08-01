@@ -4,10 +4,11 @@ import datetime as dt
 from dataclasses import dataclass
 
 from pandas._testing import at
+from pandas.core.indexes.datetimelike import DatetimeTimedeltaMixin
 from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
-from utilities.datetime import get_months
+from utilities.datetime import _MICROSECONDS_PER_DAY, get_months
 from utilities.iterables import one
 from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
@@ -115,8 +116,6 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
             timedelta=timedelta, nanoseconds=nanoseconds
         )
     total_micros = int(time_part.in_microseconds())
-    breakpoint()
-
     return dt.timedelta(days=total_days, microseconds=total_micros)
 
 
@@ -195,7 +194,6 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
         dtd = _to_datetime_delta(timedelta)
     except _ToDateTimeDeltaError as error:
         raise SerializeTimeDeltaError(timedelta=error.timedelta) from None
-    breakpoint()
     return dtd.format_common_iso()
 
 
@@ -230,17 +228,12 @@ class SerializeZonedDateTimeError(Exception):
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
-    seconds = 24 * 60 * 60 * timedelta.days + timedelta.seconds
-    microseconds = int(1e6) * seconds + timedelta.microseconds
-    if microseconds == 0:
+    total_micro = _MICROSECONDS_PER_DAY * timedelta.days + timedelta.microseconds
+    if total_micro == 0:
         return DateTimeDelta()
-    if microseconds >= 1:
+    if total_micro >= 1:
         try:
-            return DateTimeDelta(
-                days=timedelta.days,
-                seconds=timedelta.seconds,
-                microseconds=timedelta.microseconds,
-            )
+            dtd = DateTimeDelta(microseconds=total_micro)
         except OverflowError:
             raise _ToDateTimeDeltaError(timedelta=timedelta) from None
         except ValueError as error:
@@ -248,6 +241,10 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
             if msg in {"Out of range", "microseconds out of range"}:
                 raise _ToDateTimeDeltaError(timedelta=timedelta) from None
             raise
+        months, days, seconds, nanoseconds = dtd.in_months_days_secs_nanos()
+        return DateTimeDelta(
+            months=months, days=days, seconds=seconds, nanoseconds=nanoseconds
+        )
     return -_to_datetime_delta(-timedelta)
 
 
