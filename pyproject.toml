@@ -75,6 +75,7 @@ dev = [
   "vegafusion >= 1.6.9, < 1.7",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
   "vl-convert-python >= 1.5.1, < 1.6",
+  "whenever >= 0.6.6, < 0.7",
   "xarray >= 2024.6.0, < 2024.7",
   "xlrd >= 2.0.1, < 2.1",
   "zarr >= 2.18.2, < 2.19",
@@ -303,6 +304,7 @@ zzz-test-typed-settings = [
   "sqlalchemy >= 2.0.31, < 2.1",
   "typed-settings >= 24.4.0, < 24.5",
 ]
+zzz-test-whenever = ["whenever >= 0.6.6, < 0.7"]
 zzz-test-xarray = [
   "bottleneck >= 1.4.0, < 1.5",
   "numbagg >= 0.8.1, < 0.9",

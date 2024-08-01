@@ -71,6 +71,7 @@ text
 timer
 tqdm
 typed-settings
+whenever
 xarray
 xlrd
 zarr

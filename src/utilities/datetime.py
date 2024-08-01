@@ -418,46 +418,6 @@ class ParseTimeError(Exception):
         return f"Unable to parse time; got {self.time!r}"
 
 
-def parse_timedelta(timedelta: str, /) -> dt.timedelta:
-    """Parse a string into a timedelta."""
-
-    def try_parse(fmt: str, /) -> dt.datetime | None:
-        try:
-            return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
-        except ValueError:
-            return None
-
-    try:
-        as_dt = next(
-            parsed
-            for fmt in ("%H:%M:%S", "%H:%M:%S.%f")
-            if (parsed := try_parse(fmt)) is not None
-        )
-    except StopIteration:
-        pass
-    else:
-        return dt.timedelta(
-            hours=as_dt.hour,
-            minutes=as_dt.minute,
-            seconds=as_dt.second,
-            microseconds=as_dt.microsecond,
-        )
-    try:
-        days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
-    except ExtractGroupsError:
-        raise ParseTimedeltaError(timedelta=timedelta) from None
-    return dt.timedelta(days=int(days)) + parse_timedelta(tail)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimedeltaError(Exception):
-    timedelta: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse timedelta; got {self.timedelta!r}"
-
-
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, is_next=True)
@@ -609,7 +569,6 @@ __all__ = [
     "ParseDateTimeError",
     "ParseMonthError",
     "ParseTimeError",
-    "ParseTimedeltaError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
@@ -639,7 +598,6 @@ __all__ = [
     "parse_datetime",
     "parse_month",
     "parse_time",
-    "parse_timedelta",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_date",
