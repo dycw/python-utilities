@@ -18,14 +18,13 @@ from hypothesis.strategies import (
     times,
     tuples,
 )
-from luigi import BoolParameter, Parameter, Task
-from pytest import mark, param
+from luigi import BoolParameter, Task
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
 from sqlalchemy.orm import declarative_base
 from typing_extensions import override
 
 from tests.conftest import FLAKY
-from utilities.datetime import serialize_date, serialize_datetime, serialize_time
+from utilities.datetime import serialize_date, serialize_time
 from utilities.hypothesis import (
     datetimes_utc,
     namespace_mixins,
@@ -38,10 +37,6 @@ from utilities.luigi import (
     AwaitTask,
     AwaitTime,
     DatabaseTarget,
-    DateHourParameter,
-    DateMinuteParameter,
-    DateParameter,
-    DateSecondParameter,
     EngineParameter,
     EnumParameter,
     ExternalFile,
@@ -148,34 +143,6 @@ class TestDatabaseTarget:
         insert_items(engine, (rows, table))
         expected = any(first == 0 for first, _ in rows)
         assert target.exists() is expected
-
-
-class TestDateParameter:
-    @given(data=data(), date=dates())
-    def test_main(self, *, data: DataObject, date: dt.date) -> None:
-        param = DateParameter()
-        input_ = data.draw(sampled_from([date, serialize_date(date)]))
-        norm = param.normalize(input_)
-        assert param.parse(param.serialize(norm)) == norm
-
-
-class TestDateTimeParameter:
-    @given(data=data(), datetime=datetimes_utc())
-    @mark.parametrize(
-        "param_cls",
-        [
-            param(DateHourParameter),
-            param(DateMinuteParameter),
-            param(DateSecondParameter),
-        ],
-    )
-    def test_main(
-        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
-    ) -> None:
-        param = param_cls()
-        input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
-        norm = param.normalize(input_)
-        assert param.parse(param.serialize(norm)) == norm
 
 
 class TestEngineParameter:

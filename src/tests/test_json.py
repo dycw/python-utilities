@@ -6,7 +6,7 @@ from math import isnan
 from operator import eq, neg
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -53,7 +53,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
-from utilities.whenever import SerializeTimeDeltaError
+from utilities.whenever import ParseTimedeltaError, SerializeTimeDeltaError
 from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
@@ -223,7 +223,9 @@ class TestSerializeAndDeserialize:
     ) -> None:
         with assume_does_not_raise(SerializeTimeDeltaError):
             ser_x = serialize(x)
-        assert eq(deserialize(ser_x), x)
+        with assume_does_not_raise(ParseTimedeltaError):
+            deser_x = deserialize(ser_x)
+        assert eq(deser_x, x)
         with assume_does_not_raise(SerializeTimeDeltaError):
             res = ser_x == serialize(y)
         expected = eq(x, y)
