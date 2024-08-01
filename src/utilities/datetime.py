@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Never, Self, assert_never, cast
+from typing import TYPE_CHECKING, Any, Self, TypeGuard, assert_never
 
 from typing_extensions import override
 
 from utilities.platform import SYSTEM, System
-from utilities.re import ExtractGroupsError, extract_groups
 from utilities.zoneinfo import (
     HONG_KONG,
     TOKYO,
@@ -25,6 +23,8 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _DAYS_PER_YEAR = 365.25
+_MICROSECONDS_PER_SECOND = int(1e6)
+_MICROSECONDS_PER_DAY = 24 * 60 * 60 * _MICROSECONDS_PER_SECOND
 SECOND = dt.timedelta(seconds=1)
 MINUTE = dt.timedelta(minutes=1)
 HOUR = dt.timedelta(hours=1)
@@ -83,35 +83,9 @@ def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     return duration
 
 
-def ensure_date(date: dt.date | str, /) -> dt.date:
-    """Ensure the object is a date."""
-    return date if isinstance(date, dt.date) else parse_date(date)
-
-
-def ensure_datetime(
-    datetime: dt.datetime | str, /, *, time_zone: ZoneInfo | str = UTC
-) -> dt.datetime:
-    """Ensure the object is a datetime."""
-    if isinstance(datetime, dt.datetime):
-        return datetime
-    return parse_datetime(datetime, time_zone=time_zone)
-
-
 def ensure_month(month: Month | str, /) -> Month:
     """Ensure the object is a month."""
     return month if isinstance(month, Month) else parse_month(month)
-
-
-def ensure_time(time: dt.time | str, /) -> dt.time:
-    """Ensure the object is a time."""
-    return time if isinstance(time, dt.time) else parse_time(time)
-
-
-def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
-    """Ensure the object is a timedelta."""
-    if isinstance(timedelta, dt.timedelta):
-        return timedelta
-    return parse_timedelta(timedelta)
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
@@ -233,21 +207,27 @@ YEAR = get_years(n=1)
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
-    match x_aware, y_aware:
-        case (False, False) | (True, True):
-            return x == y
-        case True, False:
-            return x.astimezone(UTC).replace(tzinfo=None) == y
-        case False, True:
-            return x == y.astimezone(UTC).replace(tzinfo=None)
-        case _ as never:
-            assert_never(cast(Never, never))
+    if x_aware and not y_aware:
+        return x.astimezone(UTC).replace(tzinfo=None) == y
+    if not x_aware and y_aware:
+        return x == y.astimezone(UTC).replace(tzinfo=None)
+    return x == y
+
+
+def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a local datetime."""
+    return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
 
 
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
     friday = 5
     return date.isoweekday() <= friday
+
+
+def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
+    """Check if an object is a zoned datetime."""
+    return isinstance(obj, dt.datetime) and (obj.tzinfo is not None)
 
 
 def maybe_sub_pct_y(text: str, /) -> str:
@@ -297,12 +277,6 @@ class Month:
             return NotImplemented
         return self + (-other)
 
-    def isoformat(self) -> str:
-        return serialize_month(self)
-
-    def strftime(self, format_: str) -> str:
-        return self.to_date().strftime(format_)
-
     def to_date(self, /, *, day: int = 1) -> dt.date:
         return dt.date(self.year, self.month, day)
 
@@ -319,61 +293,6 @@ class MonthError(Exception):
 
 MIN_MONTH = Month(dt.date.min.year, dt.date.min.month)
 MAX_MONTH = Month(dt.date.max.year, dt.date.max.month)
-
-
-def parse_date(date: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.date:
-    """Parse a string into a date."""
-    with suppress(ValueError):
-        return dt.date.fromisoformat(date)
-    time_zone_use = ensure_time_zone(time_zone)
-    for fmt in ["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]:
-        try:
-            return dt.datetime.strptime(date, fmt).replace(tzinfo=time_zone_use).date()
-        except ValueError:
-            pass
-    raise ParseDateError(date=date)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateError(Exception):
-    date: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse date; got {self.date!r}"
-
-
-def parse_datetime(datetime: str, /, *, time_zone: ZoneInfo | str = UTC) -> dt.datetime:
-    """Parse a string into a datetime."""
-    time_zone_use = ensure_time_zone(time_zone)
-    with suppress(ValueError):
-        return dt.datetime.fromisoformat(datetime).replace(tzinfo=time_zone_use)
-    for fmt in [
-        "%Y%m%d",
-        "%Y%m%dT%H",
-        "%Y%m%dT%H%M",
-        "%Y%m%dT%H%M%S",
-        "%Y%m%dT%H%M%S.%f",
-    ]:
-        try:
-            return dt.datetime.strptime(datetime, fmt).replace(tzinfo=time_zone_use)
-        except ValueError:
-            pass
-    for fmt in ["%Y-%m-%d %H:%M:%S.%f%z", "%Y%m%dT%H%M%S.%f%z"]:
-        try:
-            return dt.datetime.strptime(datetime, fmt)  # noqa: DTZ007
-        except ValueError:
-            pass
-    raise ParseDateTimeError(datetime=datetime)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseDateTimeError(Exception):
-    datetime: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse datetime; got {self.datetime!r}"
 
 
 def parse_month(month: str, /) -> Month:
@@ -397,67 +316,6 @@ class ParseMonthError(Exception):
         return f"Unable to parse month; got {self.month!r}"
 
 
-def parse_time(time: str, /) -> dt.time:
-    """Parse a string into a time."""
-    with suppress(ValueError):
-        return dt.time.fromisoformat(time)
-    for fmt in ["%H", "%H%M", "%H%M%S", "%H%M%S.%f"]:
-        try:
-            return dt.datetime.strptime(time, fmt).replace(tzinfo=UTC).time()
-        except ValueError:
-            pass
-    raise ParseTimeError(time=time)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimeError(Exception):
-    time: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse time; got {self.time!r}"
-
-
-def parse_timedelta(timedelta: str, /) -> dt.timedelta:
-    """Parse a string into a timedelta."""
-
-    def try_parse(fmt: str, /) -> dt.datetime | None:
-        try:
-            return dt.datetime.strptime(timedelta, fmt).replace(tzinfo=UTC)
-        except ValueError:
-            return None
-
-    try:
-        as_dt = next(
-            parsed
-            for fmt in ("%H:%M:%S", "%H:%M:%S.%f")
-            if (parsed := try_parse(fmt)) is not None
-        )
-    except StopIteration:
-        pass
-    else:
-        return dt.timedelta(
-            hours=as_dt.hour,
-            minutes=as_dt.minute,
-            seconds=as_dt.second,
-            microseconds=as_dt.microsecond,
-        )
-    try:
-        days, tail = extract_groups(r"([-\d]+)\s*(?:days?)?,?\s*([\d:\.]+)", timedelta)
-    except ExtractGroupsError:
-        raise ParseTimedeltaError(timedelta=timedelta) from None
-    return dt.timedelta(days=int(days)) + parse_timedelta(tail)
-
-
-@dataclass(kw_only=True, slots=True)
-class ParseTimedeltaError(Exception):
-    timedelta: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Unable to parse timedelta; got {self.timedelta!r}"
-
-
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
     return _round_to_weekday(date, is_next=True)
@@ -476,34 +334,9 @@ def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
     return date
 
 
-def serialize_date(date: dt.date, /) -> str:
-    """Serialize a date."""
-    if isinstance(date, dt.datetime):
-        return serialize_date(date.date())
-    return date.isoformat()
-
-
-def serialize_datetime(datetime: dt.datetime, /) -> str:
-    """Serialize a datetime."""
-    return datetime.isoformat()
-
-
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
-
-
-def serialize_time(time: dt.time, /) -> str:
-    """Serialize a time."""
-    return time.isoformat()
-
-
-def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
-    """Serialize a timedelta."""
-    if (days := timedelta.days) == 0:
-        return str(timedelta)
-    tail = serialize_timedelta(timedelta - dt.timedelta(days=days))
-    return f"d{days},{tail}"
 
 
 def yield_days(
@@ -605,11 +438,7 @@ __all__ = [
     "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
-    "ParseDateError",
-    "ParseDateTimeError",
     "ParseMonthError",
-    "ParseTimeError",
-    "ParseTimedeltaError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
@@ -617,11 +446,7 @@ __all__ = [
     "date_to_month",
     "duration_to_float",
     "duration_to_timedelta",
-    "ensure_date",
-    "ensure_datetime",
     "ensure_month",
-    "ensure_time",
-    "ensure_timedelta",
     "format_datetime_local_and_utc",
     "get_half_years",
     "get_months",
@@ -633,20 +458,14 @@ __all__ = [
     "get_today_hk",
     "get_today_tokyo",
     "get_years",
+    "is_local_datetime",
     "is_weekday",
+    "is_zoned_datetime",
     "maybe_sub_pct_y",
-    "parse_date",
-    "parse_datetime",
     "parse_month",
-    "parse_time",
-    "parse_timedelta",
     "round_to_next_weekday",
     "round_to_prev_weekday",
-    "serialize_date",
-    "serialize_datetime",
     "serialize_month",
-    "serialize_time",
-    "serialize_timedelta",
     "yield_days",
     "yield_weekdays",
 ]

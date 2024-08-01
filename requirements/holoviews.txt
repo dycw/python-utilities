@@ -97,7 +97,7 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.2
+pyviz-comms==3.0.3
     # via
     #   holoviews
     #   panel

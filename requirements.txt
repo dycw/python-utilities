@@ -34,7 +34,7 @@ attrs==23.2.0
     #   trio
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.15.0
+basedpyright==1.15.1
     # via dycw-utilities (pyproject.toml)
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
@@ -325,7 +325,7 @@ polars-lts-cpu==1.2.1
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.27.2
+protobuf==5.27.3
     # via
     #   streamlit
     #   vegafusion
@@ -398,7 +398,7 @@ python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.2
+pyviz-comms==3.0.3
     # via
     #   holoviews
     #   panel
@@ -529,7 +529,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.31
+uv==0.2.32
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -547,6 +547,8 @@ webencodings==0.5.1
     # via bleach
 websocket-client==1.8.0
     # via selenium
+whenever==0.6.6
+    # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0

@@ -30,7 +30,6 @@ from hypothesis.strategies import (
     sets,
     slices,
     text,
-    timedeltas,
     times,
     tuples,
     uuids,
@@ -38,12 +37,12 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from typing_extensions import override
 
-from utilities.datetime import NOW_HK
 from utilities.hypothesis import (
     assume_does_not_raise,
     sqlite_engines,
     temp_paths,
     text_ascii,
+    timedeltas_2w,
 )
 from utilities.json import (
     _CLASS,
@@ -54,7 +53,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -71,7 +70,8 @@ class TestSerializeAndDeserialize:
             param(booleans()),
             param(characters()),
             param(dates()),
-            param(datetimes(timezones=sampled_from([UTC, dt.UTC]) | none())),
+            param(datetimes()),
+            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]))),
             param(fractions()),
             param(ip_addresses(v=4)),
             param(ip_addresses(v=6)),
@@ -79,7 +79,7 @@ class TestSerializeAndDeserialize:
             param(none()),
             param(temp_paths()),
             param(text()),
-            param(timedeltas()),
+            param(timedeltas_2w()),
             param(times()),
             param(uuids()),
         ],
@@ -212,10 +212,6 @@ class TestSerializeAndDeserialize:
         res = ser_x == serialize(y, extra=extra_ser)
         expected = x == y
         assert res is expected
-
-    def test_error_timezone(self) -> None:
-        with raises(JsonSerializationError, match="Invalid timezone: Asia/Hong_Kong"):
-            _ = serialize(NOW_HK)
 
     def test_error(self) -> None:
         with raises(JsonSerializationError, match=r"Unsupported type: Sentinel"):

@@ -25,7 +25,6 @@ from sqlalchemy.orm import declarative_base
 from typing_extensions import override
 
 from tests.conftest import FLAKY
-from utilities.datetime import serialize_date, serialize_datetime, serialize_time
 from utilities.hypothesis import (
     datetimes_utc,
     namespace_mixins,
@@ -40,7 +39,6 @@ from utilities.luigi import (
     DatabaseTarget,
     DateHourParameter,
     DateMinuteParameter,
-    DateParameter,
     DateSecondParameter,
     EngineParameter,
     EnumParameter,
@@ -59,6 +57,7 @@ from utilities.luigi import (
 )
 from utilities.pathlib import ensure_path
 from utilities.sqlalchemy import insert_items
+from utilities.whenever import serialize_date, serialize_time, serialize_zoned_datetime
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -150,15 +149,6 @@ class TestDatabaseTarget:
         assert target.exists() is expected
 
 
-class TestDateParameter:
-    @given(data=data(), date=dates())
-    def test_main(self, *, data: DataObject, date: dt.date) -> None:
-        param = DateParameter()
-        input_ = data.draw(sampled_from([date, serialize_date(date)]))
-        norm = param.normalize(input_)
-        assert param.parse(param.serialize(norm)) == norm
-
-
 class TestDateTimeParameter:
     @given(data=data(), datetime=datetimes_utc())
     @mark.parametrize(
@@ -170,10 +160,10 @@ class TestDateTimeParameter:
         ],
     )
     def test_main(
-        self, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
+        self, *, data: DataObject, datetime: dt.datetime, param_cls: type[Parameter]
     ) -> None:
         param = param_cls()
-        input_ = data.draw(sampled_from([datetime, serialize_datetime(datetime)]))
+        input_ = data.draw(sampled_from([datetime, serialize_zoned_datetime(datetime)]))
         norm = param.normalize(input_)
         assert param.parse(param.serialize(norm)) == norm
 

@@ -53,6 +53,7 @@ from utilities.types import (
     is_sized,
     is_sized_not_str,
     issubclass_except_bool_int,
+    make_isinstance,
 )
 
 
@@ -410,6 +411,16 @@ class TestIterableStrs:
     def test_fail(self) -> None:
         with raises(BeartypeDoorHintViolation):
             die_if_unbearable("abc", IterableStrs)
+
+
+class TestMakeIsInstance:
+    @mark.parametrize(
+        ("obj", "expected"), [param(True, True), param(False, True), param(None, False)]
+    )
+    def test_main(self, *, obj: bool | None, expected: bool) -> None:
+        func = make_isinstance(bool)
+        result = func(obj)
+        assert result is expected
 
 
 class TestNumber:

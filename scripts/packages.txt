@@ -24,6 +24,7 @@ hashlib
 hatch
 holoviews
 humps
+hypothesis
 ipython
 iterables
 json
@@ -71,6 +72,7 @@ text
 timer
 tqdm
 typed-settings
+whenever
 xarray
 xlrd
 zarr

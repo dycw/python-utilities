@@ -9,17 +9,12 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
-    DataObject,
-    SearchStrategy,
-    data,
     dates,
     datetimes,
     floats,
     integers,
     just,
-    sampled_from,
     timedeltas,
-    times,
     timezones,
 )
 from pytest import mark, param, raises
@@ -45,11 +40,7 @@ from utilities.datetime import (
     FormatDatetimeLocalAndUTCError,
     Month,
     MonthError,
-    ParseDateError,
-    ParseDateTimeError,
     ParseMonthError,
-    ParseTimedeltaError,
-    ParseTimeError,
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
@@ -57,11 +48,6 @@ from utilities.datetime import (
     date_to_month,
     duration_to_float,
     duration_to_timedelta,
-    ensure_date,
-    ensure_datetime,
-    ensure_month,
-    ensure_time,
-    ensure_timedelta,
     format_datetime_local_and_utc,
     get_half_years,
     get_months,
@@ -74,25 +60,18 @@ from utilities.datetime import (
     get_today_tokyo,
     get_years,
     is_equal_mod_tz,
+    is_local_datetime,
     is_weekday,
+    is_zoned_datetime,
     maybe_sub_pct_y,
-    parse_date,
-    parse_datetime,
     parse_month,
-    parse_time,
-    parse_timedelta,
     round_to_next_weekday,
     round_to_prev_weekday,
-    serialize_date,
-    serialize_datetime,
     serialize_month,
-    serialize_time,
-    serialize_timedelta,
     yield_days,
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, months, text_clean
-from utilities.types import ensure_class
 from utilities.zoneinfo import HONG_KONG, TOKYO, UTC
 
 if TYPE_CHECKING:
@@ -177,37 +156,6 @@ class TestDurationToTimedelta:
     def test_timedelta(self, *, duration: dt.timedelta) -> None:
         result = duration_to_timedelta(duration)
         assert result == duration
-
-
-class TestEnsure:
-    @given(data=data())
-    @mark.parametrize(
-        ("strategy", "func"),
-        [
-            param(dates(), ensure_date),
-            param(months(), ensure_month),
-            param(times(), ensure_time),
-            param(timedeltas(), ensure_timedelta),
-        ],
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        strategy: SearchStrategy[Any],
-        func: Callable[[Any], Any],
-    ) -> None:
-        value = data.draw(strategy)
-        str_or_value = data.draw(sampled_from([value, str(value)]))
-        result = func(str_or_value)
-        assert result == value
-
-    @given(data=data(), datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_datetime(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        datetime_or_str = data.draw(sampled_from([datetime, str(datetime)]))
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = ensure_datetime(datetime_or_str, time_zone=time_zone)
-        assert result == datetime
 
 
 class TestEpochUTC:
@@ -337,12 +285,40 @@ class TestIsEqualModTz:
         assert is_equal_mod_tz(aware, naive) == expected
 
 
+class TestIsLocalDateTime:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), True),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_local_datetime(obj)
+        assert result is expected
+
+
 class TestIsWeekday:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         result = is_weekday(date)
         name = date.strftime("%A")
         expected = name in {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"}
+        assert result is expected
+
+
+class TestIsZonedDateTime:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), False),
+            param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_zoned_datetime(obj)
         assert result is expected
 
 
@@ -407,222 +383,16 @@ class TestMonth:
             _ = Month(2000, 13)
 
 
-class TestParseDate:
-    @given(date=dates())
-    def test_str(self, *, date: dt.date) -> None:
-        result = parse_date(str(date))
-        assert result == date
-
-    @given(date=dates())
-    def test_isoformat(self, *, date: dt.date) -> None:
-        result = parse_date(date.isoformat())
-        assert result == date
-
-    @given(
-        date=dates(),
-        fmt=sampled_from(["%Y%m%d", "%Y %m %d", "%d%b%Y", "%d %b %Y"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_various_formats(self, *, date: dt.date, fmt: str) -> None:
-        result = parse_date(date.strftime(fmt))
-        assert result == date
-
-    def test_error(self) -> None:
-        with raises(ParseDateError, match="Unable to parse date; got 'error'"):
-            _ = parse_date("error")
-
-
-class TestParseDateTime:
-    @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_str(self, *, datetime: dt.datetime) -> None:
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(str(datetime), time_zone=time_zone)
-        assert result == datetime
-
-    @given(datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])))
-    def test_isoformat(self, *, datetime: dt.datetime) -> None:
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.isoformat(), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M%S.%f%z", "%Y-%m-%d %H:%M:%S.%f%z"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_yyyymmdd_hhmmss_fff_zzzz(self, *, datetime: dt.datetime, fmt: str) -> None:
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M%S.%f", "%Y-%m-%d %H:%M:%S.%f"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_yyyymmdd_hhmmss_fff(self, *, datetime: dt.datetime, fmt: str) -> None:
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from([
-            "%Y%m%dT%H%M%S",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S",
-        ]).map(maybe_sub_pct_y),
-    )
-    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime, fmt: str) -> None:
-        datetime = datetime.replace(microsecond=0)
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H%M", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_yyyymmdd_hhmm(self, *, datetime: dt.datetime, fmt: str) -> None:
-        datetime = datetime.replace(second=0, microsecond=0)
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%dT%H", "%Y-%m-%d %H", "%Y-%m-%dT%H"]).map(
-            maybe_sub_pct_y
-        ),
-    )
-    def test_yyyymmdd_hh(self, *, datetime: dt.datetime, fmt: str) -> None:
-        datetime = datetime.replace(minute=0, second=0, microsecond=0)
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    @given(
-        datetime=datetimes(timezones=sampled_from([UTC, HONG_KONG])),
-        fmt=sampled_from(["%Y%m%d", "%Y-%m-%d"]).map(maybe_sub_pct_y),
-    )
-    def test_yyyymmdd(self, *, datetime: dt.datetime, fmt: str) -> None:
-        datetime = datetime.replace(hour=0, minute=0, second=0, microsecond=0)
-        time_zone = ensure_class(datetime.tzinfo, ZoneInfo)
-        result = parse_datetime(datetime.strftime(fmt), time_zone=time_zone)
-        assert result == datetime
-
-    def test_error(self) -> None:
-        with raises(ParseDateTimeError, match="Unable to parse datetime; got 'error'"):
-            _ = parse_datetime("error")
-
-
-class TestParseMonth:
+class TestParseAndSerializeMonth:
     @given(month=months())
-    def test_str(self, *, month: Month) -> None:
-        result = parse_month(str(month))
+    def test_main(self, *, month: Month) -> None:
+        serialized = serialize_month(month)
+        result = parse_month(serialized)
         assert result == month
 
-    @given(month=months())
-    def test_isoformat(self, *, month: Month) -> None:
-        result = parse_month(month.isoformat())
-        assert result == month
-
-    @given(month=months(), fmt=sampled_from(["%Y%m", "%Y %m"]).map(maybe_sub_pct_y))
-    def test_various_formats(self, *, month: Month, fmt: str) -> None:
-        result = parse_month(month.strftime(fmt))
-        assert result == month
-
-    def test_error(self) -> None:
-        with raises(ParseMonthError, match="Unable to parse month; got 'error'"):
-            _ = parse_month("error")
-
-
-class TestParseTime:
-    @given(time=times())
-    def test_str(self, *, time: dt.time) -> None:
-        result = parse_time(str(time))
-        assert result == time
-
-    @given(time=times())
-    def test_isoformat(self, *, time: dt.time) -> None:
-        result = parse_time(time.isoformat())
-        assert result == time
-
-    @given(time=times(), fmt=sampled_from(["%H%M%S.%f", "%H:%M:%S.%f"]))
-    def test_hhmmss_fff(self, *, time: dt.time, fmt: str) -> None:
-        result = parse_time(time.strftime(fmt))
-        assert result == time
-
-    @given(time=times(), fmt=sampled_from(["%H%M%S", "%H:%M:%S"]))
-    def test_hhmmss(self, *, time: dt.time, fmt: str) -> None:
-        time = time.replace(microsecond=0)
-        result = parse_time(time.strftime(fmt))
-        assert result == time
-
-    @given(time=times(), fmt=sampled_from(["%H%M", "%H:%M"]))
-    def test_hhmm(self, *, time: dt.time, fmt: str) -> None:
-        time = time.replace(second=0, microsecond=0)
-        result = parse_time(time.strftime(fmt))
-        assert result == time
-
-    @given(time=times())
-    def test_hh(self, *, time: dt.time) -> None:
-        time = time.replace(minute=0, second=0, microsecond=0)
-        result = parse_time(time.strftime("%H"))
-        assert result == time
-
-    def test_error(self) -> None:
-        with raises(ParseTimeError, match="Unable to parse time; got 'error'"):
-            _ = parse_time("error")
-
-
-class TestParseTimedelta:
-    @given(timedelta=timedeltas())
-    def test_main(self, *, timedelta: dt.timedelta) -> None:
-        result = parse_timedelta(str(timedelta))
-        assert result == timedelta
-
-    def test_error(self) -> None:
-        with raises(
-            ParseTimedeltaError, match="Unable to parse timedelta; got 'error'"
-        ):
-            _ = parse_timedelta("error")
-
-
-class TestSerialize:
-    @given(data=data())
-    @mark.parametrize(
-        ("strategy", "serialize", "parse"),
-        [
-            param(dates(), serialize_date, parse_date),
-            param(datetimes(timezones=just(UTC)), serialize_datetime, parse_datetime),
-            param(months(), serialize_month, parse_month),
-            param(times(), serialize_time, parse_time),
-            param(timedeltas(), str, parse_timedelta),
-            param(timedeltas(), serialize_timedelta, parse_timedelta),
-        ],
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        strategy: SearchStrategy[Any],
-        serialize: Callable[[Any], Any],
-        parse: Callable[[Any], Any],
-    ) -> None:
-        value = data.draw(strategy)
-        result = parse(serialize(value))
-        assert result == value
-
-    @given(datetime=datetimes())
-    def test_serialize_date(self, *, datetime: dt.datetime) -> None:
-        result = parse_date(serialize_date(datetime))
-        assert result == datetime.date()
+    def test_error_parse(self) -> None:
+        with raises(ParseMonthError, match="Unable to parse month; got 'invalid'"):
+            _ = parse_month("invalid")
 
 
 class TestRoundToWeekday:
