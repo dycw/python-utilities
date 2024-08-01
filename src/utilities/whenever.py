@@ -11,8 +11,6 @@ from utilities.datetime import (
     _MICROSECONDS_PER_SECOND,
     get_months,
 )
-from utilities.iterables import one
-from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
@@ -247,13 +245,8 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
         seconds, microseconds = divmod(rem_after_day, _MICROSECONDS_PER_SECOND)
         try:
             dtd = DateTimeDelta(days=days, seconds=seconds, microseconds=microseconds)
-        except OverflowError:
+        except (OverflowError, ValueError):
             raise _ToDateTimeDeltaError(timedelta=timedelta) from None
-        except ValueError as error:
-            msg = ensure_str(one(error.args))
-            if msg in {"Out of range", "microseconds out of range"}:
-                raise _ToDateTimeDeltaError(timedelta=timedelta) from None
-            raise
         months, days, seconds, nanoseconds = dtd.in_months_days_secs_nanos()
         return DateTimeDelta(
             months=months, days=days, seconds=seconds, nanoseconds=nanoseconds
