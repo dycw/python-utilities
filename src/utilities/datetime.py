@@ -4,7 +4,7 @@ import datetime as dt
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Never, Self, TypeGuard, assert_never, cast
+from typing import TYPE_CHECKING, Any, Self, TypeGuard, assert_never
 
 from typing_extensions import override
 
@@ -215,8 +215,6 @@ def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
             return x.astimezone(UTC).replace(tzinfo=None) == y
         case False, True:
             return x == y.astimezone(UTC).replace(tzinfo=None)
-        case _ as never:
-            assert_never(cast(Never, never))
 
 
 def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:

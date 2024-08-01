@@ -107,7 +107,7 @@ def ensure_class(
     *,
     nullable: Literal[False] = False,
 ) -> _T1 | _T2 | _T3 | _T4 | _T5: ...
-def ensure_class(  # pyright: ignore[reportInconsistentOverload]
+def ensure_class(
     obj: Any, cls: type[_T] | tuple[type[_T], ...], /, *, nullable: bool = False
 ) -> _T:
     """Ensure an object is of the required class."""

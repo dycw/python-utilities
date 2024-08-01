@@ -13,7 +13,6 @@ from zarr import JSON, Array, Group, group
 from zarr.convenience import open_group
 
 from utilities.atomicwrites import writer
-from utilities.datetime import ensure_date, ensure_datetime
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.numpy import (
@@ -192,9 +191,15 @@ class NDArrayWithIndexes:
             return slice(None)
         index = self._get_index_by_name(dim)
         if has_dtype(index, (datetime64D, datetime64Y)):
+            from utilities.whenever import ensure_date
+
             indexer = self._cast_date_indexer(indexer, index.dtype, ensure_date)
         elif has_dtype(index, datetime64ns):
-            indexer = self._cast_date_indexer(indexer, index.dtype, ensure_datetime)
+            from utilities.whenever import ensure_local_datetime
+
+            indexer = self._cast_date_indexer(
+                indexer, index.dtype, ensure_local_datetime
+            )
         if is_sized_not_str(indexer):
             bool_indexer = isin(index, cast(ArrayLike, indexer))
             if sum(bool_indexer) == len(indexer):

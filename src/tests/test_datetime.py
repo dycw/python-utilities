@@ -319,6 +319,7 @@ class TestIsZonedDateTime:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_zoned_datetime(obj)
+
         assert result is expected
 
 
