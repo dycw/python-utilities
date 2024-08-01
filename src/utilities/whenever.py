@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 
+from pandas._testing import at
 from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
 
@@ -188,7 +189,36 @@ def serialize_time(time: dt.time, /) -> str:
 
 def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     """Serialize a timedelta."""
-    return _to_datetime_delta(timedelta).format_common_iso()
+    try:
+        dtd = _to_datetime_delta(timedelta)
+    except _ToDateTimeDeltaTimeOverflowError as error:
+        raise _SerializeTimeDeltaOverflowError(timedelta=error.timedelta) from None
+    except _ToDateTimeDeltaTimeMicrosecondsError as error:
+        raise _SerializeTimeDeltaMicrosecondsError(
+            timedelta=error.timedelta, microseconds=error.microseconds
+        ) from None
+    return dtd.format_common_iso()
+
+
+@dataclass(kw_only=True, slots=True)
+class SerializeTimeDeltaError(Exception):
+    timedelta: dt.timedelta
+
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeTimeDeltaOverflowError(SerializeTimeDeltaError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize timedelta due to overflow; got {self.timedelta}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _SerializeTimeDeltaMicrosecondsError(SerializeTimeDeltaError):
+    microseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize timedelta due to microseconds; got {self.microseconds}"
 
 
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
@@ -236,7 +266,7 @@ class _ToDateTimeDeltaTimeError(Exception):
 class _ToDateTimeDeltaTimeOverflowError(_ToDateTimeDeltaTimeError):
     @override
     def __str__(self) -> str:
-        return "Unable to create DateTimeDelta; overflowed"
+        return f"Unable to create DateTimeDelta due to overflow; got {self.timedelta}"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -245,7 +275,7 @@ class _ToDateTimeDeltaTimeMicrosecondsError(_ToDateTimeDeltaTimeError):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to create DateTimeDelta; got {self.microseconds} microseconds"
+        return f"Unable to create DateTimeDelta due to microseconds; got {self.microseconds}"
 
 
 __all__ = [
@@ -255,6 +285,7 @@ __all__ = [
     "ParseTimedeltaError",
     "ParseZonedDateTimeError",
     "SerializeLocalDateTimeError",
+    "SerializeTimeDeltaError",
     "SerializeZonedDateTimeError",
     "ensure_date",
     "ensure_local_datetime",

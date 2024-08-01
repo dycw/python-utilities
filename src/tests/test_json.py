@@ -6,7 +6,7 @@ from math import isnan
 from operator import eq, neg
 from typing import TYPE_CHECKING, Any
 
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -80,11 +80,12 @@ class TestSerializeAndDeserialize:
             param(none()),
             param(temp_paths()),
             param(text()),
-            param(timedeltas()),
+            param(timedeltas(), marks=mark.only),
             param(times()),
             param(uuids()),
         ],
     )
+    @reproduce_failure("6.108.5", b"AXicY2BgYJxuxQACjAxIAAAQVADU")
     def test_main(self, *, data: DataObject, elements: SearchStrategy[Any]) -> None:
         x, y = data.draw(tuples(elements, elements))
         self._assert_standard(x, y)

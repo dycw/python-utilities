@@ -27,7 +27,10 @@ from utilities.whenever import (
     ParseTimeError,
     ParseZonedDateTimeError,
     SerializeLocalDateTimeError,
+    SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
+    _SerializeTimeDeltaMicrosecondsError,
+    _SerializeTimeDeltaOverflowError,
     _to_datetime_delta,
     _ToDateTimeDeltaTimeError,
     ensure_date,
@@ -47,6 +50,9 @@ from utilities.whenever import (
     serialize_zoned_datetime,
 )
 from utilities.zoneinfo import HONG_KONG, UTC
+
+_TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
+_TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
 
 
 class TestParseAndSerializeDate:
@@ -119,13 +125,14 @@ class TestParseAndSerializeTime:
 
 
 class TestParseAndSerializeTimedelta:
-    max_timedelta: ClassVar[dt.timedelta] = get_years(n=10)
-
-    @given(timedelta=timedeltas(min_value=-max_timedelta, max_value=max_timedelta))
+    @given(timedelta=timedeltas())
     def test_main(self, *, timedelta: dt.timedelta) -> None:
         serialized = serialize_timedelta(timedelta)
         result = parse_timedelta(serialized)
         assert result == timedelta
+
+    def test_example(self) -> None:
+        da = 1
 
     def test_error_parse(self) -> None:
         with raises(
@@ -139,14 +146,25 @@ class TestParseAndSerializeTimedelta:
         ):
             _ = parse_timedelta("PT0.111222333S")
 
-    @given(
-        data=data(),
-        timedelta=timedeltas(min_value=-max_timedelta, max_value=max_timedelta),
-    )
+    def test_error_serialize_overflow(self) -> None:
+        with raises(
+            SerializeTimeDeltaError,
+            match="Unable to serialize timedelta due to overflow; got 106751991 days, 4:00:54.775808",
+        ):
+            _ = serialize_timedelta(_TIMEDELTA_OVERFLOW)
+
+    def test_error_serialize_microseconds(self) -> None:
+        with raises(
+            _SerializeTimeDeltaMicrosecondsError,
+            match="Unable to serialize timedelta due to microseconds; got 1000000000000000000",
+        ):
+            _ = serialize_timedelta(_TIMEDELTA_MICROSECONDS)
+
+    @given(data=data(), timedelta=timedeltas())
     def test_ensure(self, *, data: DataObject, timedelta: dt.timedelta) -> None:
-        str_or_value = data.draw(
-            sampled_from([timedelta, serialize_timedelta(timedelta)])
-        )
+        with assume_does_not_raise(SerializeTimeDeltaError):
+            str_value = serialize_timedelta(timedelta)
+        str_or_value = data.draw(sampled_from([timedelta, str_value]))
         result = ensure_timedelta(str_or_value)
         assert result == timedelta
 
@@ -199,17 +217,15 @@ class TestToDatetimeDelta:
         assert result == expected
 
     def test_error_overflow(self) -> None:
-        timedelta = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
         with raises(
             _ToDateTimeDeltaTimeError,
-            match="Unable to create DateTimeDelta; overflowed",
+            match="Unable to create DateTimeDelta due to overflow; got 106751991 days, 4:00:54.775808",
         ):
-            _ = _to_datetime_delta(timedelta)
+            _ = _to_datetime_delta(_TIMEDELTA_OVERFLOW)
 
     def test_error_microseconds(self) -> None:
-        timedelta = dt.timedelta(microseconds=1e18)
         with raises(
             _ToDateTimeDeltaTimeError,
-            match="Unable to create DateTimeDelta; got 1000000000000000000 microseconds",
+            match="Unable to create DateTimeDelta due to microseconds; got 1000000000000000000",
         ):
-            _ = _to_datetime_delta(timedelta)
+            _ = _to_datetime_delta(_TIMEDELTA_MICROSECONDS)
