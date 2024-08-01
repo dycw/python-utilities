@@ -54,7 +54,7 @@ from utilities.json import (
     serialize,
 )
 from utilities.sentinel import sentinel
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -71,7 +71,7 @@ class TestSerializeAndDeserialize:
             param(booleans()),
             param(characters()),
             param(dates()),
-            param(datetimes(timezones=sampled_from([UTC, dt.UTC]) | none())),
+            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none())),
             param(fractions()),
             param(ip_addresses(v=4)),
             param(ip_addresses(v=6)),
@@ -212,10 +212,6 @@ class TestSerializeAndDeserialize:
         res = ser_x == serialize(y, extra=extra_ser)
         expected = x == y
         assert res is expected
-
-    def test_error_timezone(self) -> None:
-        with raises(JsonSerializationError, match="Invalid timezone: Asia/Hong_Kong"):
-            _ = serialize(NOW_HK)
 
     def test_error(self) -> None:
         with raises(JsonSerializationError, match=r"Unsupported type: Sentinel"):
