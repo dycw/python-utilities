@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from re import escape
 
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     data,
@@ -94,6 +94,20 @@ class TestParseAndSerializeLocalDateTime:
     @given(datetime=datetimes())
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_local_datetime(datetime)
+        result = parse_local_datetime(serialized)
+        assert result == datetime
+
+    @given(datetime=datetimes())
+    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
+        datetime = datetime.replace(microsecond=0)
+        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
+        result = parse_local_datetime(serialized)
+        assert result == datetime
+
+    @given(datetime=datetimes())
+    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.microsecond != 0)
+        serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
         result = parse_local_datetime(serialized)
         assert result == datetime
 
