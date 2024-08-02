@@ -78,13 +78,39 @@ class ParseDateError(Exception):
         return f"Unable to parse date; got {self.date!r}"
 
 
+_PARSE_LOCAL_DATETIME_REGEX = re.compile(
+    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?$"
+)
+
+
 def parse_local_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a local datetime."""
     try:
         ldt = LocalDateTime.parse_common_iso(datetime)
     except ValueError:
+        pass
+    else:
+        return ldt.py_datetime()
+    try:
+        ((year, month, day, hour, minute, second, microsecond),) = (
+            _PARSE_LOCAL_DATETIME_REGEX.findall(datetime)
+        )
+    except ValueError:
         raise ParseLocalDateTimeError(datetime=datetime) from None
-    return ldt.py_datetime()
+    try:
+        microsecond_use = int(microsecond)
+    except ValueError:
+        microsecond_use = 0
+    return dt.datetime(
+        year=int(year),
+        month=int(month),
+        day=int(day),
+        hour=int(hour),
+        minute=int(minute),
+        second=int(second),
+        microsecond=microsecond_use,
+        tzinfo=UTC,
+    ).replace(tzinfo=None)
 
 
 @dataclass(kw_only=True, slots=True)
