@@ -165,7 +165,7 @@ jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
     # via keyring
-jaraco-functools==4.0.1
+jaraco-functools==4.0.2
     # via keyring
 jeepney==0.8.0
     # via
@@ -529,7 +529,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.32
+uv==0.2.33
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

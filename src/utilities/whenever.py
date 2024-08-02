@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 from dataclasses import dataclass
 
 from typing_extensions import override
@@ -50,13 +51,22 @@ def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     return parse_zoned_datetime(datetime)
 
 
+_PARSE_DATE_REGEX = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
+
+
 def parse_date(date: str, /) -> dt.date:
     """Parse a string into a date."""
     try:
         w_date = Date.parse_common_iso(date)
     except ValueError:
+        pass
+    else:
+        return w_date.py_date()
+    try:
+        ((year, month, day),) = _PARSE_DATE_REGEX.findall(date)
+    except ValueError:
         raise ParseDateError(date=date) from None
-    return w_date.py_date()
+    return dt.date(year=int(year), month=int(month), day=int(day))
 
 
 @dataclass(kw_only=True, slots=True)

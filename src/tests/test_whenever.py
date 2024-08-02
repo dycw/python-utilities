@@ -17,7 +17,11 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
-from utilities.datetime import _MICROSECONDS_PER_DAY, _MICROSECONDS_PER_SECOND
+from utilities.datetime import (
+    _MICROSECONDS_PER_DAY,
+    _MICROSECONDS_PER_SECOND,
+    maybe_sub_pct_y,
+)
 from utilities.hypothesis import assume_does_not_raise
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
@@ -60,6 +64,12 @@ class TestParseAndSerializeDate:
     @given(date=dates())
     def test_main(self, *, date: dt.date) -> None:
         serialized = serialize_date(date)
+        result = parse_date(serialized)
+        assert result == date
+
+    @given(date=dates())
+    def test_yyyymmdd(self, *, date: dt.date) -> None:
+        serialized = date.strftime(maybe_sub_pct_y("%Y%m%d"))
         result = parse_date(serialized)
         assert result == date
 
