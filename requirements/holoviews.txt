@@ -70,7 +70,7 @@ pandas==2.2.2
     #   holoviews
     #   panel
     #   xarray
-panel==1.4.4
+panel==1.4.5
     # via holoviews
 param==2.1.1
     # via
