@@ -190,11 +190,11 @@ _PARSE_ZONED_DATETIME_REGEX = re.compile(
 def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a zoned datetime."""
     try:
-        ztd = ZonedDateTime.parse_common_iso(datetime)
+        zdt = ZonedDateTime.parse_common_iso(datetime)
     except ValueError:
         pass
     else:
-        return ztd.py_datetime()
+        return zdt.py_datetime()
     try:
         ((year, month, day, hour, minute, second, microsecond, timezone),) = (
             _PARSE_ZONED_DATETIME_REGEX.findall(datetime)
