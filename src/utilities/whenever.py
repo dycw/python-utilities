@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
 from typing_extensions import override
 from whenever import Date, DateTimeDelta, LocalDateTime, Time, ZonedDateTime
@@ -181,13 +182,39 @@ class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
         return f"Unable to parse timedelta; got {self.nanoseconds} nanoseconds"
 
 
+_PARSE_ZONED_DATETIME_REGEX = re.compile(
+    r"^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\.?(\d{6})?\[([\w/]+)\]$"
+)
+
+
 def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
     """Parse a string into a zoned datetime."""
     try:
         ztd = ZonedDateTime.parse_common_iso(datetime)
     except ValueError:
+        pass
+    else:
+        return ztd.py_datetime()
+    try:
+        ((year, month, day, hour, minute, second, microsecond, timezone),) = (
+            _PARSE_ZONED_DATETIME_REGEX.findall(datetime)
+        )
+    except ValueError:
         raise ParseZonedDateTimeError(datetime=datetime) from None
-    return ztd.py_datetime()
+    try:
+        microsecond_use = int(microsecond)
+    except ValueError:
+        microsecond_use = 0
+    return dt.datetime(
+        year=int(year),
+        month=int(month),
+        day=int(day),
+        hour=int(hour),
+        minute=int(minute),
+        second=int(second),
+        microsecond=microsecond_use,
+        tzinfo=ZoneInfo(timezone),
+    )
 
 
 @dataclass(kw_only=True, slots=True)

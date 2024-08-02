@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import datetime as dt
+from datetime import timezone
 from re import escape
+from zoneinfo import ZoneInfo
 
 from hypothesis import assume, given
 from hypothesis.strategies import (
@@ -54,7 +56,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
 
 _TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
@@ -237,6 +239,26 @@ class TestParseAndSerializeZonedDateTime:
     @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
+        result = parse_zoned_datetime(serialized)
+        assert result == datetime
+
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
+        datetime = datetime.replace(microsecond=0)
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
+        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
+        part2 = get_time_zone_name(datetime.tzinfo)
+        serialized = f"{part1}[{part2}]"
+        result = parse_zoned_datetime(serialized)
+        assert result == datetime
+
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.microsecond != 0)
+        part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
+        assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
+        part2 = get_time_zone_name(datetime.tzinfo)
+        serialized = f"{part1}[{part2}]"
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
