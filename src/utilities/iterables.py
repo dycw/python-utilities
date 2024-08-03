@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -468,14 +469,22 @@ def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     return iter(partial(take, n, iter(iterable)), [])
 
 
+_DESCRIBE_MAPPING_REGEX = re.compile(r"^_")
+
+
 def describe_mapping(
     mapping: Mapping[str, Any],
     /,
     *,
     func: Callable[..., Any] | None = None,
+    include_underscore: bool = False,
     include_none: bool = False,
 ) -> str:
     """Describe a mapping."""
+    if not include_underscore:
+        mapping = {
+            k: v for k, v in mapping.items() if not _DESCRIBE_MAPPING_REGEX.search(k)
+        }
     if not include_none:
         mapping = {k: v for k, v in mapping.items() if v is not None}
     if func is not None:
