@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from math import inf, nan
 
-from pytest import mark, param, raises
+from pytest import approx, mark, param, raises
 
 from utilities.math import (
     CheckIntegerError,
@@ -51,6 +51,7 @@ from utilities.math import (
     is_zero_or_nan,
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
+    order_of_magnitude,
 )
 
 
@@ -663,3 +664,28 @@ class TestIsZeroOrNonMicro:
     def test_main(self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
         assert is_zero_or_non_micro_or_nan(x, abs_tol=1e-8) is expected
+
+
+class TestOrderOfMagnitude:
+    @mark.parametrize(
+        ("x", "exp_float", "exp_int"),
+        [
+            param(0.25, -0.60206, -1),
+            param(0.5, -0.30103, 0),
+            param(0.75, -0.1249387, 0),
+            param(1.0, 0.0, 0),
+            param(5.0, 0.69897, 1),
+            param(10.0, 1.0, 1),
+            param(50.0, 1.69897, 2),
+            param(100.0, 2.0, 2),
+        ],
+    )
+    @mark.parametrize("sign", [param(1.0), param(-1.0)])
+    def test_main(
+        self, *, sign: float, x: float, exp_float: float, exp_int: int
+    ) -> None:
+        x_use = sign * x
+        res_float = order_of_magnitude(x_use)
+        assert res_float == approx(exp_float)
+        res_int = order_of_magnitude(x_use, round_=True)
+        assert res_int == exp_int
