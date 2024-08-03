@@ -375,7 +375,7 @@ class TestDescribeMapping:
         ("include_underscore", "include_none", "expected"),
         [
             param(False, False, "a=1, c=3"),
-            param(False, True, "a=1, c=3"),
+            param(False, True, "a=1, b=None, c=3"),
             param(True, False, "a=1, c=3, _underscore=4"),
             param(True, True, "a=1, b=None, c=3, _underscore=4"),
         ],
