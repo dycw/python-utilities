@@ -372,12 +372,21 @@ class TestChunked:
 
 class TestDescribeMapping:
     @mark.parametrize(
-        ("include_none", "expected"),
-        [param(False, "a=1, c=3"), param(True, "a=1, b=None, c=3")],
+        ("include_underscore", "include_none", "expected"),
+        [
+            param(False, False, "a=1, c=3"),
+            param(False, True, "a=1, c=3"),
+            param(True, False, "a=1, c=3, _underscore=4"),
+            param(True, True, "a=1, b=None, c=3, _underscore=4"),
+        ],
     )
-    def test_main(self, *, include_none: bool, expected: str) -> None:
-        mapping = {"a": 1, "b": None, "c": 3}
-        result = describe_mapping(mapping, include_none=include_none)
+    def test_main(
+        self, *, include_underscore: bool, include_none: bool, expected: str
+    ) -> None:
+        mapping = {"a": 1, "b": None, "c": 3, "_underscore": 4}
+        result = describe_mapping(
+            mapping, include_underscore=include_underscore, include_none=include_none
+        )
         assert result == expected
 
     @mark.parametrize(
