@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isclose, isfinite, isnan
-from typing import Annotated
+from math import isclose, isfinite, isnan, log10
+from typing import Annotated, Literal, overload
 
 from typing_extensions import override
 
@@ -355,6 +355,16 @@ def _is_close(
     )
 
 
+@overload
+def order_of_magnitude(x: float, /, *, round_: Literal[True]) -> int: ...
+@overload
+def order_of_magnitude(x: float, /, *, round_: bool = False) -> float: ...
+def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
+    """Get the order of magnitude of a number."""
+    result = log10(abs(x))
+    return round(result) if round_ else result
+
+
 # annotations
 
 
@@ -553,4 +563,5 @@ __all__ = [
     "is_zero_or_nan",
     "is_zero_or_non_micro",
     "is_zero_or_non_micro_or_nan",
+    "order_of_magnitude",
 ]
