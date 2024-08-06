@@ -277,6 +277,10 @@ class Month:
             return NotImplemented
         return self + (-other)
 
+    @classmethod
+    def from_date(cls, date: dt.date, /) -> Self:
+        return cls(year=date.year, month=date.month)
+
     def to_date(self, /, *, day: int = 1) -> dt.date:
         return dt.date(self.year, self.month, day)
 

@@ -4,16 +4,16 @@ altair==5.3.0
     # via dycw-utilities (pyproject.toml)
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   hypothesis
     #   jsonschema
     #   referencing
-coverage==7.6.0
+coverage==7.6.1
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.108.5
+hypothesis==6.108.10
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
