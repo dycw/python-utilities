@@ -16,7 +16,7 @@ asttokens==2.4.1
     # via stack-data
 async-lru==2.0.4
     # via jupyterlab
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   hypothesis
     #   jsonschema
@@ -38,9 +38,9 @@ charset-normalizer==3.3.2
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.6.0
+coverage==7.6.1
     # via pytest-cov
-debugpy==1.8.3
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -58,7 +58,7 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via jupyterlab
-hypothesis==6.108.5
+hypothesis==6.108.10
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -173,7 +173,7 @@ platformdirs==4.2.2
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-polars-lts-cpu==1.2.1
+polars-lts-cpu==1.4.1
     # via dycw-utilities (pyproject.toml)
 prometheus-client==0.20.0
     # via jupyter-server
@@ -216,7 +216,7 @@ pytz==2024.1
     # via pandas
 pyyaml==6.0.1
     # via jupyter-events
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client

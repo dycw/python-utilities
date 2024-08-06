@@ -25,7 +25,7 @@ atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 atools==0.14.2
     # via dycw-utilities (pyproject.toml)
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   hypothesis
     #   jsonschema
@@ -82,7 +82,7 @@ colorlog==6.8.2
     #   optuna
 contourpy==1.2.1
     # via bokeh
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -140,7 +140,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.108.5
+hypothesis==6.108.10
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -313,7 +313,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.2.1
+polars-lts-cpu==1.4.1
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -346,7 +346,7 @@ pygments==2.18.0
     # via rich
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pyinstrument==4.6.2
+pyinstrument==4.7.2
     # via dycw-utilities (pyproject.toml)
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
@@ -453,12 +453,12 @@ sortedcontainers==2.4.0
     #   trio
 soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==2.0.31
+sqlalchemy==2.0.32
     # via
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-streamlit==1.37.0
+streamlit==1.37.1
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
@@ -477,13 +477,13 @@ tornado==6.4.1
     #   bokeh
     #   luigi
     #   streamlit
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   optuna
     #   panel
     #   pqdm
-trio==0.26.0
+trio==0.26.1
     # via
     #   selenium
     #   trio-websocket
@@ -529,7 +529,7 @@ virtualenv==20.26.3
     # via
     #   hatch
     #   nox
-vl-convert-python==1.5.1
+vl-convert-python==1.6.0
     # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1
     # via bleach
@@ -543,7 +543,7 @@ wrapt==1.16.0
     # via deprecated
 wsproto==1.2.0
     # via trio-websocket
-xarray==2024.6.0
+xarray==2024.7.0
     # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
     # via dycw-utilities (pyproject.toml)
