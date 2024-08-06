@@ -346,7 +346,7 @@ pygments==2.18.0
     # via rich
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pyinstrument==4.6.2
+pyinstrument==4.7.2
     # via dycw-utilities (pyproject.toml)
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
