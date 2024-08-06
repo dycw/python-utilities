@@ -529,7 +529,7 @@ virtualenv==20.26.3
     # via
     #   hatch
     #   nox
-vl-convert-python==1.5.1
+vl-convert-python==1.6.0
     # via dycw-utilities (pyproject.toml)
 webencodings==0.5.1
     # via bleach
@@ -543,7 +543,7 @@ wrapt==1.16.0
     # via deprecated
 wsproto==1.2.0
     # via trio-websocket
-xarray==2024.6.0
+xarray==2024.7.0
     # via dycw-utilities (pyproject.toml)
 xlrd==2.0.1
     # via dycw-utilities (pyproject.toml)

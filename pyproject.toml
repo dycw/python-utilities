@@ -68,15 +68,15 @@ dev = [
   "semver >= 3.0.2, < 3.1",
   "sqlalchemy >= 2.0.32, < 2.1",
   "streamlit >= 1.37.1, < 1.38",
-  "tqdm >= 4.66.4, < 4.67",
+  "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.4.0, < 24.5",
   "tzdata >= 2024.1, < 2024.2",
   "tzlocal >= 5.2, < 5.3",
   "vegafusion >= 1.6.9, < 1.7",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
-  "vl-convert-python >= 1.5.1, < 1.6",
+  "vl-convert-python >= 1.6.0, < 1.7",
   "whenever >= 0.6.6, < 0.7",
-  "xarray >= 2024.6.0, < 2024.7",
+  "xarray >= 2024.7.0, < 2024.8",
   "xlrd >= 2.0.1, < 2.1",
   "zarr >= 2.18.2, < 2.19",
   # test
@@ -187,7 +187,7 @@ zzz-test-hatch = ["hatch >= 1.12.0, < 1.13"]
 zzz-test-holoviews = [
   "holoviews >= 1.19.1, < 1.20",
   "numbagg >= 0.8.1, < 0.9",
-  "xarray >= 2024.5.0, < 2024.6",
+  "xarray >= 2024.7.0, < 2024.8",
 ]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
@@ -309,7 +309,7 @@ zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-text = []
 zzz-test-timer = []
-zzz-test-tqdm = ["tqdm >= 4.66.4, < 4.67"]
+zzz-test-tqdm = ["tqdm >= 4.66.5, < 4.67"]
 zzz-test-typed-settings = [
   "click >= 8.1.7, < 8.2",
   "sqlalchemy >= 2.0.32, < 2.1",
@@ -319,7 +319,7 @@ zzz-test-whenever = ["whenever >= 0.6.6, < 0.7"]
 zzz-test-xarray = [
   "bottleneck >= 1.4.0, < 1.5",
   "numbagg >= 0.8.1, < 0.9",
-  "xarray >= 2024.5.0, < 2024.6",
+  "xarray >= 2024.7.0, < 2024.8",
 ]
 zzz-test-xlrd = ["xlrd >= 2.0.1, < 2.1"]
 zzz-test-zarr = [
