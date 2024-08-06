@@ -427,6 +427,7 @@ filterwarnings = [
   "error",
   "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
+  "ignore:The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025:DeprecationWarning",
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
 ]
 minversion = "8.0"
