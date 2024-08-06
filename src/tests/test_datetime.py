@@ -373,10 +373,11 @@ class TestMonth:
         result = month - n
         assert result == expected
 
-    def test_to_date(self) -> None:
-        result = Month(2000, 1).to_date(day=1)
-        expected = dt.date(2000, 1, 1)
-        assert result == expected
+    @given(date=dates())
+    def test_to_and_from_date(self, *, date: dt.date) -> None:
+        month = Month.from_date(date)
+        result = month.to_date(day=date.day)
+        assert result == date
 
     def test_error(self) -> None:
         with raises(MonthError, match=r"Invalid year and month: \d+, \d+"):
