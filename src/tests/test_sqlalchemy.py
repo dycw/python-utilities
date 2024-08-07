@@ -870,8 +870,6 @@ class TestEnsureTablesCreated:
 
     def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
         return select(get_table(table_or_mapped_class))
-        get_table(table_or_mapped_class).select()
-        return None
 
 
 class TestEnsureTablesDropped:
@@ -1189,8 +1187,8 @@ class TestInsertItems:
         insert_items(engine, *args)
         sel = select(self._table.c["id_"])
         with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        assert set(res) == ids
+            results = conn.execute(sel).scalars().all()
+        self._assert_results(results, ids)
 
     async def _run_test_async(
         self, engine: AsyncEngine, ids: set[int], /, *args: Any
@@ -1199,8 +1197,8 @@ class TestInsertItems:
         await insert_items_async(engine, *args)
         sel = select(self._table.c["id_"])
         async with engine.begin() as conn:
-            res = (await conn.execute(sel)).scalars().all()
-        assert set(res) == ids
+            results = (await conn.execute(sel)).scalars().all()
+        self._assert_results(results, ids)
 
     def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])

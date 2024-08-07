@@ -170,8 +170,7 @@ class TestInsertDataFrame:
         engine=sqlite_engines(),
     )
     def test_sync_error(self, *, values: list[bool | None], engine: Engine) -> None:
-        df = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        table = self._make_table(sqlalchemy.Boolean)
+        df, table = self._prepare_empty_test(values)
         with raises(
             InsertDataFrameError,
             match="Non-empty DataFrame must resolve to at least 1 item",
@@ -210,6 +209,18 @@ class TestInsertDataFrame:
             res = (await conn.execute(sel)).scalars().all()
         assert res == values
 
+    @given(data=data(), values=lists(booleans() | none(), min_size=1, max_size=100))
+    async def test_async_error(
+        self, *, data: DataObject, values: list[bool | None]
+    ) -> None:
+        df, table = self._prepare_empty_test(values)
+        engine = aiosqlite_engines(data)
+        with raises(
+            InsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            _ = insert_dataframe_async(df, table, engine)
+
     def _prepare_main_test(
         self,
         data: DataObject,
@@ -243,15 +254,19 @@ class TestInsertDataFrame:
             assert ((r is None) == (v is None)) or check(r, v)
 
     def _prepare_snake_test(
-        self,
-        sr_name: str,
-        values: Sequence[bool | None],
-        /,
+        self, sr_name: str, values: Sequence[bool | None], /
     ) -> tuple[DataFrame, Table, Select[Any]]:
         df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean, title=True)
-        sel = select(table.c["value"])
+        sel = select(table.c["Value"])
         return df, table, sel
+
+    def _prepare_empty_test(
+        self, values: Sequence[bool | None], /
+    ) -> tuple[DataFrame, Table]:
+        df = DataFrame({"other": values}, schema={"other": pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean)
+        return df, table
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
