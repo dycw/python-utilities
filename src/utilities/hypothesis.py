@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, ov
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
+    DataObject,
     DrawFn,
     SearchStrategy,
     booleans,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from pandas import Timestamp
     from semver import Version
     from sqlalchemy import Engine, MetaData
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
@@ -58,6 +60,28 @@ _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
 _INDEX_LENGTHS = integers(0, 10)
+
+
+async def aiosqlite_engines(
+    data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
+) -> AsyncEngine:
+    from utilities.sqlalchemy import create_engine
+
+    temp_path = data.draw(temp_paths())
+    path = Path(temp_path, "db.sqlite")
+    engine = create_engine(
+        "sqlite+aiosqlite", database=str(path.joinpath("db.sqlite")), async_=True
+    )
+    if metadata is not None:
+        async with engine.begin() as conn:
+            await conn.run_sync(metadata.create_all)
+    if base is not None:
+        async with engine.begin() as conn:
+            await conn.run_sync(base.metadata.create_all)
+
+    # attach temp_path to the engine, so as to keep it alive
+    cast(Any, engine).temp_path = temp_path
+    return engine
 
 
 @contextmanager
@@ -723,7 +747,6 @@ def sqlite_engines(
 
     # attach temp_path to the engine, so as to keep it alive
     cast(Any, engine).temp_path = temp_path
-
     return engine
 
 

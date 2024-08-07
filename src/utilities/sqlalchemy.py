@@ -45,7 +45,7 @@ from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -582,6 +582,34 @@ def ensure_tables_created(
                     raise  # pragma: no cover
 
 
+async def ensure_tables_created_async(
+    engine: AsyncEngine, /, *tables_or_mapped_classes: Table | type[Any]
+) -> None:
+    """Ensure a table/set of tables is/are created."""
+    match dialect := get_dialect(engine):
+        case Dialect.mysql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # pragma: no cover
+            match = "relation .* already exists"
+        case Dialect.mssql:  # pragma: no cover
+            match = "There is already an object named .* in the database"
+        case Dialect.oracle:  # pragma: no cover
+            match = "ORA-00955: name is already used by an existing object"
+        case Dialect.sqlite:
+            match = "table .* already exists"
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+    for table_or_mapped_class in tables_or_mapped_classes:
+        table = get_table(table_or_mapped_class)
+        async with engine.begin() as conn:
+            try:
+                conn.run_sync(table.create)
+            except DatabaseError as error:
+                if not search(match, ensure_str(one(error.args))):
+                    raise  # pragma: no cover
+
+
 def ensure_tables_dropped(
     engine: Engine, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
@@ -598,7 +626,7 @@ def ensure_tables_dropped(
 
 
 def get_chunk_size(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -620,7 +648,9 @@ def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]
     return list(get_table(table_or_mapped_class).columns)
 
 
-def get_dialect(engine_or_conn: Engine | Connection, /) -> Dialect:
+def get_dialect(
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
+) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
     if isinstance(dialect, mssql_dialect):  # pragma: no cover
@@ -809,6 +839,40 @@ def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:
     return isinstance(obj, tuple) or (
         isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
     )
+
+
+async def insert_items_async(
+    engine: AsyncEngine, *items: Any, chunk_size_frac: float = CHUNK_SIZE_FRAC
+) -> None:
+    """Insert a set of items into a database.
+
+    These can be either a:
+     - tuple[Any, ...], table
+     - dict[str, Any], table
+     - [tuple[Any ,...]], table
+     - [dict[str, Any], table
+     - Model
+    """
+    dialect = get_dialect(engine)
+    to_insert: dict[Table, list[_InsertItemValues]] = defaultdict(list)
+    lengths: set[int] = set()
+    for item in chain(*map(_insert_items_collect, items)):
+        values = item.values  # noqa: PD011
+        to_insert[item.table].append(values)
+        lengths.add(len(values))
+    max_length = max(lengths, default=1)
+    chunk_size = get_chunk_size(
+        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
+    )
+    for table, values in to_insert.items():
+        ensure_tables_created(engine, table)
+        ins = insert(table)
+        async with engine.begin() as conn:
+            for chunk in chunked(values, chunk_size):
+                if dialect is Dialect.oracle:  # pragma: no cover
+                    _ = conn.execute(ins, cast(Any, chunk))
+                else:
+                    _ = conn.execute(ins.values(list(chunk)))
 
 
 def is_mapped_class(obj: Any, /) -> bool:
@@ -1022,6 +1086,7 @@ __all__ = [
     "get_table_name",
     "get_table_updated_column",
     "insert_items",
+    "insert_items_async",
     "is_mapped_class",
     "is_table_or_mapped_class",
     "mapped_class_to_dict",

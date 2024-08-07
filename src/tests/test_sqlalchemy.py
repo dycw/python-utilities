@@ -79,6 +79,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
+    aiosqlite_engines,
     assume_does_not_raise,
     lists_fixed_length,
     sqlite_engines,
@@ -133,6 +134,7 @@ from utilities.sqlalchemy import (
     create_engine,
     ensure_engine,
     ensure_tables_created,
+    ensure_tables_created_async,
     ensure_tables_dropped,
     get_chunk_size,
     get_column_names,
@@ -143,6 +145,7 @@ from utilities.sqlalchemy import (
     get_table_name,
     get_table_updated_column,
     insert_items,
+    insert_items_async,
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
@@ -814,14 +817,11 @@ class TestEnsureEngine:
 
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_table(self, *, engine: Engine, runs: int) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        self._run_test(table, engine, runs)
+    def test_sync_table(self, *, engine: Engine) -> None:
+        self._run_test_sync(engine, self._table)
 
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
+    def test_sync_mapped_class(self, *, engine: Engine) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -829,15 +829,33 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test(Example, engine, runs)
+        self._run_test_sync(engine, Example)
 
-    def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+    @given(data=data())
+    async def test_async_table(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, self._table)
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    def _run_test_sync(
+        self, engine: Engine, table_or_mapped_class: Table | type[Any], /
     ) -> None:
-        for _ in range(runs):
+        for _ in range(2):
             ensure_tables_created(engine, table_or_mapped_class)
         sel = get_table(table_or_mapped_class).select()
         with engine.begin() as conn:
+            _ = conn.execute(sel).all()
+
+    async def _run_test_async(
+        self, engine: AsyncEngine, table_or_mapped_class: Table | type[Any], /
+    ) -> None:
+        for _ in range(2):
+            await ensure_tables_created_async(engine, table_or_mapped_class)
+        sel = get_table(table_or_mapped_class).select()
+        async with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
 
@@ -879,9 +897,19 @@ class TestGetChunkSize:
         chunk_size_frac=floats(0.0, 1.0),
         scaling=floats(0.1, 10.0),
     )
-    def test_main(
+    def test_sync(
         self, *, engine: Engine, chunk_size_frac: float, scaling: float
     ) -> None:
+        result = get_chunk_size(
+            engine, chunk_size_frac=chunk_size_frac, scaling=scaling
+        )
+        assert result >= 1
+
+    @given(data=data(), chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
+    async def test_async(
+        self, *, data: DataObject, chunk_size_frac: float, scaling: float
+    ) -> None:
+        engine = await aiosqlite_engines(data)
         result = get_chunk_size(
             engine, chunk_size_frac=chunk_size_frac, scaling=scaling
         )
@@ -931,7 +959,12 @@ class TestGetColumns:
 
 class TestGetDialect:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_sync(self, *, engine: Engine) -> None:
+        assert get_dialect(engine) is Dialect.sqlite
+
+    @given(data=data())
+    async def test_async(self, *, data: DataObject) -> None:
+        engine =await aiosqlite_engines(data)
         assert get_dialect(engine) is Dialect.sqlite
 
 
@@ -1015,41 +1048,41 @@ class TestGetTableUpdatedColumn:
 class TestInsertItems:
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test(engine, {id_}, ((id_,), self._table))
+        self._run_test_sync(engine, {id_}, ((id_,), self._table))
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test(engine, {id_}, ({"id_": id_}, self._table))
+        self._run_test_sync(engine, {id_}, ({"id_": id_}, self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_tuples_and_table(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, ([((id_,)) for id_ in ids], self._table))
+        self._run_test_sync(engine, ids, ([((id_,)) for id_ in ids], self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_pair_of_lists_of_dicts_and_table(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
+        self._run_test_sync(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_tuples_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, [(((id_,), self._table)) for id_ in ids])
+        self._run_test_sync(engine, ids, [(((id_,), self._table)) for id_ in ids])
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     def test_list_of_pairs_of_dicts_and_tables(
         self, *, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
+        self._run_test_sync(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
     def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
-        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
+        self._run_test_sync(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
     def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
@@ -1060,17 +1093,27 @@ class TestInsertItems:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test(engine, {id_}, Example(id_=id_))
+        self._run_test_sync(engine, {id_}, Example(id_=id_))
 
     @property
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
-    def _run_test(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
+    def _run_test_sync(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
         ensure_tables_created(engine, self._table)
         insert_items(engine, *args)
         sel = select(self._table.c["id_"])
         with engine.begin() as conn:
+            res = conn.execute(sel).scalars().all()
+        assert set(res) == ids
+
+    async def _run_test_async(
+        self, engine: AsyncEngine, ids: set[int], /, *args: Any
+    ) -> None:
+        await ensure_tables_created_async(engine, self._table)
+        await insert_items_async(engine, *args)
+        sel = select(self._table.c["id_"])
+        async with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         assert set(res) == ids
 

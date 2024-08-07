@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cached_property
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -44,13 +45,15 @@ from pandas.testing import assert_index_equal
 from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass, declarative_base
 
 from tests.conftest import FLAKY
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
     _merge_into_dict_of_indexes,
+    aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
     bool_data_arrays,
@@ -102,7 +105,7 @@ from utilities.pandas import (
 )
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
-from utilities.sqlalchemy import get_table, insert_items
+from utilities.sqlalchemy import get_table, insert_items, insert_items_async
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
@@ -794,38 +797,75 @@ class TestSetupHypothesisProfiles:
 
 class TestSQLiteEngines:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_sync(self, *, engine: Engine) -> None:
         assert isinstance(engine, Engine)
         database = engine.url.database
         assert database is not None
         assert not valid_path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
-    def test_table(self, *, data: DataObject, ids: set[int]) -> None:
-        metadata = MetaData()
-        table = Table("example", metadata, Column("id_", Integer, primary_key=True))
+    def test_sync_table(self, *, data: DataObject, ids: set[int]) -> None:
+        metadata, table = self._metadata_and_table()
         engine = data.draw(sqlite_engines(metadata=metadata))
-        self._run_test(engine, table, ids)
+        self._run_test_sync(engine, table, ids)
 
     @given(data=data(), ids=sets(integers(0, 10)))
-    def test_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
-        Base = declarative_base()  # noqa: N806
+    def test_sync_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
+        base, mapped_class = self._base_and_mapped_class()
+        engine = data.draw(sqlite_engines(base=base))
+        self._run_test_sync(engine, mapped_class, ids)
 
-        class Example(Base):
+    @given(data=data())
+    async def test_async(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        assert isinstance(engine, AsyncEngine)
+        database = engine.url.database
+        assert database is not None
+        assert not valid_path(database).exists()
+
+    @given(data=data(), ids=sets(integers(0, 10)))
+    async def test_async_table(self, *, data: DataObject, ids: set[int]) -> None:
+        metadata, table = self._metadata_and_table()
+        engine = await aiosqlite_engines(data, metadata=metadata)
+        await self._run_test_async(engine, table, ids)
+
+    def _metadata_and_table(self) -> tuple[MetaData, Table]:
+        metadata = MetaData()
+        table = Table("example", metadata, Column("id_", Integer, primary_key=True))
+        return metadata, table
+
+    def _base_and_mapped_class(self) -> tuple[type[Any], type[Any]]:
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(self._base_and_mapped_class):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
 
-        engine = data.draw(sqlite_engines(base=Base))
-        self._run_test(engine, Example, ids)
+        return Base, Example
 
-    def _run_test(
+    def _run_test_sync(
         self, engine: Engine, table_or_mapped_class: Table | type[Any], ids: set[int], /
     ) -> None:
         insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
         sel = select(get_table(table_or_mapped_class).c["id_"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
+        assert set(res) == ids
+
+    async def _run_test_async(
+        self,
+        engine: AsyncEngine,
+        table_or_mapped_class: Table | type[Any],
+        ids: set[int],
+        /,
+    ) -> None:
+        await insert_items_async(
+            engine, ([(id_,) for id_ in ids], table_or_mapped_class)
+        )
+        sel = select(get_table(table_or_mapped_class).c["id_"])
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
         assert set(res) == ids
 
 
