@@ -214,12 +214,12 @@ class TestInsertDataFrame:
         self, *, data: DataObject, values: list[bool | None]
     ) -> None:
         df, table = self._prepare_empty_test(values)
-        engine = aiosqlite_engines(data)
+        engine = await aiosqlite_engines(data)
         with raises(
             InsertDataFrameError,
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
-            _ = insert_dataframe_async(df, table, engine)
+            _ = await insert_dataframe_async(df, table, engine)
 
     def _prepare_main_test(
         self,
