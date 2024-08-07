@@ -558,56 +558,51 @@ def ensure_tables_created(
     engine: Engine, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    match dialect := get_dialect(engine):
-        case Dialect.mysql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # pragma: no cover
-            match = "relation .* already exists"
-        case Dialect.mssql:  # pragma: no cover
-            match = "There is already an object named .* in the database"
-        case Dialect.oracle:  # pragma: no cover
-            match = "ORA-00955: name is already used by an existing object"
-        case Dialect.sqlite:
-            match = "table .* already exists"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-
+    match = _ensure_tables_created_match(engine)
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
         with engine.begin() as conn:
             try:
                 table.create(conn)
             except DatabaseError as error:
-                if not search(match, ensure_str(one(error.args))):
-                    raise  # pragma: no cover
+                _ensure_tables_created_maybe_reraise(error, match)
 
 
 async def ensure_tables_created_async(
     engine: AsyncEngine, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    match dialect := get_dialect(engine):
-        case Dialect.mysql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # pragma: no cover
-            match = "relation .* already exists"
-        case Dialect.mssql:  # pragma: no cover
-            match = "There is already an object named .* in the database"
-        case Dialect.oracle:  # pragma: no cover
-            match = "ORA-00955: name is already used by an existing object"
-        case Dialect.sqlite:
-            match = "table .* already exists"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-
+    match = _ensure_tables_created_match(engine)
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
         async with engine.begin() as conn:
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
-                if not search(match, ensure_str(one(error.args))):
-                    raise  # pragma: no cover
+                _ensure_tables_created_maybe_reraise(error, match)
+
+
+def _ensure_tables_created_match(engine: Engine | AsyncEngine, /) -> str:
+    """Get the match statement for the given engine."""
+    match dialect := get_dialect(engine):
+        case Dialect.mysql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # pragma: no cover
+            return "relation .* already exists"
+        case Dialect.mssql:  # pragma: no cover
+            return "There is already an object named .* in the database"
+        case Dialect.oracle:  # pragma: no cover
+            return "ORA-00955: name is already used by an existing object"
+        case Dialect.sqlite:
+            return "table .* already exists"
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _ensure_tables_created_maybe_reraise(error: DatabaseError, match: str, /) -> None:
+    """Re-raise the error if it does not match the required statement."""
+    if not search(match, ensure_str(one(error.args))):
+        raise error  # pragma: no cover
 
 
 def ensure_tables_dropped(

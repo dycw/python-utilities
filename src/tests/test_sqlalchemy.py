@@ -823,6 +823,24 @@ class TestEnsureTablesCreated:
 
     @given(engine=sqlite_engines())
     def test_sync_mapped_class(self, *, engine: Engine) -> None:
+        self._run_test_sync(engine, self._mapped_class)
+
+    @given(data=data())
+    async def test_async_table(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, self._table)
+
+    @given(data=data())
+    async def test_async_mapped_class(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, self._mapped_class)
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    @property
+    def _mapped_class(self) -> type[Any]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -830,23 +848,14 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test_sync(engine, Example)
-
-    @given(data=data())
-    async def test_async_table(self, *, data: DataObject) -> None:
-        engine = await aiosqlite_engines(data)
-        await self._run_test_async(engine, self._table)
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        return Example
 
     def _run_test_sync(
         self, engine: Engine, table_or_mapped_class: Table | type[Any], /
     ) -> None:
         for _ in range(2):
             ensure_tables_created(engine, table_or_mapped_class)
-        sel = get_table(table_or_mapped_class).select()
+        sel = self._get_select(table_or_mapped_class)
         with engine.begin() as conn:
             _ = conn.execute(sel).all()
 
@@ -855,9 +864,14 @@ class TestEnsureTablesCreated:
     ) -> None:
         for _ in range(2):
             await ensure_tables_created_async(engine, table_or_mapped_class)
-        sel = get_table(table_or_mapped_class).select()
+        sel = self._get_select(table_or_mapped_class)
         async with engine.begin() as conn:
-            _ = conn.execute(sel).all()
+            _ = (await conn.execute(sel)).all()
+
+    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+        return select(get_table(table_or_mapped_class))
+        get_table(table_or_mapped_class).select()
+        return None
 
 
 class TestEnsureTablesDropped:
