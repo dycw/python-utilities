@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-hatch --prerelease=disallow --output-file=requirements/hatch.txt --python-version=3.11 pyproject.toml
 anyio==4.4.0
     # via httpx
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 backports-tarfile==1.2.0
     # via jaraco-context

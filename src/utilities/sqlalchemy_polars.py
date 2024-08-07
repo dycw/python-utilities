@@ -15,6 +15,7 @@ from polars import (
     Datetime,
     Duration,
     Float64,
+    Int32,
     Int64,
     Time,
     Utf8,
@@ -153,7 +154,7 @@ def _insert_dataframe_check_df_and_db_types(
         )
         or (dtype == Datetime and issubclass(db_col_type, dt.datetime))
         or (dtype == Float64 and issubclass(db_col_type, float))
-        or (dtype == Int64 and issubclass(db_col_type, int))
+        or (dtype in {Int32, Int64} and issubclass(db_col_type, int))
         or (dtype == Utf8 and issubclass(db_col_type, str))
     )
 

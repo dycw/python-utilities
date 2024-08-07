@@ -21,7 +21,17 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
 )
-from polars import Binary, DataFrame, Datetime, Decimal, Duration, Float64, Int64, Utf8
+from polars import (
+    Binary,
+    DataFrame,
+    Datetime,
+    Decimal,
+    Duration,
+    Float64,
+    Int32,
+    Int64,
+    Utf8,
+)
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from sqlalchemy import (
@@ -117,6 +127,7 @@ class TestInsertDataFrame:
                 is_equal_mod_tz,
             ),
             param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
+            param(integers(-10, 10) | none(), Int32, Integer, eq),
             param(integers(-10, 10) | none(), Int64, Integer, eq),
             param(text_ascii() | none(), Utf8, String, eq),
         ],

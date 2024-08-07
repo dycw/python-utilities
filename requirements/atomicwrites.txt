@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-atomicwrites --prerelease=disallow --output-file=requirements/atomicwrites.txt --python-version=3.11 pyproject.toml
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 coverage==7.6.1
     # via pytest-cov
