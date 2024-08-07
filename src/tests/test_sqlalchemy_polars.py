@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from operator import eq
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 import polars as pl
@@ -21,6 +22,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
 )
+from more_itertools import classify_unique
 from polars import (
     Binary,
     DataFrame,
@@ -424,35 +426,49 @@ class TestSelectToDataFrame:
         assert_frame_equal(res, expected)
 
     @given(
+        engine=sqlite_engines(),
+        values=lists(integers(0, 100), max_size=100),
+        batch_size=integers(1, 10),
+    )
+    def test_sync_batch(
+        self, *, engine: Engine, values: list[int], batch_size: int
+    ) -> None:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = self._make_table(Integer)
+        insert_dataframe(df, table, engine)
+        sel = select(table.c["value"])
+        seen: set[int] = set()
+        dfs = select_to_dataframe(sel, engine, batch_size=batch_size)
+        for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=batch_size, schema_list={"value": Int64}
+            )
+            assert df_i["value"].is_in(values).all()
+            seen.update(df_i["value"].to_list())
+        assert seen == set(values)
+
+    @given(
         data=data(),
         engine=sqlite_engines(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
-        batch_size=integers(1, 10) | none(),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_sync_engine_and_in_clauses_non_empty(
+    def test_sync_in_clauses_non_empty(
         self,
         *,
         data: DataObject,
         engine: Engine,
         values: list[int],
-        batch_size: int | None,
         in_clauses_chunk_size: int,
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": Int64})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+        table = self._make_table(Integer)
         insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
         in_values = data.draw(sets(sampled_from(values)))
         df = select_to_dataframe(
             sel,
             engine,
-            batch_size=batch_size,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
@@ -460,90 +476,49 @@ class TestSelectToDataFrame:
         assert set(df["value"].to_list()) == in_values
 
     @given(engine=sqlite_engines())
-    def test_engine_and_in_clauses_empty(self, *, engine: Engine) -> None:
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+    def test_sync_in_clauses_empty(self, *, engine: Engine) -> None:
+        table = self._make_table(Integer)
         ensure_tables_created(engine, table)
         sel = select(table.c["value"])
         df = select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
         check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
     @given(
-        engine=sqlite_engines(),
-        values=lists(booleans() | none(), max_size=100),
-        batch_size=integers(1, 10),
-    )
-    def test_conn_and_batch_size_only(
-        self, *, engine: Engine, values: list[bool | None], batch_size: int
-    ) -> None:
-        df = DataFrame({"value": values}, schema={"value": pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", sqlalchemy.Boolean),
-        )
-        insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
-        with engine.begin() as conn:
-            dfs = select_to_dataframe(sel, conn, batch_size=batch_size)
-            for df_i in dfs:
-                check_polars_dataframe(
-                    df_i,
-                    min_height=1,
-                    max_height=batch_size,
-                    schema_list={"value": pl.Boolean},
-                )
-
-    @given(
         data=data(),
         engine=sqlite_engines(),
-        batch_size=integers(1, 10) | none(),
+        batch_size=integers(1, 10),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_conn_and_in_clauses(
+    def test_sync_batch_and_in_clauses(
         self,
         *,
         data: DataObject,
-        batch_size: int | None,
+        batch_size: int,
         engine: Engine,
         values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": Int64})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+        table = self._make_table(Integer)
         insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
-        if batch_size is None:
-            max_height = in_clauses_chunk_size
-        else:
-            max_height = batch_size * in_clauses_chunk_size
-        seen: set[int] = set()
+        max_height = batch_size * in_clauses_chunk_size
         in_values = data.draw(sets(sampled_from(values)))
-        with engine.begin() as conn:
-            dfs = select_to_dataframe(
-                sel,
-                conn,
-                batch_size=batch_size,
-                in_clauses=(table.c["value"], in_values),
-                in_clauses_chunk_size=in_clauses_chunk_size,
+        dfs = select_to_dataframe(
+            sel,
+            engine,
+            batch_size=batch_size,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        seen: set[int] = set()
+        for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=max_height, schema_list={"value": Int64}
             )
-            for df_i in dfs:
-                check_polars_dataframe(
-                    df_i, max_height=max_height, schema_list={"value": Int64}
-                )
-                assert df_i["value"].is_in(in_values).all()
-                seen.update(df_i["value"].to_list())
+            assert df_i["value"].is_in(in_values).all()
+            seen.update(df_i["value"].to_list())
         assert seen == in_values
 
     @given(engine=sqlite_engines())

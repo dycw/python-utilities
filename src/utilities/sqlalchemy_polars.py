@@ -227,7 +227,7 @@ def select_to_dataframe(
     snake: bool = ...,
     time_zone: ZoneInfo | str = ...,
     batch_size: None = ...,
-    in_clauses: None = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = ...,
     **kwargs: Any,
@@ -264,15 +264,15 @@ def select_to_dataframe(
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
-        with yield_connection(engine_or_conn) as conn:
-            return read_database(
-                sel,
-                cast(ConnectionOrCursor, conn),
-                iter_batches=batch_size is not None,
-                batch_size=batch_size,
-                schema_overrides=schema,
-                **kwargs,
-            )
+        # with yield_connection(engine_or_conn) as conn:
+        return read_database(
+            sel,
+            cast(ConnectionOrCursor, engine_or_conn),
+            iter_batches=batch_size is not None,
+            batch_size=batch_size,
+            schema_overrides=schema,
+            **kwargs,
+        )
     sels = _select_to_dataframe_yield_selects_with_in_clauses(
         sel,
         engine_or_conn,
