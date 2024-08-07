@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import eq
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 import polars as pl
 import sqlalchemy
@@ -107,11 +107,14 @@ from utilities.sqlalchemy_polars import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
+
+
+_T = TypeVar("_T")
 
 
 class TestInsertDataFrame:
@@ -143,30 +146,21 @@ class TestInsertDataFrame:
         col_type: Any,
         check: Callable[[Any, Any], bool],
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
-        df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = self._make_table(col_type)
+        values, df, table, sel = self._prepare_main_test(
+            data, strategy, pl_dtype, col_type
+        )
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
-        for r, v in zip(res, values, strict=True):
-            assert ((r is None) == (v is None)) or check(r, v)
+        self._assert_results(res, values, check)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
     def test_sync_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
-        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("Value", sqlalchemy.Boolean),
-        )
+        df, table, sel = self._prepare_snake_test(sr_name, values)
         insert_dataframe(df, table, engine, snake=True)
-        sel = select(table.c["Value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         assert res == values
@@ -195,24 +189,69 @@ class TestInsertDataFrame:
         col_type: Any,
         check: Callable[[Any, Any], bool],
     ) -> None:
+        values, df, table, sel = self._prepare_main_test(
+            data, strategy, pl_dtype, col_type
+        )
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
+        self._assert_results(res, values, check)
+
+    @given(data=data(), values=lists(booleans() | none(), max_size=100))
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    async def test_async_snake(
+        self, *, data: DataObject, values: list[bool | None], sr_name: str
+    ) -> None:
+        df, table, sel = self._prepare_snake_test(sr_name, values)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine, snake=True)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
+        assert res == values
+
+    def _prepare_main_test(
+        self,
+        data: DataObject,
+        strategy: SearchStrategy[_T],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        /,
+    ) -> tuple[Sequence[_T], DataFrame, Table, Select[Any]]:
         values = data.draw(lists(strategy, max_size=100))
         df = DataFrame({"value": values}, schema={"value": pl_dtype})
         table = self._make_table(col_type)
-        engine = await aiosqlite_engines(data)
-        await insert_dataframe_async(df, table, engine)
         sel = select(table.c["value"])
-        async with engine.begin() as conn:
-            res = (await conn.execute(sel)).scalars().all()
-        for r, v in zip(res, values, strict=True):
-            assert ((r is None) == (v is None)) or check(r, v)
+        return values, df, table, sel
 
-    def _make_table(self, type_: Any, /) -> Table:
+    def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
         return Table(
             "example",
             MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", type_),
+            Column("Id" if title else "id", Integer, primary_key=True),
+            Column("Value" if title else "value", type_),
         )
+
+    def _assert_results(
+        self,
+        results: Sequence[Any],
+        values: Sequence[Any],
+        check: Callable[[Any, Any], bool],
+        /,
+    ) -> None:
+        for r, v in zip(results, values, strict=True):
+            assert ((r is None) == (v is None)) or check(r, v)
+
+    def _prepare_snake_test(
+        self,
+        sr_name: str,
+        values: Sequence[bool | None],
+        /,
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean, title=True)
+        sel = select(table.c["value"])
+        return df, table, sel
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:

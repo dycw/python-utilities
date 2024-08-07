@@ -69,10 +69,10 @@ def insert_dataframe(
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.is_empty_df_and_no_items:
+    if prepared.no_items_empty_df:
         ensure_tables_created(engine, table_or_mapped_class)
         return
-    if prepared.is_empty_df_and_with_items:
+    if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
     insert_items(engine, prepared.insert_item, chunk_size_frac=chunk_size_frac)
 
@@ -88,10 +88,10 @@ async def insert_dataframe_async(
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
-    if prepared.is_empty_df_and_no_items:
+    if prepared.no_items_empty_df:
         await ensure_tables_created_async(engine, table_or_mapped_class)
         return
-    if prepared.is_empty_df_and_with_items:
+    if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
     await insert_items_async(
         engine, prepared.insert_item, chunk_size_frac=chunk_size_frac
@@ -101,8 +101,8 @@ async def insert_dataframe_async(
 @dataclass(frozen=True, kw_only=True)
 class _InsertDataFramePrepare:
     insert_item: tuple[Sequence[Mapping[str, Any]], Table | type[Any]]
-    is_empty_df_and_no_items: bool
-    is_empty_df_and_with_items: bool
+    no_items_empty_df: bool
+    no_items_non_empty_df: bool
 
 
 def _insert_dataframe_prepare(
@@ -113,10 +113,12 @@ def _insert_dataframe_prepare(
         df.schema, table_or_mapped_class, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
+    no_items = len(items) == 0
+    df_is_empty = df.is_empty()
     return _InsertDataFramePrepare(
-        is_empty_df_and_no_items=df.is_empty() and (len(items) == 0),
-        is_empty_df_and_with_items=df.is_empty() and (len(items) >= 1),
         insert_item=(items, table_or_mapped_class),
+        no_items_empty_df=no_items and df_is_empty,
+        no_items_non_empty_df=no_items and not df_is_empty,
     )
 
 
