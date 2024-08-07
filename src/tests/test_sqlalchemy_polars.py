@@ -595,24 +595,44 @@ class TestSelectToDataFrame:
     @given(
         data=data(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
-        batch_size=integers(1, 10) | none(),
-        in_clauses_chunk_size=integers(1, 10),
+        batch_size=integers(1, 10),
     )
-    async def test_async_engine_and_in_clauses_non_empty(
+    async def test_async_batch(
         self,
         *,
         data: DataObject,
         values: list[int],
-        batch_size: int | None,
+        batch_size: int,
+    ) -> None:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = self._make_table(Integer)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        sel = select(table.c["value"])
+        seen: set[int] = set()
+        dfs = await select_to_dataframe_async(sel, engine, batch_size=batch_size)
+        for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=batch_size, schema_list={"value": Int64}
+            )
+            assert df_i["value"].is_in(values).all()
+            seen.update(df_i["value"].to_list())
+        assert seen == set(values)
+
+    @given(
+        data=data(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        in_clauses_chunk_size=integers(1, 10),
+    )
+    async def test_async_in_clauses(
+        self,
+        *,
+        data: DataObject,
+        values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": Int64})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+        table = self._make_table(Integer)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
         sel = select(table.c["value"])
@@ -620,12 +640,48 @@ class TestSelectToDataFrame:
         df = await select_to_dataframe_async(
             sel,
             engine,
-            batch_size=batch_size,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
+
+    @given(
+        data=data(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        batch_size=integers(1, 10),
+        in_clauses_chunk_size=integers(1, 10),
+    )
+    async def test_async_batch_and_in_clauses(
+        self,
+        *,
+        data: DataObject,
+        values: list[int],
+        batch_size: int,
+        in_clauses_chunk_size: int,
+    ) -> None:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = self._make_table(Integer)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        sel = select(table.c["value"])
+        in_values = data.draw(sets(sampled_from(values)))
+        max_height = batch_size * in_clauses_chunk_size
+        dfs = await select_to_dataframe_async(
+            sel,
+            engine,
+            batch_size=batch_size,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        seen: set[int] = set()
+        async for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=batch_size, schema_list={"value": Int64}
+            )
+            assert df_i["value"].is_in(values).all()
+            seen.update(df_i["value"].to_list())
+        assert seen == (in_values)
 
     def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
         return Table(
