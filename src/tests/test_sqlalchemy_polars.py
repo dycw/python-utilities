@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import eq
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import polars as pl
 import sqlalchemy
@@ -83,7 +83,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError
 
 from utilities.datetime import is_equal_mod_tz
-from utilities.hypothesis import sqlite_engines, text_ascii
+from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
 from utilities.sqlalchemy import ensure_tables_created
@@ -101,6 +101,7 @@ from utilities.sqlalchemy_polars import (
     _select_to_dataframe_map_table_column_type_to_dtype,
     _select_to_dataframe_yield_selects_with_in_clauses,
     insert_dataframe,
+    insert_dataframe_async,
     select_to_dataframe,
 )
 from utilities.zoneinfo import UTC
@@ -108,31 +109,31 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
 
 
 class TestInsertDataFrame:
+    cases: ClassVar[list[ParameterSet]] = [
+        param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
+        param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
+        param(datetimes() | none(), Datetime, DateTime, eq),
+        param(
+            datetimes(timezones=just(UTC)) | none(),
+            Datetime(time_zone="UTC"),
+            DateTime(timezone=True),
+            is_equal_mod_tz,
+        ),
+        param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
+        param(integers(-10, 10) | none(), Int32, Integer, eq),
+        param(integers(-10, 10) | none(), Int64, Integer, eq),
+        param(text_ascii() | none(), Utf8, String, eq),
+    ]
+
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
-        ("strategy", "pl_dtype", "col_type", "check"),
-        [
-            param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
-            param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
-            param(datetimes() | none(), Datetime, DateTime, eq),
-            param(
-                datetimes(timezones=just(UTC)) | none(),
-                Datetime(time_zone="UTC"),
-                DateTime(timezone=True),
-                is_equal_mod_tz,
-            ),
-            param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
-            param(integers(-10, 10) | none(), Int32, Integer, eq),
-            param(integers(-10, 10) | none(), Int64, Integer, eq),
-            param(text_ascii() | none(), Utf8, String, eq),
-        ],
-    )
-    def test_main(
+    @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
+    def test_sync(
         self,
         *,
         data: DataObject,
@@ -143,14 +144,9 @@ class TestInsertDataFrame:
         check: Callable[[Any, Any], bool],
     ) -> None:
         values = data.draw(lists(strategy, max_size=100))
-        dummy = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", col_type),
-        )
-        insert_dataframe(dummy, table, engine)
+        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        table = self._make_table(col_type)
+        insert_dataframe(df, table, engine)
         sel = select(table.c["value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -159,17 +155,17 @@ class TestInsertDataFrame:
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
-    def test_snake(
+    def test_sync_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
-        dummy = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
         table = Table(
             "example",
             MetaData(),
             Column("Id", Integer, primary_key=True),
             Column("Value", sqlalchemy.Boolean),
         )
-        insert_dataframe(dummy, table, engine, snake=True)
+        insert_dataframe(df, table, engine, snake=True)
         sel = select(table.c["Value"])
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
@@ -179,18 +175,44 @@ class TestInsertDataFrame:
         values=lists(booleans() | none(), min_size=1, max_size=100),
         engine=sqlite_engines(),
     )
-    def test_dataframe_becomes_no_items_error(
-        self, *, values: list[bool | None], engine: Engine
+    def test_sync_error(self, *, values: list[bool | None], engine: Engine) -> None:
+        df = DataFrame({"other": values}, schema={"other": pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean)
+        with raises(
+            InsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            insert_dataframe(df, table, engine)
+
+    @given(data=data())
+    @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
+    async def test_async(
+        self,
+        *,
+        data: DataObject,
+        strategy: SearchStrategy[Any],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        check: Callable[[Any, Any], bool],
     ) -> None:
-        table = Table(
+        values = data.draw(lists(strategy, max_size=100))
+        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        table = self._make_table(col_type)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        sel = select(table.c["value"])
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
+        for r, v in zip(res, values, strict=True):
+            assert ((r is None) == (v is None)) or check(r, v)
+
+    def _make_table(self, type_: Any, /) -> Table:
+        return Table(
             "example",
             MetaData(),
             Column("id", Integer, primary_key=True),
-            Column("value", sqlalchemy.Boolean),
+            Column("value", type_),
         )
-        dummy = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(InsertDataFrameError):
-            insert_dataframe(dummy, table, engine)
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:

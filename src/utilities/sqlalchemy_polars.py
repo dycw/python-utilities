@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import decimal
 from contextlib import suppress
+from dataclasses import dataclass
 from itertools import chain
 from typing import TYPE_CHECKING, Any, cast, overload
 from uuid import UUID
@@ -26,6 +27,7 @@ from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from typing_extensions import override
 
 from utilities.errors import redirect_error
 from utilities.functions import identity
@@ -40,14 +42,16 @@ from utilities.polars import EmptyPolarsConcatError, redirect_empty_polars_conca
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     ensure_tables_created,
+    ensure_tables_created_async,
     get_chunk_size,
     get_columns,
     insert_items,
+    insert_items_async,
 )
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator, Mapping
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
     from zoneinfo import ZoneInfo
 
     from sqlalchemy.sql import ColumnCollection
@@ -64,21 +68,65 @@ def insert_dataframe(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a DataFrame into a database."""
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.is_empty_df_and_no_items:
+        ensure_tables_created(engine, table_or_mapped_class)
+        return
+    if prepared.is_empty_df_and_with_items:
+        raise InsertDataFrameError(df=df)
+    insert_items(engine, prepared.insert_item, chunk_size_frac=chunk_size_frac)
+
+
+async def insert_dataframe_async(
+    df: DataFrame,
+    table_or_mapped_class: Table | type[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> None:
+    """Insert a DataFrame into a database."""
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.is_empty_df_and_no_items:
+        await ensure_tables_created_async(engine, table_or_mapped_class)
+        return
+    if prepared.is_empty_df_and_with_items:
+        raise InsertDataFrameError(df=df)
+    await insert_items_async(
+        engine, prepared.insert_item, chunk_size_frac=chunk_size_frac
+    )
+
+
+@dataclass(frozen=True, kw_only=True)
+class _InsertDataFramePrepare:
+    insert_item: tuple[Sequence[Mapping[str, Any]], Table | type[Any]]
+    is_empty_df_and_no_items: bool
+    is_empty_df_and_with_items: bool
+
+
+def _insert_dataframe_prepare(
+    df: DataFrame, table_or_mapped_class: Table | type[Any], /, *, snake: bool = False
+) -> _InsertDataFramePrepare:
+    """Prepare the arguments for `insert_dataframe`."""
     mapping = _insert_dataframe_map_df_schema_to_table(
         df.schema, table_or_mapped_class, snake=snake
     )
     items = df.select(mapping).rename(mapping).to_dicts()
-    if len(items) == 0:
-        if df.height == 0:
-            return ensure_tables_created(engine, table_or_mapped_class)
-        msg = f"{df=}, {items=}"
-        raise InsertDataFrameError(msg)
-    return insert_items(
-        engine, (items, table_or_mapped_class), chunk_size_frac=chunk_size_frac
+    return _InsertDataFramePrepare(
+        is_empty_df_and_no_items=df.is_empty() and (len(items) == 0),
+        is_empty_df_and_with_items=df.is_empty() and (len(items) >= 1),
+        insert_item=(items, table_or_mapped_class),
     )
 
 
-class InsertDataFrameError(Exception): ...
+@dataclass(kw_only=True)
+class InsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 def _insert_dataframe_map_df_schema_to_table(
@@ -583,5 +631,6 @@ __all__ = [
     "InsertDataFrameError",
     "SelectToDataFrameError",
     "insert_dataframe",
+    "insert_dataframe_async",
     "select_to_dataframe",
 ]
