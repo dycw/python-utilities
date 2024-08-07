@@ -964,7 +964,7 @@ class TestGetDialect:
 
     @given(data=data())
     async def test_async(self, *, data: DataObject) -> None:
-        engine =await aiosqlite_engines(data)
+        engine = await aiosqlite_engines(data)
         assert get_dialect(engine) is Dialect.sqlite
 
 

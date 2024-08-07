@@ -35,6 +35,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
 from utilities.pathlib import temp_cwd
@@ -69,9 +70,7 @@ async def aiosqlite_engines(
 
     temp_path = data.draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
-    engine = create_engine(
-        "sqlite+aiosqlite", database=str(path.joinpath("db.sqlite")), async_=True
-    )
+    engine = create_engine("sqlite+aiosqlite", database=str(path), async_=True)
     if metadata is not None:
         async with engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
@@ -79,9 +78,11 @@ async def aiosqlite_engines(
         async with engine.begin() as conn:
             await conn.run_sync(base.metadata.create_all)
 
-    # attach temp_path to the engine, so as to keep it alive
-    cast(Any, engine).temp_path = temp_path
-    return engine
+    class EngineWithPath(type(engine)): ...
+
+    engine_with_path = EngineWithPath(engine.sync_engine)
+    cast(Any, engine_with_path).temp_path = temp_path  # keep `temp_path` alive
+    return engine_with_path
 
 
 @contextmanager
@@ -740,13 +741,11 @@ def sqlite_engines(
     temp_path = _draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
     engine = create_engine("sqlite", database=str(path))
+    cast(Any, engine).temp_path = temp_path  # keep `temp_path` alive
     if metadata is not None:
         metadata.create_all(engine)
     if base is not None:
         base.metadata.create_all(engine)
-
-    # attach temp_path to the engine, so as to keep it alive
-    cast(Any, engine).temp_path = temp_path
     return engine
 
 

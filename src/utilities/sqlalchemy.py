@@ -604,7 +604,7 @@ async def ensure_tables_created_async(
         table = get_table(table_or_mapped_class)
         async with engine.begin() as conn:
             try:
-                conn.run_sync(table.create)
+                await conn.run_sync(table.create)
             except DatabaseError as error:
                 if not search(match, ensure_str(one(error.args))):
                     raise  # pragma: no cover
@@ -865,14 +865,14 @@ async def insert_items_async(
         engine, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
     for table, values in to_insert.items():
-        ensure_tables_created(engine, table)
+        await ensure_tables_created_async(engine, table)
         ins = insert(table)
         async with engine.begin() as conn:
             for chunk in chunked(values, chunk_size):
                 if dialect is Dialect.oracle:  # pragma: no cover
-                    _ = conn.execute(ins, cast(Any, chunk))
+                    _ = await conn.execute(ins, cast(Any, chunk))
                 else:
-                    _ = conn.execute(ins.values(list(chunk)))
+                    _ = await conn.execute(ins.values(list(chunk)))
 
 
 def is_mapped_class(obj: Any, /) -> bool:

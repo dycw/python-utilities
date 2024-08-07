@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import cached_property
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -44,9 +43,9 @@ from pandas import Timestamp
 from pandas.testing import assert_index_equal
 from pytest import mark, param, raises
 from semver import Version
-from sqlalchemy import Column, Engine, Integer, MetaData, Table, select
+from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass, declarative_base
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY
 from utilities.git import _GET_BRANCH_NAME
@@ -116,7 +115,7 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Hashable, Mapping
+    from collections.abc import Hashable, Mapping, Sequence
     from collections.abc import Set as AbstractSet
 
     from utilities.datetime import Month
@@ -829,6 +828,12 @@ class TestSQLiteEngines:
         engine = await aiosqlite_engines(data, metadata=metadata)
         await self._run_test_async(engine, table, ids)
 
+    @given(data=data(), ids=sets(integers(0, 10)))
+    async def test_async_mapped_class(self, *, data: DataObject, ids: set[int]) -> None:
+        base, mapped_class = self._base_and_mapped_class()
+        engine = await aiosqlite_engines(data, base=base)
+        await self._run_test_async(engine, mapped_class, ids)
+
     def _metadata_and_table(self) -> tuple[MetaData, Table]:
         metadata = MetaData()
         table = Table("example", metadata, Column("id_", Integer, primary_key=True))
@@ -837,7 +842,7 @@ class TestSQLiteEngines:
     def _base_and_mapped_class(self) -> tuple[type[Any], type[Any]]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
-        class Example(self._base_and_mapped_class):
+        class Example(Base):
             __tablename__ = "example"
 
             id_ = Column(Integer, primary_key=True)
@@ -848,10 +853,10 @@ class TestSQLiteEngines:
         self, engine: Engine, table_or_mapped_class: Table | type[Any], ids: set[int], /
     ) -> None:
         insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
-        sel = select(get_table(table_or_mapped_class).c["id_"])
+        sel = self._get_select(table_or_mapped_class)
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
-        assert set(res) == ids
+        self._assert_results(res, ids)
 
     async def _run_test_async(
         self,
@@ -863,10 +868,16 @@ class TestSQLiteEngines:
         await insert_items_async(
             engine, ([(id_,) for id_ in ids], table_or_mapped_class)
         )
-        sel = select(get_table(table_or_mapped_class).c["id_"])
+        sel = self._get_select(table_or_mapped_class)
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).scalars().all()
-        assert set(res) == ids
+        self._assert_results(res, ids)
+
+    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+        return select(get_table(table_or_mapped_class).c["id_"])
+
+    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> Select[Any]:
+        assert set(results) == ids
 
 
 class TestStrArrays:
