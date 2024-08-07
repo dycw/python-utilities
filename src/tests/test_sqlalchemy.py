@@ -1061,7 +1061,7 @@ class TestGetTableUpdatedColumn:
 
 
 class TestInsertItems:
-    CaseSingleItem = Literal["tuple_and_table", "dict_and_table"]
+    CaseSingleItem = Literal["tuple", "dict"]
     CaseMultipleItems = Literal[
         "pair_of_list_of_tuples",
         "pair_of_list_of_dicts",
@@ -1070,16 +1070,16 @@ class TestInsertItems:
     ]
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
+    @mark.parametrize("case", [param("tuple"), param("dict")])
     def test_sync_single_item(
         self, *, case: CaseSingleItem, engine: Engine, id_: int
     ) -> None:
         match case:
-            case "tuple_and_table":
-                item = (id_,), self._table
-            case "dict_and_table":
-                item = {"id_": id_}, self._table
-        self._run_test_sync(engine, {id_}, item)
+            case "tuple":
+                value = (id_,)
+            case "dict":
+                value = {"id_": id_}
+        self._run_test_sync(engine, {id_}, (value, self._table))
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize(
@@ -1211,45 +1211,56 @@ class TestInsertItems:
 
 class TestInsertItemsCollect:
     @given(id_=integers())
-    def test_pair_with_tuple_data(self, *, id_: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(((id_,), table)))
-        expected = [_InsertionItem(values=(id_,), table=table)]
-        assert result == expected
-
-    @given(id_=integers())
-    def test_pair_with_dict_data(self, *, id_: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(({"id": id_}, table)))
-        expected = [_InsertionItem(values={"id": id_}, table=table)]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_pair_with_list_of_tuple_data(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(([(id_,) for id_ in ids], table)))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    def test_single_item(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
+        table = self._table()
+        match case:
+            case "tuple":
+                values = (id_,)
+            case "dict":
+                values = {"id": id_}
+        result = list(_insert_items_collect((values, table)))
+        expected = [_InsertionItem(values=values, table=table)]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_pair_with_list_of_dict_data(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(([{"id": id_} for id_ in ids], table)))
-        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    def test_multiple_items(
+        self,
+        *,
+        case: Literal[
+            "pair_of_list_of_tuples",
+            "pair_of_list_of_dicts",
+            "list_of_pairs_of_tuples",
+            "list_of_pairs_of_dicts",
+        ],
+        ids: set[int],
+    ) -> None:
+        table = self._table()
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], table
+                values = [(id_,) for id_ in ids]
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], table
+                values = [{"id_": id_} for id_ in ids]
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), table)) for id_ in ids]
+                values = [(id_,) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, table) for id_ in ids]
+                values = [{"id_": id_} for id_ in ids]
+        result = list(_insert_items_collect(item))
+        expected = [_InsertionItem(values=v, table=table) for v in values]
         assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect([((id_,), table) for id_ in ids]))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_set(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect({((id_,), table) for id_ in ids}))
-        assert {one(r.values) for r in result} == ids
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
@@ -1270,8 +1281,7 @@ class TestInsertItemsCollect:
         [
             param((None,), "Tuple must be a pair; got (None,)"),
             param(
-                (None, None),
-                "Second element must be a table or mapped class; got None",
+                (None, None), "Second element must be a table or mapped class; got None"
             ),
             param(None, "Item must be valid; got None"),
         ],
