@@ -848,45 +848,88 @@ class _InsertionItem:
 def _insert_items_collect(item: Any, /) -> Iterator[_InsertionItem]:
     """Collect the insertion items."""
     if isinstance(item, tuple):
-        with redirect_error(ValueError, _InsertItemsCollectError(f"{item=}")):
+        try:
             data, table_or_mapped_class = item
+        except ValueError:
+            raise _InsertItemsCollectTupleButNotAPairError(item=item) from None
         if not is_table_or_mapped_class(table_or_mapped_class):
-            msg = f"{table_or_mapped_class=}"
-            raise _InsertItemsCollectError(msg)
+            raise _InsertItemsCollectSecondElementNotATableOrMappedClassError(
+                item=item, second=table_or_mapped_class
+            ) from None
         if _insert_items_collect_valid(data):
             yield _InsertionItem(values=data, table=get_table(table_or_mapped_class))
         elif is_iterable_not_str(data):
             yield from _insert_items_collect_iterable(data, table_or_mapped_class)
         else:
-            msg = f"{data=}"
-            raise _InsertItemsCollectError(msg)
+            raise _InsertItemsCollectFirstElementInvalidError(item=item, data=data)
     elif is_iterable_not_str(item):
         for i in item:
             yield from _insert_items_collect(i)
     elif is_mapped_class(cls := type(item)):
         yield _InsertionItem(values=mapped_class_to_dict(item), table=get_table(cls))
     else:
-        msg = f"{item=}"
-        raise _InsertItemsCollectError(msg)
+        raise _InsertItemsCollectInvalidItemError(item=item)
 
 
-class _InsertItemsCollectError(Exception): ...
+@dataclass(kw_only=True)
+class _InsertItemsCollectError(Exception):
+    item: Any
+
+
+@dataclass(kw_only=True)
+class _InsertItemsCollectTupleButNotAPairError(_InsertItemsCollectError):
+    @override
+    def __str__(self) -> str:
+        return f"Tuple must be a pair; got {self.item}"
+
+
+@dataclass(kw_only=True)
+class _InsertItemsCollectSecondElementNotATableOrMappedClassError(
+    _InsertItemsCollectError
+):
+    second: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Second element must be a table or mapped class; got {self.second}"
+
+
+@dataclass(kw_only=True)
+class _InsertItemsCollectFirstElementInvalidError(_InsertItemsCollectError):
+    data: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"First element must be valid; got {self.data}"
+
+
+@dataclass(kw_only=True)
+class _InsertItemsCollectInvalidItemError(_InsertItemsCollectError):
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 def _insert_items_collect_iterable(
-    obj: Iterable[Any], table_or_mapped_class: Table | type[Any], /
+    items: Iterable[Any], table_or_mapped_class: Table | type[Any], /
 ) -> Iterator[_InsertionItem]:
     """Collect the insertion items, for an iterable."""
     table = get_table(table_or_mapped_class)
-    for datum in obj:
-        if _insert_items_collect_valid(datum):
-            yield _InsertionItem(values=datum, table=table)
+    for item in items:
+        if _insert_items_collect_valid(item):
+            yield _InsertionItem(values=item, table=table)
         else:
-            msg = f"{datum=}"
-            raise _InsertItemsCollectIterableError(msg)
+            raise _InsertItemsCollectIterableError(items=items, item=item)
 
 
-class _InsertItemsCollectIterableError(Exception): ...
+@dataclass(kw_only=True)
+class _InsertItemsCollectIterableError(Exception):
+    items: Iterable[Any]
+    item: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Iterable item must be valid; got {self.item}"
 
 
 def _insert_items_collect_valid(obj: Any, /) -> TypeGuard[_InsertItemValues]:

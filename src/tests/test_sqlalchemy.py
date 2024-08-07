@@ -1266,44 +1266,55 @@ class TestInsertItemsCollect:
         assert result == expected
 
     @mark.parametrize(
-        "item",
+        ("item", "match"),
         [
-            param((None,), id="tuple length"),
-            param((None, None), id="second argument not a table or mapped class"),
-            param(None, id="outright invalid"),
+            param((None,), "Tuple must be a pair; got (None,)"),
+            param(
+                (None, None),
+                "Second element must be a table or mapped class; got None",
+            ),
+            param(None, "Item must be valid; got None"),
         ],
     )
-    def test_errors(self, *, item: Any) -> None:
-        with raises(_InsertItemsCollectError):
+    def test_errors(self, *, item: Any, match: str) -> None:
+        with raises(_InsertItemsCollectError, match=escape(match)):
             _ = list(_insert_items_collect(item))
 
     def test_error_tuple_but_first_argument_invalid(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectError):
-            _ = list(_insert_items_collect((None, table)))
+        with raises(
+            _InsertItemsCollectError, match="First element must be valid; got None"
+        ):
+            _ = list(_insert_items_collect((None, self._table())))
+
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
 
 class TestInsertItemsCollectIterable:
     @given(ids=sets(integers()))
-    def test_list_of_tuples(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect_iterable([(id_,) for id_ in ids], table))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list_of_dicts(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(
-            _insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
-        )
-        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    def test_main(self, *, case: Literal["tuple", "dict"], ids: set[int]) -> None:
+        table = self._table()
+        match case:
+            case "tuple":
+                items = [(id_,) for id_ in ids]
+                exp_values = [(id_,) for id_ in ids]
+            case "dict":
+                items = [{"id": id_} for id_ in ids]
+                exp_values = [{"id": id_} for id_ in ids]
+        result = list(_insert_items_collect_iterable(items, table))
+        expected = [_InsertionItem(values=v, table=table) for v in exp_values]
         assert result == expected
 
     def test_error(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectIterableError):
-            _ = list(_insert_items_collect_iterable([None], table))
+        with raises(
+            _InsertItemsCollectIterableError,
+            match="Iterable item must be valid; got None",
+        ):
+            _ = list(_insert_items_collect_iterable([None], self._table()))
+
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
 
 class TestInsertItemsCollectValid:
