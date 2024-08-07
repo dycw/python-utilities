@@ -34,7 +34,7 @@ attrs==24.2.0
     #   trio
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.15.1
+basedpyright==1.15.2
     # via dycw-utilities (pyproject.toml)
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
@@ -214,6 +214,8 @@ more-itertools==10.3.0
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
+nest-asyncio==1.6.0
+    # via dycw-utilities (pyproject.toml)
 nodejs-wheel-binaries==20.16.0
     # via basedpyright
 nox==2024.4.15
@@ -521,7 +523,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.33
+uv==0.2.34
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

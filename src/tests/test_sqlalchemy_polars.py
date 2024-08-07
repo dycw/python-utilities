@@ -31,7 +31,6 @@ from polars import (
     Int32,
     Int64,
     Utf8,
-    read_database,
 )
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
@@ -82,7 +81,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from utilities.datetime import is_equal_mod_tz
 from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
@@ -598,11 +596,7 @@ class TestSelectToDataFrame:
         batch_size=integers(1, 10),
     )
     async def test_async_batch(
-        self,
-        *,
-        data: DataObject,
-        values: list[int],
-        batch_size: int,
+        self, *, data: DataObject, values: list[int], batch_size: int
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": Int64})
         table = self._make_table(Integer)
@@ -625,11 +619,7 @@ class TestSelectToDataFrame:
         in_clauses_chunk_size=integers(1, 10),
     )
     async def test_async_in_clauses(
-        self,
-        *,
-        data: DataObject,
-        values: list[int],
-        in_clauses_chunk_size: int,
+        self, *, data: DataObject, values: list[int], in_clauses_chunk_size: int
     ) -> None:
         df = DataFrame({"value": values}, schema={"value": Int64})
         table = self._make_table(Integer)

@@ -18,15 +18,7 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    TypeGuard,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
 
 import sqlalchemy
 from sqlalchemy import (

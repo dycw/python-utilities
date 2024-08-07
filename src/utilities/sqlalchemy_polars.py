@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 import decimal
-from concurrent.futures.process import BrokenProcessPool
 from contextlib import suppress
 from dataclasses import dataclass
 from itertools import chain
@@ -48,6 +47,7 @@ from utilities.sqlalchemy import (
     get_columns,
     insert_items,
     insert_items_async,
+    yield_connection,
 )
 from utilities.zoneinfo import UTC, get_time_zone_name
 
@@ -55,8 +55,6 @@ if TYPE_CHECKING:
     from collections.abc import (
         AsyncIterable,
         AsyncIterator,
-        Awaitable,
-        Coroutine,
         Iterable,
         Iterator,
         Mapping,
@@ -266,90 +264,55 @@ def select_to_dataframe(
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
     if in_clauses is None:
-        with yield_conn(engine_or_conn) as conn:
+        with yield_connection(engine_or_conn) as conn:
             return read_database(
-                sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
-            )
-    if isinstance(engine_or_conn, Engine) and (in_clauses is not None):
-        with engine_or_conn.begin() as conn:
-            dfs = select_to_dataframe(
                 sel,
-                conn,
-                snake=snake,
-                time_zone=time_zone,
+                cast(ConnectionOrCursor, conn),
+                iter_batches=batch_size is not None,
                 batch_size=batch_size,
-                in_clauses=in_clauses,
-                in_clauses_chunk_size=in_clauses_chunk_size,
-                chunk_size_frac=chunk_size_frac,
+                schema_overrides=schema,
                 **kwargs,
+            )
+    sels = _select_to_dataframe_yield_selects_with_in_clauses(
+        sel,
+        engine_or_conn,
+        in_clauses,
+        in_clauses_chunk_size=in_clauses_chunk_size,
+        chunk_size_frac=chunk_size_frac,
+    )
+    if batch_size is None:
+        with yield_connection(engine_or_conn) as conn:
+            dfs = (
+                select_to_dataframe(
+                    sel,
+                    conn,
+                    snake=snake,
+                    time_zone=time_zone,
+                    batch_size=None,
+                    in_clauses=None,
+                    **kwargs,
+                )
+                for sel in sels
             )
             try:
                 with redirect_empty_polars_concat():
                     return concat(dfs)
             except EmptyPolarsConcatError:
                 return DataFrame(schema=schema)
-    if (
-        isinstance(engine_or_conn, Connection)
-        and (batch_size is not None)
-        and (in_clauses is None)
-    ):
-        return read_database(
+    dfs = (
+        select_to_dataframe(
             sel,
-            cast(ConnectionOrCursor, engine_or_conn),
-            iter_batches=True,
+            engine_or_conn,
+            snake=snake,
+            time_zone=time_zone,
             batch_size=batch_size,
-            schema_overrides=schema,
+            in_clauses=None,
+            chunk_size_frac=chunk_size_frac,
             **kwargs,
         )
-    if (
-        isinstance(engine_or_conn, Connection)
-        and (batch_size is None)
-        and (in_clauses is not None)
-    ):
-        sels = _select_to_dataframe_yield_selects_with_in_clauses(
-            sel,
-            engine_or_conn,
-            in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-        )
-        return (
-            read_database(
-                sel,
-                cast(ConnectionOrCursor, engine_or_conn),
-                batch_size=batch_size,
-                schema_overrides=schema,
-                **kwargs,
-            )
-            for sel in sels
-        )
-    if (
-        isinstance(engine_or_conn, Connection)
-        and (batch_size is not None)
-        and (in_clauses is not None)
-    ):
-        sels = _select_to_dataframe_yield_selects_with_in_clauses(
-            sel,
-            engine_or_conn,
-            in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-        )
-        return chain(
-            *(
-                read_database(
-                    sel,
-                    cast(ConnectionOrCursor, engine_or_conn),
-                    iter_batches=True,
-                    batch_size=batch_size,
-                    schema_overrides=schema,
-                    **kwargs,
-                )
-                for sel in sels
-            )
-        )
-    msg = f"{engine_or_conn=}, {batch_size=}, {in_clauses=}"
-    raise SelectToDataFrameError(msg)
+        for sel in sels
+    )
+    return chain(*dfs)
 
 
 class SelectToDataFrameError(Exception): ...
@@ -525,14 +488,14 @@ async def select_to_dataframe_async(
             schema_overrides=schema,
             **kwargs,
         )
+    sels = _select_to_dataframe_yield_selects_with_in_clauses(
+        sel,
+        engine,
+        in_clauses,
+        in_clauses_chunk_size=in_clauses_chunk_size,
+        chunk_size_frac=chunk_size_frac,
+    )
     if batch_size is None:
-        sels = _select_to_dataframe_yield_selects_with_in_clauses(
-            sel,
-            engine,
-            in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-        )
         dfs = [
             await select_to_dataframe_async(
                 sel,
@@ -550,13 +513,6 @@ async def select_to_dataframe_async(
                 return concat(dfs)
         except EmptyPolarsConcatError:
             return DataFrame(schema=schema)
-    sels = _select_to_dataframe_yield_selects_with_in_clauses(
-        sel,
-        engine,
-        in_clauses,
-        in_clauses_chunk_size=in_clauses_chunk_size,
-        chunk_size_frac=chunk_size_frac,
-    )
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:
         for sel in sels:
