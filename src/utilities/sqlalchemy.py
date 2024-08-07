@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import enum
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
@@ -10,7 +18,15 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    TypeGuard,
+    assert_never,
+    cast,
+    overload,
+)
 
 import sqlalchemy
 from sqlalchemy import (
@@ -45,7 +61,7 @@ from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.exc import ArgumentError, DatabaseError
-from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     InstrumentedAttribute,
@@ -74,7 +90,6 @@ from utilities.types import IterableStrs, get_class_name
 if TYPE_CHECKING:
     import datetime as dt
 
-    from sqlalchemy.ext.asyncio import AsyncEngine
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
     from utilities.math import FloatFinNonNeg, IntNonNeg
@@ -555,12 +570,12 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    engine: Engine, /, *tables_or_mapped_classes: Table | type[Any]
+    engine: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
     for table in prepared.tables:
-        with engine.begin() as conn:
+        with yield_connection(engine) as conn:
             try:
                 table.create(conn)
             except DatabaseError as error:
@@ -587,16 +602,20 @@ class _EnsureTablesCreatedPrepare:
 
 
 def _ensure_tables_created_prepare(
-    engine: Engine | AsyncEngine, /, *tables_or_mapped_classes: Table | type[Any]
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    /,
+    *tables_or_mapped_classes: Table | type[Any],
 ) -> _EnsureTablesCreatedPrepare:
     """Prepare the arguments for `ensure_tables_created`."""
     return _EnsureTablesCreatedPrepare(
-        match=_ensure_tables_created_match(engine),
+        match=_ensure_tables_created_match(engine_or_conn),
         tables=list(map(get_table, tables_or_mapped_classes)),
     )
 
 
-def _ensure_tables_created_match(engine: Engine | AsyncEngine, /) -> str:
+def _ensure_tables_created_match(
+    engine: Engine | Connection | AsyncEngine | AsyncConnection, /
+) -> str:
     """Get the match statement for the given engine."""
     match dialect := get_dialect(engine):
         case Dialect.mysql:  # pragma: no cover
@@ -1118,6 +1137,28 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
+@contextmanager
+def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
+    """Yield a synchronous connection."""
+    if isinstance(engine_or_conn, Engine):
+        with engine_or_conn.begin() as conn:
+            yield conn
+    else:
+        yield engine_or_conn
+
+
+@asynccontextmanager
+async def yield_connection_async(
+    engine_or_conn: AsyncEngine | AsyncConnection, /
+) -> AsyncIterator[AsyncConnection]:
+    """Yield an asynchronous connection."""
+    if isinstance(engine_or_conn, AsyncEngine):
+        async with engine_or_conn.begin() as conn:
+            yield conn
+    else:
+        yield engine_or_conn
+
+
 def yield_primary_key_columns(obj: Any, /) -> Iterator[Column]:
     """Yield the primary key columns of a table."""
     table = get_table(obj)
@@ -1157,5 +1198,7 @@ __all__ = [
     "parse_engine",
     "postgres_upsert",
     "serialize_engine",
+    "yield_connection",
+    "yield_connection_async",
     "yield_primary_key_columns",
 ]

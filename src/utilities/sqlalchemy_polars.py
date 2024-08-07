@@ -223,7 +223,7 @@ def _insert_dataframe_check_df_and_db_types(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine,
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = ...,
@@ -237,41 +237,13 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: int | None = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> DataFrame: ...
-@overload
-def select_to_dataframe(
-    sel: Select[Any],
-    engine_or_conn: Connection,
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = ...,
     time_zone: ZoneInfo | str = ...,
     batch_size: int = ...,
     in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> Iterable[DataFrame]: ...
-@overload
-def select_to_dataframe(
-    sel: Select[Any],
-    engine_or_conn: Connection,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: int | None = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
     in_clauses_chunk_size: int | None = ...,
     chunk_size_frac: float = ...,
     **kwargs: Any,
@@ -293,12 +265,8 @@ def select_to_dataframe(
     if snake:
         sel = _select_to_dataframe_apply_snake(sel)
     schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if (
-        isinstance(engine_or_conn, Engine)
-        and (batch_size is None)
-        and (in_clauses is None)
-    ):
-        with engine_or_conn.begin() as conn:
+    if in_clauses is None:
+        with yield_conn(engine_or_conn) as conn:
             return read_database(
                 sel, cast(ConnectionOrCursor, conn), schema_overrides=schema, **kwargs
             )
@@ -532,6 +500,7 @@ async def select_to_dataframe_async(
 ) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
     if not issubclass(AsyncEngine, type(engine)):
+        # for handling testing
         engine = create_async_engine(engine.url)
         return await select_to_dataframe_async(
             sel,

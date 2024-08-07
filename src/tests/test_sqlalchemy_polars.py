@@ -677,7 +677,7 @@ class TestSelectToDataFrame:
         seen: set[int] = set()
         async for df_i in dfs:
             check_polars_dataframe(
-                df_i, max_height=batch_size, schema_list={"value": Int64}
+                df_i, max_height=max_height, schema_list={"value": Int64}
             )
             assert df_i["value"].is_in(values).all()
             seen.update(df_i["value"].to_list())

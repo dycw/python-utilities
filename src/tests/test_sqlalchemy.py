@@ -50,6 +50,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Connection,
     Date,
     DateTime,
     Double,
@@ -75,7 +76,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
@@ -154,6 +155,8 @@ from utilities.sqlalchemy import (
     postgres_upsert,
     reflect_table,
     serialize_engine,
+    yield_connection,
+    yield_connection_async,
     yield_primary_key_columns,
 )
 from utilities.types import get_class_name
@@ -1790,6 +1793,30 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+class TestYieldConnection:
+    @given(engine=sqlite_engines())
+    def test_sync_engine(self, *, engine: Engine) -> None:
+        with yield_connection(engine) as conn:
+            assert isinstance(conn, Connection)
+
+    @given(engine=sqlite_engines())
+    def test_sync_connection(self, *, engine: Engine) -> None:
+        with engine.begin() as conn1, yield_connection(conn1) as conn2:
+            assert isinstance(conn2, Connection)
+
+    @given(data=data())
+    async def test_async_engine(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        async with yield_connection_async(engine) as conn:
+            assert isinstance(conn, AsyncConnection)
+
+    @given(data=data())
+    async def test_async_conn(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        async with engine.begin() as conn1, yield_connection_async(conn1) as conn2:
+            assert isinstance(conn2, AsyncConnection)
 
 
 class TestYieldPrimaryKeyColumns:
