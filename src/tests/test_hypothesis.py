@@ -876,7 +876,7 @@ class TestSQLiteEngines:
     def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 
-    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> Select[Any]:
+    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
         assert set(results) == ids
 
 

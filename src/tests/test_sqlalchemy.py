@@ -62,6 +62,7 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     Row,
+    Select,
     SmallInteger,
     String,
     Table,
@@ -1046,46 +1047,120 @@ class TestGetTableUpdatedColumn:
 
 
 class TestInsertItems:
-    @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test_sync(engine, {id_}, ((id_,), self._table))
+    CaseSingleItem = Literal["tuple_and_table", "dict_and_table"]
+    CaseMultipleItems = Literal[
+        "pair_of_list_of_tuples",
+        "pair_of_list_of_dicts",
+        "list_of_pairs_of_tuples",
+        "list_of_pairs_of_dicts",
+    ]
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test_sync(engine, {id_}, ({"id_": id_}, self._table))
+    @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
+    def test_sync_single_item(
+        self, *, case: CaseSingleItem, engine: Engine, id_: int
+    ) -> None:
+        match case:
+            case "tuple_and_table":
+                item = (id_,), self._table
+            case "dict_and_table":
+                item = {"id_": id_}, self._table
+        self._run_test_sync(engine, {id_}, item)
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_pair_of_lists_of_tuples_and_table(
-        self, *, engine: Engine, ids: set[int]
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    def test_sync_multiple_items(
+        self, *, case: CaseMultipleItems, engine: Engine, ids: set[int]
     ) -> None:
-        self._run_test_sync(engine, ids, ([((id_,)) for id_ in ids], self._table))
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_pair_of_lists_of_dicts_and_table(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test_sync(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_list_of_pairs_of_tuples_and_tables(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test_sync(engine, ids, [(((id_,), self._table)) for id_ in ids])
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_list_of_pairs_of_dicts_and_tables(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test_sync(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], self._table
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], self._table
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), self._table)) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, self._table) for id_ in ids]
+        self._run_test_sync(engine, ids, item)
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
-    def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
+    def test_sync_many_items(self, *, engine: Engine, ids: set[int]) -> None:
         self._run_test_sync(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
+    def test_sync_mapped_class(self, *, engine: Engine, id_: int) -> None:
+        self._run_test_sync(engine, {id_}, self._mapped_class(id_=id_))
+
+    @given(data=data(), id_=integers(0, 10))
+    @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
+    async def test_async_single_item(
+        self,
+        *,
+        case: Literal["tuple_and_table", "dict_and_table"],
+        data: DataObject,
+        id_: int,
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        match case:
+            case "tuple_and_table":
+                pair = (id_,), self._table
+            case "dict_and_table":
+                pair = {"id_": id_}, self._table
+        await self._run_test_async(engine, {id_}, pair)
+
+    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    async def test_async_multiple_items(
+        self, *, case: CaseMultipleItems, data: DataObject, ids: set[int]
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], self._table
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], self._table
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), self._table)) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, self._table) for id_ in ids]
+        await self._run_test_async(engine, ids, item)
+
+    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
+    async def test_async_many_items(self, *, data: DataObject, ids: set[int]) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(
+            engine, ids, [({"id_": id_}, self._table) for id_ in ids]
+        )
+
+    @given(data=data(), id_=integers(0, 10))
+    async def test_async_mapped_class(self, *, data: DataObject, id_: int) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, {id_}, self._mapped_class(id_=id_))
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    @property
+    def _mapped_class(self) -> type[Any]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -1093,11 +1168,7 @@ class TestInsertItems:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test_sync(engine, {id_}, Example(id_=id_))
-
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+        return Example
 
     def _run_test_sync(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
         ensure_tables_created(engine, self._table)
@@ -1114,8 +1185,14 @@ class TestInsertItems:
         await insert_items_async(engine, *args)
         sel = select(self._table.c["id_"])
         async with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
+            res = (await conn.execute(sel)).scalars().all()
         assert set(res) == ids
+
+    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+        return select(get_table(table_or_mapped_class).c["id_"])
+
+    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
+        assert set(results) == ids
 
 
 class TestInsertItemsCollect:

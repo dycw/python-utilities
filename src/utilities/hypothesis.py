@@ -35,7 +35,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from sqlalchemy.ext.asyncio import create_async_engine
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
 from utilities.pathlib import temp_cwd
@@ -1064,6 +1063,7 @@ def _merge_into_dict_of_indexes(
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
+    "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
     "bool_data_arrays",
