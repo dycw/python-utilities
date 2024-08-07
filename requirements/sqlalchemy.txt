@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-sqlalchemy --prerelease=disallow --output-file=requirements/sqlalchemy.txt --python-version=3.11 pyproject.toml
 aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 coverage==7.6.1
     # via pytest-cov

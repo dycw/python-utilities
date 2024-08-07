@@ -16,7 +16,7 @@ asttokens==2.4.1
     # via stack-data
 async-lru==2.0.4
     # via jupyterlab
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   jsonschema
@@ -32,7 +32,7 @@ certifi==2024.7.4
     #   httpcore
     #   httpx
     #   requests
-cffi==1.16.0
+cffi==1.17.0
     # via argon2-cffi-bindings
 charset-normalizer==3.3.2
     # via requests
@@ -214,7 +214,7 @@ python-json-logger==2.0.7
     # via jupyter-events
 pytz==2024.1
     # via pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via jupyter-events
 pyzmq==26.1.0
     # via
@@ -236,7 +236,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing

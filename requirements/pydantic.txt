@@ -4,7 +4,7 @@ annotated-types==0.7.0
     # via pydantic
 atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 coverage==7.6.1
     # via pytest-cov

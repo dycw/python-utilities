@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-ipython --prerelease=disallow --output-file=requirements/ipython.txt --python-version=3.11 pyproject.toml
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 coverage==7.6.1
     # via pytest-cov

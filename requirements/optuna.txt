@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-optuna --prerelease=disallow --output-file=requirements/optuna.txt --python-version=3.11 pyproject.toml
 alembic==1.13.2
     # via optuna
-attrs==24.1.0
+attrs==24.2.0
     # via hypothesis
 colorlog==6.8.2
     # via optuna
@@ -39,7 +39,7 @@ pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via optuna
 sortedcontainers==2.4.0
     # via hypothesis
