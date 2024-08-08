@@ -372,7 +372,6 @@ class TestInsertDataFrameMapDFSchemaToTable:
         assert result == expected
 
 
-@mark.only
 class TestSelectToDataFrame:
     cases: ClassVar[list[ParameterSet]] = [
         param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean),
