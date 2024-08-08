@@ -8,7 +8,7 @@ colorlog==6.8.2
     # via optuna
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.108.10
+hypothesis==6.110.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
