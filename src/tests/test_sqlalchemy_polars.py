@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import eq
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 import polars as pl
 import sqlalchemy
@@ -83,13 +83,12 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError
 
 from utilities.datetime import is_equal_mod_tz
-from utilities.hypothesis import sqlite_engines, text_ascii
+from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
-from utilities.sqlalchemy import ensure_tables_created
+from utilities.sqlalchemy import ensure_tables_created, ensure_tables_created_async
 from utilities.sqlalchemy_polars import (
     InsertDataFrameError,
-    SelectToDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -101,38 +100,43 @@ from utilities.sqlalchemy_polars import (
     _select_to_dataframe_map_table_column_type_to_dtype,
     _select_to_dataframe_yield_selects_with_in_clauses,
     insert_dataframe,
+    insert_dataframe_async,
     select_to_dataframe,
+    select_to_dataframe_async,
 )
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable, Sequence
 
+    from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
 
 
+_T = TypeVar("_T")
+
+
 class TestInsertDataFrame:
+    cases: ClassVar[list[ParameterSet]] = [
+        param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
+        param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
+        param(datetimes() | none(), Datetime, DateTime, eq),
+        param(
+            datetimes(timezones=just(UTC)) | none(),
+            Datetime(time_zone="UTC"),
+            DateTime(timezone=True),
+            is_equal_mod_tz,
+        ),
+        param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
+        param(integers(-10, 10) | none(), Int32, Integer, eq),
+        param(integers(-10, 10) | none(), Int64, Integer, eq),
+        param(text_ascii() | none(), Utf8, String, eq),
+    ]
+
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
-        ("strategy", "pl_dtype", "col_type", "check"),
-        [
-            param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean, eq),
-            param(dates() | none(), pl.Date, sqlalchemy.Date, eq),
-            param(datetimes() | none(), Datetime, DateTime, eq),
-            param(
-                datetimes(timezones=just(UTC)) | none(),
-                Datetime(time_zone="UTC"),
-                DateTime(timezone=True),
-                is_equal_mod_tz,
-            ),
-            param(floats(allow_nan=False) | none(), Float64, Float, is_equal),
-            param(integers(-10, 10) | none(), Int32, Integer, eq),
-            param(integers(-10, 10) | none(), Int64, Integer, eq),
-            param(text_ascii() | none(), Utf8, String, eq),
-        ],
-    )
-    def test_main(
+    @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
+    def test_sync(
         self,
         *,
         data: DataObject,
@@ -142,35 +146,21 @@ class TestInsertDataFrame:
         col_type: Any,
         check: Callable[[Any, Any], bool],
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
-        dummy = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", col_type),
+        values, df, table, sel = self._prepare_main_test(
+            data, strategy, pl_dtype, col_type
         )
-        insert_dataframe(dummy, table, engine)
-        sel = select(table.c["value"])
+        insert_dataframe(df, table, engine)
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
-        for r, v in zip(res, values, strict=True):
-            assert ((r is None) == (v is None)) or check(r, v)
+        self._assert_results(res, values, check)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
-    def test_snake(
+    def test_sync_snake(
         self, *, engine: Engine, values: list[bool | None], sr_name: str
     ) -> None:
-        dummy = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("Value", sqlalchemy.Boolean),
-        )
-        insert_dataframe(dummy, table, engine, snake=True)
-        sel = select(table.c["Value"])
+        df, table, sel = self._prepare_snake_test(sr_name, values)
+        insert_dataframe(df, table, engine, snake=True)
         with engine.begin() as conn:
             res = conn.execute(sel).scalars().all()
         assert res == values
@@ -179,18 +169,104 @@ class TestInsertDataFrame:
         values=lists(booleans() | none(), min_size=1, max_size=100),
         engine=sqlite_engines(),
     )
-    def test_dataframe_becomes_no_items_error(
-        self, *, values: list[bool | None], engine: Engine
+    def test_sync_error(self, *, values: list[bool | None], engine: Engine) -> None:
+        df, table = self._prepare_empty_test(values)
+        with raises(
+            InsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            insert_dataframe(df, table, engine)
+
+    @given(data=data())
+    @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
+    async def test_async(
+        self,
+        *,
+        data: DataObject,
+        strategy: SearchStrategy[Any],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        check: Callable[[Any, Any], bool],
     ) -> None:
-        table = Table(
+        values, df, table, sel = self._prepare_main_test(
+            data, strategy, pl_dtype, col_type
+        )
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
+        self._assert_results(res, values, check)
+
+    @given(data=data(), values=lists(booleans() | none(), max_size=100))
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    async def test_async_snake(
+        self, *, data: DataObject, values: list[bool | None], sr_name: str
+    ) -> None:
+        df, table, sel = self._prepare_snake_test(sr_name, values)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine, snake=True)
+        async with engine.begin() as conn:
+            res = (await conn.execute(sel)).scalars().all()
+        assert res == values
+
+    @given(data=data(), values=lists(booleans() | none(), min_size=1, max_size=100))
+    async def test_async_error(
+        self, *, data: DataObject, values: list[bool | None]
+    ) -> None:
+        df, table = self._prepare_empty_test(values)
+        engine = await aiosqlite_engines(data)
+        with raises(
+            InsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            _ = await insert_dataframe_async(df, table, engine)
+
+    def _prepare_main_test(
+        self,
+        data: DataObject,
+        strategy: SearchStrategy[_T],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        /,
+    ) -> tuple[Sequence[_T], DataFrame, Table, Select[Any]]:
+        values = data.draw(lists(strategy, max_size=100))
+        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        table = self._make_table(col_type)
+        sel = select(table.c["value"])
+        return values, df, table, sel
+
+    def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
+        return Table(
             "example",
             MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", sqlalchemy.Boolean),
+            Column("Id" if title else "id", Integer, primary_key=True),
+            Column("Value" if title else "value", type_),
         )
-        dummy = DataFrame({"other": values}, schema={"other": pl.Boolean})
-        with raises(InsertDataFrameError):
-            insert_dataframe(dummy, table, engine)
+
+    def _assert_results(
+        self,
+        results: Sequence[Any],
+        values: Sequence[Any],
+        check: Callable[[Any, Any], bool],
+        /,
+    ) -> None:
+        for r, v in zip(results, values, strict=True):
+            assert ((r is None) == (v is None)) or check(r, v)
+
+    def _prepare_snake_test(
+        self, sr_name: str, values: Sequence[bool | None], /
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean, title=True)
+        sel = select(table.c["Value"])
+        return df, table, sel
+
+    def _prepare_empty_test(
+        self, values: Sequence[bool | None], /
+    ) -> tuple[DataFrame, Table]:
+        df = DataFrame({"other": values}, schema={"other": pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean)
+        return df, table
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
@@ -297,24 +373,23 @@ class TestInsertDataFrameMapDFSchemaToTable:
 
 
 class TestSelectToDataFrame:
+    cases: ClassVar[list[ParameterSet]] = [
+        param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean),
+        param(dates() | none(), pl.Date, sqlalchemy.Date),
+        param(datetimes() | none(), Datetime, DateTime),
+        param(
+            datetimes(timezones=just(UTC)) | none(),
+            Datetime(time_zone="UTC"),
+            DateTime(timezone=True),
+        ),
+        param(floats(allow_nan=False) | none(), Float64, Float),
+        param(integers(-10, 10) | none(), Int64, Integer),
+        param(text_ascii() | none(), Utf8, String),
+    ]
+
     @given(data=data(), engine=sqlite_engines())
-    @mark.parametrize(
-        ("strategy", "pl_dtype", "col_type"),
-        [
-            param(booleans() | none(), pl.Boolean, sqlalchemy.Boolean),
-            param(dates() | none(), pl.Date, sqlalchemy.Date),
-            param(datetimes() | none(), Datetime, DateTime),
-            param(
-                datetimes(timezones=just(UTC)) | none(),
-                Datetime(time_zone="UTC"),
-                DateTime(timezone=True),
-            ),
-            param(floats(allow_nan=False) | none(), Float64, Float),
-            param(integers(-10, 10) | none(), Int64, Integer),
-            param(text_ascii() | none(), Utf8, String),
-        ],
-    )
-    def test_main(
+    @mark.parametrize(("strategy", "pl_dtype", "col_type"), cases)
+    def test_sync(
         self,
         *,
         data: DataObject,
@@ -323,64 +398,57 @@ class TestSelectToDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
-        df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", col_type),
-        )
+        df, table, sel = self._prepare_main_test(data, strategy, pl_dtype, col_type)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         result = select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
 
-    @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    def test_snake(self, *, engine: Engine, values: list[bool | None]) -> None:
-        df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("Value", sqlalchemy.Boolean),
-        )
+    @given(
+        engine=sqlite_engines(),
+        values=lists(booleans() | none(), min_size=1, max_size=100),
+    )
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    def test_sync_snake(
+        self, *, engine: Engine, values: list[bool | None], sr_name: str
+    ) -> None:
+        df, table, sel, expected = self._prepare_snake_test(values, sr_name)
+        insert_dataframe(df, table, engine, snake=True)
+        result = select_to_dataframe(sel, engine, snake=True)
+        assert_frame_equal(result, expected)
+
+    @given(
+        engine=sqlite_engines(),
+        values=lists(integers(0, 100), max_size=100),
+        batch_size=integers(1, 10),
+    )
+    def test_sync_batch(
+        self, *, engine: Engine, values: list[int], batch_size: int
+    ) -> None:
+        df, table, sel = self._prepare_feature_test(values)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["Value"])
-        res = select_to_dataframe(sel, engine, snake=True)
-        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
-        assert_frame_equal(res, expected)
+        dfs = select_to_dataframe(sel, engine, batch_size=batch_size)
+        self._assert_batch_results(dfs, batch_size, values)
 
     @given(
         data=data(),
         engine=sqlite_engines(),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
-        batch_size=integers(1, 10) | none(),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_engine_and_in_clauses_non_empty(
+    def test_sync_in_clauses_non_empty(
         self,
         *,
         data: DataObject,
         engine: Engine,
         values: list[int],
-        batch_size: int | None,
         in_clauses_chunk_size: int,
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+        df, table, sel = self._prepare_feature_test(values)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         in_values = data.draw(sets(sampled_from(values)))
         df = select_to_dataframe(
             sel,
             engine,
-            batch_size=batch_size,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
@@ -388,98 +456,209 @@ class TestSelectToDataFrame:
         assert set(df["value"].to_list()) == in_values
 
     @given(engine=sqlite_engines())
-    def test_engine_and_in_clauses_empty(self, *, engine: Engine) -> None:
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
-        )
+    def test_sync_in_clauses_empty(self, *, engine: Engine) -> None:
+        table, sel = self._prepare_empty_test()
         ensure_tables_created(engine, table)
-        sel = select(table.c["value"])
         df = select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
         check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
     @given(
-        engine=sqlite_engines(),
-        values=lists(booleans() | none(), max_size=100),
-        batch_size=integers(1, 10),
-    )
-    def test_conn_and_batch_size_only(
-        self, *, engine: Engine, values: list[bool | None], batch_size: int
-    ) -> None:
-        df = DataFrame({"value": values}, schema={"value": pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", sqlalchemy.Boolean),
-        )
-        insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
-        with engine.begin() as conn:
-            dfs = select_to_dataframe(sel, conn, batch_size=batch_size)
-            for df_i in dfs:
-                check_polars_dataframe(
-                    df_i,
-                    min_height=1,
-                    max_height=batch_size,
-                    schema_list={"value": pl.Boolean},
-                )
-
-    @given(
         data=data(),
         engine=sqlite_engines(),
-        batch_size=integers(1, 10) | none(),
+        batch_size=integers(1, 10),
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
-    def test_conn_and_in_clauses(
+    def test_sync_batch_and_in_clauses(
         self,
         *,
         data: DataObject,
-        batch_size: int | None,
+        batch_size: int,
         engine: Engine,
         values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("id", Integer, primary_key=True),
-            Column("value", Integer),
+        df, table, sel, in_values = self._prepare_batch_and_in_clauses_test(
+            data, values
         )
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
-        if batch_size is None:
-            max_height = in_clauses_chunk_size
-        else:
-            max_height = batch_size * in_clauses_chunk_size
-        seen: set[int] = set()
-        in_values = data.draw(sets(sampled_from(values)))
-        with engine.begin() as conn:
-            dfs = select_to_dataframe(
-                sel,
-                conn,
-                batch_size=batch_size,
-                in_clauses=(table.c["value"], in_values),
-                in_clauses_chunk_size=in_clauses_chunk_size,
-            )
-            for df_i in dfs:
-                check_polars_dataframe(
-                    df_i, max_height=max_height, schema_list={"value": Int64}
-                )
-                assert df_i["value"].is_in(in_values).all()
-                seen.update(df_i["value"].to_list())
-        assert seen == in_values
+        dfs = select_to_dataframe(
+            sel,
+            engine,
+            batch_size=batch_size,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        max_height = batch_size * in_clauses_chunk_size
+        self._assert_batch_results(dfs, max_height, in_values)
 
-    @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table)
-        with raises(SelectToDataFrameError):
-            _ = select_to_dataframe(sel, engine, batch_size=1)
+    @given(data=data())
+    @mark.parametrize(("strategy", "pl_dtype", "col_type"), cases)
+    async def test_async(
+        self,
+        *,
+        data: DataObject,
+        strategy: SearchStrategy[Any],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+    ) -> None:
+        df, table, sel = self._prepare_main_test(data, strategy, pl_dtype, col_type)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        result = await select_to_dataframe_async(sel, engine)
+        assert_frame_equal(result, df)
+
+    @given(data=data(), values=lists(booleans() | none(), min_size=1, max_size=100))
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    async def test_async_snake(
+        self, *, data: DataObject, values: list[bool], sr_name: str
+    ) -> None:
+        df, table, sel, expected = self._prepare_snake_test(values, sr_name)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine, snake=True)
+        result = await select_to_dataframe_async(sel, engine, snake=True)
+        assert_frame_equal(result, expected)
+
+    @given(
+        data=data(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        batch_size=integers(1, 10),
+    )
+    async def test_async_batch(
+        self, *, data: DataObject, values: list[int], batch_size: int
+    ) -> None:
+        df, table, sel = self._prepare_feature_test(values)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        dfs = await select_to_dataframe_async(sel, engine, batch_size=batch_size)
+        self._assert_batch_results(dfs, batch_size, values)
+
+    @given(
+        data=data(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        in_clauses_chunk_size=integers(1, 10),
+    )
+    async def test_async_in_clauses_non_empty(
+        self, *, data: DataObject, values: list[int], in_clauses_chunk_size: int
+    ) -> None:
+        df, table, sel = self._prepare_feature_test(values)
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        in_values = data.draw(sets(sampled_from(values)))
+        df = await select_to_dataframe_async(
+            sel,
+            engine,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
+        assert set(df["value"].to_list()) == in_values
+
+    @given(data=data())
+    async def test_async_in_clauses_empty(self, *, data: DataObject) -> None:
+        table, sel = self._prepare_empty_test()
+        engine = await aiosqlite_engines(data)
+        await ensure_tables_created_async(engine, table)
+        df = await select_to_dataframe_async(
+            sel, engine, in_clauses=(table.c["value"], [])
+        )
+        check_polars_dataframe(df, height=0, schema_list={"value": Int64})
+
+    @given(
+        data=data(),
+        values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
+        batch_size=integers(1, 10),
+        in_clauses_chunk_size=integers(1, 10),
+    )
+    async def test_async_batch_and_in_clauses(
+        self,
+        *,
+        data: DataObject,
+        values: list[int],
+        batch_size: int,
+        in_clauses_chunk_size: int,
+    ) -> None:
+        df, table, sel, in_values = self._prepare_batch_and_in_clauses_test(
+            data, values
+        )
+        engine = await aiosqlite_engines(data)
+        await insert_dataframe_async(df, table, engine)
+        async_dfs = await select_to_dataframe_async(
+            sel,
+            engine,
+            batch_size=batch_size,
+            in_clauses=(table.c["value"], in_values),
+            in_clauses_chunk_size=in_clauses_chunk_size,
+        )
+        sync_dfs = [df async for df in async_dfs]
+        max_height = batch_size * in_clauses_chunk_size
+        self._assert_batch_results(sync_dfs, max_height, in_values)
+
+    def _prepare_main_test(
+        self,
+        data: DataObject,
+        strategy: SearchStrategy[_T],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        /,
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        values = data.draw(lists(strategy, max_size=100))
+        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        table = self._make_table(col_type)
+        sel = select(table.c["value"])
+        return df, table, sel
+
+    def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
+        return Table(
+            "example",
+            MetaData(),
+            Column("Id" if title else "id", Integer, primary_key=True),
+            Column("Value" if title else "value", type_),
+        )
+
+    def _prepare_snake_test(
+        self, values: Sequence[bool | None], sr_name: str, /
+    ) -> tuple[DataFrame, Table, Select[Any], DataFrame]:
+        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean, title=True)
+        sel = select(table.c["Value"])
+        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
+        return df, table, sel, expected
+
+    def _prepare_feature_test(
+        self, values: Sequence[int], /
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        return df, table, sel
+
+    def _assert_batch_results(
+        self, dfs: Iterable[DataFrame], max_height: int, values: Iterable[int], /
+    ) -> None:
+        seen: set[int] = set()
+        values = set(values)
+        for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=max_height, schema_list={"value": Int64}
+            )
+            assert df_i["value"].is_in(values).all()
+            seen.update(df_i["value"].to_list())
+        assert seen == values
+
+    def _prepare_empty_test(self, /) -> tuple[Table, Select[Any]]:
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        return table, sel
+
+    def _prepare_batch_and_in_clauses_test(
+        self, data: DataObject, values: Sequence[int], /
+    ) -> tuple[DataFrame, Table, Select[Any], set[int]]:
+        df, table, sel = self._prepare_feature_test(values)
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        in_values = data.draw(sets(sampled_from(values)))
+        return df, table, sel, in_values
 
 
 class TestSelectToDataFrameApplySnake:

@@ -50,6 +50,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Connection,
     Date,
     DateTime,
     Double,
@@ -62,6 +63,7 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     Row,
+    Select,
     SmallInteger,
     String,
     Table,
@@ -74,11 +76,12 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.exc import DatabaseError, NoSuchTableError
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
+    aiosqlite_engines,
     assume_does_not_raise,
     lists_fixed_length,
     sqlite_engines,
@@ -133,6 +136,7 @@ from utilities.sqlalchemy import (
     create_engine,
     ensure_engine,
     ensure_tables_created,
+    ensure_tables_created_async,
     ensure_tables_dropped,
     get_chunk_size,
     get_column_names,
@@ -143,6 +147,7 @@ from utilities.sqlalchemy import (
     get_table_name,
     get_table_updated_column,
     insert_items,
+    insert_items_async,
     is_mapped_class,
     is_table_or_mapped_class,
     mapped_class_to_dict,
@@ -150,6 +155,8 @@ from utilities.sqlalchemy import (
     postgres_upsert,
     reflect_table,
     serialize_engine,
+    yield_connection,
+    yield_connection_async,
     yield_primary_key_columns,
 )
 from utilities.types import get_class_name
@@ -814,14 +821,35 @@ class TestEnsureEngine:
 
 class TestEnsureTablesCreated:
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_table(self, *, engine: Engine, runs: int) -> None:
-        table = Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-        self._run_test(table, engine, runs)
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_table(self, *, engine: Engine, use_conn: bool) -> None:
+        self._run_test_sync(engine, self._table, use_conn=use_conn)
 
     @given(engine=sqlite_engines())
-    @mark.parametrize("runs", [param(1), param(2)])
-    def test_mapped_class(self, *, engine: Engine, runs: int) -> None:
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_mapped_class(self, *, engine: Engine, use_conn: bool) -> None:
+        self._run_test_sync(engine, self._mapped_class, use_conn=use_conn)
+
+    @given(data=data())
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_table(self, *, data: DataObject, use_conn: bool) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, self._table, use_conn=use_conn)
+
+    @given(data=data())
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_mapped_class(
+        self, *, data: DataObject, use_conn: bool
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(engine, self._mapped_class, use_conn=use_conn)
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    @property
+    def _mapped_class(self) -> type[Any]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -829,16 +857,46 @@ class TestEnsureTablesCreated:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test(Example, engine, runs)
+        return Example
 
-    def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+    def _run_test_sync(
+        self,
+        engine_or_conn: Engine | Connection,
+        table_or_mapped_class: Table | type[Any],
+        /,
+        *,
+        use_conn: bool = False,
     ) -> None:
-        for _ in range(runs):
-            ensure_tables_created(engine, table_or_mapped_class)
-        sel = get_table(table_or_mapped_class).select()
-        with engine.begin() as conn:
+        if use_conn:
+            with yield_connection(engine_or_conn) as conn:
+                self._run_test_sync(conn, table_or_mapped_class)
+            return
+        for _ in range(2):
+            ensure_tables_created(engine_or_conn, table_or_mapped_class)
+        sel = self._get_select(table_or_mapped_class)
+        with yield_connection(engine_or_conn) as conn:
             _ = conn.execute(sel).all()
+
+    async def _run_test_async(
+        self,
+        engine_or_conn: AsyncEngine | AsyncConnection,
+        table_or_mapped_class: Table | type[Any],
+        /,
+        *,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            async with yield_connection_async(engine_or_conn) as conn:
+                await self._run_test_async(conn, table_or_mapped_class)
+            return
+        for _ in range(2):
+            await ensure_tables_created_async(engine_or_conn, table_or_mapped_class)
+        sel = self._get_select(table_or_mapped_class)
+        async with yield_connection_async(engine_or_conn) as conn:
+            _ = (await conn.execute(sel)).all()
+
+    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+        return select(get_table(table_or_mapped_class))
 
 
 class TestEnsureTablesDropped:
@@ -879,9 +937,19 @@ class TestGetChunkSize:
         chunk_size_frac=floats(0.0, 1.0),
         scaling=floats(0.1, 10.0),
     )
-    def test_main(
+    def test_sync(
         self, *, engine: Engine, chunk_size_frac: float, scaling: float
     ) -> None:
+        result = get_chunk_size(
+            engine, chunk_size_frac=chunk_size_frac, scaling=scaling
+        )
+        assert result >= 1
+
+    @given(data=data(), chunk_size_frac=floats(0.0, 1.0), scaling=floats(0.1, 10.0))
+    async def test_async(
+        self, *, data: DataObject, chunk_size_frac: float, scaling: float
+    ) -> None:
+        engine = await aiosqlite_engines(data)
         result = get_chunk_size(
             engine, chunk_size_frac=chunk_size_frac, scaling=scaling
         )
@@ -931,7 +999,12 @@ class TestGetColumns:
 
 class TestGetDialect:
     @given(engine=sqlite_engines())
-    def test_main(self, *, engine: Engine) -> None:
+    def test_sync(self, *, engine: Engine) -> None:
+        assert get_dialect(engine) is Dialect.sqlite
+
+    @given(data=data())
+    async def test_async(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
         assert get_dialect(engine) is Dialect.sqlite
 
 
@@ -1013,46 +1086,148 @@ class TestGetTableUpdatedColumn:
 
 
 class TestInsertItems:
-    @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_tuple_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test(engine, {id_}, ((id_,), self._table))
+    TupleOrDict = Literal["tuple", "dict"]
+    CaseMultipleItems = Literal[
+        "pair_of_list_of_tuples",
+        "pair_of_list_of_dicts",
+        "list_of_pairs_of_tuples",
+        "list_of_pairs_of_dicts",
+    ]
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_pair_of_dict_and_table(self, *, engine: Engine, id_: int) -> None:
-        self._run_test(engine, {id_}, ({"id_": id_}, self._table))
+    @mark.parametrize("tuple_or_dict", [param("tuple"), param("dict")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_single_item(
+        self, *, tuple_or_dict: TupleOrDict, engine: Engine, id_: int, use_conn: bool
+    ) -> None:
+        match tuple_or_dict:
+            case "tuple":
+                value = (id_,)
+            case "dict":
+                value = {"id_": id_}
+        self._run_test_sync(engine, {id_}, (value, self._table), use_conn=use_conn)
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_pair_of_lists_of_tuples_and_table(
-        self, *, engine: Engine, ids: set[int]
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_multiple_items(
+        self, *, case: CaseMultipleItems, engine: Engine, ids: set[int], use_conn: bool
     ) -> None:
-        self._run_test(engine, ids, ([((id_,)) for id_ in ids], self._table))
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_pair_of_lists_of_dicts_and_table(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test(engine, ids, ([({"id_": id_}) for id_ in ids], self._table))
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_list_of_pairs_of_tuples_and_tables(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test(engine, ids, [(((id_,), self._table)) for id_ in ids])
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    def test_list_of_pairs_of_dicts_and_tables(
-        self, *, engine: Engine, ids: set[int]
-    ) -> None:
-        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], self._table
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], self._table
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), self._table)) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, self._table) for id_ in ids]
+        self._run_test_sync(engine, ids, item, use_conn=use_conn)
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
     )
-    def test_many_items(self, *, engine: Engine, ids: set[int]) -> None:
-        self._run_test(engine, ids, [({"id_": id_}, self._table) for id_ in ids])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_many_items(
+        self, *, engine: Engine, ids: set[int], use_conn: bool
+    ) -> None:
+        self._run_test_sync(
+            engine, ids, [({"id_": id_}, self._table) for id_ in ids], use_conn=use_conn
+        )
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    def test_mapped_class(self, *, engine: Engine, id_: int) -> None:
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_mapped_class(
+        self, *, engine: Engine, id_: int, use_conn: bool
+    ) -> None:
+        self._run_test_sync(
+            engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
+        )
+
+    @given(data=data(), id_=integers(0, 10))
+    @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_single_item(
+        self,
+        *,
+        case: Literal["tuple_and_table", "dict_and_table"],
+        data: DataObject,
+        id_: int,
+        use_conn: bool,
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        match case:
+            case "tuple_and_table":
+                pair = (id_,), self._table
+            case "dict_and_table":
+                pair = {"id_": id_}, self._table
+        await self._run_test_async(engine, {id_}, pair, use_conn=use_conn)
+
+    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_multiple_items(
+        self,
+        *,
+        case: CaseMultipleItems,
+        data: DataObject,
+        ids: set[int],
+        use_conn: bool,
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], self._table
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], self._table
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), self._table)) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, self._table) for id_ in ids]
+        await self._run_test_async(engine, ids, item, use_conn=use_conn)
+
+    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_many_items(
+        self, *, data: DataObject, ids: set[int], use_conn: bool
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(
+            engine, ids, [({"id_": id_}, self._table) for id_ in ids], use_conn=use_conn
+        )
+
+    @given(data=data(), id_=integers(0, 10))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_mapped_class(
+        self, *, data: DataObject, id_: int, use_conn: bool
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(
+            engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
+        )
+
+    @property
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    @property
+    def _mapped_class(self) -> type[Any]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -1060,62 +1235,105 @@ class TestInsertItems:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        self._run_test(engine, {id_}, Example(id_=id_))
+        return Example
 
-    @property
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-    def _run_test(self, engine: Engine, ids: set[int], /, *args: Any) -> None:
-        ensure_tables_created(engine, self._table)
-        insert_items(engine, *args)
+    def _run_test_sync(
+        self,
+        engine_or_conn: Engine | Connection,
+        ids: set[int],
+        /,
+        *args: Any,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            with yield_connection(engine_or_conn) as conn:
+                self._run_test_sync(conn, ids, *args)
+            return
+        ensure_tables_created(engine_or_conn, self._table)
+        insert_items(engine_or_conn, *args)
         sel = select(self._table.c["id_"])
-        with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        assert set(res) == ids
+        with yield_connection(engine_or_conn) as conn:
+            results = conn.execute(sel).scalars().all()
+        self._assert_results(results, ids)
+
+    async def _run_test_async(
+        self,
+        engine_or_conn: AsyncEngine | AsyncConnection,
+        ids: set[int],
+        /,
+        *args: Any,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            async with yield_connection_async(engine_or_conn) as conn:
+                await self._run_test_async(conn, ids, *args)
+            return
+        await ensure_tables_created_async(engine_or_conn, self._table)
+        await insert_items_async(engine_or_conn, *args)
+        sel = select(self._table.c["id_"])
+        async with yield_connection_async(engine_or_conn) as conn:
+            results = (await conn.execute(sel)).scalars().all()
+        self._assert_results(results, ids)
+
+    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+        return select(get_table(table_or_mapped_class).c["id_"])
+
+    def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
+        assert set(results) == ids
 
 
 class TestInsertItemsCollect:
     @given(id_=integers())
-    def test_pair_with_tuple_data(self, *, id_: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(((id_,), table)))
-        expected = [_InsertionItem(values=(id_,), table=table)]
-        assert result == expected
-
-    @given(id_=integers())
-    def test_pair_with_dict_data(self, *, id_: int) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(({"id": id_}, table)))
-        expected = [_InsertionItem(values={"id": id_}, table=table)]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_pair_with_list_of_tuple_data(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(([(id_,) for id_ in ids], table)))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    def test_single_item(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
+        table = self._table()
+        match case:
+            case "tuple":
+                values = (id_,)
+            case "dict":
+                values = {"id": id_}
+        result = list(_insert_items_collect((values, table)))
+        expected = [_InsertionItem(values=values, table=table)]
         assert result == expected
 
     @given(ids=sets(integers()))
-    def test_pair_with_list_of_dict_data(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect(([{"id": id_} for id_ in ids], table)))
-        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+    @mark.parametrize(
+        "case",
+        [
+            param("pair_of_list_of_tuples"),
+            param("pair_of_list_of_dicts"),
+            param("list_of_pairs_of_tuples"),
+            param("list_of_pairs_of_dicts"),
+        ],
+    )
+    def test_multiple_items(
+        self,
+        *,
+        case: Literal[
+            "pair_of_list_of_tuples",
+            "pair_of_list_of_dicts",
+            "list_of_pairs_of_tuples",
+            "list_of_pairs_of_dicts",
+        ],
+        ids: set[int],
+    ) -> None:
+        table = self._table()
+        match case:
+            case "pair_of_list_of_tuples":
+                item = [((id_,)) for id_ in ids], table
+                values = [(id_,) for id_ in ids]
+            case "pair_of_list_of_dicts":
+                item = [({"id_": id_}) for id_ in ids], table
+                values = [{"id_": id_} for id_ in ids]
+            case "list_of_pairs_of_tuples":
+                item = [(((id_,), table)) for id_ in ids]
+                values = [(id_,) for id_ in ids]
+            case "list_of_pairs_of_dicts":
+                item = [({"id_": id_}, table) for id_ in ids]
+                values = [{"id_": id_} for id_ in ids]
+        result = list(_insert_items_collect(item))
+        expected = [_InsertionItem(values=v, table=table) for v in values]
         assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect([((id_,), table) for id_ in ids]))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_set(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect({((id_,), table) for id_ in ids}))
-        assert {one(r.values) for r in result} == ids
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
@@ -1132,44 +1350,54 @@ class TestInsertItemsCollect:
         assert result == expected
 
     @mark.parametrize(
-        "item",
+        ("item", "match"),
         [
-            param((None,), id="tuple length"),
-            param((None, None), id="second argument not a table or mapped class"),
-            param(None, id="outright invalid"),
+            param((None,), "Tuple must be a pair; got (None,)"),
+            param(
+                (None, None), "Second element must be a table or mapped class; got None"
+            ),
+            param(None, "Item must be valid; got None"),
         ],
     )
-    def test_errors(self, *, item: Any) -> None:
-        with raises(_InsertItemsCollectError):
+    def test_errors(self, *, item: Any, match: str) -> None:
+        with raises(_InsertItemsCollectError, match=escape(match)):
             _ = list(_insert_items_collect(item))
 
     def test_error_tuple_but_first_argument_invalid(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectError):
-            _ = list(_insert_items_collect((None, table)))
+        with raises(
+            _InsertItemsCollectError, match="First element must be valid; got None"
+        ):
+            _ = list(_insert_items_collect((None, self._table())))
+
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
 
 class TestInsertItemsCollectIterable:
     @given(ids=sets(integers()))
-    def test_list_of_tuples(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(_insert_items_collect_iterable([(id_,) for id_ in ids], table))
-        expected = [_InsertionItem(values=(id_,), table=table) for id_ in ids]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list_of_dicts(self, *, ids: set[int]) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        result = list(
-            _insert_items_collect_iterable([{"id": id_} for id_ in ids], table)
-        )
-        expected = [_InsertionItem(values={"id": id_}, table=table) for id_ in ids]
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    def test_main(self, *, case: Literal["tuple", "dict"], ids: set[int]) -> None:
+        table = self._table()
+        match case:
+            case "tuple":
+                items = [(id_,) for id_ in ids]
+                exp_values = [(id_,) for id_ in ids]
+            case "dict":
+                items = [{"id": id_} for id_ in ids]
+                exp_values = [{"id": id_} for id_ in ids]
+        result = list(_insert_items_collect_iterable(items, table))
+        expected = [_InsertionItem(values=v, table=table) for v in exp_values]
         assert result == expected
 
     def test_error(self) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        with raises(_InsertItemsCollectIterableError):
-            _ = list(_insert_items_collect_iterable([None], table))
+        with raises(
+            _InsertItemsCollectIterableError,
+            match="Iterable item must be valid; got None",
+        ):
+            _ = list(_insert_items_collect_iterable([None], self._table()))
+
+    def _table(self) -> Table:
+        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
 
 class TestInsertItemsCollectValid:
@@ -1637,6 +1865,30 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+class TestYieldConnection:
+    @given(engine=sqlite_engines())
+    def test_sync_engine(self, *, engine: Engine) -> None:
+        with yield_connection(engine) as conn:
+            assert isinstance(conn, Connection)
+
+    @given(engine=sqlite_engines())
+    def test_sync_connection(self, *, engine: Engine) -> None:
+        with engine.begin() as conn1, yield_connection(conn1) as conn2:
+            assert isinstance(conn2, Connection)
+
+    @given(data=data())
+    async def test_async_engine(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        async with yield_connection_async(engine) as conn:
+            assert isinstance(conn, AsyncConnection)
+
+    @given(data=data())
+    async def test_async_conn(self, *, data: DataObject) -> None:
+        engine = await aiosqlite_engines(data)
+        async with engine.begin() as conn1, yield_connection_async(conn1) as conn2:
+            assert isinstance(conn2, AsyncConnection)
 
 
 class TestYieldPrimaryKeyColumns:

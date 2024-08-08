@@ -18,7 +18,6 @@ from typing import (
 from more_itertools import always_iterable as _always_iterable
 from more_itertools import partition, split_into
 from more_itertools import peekable as _peekable
-from more_itertools import windowed_complete as _windowed_complete
 from typing_extensions import override
 
 from utilities.sentinel import Sentinel, sentinel
@@ -146,16 +145,6 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
         return f"Iterables {include} and {exclude} must not overlap; got {overlap}."
 
 
-def windowed_complete(
-    iterable: Iterable[_T], n: int, /
-) -> Iterator[tuple[tuple[_T, ...], tuple[_T, ...], tuple[_T, ...]]]:
-    """Typed version of `windowed_complete`."""
-    return cast(
-        Iterator[tuple[tuple[_T, ...], tuple[_T, ...], tuple[_T, ...]]],
-        _windowed_complete(iterable, n),
-    )
-
-
 @dataclass(frozen=True)
 class Split(Generic[_T]):
     """An iterable split into head/tail."""
@@ -247,6 +236,5 @@ __all__ = [
     "partition_typeguard",
     "peekable",
     "resolve_include_and_exclude",
-    "windowed_complete",
     "yield_splits",
 ]

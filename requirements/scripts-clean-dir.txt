@@ -8,7 +8,7 @@ coverage==7.6.1
     # via pytest-cov
 freezegun==1.5.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.108.10
+hypothesis==6.110.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
