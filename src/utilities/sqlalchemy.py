@@ -575,12 +575,14 @@ def ensure_tables_created(
 
 
 async def ensure_tables_created_async(
-    engine: AsyncEngine, /, *tables_or_mapped_classes: Table | type[Any]
+    engine: AsyncEngine | AsyncConnection,
+    /,
+    *tables_or_mapped_classes: Table | type[Any],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
     for table in prepared.tables:
-        async with engine.begin() as conn:
+        async with yield_connection_async(engine) as conn:
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
@@ -768,7 +770,10 @@ def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
 
 
 def insert_items(
-    engine: Engine, /, *items: Any, chunk_size_frac: float = CHUNK_SIZE_FRAC
+    engine_or_conn: Engine | Connection,
+    /,
+    *items: Any,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -779,10 +784,12 @@ def insert_items(
      - [dict[str, Any], table
      - Model
     """
-    prepared = _insert_items_prepare(engine, *items, chunk_size_frac=chunk_size_frac)
-    ensure_tables_created(engine, *prepared.tables)
+    prepared = _insert_items_prepare(
+        engine_or_conn, *items, chunk_size_frac=chunk_size_frac
+    )
+    ensure_tables_created(engine_or_conn, *prepared.tables)
     for ins, values in prepared.yield_pairs():
-        with engine.begin() as conn:
+        with yield_connection(engine_or_conn) as conn:
             if prepared.dialect is Dialect.oracle:  # pragma: no cover
                 _ = conn.execute(ins, cast(Any, values))
             else:
@@ -822,13 +829,13 @@ class _InsertItemsPrepare:
 
 
 def _insert_items_prepare(
-    engine: Engine | AsyncEngine,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     /,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> _InsertItemsPrepare:
     """Prepare the arguments for `insert_items`."""
-    dialect = get_dialect(engine)
+    dialect = get_dialect(engine_or_conn)
     mapping: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
@@ -838,7 +845,7 @@ def _insert_items_prepare(
     tables = list(mapping)
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
-        engine, chunk_size_frac=chunk_size_frac, scaling=max_length
+        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
     def yield_pairs() -> Iterator[tuple[Insert, Iterable[_InsertItemValues]]]:
