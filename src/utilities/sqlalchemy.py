@@ -797,7 +797,9 @@ def insert_items(
 
 
 async def insert_items_async(
-    engine: AsyncEngine, *items: Any, chunk_size_frac: float = CHUNK_SIZE_FRAC
+    engine: AsyncEngine | AsyncConnection,
+    *items: Any,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
 ) -> None:
     """Insert a set of items into a database.
 

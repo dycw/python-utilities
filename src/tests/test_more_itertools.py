@@ -15,7 +15,6 @@ from utilities.more_itertools import (
     partition_typeguard,
     peekable,
     resolve_include_and_exclude,
-    windowed_complete,
     yield_splits,
 )
 from utilities.text import strip_and_dedent
@@ -237,27 +236,6 @@ class TestResolveIncludeAndExclude:
             match="Iterables .* and .* must not overlap; got .*",
         ):
             _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
-
-
-class TestWindowedComplete:
-    def test_main(self) -> None:
-        result = list(windowed_complete([1, 2, 3, 4, 5], 3))
-        expected = [
-            ((), (1, 2, 3), (4, 5)),
-            ((1,), (2, 3, 4), (5,)),
-            ((1, 2), (3, 4, 5), ()),
-        ]
-        assert result == expected
-
-    def test_zero_length(self) -> None:
-        result = list(windowed_complete([1, 2, 3], 0))
-        expected = [
-            ((), (), (1, 2, 3)),
-            ((1,), (), (2, 3)),
-            ((1, 2), (), (3,)),
-            ((1, 2, 3), (), ()),
-        ]
-        assert result == expected
 
 
 class TestYieldSplits:
