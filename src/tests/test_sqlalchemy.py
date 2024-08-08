@@ -1271,7 +1271,7 @@ class TestInsertItems:
         await ensure_tables_created_async(engine_or_conn, self._table)
         await insert_items_async(engine_or_conn, *args)
         sel = select(self._table.c["id_"])
-        async with engine_or_conn.begin() as conn:
+        async with yield_connection_async(engine_or_conn) as conn:
             results = (await conn.execute(sel)).scalars().all()
         self._assert_results(results, ids)
 
