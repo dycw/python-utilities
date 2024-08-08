@@ -315,9 +315,6 @@ def select_to_dataframe(
     return chain(*dfs)
 
 
-class SelectToDataFrameError(Exception): ...
-
-
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
     """Apply snake-case to a selectable."""
     from utilities.humps import snake_case
@@ -533,7 +530,6 @@ async def select_to_dataframe_async(
 
 __all__ = [
     "InsertDataFrameError",
-    "SelectToDataFrameError",
     "insert_dataframe",
     "insert_dataframe_async",
     "select_to_dataframe",

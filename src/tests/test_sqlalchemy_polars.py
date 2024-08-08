@@ -85,13 +85,17 @@ from sqlalchemy import (
 from sqlalchemy.exc import DuplicateColumnError
 
 from utilities.datetime import is_equal_mod_tz
-from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
+from utilities.hypothesis import (
+    aiosqlite_engines,
+    assume_does_not_raise,
+    sqlite_engines,
+    text_ascii,
+)
 from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
-from utilities.sqlalchemy import ensure_tables_created
+from utilities.sqlalchemy import ensure_tables_created, ensure_tables_created_async
 from utilities.sqlalchemy_polars import (
     InsertDataFrameError,
-    SelectToDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -402,28 +406,23 @@ class TestSelectToDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
-        df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = self._make_table(col_type)
+        df, table, sel = self._prepare_main_test(data, strategy, pl_dtype, col_type)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         result = select_to_dataframe(sel, engine)
         assert_frame_equal(result, df)
 
-    @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    def test_sync_snake(self, *, engine: Engine, values: list[bool | None]) -> None:
-        df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("Value", sqlalchemy.Boolean),
-        )
-        insert_dataframe(df, table, engine)
-        sel = select(table.c["Value"])
-        res = select_to_dataframe(sel, engine, snake=True)
-        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
-        assert_frame_equal(res, expected)
+    @given(
+        engine=sqlite_engines(),
+        values=lists(booleans() | none(), min_size=1, max_size=100),
+    )
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
+    def test_sync_snake(
+        self, *, engine: Engine, values: list[bool | None], sr_name: str
+    ) -> None:
+        df, table, sel, expected = self._prepare_snake_test(values, sr_name)
+        insert_dataframe(df, table, engine, snake=True)
+        result = select_to_dataframe(sel, engine, snake=True)
+        assert_frame_equal(result, expected)
 
     @given(
         engine=sqlite_engines(),
@@ -433,10 +432,8 @@ class TestSelectToDataFrame:
     def test_sync_batch(
         self, *, engine: Engine, values: list[int], batch_size: int
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel = self._prepare_feature_test(values)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         seen: set[int] = set()
         dfs = select_to_dataframe(sel, engine, batch_size=batch_size)
         for df_i in dfs:
@@ -461,10 +458,8 @@ class TestSelectToDataFrame:
         values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel = self._prepare_feature_test(values)
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
         in_values = data.draw(sets(sampled_from(values)))
         df = select_to_dataframe(
             sel,
@@ -477,9 +472,8 @@ class TestSelectToDataFrame:
 
     @given(engine=sqlite_engines())
     def test_sync_in_clauses_empty(self, *, engine: Engine) -> None:
-        table = self._make_table(Integer)
+        table, sel = self._prepare_empty_test()
         ensure_tables_created(engine, table)
-        sel = select(table.c["value"])
         df = select_to_dataframe(sel, engine, in_clauses=(table.c["value"], []))
         check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
@@ -521,13 +515,6 @@ class TestSelectToDataFrame:
             seen.update(df_i["value"].to_list())
         assert seen == in_values
 
-    @given(engine=sqlite_engines())
-    def test_error(self, *, engine: Engine) -> None:
-        table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
-        sel = select(table)
-        with raises(SelectToDataFrameError):
-            _ = select_to_dataframe(sel, engine, batch_size=1)
-
     @given(data=data())
     @mark.parametrize(("strategy", "pl_dtype", "col_type"), cases)
     async def test_async(
@@ -538,31 +525,21 @@ class TestSelectToDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
     ) -> None:
-        values = data.draw(lists(strategy, max_size=100))
-        df = DataFrame({"value": values}, schema={"value": pl_dtype})
-        table = self._make_table(col_type)
+        df, table, sel = self._prepare_main_test(data, strategy, pl_dtype, col_type)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        sel = select(table.c["value"])
         result = await select_to_dataframe_async(sel, engine)
         assert_frame_equal(result, df)
 
-    @given(data=data(), values=lists(booleans() | none(), max_size=100))
+    @given(data=data(), values=lists(booleans() | none(), min_size=1, max_size=100))
+    @mark.parametrize("sr_name", [param("Value"), param("value")])
     async def test_async_snake(
-        self, *, data: DataObject, values: list[bool | None]
+        self, *, data: DataObject, values: list[bool], sr_name: str
     ) -> None:
-        df = DataFrame({"Value": values}, schema={"Value": pl.Boolean})
-        table = Table(
-            "example",
-            MetaData(),
-            Column("Id", Integer, primary_key=True),
-            Column("Value", sqlalchemy.Boolean),
-        )
+        df, table, sel, expected = self._prepare_snake_test(values, sr_name)
         engine = await aiosqlite_engines(data)
-        await insert_dataframe_async(df, table, engine)
-        sel = select(table.c["Value"])
+        await insert_dataframe_async(df, table, engine, snake=True)
         result = await select_to_dataframe_async(sel, engine, snake=True)
-        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
         assert_frame_equal(result, expected)
 
     @given(
@@ -573,11 +550,9 @@ class TestSelectToDataFrame:
     async def test_async_batch(
         self, *, data: DataObject, values: list[int], batch_size: int
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel = self._prepare_feature_test(values)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        sel = select(table.c["value"])
         seen: set[int] = set()
         dfs = await select_to_dataframe_async(sel, engine, batch_size=batch_size)
         for df_i in dfs:
@@ -593,14 +568,12 @@ class TestSelectToDataFrame:
         values=lists(integers(0, 100), min_size=1, max_size=100, unique=True),
         in_clauses_chunk_size=integers(1, 10),
     )
-    async def test_async_in_clauses(
+    async def test_async_in_clauses_non_empty(
         self, *, data: DataObject, values: list[int], in_clauses_chunk_size: int
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel = self._prepare_feature_test(values)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        sel = select(table.c["value"])
         in_values = data.draw(sets(sampled_from(values)))
         df = await select_to_dataframe_async(
             sel,
@@ -610,6 +583,15 @@ class TestSelectToDataFrame:
         )
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
+
+    @given(engine=sqlite_engines())
+    async def test_async_in_clauses_empty(self, *, engine: Engine) -> None:
+        table, sel = self._prepare_empty_test()
+        await ensure_tables_created_async(engine, table)
+        df = await select_to_dataframe_async(
+            sel, engine, in_clauses=(table.c["value"], [])
+        )
+        check_polars_dataframe(df, height=0, schema_list={"value": Int64})
 
     @given(
         data=data(),
@@ -625,11 +607,9 @@ class TestSelectToDataFrame:
         batch_size: int,
         in_clauses_chunk_size: int,
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel = self._prepare_feature_test(values)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        sel = select(table.c["value"])
         in_values = data.draw(sets(sampled_from(values)))
         max_height = batch_size * in_clauses_chunk_size
         dfs = await select_to_dataframe_async(
@@ -648,6 +628,20 @@ class TestSelectToDataFrame:
             seen.update(df_i["value"].to_list())
         assert seen == (in_values)
 
+    def _prepare_main_test(
+        self,
+        data: DataObject,
+        strategy: SearchStrategy[_T],
+        pl_dtype: PolarsDataType,
+        col_type: Any,
+        /,
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        values = data.draw(lists(strategy, max_size=100))
+        df = DataFrame({"value": values}, schema={"value": pl_dtype})
+        table = self._make_table(col_type)
+        sel = select(table.c["value"])
+        return df, table, sel
+
     def _make_table(self, type_: Any, /, *, title: bool = False) -> Table:
         return Table(
             "example",
@@ -655,6 +649,28 @@ class TestSelectToDataFrame:
             Column("Id" if title else "id", Integer, primary_key=True),
             Column("Value" if title else "value", type_),
         )
+
+    def _prepare_snake_test(
+        self, values: Sequence[bool | None], sr_name: str, /
+    ) -> tuple[DataFrame, Table, Select[Any], DataFrame]:
+        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean, title=True)
+        sel = select(table.c["Value"])
+        expected = DataFrame({"value": values}, schema={"value": pl.Boolean})
+        return df, table, sel, expected
+
+    def _prepare_feature_test(
+        self, values: Sequence[int], /
+    ) -> tuple[DataFrame, Table, Select[Any]]:
+        df = DataFrame({"value": values}, schema={"value": Int64})
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        return df, table, sel
+
+    def _prepare_empty_test(self, /) -> tuple[Table, Select[Any]]:
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        return table, sel
 
 
 class TestSelectToDataFrameApplySnake:

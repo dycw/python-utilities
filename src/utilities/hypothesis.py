@@ -743,7 +743,7 @@ def sqlite_engines(
     temp_path = _draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
     engine = create_engine("sqlite", database=str(path))
-    cast(Any, engine)._temp_path = temp_path  # keep `temp_path` alive
+    cast(Any, engine).temp_path = temp_path  # keep `temp_path` alive
     if metadata is not None:
         metadata.create_all(engine)
     if base is not None:
