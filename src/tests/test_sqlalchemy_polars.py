@@ -584,9 +584,10 @@ class TestSelectToDataFrame:
         check_polars_dataframe(df, height=len(in_values), schema_list={"value": Int64})
         assert set(df["value"].to_list()) == in_values
 
-    @given(engine=sqlite_engines())
-    async def test_async_in_clauses_empty(self, *, engine: Engine) -> None:
+    @given(data=data())
+    async def test_async_in_clauses_empty(self, *, data: DataObject) -> None:
         table, sel = self._prepare_empty_test()
+        engine = await aiosqlite_engines(data)
         await ensure_tables_created_async(engine, table)
         df = await select_to_dataframe_async(
             sel, engine, in_clauses=(table.c["value"], [])
