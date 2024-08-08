@@ -264,6 +264,7 @@ def select_to_dataframe(
     """Read a table from a database into a DataFrame."""
     prepared = _select_to_dataframe_prepare(
         sel,
+        engine_or_conn,
         snake=snake,
         time_zone=time_zone,
         in_clauses=in_clauses,
@@ -387,6 +388,7 @@ async def select_to_dataframe_async(
         )
     prepared = _select_to_dataframe_prepare(
         sel,
+        engine,
         snake=snake,
         time_zone=time_zone,
         in_clauses=in_clauses,
@@ -448,7 +450,7 @@ class _SelectToDataFramePrepare:
 
 def _select_to_dataframe_prepare(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: Engine | Connection | AsyncEngine,
     /,
     *,
     snake: bool = False,
