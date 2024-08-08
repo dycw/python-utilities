@@ -209,7 +209,7 @@ mdutils==1.6.0
     # via dycw-utilities (pyproject.toml)
 memory-profiler==0.61.0
     # via dycw-utilities (pyproject.toml)
-more-itertools==10.3.0
+more-itertools==10.4.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
