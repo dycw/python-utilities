@@ -397,7 +397,7 @@ async def select_to_dataframe_async(
     )
     if in_clauses is None:
         return read_database(
-            sel,
+            prepared.sel,
             cast(Any, engine),
             iter_batches=batch_size is not None,
             batch_size=batch_size,
