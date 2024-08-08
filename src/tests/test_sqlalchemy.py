@@ -1161,8 +1161,8 @@ class TestInsertItems:
             engine,
             {id_},
             self._mapped_class(id_=id_),
-            use_conn=use_conn,
             assume_tables_exist=True,
+            use_conn=use_conn,
         )
 
     @given(data=data(), id_=integers(0, 10))
@@ -1245,8 +1245,8 @@ class TestInsertItems:
             engine,
             {id_},
             self._mapped_class(id_=id_),
-            use_conn=use_conn,
             assume_tables_exist=True,
+            use_conn=use_conn,
         )
 
     @property
