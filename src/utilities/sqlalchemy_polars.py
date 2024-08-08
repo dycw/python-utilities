@@ -76,6 +76,7 @@ def insert_dataframe(
     *,
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
@@ -84,7 +85,12 @@ def insert_dataframe(
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
-    insert_items(engine, prepared.insert_item, chunk_size_frac=chunk_size_frac)
+    insert_items(
+        engine,
+        prepared.insert_item,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+    )
 
 
 async def insert_dataframe_async(
@@ -95,6 +101,7 @@ async def insert_dataframe_async(
     *,
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
@@ -104,7 +111,10 @@ async def insert_dataframe_async(
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
     await insert_items_async(
-        engine, prepared.insert_item, chunk_size_frac=chunk_size_frac
+        engine,
+        prepared.insert_item,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
     )
 
 
