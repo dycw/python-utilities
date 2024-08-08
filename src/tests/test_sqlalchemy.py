@@ -1284,12 +1284,12 @@ class TestInsertItems:
                 insert_items(
                     engine_or_conn, *args, assume_tables_exist=assume_tables_exist
                 )
-        else:
-            insert_items(engine_or_conn, *args, assume_tables_exist=assume_tables_exist)
-            sel = select(self._table.c["id_"])
-            with yield_connection(engine_or_conn) as conn:
-                results = conn.execute(sel).scalars().all()
-            self._assert_results(results, ids)
+            return
+        insert_items(engine_or_conn, *args, assume_tables_exist=assume_tables_exist)
+        sel = select(self._table.c["id_"])
+        with yield_connection(engine_or_conn) as conn:
+            results = conn.execute(sel).scalars().all()
+        self._assert_results(results, ids)
 
     async def _run_test_async(
         self,
@@ -1311,14 +1311,14 @@ class TestInsertItems:
                 await insert_items_async(
                     engine_or_conn, *args, assume_tables_exist=assume_tables_exist
                 )
-        else:
-            await insert_items_async(
-                engine_or_conn, *args, assume_tables_exist=assume_tables_exist
-            )
-            sel = select(self._table.c["id_"])
-            async with yield_connection_async(engine_or_conn) as conn:
-                results = (await conn.execute(sel)).scalars().all()
-            self._assert_results(results, ids)
+            return
+        await insert_items_async(
+            engine_or_conn, *args, assume_tables_exist=assume_tables_exist
+        )
+        sel = select(self._table.c["id_"])
+        async with yield_connection_async(engine_or_conn) as conn:
+            results = (await conn.execute(sel)).scalars().all()
+        self._assert_results(results, ids)
 
     def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
