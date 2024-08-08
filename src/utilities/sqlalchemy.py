@@ -813,7 +813,7 @@ async def insert_items_async(
     prepared = _insert_items_prepare(engine, *items, chunk_size_frac=chunk_size_frac)
     await ensure_tables_created_async(engine, *prepared.tables)
     for ins, values in prepared.yield_pairs():
-        async with engine.begin() as conn:
+        async with yield_connection_async(engine) as conn:
             if prepared.dialect is Dialect.oracle:  # pragma: no cover
                 _ = await conn.execute(ins, cast(Any, values))
             else:
