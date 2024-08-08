@@ -70,9 +70,6 @@ async def aiosqlite_engines(
     temp_path = data.draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
     engine = create_engine("sqlite+aiosqlite", database=str(path), async_=True)
-    # if (metadata is None) and (base is None):
-    #     return engine
-    #
     if metadata is not None:
         async with engine.begin() as conn:
             await conn.run_sync(metadata.create_all)
