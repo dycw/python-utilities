@@ -774,6 +774,7 @@ def insert_items(
     /,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -787,7 +788,8 @@ def insert_items(
     prepared = _insert_items_prepare(
         engine_or_conn, *items, chunk_size_frac=chunk_size_frac
     )
-    ensure_tables_created(engine_or_conn, *prepared.tables)
+    if not assume_tables_exist:
+        ensure_tables_created(engine_or_conn, *prepared.tables)
     for ins, values in prepared.yield_pairs():
         with yield_connection(engine_or_conn) as conn:
             if prepared.dialect is Dialect.oracle:  # pragma: no cover
@@ -800,6 +802,7 @@ async def insert_items_async(
     engine: AsyncEngine | AsyncConnection,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
 ) -> None:
     """Insert a set of items into a database.
 
@@ -811,7 +814,8 @@ async def insert_items_async(
      - Model
     """
     prepared = _insert_items_prepare(engine, *items, chunk_size_frac=chunk_size_frac)
-    await ensure_tables_created_async(engine, *prepared.tables)
+    if not assume_tables_exist:
+        await ensure_tables_created_async(engine, *prepared.tables)
     for ins, values in prepared.yield_pairs():
         async with yield_connection_async(engine) as conn:
             if prepared.dialect is Dialect.oracle:  # pragma: no cover

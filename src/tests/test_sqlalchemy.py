@@ -75,7 +75,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.exc import DatabaseError, NoSuchTableError
+from sqlalchemy.exc import DatabaseError, NoSuchTableError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
@@ -1152,6 +1152,19 @@ class TestInsertItems:
             engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
         )
 
+    @given(engine=sqlite_engines(), id_=integers(0, 10))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_assume_table_exists(
+        self, *, engine: Engine, id_: int, use_conn: bool
+    ) -> None:
+        self._run_test_sync(
+            engine,
+            {id_},
+            self._mapped_class(id_=id_),
+            assume_tables_exist=True,
+            use_conn=use_conn,
+        )
+
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
     @mark.parametrize("use_conn", [param(True), param(False)])
@@ -1222,6 +1235,20 @@ class TestInsertItems:
             engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
         )
 
+    @given(data=data(), id_=integers(0, 10))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_assume_table_exists(
+        self, *, data: DataObject, id_: int, use_conn: bool
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(
+            engine,
+            {id_},
+            self._mapped_class(id_=id_),
+            assume_tables_exist=True,
+            use_conn=use_conn,
+        )
+
     @property
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
@@ -1243,14 +1270,22 @@ class TestInsertItems:
         ids: set[int],
         /,
         *args: Any,
+        assume_tables_exist: bool = False,
         use_conn: bool = False,
     ) -> None:
         if use_conn:
             with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(conn, ids, *args)
+                self._run_test_sync(
+                    conn, ids, *args, assume_tables_exist=assume_tables_exist
+                )
             return
-        ensure_tables_created(engine_or_conn, self._table)
-        insert_items(engine_or_conn, *args)
+        if assume_tables_exist:
+            with raises(OperationalError, match="no such table"):
+                insert_items(
+                    engine_or_conn, *args, assume_tables_exist=assume_tables_exist
+                )
+            return
+        insert_items(engine_or_conn, *args, assume_tables_exist=assume_tables_exist)
         sel = select(self._table.c["id_"])
         with yield_connection(engine_or_conn) as conn:
             results = conn.execute(sel).scalars().all()
@@ -1262,14 +1297,24 @@ class TestInsertItems:
         ids: set[int],
         /,
         *args: Any,
+        assume_tables_exist: bool = False,
         use_conn: bool = False,
     ) -> None:
         if use_conn:
             async with yield_connection_async(engine_or_conn) as conn:
-                await self._run_test_async(conn, ids, *args)
+                await self._run_test_async(
+                    conn, ids, *args, assume_tables_exist=assume_tables_exist
+                )
             return
-        await ensure_tables_created_async(engine_or_conn, self._table)
-        await insert_items_async(engine_or_conn, *args)
+        if assume_tables_exist:
+            with raises(OperationalError, match="no such table"):
+                await insert_items_async(
+                    engine_or_conn, *args, assume_tables_exist=assume_tables_exist
+                )
+            return
+        await insert_items_async(
+            engine_or_conn, *args, assume_tables_exist=assume_tables_exist
+        )
         sel = select(self._table.c["id_"])
         async with yield_connection_async(engine_or_conn) as conn:
             results = (await conn.execute(sel)).scalars().all()
