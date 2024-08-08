@@ -4,7 +4,7 @@ from random import Random, SystemRandom
 from typing import TYPE_CHECKING
 
 from hypothesis import given
-from hypothesis.strategies import integers, iterables
+from hypothesis.strategies import integers, iterables, just
 
 from utilities.random import SYSTEM_RANDOM, get_state, shuffle
 
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class TestGetState:
-    @given(seed=integers())
-    def test_main(self, *, seed: int) -> None:
+    @given(seed=integers() | just(SYSTEM_RANDOM))
+    def test_main(self, *, seed: int | SystemRandom) -> None:
         state = get_state(seed=seed)
         assert isinstance(state, Random)
 
