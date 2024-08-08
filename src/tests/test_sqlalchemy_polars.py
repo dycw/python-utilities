@@ -107,7 +107,7 @@ from utilities.sqlalchemy_polars import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
@@ -427,15 +427,8 @@ class TestSelectToDataFrame:
     ) -> None:
         df, table, sel = self._prepare_feature_test(values)
         insert_dataframe(df, table, engine)
-        seen: set[int] = set()
         dfs = select_to_dataframe(sel, engine, batch_size=batch_size)
-        for df_i in dfs:
-            check_polars_dataframe(
-                df_i, max_height=batch_size, schema_list={"value": Int64}
-            )
-            assert df_i["value"].is_in(values).all()
-            seen.update(df_i["value"].to_list())
-        assert seen == set(values)
+        self._assert_batch_results(dfs, batch_size, values)
 
     @given(
         data=data(),
@@ -486,12 +479,10 @@ class TestSelectToDataFrame:
         values: list[int],
         in_clauses_chunk_size: int,
     ) -> None:
-        df = DataFrame({"value": values}, schema={"value": Int64})
-        table = self._make_table(Integer)
+        df, table, sel, in_values = self._prepare_batch_and_in_clauses_test(
+            data, values
+        )
         insert_dataframe(df, table, engine)
-        sel = select(table.c["value"])
-        max_height = batch_size * in_clauses_chunk_size
-        in_values = data.draw(sets(sampled_from(values)))
         dfs = select_to_dataframe(
             sel,
             engine,
@@ -499,14 +490,8 @@ class TestSelectToDataFrame:
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
-        seen: set[int] = set()
-        for df_i in dfs:
-            check_polars_dataframe(
-                df_i, max_height=max_height, schema_list={"value": Int64}
-            )
-            assert df_i["value"].is_in(in_values).all()
-            seen.update(df_i["value"].to_list())
-        assert seen == in_values
+        max_height = batch_size * in_clauses_chunk_size
+        self._assert_batch_results(dfs, max_height, in_values)
 
     @given(data=data())
     @mark.parametrize(("strategy", "pl_dtype", "col_type"), cases)
@@ -546,15 +531,8 @@ class TestSelectToDataFrame:
         df, table, sel = self._prepare_feature_test(values)
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        seen: set[int] = set()
         dfs = await select_to_dataframe_async(sel, engine, batch_size=batch_size)
-        for df_i in dfs:
-            check_polars_dataframe(
-                df_i, max_height=batch_size, schema_list={"value": Int64}
-            )
-            assert df_i["value"].is_in(values).all()
-            seen.update(df_i["value"].to_list())
-        assert seen == set(values)
+        self._assert_batch_results(dfs, batch_size, values)
 
     @given(
         data=data(),
@@ -601,26 +579,21 @@ class TestSelectToDataFrame:
         batch_size: int,
         in_clauses_chunk_size: int,
     ) -> None:
-        df, table, sel = self._prepare_feature_test(values)
+        df, table, sel, in_values = self._prepare_batch_and_in_clauses_test(
+            data, values
+        )
         engine = await aiosqlite_engines(data)
         await insert_dataframe_async(df, table, engine)
-        in_values = data.draw(sets(sampled_from(values)))
-        max_height = batch_size * in_clauses_chunk_size
-        dfs = await select_to_dataframe_async(
+        async_dfs = await select_to_dataframe_async(
             sel,
             engine,
             batch_size=batch_size,
             in_clauses=(table.c["value"], in_values),
             in_clauses_chunk_size=in_clauses_chunk_size,
         )
-        seen: set[int] = set()
-        async for df_i in dfs:
-            check_polars_dataframe(
-                df_i, max_height=max_height, schema_list={"value": Int64}
-            )
-            assert df_i["value"].is_in(values).all()
-            seen.update(df_i["value"].to_list())
-        assert seen == (in_values)
+        sync_dfs = [df async for df in async_dfs]
+        max_height = batch_size * in_clauses_chunk_size
+        self._assert_batch_results(sync_dfs, max_height, in_values)
 
     def _prepare_main_test(
         self,
@@ -661,10 +634,32 @@ class TestSelectToDataFrame:
         sel = select(table.c["value"])
         return df, table, sel
 
+    def _assert_batch_results(
+        self, dfs: Iterable[DataFrame], max_height: int, values: Iterable[int], /
+    ) -> None:
+        seen: set[int] = set()
+        values = set(values)
+        for df_i in dfs:
+            check_polars_dataframe(
+                df_i, max_height=max_height, schema_list={"value": Int64}
+            )
+            assert df_i["value"].is_in(values).all()
+            seen.update(df_i["value"].to_list())
+        assert seen == values
+
     def _prepare_empty_test(self, /) -> tuple[Table, Select[Any]]:
         table = self._make_table(Integer)
         sel = select(table.c["value"])
         return table, sel
+
+    def _prepare_batch_and_in_clauses_test(
+        self, data: DataObject, values: Sequence[int], /
+    ) -> tuple[DataFrame, Table, Select[Any], set[int]]:
+        df, table, sel = self._prepare_feature_test(values)
+        table = self._make_table(Integer)
+        sel = select(table.c["value"])
+        in_values = data.draw(sets(sampled_from(values)))
+        return df, table, sel, in_values
 
 
 class TestSelectToDataFrameApplySnake:
