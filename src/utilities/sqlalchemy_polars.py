@@ -26,7 +26,7 @@ from polars import (
 from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
 from sqlalchemy import Column, Connection, Engine, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
 
 from utilities.errors import redirect_error
@@ -49,6 +49,7 @@ from utilities.sqlalchemy import (
     insert_items_async,
     yield_connection,
 )
+from utilities.types import ensure_not_none
 from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
     )
     from zoneinfo import ZoneInfo
 
+    from sqlalchemy.ext.asyncio import AsyncConnection
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
@@ -260,26 +262,24 @@ def select_to_dataframe(
     **kwargs: Any,
 ) -> DataFrame | Iterable[DataFrame]:
     """Read a table from a database into a DataFrame."""
-    if snake:
-        sel = _select_to_dataframe_apply_snake(sel)
-    schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if in_clauses is None:
-        # with yield_connection(engine_or_conn) as conn:
-        return read_database(
-            sel,
-            cast(ConnectionOrCursor, engine_or_conn),
-            iter_batches=batch_size is not None,
-            batch_size=batch_size,
-            schema_overrides=schema,
-            **kwargs,
-        )
-    sels = _select_to_dataframe_yield_selects_with_in_clauses(
+    prepared = _select_to_dataframe_prepare(
         sel,
-        engine_or_conn,
-        in_clauses,
+        snake=snake,
+        time_zone=time_zone,
+        in_clauses=in_clauses,
         in_clauses_chunk_size=in_clauses_chunk_size,
         chunk_size_frac=chunk_size_frac,
     )
+    if in_clauses is None:
+        return read_database(
+            prepared.sel,
+            cast(ConnectionOrCursor, engine_or_conn),
+            iter_batches=batch_size is not None,
+            batch_size=batch_size,
+            schema_overrides=prepared.schema,
+            **kwargs,
+        )
+    sels = ensure_not_none(prepared.sels)
     if batch_size is None:
         with yield_connection(engine_or_conn) as conn:
             dfs = (
@@ -298,7 +298,7 @@ def select_to_dataframe(
                 with redirect_empty_polars_concat():
                     return concat(dfs)
             except EmptyPolarsConcatError:
-                return DataFrame(schema=schema)
+                return DataFrame(schema=prepared.schema)
     dfs = (
         select_to_dataframe(
             sel,
@@ -313,6 +313,164 @@ def select_to_dataframe(
         for sel in sels
     )
     return chain(*dfs)
+
+
+@overload
+async def select_to_dataframe_async(
+    sel: Select[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = ...,
+    time_zone: ZoneInfo | str = ...,
+    batch_size: None = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
+    in_clauses_chunk_size: int | None = ...,
+    chunk_size_frac: float = ...,
+    **kwargs: Any,
+) -> DataFrame: ...
+@overload
+async def select_to_dataframe_async(
+    sel: Select[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = ...,
+    time_zone: ZoneInfo | str = ...,
+    batch_size: int = ...,
+    in_clauses: None = ...,
+    in_clauses_chunk_size: int | None = ...,
+    chunk_size_frac: float = ...,
+    **kwargs: Any,
+) -> Iterable[DataFrame]: ...
+@overload
+async def select_to_dataframe_async(
+    sel: Select[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = ...,
+    time_zone: ZoneInfo | str = ...,
+    batch_size: int = ...,
+    in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
+    in_clauses_chunk_size: int | None = ...,
+    chunk_size_frac: float = ...,
+    **kwargs: Any,
+) -> AsyncIterable[DataFrame]: ...
+async def select_to_dataframe_async(
+    sel: Select[Any],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = False,
+    time_zone: ZoneInfo | str = UTC,
+    batch_size: int | None = None,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
+    in_clauses_chunk_size: int | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    **kwargs: Any,
+) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
+    """Read a table from a database into a DataFrame."""
+    if not issubclass(AsyncEngine, type(engine)):
+        # for handling testing
+        engine = create_async_engine(engine.url)
+        return await select_to_dataframe_async(
+            sel,
+            engine,
+            snake=snake,
+            time_zone=time_zone,
+            batch_size=batch_size,
+            in_clauses=in_clauses,
+            in_clauses_chunk_size=in_clauses_chunk_size,
+            chunk_size_frac=chunk_size_frac,
+            **kwargs,
+        )
+    prepared = _select_to_dataframe_prepare(
+        sel,
+        snake=snake,
+        time_zone=time_zone,
+        in_clauses=in_clauses,
+        in_clauses_chunk_size=in_clauses_chunk_size,
+        chunk_size_frac=chunk_size_frac,
+    )
+    if in_clauses is None:
+        return read_database(
+            sel,
+            cast(Any, engine),
+            iter_batches=batch_size is not None,
+            batch_size=batch_size,
+            schema_overrides=prepared.schema,
+            **kwargs,
+        )
+    sels = ensure_not_none(prepared.sels)
+    if batch_size is None:
+        dfs = [
+            await select_to_dataframe_async(
+                sel,
+                engine,
+                snake=snake,
+                time_zone=time_zone,
+                batch_size=None,
+                in_clauses=None,
+                **kwargs,
+            )
+            for sel in sels
+        ]
+        try:
+            with redirect_empty_polars_concat():
+                return concat(dfs)
+        except EmptyPolarsConcatError:
+            return DataFrame(schema=prepared.schema)
+
+    async def yield_dfs() -> AsyncIterator[DataFrame]:
+        for sel_i in sels:
+            for df in await select_to_dataframe_async(
+                sel_i,
+                engine,
+                snake=snake,
+                time_zone=time_zone,
+                batch_size=batch_size,
+                in_clauses=None,
+                chunk_size_frac=chunk_size_frac,
+                **kwargs,
+            ):
+                yield df
+
+    return yield_dfs()
+
+
+@dataclass(frozen=True, kw_only=True)
+class _SelectToDataFramePrepare:
+    sel: Select[Any]
+    schema: SchemaDict
+    sels: Iterable[Select[Any]] | None = None
+
+
+def _select_to_dataframe_prepare(
+    sel: Select[Any],
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    /,
+    *,
+    snake: bool = False,
+    time_zone: ZoneInfo | str = UTC,
+    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
+    in_clauses_chunk_size: int | None = None,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+) -> _SelectToDataFramePrepare:
+    if snake:
+        sel = _select_to_dataframe_apply_snake(sel)
+    schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
+    if in_clauses is None:
+        sels = None
+    else:
+        sels = _select_to_dataframe_yield_selects_with_in_clauses(
+            sel,
+            engine_or_conn,
+            in_clauses,
+            in_clauses_chunk_size=in_clauses_chunk_size,
+            chunk_size_frac=chunk_size_frac,
+        )
+    return _SelectToDataFramePrepare(sel=sel, schema=schema, sels=sels)
 
 
 def _select_to_dataframe_apply_snake(sel: Select[Any], /) -> Select[Any]:
@@ -401,131 +559,6 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     else:
         chunk_size = in_clauses_chunk_size
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
-
-
-@overload
-async def select_to_dataframe_async(
-    sel: Select[Any],
-    engine: AsyncEngine,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: None = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> DataFrame: ...
-@overload
-async def select_to_dataframe_async(
-    sel: Select[Any],
-    engine: AsyncEngine,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: int = ...,
-    in_clauses: None = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> Iterable[DataFrame]: ...
-@overload
-async def select_to_dataframe_async(
-    sel: Select[Any],
-    engine: AsyncEngine,
-    /,
-    *,
-    snake: bool = ...,
-    time_zone: ZoneInfo | str = ...,
-    batch_size: int = ...,
-    in_clauses: tuple[Column[Any], Iterable[Any]] = ...,
-    in_clauses_chunk_size: int | None = ...,
-    chunk_size_frac: float = ...,
-    **kwargs: Any,
-) -> AsyncIterable[DataFrame]: ...
-async def select_to_dataframe_async(
-    sel: Select[Any],
-    engine: AsyncEngine,
-    /,
-    *,
-    snake: bool = False,
-    time_zone: ZoneInfo | str = UTC,
-    batch_size: int | None = None,
-    in_clauses: tuple[Column[Any], Iterable[Any]] | None = None,
-    in_clauses_chunk_size: int | None = None,
-    chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    **kwargs: Any,
-) -> DataFrame | Iterable[DataFrame] | AsyncIterable[DataFrame]:
-    """Read a table from a database into a DataFrame."""
-    if not issubclass(AsyncEngine, type(engine)):
-        # for handling testing
-        engine = create_async_engine(engine.url)
-        return await select_to_dataframe_async(
-            sel,
-            engine,
-            snake=snake,
-            time_zone=time_zone,
-            batch_size=batch_size,
-            in_clauses=in_clauses,
-            in_clauses_chunk_size=in_clauses_chunk_size,
-            chunk_size_frac=chunk_size_frac,
-            **kwargs,
-        )
-    if snake:
-        sel = _select_to_dataframe_apply_snake(sel)
-    schema = _select_to_dataframe_map_select_to_df_schema(sel, time_zone=time_zone)
-    if in_clauses is None:
-        return read_database(
-            sel,
-            cast(Any, engine),
-            iter_batches=batch_size is not None,
-            batch_size=batch_size,
-            schema_overrides=schema,
-            **kwargs,
-        )
-    sels = _select_to_dataframe_yield_selects_with_in_clauses(
-        sel,
-        engine,
-        in_clauses,
-        in_clauses_chunk_size=in_clauses_chunk_size,
-        chunk_size_frac=chunk_size_frac,
-    )
-    if batch_size is None:
-        dfs = [
-            await select_to_dataframe_async(
-                sel,
-                engine,
-                snake=snake,
-                time_zone=time_zone,
-                batch_size=None,
-                in_clauses=None,
-                **kwargs,
-            )
-            for sel in sels
-        ]
-        try:
-            with redirect_empty_polars_concat():
-                return concat(dfs)
-        except EmptyPolarsConcatError:
-            return DataFrame(schema=schema)
-
-    async def yield_dfs() -> AsyncIterator[DataFrame]:
-        for sel in sels:
-            for df in await select_to_dataframe_async(
-                sel,
-                engine,
-                snake=snake,
-                time_zone=time_zone,
-                batch_size=batch_size,
-                in_clauses=None,
-                chunk_size_frac=chunk_size_frac,
-                **kwargs,
-            ):
-                yield df
-
-    return yield_dfs()
 
 
 __all__ = [
