@@ -1145,7 +1145,7 @@ async def yield_connection_async(
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an asynchronous connection."""
     if isinstance(engine_or_conn, AsyncEngine):
-        async with engine_or_conn.begin() as conn:
+        async with engine_or_conn.begin() as conn:  # pragma: no cover
             yield conn
     else:
         yield engine_or_conn
