@@ -61,6 +61,7 @@ from sqlalchemy import (
     VARCHAR,
     BigInteger,
     Column,
+    Connection,
     DateTime,
     Double,
     Engine,
@@ -86,7 +87,11 @@ from utilities.datetime import is_equal_mod_tz
 from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import check_polars_dataframe
-from utilities.sqlalchemy import ensure_tables_created, ensure_tables_created_async
+from utilities.sqlalchemy import (
+    ensure_tables_created,
+    ensure_tables_created_async,
+    yield_connection,
+)
 from utilities.sqlalchemy_polars import (
     InsertDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
@@ -136,6 +141,7 @@ class TestInsertDataFrame:
 
     @given(data=data(), engine=sqlite_engines())
     @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
+    @mark.parametrize("use_conn", [param(True), param(False)])
     def test_sync(
         self,
         *,
@@ -145,37 +151,34 @@ class TestInsertDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
         check: Callable[[Any, Any], bool],
+        use_conn: bool,
     ) -> None:
         values, df, table, sel = self._prepare_main_test(
             data, strategy, pl_dtype, col_type
         )
-        insert_dataframe(df, table, engine)
-        with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        self._assert_results(res, values, check)
+        self._run_test_sync(df, table, engine, sel, values, check, use_conn=use_conn)
 
     @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
     @mark.parametrize("sr_name", [param("Value"), param("value")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
     def test_sync_snake(
-        self, *, engine: Engine, values: list[bool | None], sr_name: str
+        self, *, engine: Engine, values: list[bool | None], sr_name: str, use_conn: bool
     ) -> None:
         df, table, sel = self._prepare_snake_test(sr_name, values)
-        insert_dataframe(df, table, engine, snake=True)
-        with engine.begin() as conn:
-            res = conn.execute(sel).scalars().all()
-        assert res == values
+        self._run_test_sync(
+            df, table, engine, sel, values, eq, snake=True, use_conn=use_conn
+        )
 
     @given(
         values=lists(booleans() | none(), min_size=1, max_size=100),
         engine=sqlite_engines(),
     )
-    def test_sync_error(self, *, values: list[bool | None], engine: Engine) -> None:
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_error(
+        self, *, values: list[bool | None], engine: Engine, use_conn: bool
+    ) -> None:
         df, table = self._prepare_empty_test(values)
-        with raises(
-            InsertDataFrameError,
-            match="Non-empty DataFrame must resolve to at least 1 item",
-        ):
-            insert_dataframe(df, table, engine)
+        self._run_test_sync_error(df, table, engine, use_conn=use_conn)
 
     @given(data=data())
     @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
@@ -243,6 +246,28 @@ class TestInsertDataFrame:
             Column("Value" if title else "value", type_),
         )
 
+    def _run_test_sync(
+        self,
+        df: DataFrame,
+        table: Table,
+        engine_or_conn: Engine | Connection,
+        sel: Select[Any],
+        values: Sequence[Any],
+        check: Callable[[Any, Any], bool],
+        /,
+        *,
+        snake: bool = False,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            with yield_connection(engine_or_conn) as conn:
+                self._run_test_sync(df, table, conn, sel, values, check, snake=snake)
+            return
+        insert_dataframe(df, table, engine_or_conn, snake=snake)
+        with yield_connection(engine_or_conn) as conn:
+            res = conn.execute(sel).scalars().all()
+        self._assert_results(res, values, check)
+
     def _assert_results(
         self,
         results: Sequence[Any],
@@ -267,6 +292,25 @@ class TestInsertDataFrame:
         df = DataFrame({"other": values}, schema={"other": pl.Boolean})
         table = self._make_table(sqlalchemy.Boolean)
         return df, table
+
+    def _run_test_sync_error(
+        self,
+        df: DataFrame,
+        table: Table,
+        engine_or_conn: Engine | Connection,
+        /,
+        *,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            with yield_connection(engine_or_conn) as conn:
+                self._run_test_sync_error(df, table, conn)
+            return
+        with raises(
+            InsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            insert_dataframe(df, table, engine_or_conn)
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:
@@ -597,7 +641,7 @@ class TestSelectToDataFrame:
     def _prepare_main_test(
         self,
         data: DataObject,
-        strategy: SearchStrategy[_T],
+        strategy: SearchStrategy[Any],
         pl_dtype: PolarsDataType,
         col_type: Any,
         /,

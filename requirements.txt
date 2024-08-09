@@ -142,7 +142,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.110.0
+hypothesis==6.110.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -298,7 +298,7 @@ pathvalidate==3.2.0
     # via dycw-utilities (pyproject.toml)
 pexpect==4.9.0
     # via hatch
-pikepdf==9.1.0
+pikepdf==9.1.1
     # via img2pdf
 pillow==10.4.0
     # via

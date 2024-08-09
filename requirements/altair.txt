@@ -13,7 +13,7 @@ coverage==7.6.1
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.110.0
+hypothesis==6.110.1
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -41,7 +41,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pandas==2.2.2
     # via altair
-pikepdf==9.1.0
+pikepdf==9.1.1
     # via img2pdf
 pillow==10.4.0
     # via
