@@ -31,6 +31,7 @@ from utilities.polars import (
     CheckPolarsDataFrameError,
     ColumnsToDictError,
     DatetimeUTC,
+    DropNullStructSeriesError,
     EmptyPolarsConcatError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
@@ -46,6 +47,7 @@ from utilities.polars import (
     check_polars_dataframe,
     collect_series,
     columns_to_dict,
+    drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
     is_not_null_struct_series,
@@ -372,6 +374,29 @@ class TestDatetimeUTC:
         assert DatetimeUTC.time_zone == "UTC"
 
 
+class TestDropNullStructSeries:
+    def test_main(self) -> None:
+        series = Series(
+            values=[
+                {"a": None, "b": None},
+                {"a": True, "b": None},
+                {"a": None, "b": False},
+                {"a": True, "b": False},
+            ],
+            dtype=Struct({"a": Boolean, "b": Boolean}),
+        )
+        result = drop_null_struct_series(series)
+        expected = series[1:]
+        assert_series_equal(result, expected)
+
+    def test_error(self) -> None:
+        series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
+        with raises(
+            DropNullStructSeriesError, match="Series must have Struct-dtype; got Int64"
+        ):
+            _ = drop_null_struct_series(series)
+
+
 class TestEnsureExprOrSeries:
     @mark.parametrize(
         "column", [param("column"), param(col("column")), param(int_range(end=10))]
@@ -475,7 +500,7 @@ class TestIsNullAndIsNotNullStructSeries:
             param(is_not_null_struct_series, IsNotNullStructSeriesError),
         ],
     )
-    def test_error_struct_dtype(
+    def test_error(
         self, *, func: Callable[[Series], Series], error: type[Exception]
     ) -> None:
         series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)

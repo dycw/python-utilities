@@ -401,6 +401,24 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+def drop_null_struct_series(series: Series, /) -> Series:
+    """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
+    try:
+        is_not_null = is_not_null_struct_series(series)
+    except IsNotNullStructSeriesError as error:
+        raise DropNullStructSeriesError(series=error.series) from None
+    return series.filter(is_not_null)
+
+
+@dataclass(kw_only=True)
+class DropNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
 @overload
 def ensure_expr_or_series(column: Expr | str, /) -> Expr: ...
 @overload
@@ -625,19 +643,6 @@ class _StructDataTypeTypeError(StructDataTypeError):
         return f"Unsupported type: {self.ann}"
 
 
-def struct_is_null(
-    cls: type[Dataclass], /, *, time_zone: ZoneInfo | str | None = None
-) -> Struct:
-    """Construct the Struct data type for a dataclass."""
-    if not is_dataclass_class(cls):
-        raise _StructDataTypeNotADataclassError(cls=cls)
-    anns = get_type_hints(cls)
-    data_types = {
-        k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
-    }
-    return Struct(data_types)
-
-
 @overload
 def yield_struct_series_elements(
     series: Series, /, *, strict: Literal[True]
@@ -737,6 +742,7 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DatetimeUTC",
+    "DropNullStructSeriesError",
     "EmptyPolarsConcatError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
@@ -745,6 +751,7 @@ __all__ = [
     "check_polars_dataframe",
     "collect_series",
     "columns_to_dict",
+    "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
     "is_not_null_struct_series",
