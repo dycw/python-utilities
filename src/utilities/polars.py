@@ -33,6 +33,7 @@ from polars import (
     Series,
     Struct,
     Utf8,
+    all_horizontal,
     col,
     lit,
     when,
@@ -400,6 +401,24 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+def drop_null_struct_series(series: Series, /) -> Series:
+    """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
+    try:
+        is_not_null = is_not_null_struct_series(series)
+    except IsNotNullStructSeriesError as error:
+        raise DropNullStructSeriesError(series=error.series) from None
+    return series.filter(is_not_null)
+
+
+@dataclass(kw_only=True)
+class DropNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
 @overload
 def ensure_expr_or_series(column: Expr | str, /) -> Expr: ...
 @overload
@@ -425,6 +444,67 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     if isinstance(column, Expr):
         return floor
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
+
+
+def is_not_null_struct_series(series: Series, /) -> Series:
+    """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
+    try:
+        return ~is_null_struct_series(series)
+    except IsNullStructSeriesError as error:
+        raise IsNotNullStructSeriesError(series=error.series) from None
+
+
+@dataclass(kw_only=True)
+class IsNotNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
+def is_null_struct_series(series: Series, /) -> Series:
+    """Check if a struct-dtype Series is null as per the <= 1.1 definition."""
+    if not isinstance(series.dtype, Struct):
+        raise IsNullStructSeriesError(series=series)
+    paths = _is_null_struct_series_one(series.dtype)
+    paths = list(paths)
+    exprs = map(_is_null_struct_to_expr, paths)
+    expr = all_horizontal(*exprs)
+    return (
+        series.struct.unnest().with_columns(_result=expr)["_result"].rename(series.name)
+    )
+
+
+def _is_null_struct_series_one(
+    dtype: Struct, /, *, root: Sequence[str] = ()
+) -> Iterator[Sequence[str]]:
+    for field in dtype.fields:
+        name = field.name
+        inner = field.dtype
+        path = list(chain(root, [name]))
+        if isinstance(inner, Struct):
+            yield from _is_null_struct_series_one(inner, root=path)
+        else:
+            yield path
+
+
+def _is_null_struct_to_expr(path: Sequence[str], /) -> Expr:
+    head, *tail = path
+    return reduce(_is_null_struct_to_expr_reducer, tail, col(head)).is_null()
+
+
+def _is_null_struct_to_expr_reducer(expr: Expr, path: str, /) -> Expr:
+    return expr.struct[path]
+
+
+@dataclass(kw_only=True)
+class IsNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
 
 
 def join(
@@ -662,15 +742,20 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "ColumnsToDictError",
     "DatetimeUTC",
+    "DropNullStructSeriesError",
     "EmptyPolarsConcatError",
+    "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
     "ceil_datetime",
     "check_polars_dataframe",
     "collect_series",
     "columns_to_dict",
+    "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
+    "is_not_null_struct_series",
+    "is_null_struct_series",
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
