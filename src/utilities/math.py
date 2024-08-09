@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import count
 from math import isclose, isfinite, isnan, log10
 from typing import Annotated, Literal, overload
 
@@ -356,10 +355,12 @@ def _is_close(
     )
 
 
-def number_of_decimals(x: float, /) -> int:
+def number_of_decimals(x: float, /, *, max_decimals: int = 20) -> int:
     """Get the number of decimals."""
     _, frac = divmod(x, 1)
-    return next(s for s in count() if _number_of_decimals_check_scale(frac, s))
+    return next(
+        s for s in range(max_decimals + 1) if _number_of_decimals_check_scale(frac, s)
+    )
 
 
 def _number_of_decimals_check_scale(frac: float, scale: int, /) -> bool:
