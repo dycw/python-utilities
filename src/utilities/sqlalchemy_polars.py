@@ -71,7 +71,7 @@ if TYPE_CHECKING:
 def insert_dataframe(
     df: DataFrame,
     table_or_mapped_class: Table | type[Any],
-    engine: Engine,
+    engine_or_conn: Engine | Connection,
     /,
     *,
     snake: bool = False,
@@ -81,12 +81,12 @@ def insert_dataframe(
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
-        ensure_tables_created(engine, table_or_mapped_class)
+        ensure_tables_created(engine_or_conn, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
     insert_items(
-        engine,
+        engine_or_conn,
         prepared.insert_item,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
