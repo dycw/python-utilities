@@ -32,6 +32,7 @@ from utilities.polars import (
     ColumnsToDictError,
     DatetimeUTC,
     EmptyPolarsConcatError,
+    IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
     YieldStructSeriesElementsError,
@@ -46,6 +47,7 @@ from utilities.polars import (
     columns_to_dict,
     ensure_expr_or_series,
     floor_datetime,
+    is_null_struct_series,
     join,
     nan_sum_agg,
     nan_sum_cols,
@@ -411,6 +413,47 @@ class TestFloorDatetime:
         data = datetime_range(self.start, self.end, interval="10s", eager=True)
         result = floor_datetime(data, "1m")
         assert_series_equal(result, self.expected, check_names=False)
+
+
+class TestIsNullStructSeries:
+    def test_main(self) -> None:
+        series = Series(
+            values=[
+                {"a": None, "b": None},
+                {"a": True, "b": None},
+                {"a": None, "b": False},
+                {"a": True, "b": False},
+            ],
+            dtype=Struct({"a": Boolean, "b": Boolean}),
+        )
+        result = is_null_struct_series(series)
+        expected = Series([True, False, False, False], dtype=Boolean)
+        assert_series_equal(result, expected)
+
+    def test_nested(self) -> None:
+        series = Series(
+            values=[
+                {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
+                {"a": 1, "b": 2, "inner": None},
+                {"a": None, "b": None, "inner": {"lower": 3, "upper": 4}},
+                {"a": None, "b": None, "inner": None},
+            ],
+            dtype=Struct({
+                "a": Int64,
+                "b": Int64,
+                "inner": Struct({"lower": Int64, "upper": Int64}),
+            }),
+        )
+        result = is_null_struct_series(series)
+        expected = Series([False, False, False, True], dtype=Boolean)
+        assert_series_equal(result, expected)
+
+    def test_error_struct_dtype(self) -> None:
+        series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
+        with raises(
+            IsNullStructSeriesError, match="Series must have Struct-dtype; got Int64"
+        ):
+            _ = is_null_struct_series(series)
 
 
 class TestJoin:

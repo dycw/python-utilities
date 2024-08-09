@@ -33,6 +33,7 @@ from polars import (
     Series,
     Struct,
     Utf8,
+    all_horizontal,
     col,
     lit,
     when,
@@ -427,6 +428,50 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
 
 
+def is_null_struct_series(series: Series, /) -> Series:
+    """Check if a struct-dtype Series is null as per the <= 1.1 definition."""
+    if not isinstance(series.dtype, Struct):
+        raise IsNullStructSeriesError(series=series)
+    paths = _is_null_struct_series_one(series.dtype)
+    paths = list(paths)
+    exprs = map(_is_null_struct_to_expr, paths)
+    expr = all_horizontal(*exprs)
+    return (
+        series.struct.unnest().with_columns(_result=expr)["_result"].rename(series.name)
+    )
+
+
+def _is_null_struct_series_one(
+    dtype: Struct, /, *, root: Sequence[str] = ()
+) -> Iterator[Sequence[str]]:
+    for field in dtype.fields:
+        name = field.name
+        inner = field.dtype
+        path = list(chain(root, [name]))
+        if isinstance(inner, Struct):
+            yield from _is_null_struct_series_one(inner, root=path)
+        else:
+            yield path
+
+
+def _is_null_struct_to_expr(path: Sequence[str], /) -> Expr:
+    head, *tail = path
+    return reduce(_is_null_struct_to_expr_reducer, tail, col(head)).is_null()
+
+
+def _is_null_struct_to_expr_reducer(expr: Expr, path: str, /) -> Expr:
+    return expr.struct[path]
+
+
+@dataclass(kw_only=True)
+class IsNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
 def join(
     df: DataFrame,
     *dfs: DataFrame,
@@ -563,6 +608,19 @@ class _StructDataTypeTypeError(StructDataTypeError):
         return f"Unsupported type: {self.ann}"
 
 
+def struct_is_null(
+    cls: type[Dataclass], /, *, time_zone: ZoneInfo | str | None = None
+) -> Struct:
+    """Construct the Struct data type for a dataclass."""
+    if not is_dataclass_class(cls):
+        raise _StructDataTypeNotADataclassError(cls=cls)
+    anns = get_type_hints(cls)
+    data_types = {
+        k: _struct_data_type_one(v, time_zone=time_zone) for k, v in anns.items()
+    }
+    return Struct(data_types)
+
+
 @overload
 def yield_struct_series_elements(
     series: Series, /, *, strict: Literal[True]
@@ -663,6 +721,7 @@ __all__ = [
     "ColumnsToDictError",
     "DatetimeUTC",
     "EmptyPolarsConcatError",
+    "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
     "ceil_datetime",
@@ -671,6 +730,7 @@ __all__ = [
     "columns_to_dict",
     "ensure_expr_or_series",
     "floor_datetime",
+    "is_null_struct_series",
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
