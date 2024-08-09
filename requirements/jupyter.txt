@@ -21,7 +21,7 @@ attrs==24.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-babel==2.15.0
+babel==2.16.0
     # via jupyterlab-server
 beautifulsoup4==4.12.3
     # via nbconvert
@@ -58,7 +58,7 @@ httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via jupyterlab
-hypothesis==6.110.0
+hypothesis==6.110.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via

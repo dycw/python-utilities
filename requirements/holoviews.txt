@@ -20,7 +20,7 @@ coverage==7.6.1
     # via pytest-cov
 holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.110.0
+hypothesis==6.110.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
