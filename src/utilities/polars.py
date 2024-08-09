@@ -428,6 +428,23 @@ def floor_datetime(column: IntoExprColumn, every: Expr | str, /) -> Expr | Serie
     return DataFrame().with_columns(floor.alias(column.name))[column.name]
 
 
+def is_not_null_struct_series(series: Series, /) -> Series:
+    """Check if a struct-dtype Series is not null as per the <= 1.1 definition."""
+    try:
+        return ~is_null_struct_series(series)
+    except IsNullStructSeriesError as error:
+        raise IsNotNullStructSeriesError(series=error.series) from None
+
+
+@dataclass(kw_only=True)
+class IsNotNullStructSeriesError(Exception):
+    series: Series
+
+    @override
+    def __str__(self) -> str:
+        return f"Series must have Struct-dtype; got {self.series.dtype}"
+
+
 def is_null_struct_series(series: Series, /) -> Series:
     """Check if a struct-dtype Series is null as per the <= 1.1 definition."""
     if not isinstance(series.dtype, Struct):
@@ -730,6 +747,7 @@ __all__ = [
     "columns_to_dict",
     "ensure_expr_or_series",
     "floor_datetime",
+    "is_not_null_struct_series",
     "is_null_struct_series",
     "join",
     "nan_sum_agg",

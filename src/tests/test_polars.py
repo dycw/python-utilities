@@ -32,6 +32,7 @@ from utilities.polars import (
     ColumnsToDictError,
     DatetimeUTC,
     EmptyPolarsConcatError,
+    IsNotNullStructSeriesError,
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
@@ -47,6 +48,7 @@ from utilities.polars import (
     columns_to_dict,
     ensure_expr_or_series,
     floor_datetime,
+    is_not_null_struct_series,
     is_null_struct_series,
     join,
     nan_sum_agg,
@@ -415,8 +417,17 @@ class TestFloorDatetime:
         assert_series_equal(result, self.expected, check_names=False)
 
 
-class TestIsNullStructSeries:
-    def test_main(self) -> None:
+class TestIsNullAndIsNotNullStructSeries:
+    @mark.parametrize(
+        ("func", "exp_values"),
+        [
+            param(is_null_struct_series, [True, False, False, False]),
+            param(is_not_null_struct_series, [False, True, True, True]),
+        ],
+    )
+    def test_main(
+        self, *, func: Callable[[Series], Series], exp_values: list[bool]
+    ) -> None:
         series = Series(
             values=[
                 {"a": None, "b": None},
@@ -426,11 +437,20 @@ class TestIsNullStructSeries:
             ],
             dtype=Struct({"a": Boolean, "b": Boolean}),
         )
-        result = is_null_struct_series(series)
-        expected = Series([True, False, False, False], dtype=Boolean)
+        result = func(series)
+        expected = Series(exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    def test_nested(self) -> None:
+    @mark.parametrize(
+        ("func", "exp_values"),
+        [
+            param(is_null_struct_series, [False, False, False, True]),
+            param(is_not_null_struct_series, [True, True, True, False]),
+        ],
+    )
+    def test_nested(
+        self, *, func: Callable[[Series], Series], exp_values: list[bool]
+    ) -> None:
         series = Series(
             values=[
                 {"a": 1, "b": 2, "inner": {"lower": 3, "upper": 4}},
@@ -444,16 +464,23 @@ class TestIsNullStructSeries:
                 "inner": Struct({"lower": Int64, "upper": Int64}),
             }),
         )
-        result = is_null_struct_series(series)
-        expected = Series([False, False, False, True], dtype=Boolean)
+        result = func(series)
+        expected = Series(exp_values, dtype=Boolean)
         assert_series_equal(result, expected)
 
-    def test_error_struct_dtype(self) -> None:
+    @mark.parametrize(
+        ("func", "error"),
+        [
+            param(is_null_struct_series, IsNullStructSeriesError),
+            param(is_not_null_struct_series, IsNotNullStructSeriesError),
+        ],
+    )
+    def test_error_struct_dtype(
+        self, *, func: Callable[[Series], Series], error: type[Exception]
+    ) -> None:
         series = Series(name="series", values=[1, 2, 3, None], dtype=Int64)
-        with raises(
-            IsNullStructSeriesError, match="Series must have Struct-dtype; got Int64"
-        ):
-            _ = is_null_struct_series(series)
+        with raises(error, match="Series must have Struct-dtype; got Int64"):
+            _ = func(series)
 
 
 class TestJoin:
