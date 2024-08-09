@@ -165,7 +165,9 @@ class TestInsertDataFrame:
         self, *, engine: Engine, values: list[bool | None], sr_name: str, use_conn: bool
     ) -> None:
         df, table, sel = self._prepare_snake_test(sr_name, values)
-        self._run_test_sync(df, table, engine, sel, values, eq, use_conn=use_conn)
+        self._run_test_sync(
+            df, table, engine, sel, values, eq, snake=True, use_conn=use_conn
+        )
 
     @given(
         values=lists(booleans() | none(), min_size=1, max_size=100),
@@ -254,13 +256,14 @@ class TestInsertDataFrame:
         check: Callable[[Any, Any], bool],
         /,
         *,
+        snake: bool = False,
         use_conn: bool = False,
     ) -> None:
         if use_conn:
             with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(df, table, conn, sel, values, check)
+                self._run_test_sync(df, table, conn, sel, values, check, snake=snake)
             return
-        insert_dataframe(df, table, engine_or_conn)
+        insert_dataframe(df, table, engine_or_conn, snake=snake)
         with yield_connection(engine_or_conn) as conn:
             res = conn.execute(sel).scalars().all()
         self._assert_results(res, values, check)
