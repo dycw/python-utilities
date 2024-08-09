@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from math import inf, nan
+from typing import ClassVar
 
+from hypothesis import given
+from hypothesis.strategies import integers
 from pytest import approx, mark, param, raises
 
 from utilities.math import (
@@ -51,6 +54,7 @@ from utilities.math import (
     is_zero_or_nan,
     is_zero_or_non_micro,
     is_zero_or_non_micro_or_nan,
+    number_of_decimals,
     order_of_magnitude,
 )
 
@@ -689,3 +693,28 @@ class TestOrderOfMagnitude:
         assert res_float == approx(exp_float)
         res_int = order_of_magnitude(x_use, round_=True)
         assert res_int == exp_int
+
+
+class TestNumberOfDecimals:
+    max_int: ClassVar[int] = int(1e6)
+
+    @given(integer=integers(-max_int, max_int))
+    @mark.parametrize(
+        ("frac", "expected"),
+        [
+            param(0.0, 0),
+            param(0.1, 1),
+            param(0.12, 2),
+            param(0.123, 3),
+            param(0.1234, 4),
+            param(0.12345, 5),
+            param(0.123456, 6),
+            param(0.1234567, 7),
+            param(0.12345678, 8),
+            param(0.123456789, 9),
+        ],
+    )
+    def test_main(self, *, integer: int, frac: float, expected: int) -> None:
+        x = integer + frac
+        result = number_of_decimals(x)
+        assert result == expected

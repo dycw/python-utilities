@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import count
 from math import isclose, isfinite, isnan, log10
 from typing import Annotated, Literal, overload
 
@@ -355,6 +356,17 @@ def _is_close(
     )
 
 
+def number_of_decimals(x: float, /) -> int:
+    """Get the number of decimals."""
+    _, frac = divmod(x, 1)
+    return next(s for s in count() if _number_of_decimals_check_scale(frac, s))
+
+
+def _number_of_decimals_check_scale(frac: float, scale: int, /) -> bool:
+    scaled = 10**scale * frac
+    return isclose(scaled, round(scaled))
+
+
 @overload
 def order_of_magnitude(x: float, /, *, round_: Literal[True]) -> int: ...
 @overload
@@ -563,5 +575,6 @@ __all__ = [
     "is_zero_or_nan",
     "is_zero_or_non_micro",
     "is_zero_or_non_micro_or_nan",
+    "number_of_decimals",
     "order_of_magnitude",
 ]
