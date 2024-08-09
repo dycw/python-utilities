@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from math import inf, nan
+from re import escape
 from typing import ClassVar
 
 from hypothesis import given
@@ -9,6 +10,7 @@ from pytest import approx, mark, param, raises
 
 from utilities.math import (
     CheckIntegerError,
+    NumberOfDecimalsError,
     check_integer,
     is_at_least,
     is_at_least_or_nan,
@@ -718,3 +720,13 @@ class TestNumberOfDecimals:
         x = integer + frac
         result = number_of_decimals(x)
         assert result == expected
+
+    def test_equal_fail(self) -> None:
+        x = 1.401298464324817e-45
+        with raises(
+            NumberOfDecimalsError,
+            match=escape(
+                "Could not determine number of decimals of 1.401298464324817e-45 (up to 20)"
+            ),
+        ):
+            _ = number_of_decimals(x)
