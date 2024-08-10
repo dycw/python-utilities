@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-def tqdm_asyncio(
+def tqdm_async(
     iterable: AsyncIterable[_T],
     /,
     *,
@@ -77,4 +77,4 @@ def tqdm_asyncio(
     )
 
 
-__all__ = ["tqdm_asyncio"]
+__all__ = ["tqdm_async"]

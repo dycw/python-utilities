@@ -557,7 +557,7 @@ def groupby_lists(
 ) -> Iterator[tuple[_T, list[_T]]] | Iterator[tuple[_U, list[_T]]]:
     """Yield consecutive keys and groups (as lists)."""
     if key is None:
-        for k, group in groupby(iterable, key=key):
+        for k, group in groupby(iterable):
             yield k, list(group)
     else:
         for k, group in groupby(iterable, key=key):

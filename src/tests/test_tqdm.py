@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import sleep
 from typing import TYPE_CHECKING
 
-from utilities.tqdm import tqdm_asyncio
+from utilities.tqdm import tqdm_async
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -16,7 +16,7 @@ class TestTqdmAsyncio:
                 yield i
                 await sleep(0.1)
 
-        ints = [i async for i in tqdm_asyncio(yield_ints())]
+        ints = [i async for i in tqdm_async(yield_ints())]
         assert len(ints) == 5
         for i in ints:
             assert isinstance(i, int)
