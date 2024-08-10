@@ -2,13 +2,27 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from types import NoneType, UnionType
-from typing import Any, Literal, get_origin
+from typing import Any, Literal, Protocol, TypeVar, get_origin
 from typing import get_args as _get_args
 
 try:  # pragma: version-ge-312
     from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
 except ImportError:  # pragma: no cover
     TypeAliasType = None
+
+
+_T_contra = TypeVar("_T_contra", contravariant=True)
+
+
+class SupportsDunderLT(Protocol[_T_contra]):
+    def __lt__(self, other: _T_contra, /) -> bool: ...
+
+
+class SupportsDunderGT(Protocol[_T_contra]):
+    def __gt__(self, other: _T_contra, /) -> bool: ...
+
+
+SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
 
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
@@ -78,6 +92,9 @@ def _is_annotation_of_type(obj: Any, origin: Any, /) -> bool:
 
 
 __all__ = [
+    "SupportsDunderGT",
+    "SupportsDunderLT",
+    "SupportsRichComparison",
     "is_dict_type",
     "is_frozenset_type",
     "is_list_type",
