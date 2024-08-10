@@ -14,7 +14,7 @@ _T = TypeVar("_T")
 _U = TypeVar("_U")
 _MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitable = _T | Awaitable[_T]
-_IterableLike = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
+_MaybeAwaitableMaybeAsynIterable = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
 _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
@@ -22,14 +22,17 @@ _TSupportsRichComparison = TypeVar(
 
 @overload
 async def groupby_async(
-    iterable: _IterableLike[_T], /, *, key: None = None
+    iterable: _MaybeAwaitableMaybeAsynIterable[_T], /, *, key: None = None
 ) -> AsyncIterator[tuple[_T, list[_T]]]: ...
 @overload
 async def groupby_async(
-    iterable: _IterableLike[_T], /, *, key: Callable[[_T], _MaybeAwaitable[_U]]
+    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
+    /,
+    *,
+    key: Callable[[_T], _MaybeAwaitable[_U]],
 ) -> AsyncIterator[tuple[_U, list[_T]]]: ...
 async def groupby_async(
-    iterable: _IterableLike[_T],
+    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
@@ -55,7 +58,7 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
-async def to_list(iterable: _IterableLike[_T], /) -> list[_T]:
+async def to_list(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
@@ -64,7 +67,7 @@ async def to_list(iterable: _IterableLike[_T], /) -> list[_T]:
         return list(cast(Iterable[_T], value))
 
 
-async def to_set(iterable: _IterableLike[_T], /) -> set[_T]:
+async def to_set(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> set[_T]:
     """Reify an asynchronous iterable as a set."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
@@ -74,7 +77,7 @@ async def to_set(iterable: _IterableLike[_T], /) -> set[_T]:
 
 
 async def to_sorted(
-    iterable: _IterableLike[_TSupportsRichComparison],
+    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
     /,
     *,
     key: Callable[[_TSupportsRichComparison], _MaybeAwaitable[SupportsRichComparison]]

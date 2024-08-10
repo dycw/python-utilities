@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from pytest import mark, param
 
 from utilities.asyncio import (
-    _IterableLike,
+    _MaybeAwaitableMaybeAsynIterable,
     groupby_async,
     is_awaitable,
     to_list,
@@ -50,7 +50,9 @@ class TestGroupbyAsync:
             param(_yield_strs_async()),
         ],
     )
-    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_main(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_list(groupby_async(iterable))
         expected = [
             ("A", list(repeat("A", times=4))),
@@ -71,7 +73,9 @@ class TestGroupbyAsync:
             param(_yield_strs_async()),
         ],
     )
-    async def test_key_sync(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_key_sync(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_list(groupby_async(iterable, key=ord))
         expected = [
             (65, list(repeat("A", times=4))),
@@ -92,7 +96,9 @@ class TestGroupbyAsync:
             param(_yield_strs_async()),
         ],
     )
-    async def test_key_async(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_key_async(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         async def key(text: str, /) -> int:
             await sleep(0.01)
             return ord(text)
@@ -128,7 +134,9 @@ class TestToList:
             param(_yield_strs_async()),
         ],
     )
-    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_main(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_list(iterable)
         assert result == _STRS
 
@@ -143,7 +151,9 @@ class TestToSet:
             param(_yield_strs_async()),
         ],
     )
-    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_main(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_set(iterable)
         assert result == set(_STRS)
 
@@ -158,7 +168,9 @@ class TestToSorted:
             param(_yield_strs_async()),
         ],
     )
-    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_main(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_sorted(iterable)
         expected = sorted(_STRS)
         assert result == expected
@@ -172,7 +184,9 @@ class TestToSorted:
             param(_yield_strs_async()),
         ],
     )
-    async def test_key_sync(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_key_sync(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_sorted(iterable, key=str)
         expected = sorted(_STRS)
         assert result == expected
@@ -186,7 +200,9 @@ class TestToSorted:
             param(_yield_strs_async()),
         ],
     )
-    async def test_key_async(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_key_async(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         async def key(text: str, /) -> str:
             await sleep(0.01)
             return text
@@ -204,7 +220,9 @@ class TestToSorted:
             param(_yield_strs_async()),
         ],
     )
-    async def test_reverse(self, *, iterable: _IterableLike[str]) -> None:
+    async def test_reverse(
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+    ) -> None:
         result = await to_sorted(iterable, reverse=True)
         expected = sorted(_STRS, reverse=True)
         assert result == expected
