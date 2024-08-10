@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from itertools import repeat
 from typing import TYPE_CHECKING, Any
 
 from pytest import mark, param
 
 from utilities.asyncio import (
-    _MaybeAsyncIterable,
+    _IterableLike,
+    groupby_async,
     is_awaitable,
     to_list,
     to_set,
@@ -15,17 +17,50 @@ from utilities.asyncio import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator
+
+_STRS = list("AAAABBBCCDAABB")
 
 
-def _yield_ints_sync() -> Iterator[int]:
-    return iter([1, 3, 5, 2, 4])
+def _get_strs_sync() -> Iterable[str]:
+    return iter(_STRS)
 
 
-async def _yield_ints_async() -> AsyncIterator[int]:
-    for i in _yield_ints_sync():
-        await sleep(0.01)
+async def _get_strs_async() -> Iterable[str]:
+    return _get_strs_sync()
+
+
+def _yield_strs_sync() -> Iterator[str]:
+    return iter(_get_strs_sync())
+
+
+async def _yield_strs_async() -> AsyncIterator[str]:
+    for i in _get_strs_sync():
         yield i
+        await sleep(0.01)
+
+
+class TestGroupbyAsync:
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
+        result = await to_list(groupby_async(iterable))
+        expected = [
+            ("A", list(repeat("A", times=4))),
+            ("B", list(repeat("B", times=3))),
+            ("C", list(repeat("C", times=2))),
+            ("D", list(repeat("D", times=1))),
+            ("A", list(repeat("A", times=2))),
+            ("B", list(repeat("B", times=2))),
+        ]
+        assert result == expected
 
 
 class TestIsAwaitable:
@@ -39,59 +74,93 @@ class TestIsAwaitable:
 
 class TestToList:
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_main(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
+    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
         result = await to_list(iterable)
-        expected = [1, 3, 5, 2, 4]
-        assert result == expected
+        assert result == _STRS
 
 
 class TestToSet:
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_main(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
+    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
         result = await to_set(iterable)
-        expected = set(range(1, 6))
-        assert result == expected
+        assert result == set(_STRS)
 
 
 class TestToSorted:
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_main(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
+    async def test_main(self, *, iterable: _IterableLike[str]) -> None:
         result = await to_sorted(iterable)
-        expected = list(range(1, 6))
+        expected = sorted(_STRS)
         assert result == expected
 
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_key_sync(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
-        result = await to_sorted(iterable, key=int)
-        expected = list(range(1, 6))
+    async def test_key_sync(self, *, iterable: _IterableLike[str]) -> None:
+        result = await to_sorted(iterable, key=str)
+        expected = sorted(_STRS)
         assert result == expected
 
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_key_async(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
-        async def key(n: int, /) -> int:
+    async def test_key_async(self, *, iterable: _IterableLike[str]) -> None:
+        async def key(text: str, /) -> str:
             await sleep(0.01)
-            return n
+            return text
 
         result = await to_sorted(iterable, key=key)
-        expected = list(range(1, 6))
+        expected = sorted(_STRS)
         assert result == expected
 
     @mark.parametrize(
-        "iterable", [param(_yield_ints_sync()), param(_yield_ints_async())]
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
     )
-    async def test_reverse(self, *, iterable: _MaybeAsyncIterable[int]) -> None:
+    async def test_reverse(self, *, iterable: _IterableLike[str]) -> None:
         result = await to_sorted(iterable, reverse=True)
-        expected = list(range(5, 0, -1))
+        expected = sorted(_STRS, reverse=True)
         assert result == expected
 
 

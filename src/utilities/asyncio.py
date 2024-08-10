@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterable, Awaitable, Iterable
-from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable
+from itertools import groupby
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
 
 from utilities.typing import SupportsRichComparison
 
@@ -10,11 +11,34 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_U = TypeVar("_U")
 _MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitable = _T | Awaitable[_T]
+_IterableLike = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
 _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
+
+
+@overload
+async def groupby_async(
+    iterable: _IterableLike[_T], /, *, key: None = None
+) -> AsyncIterator[tuple[_T, list[_T]]]: ...
+@overload
+async def groupby_async(
+    iterable: _IterableLike[_T], /, *, key: Callable[[_T], _MaybeAwaitable[_U]]
+) -> AsyncIterator[tuple[_U, list[_T]]]: ...
+async def groupby_async(
+    iterable: _IterableLike[_T],
+    /,
+    *,
+    key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
+) -> AsyncIterator[tuple[_T, list[_T]]] | AsyncIterator[tuple[_U, list[_T]]]:
+    """Yield consecutive keys and groups (as lists)."""
+    if key is None:
+        as_list = await to_list(iterable)
+        for k, group in groupby(as_list):
+            yield k, list(group)
 
 
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
@@ -26,24 +50,26 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
-async def to_list(iterable: _MaybeAsyncIterable[_T], /) -> list[_T]:
+async def to_list(iterable: _IterableLike[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
+    value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
-        return [x async for x in cast(AsyncIterable[_T], iterable)]
+        return [x async for x in cast(AsyncIterable[_T], value)]
     except TypeError:
-        return list(cast(Iterable[_T], iterable))
+        return list(cast(Iterable[_T], value))
 
 
-async def to_set(iterable: _MaybeAsyncIterable[_T], /) -> set[_T]:
+async def to_set(iterable: _IterableLike[_T], /) -> set[_T]:
     """Reify an asynchronous iterable as a set."""
+    value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
-        return {x async for x in cast(AsyncIterable[_T], iterable)}
+        return {x async for x in cast(AsyncIterable[_T], value)}
     except TypeError:
-        return set(cast(Iterable[_T], iterable))
+        return set(cast(Iterable[_T], value))
 
 
 async def to_sorted(
-    iterable: _MaybeAsyncIterable[_TSupportsRichComparison],
+    iterable: _IterableLike[_TSupportsRichComparison],
     /,
     *,
     key: Callable[[_TSupportsRichComparison], _MaybeAwaitable[SupportsRichComparison]]
