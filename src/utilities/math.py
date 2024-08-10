@@ -355,6 +355,33 @@ def _is_close(
     )
 
 
+def number_of_decimals(x: float, /, *, max_decimals: int = 20) -> int:
+    """Get the number of decimals."""
+    _, frac = divmod(x, 1)
+    results = (
+        s for s in range(max_decimals + 1) if _number_of_decimals_check_scale(frac, s)
+    )
+    try:
+        return next(results)
+    except StopIteration:
+        raise NumberOfDecimalsError(x=x, max_decimals=max_decimals) from None
+
+
+def _number_of_decimals_check_scale(frac: float, scale: int, /) -> bool:
+    scaled = 10**scale * frac
+    return isclose(scaled, round(scaled))
+
+
+@dataclass(kw_only=True)
+class NumberOfDecimalsError(Exception):
+    x: float
+    max_decimals: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Could not determine number of decimals of {self.x} (up to {self.max_decimals})"
+
+
 @overload
 def order_of_magnitude(x: float, /, *, round_: Literal[True]) -> int: ...
 @overload
@@ -563,5 +590,6 @@ __all__ = [
     "is_zero_or_nan",
     "is_zero_or_non_micro",
     "is_zero_or_non_micro_or_nan",
+    "number_of_decimals",
     "order_of_magnitude",
 ]
