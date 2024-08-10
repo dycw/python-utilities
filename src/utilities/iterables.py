@@ -3,8 +3,6 @@ from __future__ import annotations
 import re
 from collections import Counter
 from collections.abc import (
-    AsyncIterable,
-    Awaitable,
     Callable,
     Hashable,
     Iterable,
@@ -52,7 +50,6 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
-_MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
 
 
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
@@ -567,15 +564,6 @@ def groupby_lists(
             yield k, list(group)
 
 
-async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
-    """Check if an object is awaitable."""
-    try:
-        await obj
-    except TypeError:
-        return False
-    return True
-
-
 def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable."""
     try:
@@ -733,14 +721,6 @@ def transpose(iterable: Iterable[tuple[Any, ...]]) -> tuple[tuple[Any, ...], ...
     return tuple(zip(*iterable, strict=True))
 
 
-async def try_await(obj: Any, /) -> Any:
-    """Try await a value from an object."""
-    try:
-        return await obj
-    except TypeError:
-        return obj
-
-
 __all__ = [
     "CheckBijectionError",
     "CheckDuplicatesError",
@@ -774,12 +754,10 @@ __all__ = [
     "ensure_iterable_not_str",
     "expanding_window",
     "groupby_lists",
-    "is_awaitable",
     "is_iterable",
     "is_iterable_not_str",
     "one",
     "product_dicts",
     "take",
     "transpose",
-    "try_await",
 ]

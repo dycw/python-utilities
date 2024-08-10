@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterable, Awaitable, Iterable
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast
 
-from utilities.iterables import try_await
 from utilities.typing import SupportsRichComparison
 
 if TYPE_CHECKING:
@@ -16,6 +15,15 @@ _MaybeAwaitable = _T | Awaitable[_T]
 _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
+
+
+async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
+    """Check if an object is awaitable."""
+    try:
+        await obj
+    except TypeError:
+        return False
+    return True
 
 
 async def to_list(iterable: _MaybeAsyncIterable[_T], /) -> list[_T]:
@@ -52,4 +60,12 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
-__all__ = ["to_list", "to_set", "to_sorted"]
+async def try_await(obj: Any, /) -> Any:
+    """Try await a value from an object."""
+    try:
+        return await obj
+    except TypeError:
+        return obj
+
+
+__all__ = ["is_awaitable", "to_list", "to_set", "to_sorted", "try_await"]
