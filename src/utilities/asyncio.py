@@ -35,10 +35,15 @@ async def groupby_async(
     key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
 ) -> AsyncIterator[tuple[_T, list[_T]]] | AsyncIterator[tuple[_U, list[_T]]]:
     """Yield consecutive keys and groups (as lists)."""
+    as_list = await to_list(iterable)
     if key is None:
-        as_list = await to_list(iterable)
         for k, group in groupby(as_list):
             yield k, list(group)
+    else:
+        pairs = [(cast(_U, await try_await(key(e))), e) for e in as_list]
+        for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
+            group = [v for _, v in pairs_group]
+            yield k, group
 
 
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:

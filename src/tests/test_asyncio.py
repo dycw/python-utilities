@@ -62,6 +62,52 @@ class TestGroupbyAsync:
         ]
         assert result == expected
 
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_key_sync(self, *, iterable: _IterableLike[str]) -> None:
+        result = await to_list(groupby_async(iterable, key=ord))
+        expected = [
+            (65, list(repeat("A", times=4))),
+            (66, list(repeat("B", times=3))),
+            (67, list(repeat("C", times=2))),
+            (68, list(repeat("D", times=1))),
+            (65, list(repeat("A", times=2))),
+            (66, list(repeat("B", times=2))),
+        ]
+        assert result == expected
+
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_key_async(self, *, iterable: _IterableLike[str]) -> None:
+        async def key(text: str, /) -> int:
+            await sleep(0.01)
+            return ord(text)
+
+        result = await to_list(groupby_async(iterable, key=key))
+        expected = [
+            (65, list(repeat("A", times=4))),
+            (66, list(repeat("B", times=3))),
+            (67, list(repeat("C", times=2))),
+            (68, list(repeat("D", times=1))),
+            (65, list(repeat("A", times=2))),
+            (66, list(repeat("B", times=2))),
+        ]
+        assert result == expected
+
 
 class TestIsAwaitable:
     @mark.parametrize(
