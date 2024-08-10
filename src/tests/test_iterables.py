@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from asyncio import sleep
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
@@ -42,6 +43,7 @@ from utilities.iterables import (
     ensure_iterable_not_str,
     expanding_window,
     groupby_lists,
+    is_awaitable,
     is_iterable,
     is_iterable_not_str,
     one,
@@ -478,6 +480,17 @@ class TestGroupbyLists:
             (66, list(repeat("B", times=2))),
         ]
         assert result == expected
+
+
+class TestIsAwaitable:
+    async def test_main(self) -> None:
+        async def yield_ints() -> None:
+            await sleep(0.01)
+
+        assert await is_awaitable(yield_ints())
+
+    async def test_not(self) -> None:
+        assert not await is_awaitable(None)
 
 
 class TestIsIterable:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterable, Awaitable, Iterable
 from typing import TYPE_CHECKING, TypeVar, cast
 
+from utilities.iterables import try_await
 from utilities.typing import SupportsRichComparison
 
 if TYPE_CHECKING:
@@ -46,14 +47,7 @@ async def to_sorted(
     if key is None:
         return sorted(as_list, reverse=reverse)
 
-    values: list[SupportsRichComparison] = []
-    for element in as_list:
-        value = key(element)
-        try:
-            value_use = await cast(Awaitable[SupportsRichComparison], value)
-        except TypeError:
-            value_use = cast(SupportsRichComparison, value)
-        values.append(value_use)
+    values = [cast(SupportsRichComparison, await try_await(key(e))) for e in as_list]
     sorted_pairs = sorted(zip(as_list, values, strict=True), key=lambda x: x[1])
     return [element for element, _ in sorted_pairs]
 
