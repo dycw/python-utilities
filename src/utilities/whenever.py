@@ -24,7 +24,10 @@ MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
     """Ensure the object is a date."""
-    return date if isinstance(date, dt.date) else parse_date(date)
+    if isinstance(date, dt.date):
+        check_date_not_datetime(date)
+        return date
+    return parse_date(date)
 
 
 def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
