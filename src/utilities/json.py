@@ -15,7 +15,7 @@ from uuid import UUID
 
 from typing_extensions import override
 
-from utilities.datetime import isinstance_date_not_datetime
+from utilities.datetime import check_date_not_datetime, isinstance_date_not_datetime
 from utilities.types import EnsureMemberError, ensure_member, get_class_name
 from utilities.typing import get_args
 
@@ -144,6 +144,7 @@ def _default_standard(obj: Any, /) -> _ClassValueMapping[_Class] | None:
 def _default_date(obj: dt.date, /) -> _ClassValueMapping[_Class]:
     from utilities.whenever import serialize_date
 
+    check_date_not_datetime(obj)
     return {_CLASS: "date", _VALUE: serialize_date(obj)}
 
 

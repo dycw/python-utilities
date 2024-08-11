@@ -8,10 +8,12 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Never,
     Self,
     TypeGuard,
     TypeVar,
     assert_never,
+    cast,
 )
 
 from typing_extensions import override
@@ -408,8 +410,6 @@ def round_to_prev_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the previous weekday."""
     return _round_to_weekday(date, prev_or_next="prev")
 
-    return None
-
 
 def _round_to_weekday(
     date: dt.date, /, *, prev_or_next: Literal["prev", "next"]
@@ -421,6 +421,8 @@ def _round_to_weekday(
             n = -1
         case "next":
             n = 1
+        case _ as never:  # pragma: no cover
+            assert_never(cast(Never, never))
     while not is_weekday(date):
         date = add_weekdays(date, n=n)
     return date
