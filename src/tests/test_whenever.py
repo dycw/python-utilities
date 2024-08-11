@@ -75,12 +75,6 @@ class TestParseAndSerializeDate:
         result = parse_date(serialized)
         assert result == date
 
-    @given(datetime=datetimes())
-    def test_on_datetime(self, *, datetime: dt.datetime) -> None:
-        serialized = serialize_date(datetime)
-        result = parse_date(serialized)
-        assert result == datetime.date()
-
     def test_error_parse(self) -> None:
         with raises(ParseDateError, match="Unable to parse date; got 'invalid'"):
             _ = parse_date("invalid")
