@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from dataclasses import dataclass
 from itertools import repeat
 from typing import TYPE_CHECKING, Any
 
@@ -36,6 +37,29 @@ def _yield_strs_sync() -> Iterator[str]:
 
 async def _yield_strs_async() -> AsyncIterator[str]:
     for i in _get_strs_sync():
+        yield i
+        await sleep(0.01)
+
+
+@dataclass(frozen=True, kw_only=True)
+class _Container:
+    text: str
+
+
+def _get_containers_sync() -> Iterable[_Container]:
+    return (_Container(text=t) for t in _get_strs_sync())
+
+
+async def _get_containers_async() -> Iterable[_Container]:
+    return _get_containers_sync()
+
+
+def _yield_containers_sync() -> Iterator[_Container]:
+    return iter(_get_containers_sync())
+
+
+async def _yield_containers_async() -> AsyncIterator[_Container]:
+    for i in _get_containers_sync():
         yield i
         await sleep(0.01)
 
@@ -178,37 +202,37 @@ class TestToSorted:
     @mark.parametrize(
         "iterable",
         [
-            param(_get_strs_sync()),
-            param(_get_strs_async()),
-            param(_yield_strs_sync()),
-            param(_yield_strs_async()),
+            param(_get_containers_sync()),
+            param(_get_containers_async()),
+            param(_yield_containers_sync()),
+            param(_yield_containers_async()),
         ],
     )
     async def test_key_sync(
-        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[_Container]
     ) -> None:
-        result = await to_sorted(iterable, key=ord)
-        expected = sorted(_STRS)
+        result = await to_sorted(iterable, key=lambda c: c.text)
+        expected = [_Container(text=t) for t in sorted(_STRS)]
         assert result == expected
 
     @mark.parametrize(
         "iterable",
         [
-            param(_get_strs_sync()),
-            param(_get_strs_async()),
-            param(_yield_strs_sync()),
-            param(_yield_strs_async()),
+            param(_get_containers_sync()),
+            param(_get_containers_async()),
+            param(_yield_containers_sync()),
+            param(_yield_containers_async()),
         ],
     )
     async def test_key_async(
-        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
+        self, *, iterable: _MaybeAwaitableMaybeAsynIterable[_Container]
     ) -> None:
-        async def key(text: str, /) -> int:
+        async def key(container: _Container, /) -> str:
             await sleep(0.01)
-            return ord(text)
+            return container.text
 
         result = await to_sorted(iterable, key=key)
-        expected = sorted(_STRS)
+        expected = [_Container(text=t) for t in sorted(_STRS)]
         assert result == expected
 
     @mark.parametrize(

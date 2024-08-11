@@ -86,25 +86,27 @@ async def to_sorted(
 ) -> list[_TSupportsRichComparison]: ...
 @overload
 async def to_sorted(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
     /,
     *,
-    key: Callable[[_TSupportsRichComparison], _MaybeAwaitable[SupportsRichComparison]],
+    key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]],
     reverse: bool = ...,
-) -> list[_TSupportsRichComparison]: ...
+) -> list[_T]: ...
 async def to_sorted(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    iterable: _MaybeAwaitableMaybeAsynIterable[_T]
+    | _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
     /,
     *,
-    key: Callable[[_TSupportsRichComparison], _MaybeAwaitable[SupportsRichComparison]]
-    | None = None,
+    key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]] | None = None,
     reverse: bool = False,
-) -> list[_TSupportsRichComparison]:
+) -> list[_T] | list[_TSupportsRichComparison]:
     """Convert."""
     as_list = await to_list(iterable)
     if key is None:
+        as_list = cast(list[_TSupportsRichComparison], as_list)
         return sorted(as_list, reverse=reverse)
 
+    as_list = cast(list[_T], as_list)
     values = [cast(SupportsRichComparison, await try_await(key(e))) for e in as_list]
     sorted_pairs = sorted(zip(as_list, values, strict=True), key=lambda x: x[1])
     return [element for element, _ in sorted_pairs]
