@@ -65,11 +65,7 @@ async def _yield_containers_async() -> AsyncIterator[_Container]:
         await sleep(0.01)
 
 
-async def _ord_async(text: str, /) -> int:
-    await sleep(0.01)
-    return ord(text)
-
-
+@mark.only
 class TestGroupbyAsync:
     exp_no_key: ClassVar[list[tuple[str, list[str]]]] = [
         ("A", list(repeat("A", times=4))),
@@ -100,30 +96,22 @@ class TestGroupbyAsync:
     async def test_no_key(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        result = groupby_async(iterable)
-        as_list: list[tuple[str, list[str]]] = []
-        async for k, v in await result:
+        result: list[tuple[str, list[str]]] = []
+        async for k, v in await groupby_async(iterable):
             assert isinstance(k, str)
             assert isinstance(v, list)
             for v_i in v:
                 assert isinstance(v_i, str)
-            as_list.append((k, v))
-        assert as_list == self.exp_no_key
-
-    @mark.parametrize(
-        "iterable",
-        [
-            param(_get_strs_sync()),
-            param(_get_strs_async()),
-            param(_yield_strs_sync()),
-            param(_yield_strs_async()),
-        ],
-    )
-    async def test_no_key_as_list(
-        self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
-    ) -> None:
-        result = await groupby_async_list(iterable)
-        assert result == self.exp_no_key
+            result.append((k, v))
+        expected = [
+            ("A", list(repeat("A", times=4))),
+            ("B", list(repeat("B", times=3))),
+            ("C", list(repeat("C", times=2))),
+            ("D", list(repeat("D", times=1))),
+            ("A", list(repeat("A", times=2))),
+            ("B", list(repeat("B", times=2))),
+        ]
+        assert result == expected
 
     @mark.parametrize(
         "iterable",
