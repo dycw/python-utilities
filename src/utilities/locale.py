@@ -11,6 +11,8 @@ from utilities.platform import SYSTEM, System
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
 
+    from utilities.iterables import MaybeIterable
+
 
 def get_locale_for_platform(locale: str, /) -> str:
     """Get the platform-dependent locale."""
@@ -39,14 +41,14 @@ def atof(
     text: str,
     /,
     *,
-    locale: str | Iterable[str | None] | None = None,
+    locale: MaybeIterable[str | None] = None,
     func: Callable[[str], float] = float,
 ) -> float:
     with override_locale(category=LC_NUMERIC, locale=locale):
         return _atof(text, func=func)
 
 
-def atoi(text: str, /, *, locale: str | Iterable[str | None] | None = None) -> float:
+def atoi(text: str, /, *, locale: MaybeIterable[str | None] = None) -> float:
     with override_locale(category=LC_NUMERIC, locale=locale):
         return _atoi(text)
 
