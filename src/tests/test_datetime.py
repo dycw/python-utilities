@@ -457,7 +457,7 @@ class TestPeriod:
         start=dates(),
         end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
     )
-    def test_error_date_and_datetime_mixed(
+    def test_error_date_and_datetime_mix(
         self, *, start: dt.date, end: dt.datetime
     ) -> None:
         with raises(
