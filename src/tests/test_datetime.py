@@ -418,6 +418,15 @@ class TestPeriod:
         assert period.start == start
         assert period.end == end
 
+    @given(start=dates(), days=integers(min_value=0))
+    def test_duration(self, *, start: dt.date, days: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            duration = dt.timedelta(days=days)
+        with assume_does_not_raise(OverflowError):
+            end = start + duration
+        period = Period(start, end)
+        assert period.duration == duration
+
     @given(start=dates(), end=dates())
     def test_error_date(self, *, start: dt.date, end: dt.date) -> None:
         _ = assume(start > end)
