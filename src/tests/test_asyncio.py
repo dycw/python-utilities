@@ -78,9 +78,9 @@ class TestGroupbyAsync:
     async def test_main(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        groupby_async(iterable)
+        result = groupby_async(iterable)
         as_list: list[tuple[str, list[str]]] = []
-        async for k, v in await groupby_async(iterable):
+        async for k, v in await result:
             assert isinstance(k, str)
             assert isinstance(v, list)
             for v_i in v:
