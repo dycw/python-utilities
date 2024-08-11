@@ -40,13 +40,20 @@ async def groupby_async(
     """Yield consecutive keys and groups (as lists)."""
     as_list = await to_list(iterable)
     if key is None:
-        for k, group in groupby(as_list):
-            yield k, list(group)
-    else:
+
+        async def yield_elements() -> AsyncIterator[tuple[_T, list[_T]]]:
+            for k, group in groupby(as_list):
+                yield k, list(group)
+
+        return yield_elements()
+
+    async def yield_elements() -> AsyncIterator[tuple[_U, list[_T]]]:
         pairs = [(cast(_U, await try_await(key(e))), e) for e in as_list]
         for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
             group = [v for _, v in pairs_group]
             yield k, group
+
+    return yield_elements()
 
 
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
