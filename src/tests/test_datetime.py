@@ -453,6 +453,14 @@ class TestPeriod:
         period = Period(start, end)
         assert period.duration == duration
 
+    @given(
+        start=dates(),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+    )
+    def test_date_and_datetime(self, *, start: dt.date, end: dt.datetime) -> None:
+        with raises(PeriodError, match="Invalid period; got .* > .*"):
+            _ = Period(start, end)
+
     @given(start=dates(), end=dates())
     def test_error_date(self, *, start: dt.date, end: dt.date) -> None:
         _ = assume(start > end)

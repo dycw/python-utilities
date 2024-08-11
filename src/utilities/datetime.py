@@ -8,12 +8,10 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Never,
     Self,
     TypeGuard,
     TypeVar,
     assert_never,
-    cast,
 )
 
 from typing_extensions import override
@@ -421,8 +419,8 @@ def _round_to_weekday(
             n = -1
         case "next":
             n = 1
-        case _ as never:  # pragma: no cover
-            assert_never(cast(Never, never))
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
     while not is_weekday(date):
         date = add_weekdays(date, n=n)
     return date
