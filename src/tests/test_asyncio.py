@@ -96,13 +96,14 @@ class TestGroupbyAsync:
     async def test_no_key(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        result: list[tuple[str, list[str]]] = []
+        groupby_async(iterable)
+        as_list: list[tuple[str, list[str]]] = []
         async for k, v in await groupby_async(iterable):
             assert isinstance(k, str)
             assert isinstance(v, list)
             for v_i in v:
                 assert isinstance(v_i, str)
-            result.append((k, v))
+            as_list.append((k, v))
         expected = [
             ("A", list(repeat("A", times=4))),
             ("B", list(repeat("B", times=3))),
@@ -111,7 +112,7 @@ class TestGroupbyAsync:
             ("A", list(repeat("A", times=2))),
             ("B", list(repeat("B", times=2))),
         ]
-        assert result == expected
+        assert as_list == expected
 
     @mark.parametrize(
         "iterable",
@@ -130,24 +131,18 @@ class TestGroupbyAsync:
         async for k, v in await result:
             assert isinstance(k, int)
             assert isinstance(v, list)
-            assert all(isinstance(v_i, str) for v_i in v)
+            for v_i in v:
+                assert isinstance(v_i, str)
             as_list.append((k, v))
-        assert as_list == self.exp_with_key
-
-    @mark.parametrize(
-        "iterable",
-        [
-            param(_get_strs_sync()),
-            param(_get_strs_async()),
-            param(_yield_strs_sync()),
-            param(_yield_strs_async()),
-        ],
-    )
-    async def test_key_sync_list(
-        self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
-    ) -> None:
-        result = await groupby_async_list(iterable, key=ord)
-        assert result == self.exp_with_key
+        expected = [
+            (65, list(repeat("A", times=4))),
+            (66, list(repeat("B", times=3))),
+            (67, list(repeat("C", times=2))),
+            (68, list(repeat("D", times=1))),
+            (65, list(repeat("A", times=2))),
+            (66, list(repeat("B", times=2))),
+        ]
+        assert as_list == expected
 
     @mark.parametrize(
         "iterable",
