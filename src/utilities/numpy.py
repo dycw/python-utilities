@@ -43,7 +43,7 @@ from numpy.random import default_rng
 from numpy.typing import NDArray
 from typing_extensions import override
 
-from utilities.datetime import EPOCH_UTC
+from utilities.datetime import EPOCH_UTC, check_date_not_datetime
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 from utilities.zoneinfo import UTC
@@ -252,6 +252,7 @@ class AsIntError(Exception): ...
 
 def date_to_datetime64(date: dt.date, /) -> datetime64:
     """Convert a `dt.date` to `numpy.datetime64`."""
+    check_date_not_datetime(date)
     return datetime64(date, "D")
 
 

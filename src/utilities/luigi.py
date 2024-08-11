@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from utilities.datetime import (
     EPOCH_UTC,
+    check_date_not_datetime,
     get_now,
     round_to_next_weekday,
     round_to_prev_weekday,
@@ -288,6 +289,7 @@ class WeekdayParameter(Parameter):
     def serialize(self, x: dt.date) -> str:
         from utilities.whenever import serialize_date
 
+        check_date_not_datetime(x)
         return serialize_date(x)
 
 

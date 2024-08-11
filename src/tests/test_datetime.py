@@ -39,6 +39,7 @@ from utilities.datetime import (
     WEEK,
     YEAR,
     AddWeekdaysError,
+    CheckDateNotDatetimeError,
     FormatDatetimeLocalAndUTCError,
     Month,
     MonthError,
@@ -48,6 +49,7 @@ from utilities.datetime import (
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
+    check_date_not_datetime,
     date_to_datetime,
     date_to_month,
     duration_to_float,
@@ -117,6 +119,19 @@ class TestAddWeekdays:
         result = weekday1 <= weekday2
         expected = n1 <= n2
         assert result is expected
+
+
+class TestCheckDateNotDatetime:
+    @given(date=dates())
+    def test_date(self, *, date: dt.date) -> None:
+        check_date_not_datetime(date)
+
+    @given(datetime=datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        with raises(
+            CheckDateNotDatetimeError, match="Date must not be a datetime; got .*"
+        ):
+            check_date_not_datetime(datetime)
 
 
 class TestDateToDatetime:
@@ -438,8 +453,33 @@ class TestPeriod:
         period = Period(start, end)
         assert period.duration == duration
 
+    @given(
+        start=dates(),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+    )
+    def test_error_date_and_datetime_mix(
+        self, *, start: dt.date, end: dt.datetime
+    ) -> None:
+        with raises(
+            PeriodError, match=r"Invalid period; got date and datetime mix \(.*, .*\)"
+        ):
+            _ = Period(start, end)
+
+    @given(
+        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+    )
+    def test_error_naive_datetime(
+        self, *, start: dt.datetime, end: dt.datetime
+    ) -> None:
+        _ = assume((start.tzinfo is None) or (end.tzinfo is None))
+        with raises(
+            PeriodError, match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)"
+        ):
+            _ = Period(start, end)
+
     @given(start=dates(), end=dates())
-    def test_error_date(self, *, start: dt.date, end: dt.date) -> None:
+    def test_error_invalid_dates(self, *, start: dt.date, end: dt.date) -> None:
         _ = assume(start > end)
         with raises(PeriodError, match="Invalid period; got .* > .*"):
             _ = Period(start, end)
@@ -448,22 +488,11 @@ class TestPeriod:
         start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
         end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
     )
-    def test_error_datetime_invalid(
+    def test_error_invalid_datetimes(
         self, *, start: dt.datetime, end: dt.datetime
     ) -> None:
         _ = assume(start > end)
         with raises(PeriodError, match="Invalid period; got .* > .*"):
-            _ = Period(start, end)
-
-    @given(
-        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-    )
-    def test_error_datetime_naive(
-        self, *, start: dt.datetime, end: dt.datetime
-    ) -> None:
-        _ = assume((start.tzinfo is None) or (end.tzinfo is None))
-        with raises(PeriodError, match="Invalid period; got .* and .*"):
             _ = Period(start, end)
 
 
