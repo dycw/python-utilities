@@ -10,7 +10,7 @@ decorator==5.1.1
     # via ipython
 executing==2.0.1
     # via stack-data
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -56,6 +56,8 @@ sortedcontainers==2.4.0
     # via hypothesis
 stack-data==0.6.3
     # via ipython
+tomli==2.0.1
+    # via coverage
 traitlets==5.14.3
     # via
     #   ipython

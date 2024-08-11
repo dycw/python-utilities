@@ -70,7 +70,7 @@ def parse_date(date: str, /) -> dt.date:
     return dt.date(year=int(year), month=int(month), day=int(day))
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseDateError(Exception):
     date: str
 
@@ -114,7 +114,7 @@ def parse_local_datetime(datetime: str, /) -> dt.datetime:
     ).replace(tzinfo=None)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseLocalDateTimeError(Exception):
     datetime: str
 
@@ -132,7 +132,7 @@ def parse_time(time: str, /) -> dt.time:
     return w_time.py_time()
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseTimeError(Exception):
     time: str
 
@@ -161,19 +161,19 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     return dt.timedelta(days=total_days, microseconds=total_micros)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseTimedeltaError(Exception):
     timedelta: str
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class _ParseTimedeltaParseError(ParseTimedeltaError):
     @override
     def __str__(self) -> str:
         return f"Unable to parse timedelta; got {self.timedelta!r}"
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
     nanoseconds: int
 
@@ -217,7 +217,7 @@ def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
     )
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseZonedDateTimeError(Exception):
     datetime: str
 
@@ -242,7 +242,7 @@ def serialize_local_datetime(datetime: dt.datetime, /) -> str:
     return ldt.format_common_iso()
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class SerializeLocalDateTimeError(Exception):
     datetime: dt.datetime
 
@@ -265,7 +265,7 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     return dtd.format_common_iso()
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class SerializeTimeDeltaError(Exception):
     timedelta: dt.timedelta
 
@@ -285,7 +285,7 @@ def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
     return zdt.format_common_iso()
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class SerializeZonedDateTimeError(Exception):
     datetime: dt.datetime
 
@@ -317,7 +317,7 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     return -_to_datetime_delta(-timedelta)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class _ToDateTimeDeltaError(Exception):
     timedelta: dt.timedelta
 

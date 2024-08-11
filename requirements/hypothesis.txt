@@ -4,7 +4,7 @@ attrs==24.2.0
     # via hypothesis
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -44,6 +44,8 @@ sortedcontainers==2.4.0
     # via hypothesis
 sqlalchemy==2.0.32
     # via dycw-utilities (pyproject.toml)
+tomli==2.0.1
+    # via coverage
 typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)

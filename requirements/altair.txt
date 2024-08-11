@@ -13,7 +13,7 @@ coverage==7.6.1
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -25,7 +25,7 @@ jsonschema==4.23.0
     # via altair
 jsonschema-specifications==2023.12.1
     # via jsonschema
-lxml==5.2.2
+lxml==5.3.0
     # via pikepdf
 markupsafe==2.1.5
     # via jinja2
@@ -77,6 +77,8 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
+tomli==2.0.1
+    # via coverage
 toolz==0.12.1
     # via altair
 typing-extensions==4.12.2

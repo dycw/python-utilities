@@ -6,7 +6,7 @@ click==8.1.7
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 importlib-resources==6.4.0
     # via pypiserver
@@ -41,6 +41,8 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
+tomli==2.0.1
+    # via coverage
 typed-settings==24.4.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2

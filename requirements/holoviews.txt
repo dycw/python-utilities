@@ -20,7 +20,7 @@ coverage==7.6.1
     # via pytest-cov
 holoviews==1.19.1
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via requests
@@ -111,6 +111,8 @@ six==1.16.0
     #   python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
+tomli==2.0.1
+    # via coverage
 tornado==6.4.1
     # via bokeh
 tqdm==4.66.5
