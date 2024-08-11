@@ -67,6 +67,7 @@ from utilities.datetime import (
     is_local_datetime,
     is_weekday,
     is_zoned_datetime,
+    isinstance_date_not_datetime,
     maybe_sub_pct_y,
     parse_month,
     round_to_next_weekday,
@@ -269,6 +270,16 @@ class TestGetToday:
     @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
+
+
+class TestIsInstanceDateNotDatetime:
+    @given(date=dates())
+    def test_date(self, *, date: dt.date) -> None:
+        assert isinstance_date_not_datetime(date)
+
+    @given(datetime=datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        assert not isinstance_date_not_datetime(datetime)
 
 
 class TestIsEqualModTz:

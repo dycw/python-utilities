@@ -204,6 +204,11 @@ def get_years(*, n: int = 1) -> dt.timedelta:
 YEAR = get_years(n=1)
 
 
+def isinstance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
+    """Check if an object is a date, and not a datetime."""
+    return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
+
+
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
@@ -510,6 +515,7 @@ __all__ = [
     "is_local_datetime",
     "is_weekday",
     "is_zoned_datetime",
+    "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
     "parse_month",
     "round_to_next_weekday",
