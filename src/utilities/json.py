@@ -15,6 +15,7 @@ from uuid import UUID
 
 from typing_extensions import override
 
+from utilities.datetime import isinstance_date_not_datetime
 from utilities.types import EnsureMemberError, ensure_member, get_class_name
 from utilities.typing import get_args
 
@@ -107,7 +108,7 @@ def _default_standard(obj: Any, /) -> _ClassValueMapping[_Class] | None:
         return {_CLASS: "decimal", _VALUE: str(obj)}
     if isinstance(obj, _DictWrapper):
         return _default_dict(obj)
-    if isinstance(obj, dt.date) and not isinstance(obj, dt.datetime):
+    if isinstance_date_not_datetime(obj):
         return _default_date(obj)
     if isinstance(obj, dt.datetime) and (obj.tzinfo is None):
         return _default_local_datetime(obj)
