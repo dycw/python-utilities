@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -22,12 +23,15 @@ from typing_extensions import override
 
 from utilities.sentinel import Sentinel, sentinel
 
+if TYPE_CHECKING:
+    from utilities.iterables import MaybeIterable
+
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
 
 def always_iterable(
-    obj: _T | Iterable[_T],
+    obj: MaybeIterable[_T],
     /,
     *,
     base_type: type[Any] | tuple[type[Any], ...] | None = (str, bytes),
@@ -41,8 +45,8 @@ def filter_include_and_exclude(
     iterable: Iterable[_T],
     /,
     *,
-    include: _U | Iterable[_U] | None = None,
-    exclude: _U | Iterable[_U] | None = None,
+    include: MaybeIterable[_U] | None = None,
+    exclude: MaybeIterable[_U] | None = None,
     key: Callable[[_T], _U],
 ) -> Iterable[_T]: ...
 @overload
@@ -50,16 +54,16 @@ def filter_include_and_exclude(
     iterable: Iterable[_T],
     /,
     *,
-    include: _T | Iterable[_T] | None = None,
-    exclude: _T | Iterable[_T] | None = None,
+    include: MaybeIterable[_T] | None = None,
+    exclude: MaybeIterable[_T] | None = None,
     key: Callable[[_T], Any] | None = None,
 ) -> Iterable[_T]: ...
 def filter_include_and_exclude(
     iterable: Iterable[_T],
     /,
     *,
-    include: _U | Iterable[_U] | None = None,
-    exclude: _U | Iterable[_U] | None = None,
+    include: MaybeIterable[_U] | None = None,
+    exclude: MaybeIterable[_U] | None = None,
     key: Callable[[_T], _U] | None = None,
 ) -> Iterable[_T]:
     """Filter an iterable based on an inclusion/exclusion pair."""

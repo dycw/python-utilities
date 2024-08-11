@@ -50,6 +50,7 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
+MaybeIterable = _T | Iterable[_T]
 
 
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
@@ -734,6 +735,7 @@ __all__ = [
     "CheckSuperSetError",
     "EnsureIterableError",
     "EnsureIterableNotStrError",
+    "MaybeIterable",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",

@@ -70,6 +70,7 @@ from utilities.datetime import get_now
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckLengthError,
+    MaybeIterable,
     OneEmptyError,
     check_length,
     chunked,
@@ -510,7 +511,7 @@ def create_engine(
         kwargs = {}
     else:
 
-        def func(x: str | IterableStrs, /) -> list[str] | str:
+        def func(x: MaybeIterable[str], /) -> list[str] | str:
             return x if isinstance(x, str) else list(x)
 
         kwargs = {"query": {k: func(v) for k, v in query.items()}}

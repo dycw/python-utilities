@@ -56,6 +56,7 @@ from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
     CheckSuperMappingError,
+    MaybeIterable,
     check_iterables_equal,
     check_mappings_equal,
     check_supermapping,
@@ -118,8 +119,8 @@ def check_polars_dataframe(
     schema_set: SchemaDict | None = None,
     schema_subset: SchemaDict | None = None,
     shape: tuple[int, int] | None = None,
-    sorted: IntoExpr | Iterable[IntoExpr] | None = None,  # noqa: A002
-    unique: IntoExpr | Iterable[IntoExpr] | None = None,
+    sorted: MaybeIterable[IntoExpr] | None = None,  # noqa: A002
+    unique: MaybeIterable[IntoExpr] | None = None,
     width: int | None = None,
 ) -> None:
     """Check the properties of a DataFrame."""
@@ -320,7 +321,7 @@ class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
 
 
 def _check_polars_dataframe_sorted(
-    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], /
+    df: DataFrame, by: MaybeIterable[IntoExpr], /
 ) -> None:
     by_use = cast(
         IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
@@ -342,7 +343,7 @@ class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
 
 
 def _check_polars_dataframe_unique(
-    df: DataFrame, by: IntoExpr | Iterable[IntoExpr], /
+    df: DataFrame, by: MaybeIterable[IntoExpr], /
 ) -> None:
     by_use = cast(
         IntoExpr | list[IntoExpr], list(by) if is_iterable_not_str(by) else by
