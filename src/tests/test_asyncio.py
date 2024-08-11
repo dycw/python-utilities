@@ -65,7 +65,6 @@ async def _yield_containers_async() -> AsyncIterator[_Container]:
         await sleep(0.01)
 
 
-@mark.only
 class TestGroupbyAsync:
     exp_no_key: ClassVar[list[tuple[str, list[str]]]] = [
         ("A", list(repeat("A", times=4))),
