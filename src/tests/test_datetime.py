@@ -14,6 +14,8 @@ from hypothesis.strategies import (
     floats,
     integers,
     just,
+    none,
+    sampled_from,
     timedeltas,
     timezones,
 )
@@ -41,6 +43,8 @@ from utilities.datetime import (
     Month,
     MonthError,
     ParseMonthError,
+    Period,
+    PeriodError,
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
@@ -394,6 +398,62 @@ class TestParseAndSerializeMonth:
     def test_error_parse(self) -> None:
         with raises(ParseMonthError, match="Unable to parse month; got 'invalid'"):
             _ = parse_month("invalid")
+
+
+class TestPeriod:
+    @given(start=dates(), end=dates())
+    def test_dates(self, *, start: dt.date, end: dt.date) -> None:
+        _ = assume(start <= end)
+        period = Period(start, end)
+        assert period.start == start
+        assert period.end == end
+
+    @given(
+        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+    )
+    def test_datetimes(self, *, start: dt.datetime, end: dt.datetime) -> None:
+        _ = assume(start <= end)
+        period = Period(start, end)
+        assert period.start == start
+        assert period.end == end
+
+    @given(start=dates(), days=integers(min_value=0))
+    def test_duration(self, *, start: dt.date, days: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            duration = dt.timedelta(days=days)
+        with assume_does_not_raise(OverflowError):
+            end = start + duration
+        period = Period(start, end)
+        assert period.duration == duration
+
+    @given(start=dates(), end=dates())
+    def test_error_date(self, *, start: dt.date, end: dt.date) -> None:
+        _ = assume(start > end)
+        with raises(PeriodError, match="Invalid period; got .* > .*"):
+            _ = Period(start, end)
+
+    @given(
+        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+    )
+    def test_error_datetime_invalid(
+        self, *, start: dt.datetime, end: dt.datetime
+    ) -> None:
+        _ = assume(start > end)
+        with raises(PeriodError, match="Invalid period; got .* > .*"):
+            _ = Period(start, end)
+
+    @given(
+        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+    )
+    def test_error_datetime_naive(
+        self, *, start: dt.datetime, end: dt.datetime
+    ) -> None:
+        _ = assume((start.tzinfo is None) or (end.tzinfo is None))
+        with raises(PeriodError, match="Invalid period; got .* and .*"):
+            _ = Period(start, end)
 
 
 class TestRoundToWeekday:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Self, TypeGuard, assert_never
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeGuard, TypeVar, assert_never
 
 from typing_extensions import override
 
@@ -311,13 +311,56 @@ def parse_month(month: str, /) -> Month:
     raise ParseMonthError(month=month)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class ParseMonthError(Exception):
     month: str
 
     @override
     def __str__(self) -> str:
         return f"Unable to parse month; got {self.month!r}"
+
+
+_TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
+
+
+@dataclass(slots=True)
+class Period(Generic[_TPeriod]):
+    """A period of time."""
+
+    start: _TPeriod
+    end: _TPeriod
+
+    def __post_init__(self) -> None:
+        for date in [self.start, self.end]:
+            if isinstance(date, dt.datetime) and (date.tzinfo is None):
+                raise _PeriodNaiveDatetimeError(start=self.start, end=self.end)
+        if self.start > self.end:
+            raise _PeriodInvalidError(start=self.start, end=self.end)
+
+    @property
+    def duration(self) -> dt.timedelta:
+        """The duration of a period time."""
+        return self.end - self.start
+
+
+@dataclass(kw_only=True)
+class PeriodError(Generic[_TPeriod], Exception):
+    start: _TPeriod
+    end: _TPeriod
+
+
+@dataclass(kw_only=True)
+class _PeriodNaiveDatetimeError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid period; got naive datetime(s) {self.start} and {self.end}"
+
+
+@dataclass(kw_only=True)
+class _PeriodInvalidError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid period; got {self.start} > {self.end}"
 
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
@@ -368,7 +411,7 @@ def yield_days(
     raise YieldDaysError(start=start, end=end, days=days)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class YieldDaysError(Exception):
     start: dt.date | None
     end: dt.date | None
@@ -406,7 +449,7 @@ def yield_weekdays(
     raise YieldWeekdaysError(start=start, end=end, days=days)
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(kw_only=True)
 class YieldWeekdaysError(Exception):
     start: dt.date | None
     end: dt.date | None
@@ -443,6 +486,8 @@ __all__ = [
     "Month",
     "MonthError",
     "ParseMonthError",
+    "Period",
+    "PeriodError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",

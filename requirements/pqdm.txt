@@ -6,7 +6,7 @@ bounded-pool-executor==0.0.3
     # via pqdm
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -32,6 +32,8 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
+tomli==2.0.1
+    # via coverage
 tqdm==4.66.5
     # via pqdm
 typing-extensions==4.12.2

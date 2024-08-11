@@ -10,7 +10,7 @@ cvxpy==1.5.2
     # via dycw-utilities (pyproject.toml)
 ecos==2.0.14
     # via cvxpy
-hypothesis==6.110.1
+hypothesis==6.110.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -66,6 +66,8 @@ six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
+tomli==2.0.1
+    # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
 tzdata==2024.1
