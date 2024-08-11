@@ -64,7 +64,6 @@ async def _yield_containers_async() -> AsyncIterator[_Container]:
         await sleep(0.01)
 
 
-@mark.only
 class TestGroupbyAsync:
     @mark.parametrize(
         "iterable",
