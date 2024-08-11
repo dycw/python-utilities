@@ -64,6 +64,7 @@ async def _yield_containers_async() -> AsyncIterator[_Container]:
         await sleep(0.01)
 
 
+@mark.only
 class TestGroupbyAsync:
     @mark.parametrize(
         "iterable",
@@ -77,14 +78,13 @@ class TestGroupbyAsync:
     async def test_main(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        result = groupby_async(iterable)
-        as_list: list[tuple[str, list[str]]] = []
-        async for k, v in await result:
+        result: list[tuple[str, list[str]]] = []
+        async for k, v in await groupby_async(iterable):
             assert isinstance(k, str)
             assert isinstance(v, list)
             for v_i in v:
                 assert isinstance(v_i, str)
-            as_list.append((k, v))
+            result.append((k, v))
         expected = [
             ("A", list(repeat("A", times=4))),
             ("B", list(repeat("B", times=3))),
