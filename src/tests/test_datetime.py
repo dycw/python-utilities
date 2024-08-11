@@ -457,8 +457,12 @@ class TestPeriod:
         start=dates(),
         end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
     )
-    def test_date_and_datetime(self, *, start: dt.date, end: dt.datetime) -> None:
-        with raises(PeriodError, match="Invalid period; got .* > .*"):
+    def test_error_date_and_datetime_mixed(
+        self, *, start: dt.date, end: dt.datetime
+    ) -> None:
+        with raises(
+            PeriodError, match=r"Invalid period; got date and datetime mix \(.*, .*\)"
+        ):
             _ = Period(start, end)
 
     @given(start=dates(), end=dates())
@@ -486,7 +490,9 @@ class TestPeriod:
         self, *, start: dt.datetime, end: dt.datetime
     ) -> None:
         _ = assume((start.tzinfo is None) or (end.tzinfo is None))
-        with raises(PeriodError, match="Invalid period; got .* and .*"):
+        with raises(
+            PeriodError, match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)"
+        ):
             _ = Period(start, end)
 
 

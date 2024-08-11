@@ -367,6 +367,10 @@ class Period(Generic[_TPeriod]):
     end: _TPeriod
 
     def __post_init__(self) -> None:
+        if isinstance_date_not_datetime(self.start) is not isinstance_date_not_datetime(
+            self.end
+        ):
+            raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime) and (date.tzinfo is None):
                 raise _PeriodNaiveDatetimeError(start=self.start, end=self.end)
@@ -386,10 +390,17 @@ class PeriodError(Generic[_TPeriod], Exception):
 
 
 @dataclass(kw_only=True)
+class _PeriodDateAndDatetimeMixedError(PeriodError[_TPeriod]):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid period; got date and datetime mix ({self.start}, {self.end})"
+
+
+@dataclass(kw_only=True)
 class _PeriodNaiveDatetimeError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
-        return f"Invalid period; got naive datetime(s) {self.start} and {self.end}"
+        return f"Invalid period; got naive datetime(s) ({self.start}, {self.end})"
 
 
 @dataclass(kw_only=True)
