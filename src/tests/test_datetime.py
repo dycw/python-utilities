@@ -39,6 +39,7 @@ from utilities.datetime import (
     WEEK,
     YEAR,
     AddWeekdaysError,
+    CheckDateNotDatetimeError,
     FormatDatetimeLocalAndUTCError,
     Month,
     MonthError,
@@ -48,6 +49,7 @@ from utilities.datetime import (
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
+    check_date_not_datetime,
     date_to_datetime,
     date_to_month,
     duration_to_float,
@@ -117,6 +119,19 @@ class TestAddWeekdays:
         result = weekday1 <= weekday2
         expected = n1 <= n2
         assert result is expected
+
+
+class TestCheckDateNotDatetime:
+    @given(date=dates())
+    def test_date(self, *, date: dt.date) -> None:
+        check_date_not_datetime(date)
+
+    @given(datetime=datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        with raises(
+            CheckDateNotDatetimeError, match="Date must not be a datetime; got .*"
+        ):
+            check_date_not_datetime(datetime)
 
 
 class TestDateToDatetime:

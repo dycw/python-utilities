@@ -3,7 +3,16 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass, replace
 from re import sub
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeGuard, TypeVar, assert_never
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    Self,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+)
 
 from typing_extensions import override
 
@@ -39,6 +48,7 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
     If the initial date is a weekend, then moving to the adjacent weekday
     counts as 1 move.
     """
+    check_date_not_datetime(date)
     if n == 0 and not is_weekday(date):
         raise AddWeekdaysError(date)
     if n >= 1:
@@ -53,10 +63,26 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
 class AddWeekdaysError(Exception): ...
 
 
+def check_date_not_datetime(date: dt.date, /) -> None:
+    """Check if a date is not a datetime."""
+    if isinstance(date, dt.datetime):
+        raise CheckDateNotDatetimeError(date=date)
+
+
+@dataclass(kw_only=True)
+class CheckDateNotDatetimeError(Exception):
+    date: dt.date
+
+    @override
+    def __str__(self) -> str:
+        return f"Date must not be a datetime; got {self.date}"
+
+
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
     """Expand a date into a datetime."""
+    check_date_not_datetime(date)
     time_use = dt.time(0) if time is None else time
     time_zone_use = ensure_time_zone(time_zone)
     return dt.datetime.combine(date, time_use, tzinfo=time_zone_use)
@@ -64,6 +90,7 @@ def date_to_datetime(
 
 def date_to_month(date: dt.date, /) -> Month:
     """Collapse a date into a month."""
+    check_date_not_datetime(date)
     return Month(year=date.year, month=date.month)
 
 
@@ -224,10 +251,13 @@ def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
     return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
 
 
+_FRIDAY = 5
+
+
 def is_weekday(date: dt.date, /) -> bool:
     """Check if a date is a weekday."""
-    friday = 5
-    return date.isoweekday() <= friday
+    check_date_not_datetime(date)
+    return date.isoweekday() <= _FRIDAY
 
 
 def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
@@ -284,6 +314,7 @@ class Month:
 
     @classmethod
     def from_date(cls, date: dt.date, /) -> Self:
+        check_date_not_datetime(date)
         return cls(year=date.year, month=date.month)
 
     def to_date(self, /, *, day: int = 1) -> dt.date:
@@ -370,17 +401,26 @@ class _PeriodInvalidError(PeriodError[_TPeriod]):
 
 def round_to_next_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the next weekday."""
-    return _round_to_weekday(date, is_next=True)
+    return _round_to_weekday(date, prev_or_next="next")
 
 
 def round_to_prev_weekday(date: dt.date, /) -> dt.date:
     """Round a date to the previous weekday."""
-    return _round_to_weekday(date, is_next=False)
+    return _round_to_weekday(date, prev_or_next="prev")
+
+    return None
 
 
-def _round_to_weekday(date: dt.date, /, *, is_next: bool) -> dt.date:
+def _round_to_weekday(
+    date: dt.date, /, *, prev_or_next: Literal["prev", "next"]
+) -> dt.date:
     """Round a date to the previous weekday."""
-    n = 1 if is_next else -1
+    check_date_not_datetime(date)
+    match prev_or_next:
+        case "prev":
+            n = -1
+        case "next":
+            n = 1
     while not is_weekday(date):
         date = add_weekdays(date, n=n)
     return date
@@ -396,18 +436,22 @@ def yield_days(
 ) -> Iterator[dt.date]:
     """Yield the days in a range."""
     if (start is not None) and (end is not None) and (days is None):
+        check_date_not_datetime(start)
+        check_date_not_datetime(end)
         date = start
         while date <= end:
             yield date
             date += dt.timedelta(days=1)
         return
     if (start is not None) and (end is None) and (days is not None):
+        check_date_not_datetime(start)
         date = start
         for _ in range(days):
             yield date
             date += dt.timedelta(days=1)
         return
     if (start is None) and (end is not None) and (days is not None):
+        check_date_not_datetime(end)
         date = end
         for _ in range(days):
             yield date
@@ -434,18 +478,22 @@ def yield_weekdays(
 ) -> Iterator[dt.date]:
     """Yield the weekdays in a range."""
     if (start is not None) and (end is not None) and (days is None):
+        check_date_not_datetime(start)
+        check_date_not_datetime(end)
         date = round_to_next_weekday(start)
         while date <= end:
             yield date
             date = round_to_next_weekday(date + dt.timedelta(days=1))
         return
     if (start is not None) and (end is None) and (days is not None):
+        check_date_not_datetime(start)
         date = round_to_next_weekday(start)
         for _ in range(days):
             yield date
             date = round_to_next_weekday(date + dt.timedelta(days=1))
         return
     if (start is None) and (end is not None) and (days is not None):
+        check_date_not_datetime(end)
         date = round_to_prev_weekday(end)
         for _ in range(days):
             yield date
@@ -487,6 +535,7 @@ __all__ = [
     "WEEK",
     "YEAR",
     "AddWeekdaysError",
+    "CheckDateNotDatetimeError",
     "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
@@ -496,6 +545,7 @@ __all__ = [
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
+    "check_date_not_datetime",
     "date_to_datetime",
     "date_to_month",
     "duration_to_float",
