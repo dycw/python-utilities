@@ -76,6 +76,22 @@ async def to_set(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> set[_T]:
         return set(cast(Iterable[_T], value))
 
 
+@overload
+async def to_sorted(
+    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    /,
+    *,
+    key: None = None,
+    reverse: bool = ...,
+) -> list[_TSupportsRichComparison]: ...
+@overload
+async def to_sorted(
+    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    /,
+    *,
+    key: Callable[[_TSupportsRichComparison], _MaybeAwaitable[SupportsRichComparison]],
+    reverse: bool = ...,
+) -> list[_TSupportsRichComparison]: ...
 async def to_sorted(
     iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
     /,

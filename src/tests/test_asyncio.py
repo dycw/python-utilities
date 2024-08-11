@@ -187,7 +187,7 @@ class TestToSorted:
     async def test_key_sync(
         self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
     ) -> None:
-        result = await to_sorted(iterable, key=str)
+        result = await to_sorted(iterable, key=ord)
         expected = sorted(_STRS)
         assert result == expected
 
@@ -203,9 +203,9 @@ class TestToSorted:
     async def test_key_async(
         self, *, iterable: _MaybeAwaitableMaybeAsynIterable[str]
     ) -> None:
-        async def key(text: str, /) -> str:
+        async def key(text: str, /) -> int:
             await sleep(0.01)
-            return text
+            return ord(text)
 
         result = await to_sorted(iterable, key=key)
         expected = sorted(_STRS)
