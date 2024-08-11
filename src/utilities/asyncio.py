@@ -14,7 +14,7 @@ _T = TypeVar("_T")
 _U = TypeVar("_U")
 _MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitable = _T | Awaitable[_T]
-_MaybeAwaitableMaybeAsynIterable = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
+_MaybeAwaitableMaybeAsyncIterable = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
 _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
@@ -22,17 +22,17 @@ _TSupportsRichComparison = TypeVar(
 
 @overload
 async def groupby_async(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_T], /, *, key: None = None
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /, *, key: None = None
 ) -> AsyncIterator[tuple[_T, list[_T]]]: ...
 @overload
 async def groupby_async(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[_U]],
 ) -> AsyncIterator[tuple[_U, list[_T]]]: ...
 async def groupby_async(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
@@ -58,7 +58,7 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
-async def to_list(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> list[_T]:
+async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
@@ -67,7 +67,7 @@ async def to_list(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> list[_T]
         return list(cast(Iterable[_T], value))
 
 
-async def to_set(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> set[_T]:
+async def to_set(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> set[_T]:
     """Reify an asynchronous iterable as a set."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
     try:
@@ -78,7 +78,7 @@ async def to_set(iterable: _MaybeAwaitableMaybeAsynIterable[_T], /) -> set[_T]:
 
 @overload
 async def to_sorted(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_TSupportsRichComparison],
     /,
     *,
     key: None = None,
@@ -86,15 +86,15 @@ async def to_sorted(
 ) -> list[_TSupportsRichComparison]: ...
 @overload
 async def to_sorted(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_T],
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]],
     reverse: bool = ...,
 ) -> list[_T]: ...
 async def to_sorted(
-    iterable: _MaybeAwaitableMaybeAsynIterable[_T]
-    | _MaybeAwaitableMaybeAsynIterable[_TSupportsRichComparison],
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T]
+    | _MaybeAwaitableMaybeAsyncIterable[_TSupportsRichComparison],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]] | None = None,
