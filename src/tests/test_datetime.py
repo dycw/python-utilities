@@ -465,8 +465,21 @@ class TestPeriod:
         ):
             _ = Period(start, end)
 
+    @given(
+        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+    )
+    def test_error_naive_datetime(
+        self, *, start: dt.datetime, end: dt.datetime
+    ) -> None:
+        _ = assume((start.tzinfo is None) or (end.tzinfo is None))
+        with raises(
+            PeriodError, match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)"
+        ):
+            _ = Period(start, end)
+
     @given(start=dates(), end=dates())
-    def test_error_date(self, *, start: dt.date, end: dt.date) -> None:
+    def test_error_invalid_dates(self, *, start: dt.date, end: dt.date) -> None:
         _ = assume(start > end)
         with raises(PeriodError, match="Invalid period; got .* > .*"):
             _ = Period(start, end)
@@ -475,24 +488,11 @@ class TestPeriod:
         start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
         end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
     )
-    def test_error_datetime_invalid(
+    def test_error_invalid_datetimes(
         self, *, start: dt.datetime, end: dt.datetime
     ) -> None:
         _ = assume(start > end)
         with raises(PeriodError, match="Invalid period; got .* > .*"):
-            _ = Period(start, end)
-
-    @given(
-        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-    )
-    def test_error_datetime_naive(
-        self, *, start: dt.datetime, end: dt.datetime
-    ) -> None:
-        _ = assume((start.tzinfo is None) or (end.tzinfo is None))
-        with raises(
-            PeriodError, match=r"Invalid period; got naive datetime\(s\) \(.*, .*\)"
-        ):
             _ = Period(start, end)
 
 
