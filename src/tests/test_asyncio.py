@@ -77,7 +77,14 @@ class TestGroupbyAsync:
     async def test_main(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        result = await to_list(groupby_async(iterable))
+        result = groupby_async(iterable)
+        as_list: list[tuple[str, list[str]]] = []
+        async for k, v in await result:
+            assert isinstance(k, str)
+            assert isinstance(v, list)
+            for v_i in v:
+                assert isinstance(v_i, str)
+            as_list.append((k, v))
         expected = [
             ("A", list(repeat("A", times=4))),
             ("B", list(repeat("B", times=3))),
@@ -86,7 +93,7 @@ class TestGroupbyAsync:
             ("A", list(repeat("A", times=2))),
             ("B", list(repeat("B", times=2))),
         ]
-        assert result == expected
+        assert as_list == expected
 
     @mark.parametrize(
         "iterable",
@@ -100,7 +107,14 @@ class TestGroupbyAsync:
     async def test_key_sync(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        result = await to_list(groupby_async(iterable, key=ord))
+        result = groupby_async(iterable, key=ord)
+        as_list: list[tuple[int, list[str]]] = []
+        async for k, v in await result:
+            assert isinstance(k, int)
+            assert isinstance(v, list)
+            for v_i in v:
+                assert isinstance(v_i, str)
+            as_list.append((k, v))
         expected = [
             (65, list(repeat("A", times=4))),
             (66, list(repeat("B", times=3))),
@@ -109,7 +123,7 @@ class TestGroupbyAsync:
             (65, list(repeat("A", times=2))),
             (66, list(repeat("B", times=2))),
         ]
-        assert result == expected
+        assert as_list == expected
 
     @mark.parametrize(
         "iterable",
