@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable, Sequence
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
 
@@ -23,37 +23,62 @@ _TSupportsRichComparison = TypeVar(
 @overload
 async def groupby_async(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /, *, key: None = None
-) -> AsyncIterator[tuple[_T, list[_T]]]: ...
+) -> AsyncIterator[tuple[_T, Sequence[_T]]]: ...
 @overload
 async def groupby_async(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[_U]],
-) -> AsyncIterator[tuple[_U, list[_T]]]: ...
+) -> AsyncIterator[tuple[_U, Sequence[_T]]]: ...
 async def groupby_async(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
     key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
-) -> AsyncIterator[tuple[_T, list[_T]]] | AsyncIterator[tuple[_U, list[_T]]]:
+) -> AsyncIterator[tuple[_T, Sequence[_T]]] | AsyncIterator[tuple[_U, Sequence[_T]]]:
     """Yield consecutive keys and groups (as lists)."""
     as_list = await to_list(iterable)
     if key is None:
 
-        async def iterator() -> AsyncIterator[tuple[_T, list[_T]]]:
+        async def iterator1() -> AsyncIterator[tuple[_T, Sequence[_T]]]:
             for k, group in groupby(as_list):
                 yield k, list(group)
 
-        return iterator()
+        return iterator1()
 
-    async def iterator() -> AsyncIterator[tuple[_U, list[_T]]]:
+    async def iterator2() -> AsyncIterator[tuple[_U, Sequence[_T]]]:
         pairs = [(cast(_U, await try_await(key(e))), e) for e in as_list]
         for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
             group = [v for _, v in pairs_group]
             yield k, group
 
-    return iterator()
+    return iterator2()
+
+
+@overload
+async def groupby_async_list(
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /, *, key: None = None
+) -> Sequence[tuple[_T, Sequence[_T]]]: ...
+@overload
+async def groupby_async_list(
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
+    /,
+    *,
+    key: Callable[[_T], _MaybeAwaitable[_U]],
+) -> Sequence[tuple[_U, Sequence[_T]]]: ...
+async def groupby_async_list(
+    iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
+    /,
+    *,
+    key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
+) -> Sequence[tuple[_T, Sequence[_T]]] | Sequence[tuple[_U, Sequence[_T]]]:
+    """Yield consecutive keys and groups (as lists)."""
+    if key is None:
+        iterator = await groupby_async(iterable)
+        return await to_list(iterator)
+    iterator = await groupby_async(iterable, key=key)
+    return await to_list(iterator)
 
 
 async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
@@ -127,4 +152,12 @@ async def try_await(obj: Any, /) -> Any:
         return obj
 
 
-__all__ = ["is_awaitable", "to_list", "to_set", "to_sorted", "try_await"]
+__all__ = [
+    "groupby_async",
+    "groupby_async_list",
+    "is_awaitable",
+    "to_list",
+    "to_set",
+    "to_sorted",
+    "try_await",
+]

@@ -3,13 +3,14 @@ from __future__ import annotations
 from asyncio import sleep
 from dataclasses import dataclass
 from itertools import repeat
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pytest import mark, param
 
 from utilities.asyncio import (
     _MaybeAwaitableMaybeAsyncIterable,
     groupby_async,
+    groupby_async_list,
     is_awaitable,
     to_list,
     to_set,
@@ -64,7 +65,29 @@ async def _yield_containers_async() -> AsyncIterator[_Container]:
         await sleep(0.01)
 
 
+async def _ord_async(text: str, /) -> int:
+    await sleep(0.01)
+    return ord(text)
+
+
 class TestGroupbyAsync:
+    exp_no_key: ClassVar[list[tuple[str, list[str]]]] = [
+        ("A", list(repeat("A", times=4))),
+        ("B", list(repeat("B", times=3))),
+        ("C", list(repeat("C", times=2))),
+        ("D", list(repeat("D", times=1))),
+        ("A", list(repeat("A", times=2))),
+        ("B", list(repeat("B", times=2))),
+    ]
+    exp_with_key: ClassVar[list[tuple[int, list[str]]]] = [
+        (65, list(repeat("A", times=4))),
+        (66, list(repeat("B", times=3))),
+        (67, list(repeat("C", times=2))),
+        (68, list(repeat("D", times=1))),
+        (65, list(repeat("A", times=2))),
+        (66, list(repeat("B", times=2))),
+    ]
+
     @mark.parametrize(
         "iterable",
         [
@@ -74,7 +97,7 @@ class TestGroupbyAsync:
             param(_yield_strs_async()),
         ],
     )
-    async def test_main(
+    async def test_no_key(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
         result = groupby_async(iterable)
@@ -85,15 +108,22 @@ class TestGroupbyAsync:
             for v_i in v:
                 assert isinstance(v_i, str)
             as_list.append((k, v))
-        expected = [
-            ("A", list(repeat("A", times=4))),
-            ("B", list(repeat("B", times=3))),
-            ("C", list(repeat("C", times=2))),
-            ("D", list(repeat("D", times=1))),
-            ("A", list(repeat("A", times=2))),
-            ("B", list(repeat("B", times=2))),
-        ]
-        assert as_list == expected
+        assert as_list == self.exp_no_key
+
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_no_key_as_list(
+        self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
+    ) -> None:
+        result = await groupby_async_list(iterable)
+        assert result == self.exp_no_key
 
     @mark.parametrize(
         "iterable",
@@ -112,18 +142,24 @@ class TestGroupbyAsync:
         async for k, v in await result:
             assert isinstance(k, int)
             assert isinstance(v, list)
-            for v_i in v:
-                assert isinstance(v_i, str)
+            assert all(isinstance(v_i, str) for v_i in v)
             as_list.append((k, v))
-        expected = [
-            (65, list(repeat("A", times=4))),
-            (66, list(repeat("B", times=3))),
-            (67, list(repeat("C", times=2))),
-            (68, list(repeat("D", times=1))),
-            (65, list(repeat("A", times=2))),
-            (66, list(repeat("B", times=2))),
-        ]
-        assert as_list == expected
+        assert as_list == self.exp_with_key
+
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_key_sync_list(
+        self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
+    ) -> None:
+        result = await groupby_async_list(iterable, key=ord)
+        assert result == self.exp_with_key
 
     @mark.parametrize(
         "iterable",
@@ -137,20 +173,29 @@ class TestGroupbyAsync:
     async def test_key_async(
         self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
     ) -> None:
-        async def key(text: str, /) -> int:
-            await sleep(0.01)
-            return ord(text)
+        result = groupby_async(iterable, key=_ord_async)
+        as_list: list[tuple[int, list[str]]] = []
+        async for k, v in await result:
+            assert isinstance(k, int)
+            assert isinstance(v, list)
+            assert all(isinstance(v_i, str) for v_i in v)
+            as_list.append((k, v))
+        assert as_list == self.exp_with_key
 
-        result = await to_list(groupby_async(iterable, key=key))
-        expected = [
-            (65, list(repeat("A", times=4))),
-            (66, list(repeat("B", times=3))),
-            (67, list(repeat("C", times=2))),
-            (68, list(repeat("D", times=1))),
-            (65, list(repeat("A", times=2))),
-            (66, list(repeat("B", times=2))),
-        ]
-        assert result == expected
+    @mark.parametrize(
+        "iterable",
+        [
+            param(_get_strs_sync()),
+            param(_get_strs_async()),
+            param(_yield_strs_sync()),
+            param(_yield_strs_async()),
+        ],
+    )
+    async def test_key_async_list(
+        self, *, iterable: _MaybeAwaitableMaybeAsyncIterable[str]
+    ) -> None:
+        result = await groupby_async_list(iterable, key=_ord_async)
+        assert result == self.exp_with_key
 
 
 class TestIsAwaitable:
