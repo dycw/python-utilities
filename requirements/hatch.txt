@@ -32,7 +32,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.110.2
+hypothesis==6.111.0
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -119,7 +119,7 @@ uv==0.2.35
     # via hatch
 virtualenv==20.26.3
     # via hatch
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata
 zstandard==0.23.0
     # via hatch
