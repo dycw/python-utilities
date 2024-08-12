@@ -8,7 +8,7 @@ coverage==7.6.1
     # via pytest-cov
 cryptography==43.0.0
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.110.2
+hypothesis==6.111.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

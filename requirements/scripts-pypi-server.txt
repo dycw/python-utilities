@@ -6,7 +6,7 @@ click==8.1.7
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.110.2
+hypothesis==6.111.0
     # via dycw-utilities (pyproject.toml)
 importlib-resources==6.4.0
     # via pypiserver
