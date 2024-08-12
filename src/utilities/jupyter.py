@@ -26,23 +26,23 @@ _DEFAULT_ROWS = 7
 _DEFAULT_COLS = 100
 
 
-@dataclass(kw_only=True)
+@dataclass
 class _Show:
     """Context manager which adjusts the display of NDFrames."""
 
-    dp: int | None = None
-    rows: int | None = _DEFAULT_ROWS
-    columns: int | None = _DEFAULT_COLS
-    stack: ExitStack = field(default_factory=ExitStack)
+    rows: int | None = field(default=_DEFAULT_ROWS)
+    columns: int | None = field(default=_DEFAULT_COLS, kw_only=True)
+    dp: int | None = field(default=None, kw_only=True)
+    stack: ExitStack = field(default_factory=ExitStack, kw_only=True)
 
     def __call__(
         self,
+        rows: int | None = _DEFAULT_ROWS,
         *,
         dp: int | None = None,
-        rows: int | None = _DEFAULT_ROWS,
         columns: int | None = _DEFAULT_COLS,
     ) -> Self:
-        return replace(self, dp=dp, rows=rows, columns=columns)
+        return replace(self, rows=rows, dp=dp, columns=columns)
 
     def __enter__(self) -> None:
         self._enter_pandas()

@@ -43,14 +43,14 @@ class TestShow:
         assert_default()
 
     @given(
-        dp=integers(0, 10) | none(),
         rows=integers(0, 100) | none(),
+        dp=integers(0, 10) | none(),
         columns=integers(0, 100) | none(),
     )
     def test_indirect(
-        self, *, dp: int | None, rows: int | None, columns: int | None
+        self, *, rows: int | None, dp: int | None, columns: int | None
     ) -> None:
-        with show(dp=dp, rows=rows, columns=columns):
+        with show(rows, dp=dp, columns=columns):
             state = Config.state(if_set=True)
             if dp is not None:
                 assert get_option("display.precision") == dp
