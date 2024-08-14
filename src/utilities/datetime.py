@@ -284,10 +284,10 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def microseconds_since_epoch(datetime: dt.datetime, /) -> float:
+def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
     check_zoned_datetime(datetime)
-    return (datetime - EPOCH_UTC).total_seconds()
+    return timedelta_to_microseconds(timedelta_since_epoch(datetime))
 
 
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
@@ -299,12 +299,6 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
         seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
         return dt.timedelta(days=days, seconds=seconds, microseconds=micros)
     return -microseconds_to_timedelta(-microseconds)
-
-
-def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
-    """Compute the number of milliseconds since the epoch."""
-    check_zoned_datetime(datetime)
-    return (datetime - EPOCH_UTC).total_seconds()
 
 
 @dataclass(order=True, frozen=True)
@@ -629,7 +623,6 @@ __all__ = [
     "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
     "microseconds_to_timedelta",
-    "milliseconds_since_epoch",
     "parse_month",
     "round_to_next_weekday",
     "round_to_prev_weekday",

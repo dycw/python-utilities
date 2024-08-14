@@ -72,6 +72,7 @@ from utilities.datetime import (
     is_zoned_datetime,
     isinstance_date_not_datetime,
     maybe_sub_pct_y,
+    microseconds_since_epoch,
     microseconds_to_timedelta,
     parse_month,
     round_to_next_weekday,
@@ -370,8 +371,15 @@ class TestMaybeSubPctY:
 class TestTimedeltaSinceEpoch:
     @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
-        timedelta = timedelta_since_epoch(datetime)
-        assert isinstance(timedelta, dt.timedelta)
+        result = timedelta_since_epoch(datetime)
+        assert isinstance(result, dt.timedelta)
+
+
+class TestMicrosecondsSinceEpoch:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = microseconds_since_epoch(datetime)
+        assert isinstance(result, int)
 
 
 class TestMicrosecondsToTimedelta:
