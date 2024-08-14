@@ -7,7 +7,28 @@ import redis
 import redis.asyncio
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    import datetime as dt
+    from collections.abc import AsyncIterator, Iterator, Mapping
+
+    from redis.commands.timeseries import TimeSeries
+
+
+def add_timestamp(
+    ts: TimeSeries,
+    key: bytes | str | memoryview,
+    value: dt.datetime,
+    /,
+    *,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: Mapping[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: str | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: int | float | None = None,
+    on_duplicate: str | None = None,
+) -> None:
+    pass
 
 
 @contextmanager

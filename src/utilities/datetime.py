@@ -78,6 +78,21 @@ class CheckDateNotDatetimeError(Exception):
         return f"Date must not be a datetime; got {self.date}"
 
 
+def check_zoned_datetime(datetime: dt.datetime, /) -> None:
+    """Check if a datetime is zoned."""
+    if datetime.tzinfo is None:
+        raise CheckZonedDatetimeError(datetime=datetime)
+
+
+@dataclass(kw_only=True)
+class CheckZonedDatetimeError(Exception):
+    datetime: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Datetime must be zoned; got {self.datetime}"
+
+
 def date_to_datetime(
     date: dt.date, /, *, time: dt.time | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
@@ -547,6 +562,7 @@ __all__ = [
     "YEAR",
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
+    "CheckZonedDatetimeError",
     "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
@@ -557,6 +573,7 @@ __all__ = [
     "YieldWeekdaysError",
     "add_weekdays",
     "check_date_not_datetime",
+    "check_zoned_datetime",
     "date_to_datetime",
     "date_to_month",
     "duration_to_float",
