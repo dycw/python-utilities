@@ -93,9 +93,9 @@ def relabel_plot(plot: _T, label: str, /) -> _T:
 
 def save_plot(plot: Any, path: PathLike, /, *, overwrite: bool = False) -> None:
     """Atomically save a plot to disk."""
-    from utilities.atomicwrites import writer  # pragma: os-ne-linux
+    from utilities.atomicwrites import writer  # os-ne-linux
 
-    with writer(path, overwrite=overwrite) as temp:  # pragma: os-ne-linux
+    with writer(path, overwrite=overwrite) as temp:  # os-ne-linux
         save(plot, temp, backend="bokeh")
 
 

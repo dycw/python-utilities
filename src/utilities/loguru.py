@@ -129,21 +129,21 @@ def _augment_levels(
         out |= levels
     if env_var_prefix is not None:
         match SYSTEM:
-            case System.windows:  # pragma: os-ne-windows
+            case System.windows:  # os-ne-windows
                 env_var_prefix_use = env_var_prefix.upper()
-            case System.mac:  # pragma: os-ne-macos
+            case System.mac:  # os-ne-macos
                 env_var_prefix_use = env_var_prefix
-            case System.linux:  # pragma: os-ne-linux
+            case System.linux:  # os-ne-linux
                 env_var_prefix_use = env_var_prefix
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
         for key, value in environ.items():
             match SYSTEM:
-                case System.windows:  # pragma: os-ne-windows
+                case System.windows:  # os-ne-windows
                     key_use = key.upper()
-                case System.mac:  # pragma: os-ne-macos
+                case System.mac:  # os-ne-macos
                     key_use = key
-                case System.linux:  # pragma: os-ne-linux
+                case System.linux:  # os-ne-linux
                     key_use = key
                 case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                     assert_never(never)

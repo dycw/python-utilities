@@ -29,11 +29,11 @@ class TestMaybeYieldLowerCase:
     def test_main(self, *, text: AbstractSet[str]) -> None:
         result = set(maybe_yield_lower_case(text))
         match SYSTEM:
-            case System.windows:  # pragma: os-ne-windows
+            case System.windows:  # os-ne-windows
                 assert all(text == text.lower() for text in result)
-            case System.mac:  # pragma: os-ne-macos
+            case System.mac:  # os-ne-macos
                 assert all(text == text.lower() for text in result)
-            case System.linux:  # pragma: os-ne-linux
+            case System.linux:  # os-ne-linux
                 assert result == text
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)

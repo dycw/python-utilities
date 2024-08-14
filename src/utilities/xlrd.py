@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 def get_date_mode() -> Literal[0, 1]:
     match SYSTEM:
-        case System.windows:  # pragma: os-ne-windows
+        case System.windows:  # os-ne-windows
             return 0
-        case System.mac:  # pragma: os-ne-macos
+        case System.mac:  # os-ne-macos
             return 1
         case system:  # pragma: no cover
             raise GetDateModeError(system=system)

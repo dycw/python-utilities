@@ -33,7 +33,7 @@ def get_shell_output(
     if activate is not None:
         with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))
-        cmd = f"source {activate}; {cmd}"  # pragma: os-ne-windows
+        cmd = f"source {activate}; {cmd}"  # os-ne-windows
 
     with temp_environ(env):
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
@@ -71,27 +71,27 @@ def _address_already_in_use_pattern() -> str:
 
 def tabulate_called_process_error(error: CalledProcessError, /) -> str:
     """Tabulate the components of a CalledProcessError."""
-    mapping = {  # pragma: os-ne-windows
+    mapping = {  # os-ne-windows
         "cmd": error.cmd,
         "returncode": error.returncode,
         "stdout": error.stdout,
         "stderr": error.stderr,
     }
-    max_key_len = max(map(len, mapping))  # pragma: os-ne-windows
-    tabulate = partial(_tabulate, buffer=max_key_len + 1)  # pragma: os-ne-windows
-    return "\n".join(starmap(tabulate, mapping.items()))  # pragma: os-ne-windows
+    max_key_len = max(map(len, mapping))  # os-ne-windows
+    tabulate = partial(_tabulate, buffer=max_key_len + 1)  # os-ne-windows
+    return "\n".join(starmap(tabulate, mapping.items()))  # os-ne-windows
 
 
 def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
-    template = f"{{:{buffer}}}{{}}"  # pragma: os-ne-windows
+    template = f"{{:{buffer}}}{{}}"  # os-ne-windows
 
-    def yield_lines() -> Iterator[str]:  # pragma: os-ne-windows
+    def yield_lines() -> Iterator[str]:  # os-ne-windows
         keys = chain([key], repeat(buffer * " "))
         value_lines = str(value).splitlines()
         for k, v in zip(keys, value_lines, strict=False):
             yield template.format(k, v)
 
-    return "\n".join(yield_lines())  # pragma: os-ne-windows
+    return "\n".join(yield_lines())  # os-ne-windows
 
 
 __all__ = [

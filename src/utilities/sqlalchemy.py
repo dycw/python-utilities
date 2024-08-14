@@ -1024,7 +1024,7 @@ def postgres_upsert(
     values: None = None,
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
-def postgres_upsert(  # pragma: ci-in-environ
+def postgres_upsert(  # ci-in-environ
     item: Any,
     /,
     *,
@@ -1061,7 +1061,7 @@ def postgres_upsert(  # pragma: ci-in-environ
     return _postgres_upsert_core(table, mappings2, selected_or_all=selected_or_all)
 
 
-def _postgres_upsert_core(  # pragma: ci-in-environ
+def _postgres_upsert_core(  # ci-in-environ
     table_or_mapped_class: Table | type[DeclarativeBase],
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
@@ -1088,7 +1088,7 @@ def _postgres_upsert_core(  # pragma: ci-in-environ
     return ins.on_conflict_do_update(constraint=constraint, set_=set_)
 
 
-def _postgres_upsert_add_updated(  # pragma: ci-in-environ
+def _postgres_upsert_add_updated(  # ci-in-environ
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     updated: Mapping[str, dt.datetime],
     /,
@@ -1098,7 +1098,7 @@ def _postgres_upsert_add_updated(  # pragma: ci-in-environ
     return [_postgres_upsert_add_updated_to_mapping(v, updated) for v in values]
 
 
-def _postgres_upsert_add_updated_to_mapping(  # pragma: ci-in-environ
+def _postgres_upsert_add_updated_to_mapping(  # ci-in-environ
     value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
 ) -> Mapping[str, Any]:
     return {**value, **updated_at}
@@ -1110,7 +1110,7 @@ class PostgresUpsertError(Exception):
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
 
     @override
-    def __str__(self) -> str:  # pragma: ci-in-environ
+    def __str__(self) -> str:  # ci-in-environ
         return f"Unsupported item and values; got {self.item} and {self.values}"
 
 

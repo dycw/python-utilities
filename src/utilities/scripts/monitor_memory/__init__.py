@@ -69,13 +69,13 @@ def _get_memory_usage() -> Item:  # pyright: ignore[reportInvalidTypeForm]
     virtual = cast(Any, virtual_memory())
     virtual_kwargs: dict[str, Any] = {}
     match SYSTEM:
-        case System.windows:  # pragma: os-ne-windows
+        case System.windows:  # os-ne-windows
             pass
-        case System.mac:  # pragma: os-ne-macos
+        case System.mac:  # os-ne-macos
             virtual_kwargs["virtual_active"] = virtual.active
             virtual_kwargs["virtual_inactive"] = virtual.inactive
             virtual_kwargs["virtual_wired"] = virtual.wired
-        case System.linux:  # pragma: os-ne-linux
+        case System.linux:  # os-ne-linux
             virtual_kwargs["virtual_active"] = virtual.active
             virtual_kwargs["virtual_inactive"] = virtual.inactive
             virtual_kwargs["virtual_buffers"] = virtual.buffers

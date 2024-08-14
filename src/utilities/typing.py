@@ -5,7 +5,7 @@ from types import NoneType, UnionType
 from typing import Any, Literal, Protocol, TypeVar, get_origin
 from typing import get_args as _get_args
 
-try:  # pragma: version-ge-312
+try:  # version-ge-312
     from typing import TypeAliasType  # pyright: ignore[reportAttributeAccessIssue]
 except ImportError:  # pragma: no cover
     TypeAliasType = None
@@ -27,7 +27,7 @@ SupportsRichComparison = SupportsDunderLT[Any] | SupportsDunderGT[Any]
 
 def get_args(obj: Any, /) -> tuple[Any, ...]:
     """Get the arguments of an annotation."""
-    if (TypeAliasType is not None) and isinstance(  # pragma: version-ge-312
+    if (TypeAliasType is not None) and isinstance(  # version-ge-312
         obj, TypeAliasType
     ):
         return get_args(obj.__value__)  # pragma: no cover
