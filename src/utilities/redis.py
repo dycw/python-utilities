@@ -396,17 +396,17 @@ _ResponseErrorKind = Literal[
 
 
 def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
-    msg = ensure_str(one(error.args))
-    if (
+    msg = ensure_str(one(error.args))  # os-ne-linux
+    if (  # os-ne-linux
         msg
         == "TSDB: Error at upsert, update is not supported when DUPLICATE_POLICY is set to BLOCK mode"
     ):
         return "error at upsert"
-    if msg == "TSDB: the key is not a TSDB key":
+    if msg == "TSDB: the key is not a TSDB key":  # os-ne-linux
         return "invalid key"
-    if msg == "TSDB: invalid timestamp, must be a nonnegative integer":
+    if msg == "TSDB: invalid timestamp, must be a nonnegative integer":  # os-ne-linux
         return "invalid timestamp"
-    if msg == "TSDB: invalid value":
+    if msg == "TSDB: invalid value":  # os-ne-linux
         return "invalid value"
     raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
 
