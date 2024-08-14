@@ -28,7 +28,7 @@ class TestTimeSeriesAdd:
         client_pair=redis_clients(),
         key=text_ascii(),
         timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])),
-        value=longs(),
+        value=longs() | floats(width=32),
     )
     @settings(phases={Phase.generate})
     def test_main(
@@ -37,7 +37,7 @@ class TestTimeSeriesAdd:
         client_pair: tuple[redis.Redis, UUID],
         key: str,
         timestamp: dt.datetime,
-        value: int,
+        value: float,
     ) -> None:
         _ = assume(timestamp.microsecond == 0)
         client, uuid = client_pair
@@ -52,7 +52,7 @@ class TestTimeSeriesAdd:
         res_milliseconds, res_value = ts.get(full_key)
         res_timestamp = milliseconds_since_epoch_to_datetime(res_milliseconds)
         assert res_timestamp == timestamp.astimezone(UTC)
-        assert int(res_value) == value
+        assert res_value == value
 
 
 class TestTimeSeriesGet:
