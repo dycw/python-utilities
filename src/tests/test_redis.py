@@ -106,7 +106,7 @@ class TestTimeSeriesAddAndGet:
         _ = assume(timestamp < EPOCH_UTC)
         client, uuid = client_pair
         with raises(
-            TimeSeriesAddError, match="Timestamp must be a non-negative integer; got .*"
+            TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
         ):
             _ = time_series_add(
                 client.ts(), f"{uuid}_{key}", timestamp, value, duplicate_policy="LAST"
@@ -222,7 +222,7 @@ class TestTimeSeriesMAddAndRange:
         _ = assume(timestamp < EPOCH_UTC)
         client, uuid = client_pair
         with raises(
-            TimeSeriesMAddError, match="Timestamp must be non-negative integer; got .*"
+            TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
         ):
             _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
 
