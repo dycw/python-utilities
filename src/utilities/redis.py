@@ -50,8 +50,8 @@ def time_series_add(
     on_duplicate: str | None = None,
 ) -> int:
     """Append a sample to a time series."""
-    milliseconds = milliseconds_since_epoch(timestamp, strict=True)
-    try:
+    milliseconds = milliseconds_since_epoch(timestamp, strict=True)  # os-ne-linux
+    try:  # os-ne-linux
         return ts.add(
             key,
             milliseconds,
@@ -65,7 +65,7 @@ def time_series_add(
             ignore_max_val_diff=ignore_max_val_diff,
             on_duplicate=on_duplicate,
         )
-    except ResponseError as error:
+    except ResponseError as error:  # os-ne-linux
         match _classify_response_error(error):
             case "error at upsert":
                 raise _TimeSeriesAddErrorAtUpsertError(
@@ -93,7 +93,7 @@ class TimeSeriesAddError(Exception):
 class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return (
+        return (  # os-ne-linux
             f"Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got {self.timestamp}"
         )
 
@@ -102,23 +102,25 @@ class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
 class _TimeSeriesAddInvalidTimestampError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return f"Timestamp must be at least the Epoch; got {self.timestamp}"
+        return (  # os-ne-linux
+            f"Timestamp must be at least the Epoch; got {self.timestamp}"
+        )
 
 
 @dataclass(kw_only=True)
 class _TimeSeriesAddInvalidValueError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return f"Invalid value; got {self.value}"
+        return f"Invalid value; got {self.value}"  # os-ne-linux
 
 
 def time_series_get(
     ts: TimeSeries, key: KeyT, /, *, latest: bool | None = False
 ) -> tuple[dt.datetime, float]:
     """Get the last sample of a time series."""
-    milliseconds, value = ts.get(key, latest=latest)
-    timestamp = milliseconds_since_epoch_to_datetime(milliseconds)
-    return timestamp, value
+    milliseconds, value = ts.get(key, latest=latest)  # os-ne-linux
+    timestamp = milliseconds_since_epoch_to_datetime(milliseconds)  # os-ne-linux
+    return timestamp, value  # os-ne-linux
 
 
 def time_series_madd(
@@ -127,10 +129,10 @@ def time_series_madd(
     /,
 ) -> list[int]:
     """Append new samples to one or more time series."""
-    from polars import DataFrame, Datetime, Float64, Int64, Utf8, col
+    from polars import DataFrame, Datetime, Float64, Int64, Utf8, col  # os-ne-linux
 
-    ktv_tuples: Sequence[tuple[KeyT, int, Number]]
-    if isinstance(values_or_df, DataFrame):
+    ktv_tuples: Sequence[tuple[KeyT, int, Number]]  # os-ne-linux
+    if isinstance(values_or_df, DataFrame):  # os-ne-linux
         df = values_or_df.select("key", "timestamp", "value")
         key_dtype, timestamp_dtype, value_dtype = df.dtypes
         if not isinstance(key_dtype, Utf8):
@@ -147,24 +149,24 @@ def time_series_madd(
         if not isinstance(value_dtype, Float64 | Int64):
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
         ktv_tuples = df.rows()
-    else:
+    else:  # os-ne-linux
         values_or_df = list(values_or_df)
         ktv_tuples = [
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
         ]
-    result: list[int | ResponseError] = ts.madd(list(ktv_tuples))
-    try:
+    result: list[int | ResponseError] = ts.madd(list(ktv_tuples))  # os-ne-linux
+    try:  # os-ne-linux
         i, error = next(
             (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
         )
-    except StopIteration:
+    except StopIteration:  # os-ne-linux
         return cast(list[int], result)
-    if isinstance(values_or_df, DataFrame):
+    if isinstance(values_or_df, DataFrame):  # os-ne-linux
         key, timestamp, value = values_or_df.row(i)
-    else:
+    else:  # os-ne-linux
         key, timestamp, value = values_or_df[i]
-    match _classify_response_error(error):
+    match _classify_response_error(error):  # os-ne-linux
         case "invalid key":
             raise _TimeSeriesMAddInvalidKeyError(values_or_df=values_or_df, key=key)
         case "invalid timestamp":
@@ -190,7 +192,7 @@ class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'key' column must be Utf8; got {self.dtype}"
+        return f"The 'key' column must be Utf8; got {self.dtype}"  # os-ne-linux
 
 
 @dataclass(kw_only=True)
@@ -200,7 +202,9 @@ class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'timestamp' column must be Datetime; got {self.dtype}"
+        return (
+            f"The 'timestamp' column must be Datetime; got {self.dtype}"  # os-ne-linux
+        )
 
 
 @dataclass(kw_only=True)
@@ -210,7 +214,7 @@ class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'value' column must be numeric; got {self.dtype}"
+        return f"The 'value' column must be numeric; got {self.dtype}"  # os-ne-linux
 
 
 @dataclass(kw_only=True)
@@ -220,7 +224,7 @@ class _TimeSeriesMAddInvalidKeyError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid key; got {self.key!r}"
+        return f"Invalid key; got {self.key!r}"  # os-ne-linux
 
 
 @dataclass(kw_only=True)
@@ -230,7 +234,7 @@ class _TimeSeriesMAddInvalidTimestampError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Timestamps must be at least the Epoch; got {self.timestamp}"
+        return f"Timestamps must be at least the Epoch; got {self.timestamp}"  # os-ne-linux
 
 
 @dataclass(kw_only=True)
@@ -240,7 +244,7 @@ class _TimeSeriesMAddInvalidValueError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid value; got {self.value}"
+        return f"Invalid value; got {self.value}"  # os-ne-linux
 
 
 def time_series_range(
@@ -262,7 +266,7 @@ def time_series_range(
     empty: bool | None = False,
 ) -> DataFrame:
     """Get a range in forward direction."""
-    from polars import (
+    from polars import (  # os-ne-linux
         DataFrame,
         Datetime,
         Float64,
@@ -273,8 +277,8 @@ def time_series_range(
         lit,
     )
 
-    keys = list(always_iterable(key))
-    if len(keys) >= 2:
+    keys = list(always_iterable(key))  # os-ne-linux
+    if len(keys) >= 2:  # os-ne-linux
         dfs = (
             time_series_range(
                 ts,
@@ -295,20 +299,22 @@ def time_series_range(
             for key in keys
         )
         return concat(dfs)
-    key = one(keys)
-    ms_since_epoch = partial(milliseconds_since_epoch, strict=True)
-    from_time_use = "-" if from_time is None else ms_since_epoch(from_time)
-    to_time_use = "+" if to_time is None else ms_since_epoch(to_time)
-    filter_by_ts_use = (
+    key = one(keys)  # os-ne-linux
+    ms_since_epoch = partial(milliseconds_since_epoch, strict=True)  # os-ne-linux
+    from_time_use = (
+        "-" if from_time is None else ms_since_epoch(from_time)
+    )  # os-ne-linux
+    to_time_use = "+" if to_time is None else ms_since_epoch(to_time)  # os-ne-linux
+    filter_by_ts_use = (  # os-ne-linux
         None if filter_by_ts is None else list(map(ms_since_epoch, filter_by_ts))
     )
-    filter_by_min_value_use = (
+    filter_by_min_value_use = (  # os-ne-linux
         None if filter_by_min_value is None else ms_since_epoch(filter_by_min_value)
     )
-    filter_by_max_value_use = (
+    filter_by_max_value_use = (  # os-ne-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
-    values = ts.range(
+    values = ts.range(  # os-ne-linux
         key,
         from_time_use,
         to_time_use,
@@ -323,7 +329,7 @@ def time_series_range(
         bucket_timestamp=bucket_timestamp,
         empty=empty,
     )
-    return DataFrame(
+    return DataFrame(  # os-ne-linux
         values, schema={"timestamp": Int64, "value": Float64}, orient="row"
     ).select(
         key=lit(key, dtype=Utf8),

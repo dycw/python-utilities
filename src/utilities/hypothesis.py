@@ -660,8 +660,8 @@ def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
                 _ = self.delete(*cast(Iterable[Any], keys))
             return super().__del__()
 
-    client = RedisWithCleanup(db=15, decode_responses=True)
-    return client, uuid
+    client = RedisWithCleanup(db=15, decode_responses=True)  # os-ne-linux
+    return client, uuid  # os-ne-linux
 
 
 def setup_hypothesis_profiles(
