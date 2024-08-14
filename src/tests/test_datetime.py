@@ -41,7 +41,6 @@ from utilities.datetime import (
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
-    FormatDatetimeLocalAndUTCError,
     Month,
     MonthError,
     ParseMonthError,
@@ -73,10 +72,12 @@ from utilities.datetime import (
     is_zoned_datetime,
     isinstance_date_not_datetime,
     maybe_sub_pct_y,
+    microseconds_to_timedelta,
     parse_month,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
+    timedelta_to_microseconds,
     yield_days,
     yield_weekdays,
 )
@@ -227,14 +228,6 @@ class TestFormatDatetimeLocalAndUTC:
         result = format_datetime_local_and_utc(datetime)
         assert result == expected
 
-    def test_error(self) -> None:
-        datetime = dt.datetime(2000, 1, 1)  # noqa: DTZ001
-        with raises(
-            FormatDatetimeLocalAndUTCError,
-            match="Datetime must have a time zone; got 2000-01-01 00:00:00",
-        ):
-            _ = format_datetime_local_and_utc(datetime)
-
 
 class TestGetNow:
     @given(time_zone=timezones())
@@ -371,6 +364,15 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
+
+
+class TestMicrosecondsToTimedelta:
+    @given(microseconds=integers())
+    def test_main(self, *, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = microseconds_to_timedelta(microseconds)
+        result = timedelta_to_microseconds(timedelta)
+        assert result == microseconds
 
 
 class TestMonth:
@@ -533,6 +535,14 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestTimedeltaToMicroseconds:
+    @given(timedelta=timedeltas())
+    def test_main(self, *, timedelta: dt.timedelta) -> None:
+        microseconds = timedelta_to_microseconds(timedelta)
+        result = microseconds_to_timedelta(microseconds)
+        assert result == timedelta
 
 
 class TestTimedeltas:

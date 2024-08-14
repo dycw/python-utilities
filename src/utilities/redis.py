@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Any
 import redis
 import redis.asyncio
 
+from utilities.datetime import check_zoned_datetime
+from utilities.zoneinfo import UTC
+
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncIterator, Iterator, Mapping
@@ -28,7 +31,8 @@ def add_timestamp(
     ignore_max_val_diff: int | float | None = None,
     on_duplicate: str | None = None,
 ) -> None:
-    pass
+    check_zoned_datetime(value)
+    value.astimezone(UTC)
 
 
 @contextmanager

@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.platform import SYSTEM, System
+from utilities.types import ensure_not_none
 from utilities.zoneinfo import (
     HONG_KONG,
     TOKYO,
@@ -132,9 +133,8 @@ def ensure_month(month: Month | str, /) -> Month:
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
     """Format a local datetime locally & in UTC."""
-    if (tzinfo := datetime.tzinfo) is None:
-        raise FormatDatetimeLocalAndUTCError(datetime=datetime)
-    time_zone = ensure_time_zone(tzinfo)
+    check_zoned_datetime(datetime)
+    time_zone = ensure_time_zone(ensure_not_none(datetime.tzinfo))
     if time_zone is UTC:
         return datetime.strftime("%Y-%m-%d %H:%M:%S (%a, UTC)")
     as_utc = datetime.astimezone(UTC)
@@ -146,15 +146,6 @@ def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
             f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%m-%d %H:%M:%S} UTC)"
         )
     return f"{datetime:%Y-%m-%d %H:%M:%S (%a}, {local}, {as_utc:%H:%M:%S} UTC)"
-
-
-@dataclass(kw_only=True)
-class FormatDatetimeLocalAndUTCError(Exception):
-    datetime: dt.datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Datetime must have a time zone; got {self.datetime}"
 
 
 def get_half_years(*, n: int = 1) -> dt.timedelta:
@@ -293,6 +284,28 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
+def microseconds_since_epoch(datetime: dt.datetime, /) -> float:
+    """Compute the number of microseconds since the epoch."""
+    check_zoned_datetime(datetime)
+    return (datetime - EPOCH_UTC).total_seconds()
+
+
+def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
+    """Compute a timedelta given a number of microseconds."""
+    if microseconds == 0:
+        return dt.timedelta(0)
+    if microseconds >= 1:
+        days, remainder = divmod(microseconds, _MICROSECONDS_PER_DAY)
+        return dt.timedelta(days=days, microseconds=remainder)
+    return -microseconds_to_timedelta(-microseconds)
+
+
+def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
+    """Compute the number of milliseconds since the epoch."""
+    check_zoned_datetime(datetime)
+    return (datetime - EPOCH_UTC).total_seconds()
+
+
 @dataclass(order=True, frozen=True)
 class Month:
     """Represents a month in time."""
@@ -387,8 +400,13 @@ class Period(Generic[_TPeriod]):
         ):
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
-            if isinstance(date, dt.datetime) and (date.tzinfo is None):
-                raise _PeriodNaiveDatetimeError(start=self.start, end=self.end)
+            if isinstance(date, dt.datetime):
+                try:
+                    check_zoned_datetime(date)
+                except CheckZonedDatetimeError:
+                    raise _PeriodNaiveDatetimeError(
+                        start=self.start, end=self.end
+                    ) from None
         if self.start > self.end:
             raise _PeriodInvalidError(start=self.start, end=self.end)
 
@@ -455,6 +473,21 @@ def _round_to_weekday(
 def serialize_month(month: Month, /) -> str:
     """Serialize a month."""
     return f"{month.year:04}-{month.month:02}"
+
+
+def timedelta_since_epoch(datetime: dt.datetime, /) -> dt.timedelta:
+    """Compute the timedelta since the epoch."""
+    check_zoned_datetime(datetime)
+    return datetime - EPOCH_UTC
+
+
+def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
+    """Compute the number of microseconds in a timedelta."""
+    return (
+        _MICROSECONDS_PER_DAY * timedelta.days
+        + _MICROSECONDS_PER_SECOND * timedelta.seconds
+        + timedelta.microseconds
+    )
 
 
 def yield_days(
@@ -563,7 +596,6 @@ __all__ = [
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
-    "FormatDatetimeLocalAndUTCError",
     "Month",
     "MonthError",
     "ParseMonthError",
@@ -595,10 +627,14 @@ __all__ = [
     "is_zoned_datetime",
     "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
+    "microseconds_to_timedelta",
+    "milliseconds_since_epoch",
     "parse_month",
     "round_to_next_weekday",
     "round_to_prev_weekday",
     "serialize_month",
+    "timedelta_since_epoch",
+    "timedelta_to_microseconds",
     "yield_days",
     "yield_weekdays",
 ]
