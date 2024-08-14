@@ -58,6 +58,7 @@ from utilities.datetime import (
     date_to_datetime,
     date_to_month,
     drop_microseconds,
+    drop_milli_and_microseconds,
     duration_to_float,
     duration_to_timedelta,
     format_datetime_local_and_utc,
@@ -180,6 +181,13 @@ class TestDropMicroseconds:
         result = drop_microseconds(datetime)
         _, remainder = divmod(result.microsecond, _MICROSECONDS_PER_MILLISECOND)
         assert remainder == 0
+
+
+class TestDropMilliAndMicroseconds:
+    @given(datetime=datetimes())
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = drop_milli_and_microseconds(datetime)
+        assert result.microsecond == 0
 
 
 class TestDurationToFloat:

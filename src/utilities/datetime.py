@@ -121,6 +121,11 @@ def drop_microseconds(datetime: dt.datetime, /) -> dt.datetime:
     return datetime.replace(microsecond=microseconds)
 
 
+def drop_milli_and_microseconds(datetime: dt.datetime, /) -> dt.datetime:
+    """Drop the milliseconds & microseconds of a datetime object."""
+    return datetime.replace(microsecond=0)
+
+
 def duration_to_float(duration: Duration, /) -> float:
     """Ensure the duration is a float."""
     if isinstance(duration, int):
@@ -694,6 +699,7 @@ __all__ = [
     "date_to_datetime",
     "date_to_month",
     "drop_microseconds",
+    "drop_milli_and_microseconds",
     "duration_to_float",
     "duration_to_timedelta",
     "ensure_month",
