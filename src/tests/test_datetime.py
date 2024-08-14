@@ -74,6 +74,7 @@ from utilities.datetime import (
     maybe_sub_pct_y,
     microseconds_since_epoch,
     microseconds_to_timedelta,
+    milliseconds_since_epoch,
     parse_month,
     round_to_next_weekday,
     round_to_prev_weekday,
@@ -380,6 +381,13 @@ class TestMicrosecondsSinceEpoch:
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = microseconds_since_epoch(datetime)
         assert isinstance(result, int)
+
+
+class TestMillisecondsSinceEpoch:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = milliseconds_since_epoch(datetime)
+        assert isinstance(result, float)
 
 
 class TestMicrosecondsToTimedelta:
