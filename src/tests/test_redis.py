@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import redis
@@ -27,7 +26,7 @@ class TestAddTimestamp:
         value=longs(),
     )
     @settings(phases={Phase.generate})
-    def test_sync(
+    def test_main(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
@@ -39,8 +38,7 @@ class TestAddTimestamp:
         client, uuid = client_pair
         full_key = f"{uuid}_{key}"
         ts = client.ts()
-        with suppress(ResponseError):
-            _ = ts.create(full_key, duplicate_policy="last")
+        _ = ts.create(full_key)
         with assume_does_not_raise(
             ResponseError, match="must be a nonnegative integer"
         ):
