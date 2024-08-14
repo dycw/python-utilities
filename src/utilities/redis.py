@@ -50,10 +50,10 @@ def time_series_add(
     on_duplicate: str | None = None,
 ) -> int:
     """Append a sample to a time series."""
-    milliseconds = milliseconds_since_epoch(  # skipif-ci-and-non-linux
+    milliseconds = milliseconds_since_epoch(  # skipif-ci-and-not-linux
         timestamp, strict=True
     )
-    try:  # skipif-ci-and-non-linux
+    try:  # skipif-ci-and-not-linux
         return ts.add(
             key,
             milliseconds,
@@ -67,7 +67,7 @@ def time_series_add(
             ignore_max_val_diff=ignore_max_val_diff,
             on_duplicate=on_duplicate,
         )
-    except ResponseError as error:  # skipif-ci-and-non-linux
+    except ResponseError as error:  # skipif-ci-and-not-linux
         match _classify_response_error(error):
             case "error at upsert":
                 raise _TimeSeriesAddErrorAtUpsertError(
@@ -95,7 +95,7 @@ class TimeSeriesAddError(Exception):
 class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return (  # skipif-ci-and-non-linux
+        return (  # skipif-ci-and-not-linux
             f"Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got {self.timestamp}"
         )
 
@@ -104,7 +104,7 @@ class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
 class _TimeSeriesAddInvalidTimestampError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return (  # skipif-ci-and-non-linux
+        return (  # skipif-ci-and-not-linux
             f"Timestamp must be at least the Epoch; got {self.timestamp}"
         )
 
@@ -113,18 +113,18 @@ class _TimeSeriesAddInvalidTimestampError(TimeSeriesAddError):
 class _TimeSeriesAddInvalidValueError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return f"Invalid value; got {self.value}"  # skipif-ci-and-non-linux
+        return f"Invalid value; got {self.value}"  # skipif-ci-and-not-linux
 
 
 def time_series_get(
     ts: TimeSeries, key: KeyT, /, *, latest: bool | None = False
 ) -> tuple[dt.datetime, float]:
     """Get the last sample of a time series."""
-    milliseconds, value = ts.get(key, latest=latest)  # skipif-ci-and-non-linux
-    timestamp = milliseconds_since_epoch_to_datetime(  # skipif-ci-and-non-linux
+    milliseconds, value = ts.get(key, latest=latest)  # skipif-ci-and-not-linux
+    timestamp = milliseconds_since_epoch_to_datetime(  # skipif-ci-and-not-linux
         milliseconds
     )
-    return timestamp, value  # skipif-ci-and-non-linux
+    return timestamp, value  # skipif-ci-and-not-linux
 
 
 def time_series_madd(
@@ -133,7 +133,7 @@ def time_series_madd(
     /,
 ) -> list[int]:
     """Append new samples to one or more time series."""
-    from polars import (  # skipif-ci-and-non-linux
+    from polars import (  # skipif-ci-and-not-linux
         DataFrame,
         Datetime,
         Float64,
@@ -142,8 +142,8 @@ def time_series_madd(
         col,
     )
 
-    ktv_tuples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-non-linux
-    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-non-linux
+    ktv_tuples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
+    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
         df = values_or_df.select("key", "timestamp", "value")
         key_dtype, timestamp_dtype, value_dtype = df.dtypes
         if not isinstance(key_dtype, Utf8):
@@ -160,26 +160,26 @@ def time_series_madd(
         if not isinstance(value_dtype, Float64 | Int64):
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
         ktv_tuples = df.rows()
-    else:  # skipif-ci-and-non-linux
+    else:  # skipif-ci-and-not-linux
         values_or_df = list(values_or_df)
         ktv_tuples = [
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
         ]
-    result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-non-linux
+    result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-not-linux
         list(ktv_tuples)
     )
-    try:  # skipif-ci-and-non-linux
+    try:  # skipif-ci-and-not-linux
         i, error = next(
             (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
         )
-    except StopIteration:  # skipif-ci-and-non-linux
+    except StopIteration:  # skipif-ci-and-not-linux
         return cast(list[int], result)
-    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-non-linux
+    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
         key, timestamp, value = values_or_df.row(i)
-    else:  # skipif-ci-and-non-linux
+    else:  # skipif-ci-and-not-linux
         key, timestamp, value = values_or_df[i]
-    match _classify_response_error(error):  # skipif-ci-and-non-linux
+    match _classify_response_error(error):  # skipif-ci-and-not-linux
         case "invalid key":
             raise _TimeSeriesMAddInvalidKeyError(values_or_df=values_or_df, key=key)
         case "invalid timestamp":
@@ -205,7 +205,7 @@ class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'key' column must be Utf8; got {self.dtype}"  # skipif-ci-and-non-linux
+        return f"The 'key' column must be Utf8; got {self.dtype}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -215,7 +215,7 @@ class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'timestamp' column must be Datetime; got {self.dtype}"  # skipif-ci-and-non-linux
+        return f"The 'timestamp' column must be Datetime; got {self.dtype}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -225,7 +225,7 @@ class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"The 'value' column must be numeric; got {self.dtype}"  # skipif-ci-and-non-linux
+        return f"The 'value' column must be numeric; got {self.dtype}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -235,7 +235,7 @@ class _TimeSeriesMAddInvalidKeyError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid key; got {self.key!r}"  # skipif-ci-and-non-linux
+        return f"Invalid key; got {self.key!r}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -245,7 +245,7 @@ class _TimeSeriesMAddInvalidTimestampError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Timestamps must be at least the Epoch; got {self.timestamp}"  # skipif-ci-and-non-linux
+        return f"Timestamps must be at least the Epoch; got {self.timestamp}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -255,7 +255,7 @@ class _TimeSeriesMAddInvalidValueError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid value; got {self.value}"  # skipif-ci-and-non-linux
+        return f"Invalid value; got {self.value}"  # skipif-ci-and-not-linux
 
 
 def time_series_range(
@@ -277,7 +277,7 @@ def time_series_range(
     empty: bool | None = False,
 ) -> DataFrame:
     """Get a range in forward direction."""
-    from polars import (  # skipif-ci-and-non-linux
+    from polars import (  # skipif-ci-and-not-linux
         DataFrame,
         Datetime,
         Float64,
@@ -288,8 +288,8 @@ def time_series_range(
         lit,
     )
 
-    keys = list(always_iterable(key))  # skipif-ci-and-non-linux
-    if len(keys) >= 2:  # skipif-ci-and-non-linux
+    keys = list(always_iterable(key))  # skipif-ci-and-not-linux
+    if len(keys) >= 2:  # skipif-ci-and-not-linux
         dfs = (
             time_series_range(
                 ts,
@@ -310,26 +310,26 @@ def time_series_range(
             for key in keys
         )
         return concat(dfs)
-    key = one(keys)  # skipif-ci-and-non-linux
+    key = one(keys)  # skipif-ci-and-not-linux
     ms_since_epoch = partial(
         milliseconds_since_epoch, strict=True
-    )  # skipif-ci-and-non-linux
+    )  # skipif-ci-and-not-linux
     from_time_use = (
         "-" if from_time is None else ms_since_epoch(from_time)
-    )  # skipif-ci-and-non-linux
+    )  # skipif-ci-and-not-linux
     to_time_use = (
         "+" if to_time is None else ms_since_epoch(to_time)
-    )  # skipif-ci-and-non-linux
-    filter_by_ts_use = (  # skipif-ci-and-non-linux
+    )  # skipif-ci-and-not-linux
+    filter_by_ts_use = (  # skipif-ci-and-not-linux
         None if filter_by_ts is None else list(map(ms_since_epoch, filter_by_ts))
     )
-    filter_by_min_value_use = (  # skipif-ci-and-non-linux
+    filter_by_min_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_min_value is None else ms_since_epoch(filter_by_min_value)
     )
-    filter_by_max_value_use = (  # skipif-ci-and-non-linux
+    filter_by_max_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
-    values = ts.range(  # skipif-ci-and-non-linux
+    values = ts.range(  # skipif-ci-and-not-linux
         key,
         from_time_use,
         to_time_use,
@@ -344,7 +344,7 @@ def time_series_range(
         bucket_timestamp=bucket_timestamp,
         empty=empty,
     )
-    return DataFrame(  # skipif-ci-and-non-linux
+    return DataFrame(  # skipif-ci-and-not-linux
         values, schema={"timestamp": Int64, "value": Float64}, orient="row"
     ).select(
         key=lit(key, dtype=Utf8),
@@ -411,19 +411,19 @@ _ResponseErrorKind = Literal[
 
 
 def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
-    msg = ensure_str(one(error.args))  # skipif-ci-and-non-linux
-    if (  # skipif-ci-and-non-linux
+    msg = ensure_str(one(error.args))  # skipif-ci-and-not-linux
+    if (  # skipif-ci-and-not-linux
         msg
         == "TSDB: Error at upsert, update is not supported when DUPLICATE_POLICY is set to BLOCK mode"
     ):
         return "error at upsert"
-    if msg == "TSDB: the key is not a TSDB key":  # skipif-ci-and-non-linux
+    if msg == "TSDB: the key is not a TSDB key":  # skipif-ci-and-not-linux
         return "invalid key"
-    if (  # skipif-ci-and-non-linux
+    if (  # skipif-ci-and-not-linux
         msg == "TSDB: invalid timestamp, must be a nonnegative integer"
     ):
         return "invalid timestamp"
-    if msg == "TSDB: invalid value":  # skipif-ci-and-non-linux
+    if msg == "TSDB: invalid value":  # skipif-ci-and-not-linux
         return "invalid value"
     raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
 
