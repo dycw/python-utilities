@@ -86,7 +86,7 @@ from sqlalchemy.exc import DuplicateColumnError
 from utilities.datetime import is_equal_mod_tz
 from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
 from utilities.math import is_equal
-from utilities.polars import check_polars_dataframe
+from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import (
     ensure_tables_created,
     ensure_tables_created_async,
@@ -129,7 +129,7 @@ class TestInsertDataFrame:
         param(datetimes() | none(), Datetime, DateTime, eq),
         param(
             datetimes(timezones=just(UTC)) | none(),
-            Datetime(time_zone="UTC"),
+            DatetimeUTC,
             DateTime(timezone=True),
             is_equal_mod_tz,
         ),
@@ -423,7 +423,7 @@ class TestSelectToDataFrame:
         param(datetimes() | none(), Datetime, DateTime),
         param(
             datetimes(timezones=just(UTC)) | none(),
-            Datetime(time_zone="UTC"),
+            DatetimeUTC,
             DateTime(timezone=True),
         ),
         param(floats(allow_nan=False) | none(), Float64, Float),

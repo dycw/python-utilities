@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
+from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import redis
 import redis.asyncio
+from typing_extensions import override
 
 from utilities.datetime import (
     milliseconds_since_epoch,
@@ -16,9 +18,10 @@ from utilities.more_itertools import always_iterable
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator
 
     from polars import DataFrame
+    from polars._typing import PolarsDataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
 
@@ -67,24 +70,65 @@ def time_series_get(
     return timestamp, value
 
 
-def time_series_madd(ts: TimeSeries, df: DataFrame, /) -> Any:
+def time_series_madd(
+    ts: TimeSeries,
+    values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
+    /,
+) -> Any:
     """Append a sample to a time series."""
-    from polars import Datetime, Float64, Int64, Utf8, col
+    from polars import DataFrame, Datetime, Float64, Int64, Utf8, col
 
-    df = df.select("key", "timestamp", "value")
-    if df.schema["key"] != Utf8:
-        raise TypeError
-    if not isinstance(df.schema["timestamp"], Datetime):
-        raise TypeError
-    df = df.with_columns(
-        timestamp=col("timestamp")
-        .cast(Datetime(time_unit="ms", time_zone="UTC"))
-        .dt.epoch(time_unit="ms")
-    )
-    if not isinstance(df.schema["value"], Float64 | Int64):
-        raise TypeError
-    ktv_tuples: Iterator[tuple[KeyT, int, Number]] = df.iter_rows()
+    ktv_tuples: Iterable[tuple[KeyT, int, Number]]
+    if isinstance(values_or_df, DataFrame):
+        df = values_or_df.select("key", "timestamp", "value")
+        key_dtype, timestamp_dtype, value_dtype = df.dtypes
+        if not isinstance(key_dtype, Utf8):
+            raise _TimeSeriesMAddKeyIsNotUtf8Error(df=df, dtype=key_dtype)
+        if not isinstance(timestamp_dtype, Datetime):
+            raise _TimeSeriesMAddTimestampIsNotDatetimeError(
+                df=df, dtype=timestamp_dtype
+            )
+        df = df.with_columns(
+            timestamp=col("timestamp")
+            .cast(Datetime(time_unit="ms", time_zone="UTC"))
+            .dt.epoch(time_unit="ms")
+        )
+        if not isinstance(value_dtype, Float64 | Int64):
+            raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
+        ktv_tuples = df.iter_rows()
+    else:
+        ktv_tuples = (
+            (key, milliseconds_since_epoch(timestamp, strict=True), value)
+            for key, timestamp, value in values_or_df
+        )
     return ts.madd(list(ktv_tuples))
+
+
+@dataclass(kw_only=True)
+class TimeSeriesMAddError(Exception):
+    df: DataFrame
+    dtype: PolarsDataType
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
+    @override
+    def __str__(self) -> str:
+        return f"The 'key' column must be Utf8; got {self.dtype}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
+    @override
+    def __str__(self) -> str:
+        return f"The 'timestamp' column must be Datetime; got {self.dtype}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
+    @override
+    def __str__(self) -> str:
+        return f"The 'value' column must be numeric; got {self.dtype}"
 
 
 def time_series_range(
@@ -229,6 +273,7 @@ async def yield_client_async(
 
 
 __all__ = [
+    "TimeSeriesMAddError",
     "time_series_add",
     "time_series_get",
     "time_series_madd",

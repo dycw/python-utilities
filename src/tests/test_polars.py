@@ -638,7 +638,7 @@ class TestStructDataType:
             field: dt.datetime
 
         result = struct_data_type(Example, time_zone=UTC)
-        expected = Struct({"field": Datetime(time_zone="UTC")})
+        expected = Struct({"field": DatetimeUTC})
         assert result == expected
 
     def test_enum(self) -> None:

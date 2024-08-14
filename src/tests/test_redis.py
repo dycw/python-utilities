@@ -6,14 +6,16 @@ import redis
 import redis.asyncio
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import datetimes, floats, integers, sampled_from
-from polars import DataFrame, Datetime, Float64, Utf8
+from polars import Boolean, DataFrame, Float64, Utf8
 from polars.testing import assert_frame_equal
+from pytest import raises
 from redis.exceptions import ResponseError
 
 from utilities.datetime import MillisecondsSinceEpochError, milliseconds_since_epoch
 from utilities.hypothesis import assume_does_not_raise, redis_clients, text_ascii
-from utilities.polars import check_polars_dataframe
+from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
+    TimeSeriesMAddError,
     time_series_add,
     time_series_get,
     time_series_madd,
@@ -99,11 +101,7 @@ class TestTimeSeriesMAddAndRange:
         with assume_does_not_raise(OverflowError):
             df = DataFrame(
                 data,
-                schema={
-                    "key": Utf8,
-                    "timestamp": Datetime(time_zone="UTC"),
-                    "value": Float64,
-                },
+                schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Float64},
                 orient="row",
             )
         time_series_madd(ts, df)
@@ -111,13 +109,45 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(
             result,
             height=2,
-            schema_list={
-                "key": Utf8,
-                "timestamp": Datetime(time_zone="UTC"),
-                "value": Float64,
-            },
+            schema_list={"key": Utf8, "timestamp": DatetimeUTC, "value": Float64},
         )
         assert_frame_equal(result, df)
+
+    @given(client_pair=redis_clients())
+    @settings(phases={Phase.generate})
+    def test_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+        client, _ = client_pair
+        ts = client.ts()
+        df = DataFrame(
+            schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
+        )
+        with raises(
+            TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
+        ):
+            _ = time_series_madd(ts, df)
+
+    @given(client_pair=redis_clients())
+    @settings(phases={Phase.generate})
+    def test_error_timestamp(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+        client, _ = client_pair
+        ts = client.ts()
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
+        with raises(
+            TimeSeriesMAddError,
+            match="The 'timestamp' column must be Datetime; got Boolean",
+        ):
+            _ = time_series_madd(ts, df)
+
+    @given(client_pair=redis_clients())
+    @settings(phases={Phase.generate})
+    def test_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+        client, _ = client_pair
+        ts = client.ts()
+        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
+        with raises(
+            TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
+        ):
+            _ = time_series_madd(ts, df)
 
 
 class TestYieldClient:
