@@ -11,6 +11,8 @@ from utilities.datetime import (
     milliseconds_since_epoch,
     milliseconds_since_epoch_to_datetime,
 )
+from utilities.iterables import one
+from utilities.more_itertools import always_iterable
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -19,6 +21,8 @@ if TYPE_CHECKING:
     from polars import DataFrame
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
+
+    from utilities.iterables import MaybeIterable
 
 
 def time_series_add(
@@ -85,7 +89,7 @@ def time_series_madd(ts: TimeSeries, df: DataFrame, /) -> Any:
 
 def time_series_range(
     ts: TimeSeries,
-    key: KeyT,
+    key: MaybeIterable[KeyT],
     /,
     *,
     from_time: dt.datetime | None = None,
@@ -101,9 +105,41 @@ def time_series_range(
     bucket_timestamp: str | None = None,
     empty: bool | None = False,
 ) -> DataFrame:
-    """Get."""
-    from polars import DataFrame, Datetime, Float64, Int64, from_epoch
+    """Get a range in forward direction."""
+    from polars import (
+        DataFrame,
+        Datetime,
+        Float64,
+        Int64,
+        Utf8,
+        concat,
+        from_epoch,
+        lit,
+    )
 
+    keys = list(always_iterable(key))
+    if len(keys) >= 2:
+        dfs = (
+            time_series_range(
+                ts,
+                key,
+                from_time=from_time,
+                to_time=to_time,
+                count=count,
+                aggregation_type=aggregation_type,
+                bucket_size_msec=bucket_size_msec,
+                filter_by_ts=filter_by_ts,
+                filter_by_min_value=filter_by_min_value,
+                filter_by_max_value=filter_by_max_value,
+                align=align,
+                latest=latest,
+                bucket_timestamp=bucket_timestamp,
+                empty=empty,
+            )
+            for key in keys
+        )
+        return concat(dfs)
+    key = one(keys)
     ms_since_epoch = partial(milliseconds_since_epoch, strict=True)
     from_time_use = "-" if from_time is None else ms_since_epoch(from_time)
     to_time_use = "+" if to_time is None else ms_since_epoch(to_time)
@@ -133,10 +169,12 @@ def time_series_range(
     )
     return DataFrame(
         values, schema={"timestamp": Int64, "value": Float64}, orient="row"
-    ).with_columns(
-        from_epoch("timestamp", time_unit="ms").cast(
+    ).select(
+        key=lit(key, dtype=Utf8),
+        timestamp=from_epoch("timestamp", time_unit="ms").cast(
             Datetime(time_unit="us", time_zone="UTC")
-        )
+        ),
+        value="value",
     )
 
 

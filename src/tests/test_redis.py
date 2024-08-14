@@ -7,18 +7,17 @@ import redis.asyncio
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import datetimes, floats, integers, sampled_from
 from polars import DataFrame, Datetime, Float64, Utf8
+from polars.testing import assert_frame_equal
 from redis.exceptions import ResponseError
 
-from utilities.datetime import (
-    MillisecondsSinceEpochError,
-    milliseconds_since_epoch,
-    milliseconds_since_epoch_to_datetime,
-)
-from utilities.hypothesis import assume_does_not_raise, longs, redis_clients, text_ascii
+from utilities.datetime import MillisecondsSinceEpochError, milliseconds_since_epoch
+from utilities.hypothesis import assume_does_not_raise, redis_clients, text_ascii
+from utilities.polars import check_polars_dataframe
 from utilities.redis import (
     time_series_add,
     time_series_get,
     time_series_madd,
+    time_series_range,
     yield_client,
     yield_client_async,
 )
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
 
-class TestTimeSeriesAdd:
+class TestTimeSeriesAddAndGet:
     @given(
         client_pair=redis_clients(),
         key=text_ascii(),
@@ -57,45 +56,12 @@ class TestTimeSeriesAdd:
             ResponseError, match="must be a nonnegative integer"
         ):
             time_series_add(ts, full_key, timestamp, value)
-        res_milliseconds, res_value = ts.get(full_key)
-        res_timestamp = milliseconds_since_epoch_to_datetime(res_milliseconds)
-        assert res_timestamp == timestamp.astimezone(UTC)
-        assert res_value == value
-
-
-class TestTimeSeriesGet:
-    @given(
-        client_pair=redis_clients(),
-        key=text_ascii(),
-        timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])),
-        value=longs() | floats(width=32),
-    )
-    @settings(phases={Phase.generate})
-    def test_main(
-        self,
-        *,
-        client_pair: tuple[redis.Redis, UUID],
-        key: str,
-        timestamp: dt.datetime,
-        value: float,
-    ) -> None:
-        with assume_does_not_raise(MillisecondsSinceEpochError):
-            _ = milliseconds_since_epoch(timestamp, strict=True)
-        client, uuid = client_pair
-        full_key = f"{uuid}_{key}"
-        ts = client.ts()
-        if client.exists(full_key) == 0:
-            _ = ts.create(full_key, duplicate_policy="LAST")
-        with assume_does_not_raise(
-            ResponseError, match="must be a nonnegative integer"
-        ):
-            time_series_add(ts, full_key, timestamp, value, duplicate_policy="LAST")
         res_timestamp, res_value = time_series_get(ts, full_key)
         assert res_timestamp == timestamp.astimezone(UTC)
         assert res_value == value
 
 
-class TestTimeSeriesMAdd:
+class TestTimeSeriesMAddAndRange:
     @given(
         client_pair=redis_clients(),
         key1=text_ascii(),
@@ -141,10 +107,17 @@ class TestTimeSeriesMAdd:
                 orient="row",
             )
         time_series_madd(ts, df)
-        for full_key, timestamp, value in data:
-            res_timestamp, res_value = time_series_get(ts, full_key)
-            assert res_timestamp == timestamp
-            assert res_value == value
+        result = time_series_range(ts, full_keys)
+        check_polars_dataframe(
+            result,
+            height=2,
+            schema_list={
+                "key": Utf8,
+                "timestamp": Datetime(time_zone="UTC"),
+                "value": Float64,
+            },
+        )
+        assert_frame_equal(result, df)
 
 
 class TestYieldClient:
