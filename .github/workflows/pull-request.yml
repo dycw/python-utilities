@@ -11,11 +11,6 @@ jobs:
     env:
       CI: 1
     runs-on: ${{ matrix.os }}
-    services:
-      redis:
-        image: redis:alpine
-        ports:
-          - 6379:6379
     strategy:
       fail-fast: false
       matrix:
