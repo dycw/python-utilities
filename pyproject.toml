@@ -196,6 +196,7 @@ zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "numpy >= 2.0.1, < 2.1",
   "pandas >= 2.2.2, < 2.3",
+  "redis >= 5.0.8, < 5.1",
   "semver >= 3.0.2, < 3.1",
   "sqlalchemy >= 2.0.32, < 2.1",
   "whenever >= 0.6.7, < 0.7",
@@ -368,6 +369,7 @@ os-eq-windows = 'sys_platform == "windows"'
 os-ne-linux = 'sys_platform != "linux"'
 os-ne-macos = 'sys_platform != "darwin"'
 os-ne-windows = 'sys_platform != "windows"'
+skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
 version-ge-312 = "sys_version_info >= (3, 12)"
 version-le-311 = "sys_version_info <= (3, 11)"
 

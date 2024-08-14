@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import polars as pl
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, integers, just, none, sampled_from
-from polars import DataFrame, Datetime, Float64, datetime_range, int_range
+from polars import DataFrame, Float64, datetime_range, int_range
 from pytest import fixture
 
 from utilities.altair import (
@@ -18,6 +18,7 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.datetime import get_now
+from utilities.polars import DatetimeUTC
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -84,7 +85,7 @@ class TestPlotIntradayDataFrame:
     def test_non_finite(self) -> None:
         data = DataFrame(
             data=[(get_now(), inf)],
-            schema={"datetime": Datetime(time_zone="UTC"), "value": Float64},
+            schema={"datetime": DatetimeUTC, "value": Float64},
             orient="row",
         )
         _ = plot_intraday_dataframe(data)

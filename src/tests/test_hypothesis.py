@@ -6,6 +6,7 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
+import redis.asyncio
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -47,7 +48,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
-from tests.conftest import FLAKY
+from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
@@ -73,8 +74,10 @@ from utilities.hypothesis import (
     int_data_arrays,
     int_indexes,
     lists_fixed_length,
+    longs,
     months,
     namespace_mixins,
+    redis_clients,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
@@ -93,6 +96,7 @@ from utilities.hypothesis import (
     uint64s,
     versions,
 )
+from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
@@ -117,6 +121,9 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Hashable, Mapping, Sequence
     from collections.abc import Set as AbstractSet
+    from uuid import UUID
+
+    import redis
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
@@ -692,6 +699,20 @@ class TestListsFixedLength:
             assert sorted(result) == result
 
 
+class TestLongs:
+    @given(data=data(), min_value=longs() | none(), max_value=longs() | none())
+    def test_main(
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(longs(min_value=min_value, max_value=max_value))
+        assert MIN_LONG <= x <= MAX_LONG
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+
+
 class TestMonths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -723,6 +744,19 @@ class TestNamespaceMixins:
         class Example(namespace_mixin, Task): ...
 
         _ = Example()
+
+
+@SKIPIF_CI_AND_NOT_LINUX
+class TestRedisClients:
+    @given(client_pair=redis_clients(), key=text_ascii(), value=integers())
+    def test_main(
+        self, *, client_pair: tuple[redis.Redis, UUID], key: str, value: int
+    ) -> None:
+        client, uuid = client_pair
+        full_key = f"{uuid}_{key}"
+        _ = client.set(full_key, value)
+        result = int(cast(str, client.get(full_key)))
+        assert result == value
 
 
 class TestReducedExamples:

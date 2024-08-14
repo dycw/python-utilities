@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import datetime as dt
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
@@ -35,8 +35,10 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from typing_extensions import override
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
+from utilities.math import MAX_LONG, MIN_LONG
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -44,6 +46,9 @@ from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
+    import redis
     from hypothesis.database import ExampleDatabase
     from pandas import Timestamp
     from semver import Version
@@ -553,6 +558,22 @@ def int64s(
     return _fixed_width_ints(int64, min_value=min_value, max_value=max_value)
 
 
+@composite
+def longs(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
+) -> int:
+    """Strategy for generating longs (long integers)."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
+    min_value_ = MIN_LONG if min_value_ is None else max(MIN_LONG, min_value_)
+    max_value_ = MAX_LONG if max_value_ is None else min(MAX_LONG, max_value_)
+    return draw(integers(min_value_, max_value_))
+
+
 _MDF = TypeVar("_MDF")
 
 
@@ -621,6 +642,26 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
         task_namespace = path.name
 
     return NamespaceMixin
+
+
+@composite
+def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
+    """Strategy for generating redis clients."""
+    import redis  # skipif-ci-and-not-linux
+    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+
+    uuid = _draw(uuids())  # skipif-ci-and-not-linux
+
+    class RedisWithCleanup(redis.Redis):  # skipif-ci-and-not-linux
+        @override
+        def __del__(self) -> Any:
+            keys = self.keys(pattern=f"{uuid}_*")
+            with suppress(ResponseError):
+                _ = self.delete(*cast(Iterable[Any], keys))
+            return super().__del__()
+
+    client = RedisWithCleanup(db=15, decode_responses=True)  # skipif-ci-and-not-linux
+    return client, uuid  # skipif-ci-and-not-linux
 
 
 def setup_hypothesis_profiles(
@@ -1086,8 +1127,10 @@ __all__ = [
     "int_indexes",
     "lift_draw",
     "lists_fixed_length",
+    "longs",
     "months",
     "namespace_mixins",
+    "redis_clients",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",

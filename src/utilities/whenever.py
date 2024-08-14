@@ -13,6 +13,7 @@ from utilities.datetime import (
     _MICROSECONDS_PER_SECOND,
     check_date_not_datetime,
     get_months,
+    timedelta_to_microseconds,
 )
 from utilities.zoneinfo import UTC
 
@@ -299,16 +300,12 @@ class SerializeZonedDateTimeError(Exception):
 
 def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     """Serialize a timedelta."""
-    total_micro = (
-        _MICROSECONDS_PER_DAY * timedelta.days
-        + _MICROSECONDS_PER_SECOND * timedelta.seconds
-        + timedelta.microseconds
-    )
-    if total_micro == 0:
+    total_microseconds = timedelta_to_microseconds(timedelta)
+    if total_microseconds == 0:
         return DateTimeDelta()
-    if total_micro >= 1:
-        days, rem_after_day = divmod(total_micro, _MICROSECONDS_PER_DAY)
-        seconds, microseconds = divmod(rem_after_day, _MICROSECONDS_PER_SECOND)
+    if total_microseconds >= 1:
+        days, remainder = divmod(total_microseconds, _MICROSECONDS_PER_DAY)
+        seconds, microseconds = divmod(remainder, _MICROSECONDS_PER_SECOND)
         try:
             dtd = DateTimeDelta(days=days, seconds=seconds, microseconds=microseconds)
         except (OverflowError, ValueError):

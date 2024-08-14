@@ -216,7 +216,7 @@ more-itertools==10.4.0
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
-narwhals==1.4.0
+narwhals==1.4.1
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -478,7 +478,7 @@ tomli==2.0.1
     # via coverage
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via hatch
 tornado==6.4.1
     # via

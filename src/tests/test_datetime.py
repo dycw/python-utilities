@@ -22,7 +22,9 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.datetime import (
+    _MICROSECONDS_PER_MILLISECOND,
     DAY,
+    EPOCH_NAIVE,
     EPOCH_UTC,
     HALF_YEAR,
     HOUR,
@@ -40,18 +42,23 @@ from utilities.datetime import (
     YEAR,
     AddWeekdaysError,
     CheckDateNotDatetimeError,
-    FormatDatetimeLocalAndUTCError,
+    CheckZonedDatetimeError,
+    MillisecondsSinceEpochError,
     Month,
     MonthError,
     ParseMonthError,
     Period,
     PeriodError,
+    TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
     check_date_not_datetime,
+    check_zoned_datetime,
     date_to_datetime,
     date_to_month,
+    drop_microseconds,
+    drop_milli_and_microseconds,
     duration_to_float,
     duration_to_timedelta,
     format_datetime_local_and_utc,
@@ -71,15 +78,24 @@ from utilities.datetime import (
     is_zoned_datetime,
     isinstance_date_not_datetime,
     maybe_sub_pct_y,
+    microseconds_since_epoch,
+    microseconds_since_epoch_to_datetime,
+    microseconds_to_timedelta,
+    milliseconds_since_epoch,
+    milliseconds_since_epoch_to_datetime,
+    milliseconds_to_timedelta,
     parse_month,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
+    timedelta_since_epoch,
+    timedelta_to_microseconds,
+    timedelta_to_milliseconds,
     yield_days,
     yield_weekdays,
 )
-from utilities.hypothesis import assume_does_not_raise, months, text_clean
-from utilities.zoneinfo import HONG_KONG, TOKYO, UTC
+from utilities.hypothesis import assume_does_not_raise, longs, months, text_clean
+from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -123,15 +139,26 @@ class TestAddWeekdays:
 
 class TestCheckDateNotDatetime:
     @given(date=dates())
-    def test_date(self, *, date: dt.date) -> None:
+    def test_main(self, *, date: dt.date) -> None:
         check_date_not_datetime(date)
 
     @given(datetime=datetimes())
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
+    def test_error(self, *, datetime: dt.datetime) -> None:
         with raises(
             CheckDateNotDatetimeError, match="Date must not be a datetime; got .*"
         ):
             check_date_not_datetime(datetime)
+
+
+class TestCheckZonedDatetime:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_date(self, *, datetime: dt.datetime) -> None:
+        check_zoned_datetime(datetime)
+
+    @given(datetime=datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        with raises(CheckZonedDatetimeError, match="Datetime must be zoned; got .*"):
+            check_zoned_datetime(datetime)
 
 
 class TestDateToDatetime:
@@ -146,6 +173,21 @@ class TestDateToMonth:
     def test_main(self, *, date: dt.date) -> None:
         result = date_to_month(date).to_date(day=date.day)
         assert result == date
+
+
+class TestDropMicroseconds:
+    @given(datetime=datetimes())
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = drop_microseconds(datetime)
+        _, remainder = divmod(result.microsecond, _MICROSECONDS_PER_MILLISECOND)
+        assert remainder == 0
+
+
+class TestDropMilliAndMicroseconds:
+    @given(datetime=datetimes())
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = drop_milli_and_microseconds(datetime)
+        assert result.microsecond == 0
 
 
 class TestDurationToFloat:
@@ -178,10 +220,13 @@ class TestDurationToTimedelta:
         assert result == duration
 
 
-class TestEpochUTC:
-    def test_main(self) -> None:
+class TestEpoch:
+    @mark.parametrize(
+        ("epoch", "time_zone"), [param(EPOCH_NAIVE, None), param(EPOCH_UTC, UTC)]
+    )
+    def test_main(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
-        assert EPOCH_UTC.tzinfo is UTC
+        assert epoch.tzinfo is time_zone
 
 
 class TestFormatDatetimeLocalAndUTC:
@@ -213,14 +258,6 @@ class TestFormatDatetimeLocalAndUTC:
     def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
         result = format_datetime_local_and_utc(datetime)
         assert result == expected
-
-    def test_error(self) -> None:
-        datetime = dt.datetime(2000, 1, 1)  # noqa: DTZ001
-        with raises(
-            FormatDatetimeLocalAndUTCError,
-            match="Datetime must have a time zone; got 2000-01-01 00:00:00",
-        ):
-            _ = format_datetime_local_and_utc(datetime)
 
 
 class TestGetNow:
@@ -358,6 +395,52 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
+
+
+class TestMicrosecondsOrMillisecondsSinceEpoch:
+    @given(datetime=datetimes(timezones=just(UTC)))
+    def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
+        microseconds = microseconds_since_epoch(datetime)
+        result = microseconds_since_epoch_to_datetime(microseconds)
+        assert result == datetime
+
+    @given(microseconds=integers())
+    def test_microseconds_to_datetime(self, *, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            datetime = microseconds_since_epoch_to_datetime(microseconds)
+        result = microseconds_since_epoch(datetime)
+        assert result == microseconds
+
+    @given(datetime=datetimes(timezones=just(UTC)))
+    @mark.parametrize("strict", [param(True), param(False)])
+    def test_datetime_to_milliseconds_exact(
+        self, *, datetime: dt.datetime, strict: bool
+    ) -> None:
+        _ = assume(datetime.microsecond == 0)
+        milliseconds = milliseconds_since_epoch(datetime, strict=strict)
+        if strict:
+            assert isinstance(milliseconds, int)
+        else:
+            assert milliseconds == round(milliseconds)
+        result = milliseconds_since_epoch_to_datetime(round(milliseconds))
+        assert result == datetime
+
+    @given(datetime=datetimes(timezones=just(UTC)))
+    def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
+        _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(microseconds != 0)
+        with raises(
+            MillisecondsSinceEpochError,
+            match=r"Unable to convert .* to milliseconds since epoch; got .* microsecond\(s\)",
+        ):
+            _ = milliseconds_since_epoch(datetime, strict=True)
+
+    @given(milliseconds=integers())
+    def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            datetime = milliseconds_since_epoch_to_datetime(milliseconds)
+        result = milliseconds_since_epoch(datetime)
+        assert result == milliseconds
 
 
 class TestMonth:
@@ -520,6 +603,71 @@ class TestRoundToWeekday:
         with assume_does_not_raise(OverflowError):
             result = func(date)
         assert operator(result, date)
+
+
+class TestTimedeltaSinceEpoch:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = timedelta_since_epoch(datetime)
+        assert isinstance(result, dt.timedelta)
+
+    @given(
+        datetime=datetimes(timezones=just(UTC)),
+        time_zone1=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
+        time_zone2=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
+    )
+    def test_time_zone(
+        self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo
+    ) -> None:
+        result1 = timedelta_since_epoch(datetime.astimezone(time_zone1))
+        result2 = timedelta_since_epoch(datetime.astimezone(time_zone2))
+        assert result1 == result2
+
+
+class TestTimedeltaToMicrosecondsOrMilliseconds:
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_microseconds(self, *, timedelta: dt.timedelta) -> None:
+        microseconds = timedelta_to_microseconds(timedelta)
+        result = microseconds_to_timedelta(microseconds)
+        assert result == timedelta
+
+    @given(microseconds=integers())
+    def test_microseconds_to_timedelta(self, *, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = microseconds_to_timedelta(microseconds)
+        result = timedelta_to_microseconds(timedelta)
+        assert result == microseconds
+
+    @given(timedelta=timedeltas())
+    @mark.parametrize("strict", [param(True), param(False)])
+    def test_timedelta_to_milliseconds_exact(
+        self, *, timedelta: dt.timedelta, strict: bool
+    ) -> None:
+        _ = assume(timedelta.microseconds == 0)
+        milliseconds = timedelta_to_milliseconds(timedelta, strict=strict)
+        if strict:
+            assert isinstance(milliseconds, int)
+        else:
+            assert milliseconds == round(milliseconds)
+        result = milliseconds_to_timedelta(round(milliseconds))
+        assert result == timedelta
+
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
+        _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(microseconds != 0)
+        with raises(
+            TimedeltaToMillisecondsError,
+            match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
+        ):
+            _ = timedelta_to_milliseconds(timedelta, strict=True)
+
+    @given(milliseconds=longs())
+    def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = milliseconds_to_timedelta(milliseconds)
+        result = timedelta_to_milliseconds(timedelta)
+        assert result == milliseconds
 
 
 class TestTimedeltas:
