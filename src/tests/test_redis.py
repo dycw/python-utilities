@@ -70,6 +70,28 @@ class TestTimeSeriesAddAndGet:
     @given(
         client_pair=redis_clients(),
         key=text_ascii(),
+        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        value=longs() | floats(allow_nan=False, allow_infinity=False),
+    )
+    def test_error_at_upsert(
+        self,
+        *,
+        client_pair: tuple[redis.Redis, UUID],
+        key: str,
+        timestamp: dt.datetime,
+        value: float,
+    ) -> None:
+        client, uuid = client_pair
+        with raises(  # noqa: PT012
+            TimeSeriesAddError,
+            match="Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*",
+        ):
+            for _ in range(2):
+                _ = time_series_add(client.ts(), f"{uuid}_{key}", timestamp, value)
+
+    @given(
+        client_pair=redis_clients(),
+        key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -146,9 +168,9 @@ class TestTimeSeriesMAddAndRange:
         client, uuid = client_pair
         full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
         ts = client.ts()
-        for full_key in full_keys:
-            if client.exists(full_key) == 0:
-                _ = ts.create(full_key, duplicate_policy="LAST")
+        # for full_key in full_keys:
+        #     if client.exists(full_key) == 0:
+        #         _ = ts.create(full_key, duplicate_policy="LAST")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         schema = {"key": Utf8, "timestamp": DatetimeUTC, "value": Float64}
         match case:
@@ -204,7 +226,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         client, uuid = client_pair
-        with raises(TimeSeriesMAddError, match="Invalid values; got .*"):
+        with raises(TimeSeriesMAddError, match=r"Invalid value\(s\); got .*"):
             _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
 
     @given(client_pair=redis_clients())

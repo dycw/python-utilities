@@ -65,6 +65,10 @@ def time_series_add(
         )
     except ResponseError as error:
         match _classify_response_error(error):
+            case "error at upsert":
+                raise _TimeSeriesAddErrorAtUpsertError(
+                    timestamp=timestamp, value=value
+                ) from None
             case "invalid timestamp":
                 raise _TimeSeriesAddInvalidTimestampError(
                     timestamp=timestamp, value=value
@@ -73,14 +77,21 @@ def time_series_add(
                 raise _TimeSeriesAddInvalidValueError(
                     timestamp=timestamp, value=value
                 ) from None
-            case _:
-                raise
 
 
 @dataclass(kw_only=True)
 class TimeSeriesAddError(Exception):
     timestamp: dt.datetime
     value: float
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got {self.timestamp}"
+        )
 
 
 @dataclass(kw_only=True)
