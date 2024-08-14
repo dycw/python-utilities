@@ -54,6 +54,7 @@ pytest-check
 python-dotenv
 random
 re
+redis
 scipy
 scripts-clean-dir
 scripts-csv-to-markdown
