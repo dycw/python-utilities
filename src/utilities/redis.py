@@ -63,6 +63,26 @@ def time_series_get(
     return timestamp, value
 
 
+def time_series_madd(ts: TimeSeries, df: DataFrame, /) -> Any:
+    """Append a sample to a time series."""
+    from polars import Datetime, Float64, Int64, Utf8, col
+
+    df = df.select("key", "timestamp", "value")
+    if df.schema["key"] != Utf8:
+        raise TypeError
+    if not isinstance(df.schema["timestamp"], Datetime):
+        raise TypeError
+    df = df.with_columns(
+        timestamp=col("timestamp")
+        .cast(Datetime(time_unit="ms", time_zone="UTC"))
+        .dt.epoch(time_unit="ms")
+    )
+    if not isinstance(df.schema["value"], Float64 | Int64):
+        raise TypeError
+    ktv_tuples: Iterator[tuple[KeyT, int, Number]] = df.iter_rows()
+    return ts.madd(list(ktv_tuples))
+
+
 def time_series_range(
     ts: TimeSeries,
     key: KeyT,
@@ -87,18 +107,15 @@ def time_series_range(
     ms_since_epoch = partial(milliseconds_since_epoch, strict=True)
     from_time_use = "-" if from_time is None else ms_since_epoch(from_time)
     to_time_use = "+" if to_time is None else ms_since_epoch(to_time)
-    if filter_by_ts is None:
-        filter_by_ts_use = None
-    else:
-        filter_by_ts_use = list(map(ms_since_epoch, filter_by_ts))
-    if filter_by_min_value is None:
-        filter_by_min_value_use = None
-    else:
-        filter_by_min_value_use = ms_since_epoch(filter_by_min_value)
-    if filter_by_max_value is None:
-        filter_by_max_value_use = None
-    else:
-        filter_by_max_value_use = ms_since_epoch(filter_by_max_value)
+    filter_by_ts_use = (
+        None if filter_by_ts is None else list(map(ms_since_epoch, filter_by_ts))
+    )
+    filter_by_min_value_use = (
+        None if filter_by_min_value is None else ms_since_epoch(filter_by_min_value)
+    )
+    filter_by_max_value_use = (
+        None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
+    )
     values = ts.range(
         key,
         from_time_use,
@@ -176,6 +193,7 @@ async def yield_client_async(
 __all__ = [
     "time_series_add",
     "time_series_get",
+    "time_series_madd",
     "time_series_range",
     "yield_client",
     "yield_client_async",

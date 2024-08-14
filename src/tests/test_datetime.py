@@ -406,7 +406,8 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
 
     @given(datetime=datetimes(timezones=just(UTC)))
     def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
-        _ = assume(datetime.microsecond != 0)
+        _, microseconds = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(microseconds != 0)
         with raises(
             MillisecondsSinceEpochError,
             match=r"Unable to convert .* to milliseconds since epoch; got .* microsecond\(s\)",

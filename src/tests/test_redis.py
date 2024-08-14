@@ -4,15 +4,21 @@ from typing import TYPE_CHECKING
 
 import redis
 import redis.asyncio
-from hypothesis import Phase, assume, given, settings
+from hypothesis import Phase, given, settings
 from hypothesis.strategies import datetimes, floats, integers, sampled_from
+from polars import DataFrame, Datetime, Float64, Utf8
 from redis.exceptions import ResponseError
 
-from utilities.datetime import milliseconds_since_epoch_to_datetime
+from utilities.datetime import (
+    MillisecondsSinceEpochError,
+    milliseconds_since_epoch,
+    milliseconds_since_epoch_to_datetime,
+)
 from utilities.hypothesis import assume_does_not_raise, longs, redis_clients, text_ascii
 from utilities.redis import (
     time_series_add,
     time_series_get,
+    time_series_madd,
     yield_client,
     yield_client_async,
 )
@@ -21,6 +27,7 @@ from utilities.zoneinfo import HONG_KONG, UTC
 if TYPE_CHECKING:
     import datetime as dt
     from uuid import UUID
+    from zoneinfo import ZoneInfo
 
 
 class TestTimeSeriesAdd:
@@ -30,7 +37,7 @@ class TestTimeSeriesAdd:
         timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])),
         value=integers() | floats(),
     )
-    @settings(max_examples=10000, phases={Phase.generate})
+    @settings(phases={Phase.generate})
     def test_main(
         self,
         *,
@@ -39,11 +46,12 @@ class TestTimeSeriesAdd:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        _ = assume(timestamp.microsecond == 0)
+        with assume_does_not_raise(MillisecondsSinceEpochError):
+            _ = milliseconds_since_epoch(timestamp, strict=True)
         client, uuid = client_pair
         full_key = f"{uuid}_{key}"
         ts = client.ts()
-        if not client.exists(full_key):
+        if client.exists(full_key) == 0:
             _ = ts.create(full_key, duplicate_policy="LAST")
         with assume_does_not_raise(
             ResponseError, match="must be a nonnegative integer"
@@ -71,11 +79,12 @@ class TestTimeSeriesGet:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        _ = assume(timestamp.microsecond == 0)
+        with assume_does_not_raise(MillisecondsSinceEpochError):
+            _ = milliseconds_since_epoch(timestamp, strict=True)
         client, uuid = client_pair
         full_key = f"{uuid}_{key}"
         ts = client.ts()
-        if not client.exists(full_key):
+        if client.exists(full_key) == 0:
             _ = ts.create(full_key, duplicate_policy="LAST")
         with assume_does_not_raise(
             ResponseError, match="must be a nonnegative integer"
@@ -84,6 +93,58 @@ class TestTimeSeriesGet:
         res_timestamp, res_value = time_series_get(ts, full_key)
         assert res_timestamp == timestamp.astimezone(UTC)
         assert res_value == value
+
+
+class TestTimeSeriesMAdd:
+    @given(
+        client_pair=redis_clients(),
+        key1=text_ascii(),
+        key2=text_ascii(),
+        datetime1=datetimes(),
+        datetime2=datetimes(),
+        time_zone=sampled_from([HONG_KONG, UTC]),
+        value1=integers() | floats(),
+        value2=integers() | floats(),
+    )
+    @settings(phases={Phase.generate})
+    def test_main(
+        self,
+        *,
+        client_pair: tuple[redis.Redis, UUID],
+        key1: str,
+        key2: str,
+        datetime1: dt.datetime,
+        datetime2: dt.datetime,
+        time_zone: ZoneInfo,
+        value1: float,
+        value2: float,
+    ) -> None:
+        timestamps = [d.replace(tzinfo=time_zone) for d in [datetime1, datetime2]]
+        for timestamp in timestamps:
+            with assume_does_not_raise(MillisecondsSinceEpochError):
+                _ = milliseconds_since_epoch(timestamp, strict=True)
+        client, uuid = client_pair
+        full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
+        ts = client.ts()
+        for full_key in full_keys:
+            if client.exists(full_key) == 0:
+                _ = ts.create(full_key, duplicate_policy="LAST")
+        data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
+        with assume_does_not_raise(OverflowError):
+            df = DataFrame(
+                data,
+                schema={
+                    "key": Utf8,
+                    "timestamp": Datetime(time_zone="UTC"),
+                    "value": Float64,
+                },
+                orient="row",
+            )
+        time_series_madd(ts, df)
+        for full_key, timestamp, value in data:
+            res_timestamp, res_value = time_series_get(ts, full_key)
+            assert res_timestamp == timestamp
+            assert res_value == value
 
 
 class TestYieldClient:
