@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import redis
 import redis.asyncio
 from hypothesis import Phase, assume, given, settings
-from hypothesis.strategies import datetimes, floats, sampled_from
+from hypothesis.strategies import datetimes, floats, integers, sampled_from
 from redis.exceptions import ResponseError
 
 from utilities.datetime import milliseconds_since_epoch_to_datetime
@@ -28,9 +28,9 @@ class TestTimeSeriesAdd:
         client_pair=redis_clients(),
         key=text_ascii(),
         timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])),
-        value=longs() | floats(width=32),
+        value=integers() | floats(),
     )
-    @settings(phases={Phase.generate})
+    @settings(max_examples=10000, phases={Phase.generate})
     def test_main(
         self,
         *,
