@@ -631,7 +631,6 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
 def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
     import redis
     from redis.exceptions import ResponseError
-    from redis.typing import KeyT
 
     uuid = _draw(uuids())
 
@@ -640,7 +639,7 @@ def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
         def __del__(self) -> Any:
             keys = self.keys(pattern=f"{uuid}_*")
             with suppress(ResponseError):
-                _ = self.delete(*cast(Iterable[KeyT], keys))
+                _ = self.delete(*cast(Iterable[Any], keys))
             return super().__del__()
 
     client = RedisWithCleanup(db=15, decode_responses=True)
