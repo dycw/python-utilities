@@ -77,7 +77,7 @@ def time_series_add(
                 raise _TimeSeriesAddInvalidValueError(
                     timestamp=timestamp, value=value
                 ) from None
-            case "invalid key":
+            case "invalid key":  # pragma: no cover
                 raise
 
 
@@ -173,7 +173,7 @@ def time_series_madd(
             raise _TimeSeriesMAddInvalidValueError(
                 values_or_df=values_or_df, value=value
             )
-        case _:
+        case _:  # pragma: no cover
             raise error
 
 
