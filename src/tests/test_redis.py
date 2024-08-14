@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import redis
 import redis.asyncio
 from hypothesis import Phase, given, settings
 from hypothesis.strategies import datetimes, floats, integers, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
-from polars.testing import assert_frame_equal
-from pytest import raises
+from pytest import mark, param, raises
 from redis.exceptions import ResponseError
 
 from utilities.datetime import MillisecondsSinceEpochError, milliseconds_since_epoch
@@ -74,11 +73,13 @@ class TestTimeSeriesMAddAndRange:
         value1=integers() | floats(),
         value2=integers() | floats(),
     )
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
     @settings(phases={Phase.generate})
-    def test_main(
+    def test_df(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
+        case: Literal["values", "DataFrame"],
         key1: str,
         key2: str,
         datetime1: dt.datetime,
@@ -98,24 +99,21 @@ class TestTimeSeriesMAddAndRange:
             if client.exists(full_key) == 0:
                 _ = ts.create(full_key, duplicate_policy="LAST")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
-        with assume_does_not_raise(OverflowError):
-            df = DataFrame(
-                data,
-                schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Float64},
-                orient="row",
-            )
-        time_series_madd(ts, df)
+        schema = {"key": Utf8, "timestamp": DatetimeUTC, "value": Float64}
+        match case:
+            case "values":
+                time_series_madd(ts, data)
+            case "DataFrame":
+                with assume_does_not_raise(OverflowError):
+                    df = DataFrame(data, schema=schema, orient="row")
+                time_series_madd(ts, df)
         result = time_series_range(ts, full_keys)
-        check_polars_dataframe(
-            result,
-            height=2,
-            schema_list={"key": Utf8, "timestamp": DatetimeUTC, "value": Float64},
-        )
-        assert_frame_equal(result, df)
+        check_polars_dataframe(result, height=2, schema_list=schema)
+        assert result.rows() == data
 
     @given(client_pair=redis_clients())
     @settings(phases={Phase.generate})
-    def test_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+    def test_df_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
         ts = client.ts()
         df = DataFrame(
@@ -128,7 +126,7 @@ class TestTimeSeriesMAddAndRange:
 
     @given(client_pair=redis_clients())
     @settings(phases={Phase.generate})
-    def test_error_timestamp(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+    def test_df_error_timestamp(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
         ts = client.ts()
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
@@ -140,7 +138,7 @@ class TestTimeSeriesMAddAndRange:
 
     @given(client_pair=redis_clients())
     @settings(phases={Phase.generate})
-    def test_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
+    def test_df_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
         ts = client.ts()
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
