@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import Phase, assume, given, settings
+from hypothesis import assume, given
 from hypothesis.strategies import datetimes, floats, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
@@ -268,7 +268,6 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(client.ts(), df)
 
     @given(client_pair=redis_clients())
-    @settings(phases={Phase.generate})
     def test_df_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
