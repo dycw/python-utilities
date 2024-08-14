@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import redis
 import redis.asyncio
@@ -17,9 +17,18 @@ def yield_client(
     port: int = 6379,
     db: int = 0,
     password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
 ) -> Iterator[redis.Redis]:
     """Yield a synchronous client."""
-    client = redis.Redis(host=host, port=port, db=db, password=password)
+    client = redis.Redis(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    )
     try:
         yield client
     finally:
@@ -33,9 +42,18 @@ async def yield_client_async(
     port: int = 6379,
     db: str | int = 0,
     password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
 ) -> AsyncIterator[redis.asyncio.Redis]:
     """Yield an asynchronous client."""
-    client = redis.asyncio.Redis(host=host, port=port, db=db, password=password)
+    client = redis.asyncio.Redis(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    )
     try:
         yield client
     finally:
