@@ -286,13 +286,9 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def microseconds_since_epoch(
-    datetime_or_timedelta: dt.datetime | dt.timedelta, /
-) -> int:
+def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
-    if isinstance(datetime_or_timedelta, dt.timedelta):
-        return timedelta_to_microseconds(datetime_or_timedelta)
-    return microseconds_since_epoch(timedelta_since_epoch(datetime_or_timedelta))
+    return timedelta_to_microseconds(timedelta_since_epoch(datetime))
 
 
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
@@ -306,13 +302,19 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     return -microseconds_to_timedelta(-microseconds)
 
 
-def milliseconds_since_epoch(
-    datetime_or_timedelta: dt.datetime | dt.timedelta, /
-) -> float:
-    """Compute the number of microseconds since the epoch."""
-    return (
-        microseconds_since_epoch(datetime_or_timedelta) / _MICROSECONDS_PER_MILLISECOND
-    )
+def microseconds_since_epoch_to_datetime(microseconds: int, /) -> dt.datetime:
+    """Convert a number of microseconds since the epoch to a datetime."""
+    return EPOCH_UTC + microseconds_to_timedelta(microseconds)
+
+
+def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
+    """Compute the number of milliseconds since the epoch."""
+    return microseconds_since_epoch(datetime) / _MICROSECONDS_PER_MILLISECOND
+
+
+def milliseconds_since_epoch_to_datetime(milliseconds: int, /) -> dt.datetime:
+    """Convert a number of milliseconds since the epoch to a datetime."""
+    return EPOCH_UTC + milliseconds_to_timedelta(milliseconds)
 
 
 def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
@@ -647,8 +649,10 @@ __all__ = [
     "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
     "microseconds_since_epoch",
+    "microseconds_since_epoch_to_datetime",
     "microseconds_to_timedelta",
     "milliseconds_since_epoch",
+    "milliseconds_since_epoch_to_datetime",
     "milliseconds_to_timedelta",
     "parse_month",
     "round_to_next_weekday",

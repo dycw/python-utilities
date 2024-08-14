@@ -73,8 +73,10 @@ from utilities.datetime import (
     isinstance_date_not_datetime,
     maybe_sub_pct_y,
     microseconds_since_epoch,
+    microseconds_since_epoch_to_datetime,
     microseconds_to_timedelta,
     milliseconds_since_epoch,
+    milliseconds_since_epoch_to_datetime,
     milliseconds_to_timedelta,
     parse_month,
     round_to_next_weekday,
@@ -86,7 +88,6 @@ from utilities.datetime import (
     yield_days,
     yield_weekdays,
 )
-from utilities.getpass import USER
 from utilities.hypothesis import assume_does_not_raise, months, text_clean
 from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
 
@@ -372,23 +373,32 @@ class TestMaybeSubPctY:
         assert not search("%Y", result)
 
 
-class TestMicroOrMillisecondsSinceEpoch:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
-    def test_datetime(self, *, datetime: dt.datetime) -> None:
+class TestMicrosecondsOrMillisecondsSinceEpoch:
+    @given(datetime=datetimes(timezones=just(UTC)))
+    def test_datetime_to_microseconds(self, *, datetime: dt.datetime) -> None:
+        microseconds = microseconds_since_epoch(datetime)
+        result = microseconds_since_epoch_to_datetime(microseconds)
+        assert result == datetime
+
+    @given(microseconds=integers())
+    def test_microseconds_to_datetime(self, *, microseconds: int) -> None:
+        datetime = microseconds_since_epoch_to_datetime(microseconds)
         result = microseconds_since_epoch(datetime)
-        assert isinstance(result, int)
+        assert result == microseconds
 
-    @given(timedelta=timedeltas())
-    def test_timedelta(self, *, timedelta: dt.timedelta) -> None:
-        result = microseconds_since_epoch(timedelta)
-        assert isinstance(result, int)
+    @given(datetime=datetimes(timezones=just(UTC)))
+    def test_datetime_to_milliseconds(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.microsecond == 0)
+        milliseconds = milliseconds_since_epoch(datetime)
+        assert milliseconds == round(milliseconds)
+        result = milliseconds_since_epoch_to_datetime(round(milliseconds))
+        assert result == datetime
 
-
-class TestMillisecondsSinceEpoch:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
-    def test_main(self, *, datetime: dt.datetime) -> None:
+    @given(milliseconds=integers())
+    def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
+        datetime = milliseconds_since_epoch_to_datetime(milliseconds)
         result = milliseconds_since_epoch(datetime)
-        assert isinstance(result, float)
+        assert result == milliseconds
 
 
 class TestMonth:
@@ -572,7 +582,7 @@ class TestTimedeltaSinceEpoch:
         assert result1 == result2
 
 
-class TestTimedeltaToMicroOrMilliseconds:
+class TestTimedeltaToMicrosecondsOrMilliseconds:
     @given(timedelta=timedeltas())
     def test_timedelta_to_microseconds(self, *, timedelta: dt.timedelta) -> None:
         microseconds = timedelta_to_microseconds(timedelta)
