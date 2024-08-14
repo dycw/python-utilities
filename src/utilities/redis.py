@@ -172,4 +172,10 @@ async def yield_client_async(
         await client.aclose()
 
 
-__all__ = ["time_series_add", "time_series_get", "yield_client", "yield_client_async"]
+__all__ = [
+    "time_series_add",
+    "time_series_get",
+    "time_series_range",
+    "yield_client",
+    "yield_client_async",
+]
