@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
-from re import search
 from typing import TYPE_CHECKING, Any
 
 import redis
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
     from redis.typing import Number
 
 
-def add_timestamp(
+def time_series_add(
     ts: TimeSeries,
     key: bytes | str | memoryview,
     timestamp: dt.datetime,
@@ -36,6 +35,7 @@ def add_timestamp(
     ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
 ) -> Any:
+    """Append a sample to a time series."""
     milliseconds = round(milliseconds_since_epoch(timestamp))
     return ts.add(
         key,
@@ -52,12 +52,12 @@ def add_timestamp(
     )
 
 
-def get_timestamp(
+def time_series_get(
     ts: TimeSeries, key: bytes | str | memoryview, /, *, latest: bool | None = False
 ) -> tuple[dt.datetime, float]:
-    milliseconds, value_str = ts.get(key, latest=latest)
+    """Get the last sample of a time series."""
+    milliseconds, value = ts.get(key, latest=latest)
     timestamp = milliseconds_since_epoch_to_datetime(milliseconds)
-    value = float(value_str) if search(r"\.", value_str) else int(value_str)
     return timestamp, value
 
 
@@ -111,4 +111,4 @@ async def yield_client_async(
         await client.aclose()
 
 
-__all__ = ["add_timestamp", "yield_client", "yield_client_async"]
+__all__ = ["time_series_add", "time_series_get", "yield_client", "yield_client_async"]
