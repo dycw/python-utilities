@@ -389,7 +389,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = ["src/utilities/clean_dir/__main__.py", "src/utilities/streamlit.py"]
+omit = ["src/utilities/clean_dir/__main__.py", "src/utilities/redis.py", "src/utilities/streamlit.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 

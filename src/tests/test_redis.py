@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import assume, given
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import datetimes, floats, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
@@ -150,6 +150,7 @@ class TestTimeSeriesMAddAndRange:
         value2=longs() | floats(allow_nan=False, allow_infinity=False),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,

@@ -77,7 +77,7 @@ def time_series_add(
                 raise _TimeSeriesAddInvalidValueError(
                     timestamp=timestamp, value=value
                 ) from None
-            case "invalid key":  # pragma: no cover
+            case "invalid key":
                 raise
 
 
@@ -173,7 +173,7 @@ def time_series_madd(
             raise _TimeSeriesMAddInvalidValueError(
                 values_or_df=values_or_df, value=value
             )
-        case _:  # pragma: no cover
+        case _:
             raise error
 
 
@@ -400,7 +400,7 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
         return "invalid timestamp"
     if msg == "TSDB: invalid value":
         return "invalid value"
-    raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
+    raise ImpossibleCaseError(case=[f"{msg=}"])
 
 
 __all__ = [
