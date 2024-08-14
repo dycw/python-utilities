@@ -86,8 +86,9 @@ from utilities.datetime import (
     yield_days,
     yield_weekdays,
 )
+from utilities.getpass import USER
 from utilities.hypothesis import assume_does_not_raise, months, text_clean
-from utilities.zoneinfo import HONG_KONG, TOKYO, UTC
+from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -557,6 +558,18 @@ class TestTimedeltaSinceEpoch:
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = timedelta_since_epoch(datetime)
         assert isinstance(result, dt.timedelta)
+
+    @given(
+        datetime=datetimes(timezones=just(UTC)),
+        time_zone1=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
+        time_zone2=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
+    )
+    def test_time_zone(
+        self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo
+    ) -> None:
+        result1 = timedelta_since_epoch(datetime.astimezone(time_zone1))
+        result2 = timedelta_since_epoch(datetime.astimezone(time_zone2))
+        assert result1 == result2
 
 
 class TestTimedeltaToMicroOrMilliseconds:

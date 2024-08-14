@@ -290,9 +290,9 @@ def microseconds_since_epoch(
     datetime_or_timedelta: dt.datetime | dt.timedelta, /
 ) -> int:
     """Compute the number of microseconds since the epoch."""
-    if isinstance(datetime_or_timedelta, dt.datetime):
-        return microseconds_since_epoch(timedelta_since_epoch(datetime_or_timedelta))
-    return timedelta_to_microseconds(datetime_or_timedelta)
+    if isinstance(datetime_or_timedelta, dt.timedelta):
+        return timedelta_to_microseconds(datetime_or_timedelta)
+    return microseconds_since_epoch(timedelta_since_epoch(datetime_or_timedelta))
 
 
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
