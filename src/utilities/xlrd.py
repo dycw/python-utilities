@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 def get_date_mode() -> Literal[0, 1]:
     match SYSTEM:
-        case System.windows:  # os-ne-windows
+        case System.windows:  # skipif-os-ne-windows
             return 0
-        case System.mac:  # os-ne-macos
+        case System.mac:  # skipif-os-ne-macos
             return 1
         case system:  # pragma: no cover
             raise GetDateModeError(system=system)
@@ -39,16 +39,18 @@ def to_date(
     date: float, /, *, book: Book | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.date:
     """Convert to a dt.date object."""
-    return to_datetime(date, book=book, time_zone=time_zone).date()  # os-eq-linux
+    return to_datetime(
+        date, book=book, time_zone=time_zone
+    ).date()  # skipif-os-eq-linux
 
 
 def to_datetime(
     date: float, /, *, book: Book | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.datetime:
     """Convert to a dt.datetime object."""
-    date_mode = get_date_mode() if book is None else book.datemode  # os-eq-linux
-    time_zone_use = ensure_time_zone(time_zone)  # os-eq-linux
-    return xldate_as_datetime(date, date_mode).replace(  # os-eq-linux
+    date_mode = get_date_mode() if book is None else book.datemode  # skipif-os-eq-linux
+    time_zone_use = ensure_time_zone(time_zone)  # skipif-os-eq-linux
+    return xldate_as_datetime(date, date_mode).replace(  # skipif-os-eq-linux
         tzinfo=time_zone_use
     )
 

@@ -30,14 +30,14 @@ _CONFIG = Config()
 @click_options(Config, appname="cleandir", config_files=[find("config.toml")])
 def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
-    setup_loguru()  # os-ne-windows
-    if config.dry_run:  # os-ne-windows
-        for item in _yield_items(  # os-ne-windows
+    setup_loguru()  # skipif-os-ne-windows
+    if config.dry_run:  # skipif-os-ne-windows
+        for item in _yield_items(  # skipif-os-ne-windows
             paths=config.paths, days=config.days, chunk_size=config.chunk_size
         ):
-            logger.debug("{path}", path=item.path)  # os-ne-windows
+            logger.debug("{path}", path=item.path)  # skipif-os-ne-windows
     else:
-        _clean_dir(  # os-ne-windows
+        _clean_dir(  # skipif-os-ne-windows
             paths=config.paths, days=config.days, chunk_size=config.chunk_size
         )
 
@@ -48,13 +48,13 @@ def _clean_dir(
     days: int = _CONFIG.days,
     chunk_size: int | None = _CONFIG.chunk_size,
 ) -> None:
-    while True:  # os-ne-windows
-        iterator = _yield_items(  # os-ne-windows
+    while True:  # skipif-os-ne-windows
+        iterator = _yield_items(  # skipif-os-ne-windows
             paths=paths, days=days, chunk_size=chunk_size
         )
-        if len(items := list(iterator)) >= 1:  # os-ne-windows
-            for item in items:  # os-ne-windows
-                item.clean()  # os-ne-windows
+        if len(items := list(iterator)) >= 1:  # skipif-os-ne-windows
+            for item in items:  # skipif-os-ne-windows
+                item.clean()  # skipif-os-ne-windows
         else:
             return
 
@@ -65,26 +65,28 @@ def _yield_items(
     days: int = _CONFIG.days,
     chunk_size: int | None = _CONFIG.chunk_size,
 ) -> Iterator[Item]:
-    it = _yield_inner(paths=paths, days=days)  # os-ne-windows
-    if chunk_size is not None:  # os-ne-windows
-        return islice(it, chunk_size)  # os-ne-windows
-    return it  # os-ne-windows
+    it = _yield_inner(paths=paths, days=days)  # skipif-os-ne-windows
+    if chunk_size is not None:  # skipif-os-ne-windows
+        return islice(it, chunk_size)  # skipif-os-ne-windows
+    return it  # skipif-os-ne-windows
 
 
 def _yield_inner(
     *, paths: Iterable[PathLike] = _CONFIG.paths, days: int = _CONFIG.days
 ) -> Iterator[Item]:
-    for path in map(Path, paths):  # os-ne-windows
-        for p in path.rglob("*"):  # os-ne-windows
-            yield from _yield_from_path(p, path, days=days)  # os-ne-windows
+    for path in map(Path, paths):  # skipif-os-ne-windows
+        for p in path.rglob("*"):  # skipif-os-ne-windows
+            yield from _yield_from_path(p, path, days=days)  # skipif-os-ne-windows
 
 
 def _yield_from_path(
     p: Path, path: Path, /, *, days: int = _CONFIG.days
 ) -> Iterator[Item]:
-    p, path = map(Path, [p, path])  # os-ne-windows
-    if p.is_symlink():  # os-ne-windows
-        yield from _yield_from_path(p.resolve(), path, days=days)  # os-ne-windows
+    p, path = map(Path, [p, path])  # skipif-os-ne-windows
+    if p.is_symlink():  # skipif-os-ne-windows
+        yield from _yield_from_path(
+            p.resolve(), path, days=days
+        )  # skipif-os-ne-windows
     elif _is_owned_and_relative(p, path):  # pragma: no cover
         if (p.is_file() or p.is_socket()) and _is_old(p, days=days):
             yield Item(p, partial(_unlink_path, p))
@@ -93,28 +95,28 @@ def _yield_from_path(
 
 
 def _is_owned_and_relative(p: Path, path: Path, /) -> bool:
-    try:  # os-ne-windows
+    try:  # skipif-os-ne-windows
         return (p.owner() == getuser()) and p.is_relative_to(path)
     except FileNotFoundError:  # pragma: no cover
         return False
 
 
 def _is_empty(path: Path, /) -> bool:
-    return len(list(path.iterdir())) == 0  # os-ne-windows
+    return len(list(path.iterdir())) == 0  # skipif-os-ne-windows
 
 
 def _is_old(path: Path, /, *, days: int = _CONFIG.days) -> bool:
-    age = get_now(time_zone=UTC) - dt.datetime.fromtimestamp(  # os-ne-windows
+    age = get_now(time_zone=UTC) - dt.datetime.fromtimestamp(  # skipif-os-ne-windows
         path.stat().st_mtime, tz=UTC
     )
-    return age >= dt.timedelta(days=days)  # os-ne-windows
+    return age >= dt.timedelta(days=days)  # skipif-os-ne-windows
 
 
 def _unlink_path(path: Path, /) -> None:
-    logger.info("Removing file:      {path}", path=path)  # os-ne-windows
-    path.unlink(missing_ok=True)  # os-ne-windows
+    logger.info("Removing file:      {path}", path=path)  # skipif-os-ne-windows
+    path.unlink(missing_ok=True)  # skipif-os-ne-windows
 
 
 def _unlink_dir(path: Path, /) -> None:
-    logger.info("Removing directory: {path}", path=path)  # os-ne-windows
-    rmtree(path, ignore_errors=True)  # os-ne-windows
+    logger.info("Removing directory: {path}", path=path)  # skipif-os-ne-windows
+    rmtree(path, ignore_errors=True)  # skipif-os-ne-windows

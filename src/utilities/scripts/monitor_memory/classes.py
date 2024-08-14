@@ -89,11 +89,11 @@ class ItemLinux:
 
 
 match SYSTEM:
-    case System.windows:  # os-ne-windows
+    case System.windows:  # skipif-os-ne-windows
         Item = ItemWindows
-    case System.mac:  # os-ne-macos
+    case System.mac:  # skipif-os-ne-macos
         Item = ItemMacOS
-    case System.linux:  # os-ne-linux
+    case System.linux:  # skipif-os-ne-linux
         Item = ItemLinux
     case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
         assert_never(never)

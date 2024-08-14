@@ -362,16 +362,15 @@ reportUnusedVariable = false
 [tool.coverage]
 
 [tool.coverage.coverage_conditional_plugin.rules]
-ci-in-environ = '"CI" in os_environ'
-os-eq-linux = 'sys_platform == "linux"'
-os-eq-macos = 'sys_platform == "darwin"'
-os-eq-windows = 'sys_platform == "windows"'
-os-ne-linux = 'sys_platform != "linux"'
-os-ne-macos = 'sys_platform != "darwin"'
-os-ne-windows = 'sys_platform != "windows"'
-skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
-version-ge-312 = "sys_version_info >= (3, 12)"
-version-le-311 = "sys_version_info <= (3, 11)"
+skipif-ci-in-environ = '"CI" in os_environ'
+skipif-os-eq-linux = 'sys_platform == "linux"'
+skipif-os-eq-macos = 'sys_platform == "darwin"'
+skipif-os-eq-windows = 'sys_platform == "windows"'
+skipif-os-ne-linux = 'sys_platform != "linux"'
+skipif-os-ne-macos = 'sys_platform != "darwin"'
+skipif-os-ne-windows = 'sys_platform != "windows"'
+skipif-version-ge-312 = "sys_version_info >= (3, 12)"
+skipif-version-le-311 = "sys_version_info <= (3, 11)"
 
 [tool.coverage.html]
 directory = ".coverage/html"

@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 def get_locale_for_platform(locale: str, /) -> str:
     """Get the platform-dependent locale."""
     match SYSTEM:
-        case System.windows:  # os-ne-windows
+        case System.windows:  # skipif-os-ne-windows
             return locale
-        case System.mac:  # os-ne-macos
+        case System.mac:  # skipif-os-ne-macos
             return locale
-        case System.linux:  # os-ne-linux
+        case System.linux:  # skipif-os-ne-linux
             return f"{locale}.utf8"
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
