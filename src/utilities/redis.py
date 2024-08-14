@@ -98,7 +98,6 @@ def time_series_range(
     else:
         filter_by_max_value_use = milliseconds_since_epoch(filter_by_max_value)
     values = ts.range(
-        ts,
         key,
         from_time_use,
         to_time_use,

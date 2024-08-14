@@ -12,6 +12,7 @@ from typing import (
     TypeGuard,
     TypeVar,
     assert_never,
+    overload,
 )
 
 from typing_extensions import override
@@ -307,9 +308,35 @@ def microseconds_since_epoch_to_datetime(microseconds: int, /) -> dt.datetime:
     return EPOCH_UTC + microseconds_to_timedelta(microseconds)
 
 
-def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
+@overload
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: Literal[True]
+) -> int: ...
+@overload
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: bool = False
+) -> float: ...
+def milliseconds_since_epoch(
+    datetime: dt.datetime, /, *, strict: bool = False
+) -> float:
     """Compute the number of milliseconds since the epoch."""
-    return microseconds_since_epoch(datetime) / _MICROSECONDS_PER_MILLISECOND
+    microseconds = microseconds_since_epoch(datetime)
+    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
+    if strict:
+        if remainder == 0:
+            return milliseconds
+        raise MillisecondsSinceEpochError(datetime=datetime, remainder=remainder)
+    return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+
+
+@dataclass(kw_only=True)
+class MillisecondsSinceEpochError(Exception):
+    datetime: dt.datetime
+    remainder: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to convert {self.datetime} to milliseconds since epoch; got {self.remainder} microsecond(s)"
 
 
 def milliseconds_since_epoch_to_datetime(milliseconds: int, /) -> dt.datetime:
@@ -506,9 +533,35 @@ def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
     )
 
 
-def timedelta_to_milliseconds(timedelta: dt.timedelta, /) -> float:
+@overload
+def timedelta_to_milliseconds(
+    timedelta: dt.timedelta, /, *, strict: Literal[True]
+) -> int: ...
+@overload
+def timedelta_to_milliseconds(
+    timedelta: dt.timedelta, /, *, strict: bool = False
+) -> float: ...
+def timedelta_to_milliseconds(
+    timedelta: dt.timedelta, /, *, strict: bool = False
+) -> float:
     """Compute the number of milliseconds in a timedelta."""
-    return timedelta_to_microseconds(timedelta) / _MICROSECONDS_PER_MILLISECOND
+    microseconds = timedelta_to_microseconds(timedelta)
+    milliseconds, remainder = divmod(microseconds, _MICROSECONDS_PER_MILLISECOND)
+    if strict:
+        if remainder == 0:
+            return milliseconds
+        raise TimedeltaToMillisecondsError(timedelta=timedelta, remainder=remainder)
+    return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
+
+
+@dataclass(kw_only=True)
+class TimedeltaToMillisecondsError(Exception):
+    timedelta: dt.timedelta
+    remainder: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to convert {self.timedelta} to milliseconds; got {self.remainder} microsecond(s)"
 
 
 def yield_days(
@@ -617,11 +670,13 @@ __all__ = [
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
+    "MillisecondsSinceEpochError",
     "Month",
     "MonthError",
     "ParseMonthError",
     "Period",
     "PeriodError",
+    "TimedeltaToMillisecondsError",
     "YieldDaysError",
     "YieldWeekdaysError",
     "add_weekdays",
@@ -660,6 +715,7 @@ __all__ = [
     "serialize_month",
     "timedelta_since_epoch",
     "timedelta_to_microseconds",
+    "timedelta_to_milliseconds",
     "yield_days",
     "yield_weekdays",
 ]

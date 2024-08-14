@@ -41,11 +41,13 @@ from utilities.datetime import (
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
+    MillisecondsSinceEpochError,
     Month,
     MonthError,
     ParseMonthError,
     Period,
     PeriodError,
+    TimedeltaToMillisecondsError,
     YieldDaysError,
     YieldWeekdaysError,
     add_weekdays,
@@ -388,12 +390,27 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         assert result == microseconds
 
     @given(datetime=datetimes(timezones=just(UTC)))
-    def test_datetime_to_milliseconds(self, *, datetime: dt.datetime) -> None:
+    @mark.parametrize("strict", [param(True), param(False)])
+    def test_datetime_to_milliseconds_exact(
+        self, *, datetime: dt.datetime, strict: bool
+    ) -> None:
         _ = assume(datetime.microsecond == 0)
-        milliseconds = milliseconds_since_epoch(datetime)
-        assert milliseconds == round(milliseconds)
+        milliseconds = milliseconds_since_epoch(datetime, strict=strict)
+        if strict:
+            assert isinstance(milliseconds, int)
+        else:
+            assert milliseconds == round(milliseconds)
         result = milliseconds_since_epoch_to_datetime(round(milliseconds))
         assert result == datetime
+
+    @given(datetime=datetimes(timezones=just(UTC)))
+    def test_datetime_to_milliseconds_error(self, *, datetime: dt.datetime) -> None:
+        _ = assume(datetime.microsecond != 0)
+        with raises(
+            MillisecondsSinceEpochError,
+            match=r"Unable to convert .* to milliseconds since epoch; got .* microsecond\(s\)",
+        ):
+            _ = milliseconds_since_epoch(datetime, strict=True)
 
     @given(milliseconds=integers())
     def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
@@ -599,12 +616,27 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         assert result == microseconds
 
     @given(timedelta=timedeltas())
-    def test_timedelta_to_milliseconds(self, *, timedelta: dt.timedelta) -> None:
+    @mark.parametrize("strict", [param(True), param(False)])
+    def test_timedelta_to_milliseconds_exact(
+        self, *, timedelta: dt.timedelta, strict: bool
+    ) -> None:
         _ = assume(timedelta.microseconds == 0)
-        milliseconds = timedelta_to_milliseconds(timedelta)
-        assert milliseconds == round(milliseconds)
+        milliseconds = timedelta_to_milliseconds(timedelta, strict=strict)
+        if strict:
+            assert isinstance(milliseconds, int)
+        else:
+            assert milliseconds == round(milliseconds)
         result = milliseconds_to_timedelta(round(milliseconds))
         assert result == timedelta
+
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
+        _ = assume(timedelta.microseconds != 0)
+        with raises(
+            TimedeltaToMillisecondsError,
+            match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
+        ):
+            _ = timedelta_to_milliseconds(timedelta, strict=True)
 
     @given(milliseconds=longs())
     def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
