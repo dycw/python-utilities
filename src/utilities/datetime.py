@@ -286,9 +286,13 @@ def maybe_sub_pct_y(text: str, /) -> str:
             assert_never(never)
 
 
-def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
+def microseconds_since_epoch(
+    datetime_or_timedelta: dt.datetime | dt.timedelta, /
+) -> int:
     """Compute the number of microseconds since the epoch."""
-    return timedelta_to_microseconds(timedelta_since_epoch(datetime))
+    if isinstance(datetime_or_timedelta, dt.datetime):
+        return microseconds_since_epoch(timedelta_since_epoch(datetime_or_timedelta))
+    return timedelta_to_microseconds(datetime_or_timedelta)
 
 
 def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
@@ -302,9 +306,18 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
     return -microseconds_to_timedelta(-microseconds)
 
 
-def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
-    """Compute the number of milliseconds since the epoch."""
-    return microseconds_since_epoch(datetime) / _MICROSECONDS_PER_MILLISECOND
+def milliseconds_since_epoch(
+    datetime_or_timedelta: dt.datetime | dt.timedelta, /
+) -> float:
+    """Compute the number of microseconds since the epoch."""
+    return (
+        microseconds_since_epoch(datetime_or_timedelta) / _MICROSECONDS_PER_MILLISECOND
+    )
+
+
+def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
+    """Compute a timedelta given a number of milliseconds."""
+    return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
 
 
 @dataclass(order=True, frozen=True)
@@ -491,6 +504,11 @@ def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:
     )
 
 
+def timedelta_to_milliseconds(timedelta: dt.timedelta, /) -> float:
+    """Compute the number of milliseconds in a timedelta."""
+    return timedelta_to_microseconds(timedelta) / _MICROSECONDS_PER_MILLISECOND
+
+
 def yield_days(
     *, start: dt.date | None = None, end: dt.date | None = None, days: int | None = None
 ) -> Iterator[dt.date]:
@@ -628,8 +646,10 @@ __all__ = [
     "is_zoned_datetime",
     "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
+    "microseconds_since_epoch",
     "microseconds_to_timedelta",
     "milliseconds_since_epoch",
+    "milliseconds_to_timedelta",
     "parse_month",
     "round_to_next_weekday",
     "round_to_prev_weekday",

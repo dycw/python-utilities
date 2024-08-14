@@ -10,31 +10,32 @@ from utilities.datetime import milliseconds_since_epoch
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator, Iterator, Mapping
+    from collections.abc import AsyncIterator, Iterator
 
     from redis.commands.timeseries import TimeSeries
+    from redis.typing import Number
 
 
 def add_timestamp(
     ts: TimeSeries,
     key: bytes | str | memoryview,
     timestamp: dt.datetime,
-    value: float,
+    value: Number,
     /,
     *,
     retention_msecs: int | None = None,
     uncompressed: bool | None = False,
-    labels: Mapping[str, str] | None = None,
+    labels: dict[str, str] | None = None,
     chunk_size: int | None = None,
     duplicate_policy: str | None = None,
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
 ) -> Any:
-    milliseconds = round(milliseconds_since_epoch(timestamp))
+    timestamp_int = round(milliseconds_since_epoch(timestamp))
     return ts.add(
         key,
-        milliseconds,
+        timestamp_int,
         value,
         retention_msecs=retention_msecs,
         uncompressed=uncompressed,

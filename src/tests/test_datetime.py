@@ -75,12 +75,14 @@ from utilities.datetime import (
     microseconds_since_epoch,
     microseconds_to_timedelta,
     milliseconds_since_epoch,
+    milliseconds_to_timedelta,
     parse_month,
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
     timedelta_since_epoch,
     timedelta_to_microseconds,
+    timedelta_to_milliseconds,
     yield_days,
     yield_weekdays,
 )
@@ -369,17 +371,15 @@ class TestMaybeSubPctY:
         assert not search("%Y", result)
 
 
-class TestTimedeltaSinceEpoch:
+class TestMicroOrMillisecondsSinceEpoch:
     @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = timedelta_since_epoch(datetime)
-        assert isinstance(result, dt.timedelta)
-
-
-class TestMicrosecondsSinceEpoch:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
-    def test_main(self, *, datetime: dt.datetime) -> None:
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
         result = microseconds_since_epoch(datetime)
+        assert isinstance(result, int)
+
+    @given(timedelta=timedeltas())
+    def test_timedelta(self, *, timedelta: dt.timedelta) -> None:
+        result = microseconds_since_epoch(timedelta)
         assert isinstance(result, int)
 
 
@@ -388,15 +388,6 @@ class TestMillisecondsSinceEpoch:
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = milliseconds_since_epoch(datetime)
         assert isinstance(result, float)
-
-
-class TestMicrosecondsToTimedelta:
-    @given(microseconds=integers())
-    def test_main(self, *, microseconds: int) -> None:
-        with assume_does_not_raise(OverflowError):
-            timedelta = microseconds_to_timedelta(microseconds)
-        result = timedelta_to_microseconds(timedelta)
-        assert result == microseconds
 
 
 class TestMonth:
@@ -561,12 +552,41 @@ class TestRoundToWeekday:
         assert operator(result, date)
 
 
-class TestTimedeltaToMicroseconds:
+class TestTimedeltaSinceEpoch:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = timedelta_since_epoch(datetime)
+        assert isinstance(result, dt.timedelta)
+
+
+class TestTimedeltaToMicroOrMilliseconds:
     @given(timedelta=timedeltas())
-    def test_main(self, *, timedelta: dt.timedelta) -> None:
+    def test_timedelta_to_microseconds(self, *, timedelta: dt.timedelta) -> None:
         microseconds = timedelta_to_microseconds(timedelta)
         result = microseconds_to_timedelta(microseconds)
         assert result == timedelta
+
+    @given(microseconds=integers())
+    def test_microseconds_to_timedelta(self, *, microseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = microseconds_to_timedelta(microseconds)
+        result = timedelta_to_microseconds(timedelta)
+        assert result == microseconds
+
+    @given(timedelta=timedeltas())
+    def test_timedelta_to_milliseconds(self, *, timedelta: dt.timedelta) -> None:
+        _ = assume(timedelta.microseconds == 0)
+        milliseconds = timedelta_to_milliseconds(timedelta)
+        assert milliseconds == round(milliseconds)
+        result = milliseconds_to_timedelta(round(milliseconds))
+        assert result == timedelta
+
+    @given(milliseconds=integers())
+    def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
+        with assume_does_not_raise(OverflowError):
+            timedelta = milliseconds_to_timedelta(milliseconds)
+        result = timedelta_to_milliseconds(timedelta)
+        assert result == milliseconds
 
 
 class TestTimedeltas:
