@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from polars._typing import SchemaDict
 
 
+@SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndGet:
     @given(
         client_pair=redis_clients(),
