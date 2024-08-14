@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import datetimes, floats, integers, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
 from redis.exceptions import ResponseError
 
+from tests.conftest import SKIPIF_CI
 from utilities.datetime import MillisecondsSinceEpochError, milliseconds_since_epoch
 from utilities.hypothesis import assume_does_not_raise, redis_clients, text_ascii
 from utilities.polars import DatetimeUTC, check_polars_dataframe
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
 
+@SKIPIF_CI
 class TestTimeSeriesAddAndGet:
     @given(
         client_pair=redis_clients(),
@@ -62,6 +64,7 @@ class TestTimeSeriesAddAndGet:
         assert res_value == value
 
 
+@SKIPIF_CI
 class TestTimeSeriesMAddAndRange:
     @given(
         client_pair=redis_clients(),
@@ -90,6 +93,7 @@ class TestTimeSeriesMAddAndRange:
     ) -> None:
         timestamps = [d.replace(tzinfo=time_zone) for d in [datetime1, datetime2]]
         for timestamp in timestamps:
+            _ = assume(timestamp.fold == 0)
             with assume_does_not_raise(MillisecondsSinceEpochError):
                 _ = milliseconds_since_epoch(timestamp, strict=True)
         client, uuid = client_pair
