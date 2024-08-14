@@ -633,6 +633,10 @@ class TestCheckEngine:
     def test_main(self, *, engine: Engine) -> None:
         check_engine(engine)
 
+    def test_postgres(self, *, create_postgres_engine: Callable[..., Engine]) -> None:
+        engine = create_postgres_engine()
+        check_engine(engine)
+
     @given(engine=sqlite_engines())
     def test_num_tables_pass(self, *, engine: Engine) -> None:
         table = Table("example", MetaData(), Column("id", Integer, primary_key=True))
