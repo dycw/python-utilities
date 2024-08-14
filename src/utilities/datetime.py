@@ -44,6 +44,7 @@ HOUR = dt.timedelta(hours=1)
 DAY = dt.timedelta(days=1)
 WEEK = dt.timedelta(weeks=1)
 EPOCH_UTC = dt.datetime.fromtimestamp(0, tz=UTC)
+EPOCH_NAIVE = EPOCH_UTC.replace(tzinfo=None)
 
 
 def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
@@ -111,6 +112,13 @@ def date_to_month(date: dt.date, /) -> Month:
     """Collapse a date into a month."""
     check_date_not_datetime(date)
     return Month(year=date.year, month=date.month)
+
+
+def drop_microseconds(datetime: dt.datetime, /) -> dt.datetime:
+    """Drop the microseconds of a datetime object."""
+    milliseconds, _ = divmod(datetime.microsecond, _MICROSECONDS_PER_MILLISECOND)
+    microseconds = _MICROSECONDS_PER_MILLISECOND * milliseconds
+    return datetime.replace(microsecond=microseconds)
 
 
 def duration_to_float(duration: Duration, /) -> float:
@@ -650,6 +658,7 @@ class YieldWeekdaysError(Exception):
 
 __all__ = [
     "DAY",
+    "EPOCH_NAIVE",
     "EPOCH_UTC",
     "HALF_YEAR",
     "HOUR",
@@ -684,6 +693,7 @@ __all__ = [
     "check_zoned_datetime",
     "date_to_datetime",
     "date_to_month",
+    "drop_microseconds",
     "duration_to_float",
     "duration_to_timedelta",
     "ensure_month",

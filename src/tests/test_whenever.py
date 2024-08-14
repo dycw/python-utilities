@@ -22,6 +22,7 @@ from whenever import DateTimeDelta
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
+    drop_microseconds,
     maybe_sub_pct_y,
 )
 from utilities.hypothesis import assume_does_not_raise
@@ -93,9 +94,8 @@ class TestParseAndSerializeLocalDateTime:
         result = parse_local_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=datetimes())
+    @given(datetime=datetimes().map(drop_microseconds))
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        datetime = datetime.replace(microsecond=0)
         serialized = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         result = parse_local_datetime(serialized)
         assert result == datetime
@@ -236,9 +236,12 @@ class TestParseAndSerializeZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(
+        datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])).map(
+            drop_microseconds
+        )
+    )
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
-        datetime = datetime.replace(microsecond=0)
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
         part2 = get_time_zone_name(datetime.tzinfo)

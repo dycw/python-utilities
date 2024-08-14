@@ -24,6 +24,7 @@ from pytest import mark, param, raises
 from utilities.datetime import (
     _MICROSECONDS_PER_MILLISECOND,
     DAY,
+    EPOCH_NAIVE,
     EPOCH_UTC,
     HALF_YEAR,
     HOUR,
@@ -56,6 +57,7 @@ from utilities.datetime import (
     check_zoned_datetime,
     date_to_datetime,
     date_to_month,
+    drop_microseconds,
     duration_to_float,
     duration_to_timedelta,
     format_datetime_local_and_utc,
@@ -172,6 +174,14 @@ class TestDateToMonth:
         assert result == date
 
 
+class TestDropMicroseconds:
+    @given(datetime=datetimes())
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        result = drop_microseconds(datetime)
+        _, remainder = divmod(result.microsecond, _MICROSECONDS_PER_MILLISECOND)
+        assert remainder == 0
+
+
 class TestDurationToFloat:
     @given(duration=integers(0, 10) | floats(0.0, 10.0))
     def test_number(self, *, duration: Number) -> None:
@@ -202,10 +212,13 @@ class TestDurationToTimedelta:
         assert result == duration
 
 
-class TestEpochUTC:
-    def test_main(self) -> None:
+class TestEpoch:
+    @mark.parametrize(
+        ("epoch", "time_zone"), [param(EPOCH_NAIVE, None), param(EPOCH_UTC, UTC)]
+    )
+    def test_main(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
-        assert EPOCH_UTC.tzinfo is UTC
+        assert epoch.tzinfo is time_zone
 
 
 class TestFormatDatetimeLocalAndUTC:

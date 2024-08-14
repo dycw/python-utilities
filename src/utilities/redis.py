@@ -3,22 +3,25 @@ from __future__ import annotations
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
 import redis.asyncio
+from redis import ResponseError
 from typing_extensions import override
 
 from utilities.datetime import (
     milliseconds_since_epoch,
     milliseconds_since_epoch_to_datetime,
 )
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
+from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import AsyncIterator, Iterable, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 
     from polars import DataFrame
     from polars._typing import PolarsDataType
@@ -43,22 +46,55 @@ def time_series_add(
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
-) -> Any:
+) -> int:
     """Append a sample to a time series."""
     milliseconds = milliseconds_since_epoch(timestamp, strict=True)
-    return ts.add(
-        key,
-        milliseconds,
-        value,
-        retention_msecs=retention_msecs,
-        uncompressed=uncompressed,
-        labels=labels,
-        chunk_size=chunk_size,
-        duplicate_policy=duplicate_policy,
-        ignore_max_time_diff=ignore_max_time_diff,
-        ignore_max_val_diff=ignore_max_val_diff,
-        on_duplicate=on_duplicate,
-    )
+    try:
+        return ts.add(
+            key,
+            milliseconds,
+            value,
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+            on_duplicate=on_duplicate,
+        )
+    except ResponseError as error:
+        match _classify_response_error(error):
+            case "invalid timestamp":
+                raise _TimeSeriesAddInvalidTimestampError(
+                    timestamp=timestamp, value=value
+                ) from None
+            case "invalid value":
+                raise _TimeSeriesAddInvalidValueError(
+                    timestamp=timestamp, value=value
+                ) from None
+            case _:
+                raise
+
+
+@dataclass(kw_only=True)
+class TimeSeriesAddError(Exception):
+    timestamp: dt.datetime
+    value: float
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddInvalidTimestampError(TimeSeriesAddError):
+    @override
+    def __str__(self) -> str:
+        return f"Timestamp must be a non-negative integer; got {self.timestamp}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddInvalidValueError(TimeSeriesAddError):
+    @override
+    def __str__(self) -> str:
+        return f"Invalid value; got {self.value}"
 
 
 def time_series_get(
@@ -74,7 +110,7 @@ def time_series_madd(
     ts: TimeSeries,
     values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
     /,
-) -> Any:
+) -> list[int]:
     """Append new samples to one or more time series."""
     from polars import DataFrame, Datetime, Float64, Int64, Utf8, col
 
@@ -97,21 +133,34 @@ def time_series_madd(
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
         ktv_tuples = df.iter_rows()
     else:
+        values_or_df = list(values_or_df)
         ktv_tuples = (
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
         )
-    return ts.madd(list(ktv_tuples))
+    result: list[int | ResponseError] = ts.madd(list(ktv_tuples))
+    try:
+        error = next(r for r in result if isinstance(r, ResponseError))
+    except StopIteration:
+        return cast(list[int], result)
+    match _classify_response_error(error):
+        case "invalid timestamp":
+            raise _TimeSeriesMAddInvalidTimestampError(values_or_df=values_or_df)
+        case "invalid value":
+            raise _TimeSeriesMAddInvalidValueError(values_or_df=values_or_df)
+        case _:
+            raise error
 
 
 @dataclass(kw_only=True)
-class TimeSeriesMAddError(Exception):
-    df: DataFrame
-    dtype: PolarsDataType
+class TimeSeriesMAddError(Exception): ...
 
 
 @dataclass(kw_only=True)
 class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
+    df: DataFrame
+    dtype: PolarsDataType
+
     @override
     def __str__(self) -> str:
         return f"The 'key' column must be Utf8; got {self.dtype}"
@@ -119,6 +168,9 @@ class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
 
 @dataclass(kw_only=True)
 class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
+    df: DataFrame
+    dtype: PolarsDataType
+
     @override
     def __str__(self) -> str:
         return f"The 'timestamp' column must be Datetime; got {self.dtype}"
@@ -126,9 +178,30 @@ class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
 
 @dataclass(kw_only=True)
 class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
+    df: DataFrame
+    dtype: PolarsDataType
+
     @override
     def __str__(self) -> str:
         return f"The 'value' column must be numeric; got {self.dtype}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddInvalidTimestampError(TimeSeriesMAddError):
+    values_or_df: Sequence[tuple[KeyT, dt.datetime, Number]] | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Timestamps must be non-negative integers; got {self.values_or_df}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddInvalidValueError(TimeSeriesMAddError):
+    values_or_df: Sequence[tuple[KeyT, dt.datetime, Number]] | DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid value(s); got {self.values_or_df}"
 
 
 def time_series_range(
@@ -270,6 +343,23 @@ async def yield_client_async(
         yield client
     finally:
         await client.aclose()
+
+
+_ResponseErrorKind = Literal["invalid timestamp", "invalid value", "error at upsert"]
+
+
+def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
+    msg = ensure_str(one(error.args))
+    if msg == "TSDB: invalid timestamp, must be a nonnegative integer":
+        return "invalid timestamp"
+    if msg == "TSDB: invalid value":
+        return "invalid value"
+    if (
+        msg
+        == "TSDB: Error at upsert, update is not supported when DUPLICATE_POLICY is set to BLOCK mode"
+    ):
+        return "error at upsert"
+    raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
 
 
 __all__ = [
