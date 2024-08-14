@@ -331,7 +331,11 @@ def check_engine(
     such a table.
     """
     match get_dialect(engine):
-        case Dialect.mssql | Dialect.mysql | Dialect.postgresql:  # pragma: no cover
+        case (  # skipif-ci-and-not-linux
+            Dialect.mssql
+            | Dialect.mysql
+            | Dialect.postgresql
+        ):
             query = "select * from information_schema.tables"
         case Dialect.oracle:  # pragma: no cover
             query = "select * from all_objects"
@@ -547,7 +551,7 @@ class Dialect(enum.Enum):
                 return 65535
             case Dialect.oracle:  # pragma: no cover
                 return 1000
-            case Dialect.postgresql:  # pragma: no cover
+            case Dialect.postgresql:  # skipif-ci-and-not-linux
                 return 32767
             case Dialect.sqlite:
                 return 100
@@ -615,7 +619,7 @@ def _ensure_tables_created_match(
     match dialect := get_dialect(engine):
         case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # pragma: no cover
+        case Dialect.postgresql:  # skipif-ci-and-not-linux
             return "relation .* already exists"
         case Dialect.mssql:  # pragma: no cover
             return "There is already an object named .* in the database"
@@ -682,7 +686,7 @@ def get_dialect(
         return Dialect.mysql
     if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return Dialect.oracle
-    if isinstance(dialect, postgresql_dialect):  # pragma: no cover
+    if isinstance(dialect, postgresql_dialect):  # skipif-ci-and-not-linux
         return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
         return Dialect.sqlite
@@ -723,7 +727,7 @@ def get_table_does_not_exist_message(engine: Engine, /) -> str:
     match dialect := get_dialect(engine):
         case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # pragma: no cover
+        case Dialect.postgresql:  # skipif-ci-and-not-linux
             return "table .* does not exist"
         case Dialect.mssql:  # pragma: no cover
             return (
@@ -1159,7 +1163,7 @@ async def yield_connection_async(
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an asynchronous connection."""
     if isinstance(engine_or_conn, AsyncEngine):
-        async with engine_or_conn.begin() as conn:  # pragma: no cover
+        async with engine_or_conn.begin() as conn:
             yield conn
     else:
         yield engine_or_conn

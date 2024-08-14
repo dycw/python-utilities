@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine, Table
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
-SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
 SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
     ("CI" in environ) and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
 )

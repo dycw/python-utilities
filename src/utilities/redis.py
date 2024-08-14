@@ -311,15 +311,15 @@ def time_series_range(
         )
         return concat(dfs)
     key = one(keys)  # skipif-ci-and-not-linux
-    ms_since_epoch = partial(
+    ms_since_epoch = partial(  # skipif-ci-and-not-linux
         milliseconds_since_epoch, strict=True
-    )  # skipif-ci-and-not-linux
-    from_time_use = (
+    )
+    from_time_use = (  # skipif-ci-and-not-linux
         "-" if from_time is None else ms_since_epoch(from_time)
-    )  # skipif-ci-and-not-linux
-    to_time_use = (
+    )
+    to_time_use = (  # skipif-ci-and-not-linux
         "+" if to_time is None else ms_since_epoch(to_time)
-    )  # skipif-ci-and-not-linux
+    )
     filter_by_ts_use = (  # skipif-ci-and-not-linux
         None if filter_by_ts is None else list(map(ms_since_epoch, filter_by_ts))
     )
