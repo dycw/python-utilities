@@ -647,12 +647,12 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
 @composite
 def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
     """Strategy for generating redis clients."""
-    import redis  # os-eq-linux
-    from redis.exceptions import ResponseError  # os-eq-linux
+    import redis  # os-ne-linux
+    from redis.exceptions import ResponseError  # os-ne-linux
 
-    uuid = _draw(uuids())  # os-eq-linux
+    uuid = _draw(uuids())  # os-ne-linux
 
-    class RedisWithCleanup(redis.Redis):  # os-eq-linux
+    class RedisWithCleanup(redis.Redis):  # os-ne-linux
         @override
         def __del__(self) -> Any:
             keys = self.keys(pattern=f"{uuid}_*")

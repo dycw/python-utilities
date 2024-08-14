@@ -402,7 +402,7 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
         return "invalid timestamp"
     if msg == "TSDB: invalid value":
         return "invalid value"
-    raise ImpossibleCaseError(case=[f"{msg=}"])
+    raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
 
 
 __all__ = [
