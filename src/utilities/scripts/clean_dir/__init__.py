@@ -32,14 +32,12 @@ def main(config: Config, /) -> None:
     """CLI for the `clean_dir` script."""
     setup_loguru()  # skipif-os-ne-windows
     if config.dry_run:  # skipif-os-ne-windows
-        for item in _yield_items(  # skipif-os-ne-windows
+        for item in _yield_items(
             paths=config.paths, days=config.days, chunk_size=config.chunk_size
         ):
-            logger.debug("{path}", path=item.path)  # skipif-os-ne-windows
-    else:
-        _clean_dir(  # skipif-os-ne-windows
-            paths=config.paths, days=config.days, chunk_size=config.chunk_size
-        )
+            logger.debug("{path}", path=item.path)
+    else:  # skipif-os-ne-windows
+        _clean_dir(paths=config.paths, days=config.days, chunk_size=config.chunk_size)
 
 
 def _clean_dir(
@@ -48,13 +46,12 @@ def _clean_dir(
     days: int = _CONFIG.days,
     chunk_size: int | None = _CONFIG.chunk_size,
 ) -> None:
-    while True:  # skipif-os-ne-windows
-        iterator = _yield_items(  # skipif-os-ne-windows
-            paths=paths, days=days, chunk_size=chunk_size
-        )
-        if len(items := list(iterator)) >= 1:  # skipif-os-ne-windows
-            for item in items:  # skipif-os-ne-windows
-                item.clean()  # skipif-os-ne-windows
+    # skipif-os-ne-windows
+    while True:
+        iterator = _yield_items(paths=paths, days=days, chunk_size=chunk_size)
+        if len(items := list(iterator)) >= 1:
+            for item in items:
+                item.clean()
         else:
             return
 
@@ -67,7 +64,7 @@ def _yield_items(
 ) -> Iterator[Item]:
     it = _yield_inner(paths=paths, days=days)  # skipif-os-ne-windows
     if chunk_size is not None:  # skipif-os-ne-windows
-        return islice(it, chunk_size)  # skipif-os-ne-windows
+        return islice(it, chunk_size)
     return it  # skipif-os-ne-windows
 
 
@@ -75,8 +72,8 @@ def _yield_inner(
     *, paths: Iterable[PathLike] = _CONFIG.paths, days: int = _CONFIG.days
 ) -> Iterator[Item]:
     for path in map(Path, paths):  # skipif-os-ne-windows
-        for p in path.rglob("*"):  # skipif-os-ne-windows
-            yield from _yield_from_path(p, path, days=days)  # skipif-os-ne-windows
+        for p in path.rglob("*"):
+            yield from _yield_from_path(p, path, days=days)
 
 
 def _yield_from_path(
@@ -84,9 +81,7 @@ def _yield_from_path(
 ) -> Iterator[Item]:
     p, path = map(Path, [p, path])  # skipif-os-ne-windows
     if p.is_symlink():  # skipif-os-ne-windows
-        yield from _yield_from_path(
-            p.resolve(), path, days=days
-        )  # skipif-os-ne-windows
+        yield from _yield_from_path(p.resolve(), path, days=days)
     elif _is_owned_and_relative(p, path):  # pragma: no cover
         if (p.is_file() or p.is_socket()) and _is_old(p, days=days):
             yield Item(p, partial(_unlink_path, p))

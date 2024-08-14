@@ -39,9 +39,9 @@ def to_date(
     date: float, /, *, book: Book | None = None, time_zone: ZoneInfo | str = UTC
 ) -> dt.date:
     """Convert to a dt.date object."""
-    return to_datetime(
+    return to_datetime(  # skipif-os-eq-linux
         date, book=book, time_zone=time_zone
-    ).date()  # skipif-os-eq-linux
+    ).date()
 
 
 def to_datetime(
