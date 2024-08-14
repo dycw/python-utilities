@@ -33,8 +33,10 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 _DAYS_PER_YEAR = 365.25
+_MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
-_MICROSECONDS_PER_DAY = 24 * 60 * 60 * _MICROSECONDS_PER_SECOND
+_SECONDS_PER_DAY = 24 * 60 * 60
+_MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
 SECOND = dt.timedelta(seconds=1)
 MINUTE = dt.timedelta(minutes=1)
 HOUR = dt.timedelta(hours=1)
@@ -286,7 +288,6 @@ def maybe_sub_pct_y(text: str, /) -> str:
 
 def microseconds_since_epoch(datetime: dt.datetime, /) -> int:
     """Compute the number of microseconds since the epoch."""
-    check_zoned_datetime(datetime)
     return timedelta_to_microseconds(timedelta_since_epoch(datetime))
 
 
@@ -299,6 +300,11 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
         seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
         return dt.timedelta(days=days, seconds=seconds, microseconds=micros)
     return -microseconds_to_timedelta(-microseconds)
+
+
+def milliseconds_since_epoch(datetime: dt.datetime, /) -> float:
+    """Compute the number of milliseconds since the epoch."""
+    return microseconds_since_epoch(datetime) / _MICROSECONDS_PER_MILLISECOND
 
 
 @dataclass(order=True, frozen=True)
@@ -623,6 +629,7 @@ __all__ = [
     "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
     "microseconds_to_timedelta",
+    "milliseconds_since_epoch",
     "parse_month",
     "round_to_next_weekday",
     "round_to_prev_weekday",
