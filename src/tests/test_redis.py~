@@ -243,7 +243,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         client, uuid = client_pair
-        with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
+        with raises(TimeSeriesMAddError, match=r"Invalid value\(s\); got .*"):
             _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
 
     @given(client_pair=redis_clients())
