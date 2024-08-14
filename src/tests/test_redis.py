@@ -73,7 +73,6 @@ class TestTimeSeriesAddAndGet:
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
     def test_invalid_timestamp(
         self,
         *,
@@ -127,7 +126,6 @@ class TestTimeSeriesMAddAndRange:
         value2=longs() | floats(allow_nan=False, allow_infinity=False),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @settings(phases={Phase.generate})
     def test_main(
         self,
         *,
@@ -167,41 +165,78 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(res_range, height=2, schema_list=schema)
         assert res_range.rows() == data
 
+    @given(
+        client_pair=redis_clients(),
+        key=text_ascii(),
+        timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
+        value=longs() | floats(allow_nan=False, allow_infinity=False),
+    )
+    def test_invalid_timestamp(
+        self,
+        *,
+        client_pair: tuple[redis.Redis, UUID],
+        key: str,
+        timestamp: dt.datetime,
+        value: float,
+    ) -> None:
+        _ = assume(timestamp < EPOCH_UTC)
+        client, uuid = client_pair
+        with raises(
+            TimeSeriesMAddError,
+            match="Timestamps must be non-negative integers; got .*",
+        ):
+            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+
+    @given(
+        client_pair=redis_clients(),
+        key=text_ascii(),
+        timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
+            drop_microseconds
+        ),
+    )
+    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
+    def test_invalid_value(
+        self,
+        *,
+        client_pair: tuple[redis.Redis, UUID],
+        key: str,
+        timestamp: dt.datetime,
+        value: float,
+    ) -> None:
+        client, uuid = client_pair
+        with raises(TimeSeriesMAddError, match="Invalid values; got .*"):
+            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+
     @given(client_pair=redis_clients())
-    @settings(phases={Phase.generate})
     def test_df_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
-        ts = client.ts()
         df = DataFrame(
             schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
         )
         with raises(
             TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(client.ts(), df)
 
     @given(client_pair=redis_clients())
-    @settings(phases={Phase.generate})
     def test_df_error_timestamp(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
-        ts = client.ts()
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
         with raises(
             TimeSeriesMAddError,
             match="The 'timestamp' column must be Datetime; got Boolean",
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(client.ts(), df)
 
     @given(client_pair=redis_clients())
     @settings(phases={Phase.generate})
     def test_df_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
         client, _ = client_pair
-        ts = client.ts()
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
         with raises(
             TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(client.ts(), df)
 
 
 class TestYieldClient:
