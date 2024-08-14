@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import inf, nan
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
 import redis.asyncio
@@ -12,13 +12,7 @@ from pytest import mark, param, raises
 
 from tests.conftest import SKIPIF_CI
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    datetimes_utc,
-    longs,
-    redis_clients,
-    text_ascii,
-)
+from utilities.hypothesis import datetimes_utc, longs, redis_clients, text_ascii
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
     TimeSeriesAddError,
@@ -36,6 +30,8 @@ if TYPE_CHECKING:
     import datetime as dt
     from uuid import UUID
     from zoneinfo import ZoneInfo
+
+    from polars._typing import SchemaDict
 
 
 @SKIPIF_CI
@@ -137,6 +133,12 @@ class TestTimeSeriesAddAndGet:
 
 @SKIPIF_CI
 class TestTimeSeriesMAddAndRange:
+    schema: ClassVar[SchemaDict] = {
+        "key": Utf8,
+        "timestamp": DatetimeUTC,
+        "value": Float64,
+    }
+
     @given(
         client_pair=redis_clients(),
         key1=text_ascii(),
@@ -172,19 +174,17 @@ class TestTimeSeriesMAddAndRange:
             if client.exists(full_key) == 0:
                 _ = ts.create(full_key, duplicate_policy="LAST")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
-        schema = {"key": Utf8, "timestamp": DatetimeUTC, "value": Float64}
         match case:
             case "values":
                 res_madd = time_series_madd(ts, data)
             case "DataFrame":
-                with assume_does_not_raise(OverflowError):
-                    df = DataFrame(data, schema=schema, orient="row")
+                df = DataFrame(data, schema=self.schema, orient="row")
                 res_madd = time_series_madd(ts, df)
         assert isinstance(res_madd, list)
         for i in res_madd:
             assert isinstance(i, int)
         res_range = time_series_range(ts, full_keys)
-        check_polars_dataframe(res_range, height=2, schema_list=schema)
+        check_polars_dataframe(res_range, height=2, schema_list=self.schema)
         assert res_range.rows() == data
 
     @given(
@@ -193,17 +193,25 @@ class TestTimeSeriesMAddAndRange:
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
     )
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_invalid_key(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
+        case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
         client, uuid = client_pair
+        data = [(f"{uuid}_{key}", timestamp, value)]
+        match case:
+            case "values":
+                values_or_df = data
+            case "DataFrame":
+                values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
-            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+            _ = time_series_madd(client.ts(), values_or_df)
 
     @given(
         client_pair=redis_clients(),
@@ -211,20 +219,28 @@ class TestTimeSeriesMAddAndRange:
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
     )
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_invalid_timestamp(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
+        case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
         client, uuid = client_pair
+        data = [(f"{uuid}_{key}", timestamp, value)]
+        match case:
+            case "values":
+                values_or_df = data
+            case "DataFrame":
+                values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(
             TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
         ):
-            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+            _ = time_series_madd(client.ts(), values_or_df)
 
     @given(
         client_pair=redis_clients(),
@@ -233,18 +249,26 @@ class TestTimeSeriesMAddAndRange:
             drop_microseconds
         ),
     )
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
     def test_invalid_value(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
+        case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
         client, uuid = client_pair
+        data = [(f"{uuid}_{key}", timestamp, value)]
+        match case:
+            case "values":
+                values_or_df = data
+            case "DataFrame":
+                values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
-            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+            _ = time_series_madd(client.ts(), values_or_df)
 
     @given(client_pair=redis_clients())
     def test_df_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
