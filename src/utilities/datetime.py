@@ -296,7 +296,8 @@ def microseconds_to_timedelta(microseconds: int, /) -> dt.timedelta:
         return dt.timedelta(0)
     if microseconds >= 1:
         days, remainder = divmod(microseconds, _MICROSECONDS_PER_DAY)
-        return dt.timedelta(days=days, microseconds=remainder)
+        seconds, micros = divmod(remainder, _MICROSECONDS_PER_SECOND)
+        return dt.timedelta(days=days, seconds=seconds, microseconds=micros)
     return -microseconds_to_timedelta(-microseconds)
 
 

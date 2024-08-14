@@ -77,6 +77,7 @@ from utilities.datetime import (
     round_to_next_weekday,
     round_to_prev_weekday,
     serialize_month,
+    timedelta_since_epoch,
     timedelta_to_microseconds,
     yield_days,
     yield_weekdays,
@@ -364,6 +365,13 @@ class TestMaybeSubPctY:
         result = maybe_sub_pct_y(text)
         _ = assume(not search("%Y", result))
         assert not search("%Y", result)
+
+
+class TestTimedeltaSinceEpoch:
+    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        timedelta = timedelta_since_epoch(datetime)
+        assert isinstance(timedelta, dt.timedelta)
 
 
 class TestMicrosecondsToTimedelta:
