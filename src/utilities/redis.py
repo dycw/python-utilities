@@ -77,6 +77,8 @@ def time_series_add(
                 raise _TimeSeriesAddInvalidValueError(
                     timestamp=timestamp, value=value
                 ) from None
+            case "invalid key":  # pragma: no cover
+                raise
 
 
 @dataclass(kw_only=True)
@@ -98,7 +100,7 @@ class _TimeSeriesAddErrorAtUpsertError(TimeSeriesAddError):
 class _TimeSeriesAddInvalidTimestampError(TimeSeriesAddError):
     @override
     def __str__(self) -> str:
-        return f"Timestamp must be a non-negative integer; got {self.timestamp}"
+        return f"Timestamp must be at least the Epoch; got {self.timestamp}"
 
 
 @dataclass(kw_only=True)
@@ -125,7 +127,7 @@ def time_series_madd(
     """Append new samples to one or more time series."""
     from polars import DataFrame, Datetime, Float64, Int64, Utf8, col
 
-    ktv_tuples: Iterable[tuple[KeyT, int, Number]]
+    ktv_tuples: Sequence[tuple[KeyT, int, Number]]
     if isinstance(values_or_df, DataFrame):
         df = values_or_df.select("key", "timestamp", "value")
         key_dtype, timestamp_dtype, value_dtype = df.dtypes
@@ -142,23 +144,35 @@ def time_series_madd(
         )
         if not isinstance(value_dtype, Float64 | Int64):
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
-        ktv_tuples = df.iter_rows()
+        ktv_tuples = df.rows()
     else:
         values_or_df = list(values_or_df)
-        ktv_tuples = (
+        ktv_tuples = [
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
-        )
+        ]
     result: list[int | ResponseError] = ts.madd(list(ktv_tuples))
     try:
-        error = next(r for r in result if isinstance(r, ResponseError))
+        i, error = next(
+            (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
+        )
     except StopIteration:
         return cast(list[int], result)
+    if isinstance(values_or_df, DataFrame):
+        key, timestamp, value = values_or_df.row(i)
+    else:
+        key, timestamp, value = values_or_df[i]
     match _classify_response_error(error):
+        case "invalid key":
+            raise _TimeSeriesMAddInvalidKeyError(values_or_df=values_or_df, key=key)
         case "invalid timestamp":
-            raise _TimeSeriesMAddInvalidTimestampError(values_or_df=values_or_df)
+            raise _TimeSeriesMAddInvalidTimestampError(
+                values_or_df=values_or_df, timestamp=timestamp
+            )
         case "invalid value":
-            raise _TimeSeriesMAddInvalidValueError(values_or_df=values_or_df)
+            raise _TimeSeriesMAddInvalidValueError(
+                values_or_df=values_or_df, value=value
+            )
         case _:
             raise error
 
@@ -198,21 +212,33 @@ class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
 
 
 @dataclass(kw_only=True)
-class _TimeSeriesMAddInvalidTimestampError(TimeSeriesMAddError):
+class _TimeSeriesMAddInvalidKeyError(TimeSeriesMAddError):
     values_or_df: Sequence[tuple[KeyT, dt.datetime, Number]] | DataFrame
+    key: KeyT
 
     @override
     def __str__(self) -> str:
-        return f"Timestamps must be non-negative integers; got {self.values_or_df}"
+        return f"Invalid key; got {self.key!r}"
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddInvalidTimestampError(TimeSeriesMAddError):
+    values_or_df: Sequence[tuple[KeyT, dt.datetime, Number]] | DataFrame
+    timestamp: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Timestamps must be at least the Epoch; got {self.timestamp}"
 
 
 @dataclass(kw_only=True)
 class _TimeSeriesMAddInvalidValueError(TimeSeriesMAddError):
     values_or_df: Sequence[tuple[KeyT, dt.datetime, Number]] | DataFrame
+    value: float
 
     @override
     def __str__(self) -> str:
-        return f"Invalid value(s); got {self.values_or_df}"
+        return f"Invalid value; got {self.value}"
 
 
 def time_series_range(
@@ -356,20 +382,24 @@ async def yield_client_async(
         await client.aclose()
 
 
-_ResponseErrorKind = Literal["invalid timestamp", "invalid value", "error at upsert"]
+_ResponseErrorKind = Literal[
+    "error at upsert", "invalid key", "invalid timestamp", "invalid value"
+]
 
 
 def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
     msg = ensure_str(one(error.args))
-    if msg == "TSDB: invalid timestamp, must be a nonnegative integer":
-        return "invalid timestamp"
-    if msg == "TSDB: invalid value":
-        return "invalid value"
     if (
         msg
         == "TSDB: Error at upsert, update is not supported when DUPLICATE_POLICY is set to BLOCK mode"
     ):
         return "error at upsert"
+    if msg == "TSDB: the key is not a TSDB key":
+        return "invalid key"
+    if msg == "TSDB: invalid timestamp, must be a nonnegative integer":
+        return "invalid timestamp"
+    if msg == "TSDB: invalid value":
+        return "invalid value"
     raise ImpossibleCaseError(case=[f"{msg=}"])  # pragma: no cover
 
 

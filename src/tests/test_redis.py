@@ -168,9 +168,9 @@ class TestTimeSeriesMAddAndRange:
         client, uuid = client_pair
         full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
         ts = client.ts()
-        # for full_key in full_keys:
-        #     if client.exists(full_key) == 0:
-        #         _ = ts.create(full_key, duplicate_policy="LAST")
+        for full_key in full_keys:
+            if client.exists(full_key) == 0:
+                _ = ts.create(full_key, duplicate_policy="LAST")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         schema = {"key": Utf8, "timestamp": DatetimeUTC, "value": Float64}
         match case:
@@ -190,6 +190,24 @@ class TestTimeSeriesMAddAndRange:
     @given(
         client_pair=redis_clients(),
         key=text_ascii(),
+        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        value=longs() | floats(allow_nan=False, allow_infinity=False),
+    )
+    def test_invalid_key(
+        self,
+        *,
+        client_pair: tuple[redis.Redis, UUID],
+        key: str,
+        timestamp: dt.datetime,
+        value: float,
+    ) -> None:
+        client, uuid = client_pair
+        with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
+            _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
+
+    @given(
+        client_pair=redis_clients(),
+        key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -204,8 +222,7 @@ class TestTimeSeriesMAddAndRange:
         _ = assume(timestamp < EPOCH_UTC)
         client, uuid = client_pair
         with raises(
-            TimeSeriesMAddError,
-            match="Timestamps must be non-negative integers; got .*",
+            TimeSeriesMAddError, match="Timestamp must be non-negative integer; got .*"
         ):
             _ = time_series_madd(client.ts(), [(f"{uuid}_{key}", timestamp, value)])
 
