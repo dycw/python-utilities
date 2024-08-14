@@ -647,12 +647,12 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
 @composite
 def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
     """Strategy for generating redis clients."""
-    import redis  # os-ne-linux
-    from redis.exceptions import ResponseError  # os-ne-linux
+    import redis  # skipif-ci-and-non-linux
+    from redis.exceptions import ResponseError  # skipif-ci-and-non-linux
 
-    uuid = _draw(uuids())  # os-ne-linux
+    uuid = _draw(uuids())  # skipif-ci-and-non-linux
 
-    class RedisWithCleanup(redis.Redis):  # os-ne-linux
+    class RedisWithCleanup(redis.Redis):  # skipif-ci-and-non-linux
         @override
         def __del__(self) -> Any:
             keys = self.keys(pattern=f"{uuid}_*")
@@ -660,8 +660,8 @@ def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
                 _ = self.delete(*cast(Iterable[Any], keys))
             return super().__del__()
 
-    client = RedisWithCleanup(db=15, decode_responses=True)  # os-ne-linux
-    return client, uuid  # os-ne-linux
+    client = RedisWithCleanup(db=15, decode_responses=True)  # skipif-ci-and-non-linux
+    return client, uuid  # skipif-ci-and-non-linux
 
 
 def setup_hypothesis_profiles(
