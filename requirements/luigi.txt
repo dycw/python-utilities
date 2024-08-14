@@ -42,7 +42,7 @@ python-dateutil==2.9.0.post0
     #   luigi
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==72.1.0
+setuptools==72.2.0
     # via python-daemon
 six==1.16.0
     # via python-dateutil
