@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       redis:
-        image: redis:redis-stack:latest
+        image: redis/redis-stack:latest
         ports:
           - 6379:6379
     strategy:

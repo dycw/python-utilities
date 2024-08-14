@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
     from utilities.iterables import MaybeIterable
 
+DuplicatePolicy = Literal["BLOCK", "FIRST", "LAST", "MIN", "MAX", "SUM"]
+
 
 def time_series_add(
     ts: TimeSeries,
@@ -42,7 +44,7 @@ def time_series_add(
     uncompressed: bool | None = False,
     labels: dict[str, str] | None = None,
     chunk_size: int | None = None,
-    duplicate_policy: str | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
