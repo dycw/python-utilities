@@ -12,7 +12,12 @@ from redis.exceptions import ResponseError
 
 from tests.conftest import SKIPIF_CI
 from utilities.datetime import MillisecondsSinceEpochError, milliseconds_since_epoch
-from utilities.hypothesis import assume_does_not_raise, redis_clients, text_ascii
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    lists_fixed_length,
+    redis_clients,
+    text_ascii,
+)
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
     TimeSeriesMAddError,
@@ -68,8 +73,7 @@ class TestTimeSeriesAddAndGet:
 class TestTimeSeriesMAddAndRange:
     @given(
         client_pair=redis_clients(),
-        key1=text_ascii(),
-        key2=text_ascii(),
+        keys=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
         datetime1=datetimes(),
         datetime2=datetimes(),
         time_zone=sampled_from([HONG_KONG, UTC]),
@@ -78,13 +82,12 @@ class TestTimeSeriesMAddAndRange:
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @settings(phases={Phase.generate})
-    def test_df(
+    def test_main(
         self,
         *,
         client_pair: tuple[redis.Redis, UUID],
         case: Literal["values", "DataFrame"],
-        key1: str,
-        key2: str,
+        keys: tuple[str, str],
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
@@ -97,7 +100,7 @@ class TestTimeSeriesMAddAndRange:
             with assume_does_not_raise(MillisecondsSinceEpochError):
                 _ = milliseconds_since_epoch(timestamp, strict=True)
         client, uuid = client_pair
-        full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
+        full_keys = [f"{uuid}_{key}" for key in keys]
         ts = client.ts()
         for full_key in full_keys:
             if client.exists(full_key) == 0:

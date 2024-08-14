@@ -75,7 +75,7 @@ def time_series_madd(
     values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
     /,
 ) -> Any:
-    """Append a sample to a time series."""
+    """Append new samples to one or more time series."""
     from polars import DataFrame, Datetime, Float64, Int64, Utf8, col
 
     ktv_tuples: Iterable[tuple[KeyT, int, Number]]
