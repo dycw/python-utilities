@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
+from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import redis
@@ -37,7 +38,7 @@ def time_series_add(
     on_duplicate: str | None = None,
 ) -> Any:
     """Append a sample to a time series."""
-    milliseconds = round(milliseconds_since_epoch(timestamp))
+    milliseconds = milliseconds_since_epoch(timestamp, strict=True)
     return ts.add(
         key,
         milliseconds,
@@ -83,20 +84,21 @@ def time_series_range(
     """Get."""
     from polars import DataFrame, Datetime, Float64, Int64, from_epoch
 
-    from_time_use = "-" if from_time is None else milliseconds_since_epoch(from_time)
-    to_time_use = "+" if to_time is None else milliseconds_since_epoch(to_time)
+    ms_since_epoch = partial(milliseconds_since_epoch, strict=True)
+    from_time_use = "-" if from_time is None else ms_since_epoch(from_time)
+    to_time_use = "+" if to_time is None else ms_since_epoch(to_time)
     if filter_by_ts is None:
         filter_by_ts_use = None
     else:
-        filter_by_ts_use = list(map(milliseconds_since_epoch, filter_by_ts))
+        filter_by_ts_use = list(map(ms_since_epoch, filter_by_ts))
     if filter_by_min_value is None:
         filter_by_min_value_use = None
     else:
-        filter_by_min_value_use = milliseconds_since_epoch(filter_by_min_value)
+        filter_by_min_value_use = ms_since_epoch(filter_by_min_value)
     if filter_by_max_value is None:
         filter_by_max_value_use = None
     else:
-        filter_by_max_value_use = milliseconds_since_epoch(filter_by_max_value)
+        filter_by_max_value_use = ms_since_epoch(filter_by_max_value)
     values = ts.range(
         key,
         from_time_use,

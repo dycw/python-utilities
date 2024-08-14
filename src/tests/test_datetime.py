@@ -22,6 +22,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 
 from utilities.datetime import (
+    _MICROSECONDS_PER_MILLISECOND,
     DAY,
     EPOCH_UTC,
     HALF_YEAR,
@@ -631,7 +632,8 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
 
     @given(timedelta=timedeltas())
     def test_timedelta_to_milliseconds_error(self, *, timedelta: dt.timedelta) -> None:
-        _ = assume(timedelta.microseconds != 0)
+        _, microseconds = divmod(timedelta.microseconds, _MICROSECONDS_PER_MILLISECOND)
+        _ = assume(microseconds != 0)
         with raises(
             TimedeltaToMillisecondsError,
             match=r"Unable to convert .* to milliseconds; got .* microsecond\(s\)",
