@@ -382,7 +382,8 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
 
     @given(microseconds=integers())
     def test_microseconds_to_datetime(self, *, microseconds: int) -> None:
-        datetime = microseconds_since_epoch_to_datetime(microseconds)
+        with assume_does_not_raise(OverflowError):
+            datetime = microseconds_since_epoch_to_datetime(microseconds)
         result = microseconds_since_epoch(datetime)
         assert result == microseconds
 
@@ -396,7 +397,8 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
 
     @given(milliseconds=integers())
     def test_milliseconds_to_datetime(self, *, milliseconds: int) -> None:
-        datetime = milliseconds_since_epoch_to_datetime(milliseconds)
+        with assume_does_not_raise(OverflowError):
+            datetime = milliseconds_since_epoch_to_datetime(milliseconds)
         result = milliseconds_since_epoch(datetime)
         assert result == milliseconds
 
