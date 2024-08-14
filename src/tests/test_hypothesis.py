@@ -48,7 +48,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
-from tests.conftest import FLAKY, SKIPIF_CI
+from tests.conftest import FLAKY
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
@@ -746,7 +746,6 @@ class TestNamespaceMixins:
         _ = Example()
 
 
-@SKIPIF_CI
 class TestRedisClients:
     @given(client_pair=redis_clients(), key=text_ascii(), value=integers())
     def test_main(

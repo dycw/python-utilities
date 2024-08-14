@@ -10,7 +10,7 @@ from hypothesis.strategies import datetimes, floats, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
 
-from tests.conftest import SKIPIF_CI
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import datetimes_utc, longs, redis_clients, text_ascii
 from utilities.polars import DatetimeUTC, check_polars_dataframe
@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from polars._typing import SchemaDict
 
 
-@SKIPIF_CI
 class TestTimeSeriesAddAndGet:
     @given(
         client_pair=redis_clients(),
@@ -131,7 +130,7 @@ class TestTimeSeriesAddAndGet:
             )
 
 
-@SKIPIF_CI
+@SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesMAddAndRange:
     schema: ClassVar[SchemaDict] = {
         "key": Utf8,
