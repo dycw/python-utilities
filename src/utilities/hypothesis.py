@@ -646,6 +646,7 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
 
 @composite
 def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
+    """Strategy for generating redis clients."""
     import redis
     from redis.exceptions import ResponseError
 
