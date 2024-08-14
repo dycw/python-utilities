@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Any
 import redis
 import redis.asyncio
 
-from utilities.datetime import check_zoned_datetime
-from utilities.zoneinfo import UTC
+from utilities.datetime import milliseconds_since_epoch
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -19,7 +18,8 @@ if TYPE_CHECKING:
 def add_timestamp(
     ts: TimeSeries,
     key: bytes | str | memoryview,
-    value: dt.datetime,
+    timestamp: dt.datetime,
+    value: float,
     /,
     *,
     retention_msecs: int | None = None,
@@ -28,11 +28,23 @@ def add_timestamp(
     chunk_size: int | None = None,
     duplicate_policy: str | None = None,
     ignore_max_time_diff: int | None = None,
-    ignore_max_val_diff: int | float | None = None,
+    ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
-) -> None:
-    check_zoned_datetime(value)
-    value.astimezone(UTC)
+) -> Any:
+    milliseconds = round(milliseconds_since_epoch(timestamp))
+    return ts.add(
+        key,
+        milliseconds,
+        value,
+        retention_msecs=retention_msecs,
+        uncompressed=uncompressed,
+        labels=labels,
+        chunk_size=chunk_size,
+        duplicate_policy=duplicate_policy,
+        ignore_max_time_diff=ignore_max_time_diff,
+        ignore_max_val_diff=ignore_max_val_diff,
+        on_duplicate=on_duplicate,
+    )
 
 
 @contextmanager
@@ -85,4 +97,4 @@ async def yield_client_async(
         await client.aclose()
 
 
-__all__ = ["yield_client", "yield_client_async"]
+__all__ = ["add_timestamp", "yield_client", "yield_client_async"]

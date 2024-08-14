@@ -75,6 +75,7 @@ from utilities.hypothesis import (
     lists_fixed_length,
     months,
     namespace_mixins,
+    redis_clients,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
@@ -117,6 +118,9 @@ if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import Hashable, Mapping, Sequence
     from collections.abc import Set as AbstractSet
+    from uuid import UUID
+
+    import redis
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
@@ -723,6 +727,18 @@ class TestNamespaceMixins:
         class Example(namespace_mixin, Task): ...
 
         _ = Example()
+
+
+class TestRedisClients:
+    @given(client_pair=redis_clients(), key=text_ascii(), value=integers())
+    def test_main(
+        self, *, client_pair: tuple[redis.Redis, UUID], key: str, value: int
+    ) -> None:
+        client, uuid = client_pair
+        full_key = f"{uuid}_{key}"
+        _ = client.set(full_key, value)
+        result = int(cast(str, client.get(full_key)))
+        assert result == value
 
 
 class TestReducedExamples:

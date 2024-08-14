@@ -479,7 +479,7 @@ def serialize_month(month: Month, /) -> str:
 def timedelta_since_epoch(datetime: dt.datetime, /) -> dt.timedelta:
     """Compute the timedelta since the epoch."""
     check_zoned_datetime(datetime)
-    return datetime - EPOCH_UTC
+    return datetime.astimezone(UTC) - EPOCH_UTC
 
 
 def timedelta_to_microseconds(timedelta: dt.timedelta, /) -> int:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import datetime as dt
 from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
@@ -35,6 +35,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from typing_extensions import override
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
 from utilities.pathlib import temp_cwd
@@ -44,6 +45,9 @@ from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    from uuid import UUID
+
+    import redis
     from hypothesis.database import ExampleDatabase
     from pandas import Timestamp
     from semver import Version
@@ -623,6 +627,26 @@ def namespace_mixins(_draw: DrawFn, /) -> type:
     return NamespaceMixin
 
 
+@composite
+def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
+    import redis
+    from redis.exceptions import ResponseError
+    from redis.typing import KeyT
+
+    uuid = _draw(uuids())
+
+    class RedisWithCleanup(redis.Redis):
+        @override
+        def __del__(self) -> Any:
+            keys = self.keys(pattern=f"{uuid}_*")
+            with suppress(ResponseError):
+                _ = self.delete(*cast(Iterable[KeyT], keys))
+            return super().__del__()
+
+    client = RedisWithCleanup(db=15, decode_responses=True)
+    return client, uuid
+
+
 def setup_hypothesis_profiles(
     *, suppress_health_check: Iterable[HealthCheck] = ()
 ) -> None:
@@ -1088,6 +1112,7 @@ __all__ = [
     "lists_fixed_length",
     "months",
     "namespace_mixins",
+    "redis_clients",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",
