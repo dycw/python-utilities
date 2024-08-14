@@ -38,6 +38,7 @@ from hypothesis.utils.conventions import not_set
 from typing_extensions import override
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
+from utilities.math import MAX_LONG, MIN_LONG
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -555,6 +556,22 @@ def int64s(
     from numpy import int64
 
     return _fixed_width_ints(int64, min_value=min_value, max_value=max_value)
+
+
+@composite
+def longs(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
+) -> int:
+    """Strategy for generating longs (long integers)."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
+    min_value_ = MIN_LONG if min_value_ is None else max(MIN_LONG, min_value_)
+    max_value_ = MAX_LONG if max_value_ is None else min(MAX_LONG, max_value_)
+    return draw(integers(min_value_, max_value_))
 
 
 _MDF = TypeVar("_MDF")
@@ -1109,6 +1126,7 @@ __all__ = [
     "int_indexes",
     "lift_draw",
     "lists_fixed_length",
+    "longs",
     "months",
     "namespace_mixins",
     "redis_clients",

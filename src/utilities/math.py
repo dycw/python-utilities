@@ -8,6 +8,9 @@ from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 
+MAX_LONG = 2**31 - 1
+MIN_LONG = -(2**31)
+
 # functions
 
 
@@ -508,6 +511,8 @@ class _CheckIntegerMaxError(CheckIntegerError):
 
 
 __all__ = [
+    "MAX_LONG",
+    "MIN_LONG",
     "CheckIntegerError",
     "FloatFin",
     "FloatFinInt",

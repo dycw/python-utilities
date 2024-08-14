@@ -88,7 +88,7 @@ from utilities.datetime import (
     yield_days,
     yield_weekdays,
 )
-from utilities.hypothesis import assume_does_not_raise, months, text_clean
+from utilities.hypothesis import assume_does_not_raise, longs, months, text_clean
 from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
 
 if TYPE_CHECKING:
@@ -606,7 +606,7 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         result = milliseconds_to_timedelta(round(milliseconds))
         assert result == timedelta
 
-    @given(milliseconds=integers())
+    @given(milliseconds=longs())
     def test_milliseconds_to_timedelta(self, *, milliseconds: int) -> None:
         with assume_does_not_raise(OverflowError):
             timedelta = milliseconds_to_timedelta(milliseconds)

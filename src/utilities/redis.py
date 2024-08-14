@@ -32,10 +32,10 @@ def add_timestamp(
     ignore_max_val_diff: float | None = None,
     on_duplicate: str | None = None,
 ) -> Any:
-    timestamp_int = round(milliseconds_since_epoch(timestamp))
+    milliseconds = round(milliseconds_since_epoch(timestamp))
     return ts.add(
         key,
-        timestamp_int,
+        milliseconds,
         value,
         retention_msecs=retention_msecs,
         uncompressed=uncompressed,

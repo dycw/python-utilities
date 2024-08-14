@@ -73,6 +73,7 @@ from utilities.hypothesis import (
     int_data_arrays,
     int_indexes,
     lists_fixed_length,
+    longs,
     months,
     namespace_mixins,
     redis_clients,
@@ -94,6 +95,7 @@ from utilities.hypothesis import (
     uint64s,
     versions,
 )
+from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
 from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATE,
@@ -694,6 +696,20 @@ class TestListsFixedLength:
             assert len(set(result)) == len(result)
         if sorted_:
             assert sorted(result) == result
+
+
+class TestLongs:
+    @given(data=data(), min_value=longs() | none(), max_value=longs() | none())
+    def test_main(
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(longs(min_value=min_value, max_value=max_value))
+        assert MIN_LONG <= x <= MAX_LONG
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
 
 
 class TestMonths:
