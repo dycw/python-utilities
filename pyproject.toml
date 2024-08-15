@@ -428,6 +428,8 @@ addopts = [
   "--cov=utilities",
   "--cov-config=pyproject.toml",
   "--cov-report=html",
+  "--durations=0",
+  "--durations-min=10",
   "--strict-markers",
 ]
 asyncio_mode = "auto"
