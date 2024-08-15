@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from math import isfinite, nan
 from typing import Any, ClassVar, Literal, cast
+from zoneinfo import ZoneInfo
 
+from hypothesis import given
+from hypothesis.strategies import sampled_from
 from polars import (
     Boolean,
     DataFrame,
@@ -29,6 +32,7 @@ from pytest import mark, param, raises
 
 from utilities.polars import (
     CheckPolarsDataFrameError,
+    CheckZonedDTypeOrSeriesError,
     ColumnsToDictError,
     DatetimeUTC,
     DropNullStructSeriesError,
@@ -38,6 +42,8 @@ from utilities.polars import (
     SetFirstRowAsColumnsError,
     StructDataTypeError,
     YieldStructSeriesElementsError,
+    ZonedDatetime,
+    ZonedDatetimeError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -45,6 +51,7 @@ from utilities.polars import (
     _yield_struct_series_element_remove_nulls,
     ceil_datetime,
     check_polars_dataframe,
+    check_zoned_dtype_or_series,
     collect_series,
     columns_to_dict,
     drop_null_struct_series,
@@ -61,7 +68,7 @@ from utilities.polars import (
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
 )
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
 
 
 class TestCeilDatetime:
@@ -340,6 +347,34 @@ class TestCheckPolarsDataFrameSchemaSubset:
         df = DataFrame({"foo": [0.0]})
         with raises(CheckPolarsDataFrameError):
             _check_polars_dataframe_schema_subset(df, schema_inc)
+
+
+class TestCheckZonedDTypeOrSeries:
+    @given(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]))
+    @mark.parametrize("case", [param("dtype"), param("series")])
+    def test_main(
+        self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
+    ) -> None:
+        dtype = Datetime(time_zone=get_time_zone_name(time_zone))
+        match case:
+            case "dtype":
+                dtype_or_series = dtype
+            case "series":
+                dtype_or_series = Series(dtype=dtype)
+        check_zoned_dtype_or_series(dtype_or_series)
+
+    def test_error_not_datetime(self) -> None:
+        with raises(
+            CheckZonedDTypeOrSeriesError,
+            match="Data type must be Datetime; got Boolean",
+        ):
+            check_zoned_dtype_or_series(Boolean())
+
+    def test_error_not_zoned(self) -> None:
+        with raises(
+            CheckZonedDTypeOrSeriesError, match="Data type must be zoned; got .*"
+        ):
+            check_zoned_dtype_or_series(Datetime())
 
 
 class TestCollectSeries:
@@ -884,3 +919,18 @@ class TestYieldStructSeriesElements:
             YieldStructSeriesElementsError, match="Series must not have nulls; got .*"
         ):
             _ = list(yield_struct_series_elements(series, strict=True))
+
+
+class TestZonedDatetime:
+    @given(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]))
+    def test_main(self, *, time_zone: ZoneInfo) -> None:
+        dtype = ZonedDatetime(time_zone=time_zone)
+        assert isinstance(dtype, Datetime)
+        assert dtype.time_zone is not None
+
+    def test_error(self) -> None:
+        with raises(
+            ZonedDatetimeError,
+            match=r"Data type must be zoned; got ZonedDatetime\(.*, time_zone=None\)",
+        ):
+            _ = ZonedDatetime(time_zone=None)
