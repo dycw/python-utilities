@@ -329,7 +329,6 @@ def time_series_madd(
         Float64,
         Int64,
         Utf8,
-        col,
     )
 
     from utilities.polars import (  # skipif-ci-and-not-linux
@@ -702,16 +701,14 @@ def time_series_read_dataframe(
                 _VALUE: Float64,
             }
         )
-    df2 = (
-        df.with_columns(
-            col(f"_{_KEY}")
-            .str.split_exact("__", 1)
-            .struct.rename_fields([output_key, "_variable"])
-        )
-        .unnest(f"_{_KEY}")
-        .pivot("_variable", index=[output_key, output_timestamp])
+    df = df.with_columns(
+        col(f"_{_KEY}")
+        .str.split_exact("__", 1)
+        .struct.rename_fields([output_key, "_variable"])
     )
-    return df2
+    return df.unnest(f"_{_KEY}").pivot(
+        "_variable", index=[output_key, output_timestamp]
+    )
 
 
 @contextmanager
