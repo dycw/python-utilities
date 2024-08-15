@@ -19,13 +19,6 @@ from hypothesis.strategies import (
     timedeltas,
     timezones,
 )
-from polars._typing import (
-    CategoricalOrdering,
-    PolarsDataType,
-    PythonDataType,
-    SchemaDict,
-    TimeUnit,
-)
 from pytest import mark, param, raises
 
 from utilities.datetime import (

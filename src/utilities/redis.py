@@ -355,7 +355,7 @@ def time_series_madd(
                 df=df, timestamp=timestamp, dtype=timestamp_dtype
             ) from None
         breakpoint()
-        
+
         df = df.with_columns(
             col(timestamp)
             .cast(Datetime(time_unit="ms", time_zone="UTC"))
@@ -621,10 +621,10 @@ def time_series_range(
             case _:
                 raise
 
-    init = DataFrame(  # skipif-ci-and-not-linux
+    DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
     )
-    init2 = DataFrame(  # skipif-ci-and-not-linux
+    DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
     ).select(
         lit(key, dtype=Utf8).alias(output_key),
@@ -701,7 +701,7 @@ def time_series_read_dataframe(
         for column in always_iterable(columns)
     )
     try:
-        df = concat(dfs)
+        concat(dfs)
     except ValueError:
         return DataFrame(schema={output_key: Utf8, output_timestamp: DatetimeUTC})
 
