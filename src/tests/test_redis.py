@@ -12,7 +12,6 @@ from hypothesis.strategies import (
     data,
     datetimes,
     floats,
-    lists,
     sampled_from,
     tuples,
 )
@@ -55,7 +54,6 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from polars._typing import PolarsDataType, SchemaDict
-    from pyarrow import DataType
 
 
 def _clean_datetime(
@@ -241,7 +239,6 @@ class TestTimeSeriesAddAndReadDataFrame:
             schema=schema,
             orient="row",
         )
-        # assert 0, f"\n{df}"
         time_series_add_dataframe(
             ts, df, key=key, timestamp=timestamp, duplicate_policy="last"
         )
@@ -422,7 +419,7 @@ class TestTimeSeriesMAddAndRange:
             _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
         ]
         values = data.draw(tuples(strategy, strategy))
-        data = list(zip(full_keys, timestamps, values, strict=True))
+        triples = list(zip(full_keys, timestamps, values, strict=True))
         schema = {
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
@@ -430,9 +427,9 @@ class TestTimeSeriesMAddAndRange:
         }
         match case:
             case "values":
-                values_or_df = data
+                values_or_df = triples
             case "DataFrame":
-                values_or_df = DataFrame(data, schema=schema, orient="row")
+                values_or_df = DataFrame(triples, schema=schema, orient="row")
         res_madd = time_series_madd(
             ts,
             values_or_df,
