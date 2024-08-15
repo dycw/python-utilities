@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, Phase, assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -197,10 +197,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         value21=longs(),
         value22=longs(),
     )
-    @mark.only
-    @settings(
-        phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
-    )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
