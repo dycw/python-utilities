@@ -646,7 +646,9 @@ def _time_series_range_one_key(
         return res_float64
     if (res_int64 is not None) and (res_float64 is not None):
         raise _TimeSeriesRangeKeyWithInt64AndFloat64Error(key=key)
-    raise ImpossibleCaseError(case=[f"{res_int64=}", f"{res_float64=}"])
+    raise ImpossibleCaseError(  # pragma: no cover
+        case=[f"{res_int64=}", f"{res_float64=}"]
+    )
 
 
 def _time_series_range_one_key_one_dtype(
@@ -723,7 +725,7 @@ def _time_series_range_one_key_one_dtype(
         match _classify_response_error(error):
             case "invalid key":
                 return None
-            case _:
+            case _:  # pragma: no cover
                 raise
     match dtype:
         case "Int64":
