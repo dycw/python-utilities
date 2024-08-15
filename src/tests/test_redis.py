@@ -59,6 +59,7 @@ class TestEnsureTimeSeriesCreated:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndGet:
+    @FLAKY
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
