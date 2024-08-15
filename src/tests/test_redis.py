@@ -278,7 +278,6 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_add_dataframe(ts_pair[0], df)
 
     @given(ts_pair=redis_time_series())
-    @mark.only
     def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -289,15 +288,17 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_add_dataframe(ts_pair[0], df)
 
-    def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        ts, _ = ts_pair
+    @given(ts_pair=redis_time_series())
+    def test_error_read_no_keys_requested(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
         with raises(
             TimeSeriesReadDataFrameError, match="At least 1 key must be requested"
         ):
-            _ = time_series_read_dataframe(ts, [], [])
+            _ = time_series_read_dataframe(ts_pair[0], [], [])
 
     @given(ts_pair=redis_time_series(), key=text_ascii())
-    def test_no_columns_requested(
+    def test_error_read_no_columns_requested(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
         ts, uuid = ts_pair
