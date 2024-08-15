@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -34,6 +34,8 @@ from utilities.polars import DatetimeUTC, check_polars_dataframe, zoned_datetime
 from utilities.redis import (
     TimeSeriesAddError,
     TimeSeriesMAddError,
+    TimeSeriesRangeError,
+    TimeSeriesReadDataFrameError,
     ensure_time_series_created,
     time_series_add,
     time_series_add_dataframe,
@@ -195,9 +197,10 @@ class TestTimeSeriesAddAndReadDataFrame:
         value21=longs(),
         value22=longs(),
     )
-    # @mark.only
-    @reproduce_failure("6.111.0", b"AXicY2CAAUYQAhFAkomBkRnEgMshmHgBAAO7ABE=")
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @mark.only
+    @settings(
+        phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
+    )
     def test_main(
         self,
         *,
@@ -212,14 +215,6 @@ class TestTimeSeriesAddAndReadDataFrame:
         value22: int,
     ) -> None:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
-
-        key = "local_symbol"
-        id1 = "eur"
-        id2 = "usd"
-        timestamp = "datetime"
-        key_value1 = "open"
-        key_value2 = "close"
-
         ts, uuid = ts_pair
         full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
         timestamp1, timestamp2 = (
@@ -253,124 +248,23 @@ class TestTimeSeriesAddAndReadDataFrame:
         check_polars_dataframe(result, height=2, schema_list=schema)
         assert_frame_equal(result, df)
 
-    @FLAKY
-    @given(
-        ts_pair=redis_time_series(),
-        key=text_ascii(),
-        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
-    )
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
-    def test_invalid_key(
-        self,
-        *,
-        ts_pair: tuple[TimeSeries, UUID],
-        case: Literal["values", "DataFrame"],
-        key: str,
-        timestamp: dt.datetime,
-        value: float,
-    ) -> None:
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
-        with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
-            _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
-
-    @given(
-        ts_pair=redis_time_series(),
-        key=text_ascii(),
-        timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
-    )
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
-    def test_invalid_timestamp(
-        self,
-        *,
-        ts_pair: tuple[TimeSeries, UUID],
-        case: Literal["values", "DataFrame"],
-        key: str,
-        timestamp: dt.datetime,
-        value: float,
-    ) -> None:
-        _ = assume(timestamp < EPOCH_UTC)
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
-        with raises(
-            TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
-        ):
-            _ = time_series_madd(ts, values_or_df)
-
-    @given(
-        ts_pair=redis_time_series(),
-        key=text_ascii(),
-        timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
-            drop_microseconds
-        ),
-    )
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    def test_invalid_value(
-        self,
-        *,
-        ts_pair: tuple[TimeSeries, UUID],
-        case: Literal["values", "DataFrame"],
-        key: str,
-        timestamp: dt.datetime,
-        value: float,
-    ) -> None:
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
-        with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
-            _ = time_series_madd(ts, values_or_df)
-
     @given(ts_pair=redis_time_series())
-    def test_df_error_key(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(
-            schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
-        )
+    def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
+        ts, _ = ts_pair
         with raises(
-            TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
+            TimeSeriesReadDataFrameError, match="At least 1 key must be requested"
         ):
-            _ = time_series_madd(ts_pair[0], df)
-
-    @given(ts_pair=redis_time_series())
-    def test_df_error_timestamp(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
-        with raises(
-            TimeSeriesMAddError,
-            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
-        ):
-            _ = time_series_madd(ts_pair[0], df)
-
-    @given(ts_pair=redis_time_series())
-    def test_df_error_value(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
-        with raises(
-            TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
-        ):
-            _ = time_series_madd(ts_pair[0], df)
+            _ = time_series_read_dataframe(ts, [], [])
 
     @given(ts_pair=redis_time_series(), key=text_ascii())
-    def test_non_existent_key(
+    def test_no_columns_requested(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
         ts, uuid = ts_pair
-        df = time_series_range(ts, f"{uuid}_{key}")
-        check_polars_dataframe(df, height=0, schema_list=self.schema)
+        with raises(
+            TimeSeriesReadDataFrameError, match="At least 1 column must be requested"
+        ):
+            _ = time_series_read_dataframe(ts, f"{uuid}_{key}", [])
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -397,9 +291,7 @@ class TestTimeSeriesMAddAndRange:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @settings(
-        phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
-    )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
@@ -569,8 +461,14 @@ class TestTimeSeriesMAddAndRange:
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
         ts, uuid = ts_pair
-        df = time_series_range(ts, f"{uuid}_{key}")
-        check_polars_dataframe(df, height=0, schema_list=self.schema)
+        with raises(TimeSeriesRangeError, match="Key '.*' does not exist"):
+            _ = time_series_range(ts, f"{uuid}_{key}")
+
+    @given(ts_pair=redis_time_series())
+    def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
+        ts, _ = ts_pair
+        with raises(TimeSeriesRangeError, match="At least 1 key must be requested"):
+            _ = time_series_range(ts, [])
 
 
 class TestYieldClient:

@@ -41,6 +41,7 @@ _PORT = 6379
 _KEY = "key"
 _TIMESTAMP = "timestamp"
 _VALUE = "value"
+_SPLIT = "|"
 
 
 def ensure_time_series_created(
@@ -235,7 +236,7 @@ def time_series_add_dataframe(
         ) from None
     df_long = (
         df.unpivot(on=numeric(), index=[key, timestamp])
-        .with_columns(pl.format("{}__{}", key, "variable").alias(f"_{_KEY}"))
+        .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
     _ = time_series_madd(
@@ -331,6 +332,7 @@ def time_series_madd(
             values_or_df, key=key, timestamp=timestamp, value=value
         )
     else:  # skipif-ci-and-not-linux
+        values_or_df = list(values_or_df)
         triples = list(_time_series_madd_prepare_triples(values_or_df))
     if not assume_time_series_exist:  # skipif-ci-and-not-linux
         ensure_time_series_created(
@@ -344,7 +346,9 @@ def time_series_madd(
             ignore_max_time_diff=ignore_max_time_diff,
             ignore_max_val_diff=ignore_max_val_diff,
         )
-    result: list[int | ResponseError] = ts.madd(triples)  # skipif-ci-and-not-linux
+    result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-not-linux
+        list(triples)
+    )
     try:  # skipif-ci-and-not-linux
         i, error = next(
             (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
@@ -419,7 +423,7 @@ def _time_series_madd_prepare_dataframe(
         )
     cls_name = get_class_name(value_dtype)  # skipif-ci-and-not-linux
     return df.with_columns(  # skipif-ci-and-not-linux
-        pl.format(f"{{}}__{cls_name}", key)
+        pl.format(f"{{}}{_SPLIT}{cls_name}", key)
     ).rows()
 
 
@@ -433,7 +437,7 @@ def _time_series_madd_prepare_triples(
         milliseconds = milliseconds_since_epoch(timestamp, strict=True)
         dtype = Int64 if isinstance(value, int) else Float64
         cls_name = get_class_name(dtype)
-        full_key = f"{key}__{cls_name}"
+        full_key = f"{key}{_SPLIT}{cls_name}"
         yield full_key, milliseconds, value
 
 
@@ -557,14 +561,13 @@ def time_series_range(
     output_value: str = _VALUE,
 ) -> DataFrame:
     """Get a range in forward direction."""
-    from polars import (  # skipif-ci-and-not-linux
-        concat,
-    )
+    from polars import concat  # skipif-ci-and-not-linux
 
-    dfs = (
+    key = list(always_iterable(key))  # skipif-ci-and-not-linux)
+    dfs = (  # skipif-ci-and-not-linux
         _time_series_range_one_key(
             ts,
-            key,
+            k,
             from_time=from_time,
             to_time=to_time,
             count=count,
@@ -582,12 +585,12 @@ def time_series_range(
             output_time_zone=output_time_zone,
             output_value=output_value,
         )
-        for key in (always_iterable(key))
+        for k in key
     )
-    try:
+    try:  # skipif-ci-and-not-linux
         return concat(dfs)
-    except ValueError:
-        raise NotImplementedError
+    except ValueError:  # skipif-ci-and-not-linux
+        raise _TimeSeriesRangeNoKeysRequestedError(key=key) from None
 
 
 def _time_series_range_one_key(
@@ -638,13 +641,13 @@ def _time_series_range_one_key(
         for dtype in ["Int64", "Float64"]
     )
     if (res_int64 is None) and (res_float64 is None):
-        raise TimeSeriesRangeError
+        raise _TimeSeriesRangeInvalidKeyError(key=key)
     if (res_int64 is not None) and (res_float64 is None):
         return res_int64
     if (res_int64 is None) and (res_float64 is not None):
         return res_float64
     if (res_int64 is not None) and (res_float64 is not None):
-        raise TimeSeriesRangeError
+        raise _TimeSeriesRangeKeyWithInt64AndFloat64Error(key=key)
     raise ImpossibleCaseError(case=[f"{res_int64=}", f"{res_float64=}"])
 
 
@@ -704,7 +707,7 @@ def _time_series_range_one_key_one_dtype(
     output_dtype = zoned_datetime(time_zone=output_time_zone)
     try:
         values = ts.range(  # skipif-ci-and-not-linux
-            f"{key}__{dtype}",
+            f"{key}{_SPLIT}{dtype}",
             from_time_use,
             to_time_use,
             count=count,
@@ -740,6 +743,37 @@ def _time_series_range_one_key_one_dtype(
     )
 
 
+@dataclass(kw_only=True)
+class TimeSeriesRangeError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesRangeNoKeysRequestedError(TimeSeriesRangeError):
+    key: Sequence[KeyT]
+
+    @override
+    def __str__(self) -> str:
+        return f"At least 1 key must be requested; got {self.key}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesRangeInvalidKeyError(TimeSeriesRangeError):
+    key: KeyT
+
+    @override
+    def __str__(self) -> str:
+        return f"Key {self.key!r} does not exist"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesRangeKeyWithInt64AndFloat64Error(TimeSeriesRangeError):
+    key: KeyT
+
+    @override
+    def __str__(self) -> str:
+        return f"Key {self.key!r} contains both Int64 and Float64 data"  # skipif-ci-and-not-linux
+
+
 def time_series_read_dataframe(
     ts: TimeSeries,
     keys: MaybeIterable[KeyT],
@@ -763,21 +797,19 @@ def time_series_read_dataframe(
     output_time_zone: ZoneInfo = UTC,
 ) -> DataFrame:
     """Read a DataFrame of time series."""
-    from polars import (  # skipif-ci-and-not-linux
-        DataFrame,
-        Utf8,
-        concat,
-    )
+    from polars import col, concat  # skipif-ci-and-not-linux
 
-    from utilities.polars import zoned_datetime
-
+    keys = list(always_iterable(keys))
+    if len(keys) == 0:
+        raise _TimeSeriesReadDataFrameNoKeysRequestedError(keys=keys)
+    columns = list(always_iterable(columns))
+    if len(columns) == 0:
+        raise _TimeSeriesReadDataFrameNoColumnsRequestedError(columns=columns)
     pairs = list(product(always_iterable(keys), always_iterable(columns)))
-    if len(pairs) == 0:
-        raise NotImplementedError
     dfs = (
         time_series_range(
             ts,
-            f"{key}__{column}",
+            f"{key}{_SPLIT}{column}",
             from_time=from_time,
             to_time=to_time,
             count=count,
@@ -796,24 +828,36 @@ def time_series_read_dataframe(
         )
         for key, column in pairs
     )
-    try:
-        df = concat(dfs)
-    except ValueError:
-        df = DataFrame(
-            schema={
-                f"_{_KEY}": Utf8,
-                output_timestamp: zoned_datetime(time_zone=output_time_zone),
-                _VALUE: Float64,
-            }
-        )
-    df = df.with_columns(
+    df = concat(dfs).with_columns(
         col(f"_{_KEY}")
-        .str.split_exact("__", 1)
+        .str.split_exact(_SPLIT, 1)
         .struct.rename_fields([output_key, "_variable"])
     )
     return df.unnest(f"_{_KEY}").pivot(
         "_variable", index=[output_key, output_timestamp]
     )
+
+
+@dataclass(kw_only=True)
+class TimeSeriesReadDataFrameError(Exception): ...
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesReadDataFrameNoKeysRequestedError(TimeSeriesReadDataFrameError):
+    keys: Sequence[KeyT]
+
+    @override
+    def __str__(self) -> str:
+        return f"At least 1 key must be requested; got {self.keys}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesReadDataFrameNoColumnsRequestedError(TimeSeriesReadDataFrameError):
+    columns: Sequence[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"At least 1 column must be requested; got {self.columns}"  # skipif-ci-and-not-linux
 
 
 @contextmanager
@@ -937,7 +981,10 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
 
 
 __all__ = [
+    "TimeSeriesAddDataFrameError",
+    "TimeSeriesAddError",
     "TimeSeriesMAddError",
+    "TimeSeriesRangeError",
     "ensure_time_series_created",
     "time_series_add",
     "time_series_add_dataframe",
