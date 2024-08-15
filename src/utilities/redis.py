@@ -712,7 +712,7 @@ def _time_series_range_one_key_one_dtype(
     filter_by_max_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
-    output_dtype = zoned_datetime(time_zone=output_time_zone)
+    output_dtype = zoned_datetime(time_zone=output_time_zone)  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         values = ts.range(
             f"{key}{_SPLIT}{dtype}",
