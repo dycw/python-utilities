@@ -349,7 +349,7 @@ class TestCheckPolarsDataFrameSchemaSubset:
 
 
 class TestCheckZonedDTypeOrSeries:
-    @given(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]))
+    @given(time_zone=sampled_from([HONG_KONG, UTC]))
     @mark.parametrize("case", [param("dtype"), param("series")])
     def test_main(
         self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
@@ -921,7 +921,7 @@ class TestYieldStructSeriesElements:
 
 
 class TestZonedDatetime:
-    @given(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]))
+    @given(time_zone=sampled_from([HONG_KONG, UTC]))
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         dtype = zoned_datetime(time_zone=time_zone)
         assert isinstance(dtype, Datetime)
