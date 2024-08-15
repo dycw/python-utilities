@@ -622,7 +622,7 @@ def _time_series_range_one_key(
     output_value: str = _VALUE,
 ) -> DataFrame:
     """Get a range for one key."""
-    res_int64, res_float64 = (
+    res_int64, res_float64 = (  # skipif-ci-and-not-linux
         _time_series_range_one_key_one_dtype(
             ts,
             key,
@@ -646,13 +646,13 @@ def _time_series_range_one_key(
         )
         for dtype in ["Int64", "Float64"]
     )
-    if (res_int64 is None) and (res_float64 is None):
+    if (res_int64 is None) and (res_float64 is None):  # skipif-ci-and-not-linux
         raise _TimeSeriesRangeInvalidKeyError(key=key)
-    if (res_int64 is not None) and (res_float64 is None):
+    if (res_int64 is not None) and (res_float64 is None):  # skipif-ci-and-not-linux
         return res_int64
-    if (res_int64 is None) and (res_float64 is not None):
+    if (res_int64 is None) and (res_float64 is not None):  # skipif-ci-and-not-linux
         return res_float64
-    if (res_int64 is not None) and (res_float64 is not None):
+    if (res_int64 is not None) and (res_float64 is not None):  # skipif-ci-and-not-linux
         raise _TimeSeriesRangeKeyWithInt64AndFloat64Error(key=key)
     raise ImpossibleCaseError(  # pragma: no cover
         case=[f"{res_int64=}", f"{res_float64=}"]
