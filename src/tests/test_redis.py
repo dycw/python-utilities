@@ -190,7 +190,7 @@ class TestTimeSeriesMAddAndRange:
         for timestamp in timestamps:
             _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
-        full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
+        full_keys = [f"{uuid}_{case}_{key}" for key in [key1, key2]]
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         match case:
             case "values":
@@ -222,7 +222,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         ts, uuid = ts_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
@@ -249,7 +249,7 @@ class TestTimeSeriesMAddAndRange:
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
         ts, uuid = ts_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
@@ -279,7 +279,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         ts, uuid = ts_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
