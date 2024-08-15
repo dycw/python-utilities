@@ -692,7 +692,7 @@ def _time_series_range_one_key_one_dtype(
         lit,
     )
 
-    from utilities.polars import DatetimeUTC, zoned_datetime
+    from utilities.polars import DatetimeUTC, zoned_datetime  # skipif-ci-and-not-linux
 
     ms_since_epoch = partial(  # skipif-ci-and-not-linux
         milliseconds_since_epoch, strict=True
