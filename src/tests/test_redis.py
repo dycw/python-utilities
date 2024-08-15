@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 from math import inf, nan
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import redis
 import redis.asyncio
 from hypothesis import HealthCheck, assume, given, reproduce_failure, settings
-from hypothesis.strategies import datetimes, floats, sampled_from
+from hypothesis.strategies import (
+    DataObject,
+    SearchStrategy,
+    data,
+    datetimes,
+    floats,
+    lists,
+    sampled_from,
+    tuples,
+)
 from polars import Boolean, DataFrame, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
@@ -15,7 +24,6 @@ from redis.commands.timeseries import TimeSeries
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
-    assume_does_not_raise,
     datetimes_utc,
     lists_fixed_length,
     longs,
@@ -23,7 +31,6 @@ from utilities.hypothesis import (
     redis_time_series,
     text_ascii,
 )
-from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.polars import DatetimeUTC, check_polars_dataframe, zoned_datetime
 from utilities.redis import (
     TimeSeriesAddError,
@@ -47,7 +54,8 @@ if TYPE_CHECKING:
     from uuid import UUID
     from zoneinfo import ZoneInfo
 
-    from polars._typing import SchemaDict
+    from polars._typing import PolarsDataType, SchemaDict
+    from pyarrow import DataType
 
 
 def _clean_datetime(
@@ -189,7 +197,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         value21=longs(),
         value22=longs(),
     )
-    @mark.only
+    # @mark.only
     @reproduce_failure("6.111.0", b"AXicY2CAAUYQAhFAkomBkRnEgMshmHgBAAO7ABE=")
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
@@ -235,11 +243,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         )
         # assert 0, f"\n{df}"
         time_series_add_dataframe(
-            ts,
-            df,
-            key=key,
-            timestamp=timestamp,
-            duplicate_policy="last",
+            ts, df, key=key, timestamp=timestamp, duplicate_policy="last"
         )
         result = time_series_read_dataframe(
             ts,
@@ -380,28 +384,36 @@ class TestTimeSeriesMAddAndRange:
         "value": Float64,
     }
 
+    @mark.only
     @given(
+        data=data(),
         ts_pair=redis_time_series(),
         keys=lists_fixed_length(text_ascii(), 5, unique=True),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         time_zone=sampled_from([HONG_KONG, UTC]),
-        value1=longs() | floats(allow_nan=False, allow_infinity=False),
-        value2=longs() | floats(allow_nan=False, allow_infinity=False),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
+    @mark.parametrize(
+        ("strategy", "dtype"),
+        [
+            param(longs(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
+        data: DataObject,
         ts_pair: tuple[TimeSeries, UUID],
         case: Literal["values", "DataFrame"],
         keys: list[str],
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        value1: float,
-        value2: float,
+        strategy: SearchStrategy[Any],
+        dtype: PolarsDataType,
     ) -> None:
         key, key1, key2, timestamp, value = keys
         ts, uuid = ts_pair
@@ -409,11 +421,12 @@ class TestTimeSeriesMAddAndRange:
         timestamps = [
             _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
         ]
-        data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
+        values = data.draw(tuples(strategy, strategy))
+        data = list(zip(full_keys, timestamps, values, strict=True))
         schema = {
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
-            value: Float64,
+            value: dtype,
         }
         match case:
             case "values":

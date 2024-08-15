@@ -472,7 +472,7 @@ ignore = [
   "D203",  # one-blank-line-before-class
   "D213",  # multi-line-summary-second-line
   "E501",  # line-too-long
-  "PD901",  # pandas-df-variable-name
+  "PD",  # pandas-vet
   "PERF203",  # try-except-in-loop
   "PLR0911",  # too-many-return-statements
   "PLR0912",  # too-many-branches
