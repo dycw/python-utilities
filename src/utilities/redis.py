@@ -18,6 +18,7 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
+from utilities.polars import DatetimeUTC
 from utilities.text import ensure_str
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 
     from polars import DataFrame
-    from polars._typing import PolarsDataType
+    from polars.datatypes import DataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
 
@@ -34,6 +35,9 @@ if TYPE_CHECKING:
 DuplicatePolicy = Literal["block", "first", "last", "min", "max", "sum"]
 _HOST = "localhost"
 _PORT = 6379
+_KEY = "key"
+_TIMESTAMP = "timestamp"
+_VALUE = "value"
 
 
 def ensure_time_series_created(
@@ -187,6 +191,105 @@ class _TimeSeriesAddInvalidValueError(TimeSeriesAddError):
         return f"Invalid value; got {self.value}"  # skipif-ci-and-not-linux
 
 
+def time_series_add_dataframe(
+    ts: TimeSeries,
+    df: DataFrame,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Append a DataFrame of time series."""
+    import polars as pl
+    from polars import Datetime
+    from polars.selectors import numeric
+
+    from utilities.polars import (
+        CheckZonedDTypeOrSeriesError,
+        check_zoned_dtype_or_series,
+    )
+
+    if key not in df.columns:
+        raise _TimeSeriesAddDataFrameKeyMissingError(df=df, key=key)
+    if timestamp not in df.columns:
+        raise _TimeSeriesAddDataFrameTimestampMissingError(df=df, timestamp=timestamp)
+    if not isinstance(key_dtype := df.schema[key], Datetime):
+        raise _TimeSeriesAddDataFrameKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
+    timestamp_dtype = df.schema[timestamp]
+    try:
+        check_zoned_dtype_or_series(timestamp_dtype)
+    except CheckZonedDTypeOrSeriesError:
+        raise _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
+            df=df, timestamp=timestamp, dtype=timestamp_dtype
+        ) from None
+    df_long = (
+        df.unpivot(on=numeric(), index=[key, timestamp])
+        .with_columns(_combined_key=pl.format("{}__{}", key, "variable"))
+        .drop(key, "variable")
+    )
+    _ = time_series_madd(
+        ts,
+        df_long,
+        key="_combined_key",
+        timestamp=timestamp,
+        assume_time_series_exist=assume_time_series_exist,
+        retention_msecs=retention_msecs,
+        uncompressed=uncompressed,
+        labels=labels,
+        chunk_size=chunk_size,
+        duplicate_policy=duplicate_policy,
+        ignore_max_time_diff=ignore_max_time_diff,
+        ignore_max_val_diff=ignore_max_val_diff,
+    )
+
+
+@dataclass(kw_only=True)
+class TimeSeriesAddDataFrameError(Exception):
+    df: DataFrame
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddDataFrameKeyMissingError(TimeSeriesAddDataFrameError):
+    key: str
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddDataFrameTimestampMissingError(TimeSeriesAddDataFrameError):
+    timestamp: str
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddDataFrameKeyIsNotUtf8Error(TimeSeriesAddDataFrameError):
+    df: DataFrame
+    key: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"The {self.key!r} column must be Utf8; got {self.dtype}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
+    TimeSeriesAddDataFrameError
+):
+    df: DataFrame
+    timestamp: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"The {self.timestamp!r} column must be a zoned Datetime; got {self.dtype}"  # skipif-ci-and-not-linux
+
+
 def time_series_get(
     ts: TimeSeries, key: KeyT, /, *, latest: bool | None = False
 ) -> tuple[dt.datetime, float]:
@@ -203,6 +306,9 @@ def time_series_madd(
     values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
     /,
     *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    value: str = _VALUE,
     assume_time_series_exist: bool = False,
     retention_msecs: int | None = None,
     uncompressed: bool | None = False,
@@ -222,23 +328,40 @@ def time_series_madd(
         col,
     )
 
+    from utilities.polars import (  # skipif-ci-and-not-linux
+        CheckZonedDTypeOrSeriesError,
+        check_zoned_dtype_or_series,
+    )
+
     triples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
-        df = values_or_df.select("key", "timestamp", "value")
-        key_dtype, timestamp_dtype, value_dtype = df.dtypes
-        if not isinstance(key_dtype, Utf8):
-            raise _TimeSeriesMAddKeyIsNotUtf8Error(df=df, dtype=key_dtype)
-        if not isinstance(timestamp_dtype, Datetime):
-            raise _TimeSeriesMAddTimestampIsNotDatetimeError(
-                df=df, dtype=timestamp_dtype
+        if key not in values_or_df.columns:
+            raise _TimeSeriesMAddKeyMissingError(df=values_or_df, key=key)
+        if timestamp not in values_or_df.columns:
+            raise _TimeSeriesMAddTimestampMissingError(
+                df=values_or_df, timestamp=timestamp
             )
+        if value not in values_or_df.columns:
+            raise _TimeSeriesMAddValueMissingError(df=values_or_df, value=value)
+        df = values_or_df.select(key, timestamp, value)
+        if not isinstance(key_dtype := df.schema[key], Utf8):
+            raise _TimeSeriesMAddKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
+        timestamp_dtype = df.schema[timestamp]
+        try:
+            check_zoned_dtype_or_series(timestamp_dtype)
+        except CheckZonedDTypeOrSeriesError:
+            raise _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(
+                df=df, timestamp=timestamp, dtype=timestamp_dtype
+            ) from None
         df = df.with_columns(
-            timestamp=col("timestamp")
+            col(timestamp)
             .cast(Datetime(time_unit="ms", time_zone="UTC"))
             .dt.epoch(time_unit="ms")
         )
-        if not isinstance(value_dtype, Float64 | Int64):
-            raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
+        if not isinstance(value_dtype := df.schema[value], Float64 | Int64):
+            raise _TimeSeriesMAddValueIsNotNumericError(
+                df=df, value=value, dtype=value_dtype
+            )
         triples = df.rows()
     else:  # skipif-ci-and-not-linux
         values_or_df = list(values_or_df)
@@ -268,19 +391,21 @@ def time_series_madd(
     except StopIteration:  # skipif-ci-and-not-linux
         return cast(list[int], result)
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
-        key, timestamp, value = values_or_df.row(i)
+        error_key, error_timestamp, error_value = values_or_df.row(i)
     else:  # skipif-ci-and-not-linux
-        key, timestamp, value = values_or_df[i]
+        error_key, error_timestamp, error_value = values_or_df[i]
     match _classify_response_error(error):  # skipif-ci-and-not-linux
         case "invalid key":
-            raise _TimeSeriesMAddInvalidKeyError(values_or_df=values_or_df, key=key)
+            raise _TimeSeriesMAddInvalidKeyError(
+                values_or_df=values_or_df, key=error_key
+            )
         case "invalid timestamp":
             raise _TimeSeriesMAddInvalidTimestampError(
-                values_or_df=values_or_df, timestamp=timestamp
+                values_or_df=values_or_df, timestamp=error_timestamp
             )
         case "invalid value":
             raise _TimeSeriesMAddInvalidValueError(
-                values_or_df=values_or_df, value=value
+                values_or_df=values_or_df, value=error_value
             )
         case _:  # pragma: no cover
             raise error
@@ -291,33 +416,66 @@ class TimeSeriesMAddError(Exception): ...
 
 
 @dataclass(kw_only=True)
-class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
+class _TimeSeriesMAddKeyMissingError(TimeSeriesMAddError):
     df: DataFrame
-    dtype: PolarsDataType
+    key: str
 
     @override
     def __str__(self) -> str:
-        return f"The 'key' column must be Utf8; got {self.dtype}"  # skipif-ci-and-not-linux
+        return f"DataFrame must have a {self.key!r} column; got {self.df.columns}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
-class _TimeSeriesMAddTimestampIsNotDatetimeError(TimeSeriesMAddError):
+class _TimeSeriesMAddTimestampMissingError(TimeSeriesMAddError):
     df: DataFrame
-    dtype: PolarsDataType
+    timestamp: str
 
     @override
     def __str__(self) -> str:
-        return f"The 'timestamp' column must be Datetime; got {self.dtype}"  # skipif-ci-and-not-linux
+        return f"DataFrame must have a {self.timestamp!r} column; got {self.df.columns}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddValueMissingError(TimeSeriesMAddError):
+    df: DataFrame
+    value: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have a {self.value!r} column; got {self.df.columns}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddKeyIsNotUtf8Error(TimeSeriesMAddError):
+    df: DataFrame
+    key: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"The {self.key!r} column must be Utf8; got {self.dtype}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(TimeSeriesMAddError):
+    df: DataFrame
+    timestamp: str
+    dtype: DataType
+
+    @override
+    def __str__(self) -> str:
+        return f"The {self.timestamp!r} column must be a zoned Datetime; got {self.dtype}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
 class _TimeSeriesMAddValueIsNotNumericError(TimeSeriesMAddError):
     df: DataFrame
-    dtype: PolarsDataType
+    value: str
+    dtype: DataType
 
     @override
     def __str__(self) -> str:
-        return f"The 'value' column must be numeric; got {self.dtype}"  # skipif-ci-and-not-linux
+        return f"The {self.value!r} column must be numeric; got {self.dtype}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -367,6 +525,9 @@ def time_series_range(
     latest: bool | None = False,
     bucket_timestamp: str | None = None,
     empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_value: str = _VALUE,
 ) -> DataFrame:
     """Get a range in forward direction."""
     from polars import (  # skipif-ci-and-not-linux
@@ -398,6 +559,9 @@ def time_series_range(
                 latest=latest,
                 bucket_timestamp=bucket_timestamp,
                 empty=empty,
+                output_key=output_key,
+                output_timestamp=output_timestamp,
+                output_value=output_value,
             )
             for key in keys
         )
@@ -421,21 +585,122 @@ def time_series_range(
     filter_by_max_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
-    values = ts.range(  # skipif-ci-and-not-linux
-        key,
-        from_time_use,
-        to_time_use,
-        count=count,
-        aggregation_type=aggregation_type,
-        bucket_size_msec=bucket_size_msec,
-        filter_by_ts=filter_by_ts_use,
-        filter_by_min_value=filter_by_min_value_use,
-        filter_by_max_value=filter_by_max_value_use,
-        align=align,
-        latest=latest,
-        bucket_timestamp=bucket_timestamp,
-        empty=empty,
+    try:
+        values = ts.range(  # skipif-ci-and-not-linux
+            key,
+            from_time_use,
+            to_time_use,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts_use,
+            filter_by_min_value=filter_by_min_value_use,
+            filter_by_max_value=filter_by_max_value_use,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+        )
+    except ResponseError as error:
+        match _classify_response_error(error):
+            case "invalid key":
+                return DataFrame(
+                    schema={
+                        output_key: Utf8,
+                        output_timestamp: DatetimeUTC,
+                        output_value: Float64,
+                    }
+                )
+            case _:
+                raise
+
+    return DataFrame(  # skipif-ci-and-not-linux
+        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
+    ).select(
+        lit(key, dtype=Utf8).alias(output_key),
+        from_epoch(output_timestamp, time_unit="ms").cast(DatetimeUTC),
+        output_value,
     )
+
+
+def time_series_read_dataframe(
+    ts: TimeSeries,
+    key: KeyT,
+    columns: Iterable[str],
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+) -> DataFrame:
+    """Read a DataFrame of time series."""
+    from polars import (  # skipif-ci-and-not-linux
+        DataFrame,
+        Float64,
+        Int64,
+        Utf8,
+        concat,
+        from_epoch,
+        lit,
+    )
+
+    dfs = (
+        time_series_range(
+            ts,
+            f"{key}__{column}",
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+        )
+        for column in always_iterable(columns)
+    )
+    try:
+        df = concat(dfs)
+    except ValueError:
+        df = DataFrame()
+
+    keys = list(always_iterable(key))  # skipif-ci-and-not-linux
+    if len(keys) >= 2:  # skipif-ci-and-not-linux
+        dfs = (
+            time_series_range(
+                ts,
+                key,
+                from_time=from_time,
+                to_time=to_time,
+                count=count,
+                aggregation_type=aggregation_type,
+                bucket_size_msec=bucket_size_msec,
+                filter_by_ts=filter_by_ts,
+                filter_by_min_value=filter_by_min_value,
+                filter_by_max_value=filter_by_max_value,
+                align=align,
+                latest=latest,
+                bucket_timestamp=bucket_timestamp,
+                empty=empty,
+            )
+            for key in keys
+        )
+        return concat(dfs)
     return DataFrame(  # skipif-ci-and-not-linux
         values, schema={"timestamp": Int64, "value": Float64}, orient="row"
     ).select(
@@ -553,7 +818,10 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
         == "TSDB: Error at upsert, update is not supported when DUPLICATE_POLICY is set to BLOCK mode"
     ):
         return "error at upsert"
-    if msg == "TSDB: the key is not a TSDB key":  # skipif-ci-and-not-linux
+    if msg in {  # skipif-ci-and-not-linux
+        "TSDB: the key does not exist",
+        "TSDB: the key is not a TSDB key",
+    }:
         return "invalid key"
     if (  # skipif-ci-and-not-linux
         msg == "TSDB: invalid timestamp, must be a nonnegative integer"
@@ -568,6 +836,7 @@ __all__ = [
     "TimeSeriesMAddError",
     "ensure_time_series_created",
     "time_series_add",
+    "time_series_add_dataframe",
     "time_series_get",
     "time_series_madd",
     "time_series_range",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from math import inf, nan
+from string import ascii_letters
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
@@ -307,7 +308,7 @@ class TestTimeSeriesMAddAndRange:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
         with raises(
             TimeSeriesMAddError,
-            match="The 'timestamp' column must be Datetime; got Boolean",
+            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
         ):
             _ = time_series_madd(ts_pair[0], df)
 
@@ -318,6 +319,14 @@ class TestTimeSeriesMAddAndRange:
             TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
         ):
             _ = time_series_madd(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series(), key=text_ascii())
+    def test_non_existent_key(
+        self, *, ts_pair: tuple[TimeSeries, UUID], key: str
+    ) -> None:
+        ts, uuid = ts_pair
+        df = time_series_range(ts, f"{uuid}_{key}")
+        check_polars_dataframe(df, height=0, schema_list=self.schema)
 
 
 class TestYieldClient:
