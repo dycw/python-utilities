@@ -381,7 +381,6 @@ class TestTimeSeriesMAddAndRange:
         "value": Float64,
     }
 
-    @mark.only
     @given(
         data=data(),
         ts_pair=redis_time_series(),
@@ -400,10 +399,6 @@ class TestTimeSeriesMAddAndRange:
     )
     @settings(
         phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
-    )
-    @reproduce_failure(
-        "6.111.0",
-        b"AXicDcM7TgJRFAbg85/XReVhTGbuDAOBEFGjibnO9QGKULoFbayMjTuycAOuyJrEJVhZ6Jd89P5Vp+X361Z3tWv7uqrk+oh47jPpg40cfszCWW9qGeohg881SWsBFrzUyjaJPCNriQswTslZk2ebY2G2vstIPpAzj5z4fhhsYpe3hbdWBGmsg4k0XvJAO1j3SKIbWqt0yiPrO3HkmTc+NvcrJjp47u0UYywyjZ4IsSt7uozh84XwCPp5+/g92WxXD6QiNK3p/x/XHhfW",
     )
     def test_main(
         self,
@@ -456,7 +451,7 @@ class TestTimeSeriesMAddAndRange:
             output_value=value,
         )
         check_polars_dataframe(res_range, height=2, schema_list=schema)
-        assert res_range.rows() == data
+        assert res_range.rows() == triples
 
     @FLAKY
     @given(
