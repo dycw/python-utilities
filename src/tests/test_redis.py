@@ -266,7 +266,12 @@ class TestTimeSeriesAddAndReadDataFrame:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesMAddAndRange:
-    schema: ClassVar[SchemaDict] = {
+    int_schema: ClassVar[SchemaDict] = {
+        "key": Utf8,
+        "timestamp": DatetimeUTC,
+        "value": Int64,
+    }
+    float_schema: ClassVar[SchemaDict] = {
         "key": Utf8,
         "timestamp": DatetimeUTC,
         "value": Float64,
@@ -347,7 +352,7 @@ class TestTimeSeriesMAddAndRange:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
+        value=longs(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_invalid_key(
@@ -365,7 +370,7 @@ class TestTimeSeriesMAddAndRange:
             case "values":
                 values_or_df = data
             case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
+                values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
         with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
             _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
 
@@ -373,7 +378,7 @@ class TestTimeSeriesMAddAndRange:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
+        value=longs(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_invalid_timestamp(
@@ -392,7 +397,7 @@ class TestTimeSeriesMAddAndRange:
             case "values":
                 values_or_df = data
             case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
+                values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
         with raises(
             TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
         ):
@@ -422,7 +427,7 @@ class TestTimeSeriesMAddAndRange:
             case "values":
                 values_or_df = data
             case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
+                values_or_df = DataFrame(data, schema=self.float_schema, orient="row")
         with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
             _ = time_series_madd(ts, values_or_df)
 
@@ -464,7 +469,9 @@ class TestTimeSeriesMAddAndRange:
     @given(ts_pair=redis_time_series())
     def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         ts, _ = ts_pair
-        with raises(TimeSeriesRangeError, match="At least 1 key must be requested"):
+        with raises(
+            TimeSeriesRangeError, match=r"At least 1 key must be requested; got \[\]"
+        ):
             _ = time_series_range(ts, [])
 
 
