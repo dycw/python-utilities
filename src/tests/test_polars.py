@@ -42,8 +42,6 @@ from utilities.polars import (
     SetFirstRowAsColumnsError,
     StructDataTypeError,
     YieldStructSeriesElementsError,
-    ZonedDatetime,
-    ZonedDatetimeError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
@@ -69,7 +67,7 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
-from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
+from utilities.zoneinfo import HONG_KONG, UTC
 
 
 class TestCeilDatetime:
@@ -356,7 +354,7 @@ class TestCheckZonedDTypeOrSeries:
     def test_main(
         self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
     ) -> None:
-        dtype = Datetime(time_zone=get_time_zone_name(time_zone))
+        dtype = zoned_datetime(time_zone=time_zone)
         match case:
             case "dtype":
                 dtype_or_series = dtype
@@ -925,13 +923,6 @@ class TestYieldStructSeriesElements:
 class TestZonedDatetime:
     @given(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]))
     def test_main(self, *, time_zone: ZoneInfo) -> None:
-        dtype = ZonedDatetime(time_zone=time_zone)
+        dtype = zoned_datetime(time_zone=time_zone)
         assert isinstance(dtype, Datetime)
         assert dtype.time_zone is not None
-
-    def test_error(self) -> None:
-        with raises(
-            ZonedDatetimeError,
-            match=r"Data type must be zoned; got ZonedDatetime\(.*, time_zone=None\)",
-        ):
-            _ = ZonedDatetime(time_zone=None)

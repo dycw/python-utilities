@@ -22,7 +22,6 @@ from typing import (
     overload,
 )
 
-from pandas._libs.tslibs.timezones import get_timezone
 from polars import (
     Boolean,
     DataFrame,
@@ -772,30 +771,11 @@ def yield_struct_series_dataclasses(
         yield None if value is None else from_dict(cls, value, config=config)
 
 
-class ZonedDatetime(Datetime):
-    """Data type representing a calendar date and time of day."""
-
-    time_zone: str  # pyright: ignore[reportIncompatibleVariableOverride]
-
-    @override
-    def __init__(
-        self,
-        time_unit: TimeUnit = "us",
-        time_zone: ZoneInfo | str | timezone | None = UTC,
-    ) -> None:
-        time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
-        super().__init__(time_unit=time_unit, time_zone=time_zone_use)
-        if time_zone is None:
-            raise ZonedDatetimeError(dtype=self)
-
-
-@dataclass(kw_only=True)
-class ZonedDatetimeError(Exception):
-    dtype: Datetime
-
-    @override
-    def __str__(self) -> str:
-        return f"Data type must be zoned; got {self.dtype}"
+def zoned_datetime(
+    *, time_unit: TimeUnit = "us", time_zone: ZoneInfo | str | timezone = UTC
+) -> Datetime:
+    """Create a zoned datetime data type."""
+    return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
 
 
 __all__ = [
@@ -808,7 +788,6 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
-    "ZonedDatetime",
     "ceil_datetime",
     "check_polars_dataframe",
     "check_zoned_dtype_or_series",
