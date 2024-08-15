@@ -31,6 +31,12 @@ if TYPE_CHECKING:
     from utilities.iterables import MaybeIterable
 
 DuplicatePolicy = Literal["BLOCK", "FIRST", "LAST", "MIN", "MAX", "SUM"]
+_HOST = "localhost"
+_PORT = 6379
+
+
+def ensure_time_series_created(time_series: TimeSeries, /, *keys: str) -> None:
+    """Ensure a set of time series are created."""
 
 
 def time_series_add(
@@ -358,8 +364,8 @@ def time_series_range(
 @contextmanager
 def yield_client(
     *,
-    host: str = "localhost",
-    port: int = 6379,
+    host: str = _HOST,
+    port: int = _PORT,
     db: int = 0,
     password: str | None = None,
     decode_responses: bool = False,
@@ -383,8 +389,8 @@ def yield_client(
 @asynccontextmanager
 async def yield_client_async(
     *,
-    host: str = "localhost",
-    port: int = 6379,
+    host: str = _HOST,
+    port: int = _PORT,
     db: str | int = 0,
     password: str | None = None,
     decode_responses: bool = False,
@@ -403,6 +409,50 @@ async def yield_client_async(
         yield client
     finally:
         await client.aclose()
+
+
+@contextmanager
+def yield_time_series(
+    *,
+    host: str = _HOST,
+    port: int = _PORT,
+    db: int = 0,
+    password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
+) -> Iterator[TimeSeries]:
+    """Yield a synchronous time series client."""
+    with yield_client(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    ) as client:
+        yield client.ts()
+
+
+@asynccontextmanager
+async def yield_time_series_async(
+    *,
+    host: str = _HOST,
+    port: int = _PORT,
+    db: int = 0,
+    password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
+) -> AsyncIterator[TimeSeries]:
+    """Yield an asynchronous time series client."""
+    async with yield_client_async(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    ) as client:
+        yield client.ts()
 
 
 _ResponseErrorKind = Literal[
@@ -430,10 +480,13 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
 
 __all__ = [
     "TimeSeriesMAddError",
+    "ensure_time_series_created",
     "time_series_add",
     "time_series_get",
     "time_series_madd",
     "time_series_range",
     "yield_client",
     "yield_client_async",
+    "yield_time_series",
+    "yield_time_series_async",
 ]

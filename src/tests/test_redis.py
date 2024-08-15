@@ -9,6 +9,7 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import datetimes, floats, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
+from redis.commands.timeseries import TimeSeries
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
@@ -23,6 +24,8 @@ from utilities.redis import (
     time_series_range,
     yield_client,
     yield_client_async,
+    yield_time_series,
+    yield_time_series_async,
 )
 from utilities.zoneinfo import HONG_KONG, UTC
 
@@ -310,3 +313,13 @@ class TestYieldClient:
     async def test_async(self) -> None:
         async with yield_client_async() as client:
             assert isinstance(client, redis.asyncio.Redis)
+
+
+class TestYieldTimeSeries:
+    def test_sync(self) -> None:
+        with yield_time_series() as ts:
+            assert isinstance(ts, TimeSeries)
+
+    async def test_async(self) -> None:
+        async with yield_time_series_async() as ts:
+            assert isinstance(ts, TimeSeries)

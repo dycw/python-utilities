@@ -51,6 +51,7 @@ if TYPE_CHECKING:
     import redis
     from hypothesis.database import ExampleDatabase
     from pandas import Timestamp
+    from redis.commands.timeseries import TimeSeries
     from semver import Version
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
@@ -664,6 +665,13 @@ def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
     return client, uuid  # skipif-ci-and-not-linux
 
 
+@composite
+def redis_time_series(_draw: DrawFn, /) -> tuple[TimeSeries, UUID]:
+    """Strategy for generating redis time series."""
+    client, uuid = _draw(redis_clients())  # skipif-ci-and-not-linux
+    return client.ts(), uuid  # skipif-ci-and-not-linux
+
+
 def setup_hypothesis_profiles(
     *, suppress_health_check: Iterable[HealthCheck] = ()
 ) -> None:
@@ -1131,6 +1139,7 @@ __all__ = [
     "months",
     "namespace_mixins",
     "redis_clients",
+    "redis_time_series",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",

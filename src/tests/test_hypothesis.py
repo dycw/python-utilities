@@ -78,6 +78,7 @@ from utilities.hypothesis import (
     months,
     namespace_mixins,
     redis_clients,
+    redis_time_series,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
@@ -124,6 +125,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     import redis
+    from redis.commands.timeseries import TimeSeries
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
@@ -757,6 +759,20 @@ class TestRedisClients:
         _ = client.set(full_key, value)
         result = int(cast(str, client.get(full_key)))
         assert result == value
+
+
+@SKIPIF_CI_AND_NOT_LINUX
+class TestRedisTimeSeries:
+    @given(ts_pair=redis_time_series(), key=text_ascii(), value=longs())
+    def test_main(
+        self, *, ts_pair: tuple[TimeSeries, UUID], key: str, value: int
+    ) -> None:
+        ts, uuid = ts_pair
+        full_key = f"{uuid}_{key}"
+        _ = ts.add(full_key, "*", value)
+        res_timestamp, res_value = ts.get(full_key)
+        assert isinstance(res_timestamp, int)
+        assert res_value == value
 
 
 class TestReducedExamples:
