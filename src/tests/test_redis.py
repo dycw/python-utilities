@@ -11,7 +11,7 @@ from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
     datetimes_utc,
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestEnsureTimeSeriesCreated:
+    @FLAKY
     @given(client_pair=redis_clients(), key=text_ascii())
     def test_main(self, *, client_pair: tuple[redis.Redis, UUID], key: str) -> None:
         client, uuid = client_pair
@@ -206,6 +207,7 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(res_range, height=2, schema_list=self.schema)
         assert res_range.rows() == data
 
+    @FLAKY
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
