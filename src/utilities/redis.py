@@ -48,7 +48,7 @@ def ensure_time_series_created(
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: Number | None = None,
 ) -> None:
-    """Ensure a set of time series are created."""
+    """Ensure a time series/set of time series is/are created."""
     for key in set(keys):
         try:
             _ = ts.create(
@@ -77,7 +77,10 @@ async def ensure_time_series_created_async(
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: Number | None = None,
 ) -> None:
-    for key in set(keys):
+    """Ensure a time series/set of time series is/are created."""
+    # note: we do not do coverage for this yet as we don't have async clients
+
+    for key in set(keys):  # pragma: no cover
         try:
             _ = await ts.create(
                 key,
