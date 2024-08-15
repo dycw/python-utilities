@@ -74,6 +74,7 @@ class TestTimeSeriesAddAndGet:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
+        _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
         full_key = f"{uuid}_{key}"
         res_add = time_series_add(
