@@ -38,7 +38,11 @@ from utilities.iterables import (
     chunked,
     one,
 )
-from utilities.polars import EmptyPolarsConcatError, redirect_empty_polars_concat
+from utilities.polars import (
+    EmptyPolarsConcatError,
+    redirect_empty_polars_concat,
+    zoned_datetime,
+)
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     ensure_tables_created,
@@ -50,7 +54,7 @@ from utilities.sqlalchemy import (
     yield_connection,
 )
 from utilities.types import ensure_not_none
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import (
@@ -524,9 +528,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
         return pl.Date
     if issubclass(py_type, dt.datetime):
         has_tz: bool = type_use.timezone
-        return (
-            Datetime(time_zone=get_time_zone_name(time_zone)) if has_tz else Datetime()
-        )
+        return zoned_datetime(time_zone=time_zone) if has_tz else Datetime()
     if issubclass(py_type, dt.time):
         return Time
     if issubclass(py_type, dt.timedelta):
