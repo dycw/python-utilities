@@ -347,6 +347,72 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(res_range, height=2, schema_list=schema)
         assert res_range.rows() == triples
 
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_key_missing(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
+        ts, _ = ts_pair
+        df = DataFrame()
+        with raises(
+            TimeSeriesMAddError, match="DataFrame must have a 'key' column; got .*"
+        ):
+            _ = time_series_madd(ts, df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_timestamp_missing(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        ts, _ = ts_pair
+        df = DataFrame(schema={"key": Utf8})
+        with raises(
+            TimeSeriesMAddError,
+            match="DataFrame must have a 'timestamp' column; got .*",
+        ):
+            _ = time_series_madd(ts, df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_value_missing(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        ts, _ = ts_pair
+        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
+        with raises(
+            TimeSeriesMAddError,
+            match="DataFrame must have a 'value' column; got .*",
+        ):
+            _ = time_series_madd(ts, df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_key_is_not_utf8(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(
+            schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
+        )
+        with raises(
+            TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
+        ):
+            _ = time_series_madd(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_timestamp_is_not_a_zoned_datetime(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
+        with raises(
+            TimeSeriesMAddError,
+            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+        ):
+            _ = time_series_madd(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_madd_value_is_not_numeric(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
+        with raises(
+            TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
+        ):
+            _ = time_series_madd(ts_pair[0], df)
+
     @FLAKY
     @given(
         ts_pair=redis_time_series(),
@@ -355,7 +421,7 @@ class TestTimeSeriesMAddAndRange:
         value=longs(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    def test_invalid_key(
+    def test_error_madd_invalid_key(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],
@@ -371,7 +437,7 @@ class TestTimeSeriesMAddAndRange:
                 values_or_df = data
             case "DataFrame":
                 values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
-        with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
+        with raises(TimeSeriesMAddError, match="The key '.*' must exist"):
             _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
 
     @given(
@@ -381,7 +447,7 @@ class TestTimeSeriesMAddAndRange:
         value=longs(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    def test_invalid_timestamp(
+    def test_error_madd_invalid_timestamp(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],
@@ -412,7 +478,7 @@ class TestTimeSeriesMAddAndRange:
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    def test_invalid_value(
+    def test_error_madd_invalid_value(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],
@@ -428,35 +494,8 @@ class TestTimeSeriesMAddAndRange:
                 values_or_df = data
             case "DataFrame":
                 values_or_df = DataFrame(data, schema=self.float_schema, orient="row")
-        with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
+        with raises(TimeSeriesMAddError, match="The value .* is invalid"):
             _ = time_series_madd(ts, values_or_df)
-
-    @given(ts_pair=redis_time_series())
-    def test_df_error_key(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(
-            schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
-        )
-        with raises(
-            TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
-        ):
-            _ = time_series_madd(ts_pair[0], df)
-
-    @given(ts_pair=redis_time_series())
-    def test_df_error_timestamp(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
-        with raises(
-            TimeSeriesMAddError,
-            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
-        ):
-            _ = time_series_madd(ts_pair[0], df)
-
-    @given(ts_pair=redis_time_series())
-    def test_df_error_value(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
-        with raises(
-            TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
-        ):
-            _ = time_series_madd(ts_pair[0], df)
 
     @given(ts_pair=redis_time_series(), key=text_ascii())
     def test_non_existent_key(
@@ -468,6 +507,14 @@ class TestTimeSeriesMAddAndRange:
 
     @given(ts_pair=redis_time_series())
     def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
+        ts, _ = ts_pair
+        with raises(
+            TimeSeriesRangeError, match=r"At least 1 key must be requested; got \[\]"
+        ):
+            _ = time_series_range(ts, [])
+
+    @given(ts_pair=redis_time_series())
+    def test_error_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         ts, _ = ts_pair
         with raises(
             TimeSeriesRangeError, match=r"At least 1 key must be requested; got \[\]"
