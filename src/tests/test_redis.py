@@ -77,7 +77,7 @@ class TestTimeSeriesAddAndGet:
         ts, uuid = ts_pair
         full_key = f"{uuid}_{key}"
         res_add = time_series_add(
-            ts, full_key, timestamp, value, duplicate_policy="LAST"
+            ts, full_key, timestamp, value, duplicate_policy="last"
         )
         assert isinstance(res_add, int)
         res_timestamp, res_value = time_series_get(ts, full_key)
@@ -126,7 +126,7 @@ class TestTimeSeriesAddAndGet:
             TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
         ):
             _ = time_series_add(
-                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="LAST"
+                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="last"
             )
 
     @given(
@@ -148,7 +148,7 @@ class TestTimeSeriesAddAndGet:
         ts, uuid = ts_pair
         with raises(TimeSeriesAddError, match="Invalid value; got .*"):
             _ = time_series_add(
-                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="LAST"
+                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="last"
             )
 
 
@@ -191,14 +191,13 @@ class TestTimeSeriesMAddAndRange:
             _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
         full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
-        ensure_time_series_created(ts, *full_keys, duplicate_policy="last")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         match case:
             case "values":
-                res_madd = time_series_madd(ts, data)
+                values_or_df = data
             case "DataFrame":
-                df = DataFrame(data, schema=self.schema, orient="row")
-                res_madd = time_series_madd(ts, df)
+                values_or_df = DataFrame(data, schema=self.schema, orient="row")
+        res_madd = time_series_madd(ts, values_or_df, duplicate_policy="last")
         assert isinstance(res_madd, list)
         for i in res_madd:
             assert isinstance(i, int)
@@ -230,7 +229,7 @@ class TestTimeSeriesMAddAndRange:
             case "DataFrame":
                 values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
-            _ = time_series_madd(ts, values_or_df)
+            _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
 
     @given(
         ts_pair=redis_time_series(),

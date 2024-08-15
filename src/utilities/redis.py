@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from polars._typing import PolarsDataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
-    from sqlalchemy.util.typing import resolve_name_to_real_class_name
 
     from utilities.iterables import MaybeIterable
 
@@ -50,7 +49,7 @@ def ensure_time_series_created(
     ignore_max_val_diff: Number | None = None,
 ) -> None:
     """Ensure a set of time series are created."""
-    for key in keys:
+    for key in set(keys):
         try:
             _ = ts.create(
                 key,
@@ -78,7 +77,7 @@ async def ensure_time_series_created_async(
     ignore_max_time_diff: int | None = None,
     ignore_max_val_diff: Number | None = None,
 ) -> None:
-    for key in keys:
+    for key in set(keys):
         try:
             _ = await ts.create(
                 key,
@@ -94,9 +93,7 @@ async def ensure_time_series_created_async(
             _ensure_time_series_created_maybe_reraise(error)
 
 
-def _ensure_time_series_created_maybe_reraise(
-    error: resolve_name_to_real_class_name, /
-) -> None:
+def _ensure_time_series_created_maybe_reraise(error: ResponseError, /) -> None:
     """Re-raise the error if it does not match the required statement."""
     if not search("TSDB: key already exists", ensure_str(one(error.args))):
         raise error  # pragma: no cover
@@ -200,6 +197,15 @@ def time_series_madd(
     ts: TimeSeries,
     values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
     /,
+    *,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
 ) -> list[int]:
     """Append new samples to one or more time series."""
     from polars import (  # skipif-ci-and-not-linux
@@ -211,7 +217,7 @@ def time_series_madd(
         col,
     )
 
-    ktv_tuples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
+    triples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
         df = values_or_df.select("key", "timestamp", "value")
         key_dtype, timestamp_dtype, value_dtype = df.dtypes
@@ -228,15 +234,27 @@ def time_series_madd(
         )
         if not isinstance(value_dtype, Float64 | Int64):
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
-        ktv_tuples = df.rows()
+        triples = df.rows()
     else:  # skipif-ci-and-not-linux
         values_or_df = list(values_or_df)
-        ktv_tuples = [
+        triples = [
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
         ]
+    if not assume_time_series_exist:  # skipif-ci-and-not-linux
+        ensure_time_series_created(
+            ts,
+            *{key for key, _, _ in triples},
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+        )
     result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-not-linux
-        list(ktv_tuples)
+        list(triples)
     )
     try:  # skipif-ci-and-not-linux
         i, error = next(
