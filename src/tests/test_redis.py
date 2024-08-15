@@ -180,10 +180,6 @@ class TestTimeSeriesMAddAndRange:
         input_output_value=text_ascii(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @reproduce_failure(
-        "6.111.0",
-        b"AABO0/eN18+MiwQDASMEOyYFHQEdBwUiAAQhAyQAARcAHQE+JToACoUAABuQBh0IBCUF170AAH4BAH////8AIQECBgUCAACn+gAAWAcFHQEuBwABDgY0MgU8EQcHAAEABDACNBcBBAIGBAIDFAYkBAMHBwM=",
-    )
     @settings(
         phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
     )
