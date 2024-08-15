@@ -323,9 +323,7 @@ def time_series_madd(
     ignore_max_val_diff: Number | None = None,
 ) -> list[int]:
     """Append new samples to one or more time series."""
-    from polars import (  # skipif-ci-and-not-linux
-        DataFrame,
-    )
+    from polars import DataFrame  # skipif-ci-and-not-linux
 
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
         triples = _time_series_madd_prepare_dataframe(
@@ -515,7 +513,7 @@ class _TimeSeriesMAddInvalidKeyError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid key; got {self.key!r}"  # skipif-ci-and-not-linux
+        return f"The key {self.key!r} must exist"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -535,7 +533,7 @@ class _TimeSeriesMAddInvalidValueError(TimeSeriesMAddError):
 
     @override
     def __str__(self) -> str:
-        return f"Invalid value; got {self.value}"  # skipif-ci-and-not-linux
+        return f"The value {self.value} is invalid"  # skipif-ci-and-not-linux
 
 
 def time_series_range(
