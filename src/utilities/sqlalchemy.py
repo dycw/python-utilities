@@ -851,7 +851,7 @@ def _insert_items_prepare(
     mapping: dict[Table, list[_InsertItemValues]] = defaultdict(list)
     lengths: set[int] = set()
     for item in chain(*map(_insert_items_collect, items)):
-        values = item.values  # noqa: PD011
+        values = item.values
         mapping[item.table].append(values)
         lengths.add(len(values))
     tables = list(mapping)

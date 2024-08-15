@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
 import redis.asyncio
-from altair import Key
 from redis import ResponseError
-from sqlalchemy.pool import impl
 from typing_extensions import override
 
 from utilities.datetime import (
@@ -214,14 +212,12 @@ def time_series_add_dataframe(
 ) -> None:
     """Append a DataFrame of time series."""
     import polars as pl
-    from polars import Datetime, Utf8
+    from polars import Utf8
     from polars.selectors import numeric
 
     from utilities.polars import (
         CheckZonedDTypeOrSeriesError,
-        DatetimeUTC,
         check_zoned_dtype_or_series,
-        zoned_datetime,
     )
 
     if key not in df.columns:
@@ -328,16 +324,6 @@ def time_series_madd(
     """Append new samples to one or more time series."""
     from polars import (  # skipif-ci-and-not-linux
         DataFrame,
-        Float64,
-        Int64,
-        Utf8,
-    )
-
-    from utilities.polars import (  # skipif-ci-and-not-linux
-        CheckZonedDTypeOrSeriesError,
-        DatetimeUTC,
-        check_zoned_dtype_or_series,
-        zoned_datetime,
     )
 
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
@@ -433,7 +419,7 @@ def _time_series_madd_prepare_dataframe(
         )
     cls_name = get_class_name(value_dtype)  # skipif-ci-and-not-linux
     return df.with_columns(  # skipif-ci-and-not-linux
-        pl.format(f"{{}}__{cls_name}", "local_symbol")
+        pl.format(f"{{}}__{cls_name}", key)
     ).rows()
 
 
@@ -572,46 +558,131 @@ def time_series_range(
 ) -> DataFrame:
     """Get a range in forward direction."""
     from polars import (  # skipif-ci-and-not-linux
+        concat,
+    )
+
+    dfs = (
+        _time_series_range_one_key(
+            ts,
+            key,
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
+            output_value=output_value,
+        )
+        for key in (always_iterable(key))
+    )
+    try:
+        return concat(dfs)
+    except ValueError:
+        raise NotImplementedError
+
+
+def _time_series_range_one_key(
+    ts: TimeSeries,
+    key: KeyT,
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+    output_value: str = _VALUE,
+) -> DataFrame:
+    """Get a range for one key."""
+    res_int64, res_float64 = (
+        _time_series_range_one_key_one_dtype(
+            ts,
+            key,
+            cast(Literal["Int64", "Float64"], dtype),
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
+            output_value=output_value,
+        )
+        for dtype in ["Int64", "Float64"]
+    )
+    if (res_int64 is None) and (res_float64 is None):
+        raise TimeSeriesRangeError
+    if (res_int64 is not None) and (res_float64 is None):
+        return res_int64
+    if (res_int64 is None) and (res_float64 is not None):
+        return res_float64
+    if (res_int64 is not None) and (res_float64 is not None):
+        raise TimeSeriesRangeError
+    raise ImpossibleCaseError(case=[f"{res_int64=}", f"{res_float64=}"])
+
+
+def _time_series_range_one_key_one_dtype(
+    ts: TimeSeries,
+    key: KeyT,
+    dtype: Literal["Int64", "Float64"],
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+    output_value: str = _VALUE,
+) -> DataFrame | None:
+    """Get a range for one key, one dtype."""
+    from polars import (  # skipif-ci-and-not-linux
         DataFrame,
         Float64,
         Int64,
         Utf8,
-        concat,
         from_epoch,
         lit,
     )
 
     from utilities.polars import DatetimeUTC, zoned_datetime
 
-    keys = list(always_iterable(key))  # skipif-ci-and-not-linux
-    if len(keys) == 0:  # skipif-ci-and-not-linux
-        raise NotImplementedError
-    if len(keys) >= 2:  # skipif-ci-and-not-linux
-        dfs = (
-            time_series_range(
-                ts,
-                key,
-                from_time=from_time,
-                to_time=to_time,
-                count=count,
-                aggregation_type=aggregation_type,
-                bucket_size_msec=bucket_size_msec,
-                filter_by_ts=filter_by_ts,
-                filter_by_min_value=filter_by_min_value,
-                filter_by_max_value=filter_by_max_value,
-                align=align,
-                latest=latest,
-                bucket_timestamp=bucket_timestamp,
-                empty=empty,
-                output_key=output_key,
-                output_timestamp=output_timestamp,
-                output_time_zone=output_time_zone,
-                output_value=output_value,
-            )
-            for key in keys
-        )
-        return concat(dfs)
-    key = one(keys)  # skipif-ci-and-not-linux
     ms_since_epoch = partial(  # skipif-ci-and-not-linux
         milliseconds_since_epoch, strict=True
     )
@@ -633,7 +704,7 @@ def time_series_range(
     output_dtype = zoned_datetime(time_zone=output_time_zone)
     try:
         values = ts.range(  # skipif-ci-and-not-linux
-            key,
+            f"{key}__{dtype}",
             from_time_use,
             to_time_use,
             count=count,
@@ -650,17 +721,16 @@ def time_series_range(
     except ResponseError as error:
         match _classify_response_error(error):
             case "invalid key":
-                return DataFrame(
-                    schema={
-                        output_key: Utf8,
-                        output_timestamp: output_dtype,
-                        output_value: Float64,
-                    }
-                )
+                return None
             case _:
                 raise
+    match dtype:
+        case "Int64":
+            dtype_use = Int64
+        case "Float64":
+            dtype_use = Float64
     return DataFrame(  # skipif-ci-and-not-linux
-        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
+        values, schema={output_timestamp: Int64, output_value: dtype_use}, orient="row"
     ).select(
         lit(key, dtype=Utf8).alias(output_key),
         from_epoch(output_timestamp, time_unit="ms")
@@ -699,7 +769,7 @@ def time_series_read_dataframe(
         concat,
     )
 
-    from utilities.polars import DatetimeUTC, zoned_datetime
+    from utilities.polars import zoned_datetime
 
     pairs = list(product(always_iterable(keys), always_iterable(columns)))
     if len(pairs) == 0:
