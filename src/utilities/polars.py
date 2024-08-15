@@ -9,6 +9,7 @@ from datetime import timezone
 from enum import Enum
 from functools import reduce
 from itertools import chain
+from sys import gettrace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +23,7 @@ from typing import (
     overload,
 )
 
+from nox.registry import get
 from polars import (
     Boolean,
     DataFrame,
@@ -788,6 +790,7 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
+    "ZonedDatetime",
     "ceil_datetime",
     "check_polars_dataframe",
     "check_zoned_dtype_or_series",
