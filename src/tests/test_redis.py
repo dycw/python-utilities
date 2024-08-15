@@ -32,6 +32,7 @@ from utilities.hypothesis import (
 )
 from utilities.polars import DatetimeUTC, check_polars_dataframe, zoned_datetime
 from utilities.redis import (
+    TimeSeriesAddDataFrameError,
     TimeSeriesAddError,
     TimeSeriesMAddError,
     TimeSeriesRangeError,
@@ -246,6 +247,48 @@ class TestTimeSeriesAddAndReadDataFrame:
         assert_frame_equal(result, df)
 
     @given(ts_pair=redis_time_series())
+    def test_error_add_key_missing(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
+        df = DataFrame()
+        with raises(
+            TimeSeriesAddDataFrameError,
+            match="DataFrame must have a 'key' column; got .*",
+        ):
+            _ = time_series_add_dataframe(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_add_timestamp_missing(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8})
+        with raises(
+            TimeSeriesAddDataFrameError,
+            match="DataFrame must have a 'timestamp' column; got .*",
+        ):
+            _ = time_series_add_dataframe(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series())
+    def test_error_add_key_is_not_utf8(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(schema={"key": Boolean, "timestamp": DatetimeUTC})
+        with raises(
+            TimeSeriesAddDataFrameError,
+            match="The 'key' column must be Utf8; got Boolean",
+        ):
+            _ = time_series_add_dataframe(ts_pair[0], df)
+
+    @given(ts_pair=redis_time_series())
+    @mark.only
+    def test_error_madd_timestamp_is_not_a_zoned_datetime(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
+        with raises(
+            TimeSeriesAddDataFrameError,
+            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+        ):
+            _ = time_series_add_dataframe(ts_pair[0], df)
+
     def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         ts, _ = ts_pair
         with raises(
