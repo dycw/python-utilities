@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from math import inf, nan
 from typing import TYPE_CHECKING, ClassVar, Literal
 
@@ -14,11 +13,18 @@ from redis.commands.timeseries import TimeSeries
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
-from utilities.hypothesis import datetimes_utc, longs, redis_time_series, text_ascii
+from utilities.hypothesis import (
+    datetimes_utc,
+    longs,
+    redis_clients,
+    redis_time_series,
+    text_ascii,
+)
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
     TimeSeriesAddError,
     TimeSeriesMAddError,
+    ensure_time_series_created,
     time_series_add,
     time_series_get,
     time_series_madd,
@@ -36,6 +42,18 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from polars._typing import SchemaDict
+
+
+@SKIPIF_CI_AND_NOT_LINUX
+class TestEnsureTimeSeriesCreated:
+    @given(client_pair=redis_clients(), key=text_ascii())
+    def test_main(self, *, client_pair: tuple[redis.Redis, UUID], key: str) -> None:
+        client, uuid = client_pair
+        full_key = f"{uuid}_{key}"
+        assert client.exists(full_key) == 0
+        for _ in range(2):
+            ensure_time_series_created(client.ts(), full_key)
+        assert client.exists(full_key) == 1
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -173,9 +191,7 @@ class TestTimeSeriesMAddAndRange:
             _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
         full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
-        for full_key in full_keys:
-            with suppress(Exception):  # TODO: use ensure
-                _ = ts.create(full_key, duplicate_policy="LAST")
+        ensure_time_series_created(ts, *full_keys, duplicate_policy="last")
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         match case:
             case "values":

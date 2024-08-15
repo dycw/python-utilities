@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from functools import partial
+from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
@@ -27,16 +28,78 @@ if TYPE_CHECKING:
     from polars._typing import PolarsDataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
+    from sqlalchemy.util.typing import resolve_name_to_real_class_name
 
     from utilities.iterables import MaybeIterable
 
-DuplicatePolicy = Literal["BLOCK", "FIRST", "LAST", "MIN", "MAX", "SUM"]
+DuplicatePolicy = Literal["block", "first", "last", "min", "max", "sum"]
 _HOST = "localhost"
 _PORT = 6379
 
 
-def ensure_time_series_created(time_series: TimeSeries, /, *keys: str) -> None:
+def ensure_time_series_created(
+    ts: TimeSeries,
+    /,
+    *keys: KeyT,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
     """Ensure a set of time series are created."""
+    for key in keys:
+        try:
+            _ = ts.create(
+                key,
+                retention_msecs=retention_msecs,
+                uncompressed=uncompressed,
+                labels=labels,
+                chunk_size=chunk_size,
+                duplicate_policy=duplicate_policy,
+                ignore_max_time_diff=ignore_max_time_diff,
+                ignore_max_val_diff=ignore_max_val_diff,
+            )
+        except ResponseError as error:
+            _ensure_time_series_created_maybe_reraise(error)
+
+
+async def ensure_time_series_created_async(
+    ts: TimeSeries,
+    /,
+    *keys: KeyT,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    for key in keys:
+        try:
+            _ = await ts.create(
+                key,
+                retention_msecs=retention_msecs,
+                uncompressed=uncompressed,
+                labels=labels,
+                chunk_size=chunk_size,
+                duplicate_policy=duplicate_policy,
+                ignore_max_time_diff=ignore_max_time_diff,
+                ignore_max_val_diff=ignore_max_val_diff,
+            )
+        except ResponseError as error:
+            _ensure_time_series_created_maybe_reraise(error)
+
+
+def _ensure_time_series_created_maybe_reraise(
+    error: resolve_name_to_real_class_name, /
+) -> None:
+    """Re-raise the error if it does not match the required statement."""
+    if not search("TSDB: key already exists", ensure_str(one(error.args))):
+        raise error  # pragma: no cover
 
 
 def time_series_add(
