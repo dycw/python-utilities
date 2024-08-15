@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from functools import partial
+from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
@@ -30,7 +31,77 @@ if TYPE_CHECKING:
 
     from utilities.iterables import MaybeIterable
 
-DuplicatePolicy = Literal["BLOCK", "FIRST", "LAST", "MIN", "MAX", "SUM"]
+DuplicatePolicy = Literal["block", "first", "last", "min", "max", "sum"]
+_HOST = "localhost"
+_PORT = 6379
+
+
+def ensure_time_series_created(
+    ts: TimeSeries,
+    /,
+    *keys: KeyT,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Ensure a time series/set of time series is/are created."""
+    for key in set(keys):  # skipif-ci-and-not-linux
+        try:
+            _ = ts.create(
+                key,
+                retention_msecs=retention_msecs,
+                uncompressed=uncompressed,
+                labels=labels,
+                chunk_size=chunk_size,
+                duplicate_policy=duplicate_policy,
+                ignore_max_time_diff=ignore_max_time_diff,
+                ignore_max_val_diff=ignore_max_val_diff,
+            )
+        except ResponseError as error:
+            _ensure_time_series_created_maybe_reraise(error)
+
+
+async def ensure_time_series_created_async(
+    ts: TimeSeries,
+    /,
+    *keys: KeyT,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Ensure a time series/set of time series is/are created."""
+    # note: we do not do coverage for this yet as we don't have async clients
+
+    for key in set(keys):  # pragma: no cover
+        try:
+            _ = await ts.create(
+                key,
+                retention_msecs=retention_msecs,
+                uncompressed=uncompressed,
+                labels=labels,
+                chunk_size=chunk_size,
+                duplicate_policy=duplicate_policy,
+                ignore_max_time_diff=ignore_max_time_diff,
+                ignore_max_val_diff=ignore_max_val_diff,
+            )
+        except ResponseError as error:
+            _ensure_time_series_created_maybe_reraise(error)
+
+
+def _ensure_time_series_created_maybe_reraise(error: ResponseError, /) -> None:
+    """Re-raise the error if it does not match the required statement."""
+    if not search(  # skipif-ci-and-not-linux
+        "TSDB: key already exists", ensure_str(one(error.args))
+    ):
+        raise error  # pragma: no cover
 
 
 def time_series_add(
@@ -131,6 +202,15 @@ def time_series_madd(
     ts: TimeSeries,
     values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
     /,
+    *,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
 ) -> list[int]:
     """Append new samples to one or more time series."""
     from polars import (  # skipif-ci-and-not-linux
@@ -142,7 +222,7 @@ def time_series_madd(
         col,
     )
 
-    ktv_tuples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
+    triples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
         df = values_or_df.select("key", "timestamp", "value")
         key_dtype, timestamp_dtype, value_dtype = df.dtypes
@@ -159,15 +239,27 @@ def time_series_madd(
         )
         if not isinstance(value_dtype, Float64 | Int64):
             raise _TimeSeriesMAddValueIsNotNumericError(df=df, dtype=value_dtype)
-        ktv_tuples = df.rows()
+        triples = df.rows()
     else:  # skipif-ci-and-not-linux
         values_or_df = list(values_or_df)
-        ktv_tuples = [
+        triples = [
             (key, milliseconds_since_epoch(timestamp, strict=True), value)
             for key, timestamp, value in values_or_df
         ]
+    if not assume_time_series_exist:  # skipif-ci-and-not-linux
+        ensure_time_series_created(
+            ts,
+            *{key for key, _, _ in triples},
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+        )
     result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-not-linux
-        list(ktv_tuples)
+        list(triples)
     )
     try:  # skipif-ci-and-not-linux
         i, error = next(
@@ -358,8 +450,8 @@ def time_series_range(
 @contextmanager
 def yield_client(
     *,
-    host: str = "localhost",
-    port: int = 6379,
+    host: str = _HOST,
+    port: int = _PORT,
     db: int = 0,
     password: str | None = None,
     decode_responses: bool = False,
@@ -383,8 +475,8 @@ def yield_client(
 @asynccontextmanager
 async def yield_client_async(
     *,
-    host: str = "localhost",
-    port: int = 6379,
+    host: str = _HOST,
+    port: int = _PORT,
     db: str | int = 0,
     password: str | None = None,
     decode_responses: bool = False,
@@ -403,6 +495,50 @@ async def yield_client_async(
         yield client
     finally:
         await client.aclose()
+
+
+@contextmanager
+def yield_time_series(
+    *,
+    host: str = _HOST,
+    port: int = _PORT,
+    db: int = 0,
+    password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
+) -> Iterator[TimeSeries]:
+    """Yield a synchronous time series client."""
+    with yield_client(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    ) as client:
+        yield client.ts()
+
+
+@asynccontextmanager
+async def yield_time_series_async(
+    *,
+    host: str = _HOST,
+    port: int = _PORT,
+    db: int = 0,
+    password: str | None = None,
+    decode_responses: bool = False,
+    **kwargs: Any,
+) -> AsyncIterator[TimeSeries]:
+    """Yield an asynchronous time series client."""
+    async with yield_client_async(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=decode_responses,
+        **kwargs,
+    ) as client:
+        yield client.ts()
 
 
 _ResponseErrorKind = Literal[
@@ -430,10 +566,13 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
 
 __all__ = [
     "TimeSeriesMAddError",
+    "ensure_time_series_created",
     "time_series_add",
     "time_series_get",
     "time_series_madd",
     "time_series_range",
     "yield_client",
     "yield_client_async",
+    "yield_time_series",
+    "yield_time_series_async",
 ]

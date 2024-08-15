@@ -10,6 +10,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from collections.abc import Set as AbstractSet
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from enum import auto
@@ -597,7 +598,7 @@ async def ensure_tables_created_async(
 @dataclass(frozen=True, kw_only=True)
 class _EnsureTablesCreatedPrepare:
     match: str
-    tables: Sequence[Table]
+    tables: AbstractSet[Table]
 
 
 def _ensure_tables_created_prepare(
@@ -608,7 +609,7 @@ def _ensure_tables_created_prepare(
     """Prepare the arguments for `ensure_tables_created`."""
     return _EnsureTablesCreatedPrepare(
         match=_ensure_tables_created_match(engine_or_conn),
-        tables=list(map(get_table, tables_or_mapped_classes)),
+        tables=set(map(get_table, tables_or_mapped_classes)),
     )
 
 

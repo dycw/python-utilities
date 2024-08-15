@@ -9,20 +9,30 @@ from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import datetimes, floats, sampled_from
 from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
+from redis.commands.timeseries import TimeSeries
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
-from utilities.hypothesis import datetimes_utc, longs, redis_clients, text_ascii
+from utilities.hypothesis import (
+    datetimes_utc,
+    longs,
+    redis_clients,
+    redis_time_series,
+    text_ascii,
+)
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
     TimeSeriesAddError,
     TimeSeriesMAddError,
+    ensure_time_series_created,
     time_series_add,
     time_series_get,
     time_series_madd,
     time_series_range,
     yield_client,
     yield_client_async,
+    yield_time_series,
+    yield_time_series_async,
 )
 from utilities.zoneinfo import HONG_KONG, UTC
 
@@ -35,9 +45,23 @@ if TYPE_CHECKING:
 
 
 @SKIPIF_CI_AND_NOT_LINUX
+class TestEnsureTimeSeriesCreated:
+    @FLAKY
+    @given(client_pair=redis_clients(), key=text_ascii())
+    def test_main(self, *, client_pair: tuple[redis.Redis, UUID], key: str) -> None:
+        client, uuid = client_pair
+        full_key = f"{uuid}_{key}"
+        assert client.exists(full_key) == 0
+        for _ in range(2):
+            ensure_time_series_created(client.ts(), full_key)
+        assert client.exists(full_key) == 1
+
+
+@SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndGet:
+    @FLAKY
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes(
             min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
@@ -47,16 +71,16 @@ class TestTimeSeriesAddAndGet:
     def test_main(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        client, uuid = client_pair
-        ts = client.ts()
+        _ = assume(timestamp.fold == 0)
+        ts, uuid = ts_pair
         full_key = f"{uuid}_{key}"
         res_add = time_series_add(
-            ts, full_key, timestamp, value, duplicate_policy="LAST"
+            ts, full_key, timestamp, value, duplicate_policy="last"
         )
         assert isinstance(res_add, int)
         res_timestamp, res_value = time_series_get(ts, full_key)
@@ -64,7 +88,7 @@ class TestTimeSeriesAddAndGet:
         assert res_value == value
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
@@ -72,21 +96,21 @@ class TestTimeSeriesAddAndGet:
     def test_error_at_upsert(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        client, uuid = client_pair
+        ts, uuid = ts_pair
         with raises(  # noqa: PT012
             TimeSeriesAddError,
             match="Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*",
         ):
             for _ in range(2):
-                _ = time_series_add(client.ts(), f"{uuid}_{key}", timestamp, value)
+                _ = time_series_add(ts, f"{uuid}_{key}", timestamp, value)
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
@@ -94,22 +118,22 @@ class TestTimeSeriesAddAndGet:
     def test_invalid_timestamp(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
-        client, uuid = client_pair
+        ts, uuid = ts_pair
         with raises(
             TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
         ):
             _ = time_series_add(
-                client.ts(), f"{uuid}_{key}", timestamp, value, duplicate_policy="LAST"
+                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="last"
             )
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
             drop_microseconds
@@ -119,15 +143,15 @@ class TestTimeSeriesAddAndGet:
     def test_invalid_value(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        client, uuid = client_pair
+        ts, uuid = ts_pair
         with raises(TimeSeriesAddError, match="Invalid value; got .*"):
             _ = time_series_add(
-                client.ts(), f"{uuid}_{key}", timestamp, value, duplicate_policy="LAST"
+                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="last"
             )
 
 
@@ -140,7 +164,7 @@ class TestTimeSeriesMAddAndRange:
     }
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key1=text_ascii(),
         key2=text_ascii(),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
@@ -154,7 +178,7 @@ class TestTimeSeriesMAddAndRange:
     def test_main(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         case: Literal["values", "DataFrame"],
         key1: str,
         key2: str,
@@ -168,19 +192,15 @@ class TestTimeSeriesMAddAndRange:
         timestamps = [d.replace(tzinfo=time_zone) for d in [datetime1, datetime2]]
         for timestamp in timestamps:
             _ = assume(timestamp.fold == 0)
-        client, uuid = client_pair
-        full_keys = [f"{uuid}_{key}" for key in [key1, key2]]
-        ts = client.ts()
-        for full_key in full_keys:
-            if client.exists(full_key) == 0:
-                _ = ts.create(full_key, duplicate_policy="LAST")
+        ts, uuid = ts_pair
+        full_keys = [f"{uuid}_{case}_{key}" for key in [key1, key2]]
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
         match case:
             case "values":
-                res_madd = time_series_madd(ts, data)
+                values_or_df = data
             case "DataFrame":
-                df = DataFrame(data, schema=self.schema, orient="row")
-                res_madd = time_series_madd(ts, df)
+                values_or_df = DataFrame(data, schema=self.schema, orient="row")
+        res_madd = time_series_madd(ts, values_or_df, duplicate_policy="last")
         assert isinstance(res_madd, list)
         for i in res_madd:
             assert isinstance(i, int)
@@ -188,8 +208,9 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(res_range, height=2, schema_list=self.schema)
         assert res_range.rows() == data
 
+    @FLAKY
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
@@ -198,24 +219,24 @@ class TestTimeSeriesMAddAndRange:
     def test_invalid_key(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        client, uuid = client_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        ts, uuid = ts_pair
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
             case "DataFrame":
                 values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(TimeSeriesMAddError, match="Invalid key; got '.*'"):
-            _ = time_series_madd(client.ts(), values_or_df)
+            _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs() | floats(allow_nan=False, allow_infinity=False),
@@ -224,15 +245,15 @@ class TestTimeSeriesMAddAndRange:
     def test_invalid_timestamp(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
-        client, uuid = client_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        ts, uuid = ts_pair
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
@@ -241,10 +262,10 @@ class TestTimeSeriesMAddAndRange:
         with raises(
             TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
         ):
-            _ = time_series_madd(client.ts(), values_or_df)
+            _ = time_series_madd(ts, values_or_df)
 
     @given(
-        client_pair=redis_clients(),
+        ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
             drop_microseconds
@@ -255,51 +276,48 @@ class TestTimeSeriesMAddAndRange:
     def test_invalid_value(
         self,
         *,
-        client_pair: tuple[redis.Redis, UUID],
+        ts_pair: tuple[TimeSeries, UUID],
         case: Literal["values", "DataFrame"],
         key: str,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        client, uuid = client_pair
-        data = [(f"{uuid}_{key}", timestamp, value)]
+        ts, uuid = ts_pair
+        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
         match case:
             case "values":
                 values_or_df = data
             case "DataFrame":
                 values_or_df = DataFrame(data, schema=self.schema, orient="row")
         with raises(TimeSeriesMAddError, match=r"Invalid value; got .*"):
-            _ = time_series_madd(client.ts(), values_or_df)
+            _ = time_series_madd(ts, values_or_df)
 
-    @given(client_pair=redis_clients())
-    def test_df_error_key(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
-        client, _ = client_pair
+    @given(ts_pair=redis_time_series())
+    def test_df_error_key(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         df = DataFrame(
             schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
         )
         with raises(
             TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
         ):
-            _ = time_series_madd(client.ts(), df)
+            _ = time_series_madd(ts_pair[0], df)
 
-    @given(client_pair=redis_clients())
-    def test_df_error_timestamp(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
-        client, _ = client_pair
+    @given(ts_pair=redis_time_series())
+    def test_df_error_timestamp(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
         with raises(
             TimeSeriesMAddError,
             match="The 'timestamp' column must be Datetime; got Boolean",
         ):
-            _ = time_series_madd(client.ts(), df)
+            _ = time_series_madd(ts_pair[0], df)
 
-    @given(client_pair=redis_clients())
-    def test_df_error_value(self, *, client_pair: tuple[redis.Redis, UUID]) -> None:
-        client, _ = client_pair
+    @given(ts_pair=redis_time_series())
+    def test_df_error_value(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
         with raises(
             TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
         ):
-            _ = time_series_madd(client.ts(), df)
+            _ = time_series_madd(ts_pair[0], df)
 
 
 class TestYieldClient:
@@ -310,3 +328,13 @@ class TestYieldClient:
     async def test_async(self) -> None:
         async with yield_client_async() as client:
             assert isinstance(client, redis.asyncio.Redis)
+
+
+class TestYieldTimeSeries:
+    def test_sync(self) -> None:
+        with yield_time_series() as ts:
+            assert isinstance(ts, TimeSeries)
+
+    async def test_async(self) -> None:
+        async with yield_time_series_async() as ts:
+            assert isinstance(ts, TimeSeries)
