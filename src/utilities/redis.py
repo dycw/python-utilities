@@ -713,8 +713,8 @@ def _time_series_range_one_key_one_dtype(
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
     output_dtype = zoned_datetime(time_zone=output_time_zone)
-    try:
-        values = ts.range(  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
+        values = ts.range(
             f"{key}{_SPLIT}{dtype}",
             from_time_use,
             to_time_use,
@@ -729,18 +729,18 @@ def _time_series_range_one_key_one_dtype(
             bucket_timestamp=bucket_timestamp,
             empty=empty,
         )
-    except ResponseError as error:
+    except ResponseError as error:  # skipif-ci-and-not-linux
         match _classify_response_error(error):
             case "invalid key":
                 return None
             case _:  # pragma: no cover
                 raise
-    match dtype:
+    match dtype:  # skipif-ci-and-not-linux
         case "Int64":
             dtype_use = Int64
         case "Float64":
             dtype_use = Float64
-        case _ as never:  # pragma: no cover
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     return DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: dtype_use}, orient="row"
