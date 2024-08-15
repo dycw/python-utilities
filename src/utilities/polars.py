@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import contextmanager, suppress
 from dataclasses import dataclass
+from datetime import timezone
 from enum import Enum
 from functools import reduce
 from itertools import chain
@@ -45,7 +46,9 @@ from polars._typing import (
     JoinValidation,
     PolarsDataType,
     SchemaDict,
+    TimeUnit,
 )
+from polars.datatypes import DataType
 from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
@@ -72,14 +75,12 @@ from utilities.typing import (
     is_optional_type,
     is_set_type,
 )
-from utilities.zoneinfo import get_time_zone_name
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
-
-    from pyarrow import DataType
 
     from utilities.types import IterableStrs
 
@@ -377,6 +378,37 @@ class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
         )
 
 
+def check_zoned_dtype_or_series(dtype_or_series: DataType | Series, /) -> None:
+    """Check if a dtype/series is a zoned datetime."""
+    if isinstance(dtype_or_series, DataType):
+        dtype = dtype_or_series
+    else:
+        dtype = dtype_or_series.dtype
+    if not isinstance(dtype, Datetime):
+        raise _CheckZonedDTypeOrSeriesNotDatetimeError(dtype=dtype)
+    if dtype.time_zone is None:
+        raise _CheckZonedDTypeOrSeriesNotZonedError(dtype=dtype)
+
+
+@dataclass(kw_only=True)
+class CheckZonedDTypeOrSeriesError(Exception):
+    dtype: DataType
+
+
+@dataclass(kw_only=True)
+class _CheckZonedDTypeOrSeriesNotDatetimeError(CheckZonedDTypeOrSeriesError):
+    @override
+    def __str__(self) -> str:
+        return f"Data type must be Datetime; got {self.dtype}"
+
+
+@dataclass(kw_only=True)
+class _CheckZonedDTypeOrSeriesNotZonedError(CheckZonedDTypeOrSeriesError):
+    @override
+    def __str__(self) -> str:
+        return f"Data type must be zoned; got {self.dtype}"
+
+
 def collect_series(expr: Expr, /) -> Series:
     """Collect a column expression into a Series."""
     data = DataFrame().with_columns(expr)
@@ -594,14 +626,14 @@ def struct_data_type(
 
 def _struct_data_type_one(
     ann: Any, /, *, time_zone: ZoneInfo | str | None = None
-) -> DataType:
+) -> PolarsDataType:
     mapping = {bool: Boolean, dt.date: Date, float: Float64, int: Int64, str: Utf8}
     with suppress(KeyError):
         return mapping[ann]
     if ann is dt.datetime:
         if time_zone is None:
             raise _StructDataTypeTimeZoneMissingError
-        return Datetime(time_zone=get_time_zone_name(time_zone))
+        return zoned_datetime(time_zone=time_zone)
     if is_dataclass_class(ann):
         return struct_data_type(ann, time_zone=time_zone)
     if (isinstance(ann, type) and issubclass(ann, Enum)) or (
@@ -739,8 +771,16 @@ def yield_struct_series_dataclasses(
         yield None if value is None else from_dict(cls, value, config=config)
 
 
+def zoned_datetime(
+    *, time_unit: TimeUnit = "us", time_zone: ZoneInfo | str | timezone = UTC
+) -> Datetime:
+    """Create a zoned datetime data type."""
+    return Datetime(time_unit=time_unit, time_zone=get_time_zone_name(time_zone))
+
+
 __all__ = [
     "CheckPolarsDataFrameError",
+    "CheckZonedDTypeOrSeriesError",
     "ColumnsToDictError",
     "DatetimeUTC",
     "DropNullStructSeriesError",
@@ -750,6 +790,7 @@ __all__ = [
     "YieldStructSeriesElementsError",
     "ceil_datetime",
     "check_polars_dataframe",
+    "check_zoned_dtype_or_series",
     "collect_series",
     "columns_to_dict",
     "drop_null_struct_series",
@@ -765,4 +806,5 @@ __all__ = [
     "struct_data_type",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
+    "zoned_datetime",
 ]
