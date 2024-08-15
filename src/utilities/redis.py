@@ -760,7 +760,7 @@ class _TimeSeriesRangeInvalidKeyError(TimeSeriesRangeError):
 
     @override
     def __str__(self) -> str:
-        return f"Key {self.key!r} does not exist"  # skipif-ci-and-not-linux
+        return f"The key {self.key!r} must exist"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
@@ -769,7 +769,7 @@ class _TimeSeriesRangeKeyWithInt64AndFloat64Error(TimeSeriesRangeError):
 
     @override
     def __str__(self) -> str:
-        return f"Key {self.key!r} contains both Int64 and Float64 data"  # skipif-ci-and-not-linux
+        return f"The key {self.key!r} contains both Int64 and Float64 data"  # skipif-ci-and-not-linux
 
 
 def time_series_read_dataframe(

@@ -375,8 +375,7 @@ class TestTimeSeriesMAddAndRange:
         ts, _ = ts_pair
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
         with raises(
-            TimeSeriesMAddError,
-            match="DataFrame must have a 'value' column; got .*",
+            TimeSeriesMAddError, match="DataFrame must have a 'value' column; got .*"
         ):
             _ = time_series_madd(ts, df)
 
@@ -497,29 +496,50 @@ class TestTimeSeriesMAddAndRange:
         with raises(TimeSeriesMAddError, match="The value .* is invalid"):
             _ = time_series_madd(ts, values_or_df)
 
+    @given(ts_pair=redis_time_series())
+    def test_error_range_no_keys_requested(
+        self, *, ts_pair: tuple[TimeSeries, UUID]
+    ) -> None:
+        ts, _ = ts_pair
+        with raises(
+            TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
+        ):
+            _ = time_series_range(ts, [])
+
     @given(ts_pair=redis_time_series(), key=text_ascii())
-    def test_non_existent_key(
+    def test_error_range_invalid_key(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
         ts, uuid = ts_pair
-        with raises(TimeSeriesRangeError, match="Key '.*' does not exist"):
+        with raises(TimeSeriesRangeError, match="The key '.*' must exist"):
             _ = time_series_range(ts, f"{uuid}_{key}")
 
-    @given(ts_pair=redis_time_series())
-    def test_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        ts, _ = ts_pair
+    @given(
+        ts_pair=redis_time_series(),
+        key=text_ascii(),
+        datetime=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        value=longs(),
+    )
+    def test_error_range_key_with_int64_and_float64(
+        self,
+        *,
+        ts_pair: tuple[TimeSeries, UUID],
+        key: str,
+        datetime: dt.datetime,
+        value: int,
+    ) -> None:
+        ts, uuid = ts_pair
+        _ = time_series_madd(
+            ts, [(f"{uuid}_{key}", datetime, value)], duplicate_policy="last"
+        )
+        _ = time_series_madd(
+            ts, [(f"{uuid}_{key}", datetime, float(value))], duplicate_policy="last"
+        )
         with raises(
-            TimeSeriesRangeError, match=r"At least 1 key must be requested; got \[\]"
+            TimeSeriesRangeError,
+            match="The key '.*' contains both Int64 and Float64 data",
         ):
-            _ = time_series_range(ts, [])
-
-    @given(ts_pair=redis_time_series())
-    def test_error_no_keys_requested(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
-        ts, _ = ts_pair
-        with raises(
-            TimeSeriesRangeError, match=r"At least 1 key must be requested; got \[\]"
-        ):
-            _ = time_series_range(ts, [])
+            _ = time_series_range(ts, f"{uuid}_{key}")
 
 
 class TestYieldClient:
