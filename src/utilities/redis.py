@@ -264,10 +264,18 @@ class TimeSeriesAddDataFrameError(Exception):
 class _TimeSeriesAddDataFrameKeyMissingError(TimeSeriesAddDataFrameError):
     key: str
 
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have a {self.key!r} column; got {self.df.columns}"  # skipif-ci-and-not-linux
+
 
 @dataclass(kw_only=True)
 class _TimeSeriesAddDataFrameTimestampMissingError(TimeSeriesAddDataFrameError):
     timestamp: str
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame must have a {self.timestamp!r} column; got {self.df.columns}"  # skipif-ci-and-not-linux
 
 
 @dataclass(kw_only=True)
