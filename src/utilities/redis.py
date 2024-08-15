@@ -212,34 +212,34 @@ def time_series_add_dataframe(
     ignore_max_val_diff: Number | None = None,
 ) -> None:
     """Append a DataFrame of time series."""
-    import polars as pl
-    from polars import Utf8
-    from polars.selectors import numeric
+    import polars as pl  # skipif-ci-and-not-linux
+    from polars import Utf8  # skipif-ci-and-not-linux
+    from polars.selectors import numeric  # skipif-ci-and-not-linux
 
-    from utilities.polars import (
+    from utilities.polars import (  # skipif-ci-and-not-linux
         CheckZonedDTypeOrSeriesError,
         check_zoned_dtype_or_series,
     )
 
-    if key not in df.columns:
+    if key not in df.columns:  # skipif-ci-and-not-linux
         raise _TimeSeriesAddDataFrameKeyMissingError(df=df, key=key)
-    if timestamp not in df.columns:
+    if timestamp not in df.columns:  # skipif-ci-and-not-linux
         raise _TimeSeriesAddDataFrameTimestampMissingError(df=df, timestamp=timestamp)
-    if not isinstance(key_dtype := df.schema[key], Utf8):
+    if not isinstance(key_dtype := df.schema[key], Utf8):  # skipif-ci-and-not-linux
         raise _TimeSeriesAddDataFrameKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
-    timestamp_dtype = df.schema[timestamp]
-    try:
+    timestamp_dtype = df.schema[timestamp]  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
         check_zoned_dtype_or_series(timestamp_dtype)
-    except CheckZonedDTypeOrSeriesError:
+    except CheckZonedDTypeOrSeriesError:  # skipif-ci-and-not-linux
         raise _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
             df=df, timestamp=timestamp, dtype=timestamp_dtype
         ) from None
-    df_long = (
+    df_long = (  # skipif-ci-and-not-linux
         df.unpivot(on=numeric(), index=[key, timestamp])
         .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
-    _ = time_series_madd(
+    _ = time_series_madd(  # skipif-ci-and-not-linux
         ts,
         df_long,
         key=f"_{_KEY}",
