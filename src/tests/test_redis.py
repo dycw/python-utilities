@@ -65,7 +65,7 @@ def _clean_datetime(
     _ = assume(datetime.fold == 0)
     if time_zone is not None:
         datetime = datetime.replace(tzinfo=time_zone)
-    return datetime
+    return max(datetime, EPOCH_UTC.astimezone(datetime.tzinfo))
 
 
 @SKIPIF_CI_AND_NOT_LINUX
