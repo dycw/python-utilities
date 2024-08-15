@@ -1,26 +1,27 @@
 from __future__ import annotations
 
 from math import inf, nan
-from string import ascii_letters
 from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import datetimes, floats, sampled_from
-from polars import Boolean, DataFrame, Float64, Utf8
+from polars import Boolean, DataFrame, Datetime, Float64, Utf8
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
+    assume_does_not_raise,
     datetimes_utc,
     longs,
     redis_clients,
     redis_time_series,
     text_ascii,
 )
+from utilities.iterables import CheckDuplicatesError, check_duplicates
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.redis import (
     TimeSeriesAddError,
@@ -35,7 +36,7 @@ from utilities.redis import (
     yield_time_series,
     yield_time_series_async,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -170,12 +171,22 @@ class TestTimeSeriesMAddAndRange:
         key2=text_ascii(),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        time_zone=sampled_from([HONG_KONG, UTC]),
         value1=longs() | floats(allow_nan=False, allow_infinity=False),
         value2=longs() | floats(allow_nan=False, allow_infinity=False),
+        input_output_key=text_ascii(),
+        input_output_timestamp=text_ascii(),
+        input_time_zone=sampled_from([HONG_KONG, UTC]),
+        output_time_zone=sampled_from([HONG_KONG, UTC]),
+        input_output_value=text_ascii(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @reproduce_failure(
+        "6.111.0",
+        b"AABO0/eN18+MiwQDASMEOyYFHQEdBwUiAAQhAyQAARcAHQE+JToACoUAABuQBh0IBCUF170AAH4BAH////8AIQECBgUCAACn+gAAWAcFHQEuBwABDgY0MgU8EQcHAAEABDACNBcBBAIGBAIDFAYkBAMHBwM=",
+    )
+    @settings(
+        phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
+    )
     def test_main(
         self,
         *,
@@ -185,12 +196,24 @@ class TestTimeSeriesMAddAndRange:
         key2: str,
         datetime1: dt.datetime,
         datetime2: dt.datetime,
-        time_zone: ZoneInfo,
         value1: float,
         value2: float,
+        input_output_key: str,
+        input_output_timestamp: str,
+        input_output_time_zone: ZoneInfo,
+        input_output_value: str,
     ) -> None:
-        _ = assume(key1 != key2)
-        timestamps = [d.replace(tzinfo=time_zone) for d in [datetime1, datetime2]]
+        with assume_does_not_raise(CheckDuplicatesError):
+            check_duplicates([
+                key1,
+                key2,
+                input_output_key,
+                input_output_timestamp,
+                input_output_value,
+            ])
+        timestamps = [
+            d.replace(tzinfo=input_output_time_zone) for d in [datetime1, datetime2]
+        ]
         for timestamp in timestamps:
             _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
@@ -200,13 +223,47 @@ class TestTimeSeriesMAddAndRange:
             case "values":
                 values_or_df = data
             case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.schema, orient="row")
-        res_madd = time_series_madd(ts, values_or_df, duplicate_policy="last")
+                values_or_df = DataFrame(
+                    data,
+                    schema={
+                        input_output_key: Utf8,
+                        input_output_timestamp: Datetime(
+                            time_zone=get_time_zone_name(input_output_time_zone)
+                        ),
+                        input_output_value: Float64,
+                    },
+                    orient="row",
+                )
+        res_madd = time_series_madd(
+            ts,
+            values_or_df,
+            key=input_output_key,
+            timestamp=input_output_timestamp,
+            value=input_output_value,
+            duplicate_policy="last",
+        )
         assert isinstance(res_madd, list)
         for i in res_madd:
             assert isinstance(i, int)
-        res_range = time_series_range(ts, full_keys)
-        check_polars_dataframe(res_range, height=2, schema_list=self.schema)
+        res_range = time_series_range(
+            ts,
+            full_keys,
+            output_key=input_output_key,
+            output_timestamp=input_output_timestamp,
+            output_time_zone=output_time_zone,
+            output_value=input_output_value,
+        )
+        check_polars_dataframe(
+            res_range,
+            height=2,
+            schema_list={
+                input_output_key: Utf8,
+                input_output_timestamp: Datetime(
+                    time_zone=get_time_zone_name(output_time_zone)
+                ),
+                input_output_value: Float64,
+            },
+        )
         assert res_range.rows() == data
 
     @FLAKY

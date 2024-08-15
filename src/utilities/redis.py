@@ -18,12 +18,13 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
-from utilities.polars import DatetimeUTC
 from utilities.text import ensure_str
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
+    from zoneinfo import ZoneInfo
 
     from polars import DataFrame
     from polars.datatypes import DataType
@@ -353,6 +354,8 @@ def time_series_madd(
             raise _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(
                 df=df, timestamp=timestamp, dtype=timestamp_dtype
             ) from None
+        breakpoint()
+        
         df = df.with_columns(
             col(timestamp)
             .cast(Datetime(time_unit="ms", time_zone="UTC"))
@@ -527,6 +530,7 @@ def time_series_range(
     empty: bool | None = False,
     output_key: str = _KEY,
     output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
     output_value: str = _VALUE,
 ) -> DataFrame:
     """Get a range in forward direction."""
@@ -540,6 +544,8 @@ def time_series_range(
         from_epoch,
         lit,
     )
+
+    from utilities.polars import DatetimeUTC
 
     keys = list(always_iterable(key))  # skipif-ci-and-not-linux
     if len(keys) >= 2:  # skipif-ci-and-not-linux
@@ -585,6 +591,7 @@ def time_series_range(
     filter_by_max_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
+    output_dtype = Datetime(time_zone=get_time_zone_name(output_time_zone))
     try:
         values = ts.range(  # skipif-ci-and-not-linux
             key,
@@ -607,18 +614,35 @@ def time_series_range(
                 return DataFrame(
                     schema={
                         output_key: Utf8,
-                        output_timestamp: DatetimeUTC,
+                        output_timestamp: output_dtype,
                         output_value: Float64,
                     }
                 )
             case _:
                 raise
 
+    init = DataFrame(  # skipif-ci-and-not-linux
+        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
+    )
+    init2 = DataFrame(  # skipif-ci-and-not-linux
+        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
+    ).select(
+        lit(key, dtype=Utf8).alias(output_key),
+        from_epoch(output_timestamp, time_unit="ms")
+        .cast(DatetimeUTC)
+        .cast(output_dtype),
+        output_value,
+    )
+
+    breakpoint()
+
     return DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
     ).select(
         lit(key, dtype=Utf8).alias(output_key),
-        from_epoch(output_timestamp, time_unit="ms").cast(DatetimeUTC),
+        from_epoch(output_timestamp, time_unit="ms")
+        .cast(DatetimeUTC)
+        .cast(output_dtype),
         output_value,
     )
 
@@ -671,13 +695,15 @@ def time_series_read_dataframe(
             latest=latest,
             bucket_timestamp=bucket_timestamp,
             empty=empty,
+            output_key=output_key,
+            output_timestamp=output_timestamp,
         )
         for column in always_iterable(columns)
     )
     try:
         df = concat(dfs)
     except ValueError:
-        df = DataFrame()
+        return DataFrame(schema={output_key: Utf8, output_timestamp: DatetimeUTC})
 
     keys = list(always_iterable(key))  # skipif-ci-and-not-linux
     if len(keys) >= 2:  # skipif-ci-and-not-linux
