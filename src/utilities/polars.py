@@ -788,7 +788,6 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
-    "ZonedDatetime",
     "ceil_datetime",
     "check_polars_dataframe",
     "check_zoned_dtype_or_series",
