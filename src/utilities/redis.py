@@ -3,11 +3,13 @@ from __future__ import annotations
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from functools import partial
+from itertools import product
 from re import search
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
 import redis.asyncio
+from polars import Float64, col
 from redis import ResponseError
 from typing_extensions import override
 
@@ -18,7 +20,6 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
-from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.text import ensure_str
 from utilities.zoneinfo import UTC
 
@@ -211,19 +212,21 @@ def time_series_add_dataframe(
 ) -> None:
     """Append a DataFrame of time series."""
     import polars as pl
-    from polars import Datetime
+    from polars import Datetime, Utf8
     from polars.selectors import numeric
 
     from utilities.polars import (
         CheckZonedDTypeOrSeriesError,
+        DatetimeUTC,
         check_zoned_dtype_or_series,
+        zoned_datetime,
     )
 
     if key not in df.columns:
         raise _TimeSeriesAddDataFrameKeyMissingError(df=df, key=key)
     if timestamp not in df.columns:
         raise _TimeSeriesAddDataFrameTimestampMissingError(df=df, timestamp=timestamp)
-    if not isinstance(key_dtype := df.schema[key], Datetime):
+    if not isinstance(key_dtype := df.schema[key], Utf8):
         raise _TimeSeriesAddDataFrameKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
     timestamp_dtype = df.schema[timestamp]
     try:
@@ -234,13 +237,13 @@ def time_series_add_dataframe(
         ) from None
     df_long = (
         df.unpivot(on=numeric(), index=[key, timestamp])
-        .with_columns(_combined_key=pl.format("{}__{}", key, "variable"))
+        .with_columns(pl.format("{}__{}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
     _ = time_series_madd(
         ts,
         df_long,
-        key="_combined_key",
+        key=f"_{_KEY}",
         timestamp=timestamp,
         assume_time_series_exist=assume_time_series_exist,
         retention_msecs=retention_msecs,
@@ -331,7 +334,9 @@ def time_series_madd(
 
     from utilities.polars import (  # skipif-ci-and-not-linux
         CheckZonedDTypeOrSeriesError,
+        DatetimeUTC,
         check_zoned_dtype_or_series,
+        zoned_datetime,
     )
 
     triples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
@@ -542,9 +547,11 @@ def time_series_range(
         lit,
     )
 
-    from utilities.polars import DatetimeUTC
+    from utilities.polars import DatetimeUTC, zoned_datetime
 
     keys = list(always_iterable(key))  # skipif-ci-and-not-linux
+    if len(keys) == 0:  # skipif-ci-and-not-linux
+        raise NotImplementedError
     if len(keys) >= 2:  # skipif-ci-and-not-linux
         dfs = (
             time_series_range(
@@ -631,8 +638,8 @@ def time_series_range(
 
 def time_series_read_dataframe(
     ts: TimeSeries,
-    key: KeyT,
-    columns: Iterable[str],
+    keys: MaybeIterable[KeyT],
+    columns: MaybeIterable[str],
     /,
     *,
     from_time: dt.datetime | None = None,
@@ -649,6 +656,7 @@ def time_series_read_dataframe(
     empty: bool | None = False,
     output_key: str = _KEY,
     output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
 ) -> DataFrame:
     """Read a DataFrame of time series."""
     from polars import (  # skipif-ci-and-not-linux
@@ -657,6 +665,11 @@ def time_series_read_dataframe(
         concat,
     )
 
+    from utilities.polars import DatetimeUTC, zoned_datetime
+
+    pairs = list(product(always_iterable(keys), always_iterable(columns)))
+    if len(pairs) == 0:
+        raise NotImplementedError
     dfs = (
         time_series_range(
             ts,
@@ -673,17 +686,32 @@ def time_series_read_dataframe(
             latest=latest,
             bucket_timestamp=bucket_timestamp,
             empty=empty,
-            output_key=output_key,
+            output_key=f"_{_KEY}",
             output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
         )
-        for column in always_iterable(columns)
+        for key, column in pairs
     )
     try:
-        concat(dfs)
+        df = concat(dfs)
     except ValueError:
-        return DataFrame(schema={output_key: Utf8, output_timestamp: DatetimeUTC})
-
-    raise NotImplementedError
+        df = DataFrame(
+            schema={
+                f"_{_KEY}": Utf8,
+                output_timestamp: zoned_datetime(time_zone=output_time_zone),
+                _VALUE: Float64,
+            }
+        )
+    df2 = (
+        df.with_columns(
+            col(f"_{_KEY}")
+            .str.split_exact("__", 1)
+            .struct.rename_fields([output_key, "_variable"])
+        )
+        .unnest(f"_{_KEY}")
+        .pivot("_variable", index=[output_key, output_timestamp])
+    )
+    return df2
 
 
 @contextmanager
