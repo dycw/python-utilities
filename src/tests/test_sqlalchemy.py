@@ -79,7 +79,7 @@ from sqlalchemy.exc import DatabaseError, NoSuchTableError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
-from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import SKIPIF_CI
 from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
@@ -633,6 +633,7 @@ class TestCheckEngine:
     def test_main(self, *, engine: Engine) -> None:
         check_engine(engine)
 
+    @SKIPIF_CI
     def test_postgres(self, *, create_postgres_engine: Callable[..., Engine]) -> None:
         engine = create_postgres_engine()
         check_engine(engine)
@@ -1543,7 +1544,7 @@ class TestParseEngine:
             _ = parse_engine("error")
 
 
-@SKIPIF_CI_AND_NOT_LINUX
+@SKIPIF_CI
 class TestPostgresEngine:
     @given(ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
@@ -1564,7 +1565,7 @@ class TestPostgresEngine:
         assert set(res) == ids
 
 
-@SKIPIF_CI_AND_NOT_LINUX
+@SKIPIF_CI
 class TestPostgresUpsert:
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})

@@ -157,7 +157,7 @@ img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
 importlib-metadata==8.2.0
     # via keyring
-importlib-resources==6.4.0
+importlib-resources==6.4.2
     # via pypiserver
 iniconfig==2.0.0
     # via pytest

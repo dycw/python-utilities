@@ -32,10 +32,6 @@ jobs:
       CI: 1
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres/postgres:latest
-        ports:
-          - 5432:5432
       redis:
         image: redis/redis-stack:latest
         ports:
