@@ -18,8 +18,9 @@ from utilities.datetime import (
 from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
+from utilities.polars import DatetimeUTC, zoned_datetime
 from utilities.text import ensure_str
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -322,7 +323,6 @@ def time_series_madd(
     """Append new samples to one or more time series."""
     from polars import (  # skipif-ci-and-not-linux
         DataFrame,
-        Datetime,
         Float64,
         Int64,
         Utf8,
@@ -354,11 +354,9 @@ def time_series_madd(
             raise _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(
                 df=df, timestamp=timestamp, dtype=timestamp_dtype
             ) from None
-        breakpoint()
-
         df = df.with_columns(
             col(timestamp)
-            .cast(Datetime(time_unit="ms", time_zone="UTC"))
+            .cast(zoned_datetime(time_unit="ms", time_zone=UTC))
             .dt.epoch(time_unit="ms")
         )
         if not isinstance(value_dtype := df.schema[value], Float64 | Int64):
@@ -536,7 +534,6 @@ def time_series_range(
     """Get a range in forward direction."""
     from polars import (  # skipif-ci-and-not-linux
         DataFrame,
-        Datetime,
         Float64,
         Int64,
         Utf8,
@@ -567,6 +564,7 @@ def time_series_range(
                 empty=empty,
                 output_key=output_key,
                 output_timestamp=output_timestamp,
+                output_time_zone=output_time_zone,
                 output_value=output_value,
             )
             for key in keys
@@ -591,7 +589,7 @@ def time_series_range(
     filter_by_max_value_use = (  # skipif-ci-and-not-linux
         None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
     )
-    output_dtype = Datetime(time_zone=get_time_zone_name(output_time_zone))
+    output_dtype = zoned_datetime(time_zone=output_time_zone)
     try:
         values = ts.range(  # skipif-ci-and-not-linux
             key,
@@ -620,22 +618,6 @@ def time_series_range(
                 )
             case _:
                 raise
-
-    DataFrame(  # skipif-ci-and-not-linux
-        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
-    )
-    DataFrame(  # skipif-ci-and-not-linux
-        values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
-    ).select(
-        lit(key, dtype=Utf8).alias(output_key),
-        from_epoch(output_timestamp, time_unit="ms")
-        .cast(DatetimeUTC)
-        .cast(output_dtype),
-        output_value,
-    )
-
-    breakpoint()
-
     return DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: Float64}, orient="row"
     ).select(
@@ -671,12 +653,8 @@ def time_series_read_dataframe(
     """Read a DataFrame of time series."""
     from polars import (  # skipif-ci-and-not-linux
         DataFrame,
-        Float64,
-        Int64,
         Utf8,
         concat,
-        from_epoch,
-        lit,
     )
 
     dfs = (
@@ -705,37 +683,7 @@ def time_series_read_dataframe(
     except ValueError:
         return DataFrame(schema={output_key: Utf8, output_timestamp: DatetimeUTC})
 
-    keys = list(always_iterable(key))  # skipif-ci-and-not-linux
-    if len(keys) >= 2:  # skipif-ci-and-not-linux
-        dfs = (
-            time_series_range(
-                ts,
-                key,
-                from_time=from_time,
-                to_time=to_time,
-                count=count,
-                aggregation_type=aggregation_type,
-                bucket_size_msec=bucket_size_msec,
-                filter_by_ts=filter_by_ts,
-                filter_by_min_value=filter_by_min_value,
-                filter_by_max_value=filter_by_max_value,
-                align=align,
-                latest=latest,
-                bucket_timestamp=bucket_timestamp,
-                empty=empty,
-            )
-            for key in keys
-        )
-        return concat(dfs)
-    return DataFrame(  # skipif-ci-and-not-linux
-        values, schema={"timestamp": Int64, "value": Float64}, orient="row"
-    ).select(
-        key=lit(key, dtype=Utf8),
-        timestamp=from_epoch("timestamp", time_unit="ms").cast(
-            Datetime(time_unit="us", time_zone="UTC")
-        ),
-        value="value",
-    )
+    raise NotImplementedError
 
 
 @contextmanager

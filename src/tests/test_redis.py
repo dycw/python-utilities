@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.strategies import datetimes, floats, sampled_from
-from polars import Boolean, DataFrame, Datetime, Float64, Utf8
+from polars import Boolean, DataFrame, Float64, Utf8
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
 
@@ -22,7 +22,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.iterables import CheckDuplicatesError, check_duplicates
-from utilities.polars import DatetimeUTC, check_polars_dataframe
+from utilities.polars import DatetimeUTC, check_polars_dataframe, zoned_datetime
 from utilities.redis import (
     TimeSeriesAddError,
     TimeSeriesMAddError,
@@ -36,7 +36,7 @@ from utilities.redis import (
     yield_time_series,
     yield_time_series_async,
 )
-from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -173,11 +173,10 @@ class TestTimeSeriesMAddAndRange:
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value1=longs() | floats(allow_nan=False, allow_infinity=False),
         value2=longs() | floats(allow_nan=False, allow_infinity=False),
-        input_output_key=text_ascii(),
-        input_output_timestamp=text_ascii(),
-        input_time_zone=sampled_from([HONG_KONG, UTC]),
-        output_time_zone=sampled_from([HONG_KONG, UTC]),
-        input_output_value=text_ascii(),
+        io_key=text_ascii(),
+        io_timestamp=text_ascii(),
+        io_time_zone=sampled_from([HONG_KONG, UTC]),
+        io_value=text_ascii(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @settings(
@@ -194,48 +193,35 @@ class TestTimeSeriesMAddAndRange:
         datetime2: dt.datetime,
         value1: float,
         value2: float,
-        input_output_key: str,
-        input_output_timestamp: str,
-        input_output_time_zone: ZoneInfo,
-        input_output_value: str,
+        io_key: str,
+        io_timestamp: str,
+        io_time_zone: ZoneInfo,
+        io_value: str,
     ) -> None:
         with assume_does_not_raise(CheckDuplicatesError):
-            check_duplicates([
-                key1,
-                key2,
-                input_output_key,
-                input_output_timestamp,
-                input_output_value,
-            ])
-        timestamps = [
-            d.replace(tzinfo=input_output_time_zone) for d in [datetime1, datetime2]
-        ]
+            check_duplicates([key1, key2, io_key, io_timestamp, io_value])
+        timestamps = [d.replace(tzinfo=io_time_zone) for d in [datetime1, datetime2]]
         for timestamp in timestamps:
             _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
         full_keys = [f"{uuid}_{case}_{key}" for key in [key1, key2]]
         data = list(zip(full_keys, timestamps, [value1, value2], strict=True))
+        schema = {
+            io_key: Utf8,
+            io_timestamp: zoned_datetime(time_zone=io_time_zone),
+            io_value: Float64,
+        }
         match case:
             case "values":
                 values_or_df = data
             case "DataFrame":
-                values_or_df = DataFrame(
-                    data,
-                    schema={
-                        input_output_key: Utf8,
-                        input_output_timestamp: Datetime(
-                            time_zone=get_time_zone_name(input_output_time_zone)
-                        ),
-                        input_output_value: Float64,
-                    },
-                    orient="row",
-                )
+                values_or_df = DataFrame(data, schema=schema, orient="row")
         res_madd = time_series_madd(
             ts,
             values_or_df,
-            key=input_output_key,
-            timestamp=input_output_timestamp,
-            value=input_output_value,
+            key=io_key,
+            timestamp=io_timestamp,
+            value=io_value,
             duplicate_policy="last",
         )
         assert isinstance(res_madd, list)
@@ -244,22 +230,12 @@ class TestTimeSeriesMAddAndRange:
         res_range = time_series_range(
             ts,
             full_keys,
-            output_key=input_output_key,
-            output_timestamp=input_output_timestamp,
-            output_time_zone=output_time_zone,
-            output_value=input_output_value,
+            output_key=io_key,
+            output_timestamp=io_timestamp,
+            output_time_zone=io_time_zone,
+            output_value=io_value,
         )
-        check_polars_dataframe(
-            res_range,
-            height=2,
-            schema_list={
-                input_output_key: Utf8,
-                input_output_timestamp: Datetime(
-                    time_zone=get_time_zone_name(output_time_zone)
-                ),
-                input_output_value: Float64,
-            },
-        )
+        check_polars_dataframe(res_range, height=2, schema_list=schema)
         assert res_range.rows() == data
 
     @FLAKY
