@@ -46,8 +46,7 @@ def _clean_dir(
     days: int = _CONFIG.days,
     chunk_size: int | None = _CONFIG.chunk_size,
 ) -> None:
-    # skipif-os-ne-windows
-    while True:
+    while True:  # skipif-os-ne-windows
         iterator = _yield_items(paths=paths, days=days, chunk_size=chunk_size)
         if len(items := list(iterator)) >= 1:
             for item in items:
