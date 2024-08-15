@@ -49,7 +49,7 @@ def ensure_time_series_created(
     ignore_max_val_diff: Number | None = None,
 ) -> None:
     """Ensure a time series/set of time series is/are created."""
-    for key in set(keys):
+    for key in set(keys):  # skipif-ci-and-not-linux
         try:
             _ = ts.create(
                 key,
@@ -98,7 +98,9 @@ async def ensure_time_series_created_async(
 
 def _ensure_time_series_created_maybe_reraise(error: ResponseError, /) -> None:
     """Re-raise the error if it does not match the required statement."""
-    if not search("TSDB: key already exists", ensure_str(one(error.args))):
+    if not search(  # skipif-ci-and-not-linux
+        "TSDB: key already exists", ensure_str(one(error.args))
+    ):
         raise error  # pragma: no cover
 
 
