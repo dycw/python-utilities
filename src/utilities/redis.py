@@ -809,14 +809,16 @@ def time_series_read_dataframe(
     """Read a DataFrame of time series."""
     from polars import col, concat  # skipif-ci-and-not-linux
 
-    keys = list(always_iterable(keys))
-    if len(keys) == 0:
+    keys = list(always_iterable(keys))  # skipif-ci-and-not-linux
+    if len(keys) == 0:  # skipif-ci-and-not-linux
         raise _TimeSeriesReadDataFrameNoKeysRequestedError(keys=keys)
-    columns = list(always_iterable(columns))
-    if len(columns) == 0:
+    columns = list(always_iterable(columns))  # skipif-ci-and-not-linux
+    if len(columns) == 0:  # skipif-ci-and-not-linux
         raise _TimeSeriesReadDataFrameNoColumnsRequestedError(columns=columns)
-    pairs = list(product(always_iterable(keys), always_iterable(columns)))
-    dfs = (
+    pairs = list(  # skipif-ci-and-not-linux
+        product(always_iterable(keys), always_iterable(columns))
+    )
+    dfs = (  # skipif-ci-and-not-linux
         time_series_range(
             ts,
             f"{key}{_SPLIT}{column}",
@@ -838,12 +840,12 @@ def time_series_read_dataframe(
         )
         for key, column in pairs
     )
-    df = concat(dfs).with_columns(
+    df = concat(dfs).with_columns(  # skipif-ci-and-not-linux
         col(f"_{_KEY}")
         .str.split_exact(_SPLIT, 1)
         .struct.rename_fields([output_key, "_variable"])
     )
-    return df.unnest(f"_{_KEY}").pivot(
+    return df.unnest(f"_{_KEY}").pivot(  # skipif-ci-and-not-linux
         "_variable", index=[output_key, output_timestamp]
     )
 
