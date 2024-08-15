@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial
 from itertools import product
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, assert_never, cast
 
 import redis
 import redis.asyncio
@@ -740,6 +740,8 @@ def _time_series_range_one_key_one_dtype(
             dtype_use = Int64
         case "Float64":
             dtype_use = Float64
+        case _ as never:  # pragma: no cover
+            assert_never(never)
     return DataFrame(  # skipif-ci-and-not-linux
         values, schema={output_timestamp: Int64, output_value: dtype_use}, orient="row"
     ).select(
