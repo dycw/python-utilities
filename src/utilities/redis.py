@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 import redis
 import redis.asyncio
-from polars import Float64, col
+from altair import Key
 from redis import ResponseError
+from sqlalchemy.pool import impl
 from typing_extensions import override
 
 from utilities.datetime import (
@@ -21,6 +22,7 @@ from utilities.errors import ImpossibleCaseError
 from utilities.iterables import one
 from utilities.more_itertools import always_iterable
 from utilities.text import ensure_str
+from utilities.types import get_class_name
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -338,42 +340,12 @@ def time_series_madd(
         zoned_datetime,
     )
 
-    triples: Sequence[tuple[KeyT, int, Number]]  # skipif-ci-and-not-linux
     if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
-        if key not in values_or_df.columns:
-            raise _TimeSeriesMAddKeyMissingError(df=values_or_df, key=key)
-        if timestamp not in values_or_df.columns:
-            raise _TimeSeriesMAddTimestampMissingError(
-                df=values_or_df, timestamp=timestamp
-            )
-        if value not in values_or_df.columns:
-            raise _TimeSeriesMAddValueMissingError(df=values_or_df, value=value)
-        df = values_or_df.select(key, timestamp, value)
-        if not isinstance(key_dtype := df.schema[key], Utf8):
-            raise _TimeSeriesMAddKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
-        timestamp_dtype = df.schema[timestamp]
-        try:
-            check_zoned_dtype_or_series(timestamp_dtype)
-        except CheckZonedDTypeOrSeriesError:
-            raise _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(
-                df=df, timestamp=timestamp, dtype=timestamp_dtype
-            ) from None
-        df = df.with_columns(
-            col(timestamp)
-            .cast(zoned_datetime(time_unit="ms", time_zone=UTC))
-            .dt.epoch(time_unit="ms")
+        triples = _time_series_madd_prepare_dataframe(
+            values_or_df, key=key, timestamp=timestamp, value=value
         )
-        if not isinstance(value_dtype := df.schema[value], Float64 | Int64):
-            raise _TimeSeriesMAddValueIsNotNumericError(
-                df=df, value=value, dtype=value_dtype
-            )
-        triples = df.rows()
     else:  # skipif-ci-and-not-linux
-        values_or_df = list(values_or_df)
-        triples = [
-            (key, milliseconds_since_epoch(timestamp, strict=True), value)
-            for key, timestamp, value in values_or_df
-        ]
+        triples = list(_time_series_madd_prepare_triples(values_or_df))
     if not assume_time_series_exist:  # skipif-ci-and-not-linux
         ensure_time_series_created(
             ts,
@@ -386,9 +358,7 @@ def time_series_madd(
             ignore_max_time_diff=ignore_max_time_diff,
             ignore_max_val_diff=ignore_max_val_diff,
         )
-    result: list[int | ResponseError] = ts.madd(  # skipif-ci-and-not-linux
-        list(triples)
-    )
+    result: list[int | ResponseError] = ts.madd(triples)  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         i, error = next(
             (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
@@ -414,6 +384,71 @@ def time_series_madd(
             )
         case _:  # pragma: no cover
             raise error
+
+
+def _time_series_madd_prepare_dataframe(
+    df: DataFrame,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    value: str = _VALUE,
+) -> Sequence[tuple[KeyT, int, Number]]:
+    """Prepare a DataFrame for `madd`."""
+    import polars as pl  # skipif-ci-and-not-linux
+    from polars import Float64, Int64, Utf8, col  # skipif-ci-and-not-linux
+
+    from utilities.polars import (  # skipif-ci-and-not-linux
+        CheckZonedDTypeOrSeriesError,
+        check_zoned_dtype_or_series,
+        zoned_datetime,
+    )
+
+    if key not in df.columns:  # skipif-ci-and-not-linux
+        raise _TimeSeriesMAddKeyMissingError(df=df, key=key)
+    if timestamp not in df.columns:  # skipif-ci-and-not-linux
+        raise _TimeSeriesMAddTimestampMissingError(df=df, timestamp=timestamp)
+    if value not in df.columns:  # skipif-ci-and-not-linux
+        raise _TimeSeriesMAddValueMissingError(df=df, value=value)
+    df = df.select(key, timestamp, value)  # skipif-ci-and-not-linux
+    if not isinstance(key_dtype := df.schema[key], Utf8):  # skipif-ci-and-not-linux
+        raise _TimeSeriesMAddKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
+    timestamp_dtype = df.schema[timestamp]  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
+        check_zoned_dtype_or_series(timestamp_dtype)
+    except CheckZonedDTypeOrSeriesError:  # skipif-ci-and-not-linux
+        raise _TimeSeriesMAddTimestampIsNotAZonedDatetimeError(
+            df=df, timestamp=timestamp, dtype=timestamp_dtype
+        ) from None
+    df = df.with_columns(  # skipif-ci-and-not-linux
+        col(timestamp)
+        .cast(zoned_datetime(time_unit="ms", time_zone=UTC))
+        .dt.epoch(time_unit="ms")
+    )
+    if not isinstance(  # skipif-ci-and-not-linux
+        value_dtype := df.schema[value], Int64 | Float64
+    ):
+        raise _TimeSeriesMAddValueIsNotNumericError(
+            df=df, value=value, dtype=value_dtype
+        )
+    cls_name = get_class_name(value_dtype)  # skipif-ci-and-not-linux
+    return df.with_columns(  # skipif-ci-and-not-linux
+        pl.format(f"{{}}__{cls_name}", "local_symbol")
+    ).rows()
+
+
+def _time_series_madd_prepare_triples(
+    values: Iterable[tuple[KeyT, dt.datetime, Number]], /
+) -> Iterator[tuple[KeyT, int, Number]]:
+    """Prepare a set of triples for `madd`."""
+    from polars import Float64, Int64  # skipif-ci-and-not-linux
+
+    for key, timestamp, value in values:  # skipif-ci-and-not-linux
+        milliseconds = milliseconds_since_epoch(timestamp, strict=True)
+        dtype = Int64 if isinstance(value, int) else Float64
+        cls_name = get_class_name(dtype)
+        full_key = f"{key}__{cls_name}"
+        yield full_key, milliseconds, value
 
 
 @dataclass(kw_only=True)

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, assume, given, reproduce_failure, settings
+from hypothesis import HealthCheck, Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -398,7 +398,13 @@ class TestTimeSeriesMAddAndRange:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @settings(
+        phases={Phase.generate}, suppress_health_check={HealthCheck.filter_too_much}
+    )
+    @reproduce_failure(
+        "6.111.0",
+        b"AXicDcM7TgJRFAbg85/XReVhTGbuDAOBEFGjibnO9QGKULoFbayMjTuycAOuyJrEJVhZ6Jd89P5Vp+X361Z3tWv7uqrk+oh47jPpg40cfszCWW9qGeohg881SWsBFrzUyjaJPCNriQswTslZk2ebY2G2vstIPpAzj5z4fhhsYpe3hbdWBGmsg4k0XvJAO1j3SKIbWqt0yiPrO3HkmTc+NvcrJjp47u0UYywyjZ4IsSt7uozh84XwCPp5+/g92WxXD6QiNK3p/x/XHhfW",
+    )
     def test_main(
         self,
         *,
