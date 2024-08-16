@@ -3,6 +3,7 @@ from __future__ import annotations
 from itertools import chain
 from typing import TYPE_CHECKING, Any
 
+from polars import int_range
 from pytest import mark, param
 
 from utilities.reprlib import (
@@ -35,6 +36,28 @@ class TestCustomRepr:
     def test_main(self, *, mapping: Mapping[str, Any], expected: str) -> None:
         result = _custom_repr(mapping)
         assert result == expected
+
+    def test_dataframe(self) -> None:
+        df = int_range(start=0, end=100, eager=True).rename("int").to_frame()
+        result = _custom_repr(df)
+        expected = repr(df)
+        assert result == expected
+
+    def test_dataframe_fake(self) -> None:
+        class DataFrame: ...
+
+        _ = _custom_repr(DataFrame())
+
+    def test_series(self) -> None:
+        sr = int_range(start=0, end=100, eager=True).rename("int")
+        result = _custom_repr(sr)
+        expected = repr(sr)
+        assert result == expected
+
+    def test_series_fake(self) -> None:
+        class Series: ...
+
+        _ = _custom_repr(Series())
 
 
 class TestCustomMappingRepr:
@@ -123,6 +146,3 @@ class TestReprLocals:
         result = func(a=eight, b=eight, c=eight, d=eight, e=eight, f=eight)
         expected = "a=[1, 2, 3, 4, 5, 6, ...], b=[1, 2, 3, 4, 5, 6, ...], c=[1, 2, 3, 4, 5, 6, ...], d=[1, 2, 3, 4, 5, 6, ...], e=[1, 2, 3, 4, 5, 6, ...], f=[1, 2, 3, 4, 5, 6, ...], total=216"
         assert result == expected
-
-    def test_dataframe(self) -> None:
-        pass

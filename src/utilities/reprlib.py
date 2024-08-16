@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
-import reprlib
 from dataclasses import dataclass, field
 from inspect import signature
 from itertools import islice
-from reprlib import _possibly_sorted  # pyright: ignore[reportAttributeAccessIssue]
+from reprlib import (
+    Repr,
+    _possibly_sorted,  # pyright: ignore[reportAttributeAccessIssue]
+)
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
@@ -48,8 +50,26 @@ def _custom_repr(obj: Any, /) -> str:
     return _CUSTOM_REPR.repr(obj)
 
 
-class CustomRepr(reprlib.Repr):
+class CustomRepr(Repr):
     """Custom representation."""
+
+    def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
+        try:
+            from polars import DataFrame
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        if isinstance(x, DataFrame):
+            return repr(x)
+        return self.repr_instance(x, level)
+
+    def repr_Series(self, x: Any, level: int) -> str:  # noqa: N802
+        try:
+            from polars import Series
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        if isinstance(x, Series):
+            return repr(x)
+        return self.repr_instance(x, level)
 
     @override
     def repr_dict(self, x: Mapping[str, Any], level: int) -> str:
@@ -57,7 +77,7 @@ class CustomRepr(reprlib.Repr):
         if n == 0:
             return ""
         if level <= 0:
-            return f"({self.fillvalue})"
+            return f"({self.fillvalue})"  # pragma: no cover
         newlevel = level - 1
         repr1 = self.repr1
         pieces = []
