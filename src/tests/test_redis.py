@@ -193,10 +193,10 @@ class TestTimeSeriesAddAndReadDataFrame:
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         time_zone=sampled_from([HONG_KONG, UTC]),
-        value11=longs(),
-        value12=longs(),
-        value21=longs(),
-        value22=longs(),
+        long1=longs(),
+        long2=longs(),
+        float1=floats(allow_nan=False, allow_infinity=False),
+        float2=floats(allow_nan=False, allow_infinity=False),
     )
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
@@ -207,10 +207,10 @@ class TestTimeSeriesAddAndReadDataFrame:
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        value11: int,
-        value12: int,
-        value21: int,
-        value22: int,
+        long1: int,
+        long2: int,
+        float1: float,
+        float2: float,
     ) -> None:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
         ts, uuid = ts_pair
@@ -222,12 +222,12 @@ class TestTimeSeriesAddAndReadDataFrame:
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
             key_value1: Int64,
-            key_value2: Int64,
+            key_value2: Float64,
         }
         df = DataFrame(
             [
-                (full_id1, timestamp1, value11, value12),
-                (full_id2, timestamp2, value21, value22),
+                (full_id1, timestamp1, long1, float1),
+                (full_id2, timestamp2, long2, float2),
             ],
             schema=schema,
             orient="row",

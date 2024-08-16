@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from polars import DataFrame
+    from polars._typing import SelectorType
     from polars.datatypes import DataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
@@ -212,9 +213,8 @@ def time_series_add_dataframe(
     ignore_max_val_diff: Number | None = None,
 ) -> None:
     """Append a DataFrame of time series."""
-    import polars as pl  # skipif-ci-and-not-linux
     from polars import Utf8  # skipif-ci-and-not-linux
-    from polars.selectors import numeric  # skipif-ci-and-not-linux
+    from polars.selectors import float, integer  # skipif-ci-and-not-linux
 
     from utilities.polars import (  # skipif-ci-and-not-linux
         CheckZonedDTypeOrSeriesError,
@@ -234,8 +234,46 @@ def time_series_add_dataframe(
         raise _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
             df=df, timestamp=timestamp, dtype=timestamp_dtype
         ) from None
+    for selector in [integer(), float()]:  # skipif-ci-and-not-linux
+        _time_series_add_dataframe_one_selector(
+            ts,
+            df,
+            selector,
+            key=key,
+            timestamp=timestamp,
+            assume_time_series_exist=assume_time_series_exist,
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+        )
+
+
+def _time_series_add_dataframe_one_selector(
+    ts: TimeSeries,
+    df: DataFrame,
+    selector: SelectorType,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Append a DataFrame of time series, one selector."""
+    import polars as pl  # skipif-ci-and-not-linux
+
     df_long = (  # skipif-ci-and-not-linux
-        df.unpivot(on=numeric(), index=[key, timestamp])
+        df.unpivot(on=selector, index=[key, timestamp])
         .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
@@ -807,7 +845,7 @@ def time_series_read_dataframe(
     output_time_zone: ZoneInfo = UTC,
 ) -> DataFrame:
     """Read a DataFrame of time series."""
-    from polars import col, concat  # skipif-ci-and-not-linux
+    from polars import Float64, Int64  # skipif-ci-and-not-linux
 
     keys = list(always_iterable(keys))  # skipif-ci-and-not-linux
     if len(keys) == 0:  # skipif-ci-and-not-linux
@@ -818,7 +856,7 @@ def time_series_read_dataframe(
     pairs = list(  # skipif-ci-and-not-linux
         product(always_iterable(keys), always_iterable(columns))
     )
-    dfs = (  # skipif-ci-and-not-linux
+    dfs = [  # skipif-ci-and-not-linux
         time_series_range(
             ts,
             f"{key}{_SPLIT}{column}",
@@ -839,7 +877,32 @@ def time_series_read_dataframe(
             output_time_zone=output_time_zone,
         )
         for key, column in pairs
+    ]
+    df_int, df_float = (  # skipif-ci-and-not-linux
+        _time_series_read_dataframe_concat(
+            (df for df in dfs if isinstance(df["value"].dtype, dtype)),
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+        )
+        for dtype in [Int64, Float64]
     )
+    return (  # skipif-ci-and-not-linux
+        df_int.join(df_float, on=[output_key, output_timestamp], how="full")
+        .drop(f"{output_key}_right", f"{output_timestamp}_right")
+        .select(output_key, output_timestamp, *columns)
+    )
+
+
+def _time_series_read_dataframe_concat(
+    dfs: Iterable[DataFrame],
+    /,
+    *,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+) -> DataFrame:
+    """Concat the key/column DataFrame parts."""
+    from polars import col, concat  # skipif-ci-and-not-linux
+
     df = concat(dfs).with_columns(  # skipif-ci-and-not-linux
         col(f"_{_KEY}")
         .str.split_exact(_SPLIT, 1)
