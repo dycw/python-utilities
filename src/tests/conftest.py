@@ -50,7 +50,7 @@ else:
         logger.remove(handler_id)
 
     @fixture(autouse=True)
-    def log_current_test(*, request: SubRequest) -> Iterator[None]:  # noqa: PT004
+    def log_current_test(*, request: SubRequest) -> Iterator[None]:
         """Log current test.
 
         Usage:

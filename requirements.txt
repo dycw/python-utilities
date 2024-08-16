@@ -36,7 +36,7 @@ attrs==24.2.0
     #   trio
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.15.2
+basedpyright==1.16.0
     # via dycw-utilities (pyproject.toml)
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
@@ -144,7 +144,7 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.111.0
+hypothesis==6.111.1
     # via dycw-utilities (pyproject.toml)
 idna==3.7
     # via
@@ -216,7 +216,7 @@ more-itertools==10.4.0
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
-narwhals==1.4.1
+narwhals==1.4.2
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -319,7 +319,7 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.4.1
+polars-lts-cpu==1.5.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
@@ -528,7 +528,7 @@ urllib3==2.2.2
     #   selenium
 userpath==1.9.2
     # via hatch
-uv==0.2.36
+uv==0.2.37
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
