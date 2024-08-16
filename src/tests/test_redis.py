@@ -100,9 +100,9 @@ class TestTimeSeriesAddAndGet:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        _ = assume(timestamp.fold == 0)
         ts, uuid = ts_pair
         full_key = f"{uuid}_{key}"
+        timestamp = _clean_datetime(timestamp)
         res_add = time_series_add(
             ts, full_key, timestamp, value, duplicate_policy="last"
         )
@@ -159,9 +159,9 @@ class TestTimeSeriesAddAndGet:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
-            drop_microseconds
-        ),
+        timestamp=datetimes(
+            min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
     )
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
     def test_invalid_value(
@@ -175,7 +175,11 @@ class TestTimeSeriesAddAndGet:
         ts, uuid = ts_pair
         with raises(TimeSeriesAddError, match="Invalid value; got .*"):
             _ = time_series_add(
-                ts, f"{uuid}_{key}", timestamp, value, duplicate_policy="last"
+                ts,
+                f"{uuid}_{key}",
+                _clean_datetime(timestamp),
+                value,
+                duplicate_policy="last",
             )
 
 
@@ -515,9 +519,9 @@ class TestTimeSeriesMAddAndRange:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes(timezones=sampled_from([HONG_KONG, UTC])).map(
-            drop_microseconds
-        ),
+        timestamp=datetimes(
+            min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
@@ -531,7 +535,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
+        data = [(f"{uuid}_{case}_{key}", _clean_datetime(timestamp), value)]
         match case:
             case "values":
                 values_or_df = data
@@ -561,7 +565,7 @@ class TestTimeSeriesMAddAndRange:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        datetime=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=longs(),
     )
     def test_error_range_key_with_int64_and_float64(
@@ -569,15 +573,15 @@ class TestTimeSeriesMAddAndRange:
         *,
         ts_pair: tuple[TimeSeries, UUID],
         key: str,
-        datetime: dt.datetime,
+        timestamp: dt.datetime,
         value: int,
     ) -> None:
         ts, uuid = ts_pair
         _ = time_series_madd(
-            ts, [(f"{uuid}_{key}", datetime, value)], duplicate_policy="last"
+            ts, [(f"{uuid}_{key}", timestamp, value)], duplicate_policy="last"
         )
         _ = time_series_madd(
-            ts, [(f"{uuid}_{key}", datetime, float(value))], duplicate_policy="last"
+            ts, [(f"{uuid}_{key}", timestamp, float(value))], duplicate_policy="last"
         )
         with raises(
             TimeSeriesRangeError,
