@@ -14,6 +14,40 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
 
+@dataclass(repr=False)
+class ReprLocals:
+    """An object for `repr`ing local variables."""
+
+    locals: Mapping[str, Any]
+    func: Callable[..., Any]
+    include_underscore: bool = field(default=False, kw_only=True)
+    include_none: bool = field(default=False, kw_only=True)
+
+    @override
+    def __repr__(self) -> str:
+        mapping = _filter_mapping(
+            self.locals,
+            func=self.func,
+            include_underscore=self.include_underscore,
+            include_none=self.include_none,
+        )
+        return _custom_mapping_repr(mapping)
+
+    @override
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+def _custom_mapping_repr(mapping: Mapping[str, Any], /) -> str:
+    """Apply the custom representation to a mapping."""
+    return ", ".join(f"{k}={_custom_repr(v)}" for k, v in mapping.items())
+
+
+def _custom_repr(obj: Any, /) -> str:
+    """Apply the custom representation."""
+    return _CUSTOM_REPR.repr(obj)
+
+
 class CustomRepr(reprlib.Repr):
     """Custom representation."""
 
@@ -37,40 +71,6 @@ class CustomRepr(reprlib.Repr):
 
 
 _CUSTOM_REPR = CustomRepr()
-
-
-def _custom_repr(obj: Any, /) -> str:
-    """Apply the custom representation."""
-    return _CUSTOM_REPR.repr(obj)
-
-
-def _custom_mapping_repr(mapping: Mapping[str, Any], /) -> str:
-    """Apply the custom representation to a mapping."""
-    return ", ".join(f"{k}={_custom_repr(v)}" for k, v in mapping.items())
-
-
-@dataclass(repr=False)
-class ReprLocals:
-    """An object for `repr`ing local variables."""
-
-    locals: Mapping[str, Any]
-    func: Callable[..., Any]
-    include_underscore: bool = field(default=False, kw_only=True)
-    include_none: bool = field(default=False, kw_only=True)
-
-    @override
-    def __repr__(self) -> str:
-        mapping = _filter_mapping(
-            self.locals,
-            func=self.func,
-            include_underscore=self.include_underscore,
-            include_none=self.include_none,
-        )
-        return _custom_mapping_repr(mapping)
-
-    @override
-    def __str__(self) -> str:
-        return self.__repr__()
 
 
 _FILTER_MAPPING_REGEX = re.compile(r"^_")
