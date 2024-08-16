@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, TypedDict, assert_never, cast
 from loguru import logger
 from typing_extensions import override
 
+from utilities.datetime import duration_to_timedelta
 from utilities.logging import LogLevel
 from utilities.pathlib import PWD, ensure_path
 from utilities.platform import SYSTEM, System
@@ -22,7 +23,7 @@ from utilities.re import ExtractGroupError, extract_group
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
 
-    from utilities.types import IterableStrs, PathLike
+    from utilities.types import Duration, IterableStrs, PathLike
 
 _LEVELS_ENV_VAR_PREFIX = "LOGGING"
 _FILES_ENV_VAR = "LOGGING"
@@ -31,21 +32,25 @@ _RETENTION = dt.timedelta(weeks=1)
 
 
 def logged_sleep_sync(
-    seconds: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
+    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
 ) -> None:
     """Log a sleep operation, synchronously."""
+    timedelta = duration_to_timedelta(duration)
     logger.opt(depth=depth).log(
-        level, "Sleeping for {seconds} seconds...", seconds=seconds
+        level, "Sleeping for {timedelta}...", timedelta=timedelta
     )
-    time.sleep(seconds)
+    time.sleep(timedelta.total_seconds())
 
 
 async def logged_sleep_async(
-    delay: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
+    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
 ) -> None:
     """Log a sleep operation, asynchronously."""
-    logger.opt(depth=depth).log(level, "Sleeping for {delay} seconds...", delay=delay)
-    await asyncio.sleep(delay)
+    timedelta = duration_to_timedelta(duration)
+    logger.opt(depth=depth).log(
+        level, "Sleeping for {timedelta}...", timedelta=timedelta
+    )
+    await asyncio.sleep(timedelta.total_seconds())
 
 
 def setup_loguru(

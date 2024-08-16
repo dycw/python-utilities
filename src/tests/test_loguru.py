@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from pathlib import Path
 from re import search
 from time import sleep
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING
 from hypothesis import given
 from hypothesis.strategies import dictionaries, none, sampled_from, sets
 from loguru import logger
+from pytest import mark, param
 
 from utilities.hypothesis import settings_with_reduced_examples, temp_paths, text_ascii
 from utilities.logging import LogLevel
@@ -25,15 +27,17 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
     from collections.abc import Set as AbstractSet
 
-    from utilities.types import PathLike
+    from utilities.types import Duration, PathLike
 
 
 class TestLoggedSleep:
-    def test_sync(self) -> None:
-        logged_sleep_sync(0.1)
+    @mark.parametrize("duration", [param(0.01), param(dt.timedelta(seconds=0.1))])
+    def test_sync(self, *, duration: Duration) -> None:
+        logged_sleep_sync(duration)
 
-    async def test_async(self) -> None:
-        await logged_sleep_async(0.1)
+    @mark.parametrize("duration", [param(0.01), param(dt.timedelta(seconds=0.1))])
+    async def test_async(self, *, duration: Duration) -> None:
+        await logged_sleep_async(duration)
 
 
 class TestSetupLoguru:
