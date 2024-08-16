@@ -5,7 +5,7 @@ import reprlib
 from dataclasses import dataclass, field
 from inspect import signature
 from itertools import islice
-from reprlib import _possibly_sorted
+from reprlib import _possibly_sorted  # pyright: ignore[reportAttributeAccessIssue]
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
