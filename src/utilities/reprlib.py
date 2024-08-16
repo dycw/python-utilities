@@ -50,8 +50,41 @@ def _custom_repr(obj: Any, /) -> str:
     return _CUSTOM_REPR.repr(obj)
 
 
+_REPR = Repr()
+
+
 class CustomRepr(Repr):
     """Custom representation."""
+
+    def __init__(
+        self,
+        *,
+        fillvalue: str = _REPR.fillvalue,
+        maxlevel: int = _REPR.maxlevel,
+        maxtuple: int = _REPR.maxtuple,
+        maxlist: int = _REPR.maxlist,
+        maxarray: int = _REPR.maxarray,
+        maxdict: int = _REPR.maxdict,
+        maxset: int = _REPR.maxset,
+        maxfrozenset: int = _REPR.maxfrozenset,
+        maxdeque: int = _REPR.maxdeque,
+        maxstring: int = _REPR.maxstring,
+        maxlong: int = _REPR.maxlong,
+        maxother: int = _REPR.maxother,
+    ) -> None:
+        super().__init__()
+        self.fillvalue = fillvalue
+        self.maxlevel = maxlevel
+        self.maxtuple = maxtuple
+        self.maxlist = maxlist
+        self.maxarray = maxarray
+        self.maxdict = maxdict
+        self.maxset = maxset
+        self.maxfrozenset = maxfrozenset
+        self.maxdeque = maxdeque
+        self.maxstring = maxstring
+        self.maxlong = maxlong
+        self.maxother = maxother
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
         try:
