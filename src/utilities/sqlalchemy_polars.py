@@ -580,4 +580,5 @@ __all__ = [
     "insert_dataframe",
     "insert_dataframe_async",
     "select_to_dataframe",
+    "select_to_dataframe_async",
 ]
