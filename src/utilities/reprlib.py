@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
 
+_REPR = Repr()
+
+
 @dataclass(repr=False)
 class ReprLocals:
     """An object for `repr`ing local variables."""
@@ -24,6 +27,18 @@ class ReprLocals:
     func: Callable[..., Any]
     include_underscore: bool = field(default=False, kw_only=True)
     include_none: bool = field(default=False, kw_only=True)
+    fillvalue: str = field(default=_REPR.fillvalue, kw_only=True)
+    maxlevel: int = field(default=_REPR.maxlevel, kw_only=True)
+    maxtuple: int = field(default=_REPR.maxtuple, kw_only=True)
+    maxlist: int = field(default=_REPR.maxlist, kw_only=True)
+    maxarray: int = field(default=_REPR.maxarray, kw_only=True)
+    maxdict: int = field(default=_REPR.maxdict, kw_only=True)
+    maxset: int = field(default=_REPR.maxset, kw_only=True)
+    maxfrozenset: int = field(default=_REPR.maxfrozenset, kw_only=True)
+    maxdeque: int = field(default=_REPR.maxdeque, kw_only=True)
+    maxstring: int = field(default=_REPR.maxstring, kw_only=True)
+    maxlong: int = field(default=_REPR.maxlong, kw_only=True)
+    maxother: int = field(default=_REPR.maxother, kw_only=True)
 
     @override
     def __repr__(self) -> str:
@@ -33,24 +48,99 @@ class ReprLocals:
             include_underscore=self.include_underscore,
             include_none=self.include_none,
         )
-        return _custom_mapping_repr(mapping)
+        return _custom_mapping_repr(
+            mapping,
+            fillvalue=self.fillvalue,
+            maxlevel=self.maxlevel,
+            maxtuple=self.maxtuple,
+            maxlist=self.maxlist,
+            maxarray=self.maxarray,
+            maxdict=self.maxdict,
+            maxset=self.maxset,
+            maxfrozenset=self.maxfrozenset,
+            maxdeque=self.maxdeque,
+            maxstring=self.maxstring,
+            maxlong=self.maxlong,
+            maxother=self.maxother,
+        )
 
     @override
     def __str__(self) -> str:
         return self.__repr__()
 
 
-def _custom_mapping_repr(mapping: Mapping[str, Any], /) -> str:
+def _custom_mapping_repr(
+    mapping: Mapping[str, Any],
+    /,
+    *,
+    fillvalue: str = _REPR.fillvalue,
+    maxlevel: int = _REPR.maxlevel,
+    maxtuple: int = _REPR.maxtuple,
+    maxlist: int = _REPR.maxlist,
+    maxarray: int = _REPR.maxarray,
+    maxdict: int = _REPR.maxdict,
+    maxset: int = _REPR.maxset,
+    maxfrozenset: int = _REPR.maxfrozenset,
+    maxdeque: int = _REPR.maxdeque,
+    maxstring: int = _REPR.maxstring,
+    maxlong: int = _REPR.maxlong,
+    maxother: int = _REPR.maxother,
+) -> str:
     """Apply the custom representation to a mapping."""
-    return ", ".join(f"{k}={_custom_repr(v)}" for k, v in mapping.items())
+    values = (
+        _custom_repr(
+            v,
+            fillvalue=fillvalue,
+            maxlevel=maxlevel,
+            maxtuple=maxtuple,
+            maxlist=maxlist,
+            maxarray=maxarray,
+            maxdict=maxdict,
+            maxset=maxset,
+            maxfrozenset=maxfrozenset,
+            maxdeque=maxdeque,
+            maxstring=maxstring,
+            maxlong=maxlong,
+            maxother=maxother,
+        )
+        for v in mapping.values()
+    )
+    return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
 
 
-def _custom_repr(obj: Any, /) -> str:
+def _custom_repr(
+    obj: Any,
+    /,
+    *,
+    fillvalue: str = _REPR.fillvalue,
+    maxlevel: int = _REPR.maxlevel,
+    maxtuple: int = _REPR.maxtuple,
+    maxlist: int = _REPR.maxlist,
+    maxarray: int = _REPR.maxarray,
+    maxdict: int = _REPR.maxdict,
+    maxset: int = _REPR.maxset,
+    maxfrozenset: int = _REPR.maxfrozenset,
+    maxdeque: int = _REPR.maxdeque,
+    maxstring: int = _REPR.maxstring,
+    maxlong: int = _REPR.maxlong,
+    maxother: int = _REPR.maxother,
+) -> str:
     """Apply the custom representation."""
-    return _CUSTOM_REPR.repr(obj)
-
-
-_REPR = Repr()
+    repr_obj = CustomRepr(
+        fillvalue=fillvalue,
+        maxlevel=maxlevel,
+        maxtuple=maxtuple,
+        maxlist=maxlist,
+        maxarray=maxarray,
+        maxdict=maxdict,
+        maxset=maxset,
+        maxfrozenset=maxfrozenset,
+        maxdeque=maxdeque,
+        maxstring=maxstring,
+        maxlong=maxlong,
+        maxother=maxother,
+    )
+    return repr_obj.repr(obj)
 
 
 class CustomRepr(Repr):
