@@ -47,7 +47,9 @@ async def logged_sleep_async(
 ) -> None:
     """Log a sleep operation, asynchronously."""
     timedelta = duration_to_timedelta(duration)
-    logger.opt(depth=depth).log(level, "Sleeping for {timedelta}...", duration=duration)
+    logger.opt(depth=depth).log(
+        level, "Sleeping for {timedelta}...", timedelta=timedelta
+    )
     await asyncio.sleep(timedelta.total_seconds())
 
 
