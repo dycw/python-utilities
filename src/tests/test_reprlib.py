@@ -123,3 +123,6 @@ class TestReprLocals:
         result = func(a=eight, b=eight, c=eight, d=eight, e=eight, f=eight)
         expected = "a=[1, 2, 3, 4, 5, 6, ...], b=[1, 2, 3, 4, 5, 6, ...], c=[1, 2, 3, 4, 5, 6, ...], d=[1, 2, 3, 4, 5, 6, ...], e=[1, 2, 3, 4, 5, 6, ...], f=[1, 2, 3, 4, 5, 6, ...], total=216"
         assert result == expected
+
+    def test_dataframe(self) -> None:
+        pass
