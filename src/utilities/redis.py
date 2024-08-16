@@ -878,28 +878,29 @@ def time_series_read_dataframe(
         )
         for key, column in pairs
     ]
-    df_int, df_float = (
-        _process(
+    df_int, df_float = (  # skipif-ci-and-not-linux
+        _time_series_read_dataframe_concat(
             (df for df in dfs if isinstance(df["value"].dtype, dtype)),
             output_key=output_key,
             output_timestamp=output_timestamp,
         )
         for dtype in [Int64, Float64]
     )
-    return (
+    return (  # skipif-ci-and-not-linux
         df_int.join(df_float, on=[output_key, output_timestamp], how="full")
         .drop(f"{output_key}_right", f"{output_timestamp}_right")
         .select(output_key, output_timestamp, *columns)
     )
 
 
-def _process(
+def _time_series_read_dataframe_concat(
     dfs: Iterable[DataFrame],
     /,
     *,
     output_key: str = _KEY,
     output_timestamp: str = _TIMESTAMP,
 ) -> DataFrame:
+    """Concat the key/column DataFrame parts."""
     from polars import col, concat  # skipif-ci-and-not-linux
 
     df = concat(dfs).with_columns(  # skipif-ci-and-not-linux
