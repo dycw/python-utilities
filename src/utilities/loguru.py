@@ -43,7 +43,7 @@ def logged_sleep_sync(
 
 
 async def logged_sleep_async(
-    duration: float, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
+    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
 ) -> None:
     """Log a sleep operation, asynchronously."""
     timedelta = duration_to_timedelta(duration)
