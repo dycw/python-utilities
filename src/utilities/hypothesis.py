@@ -593,7 +593,7 @@ def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
     def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
         return draw(obj) if isinstance(obj, SearchStrategy) else obj
 
-    return cast(Any, func)
+    return cast(_MaybeDrawFn, func)
 
 
 @composite
