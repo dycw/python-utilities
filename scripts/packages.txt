@@ -55,6 +55,7 @@ python-dotenv
 random
 re
 redis
+reprlib
 scipy
 scripts-clean-dir
 scripts-csv-to-markdown

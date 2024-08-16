@@ -263,6 +263,7 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = ["redis >= 5.0.8, < 5.1"]
+zzz-test-reprlib = ["polars-lts-cpu >= 1.5.0, < 1.6"]
 zzz-test-rich = ["rich >= 13.7.1, < 13.8"]
 zzz-test-scipy = ["scipy >= 1.14.0, < 1.15"]
 zzz-test-scripts-clean-dir = [

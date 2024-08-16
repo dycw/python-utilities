@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -14,7 +13,6 @@ from collections.abc import (
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from functools import partial
-from inspect import signature
 from itertools import accumulate, chain, groupby, islice, product
 from typing import (
     Any,
@@ -470,31 +468,6 @@ def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     return iter(partial(take, n, iter(iterable)), [])
 
 
-_DESCRIBE_MAPPING_REGEX = re.compile(r"^_")
-
-
-def describe_mapping(
-    mapping: Mapping[str, Any],
-    /,
-    *,
-    func: Callable[..., Any] | None = None,
-    include_underscore: bool = False,
-    include_none: bool = False,
-) -> str:
-    """Describe a mapping."""
-    if not include_underscore:
-        mapping = {
-            k: v for k, v in mapping.items() if not _DESCRIBE_MAPPING_REGEX.search(k)
-        }
-    if not include_none:
-        mapping = {k: v for k, v in mapping.items() if v is not None}
-    if func is not None:
-        params = set(signature(func).parameters)
-        mapping = {k: v for k, v in mapping.items() if k in params}
-    items = (f"{k}={v}" for k, v in mapping.items())
-    return ", ".join(items)
-
-
 def ensure_hashables(
     *args: Any, **kwargs: Any
 ) -> tuple[list[Hashable], dict[str, Hashable]]:
@@ -750,7 +723,6 @@ __all__ = [
     "check_supermapping",
     "check_superset",
     "chunked",
-    "describe_mapping",
     "ensure_hashables",
     "ensure_iterable",
     "ensure_iterable_not_str",

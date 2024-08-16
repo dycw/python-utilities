@@ -36,7 +36,6 @@ from utilities.iterables import (
     check_supermapping,
     check_superset,
     chunked,
-    describe_mapping,
     ensure_hashables,
     ensure_iterable,
     ensure_iterable_not_str,
@@ -367,44 +366,6 @@ class TestChunked:
     def test_odd(self) -> None:
         result = list(chunked("ABCDE", 3))
         expected = [["A", "B", "C"], ["D", "E"]]
-        assert result == expected
-
-
-class TestDescribeMapping:
-    @mark.parametrize(
-        ("include_underscore", "include_none", "expected"),
-        [
-            param(False, False, "a=1, c=3"),
-            param(False, True, "a=1, b=None, c=3"),
-            param(True, False, "a=1, c=3, _underscore=4"),
-            param(True, True, "a=1, b=None, c=3, _underscore=4"),
-        ],
-    )
-    def test_main(
-        self, *, include_underscore: bool, include_none: bool, expected: str
-    ) -> None:
-        mapping = {"a": 1, "b": None, "c": 3, "_underscore": 4}
-        result = describe_mapping(
-            mapping, include_underscore=include_underscore, include_none=include_none
-        )
-        assert result == expected
-
-    @mark.parametrize(
-        ("b", "include_none", "expected"),
-        [
-            param(2, False, "a=1, b=2, total=3"),
-            param(2, True, "a=1, b=2, total=3"),
-            param(None, False, "a=1, total=1"),
-            param(None, True, "a=1, b=None, total=1"),
-        ],
-    )
-    def test_func(self, *, b: int | None, include_none: bool, expected: str) -> None:
-        def func(a: int, /, *, b: int | None = None) -> str:
-            init = describe_mapping(locals(), func=func, include_none=include_none)
-            total = a if b is None else (a + b)
-            return f"{init}, total={total}"
-
-        result = func(1, b=b)
         assert result == expected
 
 
