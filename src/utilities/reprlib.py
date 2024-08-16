@@ -13,8 +13,6 @@ from typing_extensions import override
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-_DESCRIBE_MAPPING_REGEX = re.compile(r"^_")
-
 
 class CustomRepr(reprlib.Repr):
     """Custom representation."""
@@ -55,34 +53,48 @@ def _custom_mapping_repr(mapping: Mapping[str, Any], /) -> str:
 class ReprLocals:
     """An object for `repr`ing local variables."""
 
-    locals: Callable[[], Mapping[str, Any]]
-    func: Callable[..., Any] | None = field(default=None, kw_only=True)
+    locals: Mapping[str, Any]
+    func: Callable[..., Any]
     include_underscore: bool = field(default=False, kw_only=True)
     include_none: bool = field(default=False, kw_only=True)
 
+    @override
     def __repr__(self) -> str:
-        mapping = self.locals()
-        mapping = {k: v for k, v in mapping.items() if v is not None}
-        return reprlib.repr(mapping)
+        mapping = _filter_mapping(
+            self.locals,
+            func=self.func,
+            include_underscore=self.include_underscore,
+            include_none=self.include_none,
+        )
+        return _custom_mapping_repr(mapping)
+
+    @override
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
-def _describe_mapping(
+_FILTER_MAPPING_REGEX = re.compile(r"^_")
+
+
+def _filter_mapping(
     mapping: Mapping[str, Any],
     /,
     *,
     func: Callable[..., Any] | None = None,
     include_underscore: bool = False,
     include_none: bool = False,
-) -> str:
-    """Describe a mapping."""
-    if not include_underscore:
-        mapping = {
-            k: v for k, v in mapping.items() if not _DESCRIBE_MAPPING_REGEX.search(k)
-        }
-    if not include_none:
-        mapping = {k: v for k, v in mapping.items() if v is not None}
+) -> Mapping[str, Any]:
+    """Filter a mapping."""
     if func is not None:
         params = set(signature(func).parameters)
         mapping = {k: v for k, v in mapping.items() if k in params}
-    items = (f"{k}={v}" for k, v in mapping.items())
-    return ", ".join(items)
+    if not include_underscore:
+        mapping = {
+            k: v for k, v in mapping.items() if not _FILTER_MAPPING_REGEX.search(k)
+        }
+    if not include_none:
+        mapping = {k: v for k, v in mapping.items() if v is not None}
+    return mapping
+
+
+__all__ = ["ReprLocals"]
