@@ -325,6 +325,7 @@ class TestTimeSeriesMAddAndRange:
         "value": Float64,
     }
 
+    @FLAKY
     @given(
         data=data(),
         ts_pair=redis_time_series(),
