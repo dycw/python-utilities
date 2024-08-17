@@ -329,7 +329,7 @@ class TestParameters:
         param(
             utilities.click.Duration(),
             utilities.types.Duration,
-            durations(two_way=True),
+            durations(min_number=0, min_value=dt.timedelta(0), two_way=True),
             serialize_duration,
             True,
         ),

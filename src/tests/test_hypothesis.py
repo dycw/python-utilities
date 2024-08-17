@@ -112,7 +112,7 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
-from utilities.types import Duration, make_isinstance
+from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
@@ -295,32 +295,47 @@ class TestDictsOfIndexes:
 
 
 class TestDurations:
-    @given(data=data(), min_value=durations() | none(), max_value=durations() | none())
+    @given(
+        data=data(),
+        min_number=integers() | floats() | none(),
+        max_number=integers() | floats() | none(),
+        min_timedelta=timedeltas() | none(),
+        max_timedelta=timedeltas() | none(),
+    )
     def test_main(
         self,
         *,
         data: DataObject,
-        min_value: Duration | None,
-        max_value: Duration | None,
+        min_number: Number | None,
+        max_number: Number | None,
+        min_timedelta: dt.timedelta | None,
+        max_timedelta: dt.timedelta | None,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
-            x = data.draw(durations(min_value=min_value, max_value=max_value))
+            x = data.draw(
+                durations(
+                    min_number=min_number,
+                    max_number=max_number,
+                    min_timedelta=min_timedelta,
+                    max_timedelta=max_timedelta,
+                )
+            )
         assert isinstance(x, Duration)
         if isinstance(x, int):
-            if isinstance(min_value, int):
-                assert x >= min_value
-            if isinstance(max_value, int):
-                assert x <= max_value
+            if isinstance(min_number, int):
+                assert x >= min_number
+            if isinstance(max_number, int):
+                assert x <= max_number
         elif isinstance(x, float):
-            if isinstance(min_value, int | float):
-                assert x >= min_value
-            if isinstance(max_value, int | float):
-                assert x <= max_value
+            if min_number is not None:
+                assert x >= min_number
+            if max_number is not None:
+                assert x <= max_number
         else:
-            if isinstance(min_value, dt.timedelta):
-                assert x >= min_value
-            if isinstance(max_value, dt.timedelta):
-                assert x <= max_value
+            if min_timedelta is not None:
+                assert x >= min_timedelta
+            if max_timedelta is not None:
+                assert x <= max_timedelta
 
     @given(
         data=data(),

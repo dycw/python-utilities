@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.pandas import IndexA, IndexI, IndexS
-    from utilities.types import Duration
+    from utilities.types import Duration, Number
     from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
 
 
@@ -291,33 +291,32 @@ def durations(
     _draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[Duration] | None = None,
-    max_value: MaybeSearchStrategy[Duration] | None = None,
+    min_number: MaybeSearchStrategy[Number] | None = None,
+    max_number: MaybeSearchStrategy[Number] | None = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating durations."""
     draw = lift_draw(_draw)
-    min_value_ = draw(min_value)
-    max_value_ = draw(max_value)
+    min_number_ = draw(min_number)
+    max_number_ = draw(max_number)
+    min_timedelta_ = draw(min_timedelta)
+    max_timedelta_ = draw(max_timedelta)
     st_integers = integers(
-        min_value=min_value_ if isinstance(min_value_, int) else None,
-        max_value=max_value_ if isinstance(max_value_, int) else None,
+        min_value=min_number_ if isinstance(min_number_, int) else None,
+        max_value=max_number_ if isinstance(max_number_, int) else None,
     )
-    st_floats = floats(
-        min_value=min_value_ if isinstance(min_value_, int | float) else None,
-        max_value=max_value_ if isinstance(max_value_, int | float) else None,
-        allow_nan=False,
-        allow_infinity=False,
-    )
+    st_floats = floats(min_value=min_number_, max_value=max_number_)
     if two_way:
-        min_timedelta = MIN_TWO_WAY_TIMEDELTA
-        max_timedelta = MAX_TWO_WAY_TIMEDELTA
+        global_min_timedelta = MIN_TWO_WAY_TIMEDELTA
+        global_max_timedelta = MAX_TWO_WAY_TIMEDELTA
     else:
-        min_timedelta = dt.timedelta.min
-        max_timedelta = dt.timedelta.max
+        global_min_timedelta = dt.timedelta.min
+        global_max_timedelta = dt.timedelta.max
     st_timedeltas = timedeltas(
-        min_value=min_value_ if isinstance(min_value_, dt.timedelta) else min_timedelta,
-        max_value=max_value_ if isinstance(max_value_, dt.timedelta) else max_timedelta,
+        min_value=global_min_timedelta if min_timedelta_ is None else min_timedelta_,
+        max_value=global_max_timedelta if max_timedelta_ is None else max_timedelta_,
     )
     return _draw(st_integers | st_floats | st_timedeltas)
 
