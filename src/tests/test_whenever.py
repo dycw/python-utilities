@@ -94,13 +94,13 @@ class TestParseAndSerializeDate:
         assert result == date
 
 
-@mark.only
 class TestParseAndSerializeDuration:
     @given(duration=durations())
     def test_main(self, *, duration: Duration) -> None:
         with assume_does_not_raise(SerializeDurationError):
             serialized = serialize_duration(duration)
-        result = parse_duration(serialized)
+        with assume_does_not_raise(ParseDurationError):
+            result = parse_duration(serialized)
         assert result == duration
 
     def test_error_parse(self) -> None:

@@ -28,6 +28,7 @@ from pytest import mark, param
 
 import utilities.click
 import utilities.datetime
+import utilities.types
 from utilities.click import (
     Date,
     DirPath,
@@ -49,12 +50,19 @@ from utilities.click import (
     workers_option,
 )
 from utilities.datetime import serialize_month
-from utilities.hypothesis import months, sqlite_engines, text_ascii, timedeltas_2w
+from utilities.hypothesis import (
+    durations,
+    months,
+    sqlite_engines,
+    text_ascii,
+    timedeltas_2w,
+)
 from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
 from utilities.whenever import (
     serialize_date,
+    serialize_duration,
     serialize_local_datetime,
     serialize_time,
     serialize_timedelta,
@@ -318,6 +326,13 @@ def _serialize_iterable_strs(values: Iterable[str], /) -> str:
 class TestParameters:
     cases = (
         param(Date(), dt.date, dates(), serialize_date, True),
+        param(
+            utilities.click.Duration(),
+            utilities.types.Duration,
+            durations(two_way=True),
+            serialize_duration,
+            True,
+        ),
         param(
             utilities.click.Engine(),
             sqlalchemy.Engine,

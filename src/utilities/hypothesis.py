@@ -43,6 +43,7 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
+from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -285,30 +286,40 @@ def draw_text(
     return drawn
 
 
+@composite
 def durations(
-    *, min_value: Duration | None = None, max_value: Duration | None = None
-) -> SearchStrategy[Duration]:
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[Duration] | None = None,
+    max_value: MaybeSearchStrategy[Duration] | None = None,
+    two_way: bool = False,
+) -> Duration:
     """Strategy for generating durations."""
-    return (
-        integers(
-            min_value=min_value if isinstance(min_value, int) else None,
-            max_value=max_value if isinstance(max_value, int) else None,
-        )
-        | floats(
-            min_value=min_value if isinstance(min_value, int | float) else None,
-            max_value=max_value if isinstance(max_value, int | float) else None,
-            allow_nan=False,
-            allow_infinity=False,
-        )
-        | timedeltas(
-            min_value=min_value
-            if isinstance(min_value, dt.timedelta)
-            else dt.timedelta.min,
-            max_value=max_value
-            if isinstance(max_value, dt.timedelta)
-            else dt.timedelta.max,
-        )
+    draw = lift_draw(_draw)
+    min_value_ = draw(min_value)
+    max_value_ = draw(max_value)
+    st_integers = integers(
+        min_value=min_value_ if isinstance(min_value_, int) else None,
+        max_value=max_value_ if isinstance(max_value_, int) else None,
     )
+    st_floats = floats(
+        min_value=min_value_ if isinstance(min_value_, int | float) else None,
+        max_value=max_value_ if isinstance(max_value_, int | float) else None,
+        allow_nan=False,
+        allow_infinity=False,
+    )
+    if two_way:
+        min_timedelta = MIN_TWO_WAY_TIMEDELTA
+        max_timedelta = MAX_TWO_WAY_TIMEDELTA
+    else:
+        min_timedelta = dt.timedelta.min
+        max_timedelta = dt.timedelta.max
+    st_timedeltas = timedeltas(
+        min_value=min_value_ if isinstance(min_value_, dt.timedelta) else min_timedelta,
+        max_value=max_value_ if isinstance(max_value_, dt.timedelta) else max_timedelta,
+    )
+    return _draw(st_integers | st_floats | st_timedeltas)
 
 
 @composite

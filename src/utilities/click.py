@@ -14,7 +14,12 @@ from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.whenever import ParseDateError, ensure_date
+from utilities.whenever import (
+    ParseDateError,
+    ParseDurationError,
+    ensure_date,
+    ensure_duration,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -45,8 +50,6 @@ class Date(ParamType):
         self, value: dt.date | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
-        from utilities.whenever import ParseDateError, ensure_date
-
         try:
             return ensure_date(value)
         except ParseDateError:
@@ -64,8 +67,8 @@ class Duration(ParamType):
     ) -> dt.date:
         """Convert a value into the `Duration` type."""
         try:
-            return ensure_date(value)
-        except ParseDateError:
+            return ensure_duration(value)
+        except ParseDurationError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -198,7 +201,7 @@ class ListDates(ParamType):
         self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
     ) -> list[dt.date]:
         """Convert a value into the `ListDates` type."""
-        from utilities.whenever import ParseDateError, parse_date
+        from utilities.whenever import parse_date
 
         if isinstance(value, list):
             return value
@@ -436,6 +439,7 @@ class Engine(ParamType):
 __all__ = [
     "Date",
     "DirPath",
+    "Duration",
     "Engine",
     "Enum",
     "ExistingDirPath",

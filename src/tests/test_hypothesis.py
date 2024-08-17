@@ -112,11 +112,13 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
-from utilities.types import Duration
+from utilities.types import Duration, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
+    parse_duration,
     parse_timedelta,
+    serialize_duration,
     serialize_timedelta,
 )
 from utilities.zoneinfo import UTC
@@ -319,6 +321,20 @@ class TestDurations:
                 assert x >= min_value
             if isinstance(max_value, dt.timedelta):
                 assert x <= max_value
+
+    @given(
+        data=data(),
+        min_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
+        max_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
+    )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_two_way(
+        self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        duration = data.draw(durations(two_way=True))
+        ser = serialize_duration(duration)
+        _ = parse_duration(ser)
 
 
 class TestFloatArrays:
