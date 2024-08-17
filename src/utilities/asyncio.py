@@ -1,16 +1,26 @@
 from __future__ import annotations
 
 from asyncio import timeout
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable, Sequence
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Sequence,
+)
+from dataclasses import dataclass
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
 
+from typing_extensions import override
+
 from utilities.datetime import duration_to_float
+from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import SupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import Timeout
-    from collections.abc import Callable
 
     from utilities.types import Duration
 
@@ -95,6 +105,59 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
+@overload
+async def reduce_async(
+    func: Callable[[_T, _U], Awaitable[_T]], iterable: Iterable[_U], /, *, initial: _T
+) -> _T: ...
+@overload
+async def reduce_async(
+    func: Callable[[_T, _T], Awaitable[_T]],
+    iterable: Iterable[_T],
+    /,
+    *,
+    initial: Sentinel = sentinel,
+) -> _T: ...
+async def reduce_async(
+    func: Callable[[Any, Any], Awaitable[Any]],
+    iterable: Iterable[Any],
+    /,
+    *,
+    initial: Any = sentinel,
+) -> Any:
+    """Apply a function of two arguments cumulatively to an iterable."""
+    if isinstance(initial, Sentinel):
+        iterator = iter(iterable)
+        try:
+            value = next(iterator)
+        except StopIteration:
+            raise ReduceAsyncError(
+                func=func, iterable=iterable, initial=initial
+            ) from None
+    else:
+        iterator = iterable
+        value = initial
+    for element in iterator:
+        value = await func(value, element)
+    return value
+
+
+@dataclass(kw_only=True)
+class ReduceAsyncError(Exception):
+    func: Callable[[Any, Any], Awaitable[_T]]
+    iterable: Iterable[Any]
+    initial: Any = sentinel
+
+    @override
+    def __str__(self) -> str:
+        return f"Empty iterable {self.iterable} with no initial value"
+
+
+def timeout_dur(*, duration: Duration | None = None) -> Timeout:
+    """Timeout context manager which accepts durations."""
+    delay = None if duration is None else duration_to_float(duration)
+    return timeout(delay)
+
+
 async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
@@ -149,12 +212,6 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
-def timeout_dur(*, duration: Duration | None = None) -> Timeout:
-    """Timeout context manager which accepts durations."""
-    delay = None if duration is None else duration_to_float(duration)
-    return timeout(delay)
-
-
 async def try_await(obj: Any, /) -> Any:
     """Try await a value from an object."""
     try:
@@ -164,9 +221,11 @@ async def try_await(obj: Any, /) -> Any:
 
 
 __all__ = [
+    "ReduceAsyncError",
     "groupby_async",
     "groupby_async_list",
     "is_awaitable",
+    "reduce_async",
     "timeout_dur",
     "to_list",
     "to_set",
