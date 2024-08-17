@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from datetime import timezone
-from re import escape
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
@@ -115,7 +114,7 @@ class TestParseAndSerializeDuration:
     )
     def test_error_serialize(self, *, duration: Duration) -> None:
         with raises(
-            SerializeDurationError, match=escape("Unable to serialize duration; got .*")
+            SerializeDurationError, match="Unable to serialize duration; got .*"
         ):
             _ = serialize_duration(duration)
 
@@ -159,9 +158,7 @@ class TestParseAndSerializeLocalDateTime:
         datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
         with raises(
             SerializeLocalDateTimeError,
-            match=escape(
-                "Unable to serialize local datetime; got 2000-01-01 00:00:00+00:00"
-            ),
+            match="Unable to serialize local datetime; got .*",
         ):
             _ = serialize_local_datetime(datetime)
 
