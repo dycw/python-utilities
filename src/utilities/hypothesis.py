@@ -43,7 +43,6 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
-from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -298,6 +297,8 @@ def durations(
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating durations."""
+    from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
+
     draw = lift_draw(_draw)
     min_number_ = draw(min_number)
     max_number_ = draw(max_number)

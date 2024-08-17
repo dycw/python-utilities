@@ -386,6 +386,7 @@ __all__ = [
     "ParseTimeError",
     "ParseTimedeltaError",
     "ParseZonedDateTimeError",
+    "SerializeDurationError",
     "SerializeLocalDateTimeError",
     "SerializeTimeDeltaError",
     "SerializeZonedDateTimeError",
