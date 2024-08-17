@@ -8,6 +8,7 @@ import click
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
+import utilities.types
 from utilities.datetime import ParseMonthError, ensure_month
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
@@ -59,8 +60,11 @@ class Duration(ParamType):
 
     @override
     def convert(
-        self, value: Duration | str, param: Parameter | None, ctx: Context | None
-    ) -> Duration:
+        self,
+        value: utilities.types.Duration | str,
+        param: Parameter | None,
+        ctx: Context | None,
+    ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
         from utilities.whenever import ParseDurationError, ensure_duration
 
