@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from datetime import timezone
 from re import escape
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from hypothesis import assume, given
@@ -25,17 +26,19 @@ from utilities.datetime import (
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
 )
-from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import assume_does_not_raise, durations
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
     ParseDateError,
+    ParseDurationError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
     ParseTimeError,
     ParseZonedDateTimeError,
+    SerializeDurationError,
     SerializeLocalDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
@@ -47,17 +50,22 @@ from utilities.whenever import (
     ensure_timedelta,
     ensure_zoned_datetime,
     parse_date,
+    parse_duration,
     parse_local_datetime,
     parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
+    serialize_duration,
     serialize_local_datetime,
     serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
 from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
+
+if TYPE_CHECKING:
+    from utilities.types import Duration
 
 _TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
@@ -85,6 +93,39 @@ class TestParseAndSerializeDate:
         str_or_value = data.draw(sampled_from([date, serialize_date(date)]))
         result = ensure_date(str_or_value)
         assert result == date
+
+
+@mark.only
+class TestParseAndSerializeDuration:
+    @given(duration=durations())
+    def test_main(self, *, duration: Duration) -> None:
+        with assume_does_not_raise(SerializeDurationError):
+            serialized = serialize_duration(duration)
+        result = parse_duration(serialized)
+        assert result == duration
+
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseDurationError, match="Unable to parse duration; got 'invalid'"
+        ):
+            _ = parse_duration("invalid")
+
+    @mark.parametrize(
+        "duration", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
+    )
+    def test_error_serialize(self, *, duration: Duration) -> None:
+        with raises(
+            SerializeDurationError, match=escape("Unable to serialize duration; got .*")
+        ):
+            _ = serialize_duration(duration)
+
+    @given(data=data(), datetime=datetimes())
+    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
+        str_or_value = data.draw(
+            sampled_from([datetime, serialize_local_datetime(datetime)])
+        )
+        result = ensure_local_datetime(str_or_value)
+        assert result == datetime
 
 
 class TestParseAndSerializeLocalDateTime:

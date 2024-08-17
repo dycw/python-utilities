@@ -271,7 +271,19 @@ def serialize_duration(duration: Duration, /) -> str:
     """Serialize a duration."""
     if isinstance(duration, int | float):
         return str(duration)
-    return serialize_timedelta(duration)
+    try:
+        return serialize_timedelta(duration)
+    except SerializeTimeDeltaError as error:
+        raise SerializeDurationError(duration=error.timedelta) from None
+
+
+@dataclass(kw_only=True)
+class SerializeDurationError(Exception):
+    duration: Duration
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to serialize duration; got {self.duration}"
 
 
 def serialize_local_datetime(datetime: dt.datetime, /) -> str:
