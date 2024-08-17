@@ -307,7 +307,12 @@ def durations(
         min_value=min_number_ if isinstance(min_number_, int) else None,
         max_value=max_number_ if isinstance(max_number_, int) else None,
     )
-    st_floats = floats(min_value=min_number_, max_value=max_number_)
+    st_floats = floats(
+        min_value=min_number_,
+        max_value=max_number_,
+        allow_nan=False,
+        allow_infinity=False,
+    )
     if two_way:
         global_min_timedelta = MIN_TWO_WAY_TIMEDELTA
         global_max_timedelta = MAX_TWO_WAY_TIMEDELTA

@@ -60,7 +60,7 @@ class Duration(ParamType):
     @override
     def convert(
         self, value: Duration | str, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
+    ) -> Duration:
         """Convert a value into the `Duration` type."""
         from utilities.whenever import ParseDurationError, ensure_duration
 
