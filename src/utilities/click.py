@@ -14,12 +14,6 @@ from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.whenever import (
-    ParseDateError,
-    ParseDurationError,
-    ensure_date,
-    ensure_duration,
-)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -50,6 +44,8 @@ class Date(ParamType):
         self, value: dt.date | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
+        from utilities.whenever import ParseDateError, ensure_date
+
         try:
             return ensure_date(value)
         except ParseDateError:
@@ -66,6 +62,8 @@ class Duration(ParamType):
         self, value: Duration | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Duration` type."""
+        from utilities.whenever import ParseDurationError, ensure_duration
+
         try:
             return ensure_duration(value)
         except ParseDurationError:
@@ -201,7 +199,7 @@ class ListDates(ParamType):
         self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
     ) -> list[dt.date]:
         """Convert a value into the `ListDates` type."""
-        from utilities.whenever import parse_date
+        from utilities.whenever import ParseDateError, parse_date
 
         if isinstance(value, list):
             return value
