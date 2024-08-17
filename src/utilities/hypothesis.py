@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.pandas import IndexA, IndexI, IndexS
+    from utilities.types import Duration
     from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
 
 
@@ -130,25 +131,6 @@ def bool_data_arrays(
     shape = tuple(map(len, indexes_.values()))
     values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
     return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
-
-
-@composite
-def datetimes_utc(
-    _draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
-    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
-) -> dt.datetime:
-    """Strategy for generating datetimes with the UTC timezone."""
-    draw = lift_draw(_draw)
-    return draw(
-        datetimes(
-            min_value=draw(min_value).replace(tzinfo=None),
-            max_value=draw(max_value).replace(tzinfo=None),
-            timezones=just(UTC),
-        )
-    )
 
 
 @composite
@@ -242,21 +224,22 @@ def datetimes_pd(
 
 
 @composite
-def draw_text(
+def datetimes_utc(
     _draw: DrawFn,
-    alphabet: MaybeSearchStrategy[str],
     /,
     *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> str:
-    """Draw from a text-generating strategy."""
+    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
+    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
+) -> dt.datetime:
+    """Strategy for generating datetimes with the UTC timezone."""
     draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
-    if draw(disallow_na):
-        _ = assume(drawn != "NA")
-    return drawn
+    return draw(
+        datetimes(
+            min_value=draw(min_value).replace(tzinfo=None),
+            max_value=draw(max_value).replace(tzinfo=None),
+            timezones=just(UTC),
+        )
+    )
 
 
 @composite
@@ -282,6 +265,50 @@ def dicts_of_indexes(
     dims = draw(lists_fixed_length(text_ascii(), ndims, unique=True))
     indexes = (draw(int_indexes(n=length)) for length in shape)
     return dict(zip(dims, indexes, strict=True))
+
+
+@composite
+def draw_text(
+    _draw: DrawFn,
+    alphabet: MaybeSearchStrategy[str],
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
+) -> str:
+    """Draw from a text-generating strategy."""
+    draw = lift_draw(_draw)
+    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    if draw(disallow_na):
+        _ = assume(drawn != "NA")
+    return drawn
+
+
+def durations(
+    *, min_value: Duration | None = None, max_value: Duration | None = None
+) -> SearchStrategy[Duration]:
+    """Strategy for generating durations."""
+    return (
+        integers(
+            min_value=min_value if isinstance(min_value, int) else None,
+            max_value=max_value if isinstance(max_value, int) else None,
+        )
+        | floats(
+            min_value=min_value if isinstance(min_value, int | float) else None,
+            max_value=max_value if isinstance(max_value, int | float) else None,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+        | timedeltas(
+            min_value=min_value
+            if isinstance(min_value, dt.timedelta)
+            else dt.timedelta.min,
+            max_value=max_value
+            if isinstance(max_value, dt.timedelta)
+            else dt.timedelta.max,
+        )
+    )
 
 
 @composite
@@ -1122,6 +1149,7 @@ __all__ = [
     "datetimes_utc",
     "dicts_of_indexes",
     "draw_text",
+    "durations",
     "float_arrays",
     "float_data_arrays",
     "floats_extra",

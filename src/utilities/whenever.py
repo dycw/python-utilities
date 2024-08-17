@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,7 @@ from utilities.datetime import (
     get_months,
     timedelta_to_microseconds,
 )
+from utilities.types import Duration
 from utilities.zoneinfo import UTC
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
@@ -29,6 +31,13 @@ def ensure_date(date: dt.date | str, /) -> dt.date:
         check_date_not_datetime(date)
         return date
     return parse_date(date)
+
+
+def ensure_duration(duration: Duration | str, /) -> Duration:
+    """Ensure the object is a Duration."""
+    if isinstance(duration, Duration):
+        return duration
+    return parse_duration(duration)
 
 
 def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
@@ -82,6 +91,27 @@ class ParseDateError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to parse date; got {self.date!r}"
+
+
+def parse_duration(duration: str, /) -> Duration:
+    """Parse a string into a Duration."""
+    with suppress(ValueError):
+        return int(duration)
+    with suppress(ValueError):
+        return float(duration)
+    try:
+        return parse_timedelta(duration)
+    except ParseTimedeltaError:
+        raise ParseDurationError(duration=duration) from None
+
+
+@dataclass(kw_only=True)
+class ParseDurationError(Exception):
+    duration: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to parse duration; got {self.duration!r}"
 
 
 _PARSE_LOCAL_DATETIME_REGEX = re.compile(
@@ -237,6 +267,13 @@ def serialize_date(date: dt.date, /) -> str:
     return Date.from_py_date(date).format_common_iso()
 
 
+def serialize_duration(duration: Duration, /) -> str:
+    """Serialize a duration."""
+    if isinstance(duration, int | float):
+        return str(duration)
+    return serialize_timedelta(duration)
+
+
 def serialize_local_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a local datetime."""
     try:
@@ -332,6 +369,7 @@ __all__ = [
     "MIN_SERIALIZABLE_TIMEDELTA",
     "MIN_TWO_WAY_TIMEDELTA",
     "ParseDateError",
+    "ParseDurationError",
     "ParseLocalDateTimeError",
     "ParseTimeError",
     "ParseTimedeltaError",
@@ -340,16 +378,19 @@ __all__ = [
     "SerializeTimeDeltaError",
     "SerializeZonedDateTimeError",
     "ensure_date",
+    "ensure_duration",
     "ensure_local_datetime",
     "ensure_time",
     "ensure_timedelta",
     "ensure_zoned_datetime",
     "parse_date",
+    "parse_duration",
     "parse_local_datetime",
     "parse_time",
     "parse_timedelta",
     "parse_zoned_datetime",
     "serialize_date",
+    "serialize_duration",
     "serialize_local_datetime",
     "serialize_time",
     "serialize_timedelta",

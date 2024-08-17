@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import override
 
 from utilities.platform import SYSTEM, System
-from utilities.types import ensure_not_none
+from utilities.types import Duration, ensure_not_none
 from utilities.zoneinfo import (
     HONG_KONG,
     TOKYO,
@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from zoneinfo import ZoneInfo
 
-    from utilities.types import Duration
 
 _DAYS_PER_YEAR = 365.25
 _MICROSECONDS_PER_MILLISECOND = int(1e3)

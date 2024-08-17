@@ -14,6 +14,7 @@ from utilities.iterables import OneStrError, one_str
 from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
+from utilities.whenever import ParseDateError, ensure_date
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -46,6 +47,22 @@ class Date(ParamType):
         """Convert a value into the `Date` type."""
         from utilities.whenever import ParseDateError, ensure_date
 
+        try:
+            return ensure_date(value)
+        except ParseDateError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class Duration(ParamType):
+    """A duration-valued parameter."""
+
+    name = "duration"
+
+    @override
+    def convert(
+        self, value: Duration | str, param: Parameter | None, ctx: Context | None
+    ) -> dt.date:
+        """Convert a value into the `Duration` type."""
         try:
             return ensure_date(value)
         except ParseDateError:
