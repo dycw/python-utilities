@@ -31,7 +31,7 @@ class TestMemoize:
     async def test_with_duration(self) -> None:
         i = 0
 
-        @memoize(duration=1)
+        @memoize(duration=0.01)
         async def increment() -> int:
             nonlocal i
             i += 1
@@ -39,7 +39,7 @@ class TestMemoize:
 
         for _ in range(2):
             assert (await increment()) == 1
-        await sleep(1)
+        await sleep(0.01)
         for _ in range(2):
             assert (await increment()) == 2
 
@@ -89,7 +89,7 @@ class TestRefreshMemoized:
     async def test_main(self) -> None:
         i = 0
 
-        @memoize(duration=1)
+        @memoize(duration=0.01)
         async def increment() -> int:
             nonlocal i
             i += 1
@@ -97,7 +97,7 @@ class TestRefreshMemoized:
 
         for _ in range(2):
             assert (await increment()) == 1
-        await sleep(1)
+        await sleep(0.01)
         for _ in range(2):
             assert (await increment()) == 2
         assert await refresh_memoized(increment) == 3

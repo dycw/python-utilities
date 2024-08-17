@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 from dataclasses import dataclass
-from itertools import repeat
+from itertools import chain, repeat
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
@@ -13,6 +13,7 @@ from utilities.asyncio import (
     groupby_async,
     groupby_async_list,
     is_awaitable,
+    reduce_async,
     timeout_dur,
     to_list,
     to_set,
@@ -22,7 +23,7 @@ from utilities.asyncio import (
 from utilities.hypothesis import durations
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterable, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
 
     from utilities.types import Duration
 
@@ -212,6 +213,31 @@ class TestIsAwaitable:
         assert result is expected
 
 
+class TestReduceAsync:
+    async def test_no_initial(self) -> None:
+        async def add(x: int, y: int, /) -> int:
+            await sleep(0.01)
+            return x + y
+
+        result = await reduce_async(add, [1, 2, 3])
+        assert result == 6
+
+    async def test_with_initial(self) -> None:
+        async def add(x: Iterable[int], y: int, /) -> Sequence[int]:
+            await sleep(0.01)
+            return list(chain(x, [y]))
+
+        result = await reduce_async(add, [1, 2, 3], initial=[])
+        assert result == []
+
+
+class TestTimeoutDur:
+    @given(duration=durations())
+    async def test_main(self, *, duration: Duration) -> None:
+        async with timeout_dur(duration=duration):
+            pass
+
+
 class TestToList:
     @mark.parametrize(
         "iterable",
@@ -314,13 +340,6 @@ class TestToSorted:
         result = await to_sorted(iterable, reverse=True)
         expected = sorted(_STRS, reverse=True)
         assert result == expected
-
-
-class TestTimeoutDur:
-    @given(duration=durations())
-    async def test_main(self, *, duration: Duration) -> None:
-        async with timeout_dur(duration=duration):
-            pass
 
 
 class TestTryAwait:
