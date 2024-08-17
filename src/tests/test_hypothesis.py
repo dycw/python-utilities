@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from itertools import pairwise
 from pathlib import Path
 from re import search
@@ -62,6 +63,7 @@ from utilities.hypothesis import (
     datetimes_pd,
     datetimes_utc,
     dicts_of_indexes,
+    durations,
     float_arrays,
     float_data_arrays,
     floats_extra,
@@ -110,16 +112,18 @@ from utilities.pandas import (
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
+from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
+    parse_duration,
     parse_timedelta,
+    serialize_duration,
     serialize_timedelta,
 )
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    import datetime as dt
     from collections.abc import Hashable, Mapping, Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
@@ -288,6 +292,64 @@ class TestDictsOfIndexes:
             assert length >= min_side
             if max_side is not None:
                 assert length <= max_side
+
+
+class TestDurations:
+    @given(
+        data=data(),
+        min_number=integers() | floats() | none(),
+        max_number=integers() | floats() | none(),
+        min_timedelta=timedeltas() | none(),
+        max_timedelta=timedeltas() | none(),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_number: Number | None,
+        max_number: Number | None,
+        min_timedelta: dt.timedelta | None,
+        max_timedelta: dt.timedelta | None,
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(
+                durations(
+                    min_number=min_number,
+                    max_number=max_number,
+                    min_timedelta=min_timedelta,
+                    max_timedelta=max_timedelta,
+                )
+            )
+        assert isinstance(x, Duration)
+        if isinstance(x, int):
+            if isinstance(min_number, int):
+                assert x >= min_number
+            if isinstance(max_number, int):
+                assert x <= max_number
+        elif isinstance(x, float):
+            if min_number is not None:
+                assert x >= min_number
+            if max_number is not None:
+                assert x <= max_number
+        else:
+            if min_timedelta is not None:
+                assert x >= min_timedelta
+            if max_timedelta is not None:
+                assert x <= max_timedelta
+
+    @given(
+        data=data(),
+        min_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
+        max_value=durations(two_way=True).filter(make_isinstance(dt.timedelta)),
+    )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    def test_two_way(
+        self, *, data: DataObject, min_value: dt.timedelta, max_value: dt.timedelta
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        duration = data.draw(durations(two_way=True))
+        ser = serialize_duration(duration)
+        _ = parse_duration(ser)
 
 
 class TestFloatArrays:

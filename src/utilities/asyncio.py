@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from asyncio import timeout
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable, Sequence
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
 
+from utilities.datetime import duration_to_float
 from utilities.typing import SupportsRichComparison
 
 if TYPE_CHECKING:
+    from asyncio import Timeout
     from collections.abc import Callable
+
+    from utilities.types import Duration
 
 
 _T = TypeVar("_T")
@@ -144,6 +149,12 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
+def timeout_dur(*, duration: Duration | None = None) -> Timeout:
+    """Timeout context manager which accepts durations."""
+    delay = None if duration is None else duration_to_float(duration)
+    return timeout(delay)
+
+
 async def try_await(obj: Any, /) -> Any:
     """Try await a value from an object."""
     try:
@@ -156,6 +167,7 @@ __all__ = [
     "groupby_async",
     "groupby_async_list",
     "is_awaitable",
+    "timeout_dur",
     "to_list",
     "to_set",
     "to_sorted",

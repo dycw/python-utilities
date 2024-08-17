@@ -8,6 +8,7 @@ import click
 from click import Context, Parameter, ParamType, option
 from typing_extensions import override
 
+import utilities.types
 from utilities.datetime import ParseMonthError, ensure_month
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
@@ -49,6 +50,27 @@ class Date(ParamType):
         try:
             return ensure_date(value)
         except ParseDateError:
+            self.fail(f"Unable to parse {value}", param, ctx)
+
+
+class Duration(ParamType):
+    """A duration-valued parameter."""
+
+    name = "duration"
+
+    @override
+    def convert(
+        self,
+        value: utilities.types.Duration | str,
+        param: Parameter | None,
+        ctx: Context | None,
+    ) -> utilities.types.Duration:
+        """Convert a value into the `Duration` type."""
+        from utilities.whenever import ParseDurationError, ensure_duration
+
+        try:
+            return ensure_duration(value)
+        except ParseDurationError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -419,6 +441,7 @@ class Engine(ParamType):
 __all__ = [
     "Date",
     "DirPath",
+    "Duration",
     "Engine",
     "Enum",
     "ExistingDirPath",

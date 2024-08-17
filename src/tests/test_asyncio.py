@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from hypothesis import given
 from pytest import mark, param
 
 from utilities.asyncio import (
@@ -12,14 +13,18 @@ from utilities.asyncio import (
     groupby_async,
     groupby_async_list,
     is_awaitable,
+    timeout_dur,
     to_list,
     to_set,
     to_sorted,
     try_await,
 )
+from utilities.hypothesis import durations
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterable, Iterator
+
+    from utilities.types import Duration
 
 _STRS = list("AAAABBBCCDAABB")
 
@@ -309,6 +314,13 @@ class TestToSorted:
         result = await to_sorted(iterable, reverse=True)
         expected = sorted(_STRS, reverse=True)
         assert result == expected
+
+
+class TestTimeoutDur:
+    @given(duration=durations())
+    async def test_main(self, *, duration: Duration) -> None:
+        async with timeout_dur(duration=duration):
+            pass
 
 
 class TestTryAwait:

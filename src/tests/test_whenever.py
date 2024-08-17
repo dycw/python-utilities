@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from datetime import timezone
-from re import escape
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from hypothesis import assume, given
@@ -25,39 +25,47 @@ from utilities.datetime import (
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
 )
-from utilities.hypothesis import assume_does_not_raise
+from utilities.hypothesis import assume_does_not_raise, durations, timedeltas_2w
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
     ParseDateError,
+    ParseDurationError,
     ParseLocalDateTimeError,
     ParseTimedeltaError,
     ParseTimeError,
     ParseZonedDateTimeError,
+    SerializeDurationError,
     SerializeLocalDateTimeError,
     SerializeTimeDeltaError,
     SerializeZonedDateTimeError,
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     ensure_date,
+    ensure_duration,
     ensure_local_datetime,
     ensure_time,
     ensure_timedelta,
     ensure_zoned_datetime,
     parse_date,
+    parse_duration,
     parse_local_datetime,
     parse_time,
     parse_timedelta,
     parse_zoned_datetime,
     serialize_date,
+    serialize_duration,
     serialize_local_datetime,
     serialize_time,
     serialize_timedelta,
     serialize_zoned_datetime,
 )
 from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
+
+if TYPE_CHECKING:
+    from utilities.types import Duration
 
 _TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
@@ -85,6 +93,37 @@ class TestParseAndSerializeDate:
         str_or_value = data.draw(sampled_from([date, serialize_date(date)]))
         result = ensure_date(str_or_value)
         assert result == date
+
+
+class TestParseAndSerializeDuration:
+    @given(duration=durations())
+    def test_main(self, *, duration: Duration) -> None:
+        with assume_does_not_raise(SerializeDurationError):
+            serialized = serialize_duration(duration)
+        with assume_does_not_raise(ParseDurationError):
+            result = parse_duration(serialized)
+        assert result == duration
+
+    def test_error_parse(self) -> None:
+        with raises(
+            ParseDurationError, match="Unable to parse duration; got 'invalid'"
+        ):
+            _ = parse_duration("invalid")
+
+    @mark.parametrize(
+        "duration", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
+    )
+    def test_error_serialize(self, *, duration: Duration) -> None:
+        with raises(
+            SerializeDurationError, match="Unable to serialize duration; got .*"
+        ):
+            _ = serialize_duration(duration)
+
+    @given(data=data(), duration=durations(two_way=True))
+    def test_ensure(self, *, data: DataObject, duration: Duration) -> None:
+        str_or_value = data.draw(sampled_from([duration, serialize_duration(duration)]))
+        result = ensure_duration(str_or_value)
+        assert result == duration
 
 
 class TestParseAndSerializeLocalDateTime:
@@ -118,9 +157,7 @@ class TestParseAndSerializeLocalDateTime:
         datetime = dt.datetime(2000, 1, 1, tzinfo=UTC)
         with raises(
             SerializeLocalDateTimeError,
-            match=escape(
-                "Unable to serialize local datetime; got 2000-01-01 00:00:00+00:00"
-            ),
+            match="Unable to serialize local datetime; got .*",
         ):
             _ = serialize_local_datetime(datetime)
 
@@ -219,13 +256,12 @@ class TestParseAndSerializeTimedelta:
         ):
             _ = serialize_timedelta(timedelta)
 
-    @given(data=data(), timedelta=timedeltas())
+    @given(data=data(), timedelta=timedeltas_2w())
     def test_ensure(self, *, data: DataObject, timedelta: dt.timedelta) -> None:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            str_value = serialize_timedelta(timedelta)
-        str_or_value = data.draw(sampled_from([timedelta, str_value]))
-        with assume_does_not_raise(ParseTimedeltaError):
-            result = ensure_timedelta(str_or_value)
+        str_or_value = data.draw(
+            sampled_from([timedelta, serialize_timedelta(timedelta)])
+        )
+        result = ensure_timedelta(str_or_value)
         assert result == timedelta
 
 
