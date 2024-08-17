@@ -25,7 +25,7 @@ from utilities.datetime import (
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
 )
-from utilities.hypothesis import assume_does_not_raise, durations
+from utilities.hypothesis import assume_does_not_raise, durations, timedeltas_2w
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
@@ -44,6 +44,7 @@ from utilities.whenever import (
     _to_datetime_delta,
     _ToDateTimeDeltaError,
     ensure_date,
+    ensure_duration,
     ensure_local_datetime,
     ensure_time,
     ensure_timedelta,
@@ -118,13 +119,11 @@ class TestParseAndSerializeDuration:
         ):
             _ = serialize_duration(duration)
 
-    @given(data=data(), datetime=datetimes())
-    def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
-        str_or_value = data.draw(
-            sampled_from([datetime, serialize_local_datetime(datetime)])
-        )
-        result = ensure_local_datetime(str_or_value)
-        assert result == datetime
+    @given(data=data(), duration=durations(two_way=True))
+    def test_ensure(self, *, data: DataObject, duration: Duration) -> None:
+        str_or_value = data.draw(sampled_from([duration, serialize_duration(duration)]))
+        result = ensure_duration(str_or_value)
+        assert result == duration
 
 
 class TestParseAndSerializeLocalDateTime:
@@ -257,13 +256,12 @@ class TestParseAndSerializeTimedelta:
         ):
             _ = serialize_timedelta(timedelta)
 
-    @given(data=data(), timedelta=timedeltas())
+    @given(data=data(), timedelta=timedeltas_2w())
     def test_ensure(self, *, data: DataObject, timedelta: dt.timedelta) -> None:
-        with assume_does_not_raise(SerializeTimeDeltaError):
-            str_value = serialize_timedelta(timedelta)
-        str_or_value = data.draw(sampled_from([timedelta, str_value]))
-        with assume_does_not_raise(ParseTimedeltaError):
-            result = ensure_timedelta(str_or_value)
+        str_or_value = data.draw(
+            sampled_from([timedelta, serialize_timedelta(timedelta)])
+        )
+        result = ensure_timedelta(str_or_value)
         assert result == timedelta
 
 
