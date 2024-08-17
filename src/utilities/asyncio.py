@@ -9,8 +9,11 @@ from collections.abc import (
     Iterable,
     Sequence,
 )
+from dataclasses import dataclass
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
+
+from typing_extensions import override
 
 from utilities.datetime import duration_to_float
 from utilities.sentinel import Sentinel, sentinel
@@ -104,41 +107,49 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
 
 @overload
 async def reduce_async(
-    function: Callable[[_T, _U], Awaitable[_T]],
-    iterable: Iterable[_U],
-    /,
-    *,
-    initial: _T,
+    func: Callable[[_T, _U], Awaitable[_T]], iterable: Iterable[_U], /, *, initial: _T
 ) -> _T: ...
 @overload
 async def reduce_async(
-    function: Callable[[_T, _T], Awaitable[_T]],
+    func: Callable[[_T, _T], Awaitable[_T]],
     iterable: Iterable[_T],
     /,
     *,
     initial: Sentinel = sentinel,
 ) -> _T: ...
 async def reduce_async(
-    function: Callable[[_T, _T | _U], Awaitable[_T]],
-    iterable: Iterable[_T] | Iterable[_U],
+    func: Callable[[Any, Any], Awaitable[Any]],
+    iterable: Iterable[Any],
     /,
     *,
-    initial: _T | Sentinel = sentinel,
-) -> _T:
+    initial: Any = sentinel,
+) -> Any:
     """Apply a function of two arguments cumulatively to an iterable."""
     if isinstance(initial, Sentinel):
-        iterable = iter(iterable)
+        iterator = iter(iterable)
         try:
-            value = next(iterable)
+            value = next(iterator)
         except StopIteration:
-            msg = "reduce_async() of empty iterable with no initial value"
-            raise TypeError(msg) from None
+            raise ReduceAsyncError(
+                func=func, iterable=iterable, initial=initial
+            ) from None
     else:
         iterator = iterable
-        value = cast(_T, initial)
+        value = initial
     for element in iterator:
-        value = await function(value, element)
+        value = await func(value, element)
     return value
+
+
+@dataclass(kw_only=True)
+class ReduceAsyncError(Exception):
+    func: Callable[[Any, Any], Awaitable[_T]]
+    iterable: Iterable[Any]
+    initial: Any = sentinel
+
+    @override
+    def __str__(self) -> str:
+        return f"Empty iterable {self.iterable} with no initial value"
 
 
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
@@ -210,6 +221,7 @@ async def try_await(obj: Any, /) -> Any:
 
 
 __all__ = [
+    "ReduceAsyncError",
     "groupby_async",
     "groupby_async_list",
     "is_awaitable",

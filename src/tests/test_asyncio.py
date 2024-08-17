@@ -6,9 +6,10 @@ from itertools import chain, repeat
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from hypothesis import given
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from utilities.asyncio import (
+    ReduceAsyncError,
     _MaybeAwaitableMaybeAsyncIterable,
     groupby_async,
     groupby_async_list,
@@ -228,7 +229,15 @@ class TestReduceAsync:
             return list(chain(x, [y]))
 
         result = await reduce_async(add, [1, 2, 3], initial=[])
-        assert result == []
+        assert result == [1, 2, 3]
+
+    async def test_empty(self) -> None:
+        async def add(x: int, y: int, /) -> int:
+            await sleep(0.01)
+            return x + y
+
+        with raises(ReduceAsyncError, match="Empty iterable .* with no initial value"):
+            _ = await reduce_async(add, [])
 
 
 class TestTimeoutDur:
