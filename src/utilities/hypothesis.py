@@ -268,24 +268,6 @@ def dicts_of_indexes(
 
 
 @composite
-def draw_text(
-    _draw: DrawFn,
-    alphabet: MaybeSearchStrategy[str],
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    disallow_na: MaybeSearchStrategy[bool] = False,
-) -> str:
-    """Draw from a text-generating strategy."""
-    draw = lift_draw(_draw)
-    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
-    if draw(disallow_na):
-        _ = assume(drawn != "NA")
-    return drawn
-
-
-@composite
 def durations(
     _draw: DrawFn,
     /,
@@ -957,7 +939,7 @@ def text_ascii(
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating ASCII text."""
-    return draw_text(
+    return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=ascii_letters),
         min_size=min_size,
         max_size=max_size,
@@ -972,7 +954,7 @@ def text_clean(
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating clean text."""
-    return draw_text(
+    return _draw_text(
         characters(blacklist_categories=["Z", "C"]),
         min_size=min_size,
         max_size=max_size,
@@ -987,7 +969,7 @@ def text_printable(
     disallow_na: MaybeSearchStrategy[bool] = False,
 ) -> SearchStrategy[str]:
     """Strategy for generating printable text."""
-    return draw_text(
+    return _draw_text(
         characters(whitelist_categories=[], whitelist_characters=printable),
         min_size=min_size,
         max_size=max_size,
@@ -1115,6 +1097,24 @@ def versions(
 
 
 @composite
+def _draw_text(
+    _draw: DrawFn,
+    alphabet: MaybeSearchStrategy[str],
+    /,
+    *,
+    min_size: MaybeSearchStrategy[int] = 0,
+    max_size: MaybeSearchStrategy[int | None] = None,
+    disallow_na: MaybeSearchStrategy[bool] = False,
+) -> str:
+    """Draw from a text-generating strategy."""
+    draw = lift_draw(_draw)
+    drawn = draw(text(alphabet, min_size=draw(min_size), max_size=draw(max_size)))
+    if draw(disallow_na):
+        _ = assume(drawn != "NA")
+    return drawn
+
+
+@composite
 def _fixed_width_ints(
     _draw: DrawFn,
     dtype: Any,
@@ -1164,7 +1164,6 @@ __all__ = [
     "datetimes_pd",
     "datetimes_utc",
     "dicts_of_indexes",
-    "draw_text",
     "durations",
     "float_arrays",
     "float_data_arrays",
