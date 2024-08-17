@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from asyncio import sleep
 from dataclasses import dataclass
+from functools import partial
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -222,6 +223,14 @@ class TestReduceAsync:
 
         result = await reduce_async(add, [1, 2, 3])
         assert result == 6
+
+    async def test_no_initial_with_partial(self) -> None:
+        async def add(x: int, y: int, /, *, z: int) -> int:
+            await sleep(0.01)
+            return x + y + z
+
+        result = await reduce_async(partial(add, z=1), [1, 2, 3])
+        assert result == 8
 
     async def test_with_initial(self) -> None:
         async def add(x: Iterable[int], y: int, /) -> Sequence[int]:
