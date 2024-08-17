@@ -233,12 +233,20 @@ class TestReduceAsync:
         assert result == 8
 
     async def test_with_initial(self) -> None:
-        async def add(x: Iterable[int], y: int, /) -> Sequence[int]:
+        async def collect(x: Iterable[int], y: int, /) -> Sequence[int]:
             await sleep(0.01)
             return list(chain(x, [y]))
 
-        result = await reduce_async(add, [1, 2, 3], initial=[])
+        result = await reduce_async(collect, [1, 2, 3], initial=[])
         assert result == [1, 2, 3]
+
+    async def test_with_initial_with_partial(self) -> None:
+        async def collect(x: Iterable[int], y: int, /, *, z: int) -> Sequence[int]:
+            await sleep(0.01)
+            return list(chain(x, [y, z]))
+
+        result = await reduce_async(partial(collect, z=0), [1, 2, 3], initial=[])
+        assert result == [1, 0, 2, 0, 3, 0]
 
     async def test_empty(self) -> None:
         async def add(x: int, y: int, /) -> int:
