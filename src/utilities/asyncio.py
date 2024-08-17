@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 from asyncio import timeout
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Iterable, Sequence
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Sequence,
+)
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
 
 from utilities.datetime import duration_to_float
+from utilities.sentinel import Sentinel, sentinel
 from utilities.typing import SupportsRichComparison
 
 if TYPE_CHECKING:
     from asyncio import Timeout
-    from collections.abc import Callable
 
     from utilities.types import Duration
 
@@ -95,6 +102,51 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     return True
 
 
+@overload
+async def reduce_async(
+    function: Callable[[_T, _U], Awaitable[_T]],
+    iterable: Iterable[_U],
+    /,
+    *,
+    initial: _T,
+) -> _T: ...
+@overload
+async def reduce_async(
+    function: Callable[[_T, _T], Awaitable[_T]],
+    iterable: Iterable[_T],
+    /,
+    *,
+    initial: Sentinel = sentinel,
+) -> _T: ...
+async def reduce_async(
+    function: Callable[[_T, _T | _U], Awaitable[_T]],
+    iterable: Iterable[_T] | Iterable[_U],
+    /,
+    *,
+    initial: _T | Sentinel = sentinel,
+) -> _T:
+    """Apply a function of two arguments cumulatively to an iterable."""
+    if isinstance(initial, Sentinel):
+        iterable = iter(iterable)
+        try:
+            value = next(iterable)
+        except StopIteration:
+            msg = "reduce_async() of empty iterable with no initial value"
+            raise TypeError(msg) from None
+    else:
+        iterator = iterable
+        value = cast(_T, initial)
+    for element in iterator:
+        value = await function(value, element)
+    return value
+
+
+def timeout_dur(*, duration: Duration | None = None) -> Timeout:
+    """Timeout context manager which accepts durations."""
+    delay = None if duration is None else duration_to_float(duration)
+    return timeout(delay)
+
+
 async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
     value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
@@ -149,12 +201,6 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
-def timeout_dur(*, duration: Duration | None = None) -> Timeout:
-    """Timeout context manager which accepts durations."""
-    delay = None if duration is None else duration_to_float(duration)
-    return timeout(delay)
-
-
 async def try_await(obj: Any, /) -> Any:
     """Try await a value from an object."""
     try:
@@ -167,6 +213,7 @@ __all__ = [
     "groupby_async",
     "groupby_async_list",
     "is_awaitable",
+    "reduce_async",
     "timeout_dur",
     "to_list",
     "to_set",
