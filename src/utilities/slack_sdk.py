@@ -13,7 +13,7 @@ _TIMEOUT = 30
 
 def send_slack_sync(text: str, /, *, url: str, timeout: int = _TIMEOUT) -> None:
     """Send a message to Slack, synchronously."""
-    client = get_client_sync(url, timeout=timeout)
+    client = _get_client_sync(url, timeout=timeout)
     response = client.send(text=text)
     _check_status_code(response)
 
@@ -26,7 +26,7 @@ async def send_slack_async(
     timeout: int = _TIMEOUT,  # noqa: ASYNC109
 ) -> None:
     """Send a message via Slack."""
-    client = get_client_async(url, timeout=timeout)
+    client = _get_client_async(url, timeout=timeout)
     response = await client.send(text=text)
     _check_status_code(response)
 
@@ -47,12 +47,15 @@ class SendSlackError(Exception):
 
 
 @ttl_cache(maxsize=1)
-def get_client_sync(url: str, /, *, timeout: int = _TIMEOUT) -> WebhookClient:
+def _get_client_sync(url: str, /, *, timeout: int = _TIMEOUT) -> WebhookClient:
     """Get the webhook client."""
     return WebhookClient(url, timeout=timeout)
 
 
 @ttl_cache(maxsize=1)
-def get_client_async(url: str, /, *, timeout: int = _TIMEOUT) -> AsyncWebhookClient:
+def _get_client_async(url: str, /, *, timeout: int = _TIMEOUT) -> AsyncWebhookClient:
     """Get the engine/sessionmaker for the required database."""
     return AsyncWebhookClient(url, timeout=timeout)
+
+
+__all__ = ["send_slack_async", "send_slack_sync"]
