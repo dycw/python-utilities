@@ -317,6 +317,9 @@ zzz-test-sqlalchemy-polars = [
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
+zzz-test-tenacity = [
+  "tenacity >= 8.5.0",  # luigi sets >=8, <9
+]
 zzz-test-text = []
 zzz-test-timer = []
 zzz-test-tqdm = ["tqdm >= 4.66.5, < 4.67"]
