@@ -54,7 +54,7 @@ bottleneck==1.4.0
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
-cachetools==5.4.0
+cachetools==5.5.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
@@ -472,6 +472,7 @@ streamlit==1.37.1
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
+    #   dycw-utilities (pyproject.toml)
     #   luigi
     #   streamlit
 toml==0.10.2

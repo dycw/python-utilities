@@ -4,7 +4,7 @@ atomicwrites==1.4.1
     # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
-cachetools==5.4.0
+cachetools==5.5.0
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov

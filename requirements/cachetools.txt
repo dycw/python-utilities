@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-cachetools --prerelease=disallow --output-file=requirements/cachetools.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-cachetools==5.4.0
+cachetools==5.5.0
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
