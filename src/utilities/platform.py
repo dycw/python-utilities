@@ -8,9 +8,7 @@ from typing import TYPE_CHECKING, assert_never
 from typing_extensions import override
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from utilities.types import IterableStrs
+    from collections.abc import Iterable, Iterator
 
 
 @unique
@@ -54,7 +52,7 @@ IS_NOT_MAC = not IS_MAC
 IS_NOT_LINUX = not IS_LINUX
 
 
-def maybe_yield_lower_case(text: IterableStrs, /) -> Iterator[str]:
+def maybe_yield_lower_case(text: Iterable[str], /) -> Iterator[str]:
     """Yield lower-cased text if the platform is case-insentive."""
     match SYSTEM:
         case System.windows:  # skipif-os-ne-windows

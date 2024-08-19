@@ -6,17 +6,18 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from typing import TYPE_CHECKING
 
+from utilities.more_itertools import always_iterable
 from utilities.pathlib import ensure_path
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
-    from utilities.types import IterableStrs, PathLike
+    from utilities.types import PathLike
 
 
 def send_email(
     from_: str,
-    to: IterableStrs,
+    to: str | Sequence[str],
     /,
     *,
     subject: str | None = None,
@@ -30,7 +31,7 @@ def send_email(
     """Send an email."""
     message = MIMEMultipart()
     message["From"] = from_
-    message["To"] = ",".join(to)
+    message["To"] = ",".join(always_iterable(to))
     if subject is not None:
         message["Subject"] = subject
     if contents is not None:
