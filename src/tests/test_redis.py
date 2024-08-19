@@ -213,7 +213,6 @@ class TestTimeSeriesAddAndReadDataFrame:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @mark.parametrize("type2", [param("int"), param("float")])
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
