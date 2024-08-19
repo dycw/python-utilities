@@ -49,8 +49,6 @@ re
 redis
 reprlib
 scipy
-scripts-clean-dir
-scripts-monitor-memory
 scripts-pypi-server
 semver
 sentinel
