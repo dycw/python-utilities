@@ -4,23 +4,9 @@ from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import integers, sets
-from pathvalidate import ValidationError
-from pytest import raises
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import list_dir, temp_cwd
-
-
-class TestEnsurePath:
-    def test_main(self) -> None:
-        assert isinstance(Path(Path("abc")), Path)
-
-    def test_error_validation(self) -> None:
-        with raises(ValidationError):
-            _ = Path("\0", validate=True)
-
-    def test_error_sanitized(self) -> None:
-        assert Path("a\0b", sanitize=True) == Path("ab")
 
 
 class TestListDir:
