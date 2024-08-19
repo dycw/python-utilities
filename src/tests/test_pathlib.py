@@ -37,7 +37,7 @@ class TestListDir:
 
 class TestTempCWD:
     def test_main(self, *, tmp_path: Path) -> None:
-        assert valid_path_cwd() != tmp_path
+        assert Path.cwd() != tmp_path
         with temp_cwd(tmp_path):
             assert valid_path_cwd() == tmp_path
-        assert valid_path_cwd() != tmp_path
+        assert Path.cwd() != tmp_path
