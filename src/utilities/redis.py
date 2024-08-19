@@ -945,13 +945,6 @@ class _TimeSeriesReadDataFrameNoColumnsRequestedError(TimeSeriesReadDataFrameErr
         return f"At least 1 column must be requested; got {self.columns}"  # skipif-ci-and-not-linux
 
 
-@dataclass(kw_only=True)
-class _TimeSeriesReadDataFrameNoRowsReturnedError(TimeSeriesReadDataFrameError):
-    @override
-    def __str__(self) -> str:
-        return "At least 1 row must be returned"  # skipif-ci-and-not-linux
-
-
 @contextmanager
 def yield_client(
     *,
