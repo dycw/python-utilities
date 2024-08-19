@@ -65,7 +65,7 @@ class TestCheckBijection:
     def test_error(self) -> None:
         with raises(
             CheckBijectionError,
-            match=".* must be a bijection; got duplicates {None: 2}",
+            match="Mapping .* must be a bijection; got duplicates {None: 2}",
         ):
             check_bijection({True: None, False: None})
 
@@ -77,7 +77,8 @@ class TestCheckDuplicates:
 
     def test_error(self) -> None:
         with raises(
-            CheckDuplicatesError, match=".* must not contain duplicates; got {None: 2}"
+            CheckDuplicatesError,
+            match="Iterable .* must not contain duplicates; got {None: 2}",
         ):
             check_duplicates([None, None])
 
@@ -89,21 +90,21 @@ class TestCheckIterablesEqual:
     def test_error_differing_items_and_left_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match="Iterables .* and .* must be equal; differing items were .* and left was longer",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
     def test_error_differing_items_and_right_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match="Iterables .* and .* must be equal; differing items were .* and right was longer",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
     def test_error_differing_items_and_same_length(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match="Iterables .* and .* must be equal; differing items were .*",
+            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
