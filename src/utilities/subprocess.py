@@ -28,13 +28,13 @@ def get_shell_output(
 
     Optionally, activate a virtual environment if necessary.
     """
-    cwd = Path(cwd)  # skipif-windows
-    if activate is not None:  # skipif-windows
+    cwd = Path(cwd)
+    if activate is not None:
         with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))
-        cmd = f"source {activate}; {cmd}"
+        cmd = f"source {activate}; {cmd}"  # skipif-not-windows
 
-    with temp_environ(env):  # skipif-windows
+    with temp_environ(env):
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
