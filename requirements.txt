@@ -15,8 +15,6 @@ anyio==4.4.0
     # via httpx
 argcomplete==3.5.0
     # via nox
-ast-comments==1.2.2
-    # via dycw-utilities (pyproject.toml)
 astor==0.8.1
     # via dycw-utilities (pyproject.toml)
 async-timeout==4.0.3
