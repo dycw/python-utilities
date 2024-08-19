@@ -303,7 +303,7 @@ class TestCheckSubSet:
     def test_error(self) -> None:
         with raises(
             CheckSubSetError,
-            match=r"Set .* must be a subset of .*; left had extra items .*\.",
+            match="Set .* must be a subset of .*; left had extra items .*",
         ):
             check_subset({1, 2, 3}, {1})
 
@@ -380,7 +380,7 @@ class TestEnsureIterable:
         _ = ensure_iterable(obj)
 
     def test_error(self) -> None:
-        with raises(EnsureIterableError, match=r"Object .* must be iterable\."):
+        with raises(EnsureIterableError, match="Object .* must be iterable"):
             _ = ensure_iterable(None)
 
 
@@ -393,7 +393,7 @@ class TestEnsureIterableNotStr:
     def test_error(self, *, obj: Any) -> None:
         with raises(
             EnsureIterableNotStrError,
-            match=r"Object .* must be iterable, but not a string\.",
+            match="Object .* must be iterable, but not a string",
         ):
             _ = ensure_iterable_not_str(obj)
 
@@ -464,13 +464,13 @@ class TestOne:
         assert one([None]) is None
 
     def test_error_empty(self) -> None:
-        with raises(OneEmptyError, match=r"Iterable .* must not be empty\."):
+        with raises(OneEmptyError, match="Iterable .* must not be empty"):
             _ = one([])
 
     def test_error_non_unique(self) -> None:
         with raises(
             OneNonUniqueError,
-            match=r"Iterable .* must contain exactly one item; got .*, .* and perhaps more\.",
+            match="Iterable .* must contain exactly one item; got .*, .* and perhaps more",
         ):
             _ = one([1, 2])
 

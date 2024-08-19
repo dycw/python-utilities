@@ -393,7 +393,7 @@ class CheckSubSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Set {self.left} must be a subset of {self.right}; left had extra items {self.extra}."
+        return f"Set {reprlib.repr(self.left)} must be a subset of {reprlib.repr(self.right)}; left had extra items {reprlib.repr(self.extra)}"
 
 
 def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -457,7 +457,7 @@ class CheckSuperSetError(Exception, Generic[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Set {self.left} must be a superset of {self.right}; right had extra items {self.extra}."
+        return f"Set {reprlib.repr(self.left)} must be a superset of {reprlib.repr(self.right)}; right had extra items {reprlib.repr(self.extra)}."
 
 
 def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
@@ -487,7 +487,7 @@ class EnsureIterableError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be iterable."
+        return f"Object {reprlib.repr(self.obj)} must be iterable"
 
 
 def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
@@ -503,7 +503,7 @@ class EnsureIterableNotStrError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must be iterable, but not a string."
+        return f"Object {reprlib.repr(self.obj)} must be iterable, but not a string"
 
 
 def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
@@ -572,7 +572,7 @@ class OneError(Exception, Generic[_T]):
 class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} must not be empty."
+        return f"Iterable {reprlib.repr(self.iterable)} must not be empty"
 
 
 @dataclass(kw_only=True)
@@ -582,7 +582,7 @@ class OneNonUniqueError(OneError[_T]):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} must contain exactly one item; got {self.first}, {self.second} and perhaps more."
+        return f"Iterable {reprlib.repr(self.iterable)} must contain exactly one item; got {self.first}, {self.second} and perhaps more"
 
 
 def one_str(
@@ -627,16 +627,14 @@ class _OneStrDuplicatesError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        return (
-            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
-        )
+        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
 
 
 @dataclass(kw_only=True)
 class _OneStrCaseSensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} does not contain {self.text!r}."
+        return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)}"
 
 
 @dataclass(kw_only=True)
@@ -645,14 +643,14 @@ class _OneStrCaseInsensitiveBijectionError(OneStrError):
 
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} must not contain duplicates (case insensitive); got {self.counts}."
+        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates (case insensitive); got {reprlib.repr(self.counts)}"
 
 
 @dataclass(kw_only=True)
 class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
-        return f"Iterable {self.iterable} does not contain {self.text!r} (case insensitive)."
+        return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)} (case insensitive)"
 
 
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K, _V]]:
