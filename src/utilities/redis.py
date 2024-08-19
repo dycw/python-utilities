@@ -886,8 +886,6 @@ def time_series_read_dataframe(
         )
         for dtype in [Int64, Float64]
     )
-    if (df_int is None) and (df_float is None):  # skipif-ci-and-not-linux
-        return _TimeSeriesReadDataFrameNoRowsReturnedError()
     if (df_int is not None) and (df_float is None):  # skipif-ci-and-not-linux
         return df_int
     if (df_int is None) and (df_float is not None):  # skipif-ci-and-not-linux
@@ -898,7 +896,7 @@ def time_series_read_dataframe(
             .drop(f"{output_key}_right", f"{output_timestamp}_right")
             .select(output_key, output_timestamp, *columns)
         )
-    raise ImpossibleCaseError(case=[f"{df_int=}"])  # pragma: no cover
+    raise ImpossibleCaseError(case=[f"{df_int=}", f"{df_float=}"])  # pragma: no cover
 
 
 def _time_series_read_dataframe_concat(

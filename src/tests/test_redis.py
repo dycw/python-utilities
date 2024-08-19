@@ -15,7 +15,7 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-from polars import Boolean, DataFrame, Float64, Int64, Utf8
+from polars import Boolean, DataFrame, DataType, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
@@ -192,16 +192,28 @@ class TestTimeSeriesAddAndReadDataFrame:
     }
 
     @given(
+        data=data(),
         ts_pair=redis_time_series(),
         keys=lists_fixed_length(text_ascii(), 6, unique=True),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         time_zone=sampled_from([HONG_KONG, UTC]),
-        long1=longs(),
-        long2=longs(),
-        float1=floats(allow_nan=False, allow_infinity=False),
-        float2=floats(allow_nan=False, allow_infinity=False),
     )
+    @mark.parametrize(
+        ("strategy1", "dtype1"),
+        [
+            param(longs(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
+    @mark.parametrize(
+        ("strategy2", "dtype2"),
+        [
+            param(longs(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
+    @mark.parametrize("type2", [param("int"), param("float")])
     @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
@@ -211,10 +223,10 @@ class TestTimeSeriesAddAndReadDataFrame:
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        long1: int,
-        long2: int,
-        float1: float,
-        float2: float,
+        strategy1: SearchStrategy[Any],
+        dtype1: DataType,
+        strategy2: SearchStrategy[Any],
+        dtype2: DataType,
     ) -> None:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
         ts, uuid = ts_pair
@@ -222,16 +234,18 @@ class TestTimeSeriesAddAndReadDataFrame:
         timestamp1, timestamp2 = (
             _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
         )
+        value11, value12 = data.draw(tuples(strategy1, strategy1))
+        value21, value22 = data.draw(tuples(strategy2, strategy2))
         schema = {
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
-            key_value1: Int64,
-            key_value2: Float64,
+            key_value1: dtype1,
+            key_value2: dtype2,
         }
         df = DataFrame(
             [
-                (full_id1, timestamp1, long1, float1),
-                (full_id2, timestamp2, long2, float2),
+                (full_id1, timestamp1, value11, value12),
+                (full_id2, timestamp2, value21, value22),
             ],
             schema=schema,
             orient="row",
