@@ -3,7 +3,7 @@ from __future__ import annotations
 from numpy import apply_along_axis, clip, full_like, isnan, nan, zeros_like
 from scipy.stats import norm
 
-from utilities.numpy import NDArrayF, NDArrayF1, is_zero
+from utilities.numpy import NDArrayF, is_zero
 
 
 def ppf(array: NDArrayF, cutoff: float, /, *, axis: int = -1) -> NDArrayF:
@@ -11,7 +11,7 @@ def ppf(array: NDArrayF, cutoff: float, /, *, axis: int = -1) -> NDArrayF:
     return apply_along_axis(_ppf_1d, axis, array, cutoff)
 
 
-def _ppf_1d(array: NDArrayF, cutoff: float, /) -> NDArrayF1:
+def _ppf_1d(array: NDArrayF, cutoff: float, /) -> NDArrayF:
     if (i := isnan(array)).all():
         return array
     if i.any():

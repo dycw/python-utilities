@@ -154,6 +154,7 @@ class CheckPolarsDataFrameError(Exception):
 
 
 def _check_polars_dataframe_columns(df: DataFrame, columns: Iterable[str], /) -> None:
+    columns = list(columns)
     try:
         check_iterables_equal(df.columns, columns)
     except CheckIterablesEqualError as error:
@@ -546,9 +547,10 @@ def join(
     validate: JoinValidation = "m:m",
 ) -> DataFrame:
     """Join a set of DataFrames."""
+    on_use = on if isinstance(on, str | Expr) else list(on)
 
     def inner(left: DataFrame, right: DataFrame, /) -> DataFrame:
-        return left.join(right, on=on, how=how, validate=validate)
+        return left.join(right, on=on_use, how=how, validate=validate)
 
     return reduce(inner, chain([df], dfs))
 

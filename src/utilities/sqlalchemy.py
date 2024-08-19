@@ -86,7 +86,6 @@ if TYPE_CHECKING:
 
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
-    from utilities.math import FloatFinNonNeg, IntNonNeg
 
 CHUNK_SIZE_FRAC = 0.95
 
@@ -321,10 +320,7 @@ class _CheckColumnTypesUuidEqualError(Exception): ...
 
 
 def check_engine(
-    engine: Engine,
-    /,
-    *,
-    num_tables: IntNonNeg | tuple[IntNonNeg, FloatFinNonNeg] | None = None,
+    engine: Engine, /, *, num_tables: int | tuple[int, float] | None = None
 ) -> None:
     """Check that an engine can connect.
 
