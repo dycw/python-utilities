@@ -366,14 +366,14 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
                 desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Mapping {self.left} must be a submapping of {self.right}; {desc}."
+        return f"Mapping {reprlib.repr(self.left)} must be a submapping of {reprlib.repr(self.right)}; {desc}."
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"left had extra keys {self.extra}"
+            yield f"left had extra keys {reprlib.repr(self.extra)}"
         if len(self.errors) >= 1:
-            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
-            yield "differing values were {}".format(", ".join(error_descs))
+            errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
+            yield f"differing values were {reprlib.repr(errors)}"
 
 
 def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -430,14 +430,14 @@ class CheckSuperMappingError(Exception, Generic[_K, _V]):
                 desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Mapping {self.left} must be a supermapping of {self.right}; {desc}."
+        return f"Mapping {reprlib.repr(self.left)} must be a supermapping of {reprlib.repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
-            yield f"right had extra keys {self.extra}"
+            yield f"right had extra keys {reprlib.repr(self.extra)}"
         if len(self.errors) >= 1:
-            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
-            yield "differing values were {}".format(", ".join(error_descs))
+            errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
+            yield f"differing values were {reprlib.repr(errors)}"
 
 
 def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:

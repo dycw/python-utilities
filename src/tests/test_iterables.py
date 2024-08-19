@@ -274,21 +274,21 @@ class TestCheckSubMapping:
     def test_error_extra_and_differing_values(self) -> None:
         with raises(
             CheckSubMappingError,
-            match=r"Mapping .* must be a submapping of .*; left had extra keys .* and differing values were \(.*, .*., k=.*\)\.",
+            match="Mapping .* must be a submapping of .*; left had extra keys .* and differing values were .*",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
     def test_error_extra_only(self) -> None:
         with raises(
             CheckSubMappingError,
-            match=r"Mapping .* must be a submapping of .*; left had extra keys .*\.",
+            match="Mapping .* must be a submapping of .*; left had extra keys .*",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
     def test_error_differing_values_only(self) -> None:
         with raises(
             CheckSubMappingError,
-            match=r"Mapping .* must be a submapping of .*; differing values were \(.*, .*, k=.*\)\.",
+            match="Mapping .* must be a submapping of .*; differing values were .*",
         ):
             check_submapping({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
 
@@ -315,21 +315,21 @@ class TestCheckSuperMapping:
     def test_error_missing_and_differing_values(self) -> None:
         with raises(
             CheckSuperMappingError,
-            match=r"Mapping .* must be a supermapping of .*; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
+            match="Mapping .* must be a supermapping of .*; right had extra keys .* and differing values were .*",
         ):
             check_supermapping({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
     def test_error_extra_only(self) -> None:
         with raises(
             CheckSuperMappingError,
-            match=r"Mapping .* must be a supermapping of .*; right had extra keys .*\.",
+            match="Mapping .* must be a supermapping of .*; right had extra keys .*",
         ):
             check_supermapping({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
     def test_error_differing_values_only(self) -> None:
         with raises(
             CheckSuperMappingError,
-            match=r"Mapping .* must be a supermapping of .*; differing values were \(.*, .*, k=.*\)\.",
+            match="Mapping .* must be a supermapping of .*; differing values were .*",
         ):
             check_supermapping({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
 
