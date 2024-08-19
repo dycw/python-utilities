@@ -17,28 +17,6 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 
-def logged_sleep_sync(
-    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
-) -> None:
-    """Log a sleep operation, synchronously."""
-    timedelta = duration_to_timedelta(duration)
-    logger.opt(depth=depth).log(
-        level, "Sleeping for {timedelta}...", timedelta=timedelta
-    )
-    time.sleep(timedelta.total_seconds())
-
-
-async def logged_sleep_async(
-    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
-) -> None:
-    """Log a sleep operation, asynchronously."""
-    timedelta = duration_to_timedelta(duration)
-    logger.opt(depth=depth).log(
-        level, "Sleeping for {timedelta}...", timedelta=timedelta
-    )
-    await asyncio.sleep(timedelta.total_seconds())
-
-
 class InterceptHandler(Handler):
     """Handler for intercepting standard logging messages.
 
@@ -62,6 +40,28 @@ class InterceptHandler(Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
+
+
+def logged_sleep_sync(
+    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
+) -> None:
+    """Log a sleep operation, synchronously."""
+    timedelta = duration_to_timedelta(duration)
+    logger.opt(depth=depth).log(
+        level, "Sleeping for {timedelta}...", timedelta=timedelta
+    )
+    time.sleep(timedelta.total_seconds())
+
+
+async def logged_sleep_async(
+    duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
+) -> None:
+    """Log a sleep operation, asynchronously."""
+    timedelta = duration_to_timedelta(duration)
+    logger.opt(depth=depth).log(
+        level, "Sleeping for {timedelta}...", timedelta=timedelta
+    )
+    await asyncio.sleep(timedelta.total_seconds())
 
 
 __all__ = ["InterceptHandler", "logged_sleep_async", "logged_sleep_sync"]
