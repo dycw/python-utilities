@@ -21,14 +21,4 @@ def valid_path(*parts: PathLike, sanitize: bool = False) -> Path:
     return path
 
 
-def valid_path_cwd(*parts: PathLike, sanitize: bool = False) -> Path:
-    """Build & validate a path from the current working directory."""
-    return valid_path(Path.cwd(), *parts, sanitize=sanitize)
-
-
-def valid_path_home(*parts: PathLike, sanitize: bool = False) -> Path:
-    """Build & validate a path from home."""
-    return valid_path(Path.home(), *parts, sanitize=sanitize)
-
-
-__all__ = ["valid_path", "valid_path_cwd", "valid_path_home"]
+__all__ = ["valid_path"]

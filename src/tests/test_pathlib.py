@@ -9,7 +9,6 @@ from pytest import raises
 
 from utilities.hypothesis import temp_paths
 from utilities.pathlib import ensure_path, list_dir, temp_cwd
-from utilities.pathvalidate import valid_path_cwd
 
 
 class TestEnsurePath:
@@ -39,5 +38,5 @@ class TestTempCWD:
     def test_main(self, *, tmp_path: Path) -> None:
         assert Path.cwd() != tmp_path
         with temp_cwd(tmp_path):
-            assert valid_path_cwd() == tmp_path
+            assert Path.cwd() == tmp_path
         assert Path.cwd() != tmp_path

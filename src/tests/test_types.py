@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
+from pathlib import Path
 from types import NoneType
 from typing import Any, cast
 
 from pytest import mark, param, raises
 
 from utilities.datetime import get_now, get_today
-from utilities.pathvalidate import valid_path_home
 from utilities.sentinel import sentinel
 from utilities.types import (
     Duration,
@@ -387,7 +387,7 @@ class TestNumber:
 
 
 class TestPathLike:
-    @mark.parametrize("path", [param(valid_path_home()), param("~")])
+    @mark.parametrize("path", [param(Path.home()), param("~")])
     def test_main(self, *, path: PathLike) -> None:
         assert isinstance(path, PathLike)
 
