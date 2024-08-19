@@ -41,12 +41,12 @@ if TYPE_CHECKING:  # pragma: no cover
     SeriesS: TypeAlias = Series[str]  # pyright: ignore[reportInvalidTypeArguments]
     SeriesSt: TypeAlias = Series[StringDtype]  # pyright: ignore[reportInvalidTypeArguments]
 else:
-    IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = IndexDutc = IndexF = (
-        IndexI
-    ) = IndexI64 = IndexS = IndexSt = Index
-    SeriesA = SeriesB = SeriesBn = SeriesC = SeriesD = SeriesDhk = SeriesDutc = (
-        SeriesF
-    ) = SeriesI = SeriesI64 = SeriesS = SeriesSt = Series
+    IndexA = IndexB = IndexBn = IndexC = IndexD = IndexDhk = (  # pragma: no cover
+        IndexDutc
+    ) = IndexF = IndexI = IndexI64 = IndexS = IndexSt = Index
+    SeriesA = SeriesB = SeriesBn = SeriesC = SeriesD = SeriesDhk = (  # pragma: no cover
+        SeriesDutc
+    ) = SeriesF = SeriesI = SeriesI64 = SeriesS = SeriesSt = Series
 
 
 __all__ = [

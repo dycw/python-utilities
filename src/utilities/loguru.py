@@ -26,18 +26,20 @@ class InterceptHandler(Handler):
     @override
     def emit(self, record: LogRecord) -> None:
         # Get corresponding Loguru level if it exists.
-        try:
+        try:  # pragma: no cover
             level = logger.level(record.levelname).name
         except ValueError:  # pragma: no cover
             level = record.levelno
 
         # Find caller from where originated the logged message.
-        frame, depth = _getframe(6), 6
-        while frame and frame.f_code.co_filename == logging.__file__:
-            frame = frame.f_back  # pragma: no cover
-            depth += 1  # pragma: no cover
+        frame, depth = _getframe(6), 6  # pragma: no cover
+        while (  # pragma: no cover
+            frame and frame.f_code.co_filename == logging.__file__
+        ):
+            frame = frame.f_back
+            depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
+        logger.opt(depth=depth, exception=record.exc_info).log(  # pragma: no cover
             level, record.getMessage()
         )
 
