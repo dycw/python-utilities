@@ -170,7 +170,6 @@ zzz-test-jupyter = [
   "pandas >= 2.2.2, < 2.3",
   "polars-lts-cpu >= 1.5.0, < 1.6",
 ]
-zzz-test-locale = []
 zzz-test-logging = []
 zzz-test-loguru = [
   "loguru >= 0.7.2, < 0.8",
