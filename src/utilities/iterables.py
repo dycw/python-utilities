@@ -323,13 +323,13 @@ class CheckSetsEqualError(Exception, Generic[_T]):
                 desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Sets {self.left} and {self.right} must be equal; {desc}."
+        return f"Sets {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra items {self.left_extra}"
+            yield f"left had extra items {reprlib.repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra items {self.right_extra}"
+            yield f"right had extra items {reprlib.repr(self.right_extra)}"
 
 
 def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:

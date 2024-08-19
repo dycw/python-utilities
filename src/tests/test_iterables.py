@@ -248,21 +248,21 @@ class TestCheckSetsEqual:
     def test_error_extra_and_missing(self) -> None:
         with raises(
             CheckSetsEqualError,
-            match=r"Sets .* and .* must be equal; left had extra items .* and right had extra items .*\.",
+            match="Sets .* and .* must be equal; left had extra items .* and right had extra items .*",
         ):
             check_sets_equal({1, 2, 3}, {2, 3, 4})
 
     def test_error_extra(self) -> None:
         with raises(
             CheckSetsEqualError,
-            match=r"Sets .* and .* must be equal; left had extra items .*\.",
+            match="Sets .* and .* must be equal; left had extra items .*",
         ):
             check_sets_equal({1, 2, 3}, set())
 
     def test_error_missing(self) -> None:
         with raises(
             CheckSetsEqualError,
-            match=r"Sets .* and .* must be equal; right had extra items .*\.",
+            match="Sets .* and .* must be equal; right had extra items .*",
         ):
             check_sets_equal(set(), {1, 2, 3})
 
