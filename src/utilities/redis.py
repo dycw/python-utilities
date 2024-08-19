@@ -886,11 +886,19 @@ def time_series_read_dataframe(
         )
         for dtype in [Int64, Float64]
     )
-    return (  # skipif-ci-and-not-linux
-        df_int.join(df_float, on=[output_key, output_timestamp], how="full")
-        .drop(f"{output_key}_right", f"{output_timestamp}_right")
-        .select(output_key, output_timestamp, *columns)
-    )
+    if (df_int is None) and (df_float is None):  # skipif-ci-and-not-linux
+        return _TimeSeriesReadDataFrameNoRowsReturnedError()
+    if (df_int is not None) and (df_float is None):  # skipif-ci-and-not-linux
+        return df_int
+    if (df_int is None) and (df_float is not None):  # skipif-ci-and-not-linux
+        return df_float
+    if (df_int is not None) and (df_float is not None):  # skipif-ci-and-not-linux
+        return (  # skipif-ci-and-not-linux
+            df_int.join(df_float, on=[output_key, output_timestamp], how="full")
+            .drop(f"{output_key}_right", f"{output_timestamp}_right")
+            .select(output_key, output_timestamp, *columns)
+        )
+    raise ImpossibleCaseError(case=[f"{df_int=}"])  # pragma: no cover
 
 
 def _time_series_read_dataframe_concat(
@@ -899,11 +907,15 @@ def _time_series_read_dataframe_concat(
     *,
     output_key: str = _KEY,
     output_timestamp: str = _TIMESTAMP,
-) -> DataFrame:
+) -> DataFrame | None:
     """Concat the key/column DataFrame parts."""
     from polars import col, concat  # skipif-ci-and-not-linux
 
-    df = concat(dfs).with_columns(  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
+        df = concat(dfs)
+    except ValueError:  # skipif-ci-and-not-linux
+        return None
+    df = df.with_columns(  # skipif-ci-and-not-linux
         col(f"_{_KEY}")
         .str.split_exact(_SPLIT, 1)
         .struct.rename_fields([output_key, "_variable"])
@@ -933,6 +945,13 @@ class _TimeSeriesReadDataFrameNoColumnsRequestedError(TimeSeriesReadDataFrameErr
     @override
     def __str__(self) -> str:
         return f"At least 1 column must be requested; got {self.columns}"  # skipif-ci-and-not-linux
+
+
+@dataclass(kw_only=True)
+class _TimeSeriesReadDataFrameNoRowsReturnedError(TimeSeriesReadDataFrameError):
+    @override
+    def __str__(self) -> str:
+        return "At least 1 row must be returned"  # skipif-ci-and-not-linux
 
 
 @contextmanager
