@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from click import command
 from loguru import logger
 
-from utilities.loguru import setup_loguru
 from utilities.pathlib import ensure_path
 from utilities.scripts.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
@@ -22,7 +21,6 @@ _CONFIG = Config()
 @click_options(Config, appname="pypiserver")
 def main(config: Config, /) -> None:
     """CLI for starting the PyPI server."""
-    setup_loguru()
     _check_password_file(path_password=config.path_password)
     config.path_packages.mkdir(parents=True, exist_ok=True)
     args = _get_args(
