@@ -366,7 +366,7 @@ class CheckSubMappingError(Exception, Generic[_K, _V]):
                 desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Mapping {reprlib.repr(self.left)} must be a submapping of {reprlib.repr(self.right)}; {desc}."
+        return f"Mapping {reprlib.repr(self.left)} must be a submapping of {reprlib.repr(self.right)}; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.extra) >= 1:
