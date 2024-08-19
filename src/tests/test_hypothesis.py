@@ -37,7 +37,6 @@ from numpy import (
     rint,
     uint32,
     uint64,
-    zeros,
 )
 from pytest import mark, param, raises
 from semver import Version
@@ -52,7 +51,6 @@ from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
-    concatenated_arrays,
     datetimes_utc,
     durations,
     float_arrays,
@@ -150,20 +148,6 @@ class TestBoolArrays:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
-
-
-class TestConcatenatedArrays:
-    @given(data=data(), m=integers(0, 10), n=integers(0, 10))
-    def test_1d(self, *, data: DataObject, m: int, n: int) -> None:
-        arrays = just(zeros(n, dtype=float))
-        array = data.draw(concatenated_arrays(arrays, m, n))
-        assert array.shape == (m, n)
-
-    @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
-    def test_2d(self, *, data: DataObject, m: int, n: int, p: int) -> None:
-        arrays = just(zeros((n, p), dtype=float))
-        array = data.draw(concatenated_arrays(arrays, m, (n, p)))
-        assert array.shape == (m, n, p)
 
 
 class TestDatetimesUTC:

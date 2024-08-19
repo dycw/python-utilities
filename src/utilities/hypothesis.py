@@ -55,7 +55,7 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
-    from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
+    from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Duration, Number
 
 
@@ -126,36 +126,6 @@ def bool_arrays(
         bool, draw(shape_use), elements=booleans(), fill=fill, unique=draw(unique)
     )
     return draw(strategy)
-
-
-@composite
-def concatenated_arrays(
-    _draw: DrawFn,
-    strategy: SearchStrategy[NDArrayA],
-    size: MaybeSearchStrategy[int],
-    fallback: Shape,
-    /,
-    *,
-    dtype: Any = float,
-) -> NDArrayA:
-    """Strategy for generating arrays from lower-dimensional strategies."""
-    from numpy import concatenate, expand_dims, zeros
-
-    from utilities.numpy import (
-        EmptyNumpyConcatenateError,
-        redirect_empty_numpy_concatenate,
-    )
-
-    draw = lift_draw(_draw)
-    size_ = draw(size)
-    arrays = draw(lists_fixed_length(strategy, size_))
-    expanded = [expand_dims(array, axis=0) for array in arrays]
-    try:
-        with redirect_empty_numpy_concatenate():
-            return concatenate(expanded)
-    except EmptyNumpyConcatenateError:
-        shape = (size_, fallback) if isinstance(fallback, int) else (size_, *fallback)
-        return zeros(shape, dtype=dtype)
 
 
 @composite
@@ -833,7 +803,6 @@ __all__ = [
     "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
-    "concatenated_arrays",
     "datetimes_utc",
     "durations",
     "float_arrays",
