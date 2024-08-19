@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import reprlib
 from collections import Counter
 from collections.abc import (
     Callable,
@@ -67,7 +68,8 @@ class CheckBijectionError(Exception, Generic[_THashable]):
     @override
     def __str__(self) -> str:
         return "Mapping {} must be a bijection; got duplicates {}.".format(
-            self.mapping, ", ".join(f"({k}, n={v})" for k, v in self.counts.items())
+            reprlib.repr(self.mapping),
+            ", ".join(f"({k}, n={v})" for k, v in self.counts.items()),
         )
 
 

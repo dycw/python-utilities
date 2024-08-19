@@ -216,7 +216,7 @@ pytz==2024.1
     # via pandas
 pyyaml==6.0.2
     # via jupyter-events
-pyzmq==26.1.0
+pyzmq==26.1.1
     # via
     #   ipykernel
     #   jupyter-client
