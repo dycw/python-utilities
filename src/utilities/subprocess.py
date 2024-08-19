@@ -10,9 +10,9 @@ from utilities.os import temp_environ
 from utilities.pathlib import PWD, ensure_path
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
-    from utilities.types import IterableStrs, PathLike
+    from utilities.types import PathLike
 
 
 def get_shell_output(
@@ -40,7 +40,7 @@ def get_shell_output(
 class GetShellOutputError(Exception): ...
 
 
-def run_accept_address_in_use(args: IterableStrs, /, *, exist_ok: bool) -> None:
+def run_accept_address_in_use(args: Sequence[str], /, *, exist_ok: bool) -> None:
     """Run a command, accepting the 'address already in use' error."""
     try:  # pragma: no cover
         _ = check_output(list(args), stderr=PIPE, text=True)
