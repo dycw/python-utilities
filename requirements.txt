@@ -181,8 +181,6 @@ markupsafe==2.1.5
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-mdutils==1.6.0
-    # via dycw-utilities (pyproject.toml)
 memory-profiler==0.61.0
     # via dycw-utilities (pyproject.toml)
 more-itertools==10.4.0
