@@ -52,9 +52,7 @@ from utilities.numpy import (
     FlatN0MultipleError,
     GetFillValueError,
     NDArrayF,
-    NDArrayF1,
-    NDArrayF2,
-    NDArrayI2,
+    NDArrayI,
     PctChangeError,
     ShiftError,
     array_indexer,
@@ -307,7 +305,7 @@ class TestDefaultRng:
 
 class TestDiscretize:
     @given(arr=float_arrays(shape=integers(0, 10), min_value=-1.0, max_value=1.0))
-    def test_1_bin(self, *, arr: NDArrayF1) -> None:
+    def test_1_bin(self, *, arr: NDArrayF) -> None:
         result = discretize(arr, 1)
         expected = zeros_like(arr, dtype=float)
         assert_equal(result, expected)
@@ -317,7 +315,7 @@ class TestDiscretize:
             shape=integers(1, 10), min_value=-1.0, max_value=1.0, unique=True
         )
     )
-    def test_2_bins(self, *, arr: NDArrayF1) -> None:
+    def test_2_bins(self, *, arr: NDArrayF) -> None:
         _ = assume(len(arr) % 2 == 0)
         result = discretize(arr, 2)
         med = median(arr)
@@ -1008,7 +1006,7 @@ class TestIsNonSingular:
         ("array", "expected"), [param(eye(2), True), param(ones((2, 2)), False)]
     )
     @mark.parametrize("dtype", [param(float), param(int)])
-    def test_main(self, *, array: NDArrayF2, dtype: Any, expected: bool) -> None:
+    def test_main(self, *, array: NDArrayF, dtype: Any, expected: bool) -> None:
         assert is_non_singular(array.astype(dtype)) is expected
 
     def test_overflow(self) -> None:
@@ -1077,12 +1075,12 @@ class TestIsPositiveSemiDefinite:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self, *, array: NDArrayF | NDArrayI, dtype: Any, expected: bool
     ) -> None:
         assert is_positive_semidefinite(array.astype(dtype)) is expected
 
     @given(array=float_arrays(shape=(2, 2), min_value=-1.0, max_value=1.0))
-    def test_overflow(self, *, array: NDArrayF2) -> None:
+    def test_overflow(self, *, array: NDArrayF) -> None:
         _ = is_positive_semidefinite(array)
 
 
@@ -1097,7 +1095,7 @@ class TestIsSymmetric:
     )
     @mark.parametrize("dtype", [param(float), param(int)])
     def test_main(
-        self, *, array: NDArrayF2 | NDArrayI2, dtype: Any, expected: bool
+        self, *, array: NDArrayF | NDArrayI, dtype: Any, expected: bool
     ) -> None:
         assert is_symmetric(array.astype(dtype)) is expected
 
