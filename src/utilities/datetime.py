@@ -289,11 +289,11 @@ def is_zoned_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
 def maybe_sub_pct_y(text: str, /) -> str:
     """Substitute the `%Y' token with '%4Y' if necessary."""
     match SYSTEM:
-        case System.windows:  # skipif-os-ne-windows
+        case System.windows:  # skipif-not-windows
             return text
-        case System.mac:  # skipif-os-ne-macos
+        case System.mac:  # skipif-not-macos
             return text
-        case System.linux:  # skipif-os-ne-linux
+        case System.linux:  # skipif-not-linux
             return sub("%Y", "%4Y", text)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)

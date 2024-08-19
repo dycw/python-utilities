@@ -28,7 +28,7 @@ def load_model(model: type[_BM], path: PathLike, /) -> _BM:
             return model.model_validate_json(fh.read())
     except FileNotFoundError:
         raise _LoadModelFileNotFoundError(model=model, path=path) from None
-    except IsADirectoryError:  # skipif-os-ne-windows
+    except IsADirectoryError:  # skipif-not-windows
         raise _LoadModelIsADirectoryError(model=model, path=path) from None
 
 
@@ -49,7 +49,7 @@ class _LoadModelFileNotFoundError(LoadModelError):
 class _LoadModelIsADirectoryError(LoadModelError):
     @override
     def __str__(self) -> str:
-        return f"Unable to load {self.model}; path {str(self.path)!r} must not be a directory."  # skipif-os-ne-windows
+        return f"Unable to load {self.model}; path {str(self.path)!r} must not be a directory."  # skipif-not-windows
 
 
 def save_model(model: BaseModel, path: PathLike, /, *, overwrite: bool = False) -> None:

@@ -47,7 +47,6 @@ redis
 reprlib
 scipy
 scripts-pypi-server
-semver
 sentinel
 socket
 sqlalchemy

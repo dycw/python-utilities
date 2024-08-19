@@ -217,7 +217,6 @@ packaging==24.1
     #   xarray
 pandas==2.2.2
     # via
-    #   dycw-utilities (pyproject.toml)
     #   streamlit
     #   vegafusion
     #   xarray
