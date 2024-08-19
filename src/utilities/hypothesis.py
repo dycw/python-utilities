@@ -51,7 +51,6 @@ if TYPE_CHECKING:
     import redis
     from hypothesis.database import ExampleDatabase
     from redis.commands.timeseries import TimeSeries
-    from semver import Version
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -687,78 +686,6 @@ def timedeltas_2w(
     )
 
 
-def uint32s(
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-) -> SearchStrategy[int]:
-    """Strategy for generating uint32s."""
-    from numpy import uint32
-
-    return _fixed_width_ints(uint32, min_value=min_value, max_value=max_value)
-
-
-def uint64s(
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-) -> SearchStrategy[int]:
-    """Strategy for generating uint64s."""
-    from numpy import uint64
-
-    return _fixed_width_ints(uint64, min_value=min_value, max_value=max_value)
-
-
-@composite
-def versions(
-    _draw: DrawFn,
-    /,
-    *,
-    min_version: MaybeSearchStrategy[Version | None] = None,
-    max_version: MaybeSearchStrategy[Version | None] = None,
-) -> Version:
-    """Strategy for generating `Version`s."""
-    from semver import Version
-
-    draw = lift_draw(_draw)
-    min_version_, max_version_ = (draw(mv) for mv in (min_version, max_version))
-    if isinstance(min_version_, Version) and isinstance(max_version_, Version):
-        if min_version_ > max_version_:
-            msg = f"{min_version_=}, {max_version_=}"
-            raise InvalidArgument(msg)
-        major = draw(integers(min_version_.major, max_version_.major))
-        minor, patch = draw(lists_fixed_length(integers(min_value=0), 2))
-        version = Version(major=major, minor=minor, patch=patch)
-        _ = assume(min_version_ <= version <= max_version_)
-        return version
-    if isinstance(min_version_, Version) and (max_version_ is None):
-        major = draw(integers(min_value=min_version_.major))
-        if major > min_version_.major:
-            minor, patch = draw(lists_fixed_length(integers(min_value=0), 2))
-        else:
-            minor = draw(integers(min_version_.minor))
-            if minor > min_version_.minor:
-                patch = draw(integers(min_value=0))  # pragma: no cover
-            else:
-                patch = draw(integers(min_value=min_version_.patch))
-    elif (min_version_ is None) and isinstance(max_version_, Version):
-        major = draw(integers(0, max_version_.major))
-        if major < max_version_.major:
-            minor, patch = draw(lists_fixed_length(integers(min_value=0), 2))
-        else:
-            minor = draw(integers(0, max_version_.minor))
-            if minor < max_version_.minor:
-                patch = draw(integers(min_value=0))  # pragma: no cover
-            else:
-                patch = draw(integers(0, max_version_.patch))
-    elif (min_version_ is None) and (max_version_ is None):
-        major, minor, patch = draw(lists_fixed_length(integers(min_value=0), 3))
-    else:
-        msg = "Invalid case"  # pragma: no cover
-        raise RuntimeError(msg)  # pragma: no cover
-    return Version(major=major, minor=minor, patch=patch)
-
-
 @composite
 def _draw_text(
     _draw: DrawFn,
@@ -828,7 +755,4 @@ __all__ = [
     "text_clean",
     "text_printable",
     "timedeltas_2w",
-    "uint32s",
-    "uint64s",
-    "versions",
 ]

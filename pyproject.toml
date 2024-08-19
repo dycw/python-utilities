@@ -51,7 +51,6 @@ dev = [
   "redis >= 5.0.8, < 5.1",
   "rich >= 13.7.1, < 13.8",
   "scipy >= 1.14.0, < 1.15",
-  "semver >= 3.0.2, < 3.1",
   "slack-sdk >= 3.31.0, < 3.32",
   "sqlalchemy >= 2.0.32, < 2.1",
   "streamlit >= 1.37.1, < 1.38",
@@ -141,7 +140,6 @@ zzz-test-hypothesis = [
   "numpy >= 2.0.1, < 2.1",
   "pandas >= 2.2.2, < 2.3",
   "redis >= 5.0.8, < 5.1",
-  "semver >= 3.0.2, < 3.1",
   "sqlalchemy >= 2.0.32, < 2.1",
   "whenever >= 0.6.7, < 0.7",
 ]
@@ -203,7 +201,6 @@ zzz-test-scripts-pypi-server = [
   "pypiserver[passlib] >= 2.1.1, < 2.2",
   "typed-settings >= 24.4.0, < 24.5",
 ]
-zzz-test-semver = ["semver >= 3.0.2, < 3.1"]
 zzz-test-sentinel = []
 zzz-test-socket = []
 zzz-test-sqlalchemy = [

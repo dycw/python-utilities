@@ -25,21 +25,8 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
 )
-from numpy import (
-    iinfo,
-    inf,
-    int32,
-    int64,
-    isfinite,
-    isinf,
-    isnan,
-    ravel,
-    rint,
-    uint32,
-    uint64,
-)
+from numpy import iinfo, inf, int32, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
-from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
@@ -76,9 +63,6 @@ from utilities.hypothesis import (
     text_clean,
     text_printable,
     timedeltas_2w,
-    uint32s,
-    uint64s,
-    versions,
 )
 from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
@@ -855,72 +839,3 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
-
-
-class TestUInt32s:
-    @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
-        info = iinfo(uint32)
-        assert info.min <= x <= info.max
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
-class TestUInt64s:
-    @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
-        info = iinfo(uint64)
-        assert info.min <= x <= info.max
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
-class TestVersions:
-    @given(data=data())
-    def test_main(self, data: DataObject) -> None:
-        version = data.draw(versions())
-        assert isinstance(version, Version)
-
-    @given(data=data())
-    def test_min_version(self, data: DataObject) -> None:
-        min_version = data.draw(versions())
-        version = data.draw(versions(min_version=min_version))
-        assert version >= min_version
-
-    @given(data=data())
-    def test_max_version(self, data: DataObject) -> None:
-        max_version = data.draw(versions())
-        version = data.draw(versions(max_version=max_version))
-        assert version <= max_version
-
-    @given(data=data())
-    def test_min_and_max_version(self, data: DataObject) -> None:
-        version1, version2 = data.draw(lists_fixed_length(versions(), 2))
-        min_version = min(version1, version2)
-        max_version = max(version1, version2)
-        version = data.draw(versions(min_version=min_version, max_version=max_version))
-        assert min_version <= version <= max_version
-
-    @given(data=data())
-    def test_error(self, data: DataObject) -> None:
-        version1, version2 = data.draw(lists_fixed_length(versions(), 2))
-        _ = assume(version1 != version2)
-        with raises(InvalidArgument):
-            _ = data.draw(
-                versions(
-                    min_version=max(version1, version2),
-                    max_version=min(version1, version2),
-                )
-            )
