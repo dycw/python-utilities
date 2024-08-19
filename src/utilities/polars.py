@@ -153,7 +153,7 @@ class CheckPolarsDataFrameError(Exception):
     df: DataFrame
 
 
-def _check_polars_dataframe_columns(df: DataFrame, columns: Sequence[str], /) -> None:
+def _check_polars_dataframe_columns(df: DataFrame, columns: Iterable[str], /) -> None:
     try:
         check_iterables_equal(df.columns, columns)
     except CheckIterablesEqualError as error:
@@ -508,7 +508,7 @@ def is_null_struct_series(series: Series, /) -> Series:
 
 
 def _is_null_struct_series_one(
-    dtype: Struct, /, *, root: Sequence[str] = ()
+    dtype: Struct, /, *, root: Iterable[str] = ()
 ) -> Iterator[Sequence[str]]:
     for field in dtype.fields:
         name = field.name
@@ -520,7 +520,7 @@ def _is_null_struct_series_one(
             yield path
 
 
-def _is_null_struct_to_expr(path: Sequence[str], /) -> Expr:
+def _is_null_struct_to_expr(path: Iterable[str], /) -> Expr:
     head, *tail = path
     return reduce(_is_null_struct_to_expr_reducer, tail, col(head)).is_null()
 
@@ -541,7 +541,7 @@ class IsNullStructSeriesError(Exception):
 def join(
     df: DataFrame,
     *dfs: DataFrame,
-    on: str | Expr | Sequence[str | Expr],
+    on: MaybeIterable[str | Expr],
     how: JoinStrategy = "inner",
     validate: JoinValidation = "m:m",
 ) -> DataFrame:

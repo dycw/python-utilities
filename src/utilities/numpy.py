@@ -51,7 +51,6 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from utilities.math import FloatFinPos
 
 # RNG
 DEFAULT_RNG = default_rng()
@@ -356,7 +355,7 @@ def discretize(x: NDArrayF1, bins: int | Iterable[float], /) -> NDArrayF1:
     return out
 
 
-def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArrayF:
+def ewma(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
     """Compute the EWMA of an array."""
     from numbagg import move_exp_nanmean
 
@@ -364,9 +363,7 @@ def ewma(array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1) -> NDArra
     return cast(Any, move_exp_nanmean)(array, axis=axis, alpha=alpha)
 
 
-def exp_moving_sum(
-    array: NDArrayF, halflife: FloatFinPos, /, *, axis: int = -1
-) -> NDArrayF:
+def exp_moving_sum(array: NDArrayF, halflife: float, /, *, axis: int = -1) -> NDArrayF:
     """Compute the exponentially-weighted moving sum of an array."""
     from numbagg import move_exp_nansum
 
@@ -374,7 +371,7 @@ def exp_moving_sum(
     return cast(Any, move_exp_nansum)(array, axis=axis, alpha=alpha)
 
 
-def _exp_weighted_alpha(halflife: FloatFinPos, /) -> float:
+def _exp_weighted_alpha(halflife: float, /) -> float:
     """Get the alpha."""
     decay = 1.0 - exp(log(0.5) / halflife)
     com = 1.0 / decay - 1.0
