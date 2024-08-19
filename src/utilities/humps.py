@@ -15,7 +15,7 @@ from utilities.iterables import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping, Sequence
+    from collections.abc import Hashable, Iterable, Mapping
 
 
 def snake_case(text: str, /) -> str:
@@ -26,7 +26,7 @@ def snake_case(text: str, /) -> str:
     return text.lower()
 
 
-def snake_case_mappings(text: Sequence[str], /) -> dict[str, str]:
+def snake_case_mappings(text: Iterable[str], /) -> dict[str, str]:
     """Map a set of text into their snake cases."""
     keys = list(text)
     try:
