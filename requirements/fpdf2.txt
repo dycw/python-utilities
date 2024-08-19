@@ -48,7 +48,7 @@ mdit-py-plugins==0.4.1
     # via panel
 mdurl==0.1.2
     # via markdown-it-py
-numpy==2.0.1
+numpy==2.1.0
     # via
     #   bokeh
     #   contourpy

@@ -70,6 +70,7 @@ sqlalchemy-polars
 subprocess
 sys
 tempfile
+tenacity
 text
 timer
 tqdm

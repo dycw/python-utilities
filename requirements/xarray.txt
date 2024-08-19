@@ -10,13 +10,13 @@ hypothesis==6.111.1
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-llvmlite==0.43.0
+llvmlite==0.34.0
     # via numba
-numba==0.60.0
+numba==0.51.2
     # via numbagg
 numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)
-numpy==2.0.1
+numpy==2.1.0
     # via
     #   bottleneck
     #   numba
@@ -48,6 +48,8 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
+setuptools==72.2.0
+    # via numba
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
