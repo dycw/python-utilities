@@ -130,91 +130,6 @@ NDArrayD = (
 )
 
 
-# annotations - ndims
-NDArray0 = Annotated[NDArrayA, 0]
-NDArray1 = Annotated[NDArrayA, 1]
-NDArray2 = Annotated[NDArrayA, 2]
-NDArray3 = Annotated[NDArrayA, 3]
-
-
-# annotations - dtype & ndim
-NDArrayB0 = Annotated[NDArrayB, 0]
-NDArrayD0 = Annotated[NDArrayD, 0]
-NDArrayF0 = Annotated[NDArrayF, 0]
-NDArrayI0 = Annotated[NDArrayI, 0]
-NDArrayO0 = Annotated[NDArrayO, 0]
-NDArrayDY0 = Annotated[NDArrayDY, 0]
-NDArrayDM0 = Annotated[NDArrayDM, 0]
-NDArrayDW0 = Annotated[NDArrayDW, 0]
-NDArrayDD0 = Annotated[NDArrayDD, 0]
-NDArrayDh0 = Annotated[NDArrayDh, 0]
-NDArrayDm0 = Annotated[NDArrayDm, 0]
-NDArrayDs0 = Annotated[NDArrayDs, 0]
-NDArrayDms0 = Annotated[NDArrayDms, 0]
-NDArrayDus0 = Annotated[NDArrayDus, 0]
-NDArrayDns0 = Annotated[NDArrayDns, 0]
-NDArrayDps0 = Annotated[NDArrayDps, 0]
-NDArrayDfs0 = Annotated[NDArrayDfs, 0]
-NDArrayDas0 = Annotated[NDArrayDas, 0]
-
-NDArrayB1 = Annotated[NDArrayB, 1]
-NDArrayD1 = Annotated[NDArrayD, 1]
-NDArrayF1 = Annotated[NDArrayF, 1]
-NDArrayI1 = Annotated[NDArrayI, 1]
-NDArrayO1 = Annotated[NDArrayO, 1]
-NDArrayDY1 = Annotated[NDArrayDY, 1]
-NDArrayDM1 = Annotated[NDArrayDM, 1]
-NDArrayDW1 = Annotated[NDArrayDW, 1]
-NDArrayDD1 = Annotated[NDArrayDD, 1]
-NDArrayDh1 = Annotated[NDArrayDh, 1]
-NDArrayDm1 = Annotated[NDArrayDm, 1]
-NDArrayDs1 = Annotated[NDArrayDs, 1]
-NDArrayDms1 = Annotated[NDArrayDms, 1]
-NDArrayDus1 = Annotated[NDArrayDus, 1]
-NDArrayDns1 = Annotated[NDArrayDns, 1]
-NDArrayDps1 = Annotated[NDArrayDps, 1]
-NDArrayDfs1 = Annotated[NDArrayDfs, 1]
-NDArrayDas1 = Annotated[NDArrayDas, 1]
-
-NDArrayB2 = Annotated[NDArrayB, 2]
-NDArrayD2 = Annotated[NDArrayD, 2]
-NDArrayF2 = Annotated[NDArrayF, 2]
-NDArrayI2 = Annotated[NDArrayI, 2]
-NDArrayO2 = Annotated[NDArrayO, 2]
-NDArrayDY2 = Annotated[NDArrayDY, 2]
-NDArrayDM2 = Annotated[NDArrayDM, 2]
-NDArrayDW2 = Annotated[NDArrayDW, 2]
-NDArrayDD2 = Annotated[NDArrayDD, 2]
-NDArrayDh2 = Annotated[NDArrayDh, 2]
-NDArrayDm2 = Annotated[NDArrayDm, 2]
-NDArrayDs2 = Annotated[NDArrayDs, 2]
-NDArrayDms2 = Annotated[NDArrayDms, 2]
-NDArrayDus2 = Annotated[NDArrayDus, 2]
-NDArrayDns2 = Annotated[NDArrayDns, 2]
-NDArrayDps2 = Annotated[NDArrayDps, 2]
-NDArrayDfs2 = Annotated[NDArrayDfs, 2]
-NDArrayDas2 = Annotated[NDArrayDas, 2]
-
-NDArrayB3 = Annotated[NDArrayB, 3]
-NDArrayD3 = Annotated[NDArrayD, 3]
-NDArrayF3 = Annotated[NDArrayF, 3]
-NDArrayI3 = Annotated[NDArrayI, 3]
-NDArrayO3 = Annotated[NDArrayO, 3]
-NDArrayDY3 = Annotated[NDArrayDY, 3]
-NDArrayDM3 = Annotated[NDArrayDM, 3]
-NDArrayDW3 = Annotated[NDArrayDW, 3]
-NDArrayDD3 = Annotated[NDArrayDD, 3]
-NDArrayDh3 = Annotated[NDArrayDh, 3]
-NDArrayDm3 = Annotated[NDArrayDm, 3]
-NDArrayDs3 = Annotated[NDArrayDs, 3]
-NDArrayDms3 = Annotated[NDArrayDms, 3]
-NDArrayDus3 = Annotated[NDArrayDus, 3]
-NDArrayDns3 = Annotated[NDArrayDns, 3]
-NDArrayDps3 = Annotated[NDArrayDps, 3]
-NDArrayDfs3 = Annotated[NDArrayDfs, 3]
-NDArrayDas3 = Annotated[NDArrayDas, 3]
-
-
 # functions
 
 
@@ -335,7 +250,7 @@ def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
 class DateTime64ToDateTimeError(Exception): ...
 
 
-def discretize(x: NDArrayF1, bins: int | Iterable[float], /) -> NDArrayF1:
+def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
     """Discretize an array of floats.
 
     Finite values are mapped to {0, ..., bins-1}.
@@ -815,7 +730,7 @@ def is_non_positive_or_nan(
 
 
 def is_non_singular(
-    array: NDArrayF2 | NDArrayI2,
+    array: NDArrayF | NDArrayI,
     /,
     *,
     rtol: float | None = None,
@@ -857,7 +772,7 @@ def is_positive_or_nan(
     return is_positive(x, rtol=rtol, atol=atol) | isnan(x)
 
 
-def is_positive_semidefinite(x: NDArrayF2 | NDArrayI2, /) -> bool:
+def is_positive_semidefinite(x: NDArrayF | NDArrayI, /) -> bool:
     """Check if `x` is positive semidefinite."""
     if not is_symmetric(x):
         return False
@@ -866,7 +781,7 @@ def is_positive_semidefinite(x: NDArrayF2 | NDArrayI2, /) -> bool:
 
 
 def is_symmetric(
-    array: NDArrayF2 | NDArrayI2,
+    array: NDArrayF | NDArrayI,
     /,
     *,
     rtol: float | None = None,
@@ -1066,214 +981,6 @@ def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
     return years if isinstance(date, ndarray) else years.item()
 
 
-# annotations - int & predicates
-NDArrayINeg = Annotated[NDArrayI, is_negative]
-NDArrayINonNeg = Annotated[NDArrayI, is_non_negative]
-NDArrayINonPos = Annotated[NDArrayI, is_non_positive]
-NDArrayINonZr = Annotated[NDArrayI, is_non_zero]
-NDArrayIPos = Annotated[NDArrayI, is_positive]
-NDArrayIZr = Annotated[NDArrayI, is_zero]
-
-
-# annotations - float & predicates
-NDArrayFFin = Annotated[NDArrayF, isfinite]
-NDArrayFFinInt = Annotated[NDArrayF, is_finite_and_integral]
-NDArrayFFinIntNan = Annotated[NDArrayF, is_finite_and_integral_or_nan]
-NDArrayFFinNeg = Annotated[NDArrayF, is_finite_and_negative]
-NDArrayFFinNegNan = Annotated[NDArrayF, is_finite_and_negative_or_nan]
-NDArrayFFinNonNeg = Annotated[NDArrayF, is_finite_and_non_negative]
-NDArrayFFinNonNegNan = Annotated[NDArrayF, is_finite_and_non_negative_or_nan]
-NDArrayFFinNonPos = Annotated[NDArrayF, is_finite_and_non_positive]
-NDArrayFFinNonPosNan = Annotated[NDArrayF, is_finite_and_non_positive_or_nan]
-NDArrayFFinNonZr = Annotated[NDArrayF, is_finite_and_non_zero]
-NDArrayFFinNonZrNan = Annotated[NDArrayF, is_finite_and_non_zero_or_nan]
-NDArrayFFinPos = Annotated[NDArrayF, is_finite_and_positive]
-NDArrayFFinPosNan = Annotated[NDArrayF, is_finite_and_positive_or_nan]
-NDArrayFFinNan = Annotated[NDArrayF, is_finite_or_nan]
-NDArrayFInt = Annotated[NDArrayF, is_integral]
-NDArrayFIntNan = Annotated[NDArrayF, is_integral_or_nan]
-NDArrayFNeg = Annotated[NDArrayF, is_negative]
-NDArrayFNegNan = Annotated[NDArrayF, is_negative_or_nan]
-NDArrayFNonNeg = Annotated[NDArrayF, is_non_negative]
-NDArrayFNonNegNan = Annotated[NDArrayF, is_non_negative_or_nan]
-NDArrayFNonPos = Annotated[NDArrayF, is_non_positive]
-NDArrayFNonPosNan = Annotated[NDArrayF, is_non_positive_or_nan]
-NDArrayFNonZr = Annotated[NDArrayF, is_non_zero]
-NDArrayFNonZrNan = Annotated[NDArrayF, is_non_zero_or_nan]
-NDArrayFPos = Annotated[NDArrayF, is_positive]
-NDArrayFPosNan = Annotated[NDArrayF, is_positive_or_nan]
-NDArrayFZr = Annotated[NDArrayF, is_zero]
-NDArrayFZrFinNonMic = Annotated[NDArrayF, is_zero_or_finite_and_non_micro]
-NDArrayFZrFinNonMicNan = Annotated[NDArrayF, is_zero_or_finite_and_non_micro_or_nan]
-NDArrayFZrNan = Annotated[NDArrayF, is_zero_or_nan]
-NDArrayFZrNonMic = Annotated[NDArrayF, is_zero_or_non_micro]
-NDArrayFZrNonMicNan = Annotated[NDArrayF, is_zero_or_non_micro_or_nan]
-
-
-# annotations - int, ndim & predicate
-NDArrayI0Neg = Annotated[NDArrayI0, is_negative]
-NDArrayI0NonNeg = Annotated[NDArrayI0, is_non_negative]
-NDArrayI0NonPos = Annotated[NDArrayI0, is_non_positive]
-NDArrayI0NonZr = Annotated[NDArrayI0, is_non_zero]
-NDArrayI0Pos = Annotated[NDArrayI0, is_positive]
-NDArrayI0Zr = Annotated[NDArrayI0, is_zero]
-
-NDArrayI1Neg = Annotated[NDArrayI1, is_negative]
-NDArrayI1NonNeg = Annotated[NDArrayI1, is_non_negative]
-NDArrayI1NonPos = Annotated[NDArrayI1, is_non_positive]
-NDArrayI1NonZr = Annotated[NDArrayI1, is_non_zero]
-NDArrayI1Pos = Annotated[NDArrayI1, is_positive]
-NDArrayI1Zr = Annotated[NDArrayI1, is_zero]
-
-NDArrayI2Neg = Annotated[NDArrayI2, is_negative]
-NDArrayI2NonNeg = Annotated[NDArrayI2, is_non_negative]
-NDArrayI2NonPos = Annotated[NDArrayI2, is_non_positive]
-NDArrayI2NonZr = Annotated[NDArrayI2, is_non_zero]
-NDArrayI2Pos = Annotated[NDArrayI2, is_positive]
-NDArrayI2Zr = Annotated[NDArrayI2, is_zero]
-
-NDArrayI3Neg = Annotated[NDArrayI1, is_negative]
-NDArrayI3NonNeg = Annotated[NDArrayI3, is_non_negative]
-NDArrayI3NonPos = Annotated[NDArrayI3, is_non_positive]
-NDArrayI3NonZr = Annotated[NDArrayI3, is_non_zero]
-NDArrayI3Pos = Annotated[NDArrayI3, is_positive]
-NDArrayI3Zr = Annotated[NDArrayI3, is_zero]
-
-
-# annotations - float, ndim & predicate
-NDArrayF0Fin = Annotated[NDArrayF0, isfinite]
-NDArrayF0FinInt = Annotated[NDArrayF0, is_finite_and_integral]
-NDArrayF0FinIntNan = Annotated[NDArrayF0, is_finite_and_integral_or_nan]
-NDArrayF0FinNeg = Annotated[NDArrayF0, is_finite_and_negative]
-NDArrayF0FinNegNan = Annotated[NDArrayF0, is_finite_and_negative_or_nan]
-NDArrayF0FinNonNeg = Annotated[NDArrayF0, is_finite_and_non_negative]
-NDArrayF0FinNonNegNan = Annotated[NDArrayF0, is_finite_and_non_negative_or_nan]
-NDArrayF0FinNonPos = Annotated[NDArrayF0, is_finite_and_non_positive]
-NDArrayF0FinNonPosNan = Annotated[NDArrayF0, is_finite_and_non_positive_or_nan]
-NDArrayF0FinNonZr = Annotated[NDArrayF0, is_finite_and_non_zero]
-NDArrayF0FinNonZrNan = Annotated[NDArrayF0, is_finite_and_non_zero_or_nan]
-NDArrayF0FinPos = Annotated[NDArrayF0, is_finite_and_positive]
-NDArrayF0FinPosNan = Annotated[NDArrayF0, is_finite_and_positive_or_nan]
-NDArrayF0FinNan = Annotated[NDArrayF0, is_finite_or_nan]
-NDArrayF0Int = Annotated[NDArrayF0, is_integral]
-NDArrayF0IntNan = Annotated[NDArrayF0, is_integral_or_nan]
-NDArrayF0Neg = Annotated[NDArrayF0, is_negative]
-NDArrayF0NegNan = Annotated[NDArrayF0, is_negative_or_nan]
-NDArrayF0NonNeg = Annotated[NDArrayF0, is_non_negative]
-NDArrayF0NonNegNan = Annotated[NDArrayF0, is_non_negative_or_nan]
-NDArrayF0NonPos = Annotated[NDArrayF0, is_non_positive]
-NDArrayF0NonPosNan = Annotated[NDArrayF0, is_non_positive_or_nan]
-NDArrayF0NonZr = Annotated[NDArrayF0, is_non_zero]
-NDArrayF0NonZrNan = Annotated[NDArrayF0, is_non_zero_or_nan]
-NDArrayF0Pos = Annotated[NDArrayF0, is_positive]
-NDArrayF0PosNan = Annotated[NDArrayF0, is_positive_or_nan]
-NDArrayF0Zr = Annotated[NDArrayF0, is_zero]
-NDArrayF0ZrFinNonMic = Annotated[NDArrayF0, is_zero_or_finite_and_non_micro]
-NDArrayF0ZrFinNonMicNan = Annotated[NDArrayF0, is_zero_or_finite_and_non_micro_or_nan]
-NDArrayF0ZrNan = Annotated[NDArrayF0, is_zero_or_nan]
-NDArrayF0ZrNonMic = Annotated[NDArrayF0, is_zero_or_non_micro]
-NDArrayF0ZrNonMicNan = Annotated[NDArrayF0, is_zero_or_non_micro_or_nan]
-
-NDArrayF1Fin = Annotated[NDArrayF1, isfinite]
-NDArrayF1FinInt = Annotated[NDArrayF1, is_finite_and_integral]
-NDArrayF1FinIntNan = Annotated[NDArrayF1, is_finite_and_integral_or_nan]
-NDArrayF1FinNeg = Annotated[NDArrayF1, is_finite_and_negative]
-NDArrayF1FinNegNan = Annotated[NDArrayF1, is_finite_and_negative_or_nan]
-NDArrayF1FinNonNeg = Annotated[NDArrayF1, is_finite_and_non_negative]
-NDArrayF1FinNonNegNan = Annotated[NDArrayF1, is_finite_and_non_negative_or_nan]
-NDArrayF1FinNonPos = Annotated[NDArrayF1, is_finite_and_non_positive]
-NDArrayF1FinNonPosNan = Annotated[NDArrayF1, is_finite_and_non_positive_or_nan]
-NDArrayF1FinNonZr = Annotated[NDArrayF1, is_finite_and_non_zero]
-NDArrayF1FinNonZrNan = Annotated[NDArrayF1, is_finite_and_non_zero_or_nan]
-NDArrayF1FinPos = Annotated[NDArrayF1, is_finite_and_positive]
-NDArrayF1FinPosNan = Annotated[NDArrayF1, is_finite_and_positive_or_nan]
-NDArrayF1FinNan = Annotated[NDArrayF1, is_finite_or_nan]
-NDArrayF1Int = Annotated[NDArrayF1, is_integral]
-NDArrayF1IntNan = Annotated[NDArrayF1, is_integral_or_nan]
-NDArrayF1Neg = Annotated[NDArrayF1, is_negative]
-NDArrayF1NegNan = Annotated[NDArrayF1, is_negative_or_nan]
-NDArrayF1NonNeg = Annotated[NDArrayF1, is_non_negative]
-NDArrayF1NonNegNan = Annotated[NDArrayF1, is_non_negative_or_nan]
-NDArrayF1NonPos = Annotated[NDArrayF1, is_non_positive]
-NDArrayF1NonPosNan = Annotated[NDArrayF1, is_non_positive_or_nan]
-NDArrayF1NonZr = Annotated[NDArrayF1, is_non_zero]
-NDArrayF1NonZrNan = Annotated[NDArrayF1, is_non_zero_or_nan]
-NDArrayF1Pos = Annotated[NDArrayF1, is_positive]
-NDArrayF1PosNan = Annotated[NDArrayF1, is_positive_or_nan]
-NDArrayF1Zr = Annotated[NDArrayF1, is_zero]
-NDArrayF1ZrFinNonMic = Annotated[NDArrayF1, is_zero_or_finite_and_non_micro]
-NDArrayF1ZrFinNonMicNan = Annotated[NDArrayF1, is_zero_or_finite_and_non_micro_or_nan]
-NDArrayF1ZrNan = Annotated[NDArrayF1, is_zero_or_nan]
-NDArrayF1ZrNonMic = Annotated[NDArrayF1, is_zero_or_non_micro]
-NDArrayF1ZrNonMicNan = Annotated[NDArrayF1, is_zero_or_non_micro_or_nan]
-
-NDArrayF2Fin = Annotated[NDArrayF2, isfinite]
-NDArrayF2FinInt = Annotated[NDArrayF2, is_finite_and_integral]
-NDArrayF2FinIntNan = Annotated[NDArrayF2, is_finite_and_integral_or_nan]
-NDArrayF2FinNeg = Annotated[NDArrayF2, is_finite_and_negative]
-NDArrayF2FinNegNan = Annotated[NDArrayF2, is_finite_and_negative_or_nan]
-NDArrayF2FinNonNeg = Annotated[NDArrayF2, is_finite_and_non_negative]
-NDArrayF2FinNonNegNan = Annotated[NDArrayF2, is_finite_and_non_negative_or_nan]
-NDArrayF2FinNonPos = Annotated[NDArrayF2, is_finite_and_non_positive]
-NDArrayF2FinNonPosNan = Annotated[NDArrayF2, is_finite_and_non_positive_or_nan]
-NDArrayF2FinNonZr = Annotated[NDArrayF2, is_finite_and_non_zero]
-NDArrayF2FinNonZrNan = Annotated[NDArrayF2, is_finite_and_non_zero_or_nan]
-NDArrayF2FinPos = Annotated[NDArrayF2, is_finite_and_positive]
-NDArrayF2FinPosNan = Annotated[NDArrayF2, is_finite_and_positive_or_nan]
-NDArrayF2FinNan = Annotated[NDArrayF2, is_finite_or_nan]
-NDArrayF2Int = Annotated[NDArrayF2, is_integral]
-NDArrayF2IntNan = Annotated[NDArrayF2, is_integral_or_nan]
-NDArrayF2Neg = Annotated[NDArrayF2, is_negative]
-NDArrayF2NegNan = Annotated[NDArrayF2, is_negative_or_nan]
-NDArrayF2NonNeg = Annotated[NDArrayF2, is_non_negative]
-NDArrayF2NonNegNan = Annotated[NDArrayF2, is_non_negative_or_nan]
-NDArrayF2NonPos = Annotated[NDArrayF2, is_non_positive]
-NDArrayF2NonPosNan = Annotated[NDArrayF2, is_non_positive_or_nan]
-NDArrayF2NonZr = Annotated[NDArrayF2, is_non_zero]
-NDArrayF2NonZrNan = Annotated[NDArrayF2, is_non_zero_or_nan]
-NDArrayF2Pos = Annotated[NDArrayF2, is_positive]
-NDArrayF2PosNan = Annotated[NDArrayF2, is_positive_or_nan]
-NDArrayF2Zr = Annotated[NDArrayF2, is_zero]
-NDArrayF2ZrFinNonMic = Annotated[NDArrayF2, is_zero_or_finite_and_non_micro]
-NDArrayF2ZrFinNonMicNan = Annotated[NDArrayF2, is_zero_or_finite_and_non_micro_or_nan]
-NDArrayF2ZrNan = Annotated[NDArrayF2, is_zero_or_nan]
-NDArrayF2ZrNonMic = Annotated[NDArrayF2, is_zero_or_non_micro]
-NDArrayF2ZrNonMicNan = Annotated[NDArrayF2, is_zero_or_non_micro_or_nan]
-
-NDArrayF3Fin = Annotated[NDArrayF3, isfinite]
-NDArrayF3FinInt = Annotated[NDArrayF3, is_finite_and_integral]
-NDArrayF3FinIntNan = Annotated[NDArrayF3, is_finite_and_integral_or_nan]
-NDArrayF3FinNeg = Annotated[NDArrayF3, is_finite_and_negative]
-NDArrayF3FinNegNan = Annotated[NDArrayF3, is_finite_and_negative_or_nan]
-NDArrayF3FinNonNeg = Annotated[NDArrayF3, is_finite_and_non_negative]
-NDArrayF3FinNonNegNan = Annotated[NDArrayF3, is_finite_and_non_negative_or_nan]
-NDArrayF3FinNonPos = Annotated[NDArrayF3, is_finite_and_non_positive]
-NDArrayF3FinNonPosNan = Annotated[NDArrayF3, is_finite_and_non_positive_or_nan]
-NDArrayF3FinNonZr = Annotated[NDArrayF3, is_finite_and_non_zero]
-NDArrayF3FinNonZrNan = Annotated[NDArrayF3, is_finite_and_non_zero_or_nan]
-NDArrayF3FinPos = Annotated[NDArrayF3, is_finite_and_positive]
-NDArrayF3FinPosNan = Annotated[NDArrayF3, is_finite_and_positive_or_nan]
-NDArrayF3FinNan = Annotated[NDArrayF3, is_finite_or_nan]
-NDArrayF3Int = Annotated[NDArrayF3, is_integral]
-NDArrayF3IntNan = Annotated[NDArrayF3, is_integral_or_nan]
-NDArrayF3Neg = Annotated[NDArrayF3, is_negative]
-NDArrayF3NegNan = Annotated[NDArrayF3, is_negative_or_nan]
-NDArrayF3NonNeg = Annotated[NDArrayF3, is_non_negative]
-NDArrayF3NonNegNan = Annotated[NDArrayF3, is_non_negative_or_nan]
-NDArrayF3NonPos = Annotated[NDArrayF3, is_non_positive]
-NDArrayF3NonPosNan = Annotated[NDArrayF3, is_non_positive_or_nan]
-NDArrayF3NonZr = Annotated[NDArrayF3, is_non_zero]
-NDArrayF3NonZrNan = Annotated[NDArrayF3, is_non_zero_or_nan]
-NDArrayF3Pos = Annotated[NDArrayF3, is_positive]
-NDArrayF3PosNan = Annotated[NDArrayF3, is_positive_or_nan]
-NDArrayF3Zr = Annotated[NDArrayF3, is_zero]
-NDArrayF3ZrFinNonMic = Annotated[NDArrayF3, is_zero_or_finite_and_non_micro]
-NDArrayF3ZrFinNonMicNan = Annotated[NDArrayF3, is_zero_or_finite_and_non_micro_or_nan]
-NDArrayF3ZrNan = Annotated[NDArrayF3, is_zero_or_nan]
-NDArrayF3ZrNonMic = Annotated[NDArrayF3, is_zero_or_non_micro]
-NDArrayF3ZrNonMicNan = Annotated[NDArrayF3, is_zero_or_non_micro_or_nan]
-
-
 __all__ = [
     "DATETIME_MAX_AS_DATETIME64",
     "DATETIME_MAX_AS_INT",
@@ -1294,291 +1001,25 @@ __all__ = [
     "FlatN0Error",
     "FlatN0MultipleError",
     "GetFillValueError",
-    "NDArray0",
-    "NDArray1",
-    "NDArray2",
-    "NDArray3",
     "NDArrayA",
     "NDArrayB",
-    "NDArrayB0",
-    "NDArrayB1",
-    "NDArrayB2",
-    "NDArrayB3",
     "NDArrayD",
-    "NDArrayD0",
-    "NDArrayD1",
-    "NDArrayD2",
-    "NDArrayD3",
     "NDArrayDD",
-    "NDArrayDD0",
-    "NDArrayDD1",
-    "NDArrayDD2",
-    "NDArrayDD3",
     "NDArrayDM",
-    "NDArrayDM0",
-    "NDArrayDM1",
-    "NDArrayDM2",
-    "NDArrayDM3",
     "NDArrayDW",
-    "NDArrayDW0",
-    "NDArrayDW1",
-    "NDArrayDW2",
-    "NDArrayDW3",
     "NDArrayDY",
-    "NDArrayDY0",
-    "NDArrayDY1",
-    "NDArrayDY2",
-    "NDArrayDY3",
     "NDArrayDas",
-    "NDArrayDas0",
-    "NDArrayDas1",
-    "NDArrayDas2",
-    "NDArrayDas3",
     "NDArrayDfs",
-    "NDArrayDfs0",
-    "NDArrayDfs1",
-    "NDArrayDfs2",
-    "NDArrayDfs3",
     "NDArrayDh",
-    "NDArrayDh0",
-    "NDArrayDh1",
-    "NDArrayDh2",
-    "NDArrayDh3",
     "NDArrayDm",
-    "NDArrayDm0",
-    "NDArrayDm1",
-    "NDArrayDm2",
-    "NDArrayDm3",
     "NDArrayDms",
-    "NDArrayDms0",
-    "NDArrayDms1",
-    "NDArrayDms2",
-    "NDArrayDms3",
     "NDArrayDns",
-    "NDArrayDns0",
-    "NDArrayDns1",
-    "NDArrayDns2",
-    "NDArrayDns3",
     "NDArrayDps",
-    "NDArrayDps0",
-    "NDArrayDps1",
-    "NDArrayDps2",
-    "NDArrayDps3",
     "NDArrayDs",
-    "NDArrayDs0",
-    "NDArrayDs1",
-    "NDArrayDs2",
-    "NDArrayDs3",
     "NDArrayDus",
-    "NDArrayDus0",
-    "NDArrayDus1",
-    "NDArrayDus2",
-    "NDArrayDus3",
     "NDArrayF",
-    "NDArrayF0",
-    "NDArrayF0Fin",
-    "NDArrayF0FinInt",
-    "NDArrayF0FinIntNan",
-    "NDArrayF0FinNan",
-    "NDArrayF0FinNeg",
-    "NDArrayF0FinNegNan",
-    "NDArrayF0FinNonNeg",
-    "NDArrayF0FinNonNegNan",
-    "NDArrayF0FinNonPos",
-    "NDArrayF0FinNonPosNan",
-    "NDArrayF0FinNonZr",
-    "NDArrayF0FinNonZrNan",
-    "NDArrayF0FinPos",
-    "NDArrayF0FinPosNan",
-    "NDArrayF0Int",
-    "NDArrayF0IntNan",
-    "NDArrayF0Neg",
-    "NDArrayF0NegNan",
-    "NDArrayF0NonNeg",
-    "NDArrayF0NonNegNan",
-    "NDArrayF0NonPos",
-    "NDArrayF0NonPosNan",
-    "NDArrayF0NonZr",
-    "NDArrayF0NonZrNan",
-    "NDArrayF0Pos",
-    "NDArrayF0PosNan",
-    "NDArrayF0Zr",
-    "NDArrayF0ZrFinNonMic",
-    "NDArrayF0ZrFinNonMicNan",
-    "NDArrayF0ZrNan",
-    "NDArrayF0ZrNonMic",
-    "NDArrayF0ZrNonMicNan",
-    "NDArrayF1",
-    "NDArrayF1Fin",
-    "NDArrayF1FinInt",
-    "NDArrayF1FinIntNan",
-    "NDArrayF1FinNan",
-    "NDArrayF1FinNeg",
-    "NDArrayF1FinNegNan",
-    "NDArrayF1FinNonNeg",
-    "NDArrayF1FinNonNegNan",
-    "NDArrayF1FinNonPos",
-    "NDArrayF1FinNonPosNan",
-    "NDArrayF1FinNonZr",
-    "NDArrayF1FinNonZrNan",
-    "NDArrayF1FinPos",
-    "NDArrayF1FinPosNan",
-    "NDArrayF1Int",
-    "NDArrayF1IntNan",
-    "NDArrayF1Neg",
-    "NDArrayF1NegNan",
-    "NDArrayF1NonNeg",
-    "NDArrayF1NonNegNan",
-    "NDArrayF1NonPos",
-    "NDArrayF1NonPosNan",
-    "NDArrayF1NonZr",
-    "NDArrayF1NonZrNan",
-    "NDArrayF1Pos",
-    "NDArrayF1PosNan",
-    "NDArrayF1Zr",
-    "NDArrayF1ZrFinNonMic",
-    "NDArrayF1ZrFinNonMicNan",
-    "NDArrayF1ZrNan",
-    "NDArrayF1ZrNonMic",
-    "NDArrayF1ZrNonMicNan",
-    "NDArrayF2",
-    "NDArrayF2Fin",
-    "NDArrayF2FinInt",
-    "NDArrayF2FinIntNan",
-    "NDArrayF2FinNan",
-    "NDArrayF2FinNeg",
-    "NDArrayF2FinNegNan",
-    "NDArrayF2FinNonNeg",
-    "NDArrayF2FinNonNegNan",
-    "NDArrayF2FinNonPos",
-    "NDArrayF2FinNonPosNan",
-    "NDArrayF2FinNonZr",
-    "NDArrayF2FinNonZrNan",
-    "NDArrayF2FinPos",
-    "NDArrayF2FinPosNan",
-    "NDArrayF2Int",
-    "NDArrayF2IntNan",
-    "NDArrayF2Neg",
-    "NDArrayF2NegNan",
-    "NDArrayF2NonNeg",
-    "NDArrayF2NonNegNan",
-    "NDArrayF2NonPos",
-    "NDArrayF2NonPosNan",
-    "NDArrayF2NonZr",
-    "NDArrayF2NonZrNan",
-    "NDArrayF2Pos",
-    "NDArrayF2PosNan",
-    "NDArrayF2Zr",
-    "NDArrayF2ZrFinNonMic",
-    "NDArrayF2ZrFinNonMicNan",
-    "NDArrayF2ZrNan",
-    "NDArrayF2ZrNonMic",
-    "NDArrayF2ZrNonMicNan",
-    "NDArrayF3",
-    "NDArrayF3Fin",
-    "NDArrayF3FinInt",
-    "NDArrayF3FinIntNan",
-    "NDArrayF3FinNan",
-    "NDArrayF3FinNeg",
-    "NDArrayF3FinNegNan",
-    "NDArrayF3FinNonNeg",
-    "NDArrayF3FinNonNegNan",
-    "NDArrayF3FinNonPos",
-    "NDArrayF3FinNonPosNan",
-    "NDArrayF3FinNonZr",
-    "NDArrayF3FinNonZrNan",
-    "NDArrayF3FinPos",
-    "NDArrayF3FinPosNan",
-    "NDArrayF3Int",
-    "NDArrayF3IntNan",
-    "NDArrayF3Neg",
-    "NDArrayF3NegNan",
-    "NDArrayF3NonNeg",
-    "NDArrayF3NonNegNan",
-    "NDArrayF3NonPos",
-    "NDArrayF3NonPosNan",
-    "NDArrayF3NonZr",
-    "NDArrayF3NonZrNan",
-    "NDArrayF3Pos",
-    "NDArrayF3PosNan",
-    "NDArrayF3Zr",
-    "NDArrayF3ZrFinNonMic",
-    "NDArrayF3ZrFinNonMicNan",
-    "NDArrayF3ZrNan",
-    "NDArrayF3ZrNonMic",
-    "NDArrayF3ZrNonMicNan",
-    "NDArrayFFin",
-    "NDArrayFFinInt",
-    "NDArrayFFinIntNan",
-    "NDArrayFFinNan",
-    "NDArrayFFinNeg",
-    "NDArrayFFinNegNan",
-    "NDArrayFFinNonNeg",
-    "NDArrayFFinNonNegNan",
-    "NDArrayFFinNonPos",
-    "NDArrayFFinNonPosNan",
-    "NDArrayFFinNonZr",
-    "NDArrayFFinNonZrNan",
-    "NDArrayFFinPos",
-    "NDArrayFFinPosNan",
-    "NDArrayFInt",
-    "NDArrayFIntNan",
-    "NDArrayFNeg",
-    "NDArrayFNegNan",
-    "NDArrayFNonNeg",
-    "NDArrayFNonNegNan",
-    "NDArrayFNonPos",
-    "NDArrayFNonPosNan",
-    "NDArrayFNonZr",
-    "NDArrayFNonZrNan",
-    "NDArrayFPos",
-    "NDArrayFPosNan",
-    "NDArrayFZr",
-    "NDArrayFZrFinNonMic",
-    "NDArrayFZrFinNonMicNan",
-    "NDArrayFZrNan",
-    "NDArrayFZrNonMic",
-    "NDArrayFZrNonMicNan",
     "NDArrayI",
-    "NDArrayI0",
-    "NDArrayI0Neg",
-    "NDArrayI0NonNeg",
-    "NDArrayI0NonPos",
-    "NDArrayI0NonZr",
-    "NDArrayI0Pos",
-    "NDArrayI0Zr",
-    "NDArrayI1",
-    "NDArrayI1Neg",
-    "NDArrayI1NonNeg",
-    "NDArrayI1NonPos",
-    "NDArrayI1NonZr",
-    "NDArrayI1Pos",
-    "NDArrayI1Zr",
-    "NDArrayI2",
-    "NDArrayI2Neg",
-    "NDArrayI2NonNeg",
-    "NDArrayI2NonPos",
-    "NDArrayI2NonZr",
-    "NDArrayI2Pos",
-    "NDArrayI2Zr",
-    "NDArrayI3",
-    "NDArrayI3Neg",
-    "NDArrayI3NonNeg",
-    "NDArrayI3NonPos",
-    "NDArrayI3NonZr",
-    "NDArrayI3Pos",
-    "NDArrayI3Zr",
-    "NDArrayINeg",
-    "NDArrayINonNeg",
-    "NDArrayINonPos",
-    "NDArrayINonZr",
-    "NDArrayIPos",
-    "NDArrayIZr",
     "NDArrayO",
-    "NDArrayO0",
-    "NDArrayO1",
-    "NDArrayO2",
-    "NDArrayO3",
     "PctChangeError",
     "ShiftError",
     "array_indexer",
