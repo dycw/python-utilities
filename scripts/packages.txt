@@ -32,7 +32,6 @@ more-itertools
 numpy
 optuna
 os
-pandas
 pathlib
 pickle
 platform

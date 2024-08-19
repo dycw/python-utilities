@@ -22,13 +22,10 @@ numpy==2.0.1
     #   bottleneck
     #   numba
     #   numbagg
-    #   pandas
 packaging==24.1
     # via
     #   pytest
     #   pytest-rerunfailures
-pandas==2.2.2
-    # via dycw-utilities (pyproject.toml)
 pluggy==1.5.0
     # via pytest
 pytest==8.3.2
@@ -43,17 +40,9 @@ pytest-randomly==3.15.0
     # via dycw-utilities (pyproject.toml)
 pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
-python-dateutil==2.9.0.post0
-    # via pandas
-pytz==2024.1
-    # via pandas
-six==1.16.0
-    # via python-dateutil
 sortedcontainers==2.4.0
     # via hypothesis
 tomli==2.0.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-tzdata==2024.1
-    # via pandas

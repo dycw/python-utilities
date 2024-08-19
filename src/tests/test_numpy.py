@@ -37,7 +37,6 @@ from numpy import (
 )
 from numpy.random import Generator
 from numpy.testing import assert_allclose, assert_equal
-from pandas import DatetimeTZDtype, Series
 from pytest import mark, param, raises
 
 from utilities.hypothesis import assume_does_not_raise, datetimes_utc, float_arrays
@@ -520,22 +519,6 @@ class TestHasDtype:
     def test_main(self, *, dtype: Any, is_tuple: bool, expected: bool) -> None:
         against = (dtype,) if is_tuple else dtype
         result = has_dtype(array([], dtype=float), against)
-        assert result is expected
-
-    @mark.parametrize(
-        ("dtype", "against", "expected"),
-        [
-            param("Int64", "Int64", True),
-            param("Int64", ("Int64",), True),
-            param("Int64", int, False),
-            param(DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="UTC"), True),
-            param(
-                DatetimeTZDtype(tz="UTC"), DatetimeTZDtype(tz="Asia/Hong_Kong"), False
-            ),
-        ],
-    )
-    def test_pandas(self, *, dtype: Any, against: Any, expected: bool) -> None:
-        result = has_dtype(Series([], dtype=dtype), against)
         assert result is expected
 
 
