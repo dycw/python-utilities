@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-import datetime as dt
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 import numpy as np
 from numpy import (
     array,
     bool_,
-    datetime64,
     digitize,
     dtype,
     errstate,
@@ -23,7 +21,6 @@ from numpy import (
     inf,
     int64,
     isclose,
-    isdtype,
     isfinite,
     isinf,
     isnan,
@@ -31,7 +28,6 @@ from numpy import (
     log,
     nan,
     nanquantile,
-    ndarray,
     object_,
     prod,
     rint,
@@ -43,10 +39,8 @@ from numpy.random import default_rng
 from numpy.typing import NDArray
 from typing_extensions import override
 
-from utilities.datetime import EPOCH_UTC, check_date_not_datetime
 from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
-from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -54,13 +48,6 @@ if TYPE_CHECKING:
 
 # RNG
 DEFAULT_RNG = default_rng()
-
-
-# types
-Datetime64Unit = Literal[
-    "Y", "M", "W", "D", "h", "m", "s", "ms", "us", "ns", "ps", "fs", "as"
-]
-Datetime64Kind = Literal["date", "time"]
 
 
 # dtypes
@@ -100,34 +87,6 @@ NDArrayB = NDArray[bool_]
 NDArrayF = NDArray[float64]
 NDArrayI = NDArray[int64]
 NDArrayO = NDArray[object_]
-NDArrayDY = Annotated[NDArrayA, datetime64Y]
-NDArrayDM = Annotated[NDArrayA, datetime64M]
-NDArrayDW = Annotated[NDArrayA, datetime64W]
-NDArrayDD = Annotated[NDArrayA, datetime64D]
-NDArrayDh = Annotated[NDArrayA, datetime64h]
-NDArrayDm = Annotated[NDArrayA, datetime64m]
-NDArrayDs = Annotated[NDArrayA, datetime64s]
-NDArrayDms = Annotated[NDArrayA, datetime64ms]
-NDArrayDus = Annotated[NDArrayA, datetime64us]
-NDArrayDns = Annotated[NDArrayA, datetime64ns]
-NDArrayDps = Annotated[NDArrayA, datetime64ps]
-NDArrayDfs = Annotated[NDArrayA, datetime64fs]
-NDArrayDas = Annotated[NDArrayA, datetime64as]
-NDArrayD = (
-    NDArrayDY
-    | NDArrayDM
-    | NDArrayDW
-    | NDArrayDD
-    | NDArrayDh
-    | NDArrayDm
-    | NDArrayDs
-    | NDArrayDms
-    | NDArrayDus
-    | NDArrayDns
-    | NDArrayDps
-    | NDArrayDfs
-    | NDArrayDas
-)
 
 
 # functions
@@ -162,92 +121,6 @@ def as_int(
 
 
 class AsIntError(Exception): ...
-
-
-def date_to_datetime64(date: dt.date, /) -> datetime64:
-    """Convert a `dt.date` to `numpy.datetime64`."""
-    check_date_not_datetime(date)
-    return datetime64(date, "D")
-
-
-DATE_MIN_AS_DATETIME64 = date_to_datetime64(dt.date.min)
-DATE_MAX_AS_DATETIME64 = date_to_datetime64(dt.date.max)
-
-
-def datetime_to_datetime64(datetime: dt.datetime, /) -> datetime64:
-    """Convert a `dt.datetime` to `numpy.datetime64`."""
-    if (tz := datetime.tzinfo) is None:
-        datetime_use = datetime
-    elif tz is UTC:
-        datetime_use = datetime.replace(tzinfo=None)
-    else:
-        raise DatetimeToDatetime64Error(datetime=datetime, tzinfo=tz)
-    return datetime64(datetime_use, "us")
-
-
-@dataclass(kw_only=True)
-class DatetimeToDatetime64Error(Exception):
-    datetime: dt.datetime
-    tzinfo: dt.tzinfo
-
-    @override
-    def __str__(self) -> str:
-        return (  # pragma: no cover
-            f"Timezone must be None or UTC; got {self.tzinfo}."
-        )
-
-
-DATETIME_MIN_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.min)
-DATETIME_MAX_AS_DATETIME64 = datetime_to_datetime64(dt.datetime.max)
-
-
-def datetime64_to_date(datetime: datetime64, /) -> dt.date:
-    """Convert a `numpy.datetime64` to a `dt.date`."""
-    as_int = datetime64_to_int(datetime)
-    if (dtype := datetime.dtype) == datetime64D:
-        with redirect_error(
-            OverflowError, DateTime64ToDateError(f"{datetime=}, {dtype=}")
-        ):
-            return (EPOCH_UTC + dt.timedelta(days=as_int)).date()
-    msg = f"{datetime=}, {dtype=}"
-    raise NotImplementedError(msg)
-
-
-class DateTime64ToDateError(Exception): ...
-
-
-def datetime64_to_int(datetime: datetime64, /) -> int:
-    """Convert a `numpy.datetime64` to an `int`."""
-    return datetime.astype(int64).item()
-
-
-DATE_MIN_AS_INT = datetime64_to_int(DATE_MIN_AS_DATETIME64)
-DATE_MAX_AS_INT = datetime64_to_int(DATE_MAX_AS_DATETIME64)
-DATETIME_MIN_AS_INT = datetime64_to_int(DATETIME_MIN_AS_DATETIME64)
-DATETIME_MAX_AS_INT = datetime64_to_int(DATETIME_MAX_AS_DATETIME64)
-
-
-def datetime64_to_datetime(datetime: datetime64, /) -> dt.datetime:
-    """Convert a `numpy.datetime64` to a `dt.datetime`."""
-    as_int = datetime64_to_int(datetime)
-    if (dtype := datetime.dtype) == datetime64ms:
-        with redirect_error(
-            OverflowError, DateTime64ToDateTimeError(f"{datetime=}, {dtype=}")
-        ):
-            return EPOCH_UTC + dt.timedelta(milliseconds=as_int)
-    if dtype == datetime64us:
-        return EPOCH_UTC + dt.timedelta(microseconds=as_int)
-    if dtype == datetime64ns:
-        microseconds, nanoseconds = divmod(as_int, int(1e3))
-        if nanoseconds != 0:
-            msg = f"{datetime=}, {nanoseconds=}"
-            raise DateTime64ToDateTimeError(msg)
-        return EPOCH_UTC + dt.timedelta(microseconds=microseconds)
-    msg = f"{datetime=}, {dtype=}"
-    raise NotImplementedError(msg)
-
-
-class DateTime64ToDateTimeError(Exception): ...
 
 
 def discretize(x: NDArrayF, bins: int | Iterable[float], /) -> NDArrayF:
@@ -361,32 +234,6 @@ class FlatN0MultipleError(FlatN0Error):
     @override
     def __str__(self) -> str:
         return f"Array {self.array} must contain at most one True."
-
-
-def get_fill_value(dtype_: Any, /) -> Any:
-    """Get the default fill value for a given dtype."""
-    try:
-        dtype_use = dtype(dtype_)
-    except TypeError:
-        raise GetFillValueError(dtype_=dtype_) from None
-    if isdtype(dtype_use, bool_):
-        return False
-    if isdtype(dtype_use, (datetime64D, datetime64Y, datetime64ns)):
-        return datetime64("NaT")
-    if isdtype(dtype_use, float64):
-        return nan
-    if isdtype(dtype_use, int64):
-        return 0
-    return None
-
-
-@dataclass(kw_only=True)
-class GetFillValueError(Exception):
-    dtype_: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid data type; got {self.dtype_!r}"
 
 
 def has_dtype(x: Any, dtype: Any, /) -> bool:
@@ -971,52 +818,15 @@ def shift_bool(
     return fillna(shifted, value=float(fill_value)).astype(bool)
 
 
-@overload
-def year(date: datetime64, /) -> int: ...
-@overload
-def year(date: NDArrayDD, /) -> NDArrayI: ...
-def year(date: datetime64 | NDArrayDD, /) -> int | NDArrayI:
-    """Convert a date/array of dates into a year/array of years."""
-    years = 1970 + date.astype(datetime64Y).astype(int)
-    return years if isinstance(date, ndarray) else years.item()
-
-
 __all__ = [
-    "DATETIME_MAX_AS_DATETIME64",
-    "DATETIME_MAX_AS_INT",
-    "DATETIME_MIN_AS_DATETIME64",
-    "DATETIME_MIN_AS_INT",
-    "DATE_MAX_AS_DATETIME64",
-    "DATE_MAX_AS_INT",
-    "DATE_MIN_AS_DATETIME64",
-    "DATE_MIN_AS_INT",
     "DEFAULT_RNG",
     "AsIntError",
-    "DateTime64ToDateError",
-    "DateTime64ToDateTimeError",
-    "Datetime64Kind",
-    "Datetime64Unit",
     "EmptyNumpyConcatenateError",
     "FlatN0EmptyError",
     "FlatN0Error",
     "FlatN0MultipleError",
-    "GetFillValueError",
     "NDArrayA",
     "NDArrayB",
-    "NDArrayD",
-    "NDArrayDD",
-    "NDArrayDM",
-    "NDArrayDW",
-    "NDArrayDY",
-    "NDArrayDas",
-    "NDArrayDfs",
-    "NDArrayDh",
-    "NDArrayDm",
-    "NDArrayDms",
-    "NDArrayDns",
-    "NDArrayDps",
-    "NDArrayDs",
-    "NDArrayDus",
     "NDArrayF",
     "NDArrayI",
     "NDArrayO",
@@ -1024,14 +834,10 @@ __all__ = [
     "ShiftError",
     "array_indexer",
     "as_int",
-    "date_to_datetime64",
     "datetime64D",
     "datetime64M",
     "datetime64W",
     "datetime64Y",
-    "datetime64_to_date",
-    "datetime64_to_datetime",
-    "datetime64_to_int",
     "datetime64as",
     "datetime64fs",
     "datetime64h",
@@ -1041,7 +847,6 @@ __all__ = [
     "datetime64ps",
     "datetime64s",
     "datetime64us",
-    "datetime_to_datetime64",
     "discretize",
     "ewma",
     "exp_moving_sum",
@@ -1049,7 +854,6 @@ __all__ = [
     "ffill_non_nan_slices",
     "fillna",
     "flatn0",
-    "get_fill_value",
     "has_dtype",
     "is_at_least",
     "is_at_least_or_nan",
@@ -1103,5 +907,4 @@ __all__ = [
     "redirect_empty_numpy_concatenate",
     "shift",
     "shift_bool",
-    "year",
 ]

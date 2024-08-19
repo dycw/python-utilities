@@ -1,36 +1,21 @@
 from __future__ import annotations
 
-import datetime as dt
 from re import escape
 from typing import TYPE_CHECKING, Any, Literal
 
 from hypothesis import assume, given
-from hypothesis.strategies import (
-    DataObject,
-    data,
-    dates,
-    datetimes,
-    floats,
-    integers,
-    just,
-    none,
-)
+from hypothesis.strategies import DataObject, data, floats, integers, none
 from numpy import (
     arange,
     array,
-    bool_,
     concatenate,
-    datetime64,
     eye,
-    float64,
     full,
     inf,
-    int64,
     isclose,
     median,
     nan,
     ndarray,
-    object_,
     ones,
     zeros,
     zeros_like,
@@ -39,32 +24,19 @@ from numpy.random import Generator
 from numpy.testing import assert_allclose, assert_equal
 from pytest import mark, param, raises
 
-from utilities.hypothesis import assume_does_not_raise, datetimes_utc, float_arrays
+from utilities.hypothesis import assume_does_not_raise, float_arrays
 from utilities.numpy import (
     DEFAULT_RNG,
     AsIntError,
-    DateTime64ToDateError,
-    DateTime64ToDateTimeError,
-    DatetimeToDatetime64Error,
     EmptyNumpyConcatenateError,
     FlatN0EmptyError,
     FlatN0MultipleError,
-    GetFillValueError,
     NDArrayF,
     NDArrayI,
     PctChangeError,
     ShiftError,
     array_indexer,
     as_int,
-    date_to_datetime64,
-    datetime64_to_date,
-    datetime64_to_datetime,
-    datetime64_to_int,
-    datetime64D,
-    datetime64ns,
-    datetime64us,
-    datetime64Y,
-    datetime_to_datetime64,
     discretize,
     ewma,
     exp_moving_sum,
@@ -72,7 +44,6 @@ from utilities.numpy import (
     ffill_non_nan_slices,
     fillna,
     flatn0,
-    get_fill_value,
     has_dtype,
     is_at_least,
     is_at_least_or_nan,
@@ -126,13 +97,10 @@ from utilities.numpy import (
     redirect_empty_numpy_concatenate,
     shift,
     shift_bool,
-    year,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from zoneinfo import ZoneInfo
 
 
 class TestArrayIndexer:
@@ -205,96 +173,6 @@ class TestAsInt:
         arr = array([value], dtype=float)
         with raises(AsIntError):
             _ = as_int(arr)
-
-
-class TestDateToDatetime64ns:
-    def test_example(self) -> None:
-        result = date_to_datetime64(dt.date(2000, 1, 1))
-        assert result == datetime64("2000-01-01", "D")
-        assert result.dtype == datetime64D
-
-    @given(date=dates())
-    def test_main(self, *, date: dt.date) -> None:
-        result = date_to_datetime64(date)
-        assert result.dtype == datetime64D
-
-
-class TestDatetimeToDatetime64:
-    @mark.parametrize("time_zone", [param(UTC), param(None)])
-    def test_example(self, *, time_zone: ZoneInfo | None) -> None:
-        result = datetime_to_datetime64(
-            dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=time_zone)
-        )
-        assert result == datetime64("2000-01-01 00:00:00.123456", "us")
-        assert result.dtype == datetime64us
-
-    @given(datetime=datetimes() | datetimes_utc())
-    def test_main(self, *, datetime: dt.datetime) -> None:
-        result = datetime_to_datetime64(datetime)
-        assert result.dtype == datetime64us
-
-    @given(datetime=datetimes(timezones=just(HONG_KONG)))
-    def test_error(self, *, datetime: dt.datetime) -> None:
-        with raises(
-            DatetimeToDatetime64Error, match=r"Timezone must be None or UTC; got .*\."
-        ):
-            _ = datetime_to_datetime64(datetime)
-
-
-class TestDatetime64ToDate:
-    def test_example(self) -> None:
-        assert datetime64_to_date(datetime64("2000-01-01", "D")) == dt.date(2000, 1, 1)
-
-    @given(date=dates())
-    def test_round_trip(self, *, date: dt.date) -> None:
-        assert datetime64_to_date(date_to_datetime64(date)) == date
-
-    @mark.parametrize(
-        ("datetime", "dtype", "error"),
-        [
-            param("10000-01-01", "D", DateTime64ToDateError),
-            param("2000-01-01", "ns", NotImplementedError),
-        ],
-    )
-    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
-        with raises(error):
-            _ = datetime64_to_date(datetime64(datetime, dtype))
-
-
-class TestDatetime64ToInt:
-    def test_example(self) -> None:
-        expected = 10957
-        assert datetime64_to_int(datetime64("2000-01-01", "D")) == expected
-
-
-class TestDatetime64ToDatetime:
-    def test_example_ms(self) -> None:
-        assert datetime64_to_datetime(
-            datetime64("2000-01-01 00:00:00.123", "ms")
-        ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123000, tzinfo=UTC)
-
-    @mark.parametrize("dtype", [param("us"), param("ns")])
-    def test_examples_us_ns(self, *, dtype: str) -> None:
-        assert datetime64_to_datetime(
-            datetime64("2000-01-01 00:00:00.123456", dtype)
-        ) == dt.datetime(2000, 1, 1, 0, 0, 0, 123456, tzinfo=UTC)
-
-    @given(datetime=datetimes_utc())
-    def test_round_trip(self, *, datetime: dt.datetime) -> None:
-        assert datetime64_to_datetime(datetime_to_datetime64(datetime)) == datetime
-
-    @mark.parametrize(
-        ("datetime", "dtype", "error"),
-        [
-            param("0000-12-31", "ms", DateTime64ToDateTimeError),
-            param("10000-01-01", "ms", DateTime64ToDateTimeError),
-            param("1970-01-01 00:00:00.000000001", "ns", DateTime64ToDateTimeError),
-            param("2000-01-01", "D", NotImplementedError),
-        ],
-    )
-    def test_error(self, *, datetime: str, dtype: str, error: type[Exception]) -> None:
-        with raises(error):
-            _ = datetime64_to_datetime(datetime64(datetime, dtype))
 
 
 class TestDefaultRng:
@@ -484,33 +362,6 @@ class TestFlatN0:
             match=escape("Array [ True  True] must contain at most one True."),
         ):
             _ = flatn0(ones(2, dtype=bool))
-
-
-class TestGetFillValue:
-    @mark.parametrize(
-        "dtype",
-        [
-            param(bool),
-            param(bool_),
-            param(datetime64D),
-            param(datetime64Y),
-            param(datetime64ns),
-            param(float),
-            param(float64),
-            param(int),
-            param(int64),
-            param(object),
-            param(object_),
-        ],
-    )
-    def test_main(self, *, dtype: Any) -> None:
-        fill_value = get_fill_value(dtype)
-        array = full(0, fill_value, dtype=dtype)
-        assert has_dtype(array, dtype)
-
-    def test_error(self) -> None:
-        with raises(GetFillValueError, match="Invalid data type; got 'invalid'"):
-            _ = get_fill_value("invalid")
 
 
 class TestHasDtype:
@@ -1384,17 +1235,3 @@ class TestShiftBool:
             [fill_value if e is None else e for e in expected_v], dtype=bool
         )
         assert_equal(result, expected)
-
-
-class TestYear:
-    @given(date=dates())
-    def test_scalar(self, *, date: dt.date) -> None:
-        date64 = datetime64(date, "D")
-        yr = year(date64)
-        assert yr == date.year
-
-    @given(date=dates())
-    def test_array(self, *, date: dt.date) -> None:
-        dates = array([date], dtype=datetime64D)
-        years = year(dates)
-        assert years.item() == date.year
