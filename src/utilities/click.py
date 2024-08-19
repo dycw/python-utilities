@@ -5,14 +5,13 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import click
-from click import Context, Parameter, ParamType, option
+from click import Context, Parameter, ParamType
 from typing_extensions import override
 
 import utilities.types
 from utilities.datetime import ParseMonthError, ensure_month
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
-from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
 
@@ -383,16 +382,6 @@ class ZonedDateTime(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
-log_level_option = option(
-    "-ll",
-    "--log-level",
-    type=Enum(LogLevel, case_sensitive=False),
-    default=LogLevel.INFO,
-    show_default=True,
-    help="The logging level",
-)
-
-
 # sqlalchemy
 
 
@@ -433,5 +422,4 @@ __all__ = [
     "Time",
     "Timedelta",
     "ZonedDateTime",
-    "log_level_option",
 ]

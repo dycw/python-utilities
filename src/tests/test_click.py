@@ -43,7 +43,6 @@ from utilities.click import (
     Time,
     Timedelta,
     ZonedDateTime,
-    log_level_option,
 )
 from utilities.datetime import serialize_month
 from utilities.hypothesis import (
@@ -53,7 +52,6 @@ from utilities.hypothesis import (
     text_ascii,
     timedeltas_2w,
 )
-from utilities.logging import LogLevel
 from utilities.sqlalchemy import serialize_engine
 from utilities.text import join_strs
 from utilities.whenever import (
@@ -256,19 +254,6 @@ class TestListChoices:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"choices = {choices}\n"
-
-
-class TestLogLevelOption:
-    @given(log_level=sampled_from(LogLevel))
-    def test_main(self, *, log_level: LogLevel) -> None:
-        @command()
-        @log_level_option
-        def cli(*, log_level: LogLevel) -> None:
-            echo(f"log_level = {log_level}")
-
-        result = CliRunner().invoke(cli, ["--log-level", log_level.name])
-        assert result.exit_code == 0
-        assert result.stdout == f"log_level = {log_level}\n"
 
 
 def _serialize_iterable_dates(values: Iterable[dt.date], /) -> str:
