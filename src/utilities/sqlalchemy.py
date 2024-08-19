@@ -79,7 +79,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.text import ensure_str
-from utilities.types import IterableStrs, get_class_name
+from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -466,7 +466,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: Mapping[str, IterableStrs | str] | None = ...,
+    query: Mapping[str, Any] | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: Literal[True],
 ) -> AsyncEngine: ...
@@ -480,7 +480,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: Mapping[str, IterableStrs | str] | None = ...,
+    query: Mapping[str, Any] | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: Literal[False] = False,
 ) -> Engine: ...
@@ -494,7 +494,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: Mapping[str, IterableStrs | str] | None = ...,
+    query: Mapping[str, Any] | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: bool = False,
 ) -> Engine | AsyncEngine: ...
@@ -507,7 +507,7 @@ def create_engine(
     host: str | None = None,
     port: int | None = None,
     database: str | None = None,
-    query: Mapping[str, IterableStrs | str] | None = None,
+    query: Mapping[str, Any] | None = None,
     poolclass: type[Pool] | None = NullPool,
     async_: bool = False,
 ) -> Engine | AsyncEngine:

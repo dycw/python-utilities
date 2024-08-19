@@ -4,8 +4,6 @@ import datetime as dt
 from types import NoneType
 from typing import Any, cast
 
-from beartype.door import die_if_unbearable
-from beartype.roar import BeartypeDoorHintViolation
 from pytest import mark, param, raises
 
 from utilities.datetime import get_now, get_today
@@ -26,10 +24,8 @@ from utilities.types import (
     EnsureSizedError,
     EnsureSizedNotStrError,
     EnsureTimeError,
-    IterableStrs,
     Number,
     PathLike,
-    SequenceStrs,
     ensure_bool,
     ensure_class,
     ensure_date,
@@ -384,18 +380,16 @@ class TestMakeIsInstance:
 class TestNumber:
     @mark.parametrize("x", [param(0), param(0.0)])
     def test_ok(self, *, x: Number) -> None:
-        die_if_unbearable(x, Number)
+        assert isinstance(x, Number)
 
     def test_error(self) -> None:
-        with raises(BeartypeDoorHintViolation):
-            die_if_unbearable("0", Number)
+        assert not isinstance(None, Number)
 
 
 class TestPathLike:
     @mark.parametrize("path", [param(valid_path_home()), param("~")])
     def test_main(self, *, path: PathLike) -> None:
-        die_if_unbearable(path, PathLike)
+        assert isinstance(path, PathLike)
 
     def test_error(self) -> None:
-        with raises(BeartypeDoorHintViolation):
-            die_if_unbearable(None, PathLike)
+        assert not isinstance(None, PathLike)

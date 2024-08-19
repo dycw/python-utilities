@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Mapping
-from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
@@ -432,10 +430,8 @@ __all__ = [
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "EnsureTimeError",
-    "IterableStrs",
     "Number",
     "PathLike",
-    "SequenceStrs",
     "ensure_bool",
     "ensure_class",
     "ensure_date",
