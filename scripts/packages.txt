@@ -5,7 +5,6 @@ atomicwrites
 atools
 beartype
 bs4
-cacher
 cachetools
 click
 cryptography
@@ -22,7 +21,6 @@ getpass
 git
 hashlib
 hatch
-holoviews
 humps
 hypothesis
 ipython
@@ -76,7 +74,4 @@ timer
 tqdm
 typed-settings
 whenever
-xarray
-xlrd
-zarr
 zoneinfo

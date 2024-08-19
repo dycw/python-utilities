@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from typing_extensions import override
 
 from utilities.datetime import get_now
-from utilities.pathlib import ensure_path
-from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -23,16 +21,6 @@ class _BasePDF(FPDF):
         self.set_font("Courier")
         _ = self.write(text=text)
         self.ln()
-
-    def add_plot(
-        self, plot: Any, /, *, validate: bool = False
-    ) -> None:  # pragma: no cover
-        from utilities.holoviews import save_plot
-
-        with TemporaryDirectory() as temp:
-            path = ensure_path(temp, "image.png", validate=validate)
-            save_plot(plot, path)
-            _ = self.image(path, w=self.epw)
 
 
 @contextmanager
