@@ -186,7 +186,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True)
