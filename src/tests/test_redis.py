@@ -234,8 +234,8 @@ class TestTimeSeriesAddAndReadDataFrame:
         timestamp1, timestamp2 = (
             _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
         )
-        value11, value12 = data.draw(tuples(strategy1, strategy1))
-        value21, value22 = data.draw(tuples(strategy2, strategy2))
+        value11, value21 = data.draw(tuples(strategy1, strategy1))
+        value12, value22 = data.draw(tuples(strategy2, strategy2))
         schema = {
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
