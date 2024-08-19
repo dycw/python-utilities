@@ -8,19 +8,19 @@ from pathvalidate import ValidationError
 from pytest import raises
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_path, list_dir, temp_cwd
+from utilities.pathlib import list_dir, temp_cwd
 
 
 class TestEnsurePath:
     def test_main(self) -> None:
-        assert isinstance(ensure_path(Path("abc")), Path)
+        assert isinstance(Path(Path("abc")), Path)
 
     def test_error_validation(self) -> None:
         with raises(ValidationError):
-            _ = ensure_path("\0", validate=True)
+            _ = Path("\0", validate=True)
 
     def test_error_sanitized(self) -> None:
-        assert ensure_path("a\0b", sanitize=True) == Path("ab")
+        assert Path("a\0b", sanitize=True) == Path("ab")
 
 
 class TestListDir:

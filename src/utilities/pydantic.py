@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import override
 
-from utilities.pathlib import ensure_path
-
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from utilities.types import PathLike
 
 _BM = TypeVar("_BM", bound=BaseModel)
@@ -25,7 +22,7 @@ class HashableBaseModel(BaseModel):
 
 
 def load_model(model: type[_BM], path: PathLike, /) -> _BM:
-    path = ensure_path(path)
+    path = Path(path)
     try:
         with path.open() as fh:
             return model.model_validate_json(fh.read())

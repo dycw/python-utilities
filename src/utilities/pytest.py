@@ -3,11 +3,11 @@ from __future__ import annotations
 from functools import cache, wraps
 from inspect import iscoroutinefunction
 from os import environ
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from utilities.datetime import duration_to_float, get_now
 from utilities.hashlib import md5_hash
-from utilities.pathlib import ensure_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -20,7 +20,6 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-    from pathlib import Path
 
     from utilities.types import Duration, PathLike
 
@@ -105,9 +104,9 @@ def throttle(
 ) -> Any:
     """Throttle a test. On success by default, on try otherwise."""
     if root is None:
-        root_use = ensure_path(".pytest_cache", "throttle", validate=validate)
+        root_use = Path(".pytest_cache", "throttle", validate=validate)
     else:
-        root_use = ensure_path(root, validate=validate)
+        root_use = Path(root, validate=validate)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Throttle a test function/method."""
@@ -150,7 +149,7 @@ def _throttle_path_and_now(
     root: Path, /, *, duration: Duration = 1.0, validate: bool = False
 ) -> tuple[Path, float]:
     test = environ["PYTEST_CURRENT_TEST"]
-    path = ensure_path(root, _throttle_md5_hash(test), validate=validate)
+    path = Path(root, _throttle_md5_hash(test), validate=validate)
     if path.exists():
         with path.open(mode="r") as fh:
             contents = fh.read()

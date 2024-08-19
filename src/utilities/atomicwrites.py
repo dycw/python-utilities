@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from atomicwrites import move_atomic, replace_atomic
 
-from utilities.pathlib import ensure_path
 from utilities.tempfile import TemporaryDirectory
 
 if TYPE_CHECKING:
@@ -29,7 +28,7 @@ def writer(
     parent.mkdir(parents=True, exist_ok=True)
     name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
-        temp_path = ensure_path(temp_dir, name, validate=validate)
+        temp_path = Path(temp_dir, name, validate=validate)
         try:
             yield temp_path
         except KeyboardInterrupt:

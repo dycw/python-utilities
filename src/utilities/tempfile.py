@@ -1,13 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
 from tempfile import TemporaryDirectory as _TemporaryDirectory
 from tempfile import gettempdir as _gettempdir
 from typing import TYPE_CHECKING
 
-from utilities.pathlib import ensure_path
-
 if TYPE_CHECKING:
-    from pathlib import Path
     from types import TracebackType
 
     from utilities.types import PathLike
@@ -33,10 +31,10 @@ class TemporaryDirectory:
             ignore_cleanup_errors=ignore_cleanup_errors,
         )
         self._validate = validate
-        self.path = ensure_path(self._temp_dir.name, validate=self._validate)
+        self.path = Path(self._temp_dir.name, validate=self._validate)
 
     def __enter__(self) -> Path:
-        return ensure_path(self._temp_dir.__enter__(), validate=self._validate)
+        return Path(self._temp_dir.__enter__(), validate=self._validate)
 
     def __exit__(
         self,
@@ -49,7 +47,7 @@ class TemporaryDirectory:
 
 def gettempdir(*, validate: bool = False) -> Path:
     """Get the name of the directory used for temporary files."""
-    return ensure_path(_gettempdir(), validate=validate)
+    return Path(_gettempdir(), validate=validate)
 
 
 TEMP_DIR = gettempdir()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import integers
@@ -8,12 +8,8 @@ from pydantic import BaseModel
 from pytest import raises
 
 from utilities.hypothesis import temp_paths
-from utilities.pathlib import ensure_path
 from utilities.pydantic import HashableBaseModel, LoadModelError, load_model, save_model
 from utilities.pytest import skipif_windows
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestHashableBaseModel:
@@ -29,7 +25,7 @@ class TestHashableBaseModel:
 class TestSaveAndLoadModel:
     @given(x=integers(), root=temp_paths())
     def test_main(self, *, x: int, root: Path) -> None:
-        path = ensure_path(root, "model.json")
+        path = Path(root, "model.json")
 
         class Example(BaseModel):
             x: int

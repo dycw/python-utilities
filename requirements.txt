@@ -225,8 +225,6 @@ passlib==1.7.4
     # via pypiserver
 pathspec==0.12.1
     # via hatchling
-pathvalidate==3.2.0
-    # via dycw-utilities (pyproject.toml)
 pexpect==4.9.0
     # via hatch
 pikepdf==9.1.1

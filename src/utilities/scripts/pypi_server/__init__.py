@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from click import command
 from loguru import logger
 
-from utilities.pathlib import ensure_path
 from utilities.scripts.pypi_server.classes import Config
 from utilities.subprocess import run_accept_address_in_use
 from utilities.typed_settings import click_options
@@ -33,7 +32,7 @@ def main(config: Config, /) -> None:
 
 
 def _check_password_file(*, path_password: PathLike = _CONFIG.path_password) -> None:
-    if not ensure_path(path_password).exists():
+    if not Path(path_password).exists():
         msg = f"{path_password=!s}"
         raise FileNotFoundError(msg)
 

@@ -3,11 +3,11 @@ from __future__ import annotations
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from smtplib import SMTP
 from typing import TYPE_CHECKING
 
 from utilities.more_itertools import always_iterable
-from utilities.pathlib import ensure_path
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -48,7 +48,7 @@ def _add_attachment(
     path: PathLike, message: MIMEMultipart, /, *, validate: bool = False
 ) -> None:
     """Add an attachment to an email."""
-    path = ensure_path(path, validate=validate)
+    path = Path(path, validate=validate)
     name = path.name
     with path.open(mode="rb") as fh:
         part = MIMEApplication(fh.read(), Name=name)

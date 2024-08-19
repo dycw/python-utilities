@@ -40,7 +40,6 @@ dev = [
   "numpy >= 2.0.1, < 2.1",
   "optuna >= 3.6.1, < 3.7",
   "pandas >= 2.2.2, < 2.3",
-  "pathvalidate >= 3.2.0, < 3.3",
   "polars-lts-cpu >= 1.5.0, < 1.6",
   "pqdm >= 0.2.0, < 0.3",
   "pydantic >= 2.8.2, < 2.9",
@@ -176,7 +175,6 @@ zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
 zzz-test-os = []
 zzz-test-pandas = ["pandas >= 2.2.2, < 2.3"]
 zzz-test-pathlib = ["pathvalidate >= 3.2.0, < 3.3"]
-zzz-test-pathvalidate = ["pathvalidate >= 3.2.0, < 3.3"]
 zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
@@ -201,26 +199,7 @@ zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = ["redis >= 5.0.8, < 5.1"]
 zzz-test-reprlib = ["polars-lts-cpu >= 1.5.0, < 1.6"]
-zzz-test-rich = ["rich >= 13.7.1, < 13.8"]
 zzz-test-scipy = ["scipy >= 1.14.0, < 1.15"]
-zzz-test-scripts-clean-dir = [
-  "click >= 8.1.7, < 8.2",
-  "freezegun >= 1.5.1, < 1.6",
-  "loguru >= 0.7.2, < 0.8",
-  "typed-settings >= 24.4.0, < 24.5",
-]
-zzz-test-scripts-csv-to-markdown = [
-  "click >= 8.1.7, < 8.2",
-  "loguru >= 0.7.2, < 0.8",
-  "mdutils >= 1.6.0, < 1.7",
-  "typed-settings >= 24.4.0, < 24.5",
-]
-zzz-test-scripts-luigi-server = [
-  "click >= 8.1.7, < 8.2",
-  "loguru >= 0.7.2, < 0.8",
-  "luigi >= 3.5.1, < 3.6",
-  "typed-settings >= 24.4.0, < 24.5",
-]
 zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
   "loguru >= 0.7.2, < 0.8",

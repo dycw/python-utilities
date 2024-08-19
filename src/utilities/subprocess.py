@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING
@@ -7,7 +8,7 @@ from typing import TYPE_CHECKING
 from utilities.errors import redirect_error
 from utilities.iterables import OneError, one
 from utilities.os import temp_environ
-from utilities.pathlib import PWD, ensure_path
+from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -27,7 +28,7 @@ def get_shell_output(
 
     Optionally, activate a virtual environment if necessary.
     """
-    cwd = ensure_path(cwd)
+    cwd = Path(cwd)
     if activate is not None:
         with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
             activate = one(cwd.rglob("activate"))

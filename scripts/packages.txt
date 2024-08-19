@@ -34,7 +34,6 @@ optuna
 os
 pandas
 pathlib
-pathvalidate
 pickle
 platform
 polars

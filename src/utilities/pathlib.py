@@ -13,17 +13,6 @@ if TYPE_CHECKING:
 PWD = Path.cwd()
 
 
-def ensure_path(
-    *parts: PathLike, validate: bool = False, sanitize: bool = False
-) -> Path:
-    """Ensure a path-like object is a path."""
-    if validate or sanitize:
-        from utilities.pathvalidate import valid_path
-
-        return valid_path(*parts, sanitize=sanitize)
-    return Path(*parts)
-
-
 def list_dir(path: PathLike, /) -> Sequence[Path]:
     """List the contents of a directory."""
     return sorted(Path(path).iterdir())
@@ -40,4 +29,4 @@ def temp_cwd(path: PathLike, /) -> Iterator[None]:
         chdir(prev)
 
 
-__all__ = ["ensure_path", "list_dir", "temp_cwd"]
+__all__ = ["list_dir", "temp_cwd"]
