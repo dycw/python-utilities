@@ -30,7 +30,6 @@ jupyter
 locale
 logging
 loguru
-luigi
 math
 memory-profiler
 modules
@@ -56,8 +55,6 @@ redis
 reprlib
 scipy
 scripts-clean-dir
-scripts-csv-to-markdown
-scripts-luigi-server
 scripts-monitor-memory
 scripts-pypi-server
 semver
