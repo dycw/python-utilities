@@ -128,7 +128,7 @@ class TestCheckLength:
         check_length([], equal=0)
 
     def test_equal_fail(self) -> None:
-        with raises(CheckLengthError, match=r"Object .* must have length .*; got .*\."):
+        with raises(CheckLengthError, match=r"Object .* must have length .*; got .*"):
             check_length([], equal=1)
 
     @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
@@ -140,10 +140,10 @@ class TestCheckLength:
     @mark.parametrize(
         ("equal_or_approx", "match"),
         [
-            param(10, r"Object .* must have length .*; got .*\."),
+            param(10, "Object .* must have length .*; got .*"),
             param(
                 (11, 0.1),
-                r"Object .* must have approximate length .* \(error .*\); got .*\.",
+                r"Object .* must have approximate length .* \(error .*\); got .*",
             ),
         ],
     )
