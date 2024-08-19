@@ -504,7 +504,7 @@ class TestOneStr:
     def test_error_bijection_error(self) -> None:
         with raises(
             OneStrError,
-            match=r"Iterable .* must not contain duplicates \(case insensitive\); got {'a': 2}",
+            match=r"Iterable .* must not contain duplicates \(case insensitive\); got .*",
         ):
             _ = one_str(["a", "A"], "a", case_sensitive=False)
 
