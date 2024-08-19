@@ -10,11 +10,10 @@ from tests.conftest import FLAKY
 from utilities.pytest import throttle
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
     from _pytest.legacypath import Testdir
-
-    from utilities.types import IterableStrs
 
 
 class TestPytestOptions:
@@ -60,10 +59,10 @@ class TestPytestOptions:
         self,
         *,
         testdir: Testdir,
-        case: IterableStrs,
+        case: Sequence[str],
         passed: int,
         skipped: int,
-        matches: IterableStrs,
+        matches: Sequence[str],
     ) -> None:
         _ = testdir.makeconftest(
             """
@@ -126,10 +125,10 @@ class TestPytestOptions:
         self,
         *,
         testdir: Testdir,
-        case: IterableStrs,
+        case: Sequence[str],
         passed: int,
         skipped: int,
-        matches: IterableStrs,
+        matches: Sequence[str],
     ) -> None:
         _ = testdir.makeconftest(
             """

@@ -18,7 +18,7 @@ from utilities.re import (
 )
 
 if TYPE_CHECKING:
-    from utilities.types import IterableStrs
+    from collections.abc import Sequence
 
 
 class TestExtractGroup:
@@ -69,7 +69,7 @@ class TestExtractGroups:
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
     )
-    def test_main(self, *, pattern: str, text: str, expected: IterableStrs) -> None:
+    def test_main(self, *, pattern: str, text: str, expected: Sequence[str]) -> None:
         assert extract_groups(pattern, text) == expected
 
     def test_with_flags(self) -> None:
