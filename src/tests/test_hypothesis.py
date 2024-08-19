@@ -53,11 +53,9 @@ from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
-    _merge_into_dict_of_indexes,
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
-    bool_data_arrays,
     concatenated_arrays,
     dates_pd,
     datetimes_pd,
@@ -65,7 +63,6 @@ from utilities.hypothesis import (
     dicts_of_indexes,
     durations,
     float_arrays,
-    float_data_arrays,
     floats_extra,
     git_repos,
     hashables,
@@ -73,7 +70,6 @@ from utilities.hypothesis import (
     int32s,
     int64s,
     int_arrays,
-    int_data_arrays,
     int_indexes,
     lists_fixed_length,
     longs,
@@ -86,7 +82,6 @@ from utilities.hypothesis import (
     slices,
     sqlite_engines,
     str_arrays,
-    str_data_arrays,
     str_indexes,
     temp_dirs,
     temp_paths,
@@ -106,7 +101,6 @@ from utilities.pandas import (
     TIMESTAMP_MAX_AS_DATETIME,
     TIMESTAMP_MIN_AS_DATE,
     TIMESTAMP_MIN_AS_DATETIME,
-    IndexA,
     string,
 )
 from utilities.pathvalidate import valid_path
@@ -124,7 +118,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping, Sequence
+    from collections.abc import Hashable, Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
 
@@ -176,20 +170,6 @@ class TestBoolArrays:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
-
-
-class TestBoolDataArrays:
-    @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
-    def test_main(
-        self, *, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
-    ) -> None:
-        array = data.draw(bool_data_arrays(indexes, name=name))
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == bool
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestConcatenatedArrays:
@@ -415,58 +395,6 @@ class TestFloatArrays:
             assert len(set(flat)) == len(flat)
 
 
-class TestFloatDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_value=floats() | none(),
-        max_value=floats() | none(),
-        allow_nan=booleans(),
-        allow_inf=booleans(),
-        allow_pos_inf=booleans(),
-        allow_neg_inf=booleans(),
-        integral=booleans(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_value: float | None,
-        max_value: float | None,
-        allow_nan: bool,
-        allow_inf: bool,
-        allow_pos_inf: bool,
-        allow_neg_inf: bool,
-        integral: bool,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                float_data_arrays(
-                    indexes,
-                    min_value=min_value,
-                    max_value=max_value,
-                    allow_nan=allow_nan,
-                    allow_inf=allow_inf,
-                    allow_pos_inf=allow_pos_inf,
-                    allow_neg_inf=allow_neg_inf,
-                    integral=integral,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == float
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
-
-
 class TestFloatsExtra:
     @given(
         data=data(),
@@ -683,43 +611,6 @@ class TestInt64s:
             assert x <= max_value
 
 
-class TestIntDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_value=int64s() | none(),
-        max_value=int64s() | none(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_value: int | None,
-        max_value: int | None,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                int_data_arrays(
-                    indexes,
-                    min_value=min_value,
-                    max_value=max_value,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == int64
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
-
-
 class TestLiftDraw:
     @given(data=data(), x=booleans())
     def test_fixed(self, *, data: DataObject, x: bool) -> None:
@@ -865,26 +756,6 @@ class TestSlices:
             InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
         ):
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
-
-
-class TestMergeIntoDictOfIndexes:
-    @given(data=data())
-    def test_empty(self, *, data: DataObject) -> None:
-        _ = data.draw(_merge_into_dict_of_indexes())
-
-    @given(
-        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
-    )
-    def test_non_empty(
-        self,
-        *,
-        data: DataObject,
-        indexes1: Mapping[str, IndexA] | None,
-        indexes2: Mapping[str, IndexA],
-    ) -> None:
-        indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
-        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
-        assert set(indexes_) == expected
 
 
 class TestSetupHypothesisProfiles:
@@ -1033,46 +904,6 @@ class TestStrArrays:
         if unique:
             flat = ravel(array)
             assert len(set(flat)) == len(flat)
-
-
-class TestStrDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_size=integers(0, 100),
-        max_size=integers(0, 100) | none(),
-        allow_none=booleans(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_size: int,
-        max_size: int | None,
-        allow_none: bool,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                str_data_arrays(
-                    indexes,
-                    min_size=min_size,
-                    max_size=max_size,
-                    allow_none=allow_none,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == object
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestTempDirs:

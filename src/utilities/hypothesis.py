@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
+from collections.abc import Collection, Hashable, Iterable, Iterator
 from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -60,7 +60,6 @@ if TYPE_CHECKING:
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.pandas import IndexA, IndexI, IndexS
     from utilities.types import Duration, Number
-    from utilities.xarray import DataArrayB, DataArrayF, DataArrayI, DataArrayO
 
 
 _T = TypeVar("_T")
@@ -110,27 +109,6 @@ def assume_does_not_raise(
                 _ = assume(condition=False)
             else:
                 raise
-
-
-@composite
-def bool_data_arrays(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    *,
-    fill: SearchStrategy[Any] | None = None,
-    unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> DataArrayB:
-    """Strategy for generating data arrays of booleans."""
-    from xarray import DataArray
-
-    draw = lift_draw(_draw)
-    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
-    shape = tuple(map(len, indexes_.values()))
-    values = draw(bool_arrays(shape=shape, fill=fill, unique=unique))
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
 
 
 @composite
@@ -346,47 +324,6 @@ def float_arrays(
 
 
 @composite
-def float_data_arrays(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[float | None] = None,
-    max_value: MaybeSearchStrategy[float | None] = None,
-    allow_nan: MaybeSearchStrategy[bool] = False,
-    allow_inf: MaybeSearchStrategy[bool] = False,
-    allow_pos_inf: MaybeSearchStrategy[bool] = False,
-    allow_neg_inf: MaybeSearchStrategy[bool] = False,
-    integral: MaybeSearchStrategy[bool] = False,
-    fill: SearchStrategy[Any] | None = None,
-    unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> DataArrayF:
-    """Strategy for generating data arrays of floats."""
-    from xarray import DataArray
-
-    draw = lift_draw(_draw)
-    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
-    shape = tuple(map(len, indexes_.values()))
-    values = draw(
-        float_arrays(
-            shape=shape,
-            min_value=min_value,
-            max_value=max_value,
-            allow_nan=allow_nan,
-            allow_inf=allow_inf,
-            allow_pos_inf=allow_pos_inf,
-            allow_neg_inf=allow_neg_inf,
-            integral=integral,
-            fill=fill,
-            unique=unique,
-        )
-    )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
-
-
-@composite
 def floats_extra(
     _draw: DrawFn,
     /,
@@ -514,37 +451,6 @@ def int_arrays(
         int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
     )
     return draw(strategy)
-
-
-@composite
-def int_data_arrays(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-    fill: SearchStrategy[Any] | None = None,
-    unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> DataArrayI:
-    """Strategy for generating data arrays of ints."""
-    from xarray import DataArray
-
-    draw = lift_draw(_draw)
-    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
-    shape = tuple(map(len, indexes_.values()))
-    values = draw(
-        int_arrays(
-            shape=shape,
-            min_value=min_value,
-            max_value=max_value,
-            fill=fill,
-            unique=unique,
-        )
-    )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
 
 
 def int_indexes(
@@ -849,39 +755,6 @@ def str_arrays(
 
 
 @composite
-def str_data_arrays(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    allow_none: MaybeSearchStrategy[bool] = False,
-    fill: SearchStrategy[Any] | None = None,
-    unique: MaybeSearchStrategy[bool] = False,
-    name: MaybeSearchStrategy[str | None] = None,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> DataArrayO:
-    """Strategy for generating data arrays of strings."""
-    from xarray import DataArray
-
-    draw = lift_draw(_draw)
-    indexes_ = draw(_merge_into_dict_of_indexes(indexes, **indexes_kwargs))
-    shape = tuple(map(len, indexes_.values()))
-    values = draw(
-        str_arrays(
-            shape=shape,
-            min_size=min_size,
-            max_size=max_size,
-            allow_none=allow_none,
-            fill=fill,
-            unique=unique,
-        )
-    )
-    return DataArray(data=values, coords=indexes_, dims=list(indexes_), name=draw(name))
-
-
-@composite
 def str_indexes(
     _draw: DrawFn,
     /,
@@ -1134,31 +1007,12 @@ def _fixed_width_ints(
     return draw(integers(min_value_, max_value))
 
 
-@composite
-def _merge_into_dict_of_indexes(
-    _draw: DrawFn,
-    indexes: MaybeSearchStrategy[Mapping[str, IndexA]] | None = None,
-    /,
-    **indexes_kwargs: MaybeSearchStrategy[IndexA],
-) -> dict[str, IndexA]:
-    """Merge positional & kwargs of indexes into a dictionary."""
-    draw = lift_draw(_draw)
-    if (indexes is None) and (len(indexes_kwargs) == 0):
-        return draw(dicts_of_indexes())
-    indexes_out: dict[str, IndexA] = {}
-    if indexes is not None:
-        indexes_out |= dict(draw(indexes))
-    indexes_out |= {k: draw(v) for k, v in indexes_kwargs.items()}
-    return indexes_out
-
-
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
     "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
-    "bool_data_arrays",
     "concatenated_arrays",
     "dates_pd",
     "datetimes_pd",
@@ -1166,7 +1020,6 @@ __all__ = [
     "dicts_of_indexes",
     "durations",
     "float_arrays",
-    "float_data_arrays",
     "floats_extra",
     "git_repos",
     "hashables",
@@ -1174,7 +1027,6 @@ __all__ = [
     "int32s",
     "int64s",
     "int_arrays",
-    "int_data_arrays",
     "int_indexes",
     "lift_draw",
     "lists_fixed_length",
@@ -1187,7 +1039,6 @@ __all__ = [
     "slices",
     "sqlite_engines",
     "str_arrays",
-    "str_data_arrays",
     "str_indexes",
     "temp_dirs",
     "temp_paths",
