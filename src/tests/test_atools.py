@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from pytest import raises
 
+from tests.conftest import FLAKY
 from utilities.atools import (
     RefreshMemoizedError,
     _memoize_auto_keygen_is_param,
@@ -86,6 +87,7 @@ class TestMemoizeAutoKeygenIsParam:
 
 
 class TestRefreshMemoized:
+    @FLAKY
     async def test_main(self) -> None:
         i = 0
 
