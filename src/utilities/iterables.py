@@ -186,7 +186,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True)
@@ -200,7 +200,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
                 desc = f"approximate length {target} (error {error:%})"
             case target:
                 desc = f"length {target}"
-        return f"Object {self.obj} must have {desc}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True)
@@ -209,7 +209,7 @@ class _CheckLengthMinError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must have minimum length {self.min_}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
 
 
 @dataclass(kw_only=True)
@@ -218,7 +218,7 @@ class _CheckLengthMaxError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must have maximum length {self.max_}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have maximum length {self.max_}; got {len(self.obj)}"
 
 
 def check_lengths_equal(left: Sized, right: Sized, /) -> None:

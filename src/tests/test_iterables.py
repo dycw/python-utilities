@@ -158,7 +158,7 @@ class TestCheckLength:
 
     def test_min_error(self) -> None:
         with raises(
-            CheckLengthError, match=r"Object .* must have minimum length .*; got .*\."
+            CheckLengthError, match="Object .* must have minimum length .*; got .*"
         ):
             check_length([], min=1)
 
@@ -167,7 +167,7 @@ class TestCheckLength:
 
     def test_max_error(self) -> None:
         with raises(
-            CheckLengthError, match=r"Object .* must have maximum length .*; got .*\."
+            CheckLengthError, match="Object .* must have maximum length .*; got .*"
         ):
             check_length([1], max=0)
 
