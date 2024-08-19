@@ -20,7 +20,6 @@ from hypothesis.strategies import (
     integers,
     just,
     lists,
-    none,
     sampled_from,
     times,
 )
@@ -44,10 +43,7 @@ from utilities.click import (
     Time,
     Timedelta,
     ZonedDateTime,
-    local_scheduler_option_default_central,
-    local_scheduler_option_default_local,
     log_level_option,
-    workers_option,
 )
 from utilities.datetime import serialize_month
 from utilities.hypothesis import (
@@ -73,8 +69,6 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
-
-    from utilities.types import SequenceStrs
 
 
 class _Truth(enum.Enum):
@@ -264,36 +258,6 @@ class TestListChoices:
         assert result.stdout == f"choices = {choices}\n"
 
 
-class TestLocalSchedulerOption:
-    @mark.parametrize(
-        ("args", "expected"),
-        [param([], True), param(["-ls"], True), param(["-nls"], False)],
-    )
-    def test_default_local(self, *, args: SequenceStrs, expected: bool) -> None:
-        @command()
-        @local_scheduler_option_default_local
-        def cli(*, local_scheduler: bool) -> None:
-            echo(f"local_scheduler = {local_scheduler}")
-
-        result = CliRunner().invoke(cli, args)
-        assert result.exit_code == 0
-        assert result.stdout == f"local_scheduler = {expected}\n"
-
-    @mark.parametrize(
-        ("args", "expected"),
-        [param([], False), param(["-ls"], True), param(["-nls"], False)],
-    )
-    def test_default_central(self, *, args: SequenceStrs, expected: bool) -> None:
-        @command()
-        @local_scheduler_option_default_central
-        def cli(*, local_scheduler: bool) -> None:
-            echo(f"local_scheduler = {local_scheduler}")
-
-        result = CliRunner().invoke(cli, args)
-        assert result.exit_code == 0
-        assert result.stdout == f"local_scheduler = {expected}\n"
-
-
 class TestLogLevelOption:
     @given(log_level=sampled_from(LogLevel))
     def test_main(self, *, log_level: LogLevel) -> None:
@@ -449,17 +413,3 @@ class TestParameters:
         assert result.stdout == f"value = {serialize(value)}\n"
 
         _ = failable
-
-
-class TestWorkersOption:
-    @given(workers=integers() | none())
-    def test_main(self, workers: int | None) -> None:
-        @command()
-        @workers_option
-        def cli(*, workers: int | None) -> None:
-            echo(f"workers = {workers}")
-
-        args = [] if workers is None else ["--workers", str(workers)]
-        result = CliRunner().invoke(cli, args)
-        assert result.exit_code == 0
-        assert result.stdout == f"workers = {workers}\n"

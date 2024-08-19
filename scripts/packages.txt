@@ -43,7 +43,6 @@ pqdm
 pydantic
 pyinstrument
 pytest
-pytest-check
 python-dotenv
 random
 re

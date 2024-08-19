@@ -88,8 +88,6 @@ deprecated==1.2.14
     # via pikepdf
 distlib==0.3.8
     # via virtualenv
-docutils==0.21.2
-    # via python-daemon
 ecos==2.0.14
     # via cvxpy
 execnet==2.1.1
@@ -159,11 +157,7 @@ keyring==25.3.0
     # via hatch
 llvmlite==0.43.0
     # via numba
-lockfile==0.12.2
-    # via python-daemon
 loguru==0.7.2
-    # via dycw-utilities (pyproject.toml)
-luigi==3.5.1
     # via dycw-utilities (pyproject.toml)
 lxml==5.3.0
     # via pikepdf
@@ -310,7 +304,6 @@ pytest==8.3.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
-    #   pytest-check
     #   pytest-cov
     #   pytest-instafail
     #   pytest-only
@@ -318,8 +311,6 @@ pytest==8.3.2
     #   pytest-rerunfailures
     #   pytest-xdist
 pytest-asyncio==0.23.8
-    # via dycw-utilities (pyproject.toml)
-pytest-check==2.3.1
     # via dycw-utilities (pyproject.toml)
 pytest-cov==5.0.0
     # via dycw-utilities (pyproject.toml)
@@ -333,12 +324,8 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-python-daemon==3.0.1
-    # via luigi
 python-dateutil==2.9.0.post0
-    # via
-    #   luigi
-    #   pandas
+    # via pandas
 python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
 pytz==2024.1
@@ -379,8 +366,6 @@ selenium==4.23.1
     # via dycw-utilities (pyproject.toml)
 semver==3.0.2
     # via dycw-utilities (pyproject.toml)
-setuptools==72.2.0
-    # via python-daemon
 shellingham==1.5.4
     # via hatch
 six==1.16.0
@@ -408,7 +393,6 @@ streamlit==1.37.1
 tenacity==8.5.0
     # via
     #   dycw-utilities (pyproject.toml)
-    #   luigi
     #   streamlit
 toml==0.10.2
     # via streamlit
@@ -419,9 +403,7 @@ tomli-w==1.0.0
 tomlkit==0.13.2
     # via hatch
 tornado==6.4.1
-    # via
-    #   luigi
-    #   streamlit
+    # via streamlit
 tqdm==4.66.5
     # via
     #   dycw-utilities (pyproject.toml)
