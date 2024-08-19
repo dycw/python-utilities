@@ -4,9 +4,9 @@ from re import search
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from tenacity import before_sleep_log, retry, wait_fixed
+from tenacity import retry, wait_fixed
 
-from utilities.tenacity import LoguruAdapter
+from utilities.tenacity import before_sleep_log
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,9 +18,7 @@ class TestLoguruAdapter:
 
         i = 0
 
-        @retry(
-            wait=wait_fixed(0.01), before_sleep=before_sleep_log(LoguruAdapter(), 20)
-        )
+        @retry(wait=wait_fixed(0.01), before_sleep=before_sleep_log())
         def func() -> int:
             nonlocal i
             i += 1

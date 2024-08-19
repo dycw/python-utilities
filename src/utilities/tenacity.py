@@ -1,29 +1,39 @@
 from __future__ import annotations
 
-import logging
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-from typing_extensions import override
+import tenacity
+from tenacity import RetryCallState
+
+from utilities.logging import LogLevel, get_logging_level
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
-class LoguruAdapter(logging.Logger):
+def before_sleep_log(
+    *, level: LogLevel = LogLevel.INFO, exc_info: bool = False
+) -> Callable[[RetryCallState], None]:
+    """Use `loguru` in around `before_sleep_log`."""
+    return tenacity.before_sleep_log(
+        cast(Any, _LoguruAdapter()), get_logging_level(level), exc_info=exc_info
+    )
+
+
+class _LoguruAdapter:
     """Proxy for `loguru`, for use in `tenacity`."""
 
-    @override
-    def __init__(self) -> None: ...  # pyright: ignore[reportMissingSuperCall]
-
-    @override
-    def log(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def log(
         self,
         msg: Any,
         level: int,
         /,
         *,
-        exc_info: BaseException | Literal[False] | None,
+        exc_info: BaseException | Literal[False] | None = None,
     ) -> None:
         from loguru import logger
 
         logger.opt(exception=exc_info).log(msg, level)
 
 
-__all__ = ["LoguruAdapter"]
+__all__ = ["before_sleep_log"]
