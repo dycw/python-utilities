@@ -19,10 +19,10 @@ from utilities.platform import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Sequence
     from pathlib import Path
 
-    from utilities.types import Duration, IterableStrs, PathLike
+    from utilities.types import Duration, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -46,7 +46,7 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
-def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
+def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
     """Add the `--slow`, etc options to pytest.
 
     Usage:
@@ -64,7 +64,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
 
 
 def add_pytest_collection_modifyitems(
-    config: Config, items: Iterable[Function], options: IterableStrs, /
+    config: Config, items: Iterable[Function], options: Sequence[str], /
 ) -> None:
     """Add the @mark.skips as necessary.
 

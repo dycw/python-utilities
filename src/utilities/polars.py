@@ -82,8 +82,6 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
-    from utilities.types import IterableStrs
-
 
 DatetimeUTC = Datetime(time_zone="UTC")
 
@@ -110,7 +108,7 @@ def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: IterableStrs | None = None,
+    columns: Sequence[str] | None = None,
     dtypes: Iterable[PolarsDataType] | None = None,
     height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
@@ -155,7 +153,7 @@ class CheckPolarsDataFrameError(Exception):
     df: DataFrame
 
 
-def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> None:
+def _check_polars_dataframe_columns(df: DataFrame, columns: Sequence[str], /) -> None:
     try:
         check_iterables_equal(df.columns, columns)
     except CheckIterablesEqualError as error:
@@ -164,7 +162,7 @@ def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> 
 
 @dataclass(kw_only=True)
 class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
-    columns: IterableStrs
+    columns: Sequence[str]
 
     @override
     def __str__(self) -> str:
