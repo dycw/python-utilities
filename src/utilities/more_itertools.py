@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import reprlib
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from itertools import islice
@@ -146,7 +147,7 @@ class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
         include = list(self.include)
         exclude = list(self.exclude)
         overlap = set(include) & set(exclude)
-        return f"Iterables {include} and {exclude} must not overlap; got {overlap}."
+        return f"Iterables {reprlib.repr(include)} and {reprlib.repr(exclude)} must not overlap; got {reprlib.repr(overlap)}"
 
 
 @dataclass(frozen=True)
