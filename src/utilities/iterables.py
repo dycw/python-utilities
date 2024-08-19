@@ -67,10 +67,7 @@ class CheckBijectionError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return "Mapping {} must be a bijection; got duplicates {}.".format(
-            reprlib.repr(self.mapping),
-            ", ".join(f"({k}, n={v})" for k, v in self.counts.items()),
-        )
+        return f"{reprlib.repr(self.mapping)} must be a bijection; got duplicates {reprlib.repr(self.counts)}"
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -87,9 +84,7 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return (
-            f"Iterable {self.iterable} must not contain duplicates; got {self.counts}."
-        )
+        return f"{reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
 
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:

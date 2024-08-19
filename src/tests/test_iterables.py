@@ -65,7 +65,7 @@ class TestCheckBijection:
     def test_error(self) -> None:
         with raises(
             CheckBijectionError,
-            match=r"Mapping .* must be a bijection; got duplicates \(.*, n=2\)\.",
+            match=".* must be a bijection; got duplicates {None: 2}",
         ):
             check_bijection({True: None, False: None})
 
@@ -77,8 +77,7 @@ class TestCheckDuplicates:
 
     def test_error(self) -> None:
         with raises(
-            CheckDuplicatesError,
-            match=r"Iterable .* must not contain duplicates; got {None: 2}\.",
+            CheckDuplicatesError, match=".* must not contain duplicates; got {None: 2}"
         ):
             check_duplicates([None, None])
 
