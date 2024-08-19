@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from re import search
-from subprocess import CalledProcessError, check_call
 
 from pytest import raises
 
@@ -11,9 +10,7 @@ from utilities.subprocess import (
     GetShellOutputError,
     _address_already_in_use_pattern,
     get_shell_output,
-    tabulate_called_process_error,
 )
-from utilities.text import strip_and_dedent
 
 
 class TestAddressAlreadyInUsePattern:
@@ -41,25 +38,3 @@ class TestGetShellOutput:
         venv = Path(tmp_path, ".venv")
         with raises(GetShellOutputError):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
-
-
-class TestTabulateCalledProcessError:
-    @skipif_windows
-    def test_main(self) -> None:
-        def which() -> None:
-            _ = check_call(["which"], text=True)
-
-        try:
-            which()
-        except CalledProcessError as error:
-            result = tabulate_called_process_error(error)
-            expected = """
-                cmd        ['which']
-                returncode 1
-                stdout     None
-                stderr     None
-            """
-            assert result == strip_and_dedent(expected)
-        else:
-            with raises(CalledProcessError):
-                which()

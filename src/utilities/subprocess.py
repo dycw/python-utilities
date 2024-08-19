@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from functools import partial
-from itertools import chain, repeat, starmap
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, check_output
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from utilities.errors import redirect_error
 from utilities.iterables import OneError, one
@@ -12,7 +10,7 @@ from utilities.os import temp_environ
 from utilities.pathlib import PWD, ensure_path
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Mapping
 
     from utilities.types import IterableStrs, PathLike
 
@@ -69,34 +67,4 @@ def _address_already_in_use_pattern() -> str:
     return f"^{escaped}$"
 
 
-def tabulate_called_process_error(error: CalledProcessError, /) -> str:
-    """Tabulate the components of a CalledProcessError."""
-    mapping = {  # skipif-os-ne-windows
-        "cmd": error.cmd,
-        "returncode": error.returncode,
-        "stdout": error.stdout,
-        "stderr": error.stderr,
-    }
-    max_key_len = max(map(len, mapping))  # skipif-os-ne-windows
-    tabulate = partial(_tabulate, buffer=max_key_len + 1)  # skipif-os-ne-windows
-    return "\n".join(starmap(tabulate, mapping.items()))  # skipif-os-ne-windows
-
-
-def _tabulate(key: str, value: Any, /, *, buffer: int) -> str:
-    template = f"{{:{buffer}}}{{}}"  # skipif-os-ne-windows
-
-    def yield_lines() -> Iterator[str]:  # skipif-os-ne-windows
-        keys = chain([key], repeat(buffer * " "))
-        value_lines = str(value).splitlines()
-        for k, v in zip(keys, value_lines, strict=False):
-            yield template.format(k, v)
-
-    return "\n".join(yield_lines())  # skipif-os-ne-windows
-
-
-__all__ = [
-    "GetShellOutputError",
-    "get_shell_output",
-    "run_accept_address_in_use",
-    "tabulate_called_process_error",
-]
+__all__ = ["GetShellOutputError", "get_shell_output", "run_accept_address_in_use"]
