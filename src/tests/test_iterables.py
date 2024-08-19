@@ -90,21 +90,21 @@ class TestCheckIterablesEqual:
     def test_error_differing_items_and_left_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer",
+            match="Iterables .* and .* must be equal; differing items were .* and left was longer",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
     def test_error_differing_items_and_right_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer",
+            match="Iterables .* and .* must be equal; differing items were .* and right was longer",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
     def test_error_differing_items_and_same_length(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)",
+            match="Iterables .* and .* must be equal; differing items were .*",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
@@ -179,7 +179,7 @@ class TestCheckLengthsEqual:
     def test_error(self) -> None:
         with raises(
             CheckLengthsEqualError,
-            match=r"Sized objects .* and .* must have the same length; got .* and .*\.",
+            match="Sized objects .* and .* must have the same length; got .* and .*",
         ):
             check_lengths_equal([], [1, 2, 3])
 
@@ -191,49 +191,49 @@ class TestCheckMappingsEqual:
     def test_error_extra_and_missing_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
+            match="Mappings .* and .* must be equal; left had extra keys .*, right had extra keys .* and differing values were .*",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 9, "d": 4})
 
     def test_error_extra_and_missing(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .* and right had extra keys .*\.",
+            match="Mappings .* and .* must be equal; left had extra keys .* and right had extra keys .*",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"b": 2, "c": 3, "d": 4})
 
     def test_error_extra_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
+            match="Mappings .* and .* must be equal; left had extra keys .* and differing values were .*",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 9})
 
     def test_error_missing_and_differing_values(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; right had extra keys .* and differing values were \(.*, .*, k=.*\)\.",
+            match="Mappings .* and .* must be equal; right had extra keys .* and differing values were .*",
         ):
             check_mappings_equal({"a": 1}, {"a": 9, "b": 2, "c": 3})
 
     def test_error_extra_only(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; left had extra keys .*\.",
+            match="Mappings .* and .* must be equal; left had extra keys .*",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1})
 
     def test_error_missing_only(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; right had extra keys .*\.",
+            match="Mappings .* and .* must be equal; right had extra keys .*",
         ):
             check_mappings_equal({"a": 1}, {"a": 1, "b": 2, "c": 3})
 
     def test_error_differing_values_only(self) -> None:
         with raises(
             CheckMappingsEqualError,
-            match=r"Mappings .* and .* must be equal; differing values were \(.*, .*, k=.*\)\.",
+            match="Mappings .* and .* must be equal; differing values were .*",
         ):
             check_mappings_equal({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 9})
 

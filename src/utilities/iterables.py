@@ -137,8 +137,8 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
-            error_descs = (f"({lv}, {rv}, i={i})" for i, lv, rv in self.errors)
-            yield "differing items were {}".format(", ".join(error_descs))
+            errors = [(f"{i=}", lv, rv) for i, lv, rv in self.errors]
+            yield f"differing items were {reprlib.repr(errors)}"
         match self.state:
             case "left_longer":
                 yield "left was longer"
@@ -234,7 +234,7 @@ class CheckLengthsEqualError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Sized objects {self.left} and {self.right} must have the same length; got {len(self.left)} and {len(self.right)}."
+        return f"Sized objects {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must have the same length; got {len(self.left)} and {len(self.right)}"
 
 
 def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> None:
@@ -280,16 +280,16 @@ class CheckMappingsEqualError(Exception, Generic[_K, _V]):
                 desc = f"{first}, {second} and {third}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Mappings {self.left} and {self.right} must be equal; {desc}."
+        return f"Mappings {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.left_extra) >= 1:
-            yield f"left had extra keys {self.left_extra}"
+            yield f"left had extra keys {reprlib.repr(self.left_extra)}"
         if len(self.right_extra) >= 1:
-            yield f"right had extra keys {self.right_extra}"
+            yield f"right had extra keys {reprlib.repr(self.right_extra)}"
         if len(self.errors) >= 1:
-            error_descs = (f"({lv}, {rv}, k={k})" for k, lv, rv in self.errors)
-            yield "differing values were {}".format(", ".join(error_descs))
+            errors = [(f"{k=}", lv, rv) for k, lv, rv in self.errors]
+            yield f"differing values were {reprlib.repr(errors)}"
 
 
 def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
