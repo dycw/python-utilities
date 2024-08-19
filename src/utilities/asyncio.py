@@ -143,7 +143,7 @@ async def reduce_async(
 
 @dataclass(kw_only=True)
 class ReduceAsyncError(Exception):
-    func: Callable[[Any, Any], Awaitable[_T]]
+    func: Callable[[Any, Any], Awaitable[Any]]
     iterable: Iterable[Any]
     initial: Any = sentinel
 

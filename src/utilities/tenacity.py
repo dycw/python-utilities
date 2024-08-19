@@ -10,7 +10,7 @@ class LoguruAdapter(logging.Logger):
     """Proxy for `loguru`, for use in `tenacity`."""
 
     @override
-    def __init__(self) -> None: ...  # pyright: ignore[reportCallIssue]
+    def __init__(self) -> None: ...  # pyright: ignore[reportMissingSuperCall]
 
     @override
     def log(  # pyright: ignore[reportIncompatibleMethodOverride]
