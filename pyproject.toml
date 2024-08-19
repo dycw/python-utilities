@@ -24,7 +24,6 @@ dev = [
   "atools >= 0.14.2, < 0.15",
   "basedpyright >= 1.16.0, < 1.17",
   "beartype >= 0.18.5, < 0.19",
-  "beautifulsoup4 >= 4.12.3, < 4.13",
   "bottleneck >= 1.4.0, < 1.5",
   "cachetools >= 5.5.0, < 5.6",
   "click >= 8.1.7, < 8.2",
@@ -112,7 +111,6 @@ zzz-test-altair = [
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
 ]
-zzz-test-ast = []
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
@@ -120,10 +118,6 @@ zzz-test-atools = [
   "pytest-asyncio >= 0.23.8, < 0.24",
 ]
 zzz-test-beartype = ["beartype >= 0.18.5, < 0.19"]
-zzz-test-bs4 = [
-  "beautifulsoup4 >= 4.12.3, < 4.13",
-  "polars-lts-cpu >= 1.5.0, < 1.6",
-]
 zzz-test-cachetools = ["cachetools >= 5.5.0, < 5.6"]
 zzz-test-click = [
   "click >= 8.1.7, < 8.2",
@@ -156,7 +150,6 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
-zzz-test-hatch = ["hatch >= 1.12.0, < 1.13"]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "numpy >= 2.0.1, < 2.1",

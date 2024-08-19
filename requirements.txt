@@ -38,8 +38,6 @@ basedpyright==1.16.0
     # via dycw-utilities (pyproject.toml)
 beartype==0.18.5
     # via dycw-utilities (pyproject.toml)
-beautifulsoup4==4.12.3
-    # via dycw-utilities (pyproject.toml)
 blinker==1.8.2
     # via streamlit
 bottleneck==1.4.0
@@ -400,8 +398,6 @@ sortedcontainers==2.4.0
     # via
     #   hypothesis
     #   trio
-soupsieve==2.6
-    # via beautifulsoup4
 sqlalchemy==2.0.32
     # via
     #   dycw-utilities (pyproject.toml)
