@@ -84,7 +84,6 @@ from utilities.hypothesis import (
 )
 from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
-from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
 from utilities.types import Duration, Number, make_isinstance
@@ -607,7 +606,7 @@ class TestSQLiteEngines:
         assert isinstance(engine, Engine)
         database = engine.url.database
         assert database is not None
-        assert not valid_path(database).exists()
+        assert not Path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
     def test_sync_table(self, *, data: DataObject, ids: set[int]) -> None:
@@ -627,7 +626,7 @@ class TestSQLiteEngines:
         assert isinstance(engine, AsyncEngine)
         database = engine.url.database
         assert database is not None
-        assert not valid_path(database).exists()
+        assert not Path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
     async def test_async_table(self, *, data: DataObject, ids: set[int]) -> None:
