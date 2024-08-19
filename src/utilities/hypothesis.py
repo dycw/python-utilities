@@ -55,7 +55,6 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
-    from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
     from utilities.types import Duration, Number
 
@@ -133,7 +132,7 @@ def bool_arrays(
 def concatenated_arrays(
     _draw: DrawFn,
     strategy: SearchStrategy[NDArrayA],
-    size: MaybeSearchStrategy[IntNonNeg],
+    size: MaybeSearchStrategy[int],
     fallback: Shape,
     /,
     *,
@@ -532,7 +531,7 @@ def setup_hypothesis_profiles(
 
 
 def settings_with_reduced_examples(
-    frac: FloatFinPos = 0.1,
+    frac: float = 0.1,
     /,
     *,
     derandomize: bool = not_set,  # pyright: ignore[reportArgumentType]
