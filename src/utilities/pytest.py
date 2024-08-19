@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cache, wraps
+from inspect import iscoroutinefunction
 from os import environ
 from typing import TYPE_CHECKING, Any
 
@@ -15,12 +16,13 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import Duration, IterableStrs, PathLike, is_function_async
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
     from pathlib import Path
+
+    from utilities.types import Duration, IterableStrs, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -109,7 +111,7 @@ def throttle(
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Throttle a test function/method."""
-        if is_function_async(func):
+        if iscoroutinefunction(func):
 
             @wraps(func)
             async def wrapped_async(*args: Any, **kwargs: Any) -> Any:

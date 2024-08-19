@@ -32,8 +32,6 @@ backports-tarfile==1.2.0
     # via jaraco-context
 basedpyright==1.16.0
     # via dycw-utilities (pyproject.toml)
-beartype==0.18.5
-    # via dycw-utilities (pyproject.toml)
 blinker==1.8.2
     # via streamlit
 bottleneck==1.4.0
@@ -259,7 +257,6 @@ protobuf==5.27.3
     #   vegafusion
 psutil==6.0.0
     # via
-    #   dycw-utilities (pyproject.toml)
     #   memory-profiler
     #   vegafusion
 psycopg2-binary==2.9.9

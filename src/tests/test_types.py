@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-from re import escape
 from types import NoneType
 from typing import Any, cast
 
@@ -27,7 +26,6 @@ from utilities.types import (
     EnsureSizedError,
     EnsureSizedNotStrError,
     EnsureTimeError,
-    IsFunctionAsyncError,
     IterableStrs,
     Number,
     PathLike,
@@ -48,7 +46,6 @@ from utilities.types import (
     get_class,
     get_class_name,
     if_not_none,
-    is_function_async,
     is_hashable,
     is_sized,
     is_sized_not_str,
@@ -60,11 +57,10 @@ from utilities.types import (
 class TestDuration:
     @mark.parametrize("x", [param(0), param(0.0), param(dt.timedelta(0))])
     def test_success(self, *, x: Duration) -> None:
-        die_if_unbearable(x, Duration)
+        assert isinstance(x, Duration)
 
     def test_error(self) -> None:
-        with raises(BeartypeDoorHintViolation):
-            die_if_unbearable("0", Duration)
+        assert not isinstance("0", Duration)
 
 
 class TestEnsureBool:
@@ -334,26 +330,6 @@ class TestIfNotNone:
         assert result == 0
 
 
-class TestIsFunctionAsync:
-    def test_function(self) -> None:
-        def func() -> None:
-            pass
-
-        assert not is_function_async(func)
-
-    def test_coroutine(self) -> None:
-        async def func() -> None:
-            pass
-
-        assert is_function_async(func)
-
-    def test_error(self) -> None:
-        with raises(
-            IsFunctionAsyncError, match=escape("Object must be a function; got None.")
-        ):
-            _ = is_function_async(None)
-
-
 class TestIsHashable:
     @mark.parametrize(
         ("obj", "expected"),
@@ -395,24 +371,6 @@ class TestIsSubclassExceptBoolInt:
         assert not issubclass_except_bool_int(bool, MyInt)
 
 
-class TestIterableStrs:
-    @mark.parametrize(
-        "x",
-        [
-            param(["a", "b", "c"]),
-            param(("a", "b", "c")),
-            param({"a", "b", "c"}),
-            param({"a": 1, "b": 2, "c": 3}),
-        ],
-    )
-    def test_pass(self, *, x: IterableStrs) -> None:
-        die_if_unbearable(x, IterableStrs)
-
-    def test_fail(self) -> None:
-        with raises(BeartypeDoorHintViolation):
-            die_if_unbearable("abc", IterableStrs)
-
-
 class TestMakeIsInstance:
     @mark.parametrize(
         ("obj", "expected"), [param(True, True), param(False, True), param(None, False)]
@@ -441,16 +399,3 @@ class TestPathLike:
     def test_error(self) -> None:
         with raises(BeartypeDoorHintViolation):
             die_if_unbearable(None, PathLike)
-
-
-class TestSequenceStrs:
-    @mark.parametrize("x", [param(["a", "b", "c"]), param(("a", "b", "c"))])
-    def test_pass(self, *, x: SequenceStrs) -> None:
-        die_if_unbearable(x, SequenceStrs)
-
-    @mark.parametrize(
-        "x", [param({"a", "b", "c"}), param({"a": 1, "b": 2, "c": 3}), param("abc")]
-    )
-    def test_fail(self, *, x: IterableStrs | str) -> None:
-        with raises(BeartypeDoorHintViolation):
-            die_if_unbearable(x, SequenceStrs)

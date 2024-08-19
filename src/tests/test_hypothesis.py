@@ -25,7 +25,6 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
 )
-from luigi import Task
 from numpy import (
     iinfo,
     inf,
@@ -66,7 +65,6 @@ from utilities.hypothesis import (
     lists_fixed_length,
     longs,
     months,
-    namespace_mixins,
     redis_clients,
     redis_time_series,
     settings_with_reduced_examples,
@@ -525,24 +523,6 @@ class TestMonths:
         _ = assume(min_value <= max_value)
         month = data.draw(months(min_value=min_value, max_value=max_value))
         assert min_value <= month <= max_value
-
-
-class TestNamespaceMixins:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        _ = data.draw(namespace_mixins())
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_first(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_second(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
 
 
 @SKIPIF_CI_AND_NOT_LINUX

@@ -451,18 +451,6 @@ def months(
 
 
 @composite
-def namespace_mixins(_draw: DrawFn, /) -> type:
-    """Strategy for generating task namespace mixins."""
-    draw = lift_draw(_draw)
-    path = draw(temp_paths())
-
-    class NamespaceMixin:
-        task_namespace = path.name
-
-    return NamespaceMixin
-
-
-@composite
 def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
     """Strategy for generating redis clients."""
     import redis  # skipif-ci-and-not-linux
@@ -860,7 +848,6 @@ __all__ = [
     "lists_fixed_length",
     "longs",
     "months",
-    "namespace_mixins",
     "redis_clients",
     "redis_time_series",
     "setup_hypothesis_profiles",

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import datetime as dt
-from collections.abc import Callable, Container, Hashable, Mapping, Sized
+from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
-from inspect import iscoroutinefunction, isfunction
 from pathlib import Path
-from typing import Any, Literal, TypeGuard, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Container, Hashable, Sized
+
 Number = int | float
 Duration = Number | dt.timedelta
-SequenceStrs = list[str] | tuple[str, ...]
-IterableStrs = SequenceStrs | AbstractSet[str] | Mapping[str, Any]
 PathLike = Path | str
 
 
@@ -380,24 +380,6 @@ def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
     return x if x is not None else y
 
 
-def is_function_async(obj: Any, /) -> bool:
-    """Check if a function is asynchronous."""
-    if iscoroutinefunction(obj):
-        return True
-    if isfunction(obj):
-        return False
-    raise IsFunctionAsyncError(obj=obj)
-
-
-@dataclass(kw_only=True)
-class IsFunctionAsyncError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be a function; got {self.obj}."
-
-
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     """Check if an object is hashable."""
     try:
@@ -450,7 +432,6 @@ __all__ = [
     "EnsureSizedError",
     "EnsureSizedNotStrError",
     "EnsureTimeError",
-    "IsFunctionAsyncError",
     "IterableStrs",
     "Number",
     "PathLike",
@@ -471,7 +452,6 @@ __all__ = [
     "get_class",
     "get_class_name",
     "if_not_none",
-    "is_function_async",
     "is_hashable",
     "is_sized",
     "is_sized_not_str",
