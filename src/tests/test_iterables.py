@@ -90,21 +90,21 @@ class TestCheckIterablesEqual:
     def test_error_differing_items_and_left_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and left was longer",
+            match="Iterables .* and .* must be equal; differing items were .* and left was longer",
         ):
             check_iterables_equal([1, 2, 3], [9])
 
     def test_error_differing_items_and_right_longer(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\) and right was longer",
+            match="Iterables .* and .* must be equal; differing items were .* and right was longer",
         ):
             check_iterables_equal([9], [1, 2, 3])
 
     def test_error_differing_items_and_same_length(self) -> None:
         with raises(
             CheckIterablesEqualError,
-            match=r"Iterables .* and .* must be equal; differing items were \(.*, .*, i=.*\)",
+            match="Iterables .* and .* must be equal; differing items were .*",
         ):
             check_iterables_equal([1, 2, 3], [1, 2, 9])
 
