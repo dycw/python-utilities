@@ -218,6 +218,7 @@ class TestTimeSeriesAddAndReadDataFrame:
     def test_main(
         self,
         *,
+        data: DataObject,
         ts_pair: tuple[TimeSeries, UUID],
         keys: list[str],
         datetime1: dt.datetime,
