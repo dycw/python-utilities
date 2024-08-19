@@ -67,7 +67,7 @@ class CheckBijectionError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return f"{reprlib.repr(self.mapping)} must be a bijection; got duplicates {reprlib.repr(self.counts)}"
+        return f"Mapping {reprlib.repr(self.mapping)} must be a bijection; got duplicates {reprlib.repr(self.counts)}"
 
 
 def check_duplicates(iterable: Iterable[Hashable], /) -> None:
@@ -84,7 +84,7 @@ class CheckDuplicatesError(Exception, Generic[_THashable]):
 
     @override
     def __str__(self) -> str:
-        return f"{reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
+        return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
 
 
 def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
@@ -133,7 +133,7 @@ class CheckIterablesEqualError(Exception, Generic[_T]):
                 desc = f"{first} and {second}"
             case _ as never:  # pragma: no cover
                 assert_never(cast(Never, never))
-        return f"Iterables {self.left} and {self.right} must be equal; {desc}."
+        return f"Iterables {reprlib.repr(self.left)} and {reprlib.repr(self.right)} must be equal; {desc}"
 
     def _yield_parts(self) -> Iterator[str]:
         if len(self.errors) >= 1:
@@ -186,7 +186,7 @@ class _CheckLengthEqualError(CheckLengthError):
 
     @override
     def __str__(self) -> str:
-        return f"Object {self.obj} must have length {self.equal}; got {len(self.obj)}."
+        return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}."
 
 
 @dataclass(kw_only=True)
