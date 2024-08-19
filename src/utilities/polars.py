@@ -108,7 +108,7 @@ def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: Sequence[str] | None = None,
+    columns: Iterable[str] | None = None,
     dtypes: Iterable[PolarsDataType] | None = None,
     height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
