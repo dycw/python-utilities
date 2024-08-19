@@ -10,7 +10,7 @@ from cvxpy import CLARABEL, Expression, Problem
 from numpy import ndarray, where
 from typing_extensions import override
 
-from utilities.numpy import NDArrayF, NDArrayF1, NDArrayF2, is_non_zero, is_zero
+from utilities.numpy import NDArrayF, is_non_zero, is_zero
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -429,10 +429,10 @@ def negative(
 
 
 @overload
-def norm(x: NDArrayF1 | SeriesF, /) -> float: ...
+def norm(x: NDArrayF | SeriesF, /) -> float: ...
 @overload
 def norm(x: Expression, /) -> Expression: ...
-def norm(x: NDArrayF1 | SeriesF | Expression, /) -> float | Expression:
+def norm(x: NDArrayF | SeriesF | Expression, /) -> float | Expression:
     """Compute the norm of a quantity."""
     if isinstance(x, ndarray):
         return numpy.linalg.norm(x).item()
@@ -496,12 +496,12 @@ def power(
 
 
 @overload
-def quad_form(x: NDArrayF1, P: NDArrayF2, /) -> float: ...  # noqa: N803
+def quad_form(x: NDArrayF, P: NDArrayF, /) -> float: ...  # noqa: N803
 @overload
-def quad_form(x: Expression, P: NDArrayF2, /) -> Expression: ...  # noqa: N803
+def quad_form(x: Expression, P: NDArrayF, /) -> Expression: ...  # noqa: N803
 def quad_form(
-    x: NDArrayF1 | Expression,
-    P: NDArrayF2,  # noqa: N803
+    x: NDArrayF | Expression,
+    P: NDArrayF,  # noqa: N803
     /,
 ) -> float | Expression:
     """Compute the quadratic form of a vector & matrix."""
@@ -713,34 +713,34 @@ def sum_(
 
 
 @overload
-def sum_axis0(x: NDArrayF2, /) -> NDArrayF1: ...
+def sum_axis0(x: NDArrayF, /) -> NDArrayF: ...
 @overload
 def sum_axis0(x: DataFrame, /) -> SeriesF: ...
 @overload
 def sum_axis0(x: Expression, /) -> Expression: ...
 def sum_axis0(
-    x: NDArrayF2 | DataFrame | Expression, /
-) -> NDArrayF1 | SeriesF | Expression:
+    x: NDArrayF | DataFrame | Expression, /
+) -> NDArrayF | SeriesF | Expression:
     """Compute the sum along axis 0 of a quantity."""
     return _sum_axis_0_or_1(x, 0)
 
 
 @overload
-def sum_axis1(x: NDArrayF2, /) -> NDArrayF1: ...
+def sum_axis1(x: NDArrayF, /) -> NDArrayF: ...
 @overload
 def sum_axis1(x: DataFrame, /) -> SeriesF: ...
 @overload
 def sum_axis1(x: Expression, /) -> Expression: ...
 def sum_axis1(
-    x: NDArrayF2 | DataFrame | Expression, /
-) -> NDArrayF1 | SeriesF | Expression:
+    x: NDArrayF | DataFrame | Expression, /
+) -> NDArrayF | SeriesF | Expression:
     """Compute the sum along axis 1 of a quantity."""
     return _sum_axis_0_or_1(x, 1)
 
 
 def _sum_axis_0_or_1(
-    x: NDArrayF2 | DataFrame | Expression, axis: Literal[0, 1], /
-) -> NDArrayF1 | SeriesF | Expression:
+    x: NDArrayF | DataFrame | Expression, axis: Literal[0, 1], /
+) -> NDArrayF | SeriesF | Expression:
     try:
         from pandas import DataFrame
     except ModuleNotFoundError:  # pragma: no cover
