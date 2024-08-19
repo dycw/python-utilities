@@ -19,16 +19,14 @@ class DirectoryExistsError(Exception): ...
 
 
 @contextmanager
-def writer(
-    path: PathLike, /, *, validate: bool = False, overwrite: bool = False
-) -> Iterator[Path]:
+def writer(path: PathLike, /, *, overwrite: bool = False) -> Iterator[Path]:
     """Yield a path for atomically writing files to disk."""
     path = Path(path)
     parent = path.parent
     parent.mkdir(parents=True, exist_ok=True)
     name = path.name
     with TemporaryDirectory(suffix=".tmp", prefix=name, dir=parent) as temp_dir:
-        temp_path = Path(temp_dir, name, validate=validate)
+        temp_path = Path(temp_dir, name)
         try:
             yield temp_path
         except KeyboardInterrupt:

@@ -21,7 +21,6 @@ class TemporaryDirectory:
         prefix: str | None = None,
         dir: PathLike | None = None,  # noqa: A002
         ignore_cleanup_errors: bool = False,
-        validate: bool = False,
     ) -> None:
         super().__init__()
         self._temp_dir = _TemporaryDirectory(
@@ -30,11 +29,10 @@ class TemporaryDirectory:
             dir=dir,
             ignore_cleanup_errors=ignore_cleanup_errors,
         )
-        self._validate = validate
-        self.path = Path(self._temp_dir.name, validate=self._validate)
+        self.path = Path(self._temp_dir.name)
 
     def __enter__(self) -> Path:
-        return Path(self._temp_dir.__enter__(), validate=self._validate)
+        return Path(self._temp_dir.__enter__())
 
     def __exit__(
         self,
@@ -45,9 +43,9 @@ class TemporaryDirectory:
         self._temp_dir.__exit__(exc, val, tb)
 
 
-def gettempdir(*, validate: bool = False) -> Path:
+def gettempdir() -> Path:
     """Get the name of the directory used for temporary files."""
-    return Path(_gettempdir(), validate=validate)
+    return Path(_gettempdir())
 
 
 TEMP_DIR = gettempdir()

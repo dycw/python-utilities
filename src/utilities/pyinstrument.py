@@ -16,14 +16,14 @@ if TYPE_CHECKING:
 
 
 @contextmanager
-def profile(*, path: PathLike = PWD, validate: bool = False) -> Iterator[None]:
+def profile(*, path: PathLike = PWD) -> Iterator[None]:
     """Profile the contents of a block."""
     from utilities.atomicwrites import writer
 
     with Profiler() as profiler:
         yield
     now = get_now(time_zone="local")
-    filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html", validate=validate)
+    filename = Path(path, f"profile__{now:%Y%m%dT%H%M%S}.html")
     with writer(filename) as temp, temp.open(mode="w") as fh:
         _ = fh.write(profiler.output_html())
 
