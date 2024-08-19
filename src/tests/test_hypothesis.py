@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     booleans,
     composite,
     data,
-    dates,
     datetimes,
     floats,
     integers,
@@ -41,8 +40,6 @@ from numpy import (
     uint64,
     zeros,
 )
-from pandas import Timestamp
-from pandas.testing import assert_index_equal
 from pytest import mark, param, raises
 from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
@@ -57,20 +54,15 @@ from utilities.hypothesis import (
     assume_does_not_raise,
     bool_arrays,
     concatenated_arrays,
-    dates_pd,
-    datetimes_pd,
     datetimes_utc,
-    dicts_of_indexes,
     durations,
     float_arrays,
     floats_extra,
     git_repos,
     hashables,
-    indexes,
     int32s,
     int64s,
     int_arrays,
-    int_indexes,
     lists_fixed_length,
     longs,
     months,
@@ -82,27 +74,18 @@ from utilities.hypothesis import (
     slices,
     sqlite_engines,
     str_arrays,
-    str_indexes,
     temp_dirs,
     temp_paths,
     text_ascii,
     text_clean,
     text_printable,
     timedeltas_2w,
-    timestamps,
     uint32s,
     uint64s,
     versions,
 )
 from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
-from utilities.pandas import (
-    TIMESTAMP_MAX_AS_DATE,
-    TIMESTAMP_MAX_AS_DATETIME,
-    TIMESTAMP_MIN_AS_DATE,
-    TIMESTAMP_MIN_AS_DATETIME,
-    string,
-)
 from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
@@ -118,7 +101,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Sequence
+    from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
 
@@ -186,46 +169,6 @@ class TestConcatenatedArrays:
         assert array.shape == (m, n, p)
 
 
-class TestDatesPd:
-    @given(
-        data=data(),
-        min_value=dates(
-            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
-        ),
-        max_value=dates(
-            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
-        ),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.date, max_value: dt.date
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        date = data.draw(dates_pd(min_value=min_value, max_value=max_value))
-        _ = Timestamp(date)
-        assert min_value <= date <= max_value
-
-
-class TestDatetimesPd:
-    @given(
-        data=data(),
-        min_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        max_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
-        _ = Timestamp(datetime)
-        assert min_value <= datetime <= max_value
-
-
 class TestDatetimesUTC:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
     def test_main(
@@ -235,43 +178,6 @@ class TestDatetimesUTC:
         _ = assume(min_value <= max_value)
         datetime = data.draw(datetimes_utc(min_value=min_value, max_value=max_value))
         assert min_value <= datetime <= max_value
-
-
-class TestDictsOfIndexes:
-    @given(
-        data=data(),
-        min_dims=integers(1, 3),
-        max_dims=integers(1, 3) | none(),
-        min_side=integers(1, 10),
-        max_side=integers(1, 10) | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_dims: int,
-        max_dims: int | None,
-        min_side: int,
-        max_side: int | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            indexes = data.draw(
-                dicts_of_indexes(
-                    min_dims=min_dims,
-                    max_dims=max_dims,
-                    min_side=min_side,
-                    max_side=max_side,
-                )
-            )
-        ndims = len(indexes)
-        assert ndims >= min_dims
-        if max_dims is not None:
-            assert ndims <= max_dims
-        for index in indexes.values():
-            length = len(index)
-            assert length >= min_side
-            if max_side is not None:
-                assert length <= max_side
 
 
 class TestDurations:
@@ -487,68 +393,6 @@ class TestHashables:
     def test_main(self, *, data: DataObject) -> None:
         x = data.draw(hashables())
         _ = hash(x)
-
-
-class TestIndexes:
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_generic(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(
-            indexes(
-                elements=int64s(), dtype=int64, n=n, unique=unique, name=name, sort=sort
-            )
-        )
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
-
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_int(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
-        assert index.dtype == int64
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
-
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_str(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(str_indexes(n=n, unique=unique, name=name, sort=sort))
-        assert index.dtype == string
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
 
 
 class TestIntArrays:
@@ -1048,39 +892,6 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
-
-
-class TestTimestamps:
-    @given(
-        data=data(),
-        min_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        max_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        allow_nanoseconds=booleans(),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        max_value: dt.datetime,
-        allow_nanoseconds: bool,
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        timestamp = data.draw(
-            timestamps(
-                min_value=min_value,
-                max_value=max_value,
-                allow_nanoseconds=allow_nanoseconds,
-            )
-        )
-        assert min_value <= timestamp <= max_value
-        if not allow_nanoseconds:
-            assert cast(Any, timestamp).nanosecond == 0
 
 
 class TestUInt32s:

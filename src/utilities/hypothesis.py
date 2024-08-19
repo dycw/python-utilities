@@ -50,7 +50,6 @@ if TYPE_CHECKING:
 
     import redis
     from hypothesis.database import ExampleDatabase
-    from pandas import Timestamp
     from redis.commands.timeseries import TimeSeries
     from semver import Version
     from sqlalchemy import Engine, MetaData
@@ -58,7 +57,6 @@ if TYPE_CHECKING:
 
     from utilities.math import FloatFinPos, IntNonNeg
     from utilities.numpy import NDArrayA, NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.pandas import IndexA, IndexI, IndexS
     from utilities.types import Duration, Number
 
 
@@ -162,46 +160,6 @@ def concatenated_arrays(
 
 
 @composite
-def dates_pd(
-    _draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.date] | None = None,
-    max_value: MaybeSearchStrategy[dt.date] | None = None,
-) -> dt.date:
-    """Strategy for generating dates which can become Timestamps."""
-    from utilities.pandas import TIMESTAMP_MAX_AS_DATE, TIMESTAMP_MIN_AS_DATE
-
-    min_value_use = TIMESTAMP_MIN_AS_DATE if min_value is None else min_value
-    max_value_use = TIMESTAMP_MAX_AS_DATE if max_value is None else max_value
-    draw = lift_draw(_draw)
-    return draw(dates(min_value=draw(min_value_use), max_value=draw(max_value_use)))
-
-
-@composite
-def datetimes_pd(
-    _draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] | None = None,
-    max_value: MaybeSearchStrategy[dt.datetime] | None = None,
-) -> dt.datetime:
-    """Strategy for generating datetimes which can become Timestamps."""
-    from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME, TIMESTAMP_MIN_AS_DATETIME
-
-    draw = lift_draw(_draw)
-    min_value_use = TIMESTAMP_MIN_AS_DATETIME if min_value is None else min_value
-    max_value_use = TIMESTAMP_MAX_AS_DATETIME if max_value is None else max_value
-    datetime = draw(
-        datetimes(
-            min_value=draw(min_value_use).replace(tzinfo=None),
-            max_value=draw(max_value_use).replace(tzinfo=None),
-        )
-    )
-    return datetime.replace(tzinfo=UTC)
-
-
-@composite
 def datetimes_utc(
     _draw: DrawFn,
     /,
@@ -218,31 +176,6 @@ def datetimes_utc(
             timezones=just(UTC),
         )
     )
-
-
-@composite
-def dicts_of_indexes(
-    _draw: DrawFn,
-    /,
-    *,
-    min_dims: int = 1,
-    max_dims: int | None = None,
-    min_side: int = 1,
-    max_side: int | None = None,
-) -> dict[str, IndexI]:
-    """Strategy for generating dictionaries of indexes."""
-    from hypothesis.extra.numpy import array_shapes
-
-    draw = lift_draw(_draw)
-    shape = draw(
-        array_shapes(
-            min_dims=min_dims, max_dims=max_dims, min_side=min_side, max_side=max_side
-        )
-    )
-    ndims = len(shape)
-    dims = draw(lists_fixed_length(text_ascii(), ndims, unique=True))
-    indexes = (draw(int_indexes(n=length)) for length in shape)
-    return dict(zip(dims, indexes, strict=True))
 
 
 @composite
@@ -388,38 +321,6 @@ def git_repos(
     return path
 
 
-@composite
-def indexes(
-    _draw: DrawFn,
-    /,
-    *,
-    elements: SearchStrategy[Any] | None = None,
-    dtype: Any = None,
-    n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = True,
-    name: MaybeSearchStrategy[Hashable] = None,
-    sort: MaybeSearchStrategy[bool] = False,
-) -> IndexA:
-    """Strategy for generating Indexes."""
-    from hypothesis.extra.pandas import indexes as _indexes
-
-    draw = lift_draw(_draw)
-    n_ = draw(n)
-    index = draw(
-        _indexes(
-            elements=elements,
-            dtype=dtype,
-            min_size=n_,
-            max_size=n_,
-            unique=draw(unique),
-        )
-    )
-    index = index.rename(draw(name))
-    if draw(sort):
-        return index.sort_values()
-    return index
-
-
 def hashables() -> SearchStrategy[Hashable]:
     """Strategy for generating hashable elements."""
     return booleans() | integers() | none() | text_ascii()
@@ -451,21 +352,6 @@ def int_arrays(
         int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
     )
     return draw(strategy)
-
-
-def int_indexes(
-    *,
-    n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = True,
-    name: MaybeSearchStrategy[Hashable] = None,
-    sort: MaybeSearchStrategy[bool] = False,
-) -> SearchStrategy[IndexI]:
-    """Strategy for generating integer Indexes."""
-    from numpy import int64
-
-    return indexes(
-        elements=int64s(), dtype=int64, n=n, unique=unique, name=name, sort=sort
-    )
 
 
 def int32s(
@@ -754,31 +640,6 @@ def str_arrays(
     return draw(strategy)
 
 
-@composite
-def str_indexes(
-    _draw: DrawFn,
-    /,
-    *,
-    min_size: MaybeSearchStrategy[int] = 0,
-    max_size: MaybeSearchStrategy[int | None] = None,
-    n: MaybeSearchStrategy[int] = _INDEX_LENGTHS,
-    unique: MaybeSearchStrategy[bool] = True,
-    name: MaybeSearchStrategy[Hashable] = None,
-    sort: MaybeSearchStrategy[bool] = False,
-) -> IndexS:
-    """Strategy for generating string Indexes."""
-    from utilities.pandas import string
-
-    draw = lift_draw(_draw)
-    elements = text_ascii(min_size=min_size, max_size=max_size)
-    index = draw(
-        indexes(
-            elements=elements, dtype=object, n=n, unique=unique, name=name, sort=sort
-        )
-    )
-    return index.astype(string)
-
-
 _TEMP_DIR_HYPOTHESIS = Path(TEMP_DIR, "hypothesis")
 
 
@@ -867,34 +728,6 @@ def timedeltas_2w(
     return draw(
         timedeltas(min_value=draw(min_value_use), max_value=draw(max_value_use))
     )
-
-
-@composite
-def timestamps(
-    _draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] | None = None,
-    max_value: MaybeSearchStrategy[dt.datetime] | None = None,
-    allow_nanoseconds: MaybeSearchStrategy[bool] = False,
-) -> Timestamp:
-    """Strategy for generating Timestamps."""
-    from pandas import Timedelta, Timestamp
-
-    from utilities.pandas import TIMESTAMP_MAX_AS_DATETIME, TIMESTAMP_MIN_AS_DATETIME
-
-    draw = lift_draw(_draw)
-    min_value_ = TIMESTAMP_MIN_AS_DATETIME if min_value is None else draw(min_value)
-    max_value_ = TIMESTAMP_MAX_AS_DATETIME if max_value is None else draw(max_value)
-    datetime = draw(datetimes_pd(min_value=min_value_, max_value=max_value_))
-    timestamp = cast(Timestamp, Timestamp(datetime))
-    if draw(allow_nanoseconds):
-        nanoseconds = draw(integers(-999, 999))
-        timedelta = Timedelta(nanoseconds=nanoseconds)
-        timestamp = cast(Timestamp, timestamp + timedelta)
-        _ = assume(min_value_ <= timestamp.floor("us"))
-        _ = assume(timestamp.ceil("us") <= max_value_)
-    return timestamp
 
 
 def uint32s(
@@ -1014,20 +847,15 @@ __all__ = [
     "assume_does_not_raise",
     "bool_arrays",
     "concatenated_arrays",
-    "dates_pd",
-    "datetimes_pd",
     "datetimes_utc",
-    "dicts_of_indexes",
     "durations",
     "float_arrays",
     "floats_extra",
     "git_repos",
     "hashables",
-    "indexes",
     "int32s",
     "int64s",
     "int_arrays",
-    "int_indexes",
     "lift_draw",
     "lists_fixed_length",
     "longs",
@@ -1039,14 +867,12 @@ __all__ = [
     "slices",
     "sqlite_engines",
     "str_arrays",
-    "str_indexes",
     "temp_dirs",
     "temp_paths",
     "text_ascii",
     "text_clean",
     "text_printable",
     "timedeltas_2w",
-    "timestamps",
     "uint32s",
     "uint64s",
     "versions",
