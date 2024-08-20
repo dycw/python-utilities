@@ -66,6 +66,7 @@ types
 typing
 typed-settings
 warnings
+weakref
 whenever
 zipfile
 zoneinfo
