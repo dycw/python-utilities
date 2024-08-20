@@ -159,8 +159,6 @@ def durations(
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating durations."""
-    from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
-
     draw = lift_draw(_draw)
     min_number_ = draw(min_number)
     max_number_ = draw(max_number)
@@ -177,6 +175,8 @@ def durations(
         allow_infinity=False,
     )
     if two_way:
+        from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
+
         global_min_timedelta = MIN_TWO_WAY_TIMEDELTA
         global_max_timedelta = MAX_TWO_WAY_TIMEDELTA
     else:
