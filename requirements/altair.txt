@@ -80,5 +80,7 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   altair
+vl-convert-python==1.6.0
+    # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
