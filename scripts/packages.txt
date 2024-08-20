@@ -1,5 +1,6 @@
 altair
 astor
+asyncio
 atomicwrites
 atools
 cachetools
@@ -17,6 +18,7 @@ functools
 getpass
 git
 hashlib
+http
 humps
 hypothesis
 ipython
@@ -48,6 +50,7 @@ reprlib
 scipy
 scripts-pypi-server
 sentinel
+slack-sdk
 socket
 sqlalchemy
 sqlalchemy-polars

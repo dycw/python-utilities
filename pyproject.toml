@@ -98,6 +98,7 @@ zzz-test-altair = [
   "img2pdf >= 0.5.1, < 0.6",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
+zzz-test-asyncio = []
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
@@ -132,6 +133,7 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
+zzz-test-http = []
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "numpy >= 2.0.1, < 2.1",
@@ -198,6 +200,7 @@ zzz-test-scripts-pypi-server = [
   "typed-settings >= 24.4.0, < 24.5",
 ]
 zzz-test-sentinel = []
+zzz-test-slack-sdk = ["slack-sdk >= 3.31.0, < 3.32"]
 zzz-test-socket = []
 zzz-test-sqlalchemy = [
   "aiosqlite >= 0.20.0, < 0.21",
@@ -278,7 +281,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = ["src/utilities/clean_dir/__main__.py", "src/utilities/slack_sdk.py", "src/utilities/streamlit.py"]
+omit = ["src/utilities/streamlit.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 
