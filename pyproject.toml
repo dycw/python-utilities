@@ -232,6 +232,7 @@ zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = [
+  "loguru >= 0.7.2, < 0.8",
   "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
 ]
 zzz-test-text = []
@@ -241,6 +242,7 @@ zzz-test-typed-settings = [
   "click >= 8.1.7, < 8.2",
   "sqlalchemy >= 2.0.32, < 2.1",
   "typed-settings >= 24.4.0, < 24.5",
+  "whenever >= 0.6.7, < 0.7",
 ]
 zzz-test-types = []
 zzz-test-typing = []
