@@ -139,6 +139,7 @@ zzz-test-hashlib = []
 zzz-test-http = []
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
+  "aiosqlite >= 0.20.0, < 0.21",
   "numpy >= 2.0.1, < 2.1",
   "redis >= 5.0.8, < 5.1",
   "sqlalchemy >= 2.0.32, < 2.1",
