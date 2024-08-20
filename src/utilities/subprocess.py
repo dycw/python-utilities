@@ -34,7 +34,7 @@ def get_shell_output(
             activate = one(cwd.rglob("activate"))
         cmd = f"source {activate}; {cmd}"  # skipif-not-windows
 
-    with temp_environ(env):  # skipif-windows
+    with temp_environ(env):  # pragma: no cover
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
