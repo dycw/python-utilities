@@ -54,6 +54,7 @@ slack-sdk
 socket
 sqlalchemy
 sqlalchemy-polars
+streamlit
 subprocess
 sys
 tempfile
