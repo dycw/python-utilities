@@ -8,8 +8,14 @@ from typing_extensions import override
 
 from utilities.errors import ImpossibleCaseError
 
-MAX_LONG = 2**31 - 1
-MIN_LONG = -(2**31)
+MIN_INT8, MAX_INT8 = -(2 ** (8 - 1)), 2 ** (8 - 1) - 1
+MIN_INT16, MAX_INT16 = -(2 ** (16 - 1)), 2 ** (16 - 1) - 1
+MIN_INT32, MAX_INT32 = -(2 ** (32 - 1)), 2 ** (32 - 1) - 1
+MIN_INT64, MAX_INT64 = -(2 ** (64 - 1)), 2 ** (64 - 1) - 1
+MIN_UINT8, MAX_UINT8 = 0, 2**8 - 1
+MIN_UINT16, MAX_UINT16 = 0, 2**16 - 1
+MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
+MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 
 # functions
 
@@ -465,8 +471,22 @@ class _CheckIntegerMaxError(CheckIntegerError):
 
 
 __all__ = [
-    "MAX_LONG",
-    "MIN_LONG",
+    "MAX_INT8",
+    "MAX_INT16",
+    "MAX_INT32",
+    "MAX_INT64",
+    "MAX_UINT8",
+    "MAX_UINT16",
+    "MAX_UINT32",
+    "MAX_UINT64",
+    "MIN_INT8",
+    "MIN_INT16",
+    "MIN_INT32",
+    "MIN_INT64",
+    "MIN_UINT8",
+    "MIN_UINT16",
+    "MIN_UINT32",
+    "MIN_UINT64",
     "CheckIntegerError",
     "check_integer",
     "is_at_least",

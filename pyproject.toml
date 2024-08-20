@@ -53,7 +53,7 @@ dev = [
   "slack-sdk >= 3.31.0, < 3.32",
   "sqlalchemy >= 2.0.32, < 2.1",
   "streamlit >= 1.37.1, < 1.38",
-  "tenacity >= 8.5.0, < 9.0",  # streamlit >= 8.1.0, < 9
+  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
   "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.4.0, < 24.5",
   "tzdata >= 2024.1, < 2024.2",
@@ -154,7 +154,7 @@ zzz-test-loguru = [
   "loguru >= 0.7.2, < 0.8",
   "pytest-asyncio >= 0.23.8, < 0.24",
 ]
-zzz-test-math = []
+zzz-test-math = ["numpy >= 2.0.1, < 2.1"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.4.0, < 10.5"]
@@ -216,7 +216,7 @@ zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = [
-  "tenacity >= 8.5.0",  # luigi sets >=8, <9
+  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
 ]
 zzz-test-text = []
 zzz-test-timer = []
@@ -227,9 +227,7 @@ zzz-test-typed-settings = [
   "typed-settings >= 24.4.0, < 24.5",
 ]
 zzz-test-whenever = ["whenever >= 0.6.7, < 0.7"]
-zzz-test-zoneinfo = [
-  "tzdata >= 2024.1, < 2024.2",
-]
+zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
 
 [project.scripts]
 start-pypi-server = "utilities.scripts.pypi_server:main"
@@ -325,10 +323,8 @@ addopts = [
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
-  "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
-  "ignore:The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025:DeprecationWarning",
-  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
+  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]

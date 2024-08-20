@@ -2,13 +2,30 @@ from __future__ import annotations
 
 from math import inf, nan
 from re import escape
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import integers
+from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
 from utilities.math import (
+    MAX_INT8,
+    MAX_INT16,
+    MAX_INT32,
+    MAX_INT64,
+    MAX_UINT8,
+    MAX_UINT16,
+    MAX_UINT32,
+    MAX_UINT64,
+    MIN_INT8,
+    MIN_INT16,
+    MIN_INT32,
+    MIN_INT64,
+    MIN_UINT8,
+    MIN_UINT16,
+    MIN_UINT32,
+    MIN_UINT64,
     CheckIntegerError,
     NumberOfDecimalsError,
     check_integer,
@@ -672,29 +689,24 @@ class TestIsZeroOrNonMicro:
         assert is_zero_or_non_micro_or_nan(x, abs_tol=1e-8) is expected
 
 
-class TestOrderOfMagnitude:
+class TestMaxLongAndDouble:
     @mark.parametrize(
-        ("x", "exp_float", "exp_int"),
+        ("min_value", "max_value", "dtype"),
         [
-            param(0.25, -0.60206, -1),
-            param(0.5, -0.30103, 0),
-            param(0.75, -0.1249387, 0),
-            param(1.0, 0.0, 0),
-            param(5.0, 0.69897, 1),
-            param(10.0, 1.0, 1),
-            param(50.0, 1.69897, 2),
-            param(100.0, 2.0, 2),
+            param(MIN_INT8, MAX_INT8, int8),
+            param(MIN_INT16, MAX_INT16, int16),
+            param(MIN_INT32, MAX_INT32, int32),
+            param(MIN_INT64, MAX_INT64, int64),
+            param(MIN_UINT8, MAX_UINT8, uint8),
+            param(MIN_UINT16, MAX_UINT16, uint16),
+            param(MIN_UINT32, MAX_UINT32, uint32),
+            param(MIN_UINT64, MAX_UINT64, uint64),
         ],
     )
-    @mark.parametrize("sign", [param(1.0), param(-1.0)])
-    def test_main(
-        self, *, sign: float, x: float, exp_float: float, exp_int: int
-    ) -> None:
-        x_use = sign * x
-        res_float = order_of_magnitude(x_use)
-        assert res_float == approx(exp_float)
-        res_int = order_of_magnitude(x_use, round_=True)
-        assert res_int == exp_int
+    def test_main(self, *, min_value: int, max_value: int, dtype: Any) -> None:
+        info = iinfo(dtype)
+        assert info.min == min_value
+        assert info.max == max_value
 
 
 class TestNumberOfDecimals:
@@ -730,3 +742,28 @@ class TestNumberOfDecimals:
             ),
         ):
             _ = number_of_decimals(x)
+
+
+class TestOrderOfMagnitude:
+    @mark.parametrize(
+        ("x", "exp_float", "exp_int"),
+        [
+            param(0.25, -0.60206, -1),
+            param(0.5, -0.30103, 0),
+            param(0.75, -0.1249387, 0),
+            param(1.0, 0.0, 0),
+            param(5.0, 0.69897, 1),
+            param(10.0, 1.0, 1),
+            param(50.0, 1.69897, 2),
+            param(100.0, 2.0, 2),
+        ],
+    )
+    @mark.parametrize("sign", [param(1.0), param(-1.0)])
+    def test_main(
+        self, *, sign: float, x: float, exp_float: float, exp_int: int
+    ) -> None:
+        x_use = sign * x
+        res_float = order_of_magnitude(x_use)
+        assert res_float == approx(exp_float)
+        res_int = order_of_magnitude(x_use, round_=True)
+        assert res_int == exp_int

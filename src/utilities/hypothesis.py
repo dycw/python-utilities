@@ -35,10 +35,11 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
+from numpy.random import RandomState
 from typing_extensions import override
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
-from utilities.math import MAX_LONG, MIN_LONG
+from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
@@ -307,14 +308,13 @@ def int_arrays(
 ) -> NDArrayI:
     """Strategy for generating arrays of ints."""
     from hypothesis.extra.numpy import array_shapes, arrays
-    from numpy import iinfo, int64
+    from numpy import int64
 
     draw = lift_draw(_draw)
     shape_use = array_shapes() if shape is None else shape
-    info = iinfo(int64)
     min_value_, max_value_ = draw(min_value), draw(max_value)
-    min_value_use = info.min if min_value_ is None else min_value_
-    max_value_use = info.max if max_value_ is None else max_value_
+    min_value_use = MIN_INT64 if min_value_ is None else min_value_
+    max_value_use = MAX_INT64 if max_value_ is None else max_value_
     elements = integers(min_value=min_value_use, max_value=max_value_use)
     strategy: SearchStrategy[NDArrayI] = arrays(
         int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
@@ -322,41 +322,19 @@ def int_arrays(
     return draw(strategy)
 
 
-def int32s(
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-) -> SearchStrategy[int]:
-    """Strategy for generating int32s."""
-    from numpy import int32
-
-    return _fixed_width_ints(int32, min_value=min_value, max_value=max_value)
-
-
-def int64s(
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-) -> SearchStrategy[int]:
-    """Strategy for generating int64s."""
-    from numpy import int64
-
-    return _fixed_width_ints(int64, min_value=min_value, max_value=max_value)
-
-
 @composite
-def longs(
+def int32s(
     _draw: DrawFn,
     /,
     *,
     min_value: MaybeSearchStrategy[int | None] = None,
     max_value: MaybeSearchStrategy[int | None] = None,
 ) -> int:
-    """Strategy for generating longs (long integers)."""
+    """Strategy for generating int32s."""
     draw = lift_draw(_draw)
     min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
-    min_value_ = MIN_LONG if min_value_ is None else max(MIN_LONG, min_value_)
-    max_value_ = MAX_LONG if max_value_ is None else min(MAX_LONG, max_value_)
+    min_value_ = MIN_INT32 if min_value_ is None else max(MIN_INT32, min_value_)
+    max_value_ = MAX_INT32 if max_value_ is None else min(MAX_INT32, max_value_)
     return draw(integers(min_value_, max_value_))
 
 
@@ -416,6 +394,17 @@ def months(
     max_date = draw(max_value).to_date()
     date = draw(dates(min_value=min_date, max_value=max_date))
     return date_to_month(date)
+
+
+@composite
+def random_states(
+    _draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
+) -> RandomState:
+    """Strategy for generating `numpy` random states."""
+    draw = lift_draw(_draw)
+    seed_ = draw(seed)
+    seed_use = draw(integers(0, MAX_UINT32)) if seed_ is None else seed_
+    return RandomState(seed=seed_use)
 
 
 @composite
@@ -704,26 +693,6 @@ def _draw_text(
     return drawn
 
 
-@composite
-def _fixed_width_ints(
-    _draw: DrawFn,
-    dtype: Any,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
-) -> int:
-    """Strategy for generating int64s."""
-    from numpy import iinfo
-
-    draw = lift_draw(_draw)
-    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
-    info = iinfo(dtype)
-    min_value_ = info.min if min_value_ is None else max(info.min, min_value_)
-    max_value = info.max if max_value_ is None else min(info.max, max_value_)
-    return draw(integers(min_value_, max_value))
-
-
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
@@ -737,12 +706,11 @@ __all__ = [
     "git_repos",
     "hashables",
     "int32s",
-    "int64s",
     "int_arrays",
     "lift_draw",
     "lists_fixed_length",
-    "longs",
     "months",
+    "random_states",
     "redis_clients",
     "redis_time_series",
     "setup_hypothesis_profiles",
