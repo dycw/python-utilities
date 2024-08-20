@@ -82,8 +82,6 @@ if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
     from zoneinfo import ZoneInfo
 
-    from utilities.types import IterableStrs
-
 
 DatetimeUTC = Datetime(time_zone="UTC")
 
@@ -110,7 +108,7 @@ def check_polars_dataframe(
     df: DataFrame,
     /,
     *,
-    columns: IterableStrs | None = None,
+    columns: Iterable[str] | None = None,
     dtypes: Iterable[PolarsDataType] | None = None,
     height: int | tuple[int, float] | None = None,
     min_height: int | None = None,
@@ -155,7 +153,8 @@ class CheckPolarsDataFrameError(Exception):
     df: DataFrame
 
 
-def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> None:
+def _check_polars_dataframe_columns(df: DataFrame, columns: Iterable[str], /) -> None:
+    columns = list(columns)
     try:
         check_iterables_equal(df.columns, columns)
     except CheckIterablesEqualError as error:
@@ -164,7 +163,7 @@ def _check_polars_dataframe_columns(df: DataFrame, columns: IterableStrs, /) -> 
 
 @dataclass(kw_only=True)
 class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
-    columns: IterableStrs
+    columns: Sequence[str]
 
     @override
     def __str__(self) -> str:
@@ -510,7 +509,7 @@ def is_null_struct_series(series: Series, /) -> Series:
 
 
 def _is_null_struct_series_one(
-    dtype: Struct, /, *, root: Sequence[str] = ()
+    dtype: Struct, /, *, root: Iterable[str] = ()
 ) -> Iterator[Sequence[str]]:
     for field in dtype.fields:
         name = field.name
@@ -522,7 +521,7 @@ def _is_null_struct_series_one(
             yield path
 
 
-def _is_null_struct_to_expr(path: Sequence[str], /) -> Expr:
+def _is_null_struct_to_expr(path: Iterable[str], /) -> Expr:
     head, *tail = path
     return reduce(_is_null_struct_to_expr_reducer, tail, col(head)).is_null()
 
@@ -543,14 +542,15 @@ class IsNullStructSeriesError(Exception):
 def join(
     df: DataFrame,
     *dfs: DataFrame,
-    on: str | Expr | Sequence[str | Expr],
+    on: MaybeIterable[str | Expr],
     how: JoinStrategy = "inner",
     validate: JoinValidation = "m:m",
 ) -> DataFrame:
     """Join a set of DataFrames."""
+    on_use = on if isinstance(on, str | Expr) else list(on)
 
     def inner(left: DataFrame, right: DataFrame, /) -> DataFrame:
-        return left.join(right, on=on, how=how, validate=validate)
+        return left.join(right, on=on_use, how=how, validate=validate)
 
     return reduce(inner, chain([df], dfs))
 

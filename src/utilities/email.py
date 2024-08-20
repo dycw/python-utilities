@@ -3,20 +3,21 @@ from __future__ import annotations
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 from smtplib import SMTP
 from typing import TYPE_CHECKING
 
-from utilities.pathlib import ensure_path
+from utilities.more_itertools import always_iterable
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
-    from utilities.types import IterableStrs, PathLike
+    from utilities.types import PathLike
 
 
 def send_email(
     from_: str,
-    to: IterableStrs,
+    to: str | Sequence[str],
     /,
     *,
     subject: str | None = None,
@@ -25,12 +26,11 @@ def send_email(
     host: str = "",
     port: int = 0,
     attachments: Iterable[PathLike] | None = None,
-    validate: bool = False,
 ) -> None:
     """Send an email."""
     message = MIMEMultipart()
     message["From"] = from_
-    message["To"] = ",".join(to)
+    message["To"] = ",".join(always_iterable(to))
     if subject is not None:
         message["Subject"] = subject
     if contents is not None:
@@ -38,16 +38,14 @@ def send_email(
         message.attach(text)
     if attachments is not None:
         for attachment in attachments:
-            _add_attachment(attachment, message, validate=validate)
+            _add_attachment(attachment, message)
     with SMTP(host=host, port=port) as smtp:
         _ = smtp.send_message(message)
 
 
-def _add_attachment(
-    path: PathLike, message: MIMEMultipart, /, *, validate: bool = False
-) -> None:
+def _add_attachment(path: PathLike, message: MIMEMultipart, /) -> None:
     """Add an attachment to an email."""
-    path = ensure_path(path, validate=validate)
+    path = Path(path)
     name = path.name
     with path.open(mode="rb") as fh:
         part = MIMEApplication(fh.read(), Name=name)

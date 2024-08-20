@@ -5,14 +5,13 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import click
-from click import Context, Parameter, ParamType, option
+from click import Context, Parameter, ParamType
 from typing_extensions import override
 
 import utilities.types
 from utilities.datetime import ParseMonthError, ensure_month
 from utilities.enum import ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
-from utilities.logging import LogLevel
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
 
@@ -383,40 +382,6 @@ class ZonedDateTime(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
-log_level_option = option(
-    "-ll",
-    "--log-level",
-    type=Enum(LogLevel, case_sensitive=False),
-    default=LogLevel.INFO,
-    show_default=True,
-    help="The logging level",
-)
-
-
-# luigi
-
-
-(local_scheduler_option_default_local, local_scheduler_option_default_central) = (
-    option(
-        "-ls/-nls",
-        "--local-scheduler/--no-local-scheduler",
-        is_flag=True,
-        default=default,
-        show_default=True,
-        help=f"Pass {flag!r} to use the {desc} scheduler",
-    )
-    for default, flag, desc in [(True, "-nls", "central"), (False, "-ls", "local")]
-)
-workers_option = option(
-    "-w",
-    "--workers",
-    type=int,
-    default=None,
-    show_default=True,
-    help="The number of workers to use",
-)
-
-
 # sqlalchemy
 
 
@@ -457,8 +422,4 @@ __all__ = [
     "Time",
     "Timedelta",
     "ZonedDateTime",
-    "local_scheduler_option_default_central",
-    "local_scheduler_option_default_local",
-    "log_level_option",
-    "workers_option",
 ]

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from functools import cache, wraps
+from inspect import iscoroutinefunction
 from os import environ
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from utilities.datetime import duration_to_float, get_now
 from utilities.hashlib import md5_hash
-from utilities.pathlib import ensure_path
 from utilities.platform import (
     IS_LINUX,
     IS_MAC,
@@ -15,12 +16,12 @@ from utilities.platform import (
     IS_NOT_WINDOWS,
     IS_WINDOWS,
 )
-from utilities.types import Duration, IterableStrs, PathLike, is_function_async
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-    from pathlib import Path
+    from collections.abc import Callable, Iterable, Sequence
+
+    from utilities.types import Duration, PathLike
 
 try:  # WARNING: this package cannot use unguarded `pytest` imports
     from _pytest.config import Config
@@ -44,7 +45,7 @@ else:
     skipif_not_linux = mark.skipif(IS_NOT_LINUX, reason="Skipped for non-Linux")
 
 
-def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
+def add_pytest_addoption(parser: Parser, options: Sequence[str], /) -> None:
     """Add the `--slow`, etc options to pytest.
 
     Usage:
@@ -62,7 +63,7 @@ def add_pytest_addoption(parser: Parser, options: IterableStrs, /) -> None:
 
 
 def add_pytest_collection_modifyitems(
-    config: Config, items: Iterable[Function], options: IterableStrs, /
+    config: Config, items: Iterable[Function], options: Sequence[str], /
 ) -> None:
     """Add the @mark.skips as necessary.
 
@@ -95,28 +96,19 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 
 def throttle(
-    *,
-    root: PathLike | None = None,
-    duration: Duration = 1.0,
-    on_try: bool = False,
-    validate: bool = False,
+    *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
 ) -> Any:
     """Throttle a test. On success by default, on try otherwise."""
-    if root is None:
-        root_use = ensure_path(".pytest_cache", "throttle", validate=validate)
-    else:
-        root_use = ensure_path(root, validate=validate)
+    root_use = Path(".pytest_cache", "throttle") if root is None else Path(root)
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         """Throttle a test function/method."""
-        if is_function_async(func):
+        if iscoroutinefunction(func):
 
             @wraps(func)
             async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
                 """Call the throttled async test function/method."""
-                path, now = _throttle_path_and_now(
-                    root_use, duration=duration, validate=validate
-                )
+                path, now = _throttle_path_and_now(root_use, duration=duration)
                 if on_try:
                     _throttle_write(path, now)
                     return await func(*args, **kwargs)
@@ -129,9 +121,7 @@ def throttle(
         @wraps(func)
         def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
             """Call the throttled sync test function/method."""
-            path, now = _throttle_path_and_now(
-                root_use, duration=duration, validate=validate
-            )
+            path, now = _throttle_path_and_now(root_use, duration=duration)
             if on_try:
                 _throttle_write(path, now)
                 return func(*args, **kwargs)
@@ -145,10 +135,10 @@ def throttle(
 
 
 def _throttle_path_and_now(
-    root: Path, /, *, duration: Duration = 1.0, validate: bool = False
+    root: Path, /, *, duration: Duration = 1.0
 ) -> tuple[Path, float]:
     test = environ["PYTEST_CURRENT_TEST"]
-    path = ensure_path(root, _throttle_md5_hash(test), validate=validate)
+    path = Path(root, _throttle_md5_hash(test))
     if path.exists():
         with path.open(mode="r") as fh:
             contents = fh.read()

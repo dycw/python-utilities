@@ -15,10 +15,6 @@ anyio==4.4.0
     # via httpx
 argcomplete==3.5.0
     # via nox
-asciitree==0.3.3
-    # via zarr
-ast-comments==1.2.2
-    # via dycw-utilities (pyproject.toml)
 astor==0.8.1
     # via dycw-utilities (pyproject.toml)
 async-timeout==4.0.3
@@ -31,25 +27,13 @@ attrs==24.2.0
     # via
     #   hypothesis
     #   jsonschema
-    #   outcome
     #   referencing
-    #   trio
 backports-tarfile==1.2.0
     # via jaraco-context
 basedpyright==1.16.0
     # via dycw-utilities (pyproject.toml)
-beartype==0.18.5
-    # via dycw-utilities (pyproject.toml)
-beautifulsoup4==4.12.3
-    # via dycw-utilities (pyproject.toml)
-bleach==6.1.0
-    # via panel
 blinker==1.8.2
     # via streamlit
-bokeh==3.4.3
-    # via
-    #   holoviews
-    #   panel
 bottleneck==1.4.0
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
@@ -63,7 +47,6 @@ certifi==2024.7.4
     #   httpcore
     #   httpx
     #   requests
-    #   selenium
 cffi==1.17.0
     # via cryptography
 charset-normalizer==3.3.2
@@ -76,14 +59,10 @@ click==8.1.7
     #   hatch
     #   streamlit
     #   userpath
-colorcet==3.1.0
-    # via holoviews
 colorlog==6.8.2
     # via
     #   nox
     #   optuna
-contourpy==1.2.1
-    # via bokeh
 coverage==7.6.1
     # via
     #   coverage-conditional-plugin
@@ -102,26 +81,18 @@ deprecated==1.2.14
     # via pikepdf
 distlib==0.3.8
     # via virtualenv
-docutils==0.21.2
-    # via python-daemon
 ecos==2.0.14
     # via cvxpy
 execnet==2.1.1
     # via pytest-xdist
-fasteners==0.19
-    # via zarr
 filelock==3.15.4
     # via virtualenv
 fonttools==4.53.1
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
-freezegun==1.5.1
-    # via dycw-utilities (pyproject.toml)
 frozendict==2.4.4
-    # via
-    #   dycw-utilities (pyproject.toml)
-    #   atools
+    # via atools
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
@@ -129,15 +100,11 @@ gitpython==3.1.43
 greenlet==3.0.3
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
-    # via
-    #   httpcore
-    #   wsproto
+    # via httpcore
 hatch==1.12.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.25.0
     # via hatch
-holoviews==1.19.1
-    # via dycw-utilities (pyproject.toml)
 httpcore==1.0.5
     # via httpx
 httpx==0.27.0
@@ -152,10 +119,9 @@ idna==3.7
     #   httpx
     #   hyperlink
     #   requests
-    #   trio
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
-importlib-metadata==8.2.0
+importlib-metadata==8.3.0
     # via keyring
 importlib-resources==6.4.3
     # via pypiserver
@@ -163,14 +129,13 @@ iniconfig==2.0.0
     # via pytest
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==5.3.0
+jaraco-context==6.0.0
     # via keyring
 jaraco-functools==4.0.2
     # via keyring
 jinja2==3.1.4
     # via
     #   altair
-    #   bokeh
     #   pydeck
 jsonschema==4.23.0
     # via altair
@@ -178,37 +143,22 @@ jsonschema-specifications==2023.12.1
     # via jsonschema
 keyring==25.3.0
     # via hatch
-linkify-it-py==2.0.3
-    # via panel
 llvmlite==0.43.0
     # via numba
-lockfile==0.12.2
-    # via python-daemon
 loguru==0.7.2
-    # via dycw-utilities (pyproject.toml)
-luigi==3.5.1
     # via dycw-utilities (pyproject.toml)
 lxml==5.3.0
     # via pikepdf
 mako==1.3.5
     # via alembic
-markdown==3.7
-    # via panel
 markdown-it-py==3.0.0
-    # via
-    #   mdit-py-plugins
-    #   panel
-    #   rich
+    # via rich
 markupsafe==2.1.5
     # via
     #   jinja2
     #   mako
-mdit-py-plugins==0.4.1
-    # via panel
 mdurl==0.1.2
     # via markdown-it-py
-mdutils==1.6.0
-    # via dycw-utilities (pyproject.toml)
 memory-profiler==0.61.0
     # via dycw-utilities (pyproject.toml)
 more-itertools==10.4.0
@@ -228,21 +178,15 @@ numba==0.60.0
     # via numbagg
 numbagg==0.8.1
     # via dycw-utilities (pyproject.toml)
-numcodecs==0.13.0
-    # via zarr
 numpy==2.0.1
     # via
     #   dycw-utilities (pyproject.toml)
-    #   bokeh
     #   bottleneck
     #   clarabel
-    #   contourpy
     #   cvxpy
     #   ecos
-    #   holoviews
     #   numba
     #   numbagg
-    #   numcodecs
     #   optuna
     #   osqp
     #   pandas
@@ -253,21 +197,16 @@ numpy==2.0.1
     #   scs
     #   streamlit
     #   xarray
-    #   zarr
 optuna==3.6.1
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post1
     # via cvxpy
-outcome==1.3.0.post0
-    # via trio
 packaging==24.1
     # via
     #   altair
-    #   bokeh
     #   coverage-conditional-plugin
     #   hatch
     #   hatchling
-    #   holoviews
     #   nox
     #   optuna
     #   pikepdf
@@ -278,33 +217,19 @@ packaging==24.1
     #   xarray
 pandas==2.2.2
     # via
-    #   dycw-utilities (pyproject.toml)
-    #   bokeh
-    #   holoviews
-    #   panel
     #   streamlit
     #   vegafusion
     #   xarray
-panel==1.4.5
-    # via holoviews
-param==2.1.1
-    # via
-    #   holoviews
-    #   panel
-    #   pyviz-comms
 passlib==1.7.4
     # via pypiserver
 pathspec==0.12.1
     # via hatchling
-pathvalidate==3.2.0
-    # via dycw-utilities (pyproject.toml)
 pexpect==4.9.0
     # via hatch
 pikepdf==9.1.1
     # via img2pdf
 pillow==10.4.0
     # via
-    #   bokeh
     #   fpdf2
     #   img2pdf
     #   pikepdf
@@ -329,7 +254,6 @@ protobuf==5.27.3
     #   vegafusion
 psutil==6.0.0
     # via
-    #   dycw-utilities (pyproject.toml)
     #   memory-profiler
     #   vegafusion
 psycopg2-binary==2.9.9
@@ -356,13 +280,10 @@ pyinstrument==4.7.2
     # via dycw-utilities (pyproject.toml)
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
-pysocks==1.7.1
-    # via urllib3
 pytest==8.3.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
-    #   pytest-check
     #   pytest-cov
     #   pytest-instafail
     #   pytest-only
@@ -370,8 +291,6 @@ pytest==8.3.2
     #   pytest-rerunfailures
     #   pytest-xdist
 pytest-asyncio==0.23.8
-    # via dycw-utilities (pyproject.toml)
-pytest-check==2.3.1
     # via dycw-utilities (pyproject.toml)
 pytest-cov==5.0.0
     # via dycw-utilities (pyproject.toml)
@@ -385,25 +304,14 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 pytest-xdist==3.6.1
     # via dycw-utilities (pyproject.toml)
-python-daemon==3.0.1
-    # via luigi
 python-dateutil==2.9.0.post0
-    # via
-    #   freezegun
-    #   luigi
-    #   pandas
+    # via pandas
 python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.3
-    # via
-    #   holoviews
-    #   panel
 pyyaml==6.0.2
-    # via
-    #   bokeh
-    #   optuna
+    # via optuna
 qdldl==0.1.7.post4
     # via osqp
 redis==5.0.8
@@ -413,9 +321,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
-    # via
-    #   panel
-    #   streamlit
+    # via streamlit
 rich==13.7.1
     # via
     #   dycw-utilities (pyproject.toml)
@@ -436,18 +342,12 @@ scipy==1.14.0
     #   scs
 scs==3.2.6
     # via cvxpy
-selenium==4.23.1
+setuptools==73.0.0
     # via dycw-utilities (pyproject.toml)
-semver==3.0.2
-    # via dycw-utilities (pyproject.toml)
-setuptools==72.2.0
-    # via python-daemon
 shellingham==1.5.4
     # via hatch
 six==1.16.0
-    # via
-    #   bleach
-    #   python-dateutil
+    # via python-dateutil
 slack-sdk==3.31.0
     # via dycw-utilities (pyproject.toml)
 smmap==5.0.1
@@ -456,13 +356,8 @@ sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-    #   trio
 sortedcontainers==2.4.0
-    # via
-    #   hypothesis
-    #   trio
-soupsieve==2.6
-    # via beautifulsoup4
+    # via hypothesis
 sqlalchemy==2.0.32
     # via
     #   dycw-utilities (pyproject.toml)
@@ -473,7 +368,6 @@ streamlit==1.37.1
 tenacity==8.5.0
     # via
     #   dycw-utilities (pyproject.toml)
-    #   luigi
     #   streamlit
 toml==0.10.2
     # via streamlit
@@ -484,22 +378,12 @@ tomli-w==1.0.0
 tomlkit==0.13.2
     # via hatch
 tornado==6.4.1
-    # via
-    #   bokeh
-    #   luigi
-    #   streamlit
+    # via streamlit
 tqdm==4.66.5
     # via
     #   dycw-utilities (pyproject.toml)
     #   optuna
-    #   panel
     #   pqdm
-trio==0.26.2
-    # via
-    #   selenium
-    #   trio-websocket
-trio-websocket==0.11.1
-    # via selenium
 trove-classifiers==2024.7.2
     # via hatchling
 typed-settings==24.4.0
@@ -510,11 +394,9 @@ typing-extensions==4.12.2
     #   aiosqlite
     #   alembic
     #   altair
-    #   panel
     #   pqdm
     #   pydantic
     #   pydantic-core
-    #   selenium
     #   sqlalchemy
     #   streamlit
 tzdata==2024.1
@@ -523,12 +405,8 @@ tzdata==2024.1
     #   pandas
 tzlocal==5.2
     # via dycw-utilities (pyproject.toml)
-uc-micro-py==1.0.3
-    # via linkify-it-py
 urllib3==2.2.2
-    # via
-    #   requests
-    #   selenium
+    # via requests
 userpath==1.9.2
     # via hatch
 uv==0.2.37
@@ -543,27 +421,13 @@ virtualenv==20.26.3
     #   nox
 vl-convert-python==1.6.0
     # via dycw-utilities (pyproject.toml)
-webencodings==0.5.1
-    # via bleach
-websocket-client==1.8.0
-    # via selenium
 whenever==0.6.7
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-wsproto==1.2.0
-    # via trio-websocket
 xarray==2024.7.0
-    # via dycw-utilities (pyproject.toml)
-xlrd==2.0.1
-    # via dycw-utilities (pyproject.toml)
-xyzservices==2024.6.0
-    # via
-    #   bokeh
-    #   panel
-zarr==2.18.2
     # via dycw-utilities (pyproject.toml)
 zipp==3.20.0
     # via importlib-metadata

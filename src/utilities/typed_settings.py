@@ -4,6 +4,7 @@ import datetime as dt
 import enum
 from dataclasses import MISSING, dataclass, field
 from operator import attrgetter
+from pathlib import Path
 from re import search
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -26,12 +27,10 @@ from typing_extensions import override
 import utilities.click
 from utilities.click import Date, LocalDateTime, Time, Timedelta
 from utilities.git import get_repo_root_or_cwd_sub_path
-from utilities.pathlib import ensure_path
 from utilities.types import PathLike, ensure_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-    from pathlib import Path
 
     from click import ParamType
     from typed_settings.loaders import Loader
@@ -40,7 +39,7 @@ _T = TypeVar("_T")
 
 
 def _config_toml(root: Path, /) -> Path | None:
-    return path if (path := ensure_path(root, "config.toml")).exists() else None
+    return path if (path := Path(root, "config.toml")).exists() else None
 
 
 _CONFIG_FILES = [

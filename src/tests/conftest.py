@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from os import environ, getenv
+from os import environ
 from typing import TYPE_CHECKING, Any
 
-from pytest import LogCaptureFixture, fixture, mark
+from pytest import fixture, mark
 
 from utilities.platform import IS_NOT_LINUX
-from utilities.timer import Timer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable
 
-    from _pytest.fixtures import SubRequest
     from sqlalchemy import Engine, Table
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
@@ -29,41 +27,6 @@ except ModuleNotFoundError:
     pass
 else:
     setup_hypothesis_profiles()
-
-
-# loguru
-
-
-try:
-    from loguru import logger
-
-    from utilities.loguru import setup_loguru
-except ModuleNotFoundError:
-    pass
-else:
-    setup_loguru()
-
-    @fixture
-    def caplog(*, caplog: LogCaptureFixture) -> Iterator[LogCaptureFixture]:
-        handler_id = logger.add(caplog.handler, format="{message}")
-        yield caplog
-        logger.remove(handler_id)
-
-    @fixture(autouse=True)
-    def log_current_test(*, request: SubRequest) -> Iterator[None]:
-        """Log current test.
-
-        Usage:
-            PYTEST_TIMER=1 pytest -s .
-        """
-        if getenv("PYTEST_TIMER") == "1":
-            name = request.node.nodeid
-            logger.info("[S ] {name}", name=name)
-            with Timer() as timer:
-                yield
-            logger.info("[ F] {name} | {timer}", name=name, timer=timer)
-        else:
-            yield
 
 
 # sqlalchemy

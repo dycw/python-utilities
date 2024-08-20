@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from types import NoneType
 from typing import Any, TypeVar, cast
 
-from beartype import beartype
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
@@ -23,7 +22,6 @@ class TestDataClassProtocol:
     def test_main(self) -> None:
         T = TypeVar("T", bound=Dataclass)
 
-        @beartype
         def identity(x: T, /) -> T:
             return x
 

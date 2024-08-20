@@ -17,7 +17,6 @@ from hypothesis.strategies import (
     booleans,
     composite,
     data,
-    dates,
     datetimes,
     floats,
     integers,
@@ -26,25 +25,8 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
 )
-from luigi import Task
-from numpy import (
-    iinfo,
-    inf,
-    int32,
-    int64,
-    isfinite,
-    isinf,
-    isnan,
-    ravel,
-    rint,
-    uint32,
-    uint64,
-    zeros,
-)
-from pandas import Timestamp
-from pandas.testing import assert_index_equal
+from numpy import iinfo, inf, int32, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
-from semver import Version
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
@@ -53,32 +35,21 @@ from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
-    _merge_into_dict_of_indexes,
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
-    bool_data_arrays,
-    concatenated_arrays,
-    dates_pd,
-    datetimes_pd,
     datetimes_utc,
-    dicts_of_indexes,
     durations,
     float_arrays,
-    float_data_arrays,
     floats_extra,
     git_repos,
     hashables,
-    indexes,
     int32s,
     int64s,
     int_arrays,
-    int_data_arrays,
-    int_indexes,
     lists_fixed_length,
     longs,
     months,
-    namespace_mixins,
     redis_clients,
     redis_time_series,
     settings_with_reduced_examples,
@@ -86,30 +57,15 @@ from utilities.hypothesis import (
     slices,
     sqlite_engines,
     str_arrays,
-    str_data_arrays,
-    str_indexes,
     temp_dirs,
     temp_paths,
     text_ascii,
     text_clean,
     text_printable,
     timedeltas_2w,
-    timestamps,
-    uint32s,
-    uint64s,
-    versions,
 )
 from utilities.math import MAX_LONG, MIN_LONG
 from utilities.os import temp_environ
-from utilities.pandas import (
-    TIMESTAMP_MAX_AS_DATE,
-    TIMESTAMP_MAX_AS_DATETIME,
-    TIMESTAMP_MIN_AS_DATE,
-    TIMESTAMP_MIN_AS_DATETIME,
-    IndexA,
-    string,
-)
-from utilities.pathvalidate import valid_path
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
 from utilities.types import Duration, Number, make_isinstance
@@ -124,7 +80,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping, Sequence
+    from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
 
@@ -178,74 +134,6 @@ class TestBoolArrays:
         assert array.shape == shape
 
 
-class TestBoolDataArrays:
-    @given(data=data(), indexes=dicts_of_indexes(), name=text_ascii() | none())
-    def test_main(
-        self, *, data: DataObject, indexes: Mapping[str, IndexA], name: str | None
-    ) -> None:
-        array = data.draw(bool_data_arrays(indexes, name=name))
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == bool
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
-
-
-class TestConcatenatedArrays:
-    @given(data=data(), m=integers(0, 10), n=integers(0, 10))
-    def test_1d(self, *, data: DataObject, m: int, n: int) -> None:
-        arrays = just(zeros(n, dtype=float))
-        array = data.draw(concatenated_arrays(arrays, m, n))
-        assert array.shape == (m, n)
-
-    @given(data=data(), m=integers(0, 10), n=integers(0, 10), p=integers(0, 10))
-    def test_2d(self, *, data: DataObject, m: int, n: int, p: int) -> None:
-        arrays = just(zeros((n, p), dtype=float))
-        array = data.draw(concatenated_arrays(arrays, m, (n, p)))
-        assert array.shape == (m, n, p)
-
-
-class TestDatesPd:
-    @given(
-        data=data(),
-        min_value=dates(
-            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
-        ),
-        max_value=dates(
-            min_value=TIMESTAMP_MIN_AS_DATE, max_value=TIMESTAMP_MAX_AS_DATE
-        ),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.date, max_value: dt.date
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        date = data.draw(dates_pd(min_value=min_value, max_value=max_value))
-        _ = Timestamp(date)
-        assert min_value <= date <= max_value
-
-
-class TestDatetimesPd:
-    @given(
-        data=data(),
-        min_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        max_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_pd(min_value=min_value, max_value=max_value))
-        _ = Timestamp(datetime)
-        assert min_value <= datetime <= max_value
-
-
 class TestDatetimesUTC:
     @given(data=data(), min_value=datetimes(), max_value=datetimes())
     def test_main(
@@ -255,43 +143,6 @@ class TestDatetimesUTC:
         _ = assume(min_value <= max_value)
         datetime = data.draw(datetimes_utc(min_value=min_value, max_value=max_value))
         assert min_value <= datetime <= max_value
-
-
-class TestDictsOfIndexes:
-    @given(
-        data=data(),
-        min_dims=integers(1, 3),
-        max_dims=integers(1, 3) | none(),
-        min_side=integers(1, 10),
-        max_side=integers(1, 10) | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_dims: int,
-        max_dims: int | None,
-        min_side: int,
-        max_side: int | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            indexes = data.draw(
-                dicts_of_indexes(
-                    min_dims=min_dims,
-                    max_dims=max_dims,
-                    min_side=min_side,
-                    max_side=max_side,
-                )
-            )
-        ndims = len(indexes)
-        assert ndims >= min_dims
-        if max_dims is not None:
-            assert ndims <= max_dims
-        for index in indexes.values():
-            length = len(index)
-            assert length >= min_side
-            if max_side is not None:
-                assert length <= max_side
 
 
 class TestDurations:
@@ -415,58 +266,6 @@ class TestFloatArrays:
             assert len(set(flat)) == len(flat)
 
 
-class TestFloatDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_value=floats() | none(),
-        max_value=floats() | none(),
-        allow_nan=booleans(),
-        allow_inf=booleans(),
-        allow_pos_inf=booleans(),
-        allow_neg_inf=booleans(),
-        integral=booleans(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_value: float | None,
-        max_value: float | None,
-        allow_nan: bool,
-        allow_inf: bool,
-        allow_pos_inf: bool,
-        allow_neg_inf: bool,
-        integral: bool,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                float_data_arrays(
-                    indexes,
-                    min_value=min_value,
-                    max_value=max_value,
-                    allow_nan=allow_nan,
-                    allow_inf=allow_inf,
-                    allow_pos_inf=allow_pos_inf,
-                    allow_neg_inf=allow_neg_inf,
-                    integral=integral,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == float
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
-
-
 class TestFloatsExtra:
     @given(
         data=data(),
@@ -561,68 +360,6 @@ class TestHashables:
         _ = hash(x)
 
 
-class TestIndexes:
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_generic(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(
-            indexes(
-                elements=int64s(), dtype=int64, n=n, unique=unique, name=name, sort=sort
-            )
-        )
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
-
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_int(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(int_indexes(n=n, unique=unique, name=name, sort=sort))
-        assert index.dtype == int64
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
-
-    @given(
-        data=data(),
-        n=integers(0, 10),
-        unique=booleans(),
-        name=hashables(),
-        sort=booleans(),
-    )
-    def test_str(
-        self, *, data: DataObject, n: int, unique: bool, name: Hashable, sort: bool
-    ) -> None:
-        index = data.draw(str_indexes(n=n, unique=unique, name=name, sort=sort))
-        assert index.dtype == string
-        assert len(index) == n
-        if unique:
-            assert not index.duplicated().any()
-        assert index.name == name
-        if sort:
-            assert_index_equal(index, index.sort_values())
-
-
 class TestIntArrays:
     @given(
         data=data(),
@@ -681,43 +418,6 @@ class TestInt64s:
             assert x >= min_value
         if max_value is not None:
             assert x <= max_value
-
-
-class TestIntDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_value=int64s() | none(),
-        max_value=int64s() | none(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_value: int | None,
-        max_value: int | None,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                int_data_arrays(
-                    indexes,
-                    min_value=min_value,
-                    max_value=max_value,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == int64
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestLiftDraw:
@@ -792,24 +492,6 @@ class TestMonths:
         assert min_value <= month <= max_value
 
 
-class TestNamespaceMixins:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        _ = data.draw(namespace_mixins())
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_first(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
-
-    @given(namespace_mixin=namespace_mixins())
-    def test_second(self, *, namespace_mixin: Any) -> None:
-        class Example(namespace_mixin, Task): ...
-
-        _ = Example()
-
-
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisClients:
     @given(client_pair=redis_clients(), key=text_ascii(), value=integers())
@@ -867,26 +549,6 @@ class TestSlices:
             _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
 
 
-class TestMergeIntoDictOfIndexes:
-    @given(data=data())
-    def test_empty(self, *, data: DataObject) -> None:
-        _ = data.draw(_merge_into_dict_of_indexes())
-
-    @given(
-        data=data(), indexes1=dicts_of_indexes() | none(), indexes2=dicts_of_indexes()
-    )
-    def test_non_empty(
-        self,
-        *,
-        data: DataObject,
-        indexes1: Mapping[str, IndexA] | None,
-        indexes2: Mapping[str, IndexA],
-    ) -> None:
-        indexes_ = data.draw(_merge_into_dict_of_indexes(indexes1, **indexes2))
-        expected = (set() if indexes1 is None else set(indexes1)) | set(indexes2)
-        assert set(indexes_) == expected
-
-
 class TestSetupHypothesisProfiles:
     def test_main(self) -> None:
         setup_hypothesis_profiles()
@@ -912,7 +574,7 @@ class TestSQLiteEngines:
         assert isinstance(engine, Engine)
         database = engine.url.database
         assert database is not None
-        assert not valid_path(database).exists()
+        assert not Path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
     def test_sync_table(self, *, data: DataObject, ids: set[int]) -> None:
@@ -932,7 +594,7 @@ class TestSQLiteEngines:
         assert isinstance(engine, AsyncEngine)
         database = engine.url.database
         assert database is not None
-        assert not valid_path(database).exists()
+        assert not Path(database).exists()
 
     @given(data=data(), ids=sets(integers(0, 10)))
     async def test_async_table(self, *, data: DataObject, ids: set[int]) -> None:
@@ -1033,46 +695,6 @@ class TestStrArrays:
         if unique:
             flat = ravel(array)
             assert len(set(flat)) == len(flat)
-
-
-class TestStrDataArrays:
-    @given(
-        data=data(),
-        indexes=dicts_of_indexes(),
-        min_size=integers(0, 100),
-        max_size=integers(0, 100) | none(),
-        allow_none=booleans(),
-        unique=booleans(),
-        name=text_ascii() | none(),
-    )
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        indexes: Mapping[str, IndexA],
-        min_size: int,
-        max_size: int | None,
-        allow_none: bool,
-        unique: bool,
-        name: str | None,
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            array = data.draw(
-                str_data_arrays(
-                    indexes,
-                    min_size=min_size,
-                    max_size=max_size,
-                    allow_none=allow_none,
-                    unique=unique,
-                    name=name,
-                )
-            )
-        assert set(array.coords) == set(indexes)
-        assert array.dims == tuple(indexes)
-        assert array.dtype == object
-        assert array.name == name
-        for arr, exp in zip(array.indexes.values(), indexes.values(), strict=True):
-            assert_index_equal(arr, exp, check_names=False)
 
 
 class TestTempDirs:
@@ -1217,105 +839,3 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
-
-
-class TestTimestamps:
-    @given(
-        data=data(),
-        min_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        max_value=datetimes_utc(
-            min_value=TIMESTAMP_MIN_AS_DATETIME, max_value=TIMESTAMP_MAX_AS_DATETIME
-        ),
-        allow_nanoseconds=booleans(),
-    )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
-    def test_main(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        max_value: dt.datetime,
-        allow_nanoseconds: bool,
-    ) -> None:
-        _ = assume(min_value <= max_value)
-        timestamp = data.draw(
-            timestamps(
-                min_value=min_value,
-                max_value=max_value,
-                allow_nanoseconds=allow_nanoseconds,
-            )
-        )
-        assert min_value <= timestamp <= max_value
-        if not allow_nanoseconds:
-            assert cast(Any, timestamp).nanosecond == 0
-
-
-class TestUInt32s:
-    @given(data=data(), min_value=uint32s() | none(), max_value=uint32s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint32s(min_value=min_value, max_value=max_value))
-        info = iinfo(uint32)
-        assert info.min <= x <= info.max
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
-class TestUInt64s:
-    @given(data=data(), min_value=uint64s() | none(), max_value=uint64s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(uint64s(min_value=min_value, max_value=max_value))
-        info = iinfo(uint64)
-        assert info.min <= x <= info.max
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
-class TestVersions:
-    @given(data=data())
-    def test_main(self, data: DataObject) -> None:
-        version = data.draw(versions())
-        assert isinstance(version, Version)
-
-    @given(data=data())
-    def test_min_version(self, data: DataObject) -> None:
-        min_version = data.draw(versions())
-        version = data.draw(versions(min_version=min_version))
-        assert version >= min_version
-
-    @given(data=data())
-    def test_max_version(self, data: DataObject) -> None:
-        max_version = data.draw(versions())
-        version = data.draw(versions(max_version=max_version))
-        assert version <= max_version
-
-    @given(data=data())
-    def test_min_and_max_version(self, data: DataObject) -> None:
-        version1, version2 = data.draw(lists_fixed_length(versions(), 2))
-        min_version = min(version1, version2)
-        max_version = max(version1, version2)
-        version = data.draw(versions(min_version=min_version, max_version=max_version))
-        assert min_version <= version <= max_version
-
-    @given(data=data())
-    def test_error(self, data: DataObject) -> None:
-        version1, version2 = data.draw(lists_fixed_length(versions(), 2))
-        _ = assume(version1 != version2)
-        with raises(InvalidArgument):
-            _ = data.draw(
-                versions(
-                    min_version=max(version1, version2),
-                    max_version=min(version1, version2),
-                )
-            )

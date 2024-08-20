@@ -27,7 +27,6 @@ from typed_settings.exceptions import InvalidSettingsError
 
 from tests.conftest import FLAKY
 from utilities.hypothesis import sqlite_engines, temp_paths, text_ascii, timedeltas_2w
-from utilities.pathlib import ensure_path
 from utilities.pytest import skipif_windows
 from utilities.sqlalchemy import serialize_engine
 from utilities.typed_settings import (
@@ -143,7 +142,7 @@ class TestClickOptions:
         assert result.exit_code == 0
         assert result.stdout == f"value = {val_str}\n"
 
-        file = ensure_path(root, "file.toml")
+        file = Path(root, "file.toml")
         cfg_str = serialize(cfg)
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{cfg_str}"')
@@ -228,7 +227,7 @@ class TestLoadSettings:
         settings_default = load_settings(Settings)
         assert settings_default.value == default
         _ = hash(settings_default)
-        file = ensure_path(root, "file.toml")
+        file = Path(root, "file.toml")
         with file.open(mode="w") as fh:
             _ = fh.write(f'[{appname}]\nvalue = "{serialize(value)}"')
         settings_loaded = load_settings(Settings, appname=appname, config_files=[file])

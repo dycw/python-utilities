@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_equal
 from pytest import mark, param
 
 from utilities.hypothesis import float_arrays
-from utilities.numpy import NDArrayF1, is_between_or_nan
+from utilities.numpy import NDArrayF, is_between_or_nan
 from utilities.scipy import ppf
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ class TestPPF:
         ),
         cutoff=floats(0.0, 10.0),
     )
-    def test_main(self, *, array: NDArrayF1, cutoff: float) -> None:
+    def test_main(self, *, array: NDArrayF, cutoff: float) -> None:
         result = ppf(array, cutoff)
         assert_equal(isfinite(result), isfinite(array))
         assert_equal(isnan(result), isnan(array))
