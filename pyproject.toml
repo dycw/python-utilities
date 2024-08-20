@@ -140,6 +140,7 @@ zzz-test-http = []
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
+  "greenlet >= 3.0.3, < 3.1",  # sqlalchemy async
   "numpy >= 2.0.1, < 2.1",
   "redis >= 5.0.8, < 5.1",
   "sqlalchemy >= 2.0.32, < 2.1",
@@ -153,6 +154,7 @@ zzz-test-json = [
 ]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
+  "pandas >= 2.2.2, < 2.3",
   "polars-lts-cpu >= 1.5.0, < 1.6",
 ]
 zzz-test-logging = []
@@ -183,6 +185,7 @@ zzz-test-pydantic = [
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
   "pyinstrument >= 4.7.2, < 4.8",
+  "tzlocal >= 5.2, < 5.3",
 ]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",

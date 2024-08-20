@@ -148,6 +148,8 @@ nest-asyncio==1.6.0
     # via ipykernel
 notebook-shim==0.2.4
     # via jupyterlab
+numpy==2.1.0
+    # via pandas
 overrides==7.7.0
     # via jupyter-server
 packaging==24.1
@@ -159,6 +161,8 @@ packaging==24.1
     #   nbconvert
     #   pytest
     #   pytest-rerunfailures
+pandas==2.2.2
+    # via dycw-utilities (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -208,8 +212,11 @@ python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   jupyter-client
+    #   pandas
 python-json-logger==2.0.7
     # via jupyter-events
+pytz==2024.1
+    # via pandas
 pyyaml==6.0.2
     # via jupyter-events
 pyzmq==26.1.1
@@ -291,6 +298,8 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   ipython
+tzdata==2024.1
+    # via pandas
 uri-template==1.3.0
     # via jsonschema
 urllib3==2.2.2
