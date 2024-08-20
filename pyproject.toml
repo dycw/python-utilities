@@ -215,6 +215,7 @@ zzz-test-sqlalchemy-polars = [
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
+zzz-test-streamlit = ["streamlit >= 1.37.1, < 1.38"]
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
@@ -229,7 +230,11 @@ zzz-test-typed-settings = [
   "sqlalchemy >= 2.0.32, < 2.1",
   "typed-settings >= 24.4.0, < 24.5",
 ]
+zzz-test-types = []
+zzz-test-typing = []
+zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.7, < 0.7"]
+zzz-test-zipfile = []
 zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
 
 [project.scripts]
