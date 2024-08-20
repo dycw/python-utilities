@@ -35,7 +35,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from numpy.random import RandomState
 from typing_extensions import override
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
@@ -51,6 +50,7 @@ if TYPE_CHECKING:
 
     import redis
     from hypothesis.database import ExampleDatabase
+    from numpy.random import RandomState
     from redis.commands.timeseries import TimeSeries
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
@@ -401,6 +401,8 @@ def random_states(
     _draw: DrawFn, /, *, seed: MaybeSearchStrategy[int | None] = None
 ) -> RandomState:
     """Strategy for generating `numpy` random states."""
+    from numpy.random import RandomState
+
     draw = lift_draw(_draw)
     seed_ = draw(seed)
     seed_use = draw(integers(0, MAX_UINT32)) if seed_ is None else seed_
