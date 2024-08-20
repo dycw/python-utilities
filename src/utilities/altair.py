@@ -23,7 +23,7 @@ from altair import (
 )
 from altair.utils.schemapi import Undefined
 
-from utilities.more_itertools import always_iterable
+from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import ensure_bytes
 from utilities.types import PathLike, ensure_number
