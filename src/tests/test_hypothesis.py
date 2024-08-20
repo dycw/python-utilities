@@ -25,7 +25,7 @@ from hypothesis.strategies import (
     sets,
     timedeltas,
 )
-from numpy import iinfo, inf, int32, int64, isfinite, isinf, isnan, ravel, rint
+from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -45,11 +45,11 @@ from utilities.hypothesis import (
     git_repos,
     hashables,
     int32s,
-    int64s,
     int_arrays,
+    lift_draw,
     lists_fixed_length,
-    longs,
     months,
+    random_states,
     redis_clients,
     redis_time_series,
     settings_with_reduced_examples,
@@ -64,7 +64,7 @@ from utilities.hypothesis import (
     text_printable,
     timedeltas_2w,
 )
-from utilities.math import MAX_LONG, MIN_LONG
+from utilities.math import MAX_INT32, MIN_INT32
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
@@ -364,8 +364,8 @@ class TestIntArrays:
     @given(
         data=data(),
         shape=array_shapes(),
-        min_value=int64s() | none(),
-        max_value=int64s() | none(),
+        min_value=int32s() | none(),
+        max_value=int32s() | none(),
         unique=booleans(),
     )
     def test_main(
@@ -397,23 +397,7 @@ class TestInt32s:
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
-        info = iinfo(int32)
-        assert info.min <= x <= info.max
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
-class TestInt64s:
-    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(int64s(min_value=min_value, max_value=max_value))
-        info = iinfo(int64)
-        assert info.min <= x <= info.max
+        assert MIN_INT32 <= x <= MAX_INT32
         if min_value is not None:
             assert x >= min_value
         if max_value is not None:
@@ -421,24 +405,25 @@ class TestInt64s:
 
 
 class TestLiftDraw:
-    @given(data=data(), x=booleans())
-    def test_fixed(self, *, data: DataObject, x: bool) -> None:
+    @given(data=data(), value=booleans())
+    def test_fixed(self, *, data: DataObject, value: bool) -> None:
         @composite
-        def func(_draw: DrawFn, /) -> bool:
-            _ = _draw(booleans())
-            return x
+        def strategy(_draw: DrawFn, /) -> bool:
+            draw = lift_draw(_draw)
+            return draw(value)
 
-        result = data.draw(func())
-        assert result is x
+        result = data.draw(strategy())
+        assert result is value
 
-    @given(data=data())
-    def test_strategy(self, *, data: DataObject) -> None:
+    @given(data=data(), value=booleans())
+    def test_strategy(self, *, data: DataObject, value: bool) -> None:
         @composite
-        def func(_draw: DrawFn, /) -> bool:
-            return _draw(booleans())
+        def strategy(_draw: DrawFn, /) -> bool:
+            draw = lift_draw(_draw)
+            return draw(just(value))
 
-        result = data.draw(func())
-        assert isinstance(result, bool)
+        result = data.draw(strategy())
+        assert result is value
 
 
 class TestListsFixedLength:
@@ -463,20 +448,6 @@ class TestListsFixedLength:
             assert sorted(result) == result
 
 
-class TestLongs:
-    @given(data=data(), min_value=longs() | none(), max_value=longs() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
-        with assume_does_not_raise(InvalidArgument):
-            x = data.draw(longs(min_value=min_value, max_value=max_value))
-        assert MIN_LONG <= x <= MAX_LONG
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
-
-
 class TestMonths:
     @given(data=data())
     def test_main(self, *, data: DataObject) -> None:
@@ -490,6 +461,12 @@ class TestMonths:
         _ = assume(min_value <= max_value)
         month = data.draw(months(min_value=min_value, max_value=max_value))
         assert min_value <= month <= max_value
+
+
+class TestRandomStates:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        _ = data.draw(random_states())
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -507,7 +484,7 @@ class TestRedisClients:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisTimeSeries:
-    @given(ts_pair=redis_time_series(), key=text_ascii(), value=longs())
+    @given(ts_pair=redis_time_series(), key=text_ascii(), value=int32s())
     def test_main(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str, value: int
     ) -> None:

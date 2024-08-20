@@ -16,6 +16,7 @@ requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 dev = [
+  "aiohttp >= 3.10.5, < 3.11",  # for slack-sdk
   "aiosqlite >= 0.20.0, < 0.21",
   "altair >= 5.4.0, < 5.5",
   "astor >= 0.8.1, < 0.9",
@@ -29,18 +30,21 @@ dev = [
   "cvxpy >= 1.5.3, < 1.6",
   "dacite >= 1.8.1, < 1.9",
   "fpdf2 >= 2.7.9, < 2.8",
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "hatch >= 1.12.0, < 1.13",
   "hypothesis >= 6.111.0, < 6.112",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.2, < 0.8",
   "memory-profiler >= 0.61.0, < 0.62",
   "more-itertools >= 10.4.0, < 10.5",
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2024.4.15, < 2024.5",
   "numbagg >= 0.8.1, < 0.9",
   "numpy >= 2.0.1, < 2.1",
   "optuna >= 3.6.1, < 3.7",
   "polars-lts-cpu >= 1.5.0, < 1.6",
   "pqdm >= 0.2.0, < 0.3",
+  "psycopg2-binary >= 2.9.9, < 2.10",  # for sqlalchemy
   "pydantic >= 2.8.2, < 2.9",
   "pyhumps >= 3.8.0, < 3.9",
   "pyinstrument >= 4.7.2, < 4.8",
@@ -53,7 +57,7 @@ dev = [
   "slack-sdk >= 3.31.0, < 3.32",
   "sqlalchemy >= 2.0.32, < 2.1",
   "streamlit >= 1.37.1, < 1.38",
-  "tenacity >= 8.5.0, < 9.0",  # streamlit >= 8.1.0, < 9
+  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
   "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.4.0, < 24.5",
   "tzdata >= 2024.1, < 2024.2",
@@ -62,12 +66,8 @@ dev = [
   "vegafusion-python-embed >= 1.6.9, < 1.7",
   "vl-convert-python >= 1.6.0, < 1.7",
   "whenever >= 0.6.7, < 0.7",
-  "xarray >= 2024.7.0, < 2024.8",
   # test
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
-  "greenlet >= 3.0.3, < 3.1",  # sqlalchemy async
-  "nest-asyncio >= 1.6.0, < 1.7",  # sqlalchemy async
-  "psycopg2-binary >= 2.9.9, < 2.10",
   "pytest-asyncio >= 0.23.8, < 0.24",
   "pytest-cov >= 5.0.0, < 5.1",
   "pytest-instafail >= 0.5.0, < 0.6",
@@ -96,8 +96,11 @@ zzz-test-altair = [
   "altair >= 5.4.0, < 5.5",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
+  "polars-lts-cpu >= 1.5.0, < 1.6",
+  "vl-convert-python >= 1.6.0, < 1.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
+zzz-test-asyncio = []
 zzz-test-atomicwrites = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-atools = [
   "atools >= 0.14.2, < 0.15",
@@ -116,6 +119,7 @@ zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-defaults = [
   "hypothesis >= 6.111.0, < 6.112",
   "pytest >= 8.3.2, < 8.4",
+  "pytest-asyncio >= 0.23.8, < 0.24",
   "pytest-cov >= 5.0.0, < 5.1",
   "pytest-randomly >= 3.15.0, < 3.16",
   "pytest-rerunfailures >= 14.0, < 15",
@@ -132,8 +136,11 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
+zzz-test-http = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
+  "aiosqlite >= 0.20.0, < 0.21",
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "numpy >= 2.0.1, < 2.1",
   "redis >= 5.0.8, < 5.1",
   "sqlalchemy >= 2.0.32, < 2.1",
@@ -147,14 +154,12 @@ zzz-test-json = [
 ]
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
+  "pandas >= 2.2.2, < 2.3",
   "polars-lts-cpu >= 1.5.0, < 1.6",
 ]
 zzz-test-logging = []
-zzz-test-loguru = [
-  "loguru >= 0.7.2, < 0.8",
-  "pytest-asyncio >= 0.23.8, < 0.24",
-]
-zzz-test-math = []
+zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
+zzz-test-math = ["numpy >= 2.0.1, < 2.1"]
 zzz-test-memory-profiler = ["memory-profiler >= 0.61.0, < 0.62"]
 zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.4.0, < 10.5"]
@@ -180,15 +185,18 @@ zzz-test-pydantic = [
 zzz-test-pyinstrument = [
   "atomicwrites >= 1.4.1, < 1.5",
   "pyinstrument >= 4.7.2, < 4.8",
+  "tzlocal >= 5.2, < 5.3",
 ]
 zzz-test-pytest = [
   "atomicwrites >= 1.4.1, < 1.5",
-  "pytest-asyncio >= 0.23.8, < 0.24",
 ]
 zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
-zzz-test-redis = ["redis >= 5.0.8, < 5.1"]
+zzz-test-redis = [
+  "polars-lts-cpu >= 1.5.0, < 1.6",
+  "redis >= 5.0.8, < 5.1",
+]
 zzz-test-reprlib = ["polars-lts-cpu >= 1.5.0, < 1.6"]
 zzz-test-scipy = ["scipy >= 1.14.0, < 1.15"]
 zzz-test-scripts-pypi-server = [
@@ -198,25 +206,34 @@ zzz-test-scripts-pypi-server = [
   "typed-settings >= 24.4.0, < 24.5",
 ]
 zzz-test-sentinel = []
+zzz-test-slack-sdk = [
+  "aiohttp >= 3.10.5, < 3.11",  # for slack-sdk
+  "slack-sdk >= 3.31.0, < 3.32",
+]
 zzz-test-socket = []
 zzz-test-sqlalchemy = [
   "aiosqlite >= 0.20.0, < 0.21",
-  "greenlet >= 3.0.3, < 3.1",  # sqlalchemy async
-  "nest-asyncio >= 1.6.0, < 1.7",  # sqlalchemy async
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "psycopg2-binary >= 2.9.9, < 2.10",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
 zzz-test-sqlalchemy-polars = [
+  "aiosqlite >= 0.20.0, < 0.21",
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "polars-lts-cpu >= 1.5.0, < 1.6",
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
+zzz-test-streamlit = ["streamlit >= 1.37.1, < 1.38"]
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = [
-  "tenacity >= 8.5.0",  # luigi sets >=8, <9
+  "loguru >= 0.7.2, < 0.8",
+  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
 ]
 zzz-test-text = []
 zzz-test-timer = []
@@ -225,11 +242,14 @@ zzz-test-typed-settings = [
   "click >= 8.1.7, < 8.2",
   "sqlalchemy >= 2.0.32, < 2.1",
   "typed-settings >= 24.4.0, < 24.5",
+  "whenever >= 0.6.7, < 0.7",
 ]
+zzz-test-types = []
+zzz-test-typing = []
+zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.7, < 0.7"]
-zzz-test-zoneinfo = [
-  "tzdata >= 2024.1, < 2024.2",
-]
+zzz-test-zipfile = []
+zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
 
 [project.scripts]
 start-pypi-server = "utilities.scripts.pypi_server:main"
@@ -280,7 +300,7 @@ skip_empty = true
 [tool.coverage.run]
 branch = true
 data_file = ".coverage/data"
-omit = ["src/utilities/clean_dir/__main__.py", "src/utilities/slack_sdk.py", "src/utilities/streamlit.py"]
+omit = ["src/utilities/streamlit.py"]
 parallel = true
 plugins = ["coverage_conditional_plugin"]
 
@@ -325,10 +345,8 @@ addopts = [
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
-  "ignore:.*utcfromtimestamp.* is deprecated and scheduled for removal in a future version:DeprecationWarning",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
-  "ignore:The `hash` argument is deprecated in favor of `unsafe_hash` and will be removed in or after August 2025:DeprecationWarning",
-  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",
+  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]

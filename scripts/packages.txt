@@ -1,5 +1,6 @@
 altair
 astor
+asyncio
 atomicwrites
 atools
 cachetools
@@ -17,6 +18,7 @@ functools
 getpass
 git
 hashlib
+http
 humps
 hypothesis
 ipython
@@ -48,9 +50,11 @@ reprlib
 scipy
 scripts-pypi-server
 sentinel
+slack-sdk
 socket
 sqlalchemy
 sqlalchemy-polars
+streamlit
 subprocess
 sys
 tempfile
@@ -58,6 +62,10 @@ tenacity
 text
 timer
 tqdm
+types
+typing
 typed-settings
+warnings
 whenever
+zipfile
 zoneinfo

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from cachetools.func import ttl_cache
 
 from utilities.datetime import duration_to_float
 from utilities.functions import identity
+from utilities.functools import lru_cache
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -22,7 +22,7 @@ def cache(
     if max_duration is not None:
         return ttl_cache(maxsize=max_size, ttl=duration_to_float(max_duration))
     if max_size is not None:
-        return cast(Any, lru_cache(maxsize=max_size))
+        return cast(Any, lru_cache(max_size=max_size))
     return identity
 
 

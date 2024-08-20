@@ -7,7 +7,7 @@ from pathlib import Path
 from smtplib import SMTP
 from typing import TYPE_CHECKING
 
-from utilities.more_itertools import always_iterable
+from utilities.iterables import always_iterable
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

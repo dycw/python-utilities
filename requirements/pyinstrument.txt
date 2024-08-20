@@ -21,9 +21,12 @@ pyinstrument==4.7.2
 pytest==8.3.2
     # via
     #   dycw-utilities (pyproject.toml)
+    #   pytest-asyncio
     #   pytest-cov
     #   pytest-randomly
     #   pytest-rerunfailures
+pytest-asyncio==0.23.8
+    # via dycw-utilities (pyproject.toml)
 pytest-cov==5.0.0
     # via dycw-utilities (pyproject.toml)
 pytest-randomly==3.15.0
@@ -35,4 +38,6 @@ sortedcontainers==2.4.0
 tomli==2.0.1
     # via coverage
 typing-extensions==4.12.2
+    # via dycw-utilities (pyproject.toml)
+tzlocal==5.2
     # via dycw-utilities (pyproject.toml)

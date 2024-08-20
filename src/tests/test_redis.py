@@ -24,8 +24,8 @@ from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
     datetimes_utc,
+    int32s,
     lists_fixed_length,
-    longs,
     redis_clients,
     redis_time_series,
     text_ascii,
@@ -90,7 +90,7 @@ class TestTimeSeriesAddAndGet:
         timestamp=datetimes(
             min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_main(
         self,
@@ -115,7 +115,7 @@ class TestTimeSeriesAddAndGet:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_error_at_upsert(
         self,
@@ -137,7 +137,7 @@ class TestTimeSeriesAddAndGet:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs() | floats(allow_nan=False, allow_infinity=False),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_invalid_timestamp(
         self,
@@ -202,14 +202,14 @@ class TestTimeSeriesAddAndReadDataFrame:
     @mark.parametrize(
         ("strategy1", "dtype1"),
         [
-            param(longs(), Int64),
+            param(int32s(), Int64),
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
     @mark.parametrize(
         ("strategy2", "dtype2"),
         [
-            param(longs(), Int64),
+            param(int32s(), Int64),
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
@@ -352,7 +352,7 @@ class TestTimeSeriesMAddAndRange:
     @mark.parametrize(
         ("strategy", "dtype"),
         [
-            param(longs(), Int64),
+            param(int32s(), Int64),
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
@@ -480,7 +480,7 @@ class TestTimeSeriesMAddAndRange:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs(),
+        value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_error_madd_invalid_key(
@@ -506,7 +506,7 @@ class TestTimeSeriesMAddAndRange:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs(),
+        value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     def test_error_madd_invalid_timestamp(
@@ -581,7 +581,7 @@ class TestTimeSeriesMAddAndRange:
         ts_pair=redis_time_series(),
         key=text_ascii(),
         timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        value=longs(),
+        value=int32s(),
     )
     def test_error_range_key_with_int64_and_float64(
         self,

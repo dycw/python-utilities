@@ -52,6 +52,17 @@ _THashable = TypeVar("_THashable", bound=Hashable)
 MaybeIterable = _T | Iterable[_T]
 
 
+def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
+    """Typed version of `always_iterable`."""
+    obj = cast(Any, obj)
+    if isinstance(obj, str | bytes):
+        return cast(list[_T], [obj])
+    try:
+        return iter(cast(Iterable[_T], obj))
+    except TypeError:
+        return cast(list[_T], [obj])
+
+
 def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
     """Check if a mapping is a bijection."""
     try:
@@ -707,6 +718,7 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "always_iterable",
     "check_bijection",
     "check_duplicates",
     "check_iterables_equal",

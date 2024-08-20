@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import TYPE_CHECKING, Any, cast
 
-import polars as pl
 from altair import (
     X2,
     Chart,
@@ -23,15 +22,16 @@ from altair import (
     vconcat,
 )
 from altair.utils.schemapi import Undefined
-from polars import DataFrame, col, int_range
 
-from utilities.more_itertools import always_iterable
+from utilities.iterables import always_iterable
 from utilities.tempfile import TemporaryDirectory
 from utilities.text import ensure_bytes
 from utilities.types import PathLike, ensure_number
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from polars import DataFrame
 
 _ChartLike = Chart | HConcatChart | LayerChart | VConcatChart
 _HEIGHT = 400
@@ -61,6 +61,9 @@ def plot_dataframes(
     interpolate: Any = Undefined,
 ) -> VConcatChart:
     """Plot a DataFrame as a set of time series, with a multi-line tooltip."""
+    import polars as pl
+    from polars import int_range
+
     if x is None:
         data = data.with_columns(_index=int_range(end=pl.len()))
         x_use = "_index"
@@ -156,6 +159,9 @@ def plot_intraday_dataframe(
     width: int = _WIDTH,
 ) -> LayerChart:
     """Plot an intraday DataFrame."""
+    import polars as pl
+    from polars import col, int_range
+
     other_cols = [c for c in data.columns if c != datetime]
     data2 = data.sort(datetime).with_columns(
         int_range(end=pl.len()).alias(f"_{datetime}_index"),
