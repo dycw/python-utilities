@@ -136,7 +136,7 @@ zzz-test-functools = []
 zzz-test-getpass = []
 zzz-test-git = []
 zzz-test-hashlib = []
-zzz-test-http = []
+zzz-test-http = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
