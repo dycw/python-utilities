@@ -223,6 +223,7 @@ zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "polars-lts-cpu >= 1.5.0, < 1.6",
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
