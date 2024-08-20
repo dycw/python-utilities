@@ -3,14 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeGuard
 
-from hypothesis import given
-from hypothesis.strategies import binary, dictionaries, integers, lists, text
 from pytest import mark, param, raises
 
 from utilities.more_itertools import (
     ResolveIncludeAndExcludeError,
     Split,
-    always_iterable,
     filter_include_and_exclude,
     partition_typeguard,
     peekable,
@@ -20,53 +17,7 @@ from utilities.more_itertools import (
 from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
-
-
-class TestAlwaysIterable:
-    @given(x=binary())
-    def test_bytes(self, *, x: bytes) -> None:
-        assert list(always_iterable(x)) == [x]
-        assert list(always_iterable(x, base_type=None)) == list(x)
-        assert list(always_iterable(x, base_type=bytes)) == [x]
-        assert list(always_iterable(x, base_type=(bytes,))) == [x]
-
-    @given(x=integers())
-    def test_integer(self, *, x: int) -> None:
-        assert list(always_iterable(x)) == [x]
-        assert list(always_iterable(x, base_type=None)) == [x]
-        assert list(always_iterable(x, base_type=int)) == [x]
-        assert list(always_iterable(x, base_type=(int,))) == [x]
-
-    @given(x=text())
-    def test_string(self, *, x: str) -> None:
-        assert list(always_iterable(x)) == [x]
-        assert list(always_iterable(x, base_type=None)) == list(x)
-        assert list(always_iterable(x, base_type=str)) == [x]
-        assert list(always_iterable(x, base_type=(str,))) == [x]
-
-    @given(x=dictionaries(text(), integers()))
-    def test_dict(self, *, x: dict[str, int]) -> None:
-        assert list(always_iterable(x)) == list(x)
-        assert list(always_iterable(x, base_type=dict)) == [x]
-        assert list(always_iterable(x, base_type=(dict,))) == [x]
-
-    @given(x=lists(integers()))
-    def test_lists(self, *, x: list[int]) -> None:
-        assert list(always_iterable(x)) == x
-        assert list(always_iterable(x, base_type=None)) == x
-        assert list(always_iterable(x, base_type=list)) == [x]
-        assert list(always_iterable(x, base_type=(list,))) == [x]
-
-    def test_none(self) -> None:
-        assert list(always_iterable(None)) == []
-
-    def test_generator(self) -> None:
-        def yield_ints() -> Iterator[int]:
-            yield 0
-            yield 1
-
-        assert list(always_iterable(yield_ints())) == [0, 1]
+    from collections.abc import Iterable
 
 
 class TestFilterIncludeAndExclude:

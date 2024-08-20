@@ -4,7 +4,17 @@ from itertools import repeat
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, integers, sampled_from, sets
+from hypothesis.strategies import (
+    DataObject,
+    binary,
+    data,
+    dictionaries,
+    integers,
+    lists,
+    sampled_from,
+    sets,
+    text,
+)
 from pytest import mark, param, raises
 
 from utilities.iterables import (
@@ -24,6 +34,7 @@ from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
+    always_iterable,
     check_bijection,
     check_duplicates,
     check_iterables_equal,
@@ -51,7 +62,44 @@ from utilities.iterables import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Iterator, Sequence
+
+
+class TestAlwaysIterable:
+    @given(x=binary())
+    def test_bytes(self, *, x: bytes) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=integers())
+    def test_integer(self, *, x: int) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=lists(binary()))
+    def test_list_of_bytes(self, *, x: list[bytes]) -> None:
+        assert list(always_iterable(x)) == x
+
+    @given(x=text())
+    def test_string(self, *, x: str) -> None:
+        assert list(always_iterable(x)) == [x]
+
+    @given(x=lists(text()))
+    def test_list_of_strings(self, *, x: list[str]) -> None:
+        assert list(always_iterable(x)) == x
+
+    @given(x=dictionaries(text(), integers()))
+    def test_dict(self, *, x: dict[str, int]) -> None:
+        assert list(always_iterable(x)) == list(x)
+
+    @given(x=lists(integers()))
+    def test_lists(self, *, x: list[int]) -> None:
+        assert list(always_iterable(x)) == x
+
+    def test_generator(self) -> None:
+        def yield_ints() -> Iterator[int]:
+            yield 0
+            yield 1
+
+        assert list(always_iterable(yield_ints())) == [0, 1]
 
 
 class TestCheckBijection:

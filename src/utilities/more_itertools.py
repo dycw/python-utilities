@@ -17,11 +17,11 @@ from typing import (
     overload,
 )
 
-from more_itertools import always_iterable as _always_iterable
 from more_itertools import partition, split_into
 from more_itertools import peekable as _peekable
 from typing_extensions import override
 
+from utilities.iterables import always_iterable
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
@@ -29,16 +29,6 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
-
-
-def always_iterable(
-    obj: MaybeIterable[_T],
-    /,
-    *,
-    base_type: type[Any] | tuple[type[Any], ...] | None = (str, bytes),
-) -> Iterator[_T]:
-    """Typed version of `always_iterable`."""
-    return _always_iterable(obj, base_type=base_type)
 
 
 @overload
@@ -236,7 +226,6 @@ def _yield_splits3(
 __all__ = [
     "ResolveIncludeAndExcludeError",
     "Split",
-    "always_iterable",
     "filter_include_and_exclude",
     "partition_typeguard",
     "peekable",
