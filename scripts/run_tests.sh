@@ -14,7 +14,7 @@ while IFS= read -r _PACKAGE; do
 	else
 		path_test="test_${_PACKAGE//-/_}.py"
 	fi
-	pytest --no-cov "src/tests/${path_test}"
+	pytest -x --no-cov "src/tests/${path_test}"
 	exit_code=$?
 	if [ $exit_code -ne 0 ]; then
 		break

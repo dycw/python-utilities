@@ -140,7 +140,7 @@ zzz-test-http = []
 zzz-test-humps = ["pyhumps >= 3.8.0, < 3.9"]
 zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
-  "greenlet >= 3.0.3, < 3.1",  # sqlalchemy async
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "numpy >= 2.0.1, < 2.1",
   "redis >= 5.0.8, < 5.1",
   "sqlalchemy >= 2.0.32, < 2.1",
@@ -213,13 +213,15 @@ zzz-test-slack-sdk = [
 zzz-test-socket = []
 zzz-test-sqlalchemy = [
   "aiosqlite >= 0.20.0, < 0.21",
-  "greenlet >= 3.0.3, < 3.1",  # sqlalchemy async
-  "nest-asyncio >= 1.6.0, < 1.7",  # sqlalchemy async
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
+  "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "psycopg2-binary >= 2.9.9, < 2.10",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
 zzz-test-sqlalchemy-polars = [
+  "aiosqlite >= 0.20.0, < 0.21",
+  "greenlet >= 3.0.3, < 3.1",  # for sqlalchemy async
   "polars-lts-cpu >= 1.5.0, < 1.6",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
