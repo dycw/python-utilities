@@ -182,7 +182,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.4.2
+narwhals==1.5.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -213,6 +213,8 @@ numpy==2.0.1
     #   scs
     #   streamlit
 optuna==3.6.1
+    # via dycw-utilities (pyproject.toml)
+orjson==3.10.7
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post1
     # via cvxpy
