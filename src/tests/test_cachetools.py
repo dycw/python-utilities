@@ -21,4 +21,5 @@ class TestCache:
             counter += 1
             return x
 
-        assert func(0) == 0
+        for _ in range(2):
+            assert func(0) == 0

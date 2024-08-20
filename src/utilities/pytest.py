@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from functools import cache, wraps
+from functools import wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from utilities.datetime import duration_to_float, get_now
+from utilities.functools import cache
 from utilities.hashlib import md5_hash
 from utilities.platform import (
     IS_LINUX,

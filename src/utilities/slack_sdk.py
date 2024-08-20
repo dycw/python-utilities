@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from http import HTTPStatus
 
-from cachetools.func import ttl_cache
 from slack_sdk.webhook import WebhookClient, WebhookResponse
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 from typing_extensions import override
+
+from utilities.functools import cache
 
 _TIMEOUT = 30
 
@@ -46,13 +47,13 @@ class SendSlackError(Exception):
         return f"Webhook response was not OK; got {self.response.status_code}"  # pragma: no cover
 
 
-@ttl_cache(maxsize=1)
+@cache
 def _get_client_sync(url: str, /, *, timeout: int = _TIMEOUT) -> WebhookClient:
     """Get the webhook client."""
     return WebhookClient(url, timeout=timeout)
 
 
-@ttl_cache(maxsize=1)
+@cache
 def _get_client_async(url: str, /, *, timeout: int = _TIMEOUT) -> AsyncWebhookClient:
     """Get the engine/sessionmaker for the required database."""
     return AsyncWebhookClient(url, timeout=timeout)
