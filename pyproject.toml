@@ -247,6 +247,7 @@ zzz-test-typed-settings = [
 zzz-test-types = []
 zzz-test-typing = []
 zzz-test-warnings = []
+zzz-test-weakref = []
 zzz-test-whenever = ["whenever >= 0.6.7, < 0.7"]
 zzz-test-zipfile = []
 zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
