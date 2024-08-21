@@ -21,7 +21,6 @@ from typing import (
 from orjson import (
     OPT_NON_STR_KEYS,
     OPT_PASSTHROUGH_DATETIME,
-    OPT_PASSTHROUGH_SUBCLASS,
     OPT_SORT_KEYS,
     dumps,
     loads,
@@ -67,10 +66,7 @@ def serialize(obj: Any, /) -> bytes:
     return dumps(
         obj,
         default=_serialize_default,
-        option=OPT_NON_STR_KEYS
-        | OPT_PASSTHROUGH_DATETIME
-        | OPT_PASSTHROUGH_SUBCLASS
-        | OPT_SORT_KEYS,
+        option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
     )
 
 
