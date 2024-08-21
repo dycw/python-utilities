@@ -5,16 +5,14 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum, unique
 from fractions import Fraction
-from ipaddress import IPv4Address, IPv4Network, IPv6Address
-from operator import itemgetter
+from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast
 
 from orjson import OPT_PASSTHROUGH_DATETIME, dumps, loads
 from typing_extensions import override
 
-from utilities.enum import ensure_enum
-from utilities.types import ensure_class, ensure_member, get_class_name
+from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -277,8 +275,8 @@ def _object_hook_date(value: str, /) -> dt.date:
     return parse_date(value)
 
 
-def _object_hook_decimal(value: str, /) -> Path:
-    return Path(value)
+def _object_hook_decimal(value: str, /) -> Decimal:
+    return Decimal(value)
 
 
 def _object_hook_fraction(value: tuple[int, int], /) -> Fraction:
