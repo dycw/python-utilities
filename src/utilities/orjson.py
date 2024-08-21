@@ -7,7 +7,7 @@ from enum import StrEnum, unique
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, assert_never, cast
 
 from orjson import OPT_PASSTHROUGH_DATETIME, dumps, loads
 from typing_extensions import override
@@ -46,12 +46,7 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    return dumps(
-        obj,
-        default=_serialize_default,
-        # option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME,
-        option=OPT_PASSTHROUGH_DATETIME,
-    )
+    return dumps(obj, default=_serialize_default, option=OPT_PASSTHROUGH_DATETIME)
 
 
 class _SchemaDict(Generic[_T], TypedDict):
@@ -263,6 +258,8 @@ def _object_hook(obj: Any, /) -> Any:
         # third party
         case _Key.sqlalchemy_engine:
             return _object_hook_sqlalchemy_engine(value)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def _object_hook_bytes(value: str, /) -> bytes:
