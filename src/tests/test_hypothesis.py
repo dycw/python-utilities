@@ -365,8 +365,8 @@ class TestIntArrays:
     @given(
         data=data(),
         shape=array_shapes(),
-        min_value=int32s() | none(),
-        max_value=int32s() | none(),
+        min_value=int64s(),
+        max_value=int64s(),
         unique=booleans(),
     )
     def test_main(
@@ -374,8 +374,8 @@ class TestIntArrays:
         *,
         data: DataObject,
         shape: Shape,
-        min_value: int | None,
-        max_value: int | None,
+        min_value: int,
+        max_value: int,
         unique: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
@@ -392,31 +392,19 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
+    @given(data=data(), min_value=int32s(), max_value=int32s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
-        assert MIN_INT32 <= x <= MAX_INT32
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
+        assert max(min_value, MIN_INT32) <= x <= min(max_value, MAX_INT32)
 
 
 class TestInt64s:
-    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
+    @given(data=data(), min_value=int64s(), max_value=int64s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
-        assert MIN_INT64 <= x <= MAX_INT64
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
+        assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
 
 
 class TestLiftDraw:

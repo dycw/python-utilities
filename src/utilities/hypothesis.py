@@ -4,7 +4,7 @@ import builtins
 import datetime as dt
 from collections.abc import Collection, Hashable, Iterable, Iterator
 from contextlib import contextmanager, suppress
-from datetime import timezone, tzinfo
+from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
@@ -296,8 +296,8 @@ def int_arrays(
     /,
     *,
     shape: MaybeSearchStrategy[Shape] | None = None,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
+    min_value: MaybeSearchStrategy[int] = MIN_INT64,
+    max_value: MaybeSearchStrategy[int] = MAX_INT64,
     fill: SearchStrategy[Any] | None = None,
     unique: MaybeSearchStrategy[bool] = False,
 ) -> NDArrayI:
@@ -307,10 +307,7 @@ def int_arrays(
 
     draw = lift_draw(_draw)
     shape_use = array_shapes() if shape is None else shape
-    min_value_, max_value_ = draw(min_value), draw(max_value)
-    min_value_use = MIN_INT64 if min_value_ is None else min_value_
-    max_value_use = MAX_INT64 if max_value_ is None else max_value_
-    elements = integers(min_value=min_value_use, max_value=max_value_use)
+    elements = int64s(min_value=min_value, max_value=max_value)
     strategy: SearchStrategy[NDArrayI] = arrays(
         int64, draw(shape_use), elements=elements, fill=fill, unique=draw(unique)
     )
@@ -322,14 +319,14 @@ def int32s(
     _draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
+    min_value: MaybeSearchStrategy[int] = MIN_INT32,
+    max_value: MaybeSearchStrategy[int] = MAX_INT32,
 ) -> int:
     """Strategy for generating int32s."""
     draw = lift_draw(_draw)
-    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
-    min_value_ = MIN_INT32 if min_value_ is None else max(MIN_INT32, min_value_)
-    max_value_ = MAX_INT32 if max_value_ is None else min(MAX_INT32, max_value_)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_ = max(min_value_, MIN_INT32)
+    max_value_ = min(max_value_, MAX_INT32)
     return draw(integers(min_value_, max_value_))
 
 
@@ -338,14 +335,14 @@ def int64s(
     _draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[int | None] = None,
-    max_value: MaybeSearchStrategy[int | None] = None,
+    min_value: MaybeSearchStrategy[int] = MIN_INT64,
+    max_value: MaybeSearchStrategy[int] = MAX_INT64,
 ) -> int:
     """Strategy for generating int64s."""
     draw = lift_draw(_draw)
-    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
-    min_value_ = MIN_INT64 if min_value_ is None else max(MIN_INT64, min_value_)
-    max_value_ = MAX_INT64 if max_value_ is None else min(MAX_INT64, max_value_)
+    min_value_, max_value_ = draw(min_value), draw(max_value)
+    min_value_ = max(min_value_, MIN_INT64)
+    max_value_ = min(max_value_, MAX_INT64)
     return draw(integers(min_value_, max_value_))
 
 
