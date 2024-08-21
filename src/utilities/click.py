@@ -99,7 +99,7 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
         self._enum = enum
         self._case_sensitive = case_sensitive
         super().__init__()
@@ -114,7 +114,9 @@ class Enum(ParamType, Generic[_E]):
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
-            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
+            return ensure_enum(
+                self._enum, value=value, case_sensitive=self._case_sensitive
+            )
         except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 

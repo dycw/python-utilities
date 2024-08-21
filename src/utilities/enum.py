@@ -23,21 +23,21 @@ MaybeStr = _E | str
 
 @overload
 def ensure_enum(
-    enum: type[_E], /, *, member: None, case_sensitive: bool = ...
+    enum: type[_E], /, *, value: None, case_sensitive: bool = ...
 ) -> None: ...
 @overload
 def ensure_enum(
-    enum: type[_E], /, *, member: MaybeStr[_E], case_sensitive: bool = ...
+    enum: type[_E], /, *, value: MaybeStr[_E], case_sensitive: bool = ...
 ) -> _E: ...
 def ensure_enum(
-    enum: type[_E], /, *, member: MaybeStr[_E] | None, case_sensitive: bool = True
+    enum: type[_E], /, *, value: MaybeStr[_E] | None, case_sensitive: bool = False
 ) -> _E | None:
     """Ensure the object is a member of the enum."""
-    if member is None:
+    if value is None:
         return None
-    if isinstance(member, Enum):
-        return member
-    return parse_enum(enum, member, case_sensitive=case_sensitive)
+    if isinstance(value, Enum):
+        return value
+    return parse_enum(enum, value, case_sensitive=case_sensitive)
 
 
 def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = True) -> _E:
