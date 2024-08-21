@@ -25,10 +25,8 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     timedeltas,
-    timezones,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
-from polars import time
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -156,8 +154,8 @@ class TestDurations:
         data=data(),
         min_number=integers() | floats() | none(),
         max_number=integers() | floats() | none(),
-        min_timedelta=timedeltas() | none(),
-        max_timedelta=timedeltas() | none(),
+        min_timedelta=timedeltas(),
+        max_timedelta=timedeltas(),
     )
     def test_main(
         self,
@@ -165,8 +163,8 @@ class TestDurations:
         data: DataObject,
         min_number: Number | None,
         max_number: Number | None,
-        min_timedelta: dt.timedelta | None,
-        max_timedelta: dt.timedelta | None,
+        min_timedelta: dt.timedelta,
+        max_timedelta: dt.timedelta,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(
@@ -189,10 +187,7 @@ class TestDurations:
             if max_number is not None:
                 assert x <= max_number
         else:
-            if min_timedelta is not None:
-                assert x >= min_timedelta
-            if max_timedelta is not None:
-                assert x <= max_timedelta
+            assert min_timedelta <= x <= max_timedelta
 
     @given(
         data=data(),
