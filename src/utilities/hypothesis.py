@@ -542,19 +542,20 @@ def settings_with_reduced_examples(
 @composite
 def slices(
     _draw: DrawFn,
-    iter_len: int,
+    iter_len: MaybeSearchStrategy[int],
     /,
     *,
     slice_len: MaybeSearchStrategy[int | None] = None,
 ) -> slice:
     """Strategy for generating continuous slices from an iterable."""
     draw = lift_draw(_draw)
+    iter_len_ = draw(iter_len)
     if (slice_len_ := draw(slice_len)) is None:
-        slice_len_ = draw(integers(0, iter_len))
-    elif not 0 <= slice_len_ <= iter_len:
-        msg = f"Slice length {slice_len_} exceeds iterable length {iter_len}"
+        slice_len_ = draw(integers(0, iter_len_))
+    elif not 0 <= slice_len_ <= iter_len_:
+        msg = f"Slice length {slice_len_} exceeds iterable length {iter_len_}"
         raise InvalidArgument(msg)
-    start = draw(integers(0, iter_len - slice_len_))
+    start = draw(integers(0, iter_len_ - slice_len_))
     stop = start + slice_len_
     return slice(start, stop)
 

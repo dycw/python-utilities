@@ -1,37 +1,15 @@
 from __future__ import annotations
 
 import datetime as dt
-from json import dumps
-from math import isnan
-from operator import eq, neg
+from operator import eq
 from typing import TYPE_CHECKING, Any
 
-from tests.scripts import test_pypi_server
-from utilities.hypothesis import (
-    assume_does_not_raise,
-    int64s,
-    slices,
-    sqlite_engines,
-    temp_paths,
-    text_ascii,
-    timedeltas_2w,
-)
-from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
-from utilities.sentinel import sentinel
-from utilities.zoneinfo import HONG_KONG, UTC
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from decimal import Decimal
-
-    from sqlalchemy import Engine
-from hypothesis import HealthCheck, given, reproduce_failure, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
     binary,
     booleans,
-    characters,
     complex_numbers,
     data,
     dates,
@@ -53,12 +31,47 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
-from typing_extensions import override
 
+from utilities.hypothesis import (
+    int64s,
+    slices,
+    sqlite_engines,
+    temp_paths,
+    text_ascii,
+    timedeltas_2w,
+)
+from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import deserialize, serialize
+from utilities.sentinel import sentinel
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from fractions import Fraction
+
+    from sqlalchemy import Engine
+
+
+def _filter_binary(obj: bytes, /) -> bool:
+    try:
+        _ = obj.decode()
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _filter_fraction(obj: Fraction, /) -> bool:
+    return (MIN_INT64 <= obj.numerator <= MAX_INT64) and (
+        MIN_INT64 <= obj.denominator <= MAX_INT64
+    )
+
+
+def _map_abs(obj: Any, /) -> Any:
+    return abs(obj) if obj == 0.0 else obj
+
+
+def _map_complex(obj: complex, /) -> complex:
+    return complex(_map_abs(obj.real), _map_abs(obj.imag))
 
 
 class TestSerializeAndDeserialize:
@@ -66,16 +79,26 @@ class TestSerializeAndDeserialize:
     @mark.parametrize(
         ("elements", "two_way"),
         [
+            param(binary().filter(_filter_binary), True),
             param(booleans(), True),
+            param(
+                complex_numbers(allow_infinity=False, allow_nan=False).map(
+                    _map_complex
+                ),
+                True,
+            ),
             param(dates(), True),
             param(datetimes(), True),
             param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])), True),
+            param(decimals(allow_nan=False, allow_infinity=False).map(_map_abs), True),
             param(dictionaries(text_ascii(), int64s(), max_size=3), True),
-            param(fractions(min_value=10, max_value=10), True),
+            param(floats(allow_nan=False, allow_infinity=False).map(_map_abs), True),
+            param(fractions().filter(_filter_fraction), True),
             param(ip_addresses(v=4), True),
             param(ip_addresses(v=6), True),
             param(lists(int64s(), max_size=3), True),
             param(none(), True),
+            param(slices(integers(0, 10)), True),
             param(temp_paths(), True),
             param(text(), True),
             param(timedeltas_2w(), True),
@@ -87,112 +110,41 @@ class TestSerializeAndDeserialize:
         self, *, data: DataObject, elements: SearchStrategy[Any], two_way: bool
     ) -> None:
         x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(x, y, two_way=two_way)
-
-    @given(x=binary(), y=binary())
-    @settings(suppress_health_check=[HealthCheck.filter_too_much])
-    def test_binary(self, *, x: bytes, y: bytes) -> None:
-        with assume_does_not_raise(UnicodeDecodeError):
-            _ = x.decode()
-            _ = y.decode()
-        self._assert_standard(x, y, two_way=True)
-
-    @given(
-        x=complex_numbers(allow_infinity=False, allow_nan=False),
-        y=complex_numbers(allow_infinity=False, allow_nan=False),
-    )
-    def test_complex(self, *, x: complex, y: complex) -> None:
-        def eq(x: complex, y: complex, /) -> bool:
-            return ((x.real == y.real) or (x.real == y.real == 0.0)) and (
-                (x.imag == y.imag) or (x.imag == y.imag == 0.0)
-            )
-
-        self._assert_standard(x, y, eq=eq, two_way=True)
-
-    @given(x=decimals(), y=decimals())
-    def test_decimal(self, *, x: Decimal, y: Decimal) -> None:
-        def eq(x: Decimal, y: Decimal, /) -> bool:
-            x_nan, y_nan = x.is_nan(), y.is_nan()
-            if x_nan and y_nan:
-                return (x.is_qnan() == y.is_qnan()) and (x.is_signed() == y.is_signed())
-            return (x_nan == y_nan) and (x == y)
-
-        self._assert_standard(x, y, eq=eq)
-
-    # @given(data=data(), n=integers(0, 10))
-    # def test_dicts_sortable(self, *, data: DataObject, n: int) -> None:
-    #     elements = dictionaries(
-    #         text_ascii(), integers(0, 2 * n), min_size=n, max_size=n
-    #     )
-    #     x, y = data.draw(tuples(elements, elements))
-    #     self._assert_standard(x, y)
-    #
-    # @given(data=data(), n=integers(2, 10))
-    # def test_dicts_unsortable(self, *, data: DataObject, n: int) -> None:
-    #     elements = dictionaries(
-    #         integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
-    #         integers(0, 2 * n),
-    #         min_size=n,
-    #         max_size=n,
-    #     )
-    #     x, y = data.draw(tuples(elements, elements))
-    #     self._assert_unsortable_collection(x, y)
+        self._assert_standard(x, y, two_way=two_way, eq_obj_implies_eq_ser=True)
 
     @given(x=sqlite_engines(), y=sqlite_engines())
     def test_engines(self, *, x: Engine, y: Engine) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
 
-        self._assert_standard(x, y, eq=eq)
-
-    @given(
-        x=floats(allow_nan=False, allow_infinity=False),
-        y=floats(allow_nan=False, allow_infinity=False),
-    )
-    def test_floats(self, *, x: float, y: float) -> None:
-        def eq(x: float, y: float, /) -> bool:
-            return (x == y) or (x == y == 0.0)
-
-        self._assert_standard(x, y, eq=eq)
+        self._assert_standard(x, y, eq=eq, two_way=True, eq_obj_implies_eq_ser=True)
 
     @given(data=data(), n=integers(0, 10))
-    @mark.parametrize("strategy", [param(frozensets), param(sets)])
-    def test_sets_sortable(
-        self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
-    ) -> None:
-        elements = strategy(integers(0, 2 * n), min_size=n, max_size=n)
-        x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(x, y, eq=eq)
-
-    @given(data=data(), n=integers(2, 10))
-    @mark.parametrize("strategy", [param(frozensets), param(sets)])
-    def test_sets_unsortable(
+    @mark.parametrize("outer_elements", [param(frozensets), param(sets)])
+    @mark.parametrize(
+        ("inner_elements", "eq_obj_implies_eq_ser"),
+        [param(int64s(), True), param(int64s() | text_ascii(), False)],
+    )
+    def test_sets_and_frozensets(
         self,
         *,
         data: DataObject,
         n: int,
-        strategy: Callable[..., SearchStrategy[int | str]],
+        outer_elements: Callable[..., SearchStrategy[Any]],
+        inner_elements: Callable[..., SearchStrategy[Any]],
+        eq_obj_implies_eq_ser: bool,
     ) -> None:
-        elements = strategy(
-            integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
-            min_size=n,
-            max_size=n,
+        elements = outer_elements(inner_elements, min_size=n, max_size=n)
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(
+            x, y, two_way=True, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser
         )
-        x, y = data.draw(tuples(elements, elements))
-        self._assert_unsortable_collection(x, y)
 
-    @given(data=data(), n=integers(0, 10))
-    def test_slices(self, *, data: DataObject, n: int) -> None:
-        elements = slices(n)
+    @given(data=data(), n=integers(0, 3))
+    def test_tuples(self, *, data: DataObject, n: int) -> None:
+        elements = tuples(*(n * [int64s()]))
         x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(x, y, eq=eq)
-
-    # @given(data=data(), n=integers(0, 3))
-    # @mark.only
-    # def test_tuples(self, *, data: DataObject, n: int) -> None:
-    #     elements = tuples(*(n * [int64s()]))
-    #     x, y = data.draw(tuples(elements, elements))
-    #     self._assert_standard(x, y, eq=eq)
+        self._assert_standard(x, y, eq=eq, two_way=False)
 
     def test_error(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
@@ -206,18 +158,15 @@ class TestSerializeAndDeserialize:
         *,
         two_way: bool = False,
         eq: Callable[[Any, Any], bool] = eq,
+        eq_obj_implies_eq_ser: bool = False,
     ) -> None:
-        ser = serialize(x)
-        if two_way:
-            deser = deserialize(ser)
-            assert eq(deser, x)
-        res = ser == serialize(y)
-        expected = eq(x, y)
-        assert res is expected
-
-    def _assert_unsortable_collection(self, x: Any, y: Any, /) -> None:
         ser_x = serialize(x)
-        assert deserialize(ser_x) == x
+        if two_way:
+            deser_x = deserialize(ser_x)
+            assert eq(deser_x, x)
         ser_y = serialize(y)
-        if ser_x == ser_y:
-            assert x == y
+        if eq(x, y):
+            if eq_obj_implies_eq_ser:
+                assert ser_x == ser_y
+        else:
+            assert ser_x != ser_y
