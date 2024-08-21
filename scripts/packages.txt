@@ -23,7 +23,6 @@ humps
 hypothesis
 ipython
 iterables
-json
 jupyter
 logging
 loguru
