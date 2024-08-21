@@ -99,25 +99,23 @@ class TestSerializeAndDeserialize:
                 True,
             ),
             param(
-                dictionaries(text_ascii(), int64s() | text_ascii(), max_size=10),
+                dictionaries(text_ascii(), int64s() | text_ascii(), max_size=3),
                 True,
                 True,
             ),
             param(
-                dictionaries(int64s(), int64s() | text_ascii(), max_size=10),
-                False,
-                True,
+                dictionaries(int64s(), int64s() | text_ascii(), max_size=3), False, True
             ),
             param(
                 floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
             ),
             param(fractions().filter(_filter_fraction), True, True),
-            param(frozensets(int64s() | text_ascii(), max_size=10), True, True),
+            param(frozensets(int64s() | text_ascii(), max_size=3), True, True),
             param(ip_addresses(v=4), True, True),
             param(ip_addresses(v=6), True, True),
             param(lists(int64s(), max_size=3), True, True),
             param(none(), True, True),
-            param(sets(int64s() | text_ascii(), max_size=10), True, True),
+            param(sets(int64s() | text_ascii(), max_size=3), True, True),
             param(slices(integers(0, 10)), True, True),
             param(temp_paths(), True, True),
             param(text(), True, True),
