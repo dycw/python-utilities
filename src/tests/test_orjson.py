@@ -214,7 +214,7 @@ class TestSerializeAndDeserialize:
             text=text,
             zoned_datetime=zoned_datetime,
         )
-        result = deserialize(serialize(obj), cls=Outer, cast=[Truth])
+        result = deserialize(serialize(obj), cls=Outer)
         assert result == obj
 
     @given(data=data())

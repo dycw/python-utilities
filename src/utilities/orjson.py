@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from dataclasses import dataclass
 from decimal import Decimal
-from enum import StrEnum, unique
+from enum import Enum, StrEnum, unique
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
@@ -31,7 +31,7 @@ from utilities.dataclasses import Dataclass
 from utilities.types import get_class_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
 
     from sqlalchemy.engine import Engine
 
@@ -231,28 +231,17 @@ class _GetSchemaError(Exception):
 
 
 @overload
-def deserialize(
-    obj: bytes, /, *, cls: type[_TDataclass], cast: Iterable[type[Any]] | None = ...
-) -> _TDataclass: ...
+def deserialize(obj: bytes, /, *, cls: type[_TDataclass]) -> _TDataclass: ...
 @overload
-def deserialize(
-    obj: bytes, /, *, cls: None = ..., cast: Iterable[type[Any]] | None = ...
-) -> Any: ...
-def deserialize(
-    obj: bytes,
-    /,
-    *,
-    cls: type[_TDataclass] | None = None,
-    cast: Iterable[type[Any]] | None = None,
-) -> Any:
+def deserialize(obj: bytes, /, *, cls: None = ...) -> Any: ...
+def deserialize(obj: bytes, /, *, cls: type[_TDataclass] | None = None) -> Any:
     """Deserialize an object."""
     data = _object_hook(loads(obj))
     if cls is None:
         return data
     from dacite import Config, from_dict
 
-    cast_use = [] if cast is None else list(cast)
-    return from_dict(cls, data, config=Config(cast=cast_use))
+    return from_dict(cls, data, config=Config(cast=[Enum]))
 
 
 def _object_hook(obj: Any, /) -> Any:
