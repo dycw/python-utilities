@@ -46,7 +46,12 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    return dumps(obj, default=_serialize_default, option=OPT_PASSTHROUGH_DATETIME)
+    return dumps(
+        obj,
+        default=_serialize_default,
+        # option=OPT_PASSTHROUGH_DATACLASS | OPT_PASSTHROUGH_DATETIME,
+        option=OPT_PASSTHROUGH_DATETIME,
+    )
 
 
 class _SchemaDict(Generic[_T], TypedDict):

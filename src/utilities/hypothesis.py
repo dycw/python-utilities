@@ -707,7 +707,7 @@ def zoned_datetimes(
     *,
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
     max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
-    time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
+    time_zone: MaybeSearchStrategy[ZoneInfo] = UTC,
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
     draw = lift_draw(_draw)
@@ -715,6 +715,17 @@ def zoned_datetimes(
         draw(min_value),
         draw(max_value),
         draw(time_zone),
+    )
+    _ = ensure_local_datetime(min_value_)
+    _ = ensure_local_datetime(max_value_)
+    min_value_ = min_value_.replace(tzinfo=time_zone_)
+    max_value_ = max_value_.replace(tzinfo=time_zone_)
+    return draw(
+        datetimes(
+            min_value=draw(min_value).replace(tzinfo=None),
+            max_value=draw(max_value).replace(tzinfo=None),
+            timezones=just(time_zone),
+        )
     )
     _ = ensure_local_datetime(min_value_)
     _ = ensure_local_datetime(max_value_)
