@@ -9,7 +9,13 @@ from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, assert_never, cast
 
-from orjson import OPT_PASSTHROUGH_DATETIME, dumps, loads
+from orjson import (
+    OPT_NON_STR_KEYS,
+    OPT_PASSTHROUGH_DATETIME,
+    OPT_SORT_KEYS,
+    dumps,
+    loads,
+)
 from typing_extensions import override
 
 from utilities.types import get_class_name
@@ -46,7 +52,11 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    return dumps(obj, default=_serialize_default, option=OPT_PASSTHROUGH_DATETIME)
+    return dumps(
+        obj,
+        default=_serialize_default,
+        option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+    )
 
 
 class _SchemaDict(Generic[_T], TypedDict):
