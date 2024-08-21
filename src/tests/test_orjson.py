@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto, unique
 from fractions import Fraction
 from operator import eq
-from typing import Any
+from typing import Any, Literal
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -47,7 +47,10 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import deserialize, serialize
 from utilities.sentinel import sentinel
+from utilities.typing import get_args
 from utilities.zoneinfo import HONG_KONG, UTC
+
+_TrueOrFalseLit = Literal["true", "false"]
 
 
 def _filter_binary(obj: bytes, /) -> bool:
@@ -158,6 +161,9 @@ class TestSerializeAndDeserialize:
         text: str,
         zoned_datetime: dt.datetime,
     ) -> None:
+        true_or_falses: tuple[_TrueOrFalseLit, ...] = get_args(_TrueOrFalseLit)
+        true_or_false = data.draw(sampled_from(true_or_falses))
+
         @unique
         class Truth(Enum):
             true = auto()
@@ -168,36 +174,40 @@ class TestSerializeAndDeserialize:
         @dataclass(kw_only=True)
         class Inner:
             date: dt.date
+            enum: Truth
             int_: int
+            literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            truth: Truth
             zoned_datetime: dt.datetime
 
         @dataclass(kw_only=True)
         class Outer:
             inner: Inner
             date: dt.date
+            enum: Truth
             int_: int
+            literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            truth: Truth
             zoned_datetime: dt.datetime
 
         obj = Outer(
             inner=Inner(
                 date=date,
+                enum=truth,
                 int_=int_,
+                literal=true_or_false,
                 local_datetime=local_datetime,
                 text=text,
-                truth=truth,
                 zoned_datetime=zoned_datetime,
             ),
             date=date,
+            enum=truth,
             int_=int_,
+            literal=true_or_false,
             local_datetime=local_datetime,
             text=text,
-            truth=truth,
             zoned_datetime=zoned_datetime,
         )
         result = deserialize(serialize(obj), cls=Outer, cast=[Truth])
