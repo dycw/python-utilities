@@ -22,10 +22,13 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
+    sampled_from,
     sets,
     timedeltas,
+    timezones,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
+from polars import time
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -64,6 +67,7 @@ from utilities.hypothesis import (
     text_clean,
     text_printable,
     timedeltas_2w,
+    zoned_datetimes,
 )
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
@@ -78,12 +82,13 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
+    from zoneinfo import ZoneInfo
 
     import redis
     from redis.commands.timeseries import TimeSeries
@@ -831,3 +836,32 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
+
+
+class TestZonedDatetimes:
+    @given(
+        data=data(),
+        min_value=datetimes(),
+        max_value=datetimes(),
+        time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: dt.datetime,
+        max_value: dt.datetime,
+        time_zone: ZoneInfo,
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        datetime = data.draw(
+            zoned_datetimes(
+                min_value=min_value, max_value=max_value, time_zone=time_zone
+            )
+        )
+        assert datetime.tzinfo is time_zone
+        assert (
+            min_value.replace(tzinfo=time_zone)
+            <= datetime
+            <= max_value.replace(tzinfo=time_zone)
+        )
