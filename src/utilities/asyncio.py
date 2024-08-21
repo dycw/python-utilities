@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
+MaybeAwaitable = _T | Awaitable[_T]
 _MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
-_MaybeAwaitable = _T | Awaitable[_T]
-_MaybeAwaitableMaybeAsyncIterable = _MaybeAwaitable[_MaybeAsyncIterable[_T]]
+_MaybeAwaitableMaybeAsyncIterable = MaybeAwaitable[_MaybeAsyncIterable[_T]]
 _TSupportsRichComparison = TypeVar(
     "_TSupportsRichComparison", bound=SupportsRichComparison
 )
@@ -44,13 +44,13 @@ async def groupby_async(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[_U]],
+    key: Callable[[_T], MaybeAwaitable[_U]],
 ) -> AsyncIterator[tuple[_U, Sequence[_T]]]: ...
 async def groupby_async(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
+    key: Callable[[_T], MaybeAwaitable[_U]] | None = None,
 ) -> AsyncIterator[tuple[_T, Sequence[_T]]] | AsyncIterator[tuple[_U, Sequence[_T]]]:
     """Yield consecutive keys and groups (as lists)."""
     as_list = await to_list(iterable)
@@ -63,7 +63,8 @@ async def groupby_async(
         return iterator1()
 
     async def iterator2() -> AsyncIterator[tuple[_U, Sequence[_T]]]:
-        pairs = [(cast(_U, await try_await(key(e))), e) for e in as_list]
+        keys = [cast(_U, await try_await(key(e))) for e in as_list]
+        pairs = zip(keys, as_list, strict=True)
         for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
             group = [v for _, v in pairs_group]
             yield k, group
@@ -80,13 +81,13 @@ async def groupby_async_list(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[_U]],
+    key: Callable[[_T], MaybeAwaitable[_U]],
 ) -> Sequence[tuple[_U, Sequence[_T]]]: ...
 async def groupby_async_list(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[_U]] | None = None,
+    key: Callable[[_T], MaybeAwaitable[_U]] | None = None,
 ) -> Sequence[tuple[_T, Sequence[_T]]] | Sequence[tuple[_U, Sequence[_T]]]:
     """Yield consecutive keys and groups (as lists)."""
     if key is None:
@@ -160,7 +161,7 @@ def timeout_dur(*, duration: Duration | None = None) -> Timeout:
 
 async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T]:
     """Reify an asynchronous iterable as a list."""
-    value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
+    value = await try_await(iterable)
     try:
         return [x async for x in cast(AsyncIterable[_T], value)]
     except TypeError:
@@ -169,7 +170,7 @@ async def to_list(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> list[_T
 
 async def to_set(iterable: _MaybeAwaitableMaybeAsyncIterable[_T], /) -> set[_T]:
     """Reify an asynchronous iterable as a set."""
-    value = cast(_MaybeAsyncIterable[_T], await try_await(iterable))
+    value = await try_await(iterable)
     try:
         return {x async for x in cast(AsyncIterable[_T], value)}
     except TypeError:
@@ -189,7 +190,7 @@ async def to_sorted(
     iterable: _MaybeAwaitableMaybeAsyncIterable[_T],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]],
+    key: Callable[[_T], MaybeAwaitable[SupportsRichComparison]],
     reverse: bool = ...,
 ) -> list[_T]: ...
 async def to_sorted(
@@ -197,7 +198,7 @@ async def to_sorted(
     | _MaybeAwaitableMaybeAsyncIterable[_TSupportsRichComparison],
     /,
     *,
-    key: Callable[[_T], _MaybeAwaitable[SupportsRichComparison]] | None = None,
+    key: Callable[[_T], MaybeAwaitable[SupportsRichComparison]] | None = None,
     reverse: bool = False,
 ) -> list[_T] | list[_TSupportsRichComparison]:
     """Convert."""
@@ -212,12 +213,16 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
-async def try_await(obj: Any, /) -> Any:
+@overload
+async def try_await(obj: Awaitable[_T], /) -> _T: ...
+@overload
+async def try_await(obj: _T, /) -> _T: ...
+async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
     """Try await a value from an object."""
     try:
-        return await obj
+        return await cast(Awaitable[_T], obj)
     except TypeError:
-        return obj
+        return cast(_T, obj)
 
 
 __all__ = [
