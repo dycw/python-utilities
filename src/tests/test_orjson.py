@@ -75,42 +75,69 @@ def _map_complex(obj: complex, /) -> complex:
 class TestSerializeAndDeserialize:
     @given(data=data())
     @mark.parametrize(
-        ("elements", "two_way"),
+        ("elements", "two_way", "eq_obj_implies_eq_ser"),
         [
-            param(binary().filter(_filter_binary), True),
-            param(booleans(), True),
+            param(binary().filter(_filter_binary), True, True),
+            param(booleans(), True, True),
             param(
                 complex_numbers(allow_infinity=False, allow_nan=False).map(
                     _map_complex
                 ),
                 True,
+                True,
             ),
-            param(dates(), True),
-            param(datetimes(), True),
+            param(dates(), True, True),
+            param(datetimes(), True, True),
             param(
-                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])), True
+                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
+                True,
+                True,
             ),
-            param(decimals(allow_nan=False, allow_infinity=False).map(_map_abs), True),
-            param(dictionaries(text_ascii(), int64s(), max_size=3), True),
-            param(floats(allow_nan=False, allow_infinity=False).map(_map_abs), True),
-            param(fractions().filter(_filter_fraction), True),
-            param(ip_addresses(v=4), True),
-            param(ip_addresses(v=6), True),
-            param(lists(int64s(), max_size=3), True),
-            param(none(), True),
-            param(slices(integers(0, 10)), True),
-            param(temp_paths(), True),
-            param(text(), True),
-            param(timedeltas_2w(), True),
-            param(times(), True),
-            param(uuids(), False),
+            param(
+                decimals(allow_nan=False, allow_infinity=False).map(_map_abs),
+                True,
+                True,
+            ),
+            param(
+                dictionaries(text_ascii(), int64s() | text_ascii(), max_size=10),
+                True,
+                True,
+            ),
+            param(
+                dictionaries(int64s(), int64s() | text_ascii(), max_size=10),
+                False,
+                True,
+            ),
+            param(
+                floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
+            ),
+            param(fractions().filter(_filter_fraction), True, True),
+            param(frozensets(int64s() | text_ascii(), max_size=10), True, True),
+            param(ip_addresses(v=4), True, True),
+            param(ip_addresses(v=6), True, True),
+            param(lists(int64s(), max_size=3), True, True),
+            param(none(), True, True),
+            param(sets(int64s() | text_ascii(), max_size=10), True, True),
+            param(slices(integers(0, 10)), True, True),
+            param(temp_paths(), True, True),
+            param(text(), True, True),
+            param(timedeltas_2w(), True, True),
+            param(times(), True, True),
+            param(tuples(int64s(), int64s()), False, True),
+            param(uuids(), False, True),
         ],
     )
     def test_main(
-        self, *, data: DataObject, elements: SearchStrategy[Any], two_way: bool
+        self,
+        *,
+        data: DataObject,
+        elements: SearchStrategy[Any],
+        two_way: bool,
+        eq_obj_implies_eq_ser: bool,
     ) -> None:
-        x, y = data.draw(tuples(elements, elements))
-        self._run_tests(x, y, two_way=two_way, eq_obj_implies_eq_ser=True)
+        self._run_tests(
+            data, elements, two_way=two_way, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser
+        )
 
     @given(
         date=dates(),
@@ -165,37 +192,14 @@ class TestSerializeAndDeserialize:
         result = from_dict(Outer, data)
         assert result == obj
 
-    @given(x=sqlite_engines(), y=sqlite_engines())
-    def test_engines(self, *, x: Engine, y: Engine) -> None:
+    @given(data=data())
+    def test_engines(self, *, data: DataObject) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
 
-        self._run_tests(x, y, eq=eq, two_way=True, eq_obj_implies_eq_ser=True)
-
-    @given(data=data(), n=integers(0, 10))
-    @mark.parametrize("outer_elements", [param(frozensets), param(sets)])
-    @mark.parametrize(
-        ("inner_elements", "eq_obj_implies_eq_ser"),
-        [param(int64s(), True), param(int64s() | text_ascii(), False)],
-    )
-    def test_sets_and_frozensets(
-        self,
-        *,
-        data: DataObject,
-        n: int,
-        outer_elements: Callable[..., SearchStrategy[Any]],
-        inner_elements: Callable[..., SearchStrategy[Any]],
-        eq_obj_implies_eq_ser: bool,
-    ) -> None:
-        elements = outer_elements(inner_elements, min_size=n, max_size=n)
-        x, y = data.draw(tuples(elements, elements))
-        self._run_tests(x, y, two_way=True, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser)
-
-    @given(data=data(), n=integers(0, 3))
-    def test_tuples(self, *, data: DataObject, n: int) -> None:
-        elements = tuples(*(n * [int64s()]))
-        x, y = data.draw(tuples(elements, elements))
-        self._run_tests(x, y, eq=eq, two_way=False)
+        self._run_tests(
+            data, sqlite_engines(), two_way=True, eq=eq, eq_obj_implies_eq_ser=True
+        )
 
     def test_error(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
@@ -203,18 +207,20 @@ class TestSerializeAndDeserialize:
 
     def _run_tests(
         self,
-        x: Any,
-        y: Any,
+        data: DataObject,
+        elements: SearchStrategy[Any],
         /,
         *,
         two_way: bool = False,
         eq: Callable[[Any, Any], bool] = eq,
         eq_obj_implies_eq_ser: bool = False,
     ) -> None:
+        x = data.draw(elements)
         ser_x = serialize(x)
         if two_way:
             deser_x = deserialize(ser_x)
             assert eq(deser_x, x)
+        y = data.draw(elements)
         ser_y = serialize(y)
         if eq(x, y):
             if eq_obj_implies_eq_ser:
