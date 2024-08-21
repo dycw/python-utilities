@@ -1,9 +1,9 @@
-from __future__ import annotations
-
 import datetime as dt
+from collections.abc import Callable
 from dataclasses import dataclass
+from fractions import Fraction
 from operator import eq
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from dacite import from_dict
 from hypothesis import given
@@ -33,6 +33,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
+from sqlalchemy import Engine
 
 from utilities.hypothesis import (
     int64s,
@@ -47,12 +48,6 @@ from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import deserialize, serialize
 from utilities.sentinel import sentinel
 from utilities.zoneinfo import HONG_KONG, UTC
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from fractions import Fraction
-
-    from sqlalchemy import Engine
 
 
 def _filter_binary(obj: bytes, /) -> bool:
@@ -117,51 +112,57 @@ class TestSerializeAndDeserialize:
         x, y = data.draw(tuples(elements, elements))
         self._run_tests(x, y, two_way=two_way, eq_obj_implies_eq_ser=True)
 
-    # @mark.only
-    @given(x=int64s(), y=int64s())
-    def test_dataclasses(self, *, x: int, y: int) -> None:
-        @dataclass(frozen=True, kw_only=True)
-        class Example:
-            n: int
-
-        obj_x, obj_y = Example(n=x), Example(n=y)
-        self._run_tests(obj_x, obj_y, two_way=False, eq_obj_implies_eq_ser=True)
-        data = deserialize(serialize(obj_x))
-        result = from_dict(Example, data)
-        assert result == obj_x
-
-    @mark.only
     @given(
         date=dates(),
         int_=int64s(),
         local_datetime=datetimes(),
+        text=text_ascii(),
         zoned_datetime=zoned_datetimes(
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])
         ),
     )
-    def test_dataclasses_simple(
+    def test_dataclasses(
         self,
         *,
         date: dt.date,
         int_: int,
         local_datetime: dt.datetime,
+        text: str,
         zoned_datetime: dt.datetime,
     ) -> None:
-        @dataclass(frozen=True, kw_only=True)
-        class Example:
+        @dataclass(kw_only=True)
+        class Inner:
             date: dt.date
             int_: int
             local_datetime: dt.datetime
+            text: str
             zoned_datetime: dt.datetime
 
-        obj = Example(
+        @dataclass(kw_only=True)
+        class Outer:
+            inner: Inner
+            date: dt.date
+            int_: int
+            local_datetime: dt.datetime
+            text: str
+            zoned_datetime: dt.datetime
+
+        obj = Outer(
+            inner=Inner(
+                date=date,
+                int_=int_,
+                local_datetime=local_datetime,
+                text=text,
+                zoned_datetime=zoned_datetime,
+            ),
             date=date,
             int_=int_,
             local_datetime=local_datetime,
+            text=text,
             zoned_datetime=zoned_datetime,
         )
         data = deserialize(serialize(obj))
-        result = from_dict(Example, data)
+        result = from_dict(Outer, data)
         assert result == obj
 
     @given(x=sqlite_engines(), y=sqlite_engines())
