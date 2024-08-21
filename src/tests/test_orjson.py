@@ -121,11 +121,9 @@ class TestSerializeAndDeserialize:
             param(lists(int64s(), max_size=3), True, True),
             param(lists(lists(int64s(), max_size=3), max_size=3), True, True),
             param(none(), True, True),
-            param(sets(int64s(), max_size=3), True, True, marks=mark.only),
-            param(sets(text_ascii(), max_size=3), True, True, marks=mark.only),
-            param(
-                sets(int64s() | text_ascii(), max_size=3), True, False, marks=mark.only
-            ),
+            param(sets(int64s(), max_size=3), True, True),
+            param(sets(text_ascii(), max_size=3), True, True),
+            param(sets(int64s() | text_ascii(), max_size=3), True, False),
             param(slices(integers(0, 10)), True, True),
             param(temp_paths(), True, True),
             param(text(), True, True),
