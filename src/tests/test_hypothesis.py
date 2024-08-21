@@ -45,6 +45,7 @@ from utilities.hypothesis import (
     git_repos,
     hashables,
     int32s,
+    int64s,
     int_arrays,
     lift_draw,
     lists_fixed_length,
@@ -64,7 +65,7 @@ from utilities.hypothesis import (
     text_printable,
     timedeltas_2w,
 )
-from utilities.math import MAX_INT32, MIN_INT32
+from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
@@ -398,6 +399,20 @@ class TestInt32s:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
         assert MIN_INT32 <= x <= MAX_INT32
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+
+
+class TestInt64s:
+    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    def test_main(
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int64s(min_value=min_value, max_value=max_value))
+        assert MIN_INT64 <= x <= MAX_INT64
         if min_value is not None:
             assert x >= min_value
         if max_value is not None:
