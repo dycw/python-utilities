@@ -133,7 +133,7 @@ idna==3.7
     #   yarl
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
-importlib-metadata==8.3.0
+importlib-metadata==8.4.0
     # via keyring
 importlib-resources==6.4.3
     # via pypiserver
@@ -182,7 +182,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.4.2
+narwhals==1.5.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -213,6 +213,8 @@ numpy==2.0.1
     #   scs
     #   streamlit
 optuna==3.6.1
+    # via dycw-utilities (pyproject.toml)
+orjson==3.10.7
     # via dycw-utilities (pyproject.toml)
 osqp==0.6.7.post1
     # via cvxpy
@@ -344,7 +346,7 @@ rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
-scipy==1.14.0
+scipy==1.14.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   clarabel
@@ -355,7 +357,7 @@ scipy==1.14.0
     #   scs
 scs==3.2.6
     # via cvxpy
-setuptools==73.0.0
+setuptools==73.0.1
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
@@ -422,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.37
+uv==0.3.0
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

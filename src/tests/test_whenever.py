@@ -25,7 +25,12 @@ from utilities.datetime import (
     drop_milli_and_microseconds,
     maybe_sub_pct_y,
 )
-from utilities.hypothesis import assume_does_not_raise, durations, timedeltas_2w
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    durations,
+    timedeltas_2w,
+    zoned_datetimes,
+)
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
@@ -266,14 +271,14 @@ class TestParseAndSerializeTimedelta:
 
 
 class TestParseAndSerializeZonedDateTime:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
     @given(
-        datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])).map(
+        datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])).map(
             drop_milli_and_microseconds
         )
     )
@@ -285,7 +290,7 @@ class TestParseAndSerializeZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
@@ -310,7 +315,10 @@ class TestParseAndSerializeZonedDateTime:
         ):
             _ = serialize_zoned_datetime(datetime)
 
-    @given(data=data(), datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
+    @given(
+        data=data(),
+        datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
+    )
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_value = data.draw(
             sampled_from([datetime, serialize_zoned_datetime(datetime)])

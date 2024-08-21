@@ -23,7 +23,6 @@ humps
 hypothesis
 ipython
 iterables
-json
 jupyter
 logging
 loguru
@@ -33,6 +32,7 @@ modules
 more-itertools
 numpy
 optuna
+orjson
 os
 pathlib
 pickle
@@ -62,9 +62,9 @@ tenacity
 text
 timer
 tqdm
+typed-settings
 types
 typing
-typed-settings
 warnings
 weakref
 whenever

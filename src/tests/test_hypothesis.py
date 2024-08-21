@@ -22,6 +22,7 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
+    sampled_from,
     sets,
     timedeltas,
 )
@@ -45,6 +46,7 @@ from utilities.hypothesis import (
     git_repos,
     hashables,
     int32s,
+    int64s,
     int_arrays,
     lift_draw,
     lists_fixed_length,
@@ -63,8 +65,9 @@ from utilities.hypothesis import (
     text_clean,
     text_printable,
     timedeltas_2w,
+    zoned_datetimes,
 )
-from utilities.math import MAX_INT32, MIN_INT32
+from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
 from utilities.sqlalchemy import get_table, insert_items, insert_items_async
@@ -77,12 +80,13 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
     from uuid import UUID
+    from zoneinfo import ZoneInfo
 
     import redis
     from redis.commands.timeseries import TimeSeries
@@ -150,8 +154,8 @@ class TestDurations:
         data=data(),
         min_number=integers() | floats() | none(),
         max_number=integers() | floats() | none(),
-        min_timedelta=timedeltas() | none(),
-        max_timedelta=timedeltas() | none(),
+        min_timedelta=timedeltas(),
+        max_timedelta=timedeltas(),
     )
     def test_main(
         self,
@@ -159,8 +163,8 @@ class TestDurations:
         data: DataObject,
         min_number: Number | None,
         max_number: Number | None,
-        min_timedelta: dt.timedelta | None,
-        max_timedelta: dt.timedelta | None,
+        min_timedelta: dt.timedelta,
+        max_timedelta: dt.timedelta,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(
@@ -183,10 +187,7 @@ class TestDurations:
             if max_number is not None:
                 assert x <= max_number
         else:
-            if min_timedelta is not None:
-                assert x >= min_timedelta
-            if max_timedelta is not None:
-                assert x <= max_timedelta
+            assert min_timedelta <= x <= max_timedelta
 
     @given(
         data=data(),
@@ -364,8 +365,8 @@ class TestIntArrays:
     @given(
         data=data(),
         shape=array_shapes(),
-        min_value=int32s() | none(),
-        max_value=int32s() | none(),
+        min_value=int64s(),
+        max_value=int64s(),
         unique=booleans(),
     )
     def test_main(
@@ -373,8 +374,8 @@ class TestIntArrays:
         *,
         data: DataObject,
         shape: Shape,
-        min_value: int | None,
-        max_value: int | None,
+        min_value: int,
+        max_value: int,
         unique: bool,
     ) -> None:
         with assume_does_not_raise(InvalidArgument):
@@ -391,17 +392,19 @@ class TestIntArrays:
 
 
 class TestInt32s:
-    @given(data=data(), min_value=int32s() | none(), max_value=int32s() | none())
-    def test_main(
-        self, *, data: DataObject, min_value: int | None, max_value: int | None
-    ) -> None:
+    @given(data=data(), min_value=int32s(), max_value=int32s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int32s(min_value=min_value, max_value=max_value))
-        assert MIN_INT32 <= x <= MAX_INT32
-        if min_value is not None:
-            assert x >= min_value
-        if max_value is not None:
-            assert x <= max_value
+        assert max(min_value, MIN_INT32) <= x <= min(max_value, MAX_INT32)
+
+
+class TestInt64s:
+    @given(data=data(), min_value=int64s(), max_value=int64s())
+    def test_main(self, *, data: DataObject, min_value: int, max_value: int) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int64s(min_value=min_value, max_value=max_value))
+        assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
 
 
 class TestLiftDraw:
@@ -816,3 +819,32 @@ class TestTimeDeltas2W:
         ser = serialize_timedelta(timedelta)
         _ = parse_timedelta(ser)
         assert min_value <= timedelta <= max_value
+
+
+class TestZonedDatetimes:
+    @given(
+        data=data(),
+        min_value=datetimes(),
+        max_value=datetimes(),
+        time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
+    )
+    def test_main(
+        self,
+        *,
+        data: DataObject,
+        min_value: dt.datetime,
+        max_value: dt.datetime,
+        time_zone: ZoneInfo,
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        datetime = data.draw(
+            zoned_datetimes(
+                min_value=min_value, max_value=max_value, time_zone=time_zone
+            )
+        )
+        assert datetime.tzinfo is time_zone
+        assert (
+            min_value.replace(tzinfo=time_zone)
+            <= datetime
+            <= max_value.replace(tzinfo=time_zone)
+        )

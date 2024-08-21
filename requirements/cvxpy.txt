@@ -48,7 +48,7 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 qdldl==0.1.7.post4
     # via osqp
-scipy==1.14.0
+scipy==1.14.1
     # via
     #   clarabel
     #   cvxpy
