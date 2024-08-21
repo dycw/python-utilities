@@ -26,21 +26,21 @@ MaybeStr = _E | str
 
 @overload
 def ensure_enum(
-    enum: type[_E], /, *, value: None, case_sensitive: bool = ...
+    enum: type[_E], value: None, /, *, case_sensitive: bool = ...
 ) -> None: ...
 @overload
 def ensure_enum(
-    enum: type[_E], /, *, value: MaybeStr[_E], case_sensitive: bool = ...
+    enum: type[_E], value: MaybeStr[_E], /, *, case_sensitive: bool = ...
 ) -> _E: ...
 @overload
 def ensure_enum(
-    enum: type[_E], /, *, value: Iterable[MaybeStr[_E]], case_sensitive: bool = ...
+    enum: type[_E], value: Iterable[MaybeStr[_E]], /, *, case_sensitive: bool = ...
 ) -> Iterable[_E]: ...
 def ensure_enum(
     enum: type[_E],
+    value: MaybeIterable[MaybeStr[_E]] | None,
     /,
     *,
-    value: MaybeIterable[MaybeStr[_E]] | None,
     case_sensitive: bool = False,
 ) -> _E | Iterable[_E] | None:
     """Ensure the object is a member of the enum."""
@@ -48,7 +48,7 @@ def ensure_enum(
         return None
     if is_iterable_not_str(value):
         return (
-            ensure_enum(enum, value=v, case_sensitive=case_sensitive)
+            ensure_enum(enum, v, case_sensitive=case_sensitive)
             for v in cast(Iterable[MaybeStr[_E]], value)
         )
     value = cast(MaybeStr[_E], value)

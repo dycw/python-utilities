@@ -74,7 +74,7 @@ class TestEnsureEnum:
 
         truth = data.draw(sampled_from(Truth))
         input_ = data.draw(sampled_from([truth, truth.name]))
-        result = ensure_enum(Truth, value=input_)
+        result = ensure_enum(Truth, input_)
         assert result is truth
 
     @given(data=data())
@@ -85,7 +85,7 @@ class TestEnsureEnum:
 
         truth = data.draw(sampled_from(Truth))
         input_ = data.draw(lists(sampled_from([truth, truth.name])))
-        result = list(ensure_enum(Truth, value=input_))
+        result = list(ensure_enum(Truth, input_))
         for r in result:
             assert r is truth
 
@@ -94,5 +94,5 @@ class TestEnsureEnum:
             true = auto()
             false = auto()
 
-        result = ensure_enum(Truth, value=None)
+        result = ensure_enum(Truth, None)
         assert result is None
