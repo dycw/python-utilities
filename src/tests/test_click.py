@@ -81,9 +81,9 @@ class TestEnum:
         assert repr(param) == expected
 
     @given(truth=sampled_from(_Truth))
-    def test_command(self, *, truth: _Truth) -> None:
+    def test_case_sensitive(self, *, truth: _Truth) -> None:
         @command()
-        @argument("truth", type=utilities.click.Enum(_Truth))
+        @argument("truth", type=utilities.click.Enum(_Truth, case_sensitive=True))
         def cli(*, truth: _Truth) -> None:
             echo(f"truth = {truth}")
 

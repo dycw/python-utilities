@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum, auto
 
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, sampled_from
+from hypothesis.strategies import DataObject, data, lists, sampled_from
 from pytest import raises
 
 from utilities.enum import ParseEnumError, ensure_enum, parse_enum
@@ -76,3 +76,23 @@ class TestEnsureEnum:
         input_ = data.draw(sampled_from([truth, truth.name]))
         result = ensure_enum(Truth, input_)
         assert result is truth
+
+    @given(data=data())
+    def test_iterable(self, *, data: DataObject) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        truth = data.draw(sampled_from(Truth))
+        input_ = data.draw(lists(sampled_from([truth, truth.name])))
+        result = list(ensure_enum(Truth, input_))
+        for r in result:
+            assert r is truth
+
+    def test_none(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = ensure_enum(Truth, None)
+        assert result is None

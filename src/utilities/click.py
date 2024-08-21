@@ -10,7 +10,7 @@ from typing_extensions import override
 
 import utilities.types
 from utilities.datetime import ParseMonthError, ensure_month
-from utilities.enum import ParseEnumError, ensure_enum
+from utilities.enum import MaybeStr, ParseEnumError, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
@@ -99,7 +99,7 @@ class Enum(ParamType, Generic[_E]):
 
     name = "enum"
 
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = True) -> None:
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
         self._enum = enum
         self._case_sensitive = case_sensitive
         super().__init__()
@@ -110,7 +110,7 @@ class Enum(ParamType, Generic[_E]):
 
     @override
     def convert(
-        self, value: _E | str, param: Parameter | None, ctx: Context | None
+        self, value: MaybeStr[_E], param: Parameter | None, ctx: Context | None
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
