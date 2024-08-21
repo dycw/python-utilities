@@ -43,10 +43,12 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
+from utilities.whenever import ensure_local_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from uuid import UUID
+    from zoneinfo import ZoneInfo
 
     import redis
     from hypothesis.database import ExampleDatabase
@@ -154,16 +156,14 @@ def durations(
     *,
     min_number: MaybeSearchStrategy[Number] | None = None,
     max_number: MaybeSearchStrategy[Number] | None = None,
-    min_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
-    max_timedelta: MaybeSearchStrategy[dt.timedelta] | None = None,
+    min_timedelta: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.min,
+    max_timedelta: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.max,
     two_way: bool = False,
 ) -> Duration:
     """Strategy for generating durations."""
     draw = lift_draw(_draw)
-    min_number_ = draw(min_number)
-    max_number_ = draw(max_number)
-    min_timedelta_ = draw(min_timedelta)
-    max_timedelta_ = draw(max_timedelta)
+    min_number_, max_number_ = draw(min_number), draw(max_number)
+    min_timedelta_, max_timedelta_ = draw(min_timedelta), draw(max_timedelta)
     st_integers = integers(
         min_value=min_number_ if isinstance(min_number_, int) else None,
         max_value=max_number_ if isinstance(max_number_, int) else None,
@@ -177,15 +177,9 @@ def durations(
     if two_way:
         from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 
-        global_min_timedelta = MIN_TWO_WAY_TIMEDELTA
-        global_max_timedelta = MAX_TWO_WAY_TIMEDELTA
-    else:
-        global_min_timedelta = dt.timedelta.min
-        global_max_timedelta = dt.timedelta.max
-    st_timedeltas = timedeltas(
-        min_value=global_min_timedelta if min_timedelta_ is None else min_timedelta_,
-        max_value=global_max_timedelta if max_timedelta_ is None else max_timedelta_,
-    )
+        min_timedelta_ = max(min_timedelta_, MIN_TWO_WAY_TIMEDELTA)
+        max_timedelta_ = min(max_timedelta_, MAX_TWO_WAY_TIMEDELTA)
+    st_timedeltas = timedeltas(min_value=min_timedelta_, max_value=max_timedelta_)
     return _draw(st_integers | st_floats | st_timedeltas)
 
 
@@ -680,17 +674,44 @@ def timedeltas_2w(
     _draw: DrawFn,
     /,
     *,
-    min_value: MaybeSearchStrategy[dt.timedelta] | None = None,
-    max_value: MaybeSearchStrategy[dt.timedelta] | None = None,
+    min_value: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.min,
+    max_value: MaybeSearchStrategy[dt.timedelta] = dt.timedelta.max,
 ) -> dt.timedelta:
     """Strategy for generating timedeltas which can be se/deserialized."""
     from utilities.whenever import MAX_TWO_WAY_TIMEDELTA, MIN_TWO_WAY_TIMEDELTA
 
     draw = lift_draw(_draw)
-    min_value_use = MIN_TWO_WAY_TIMEDELTA if min_value is None else min_value
-    max_value_use = MAX_TWO_WAY_TIMEDELTA if max_value is None else max_value
+    min_value_ = max(draw(min_value), MIN_TWO_WAY_TIMEDELTA)
+    max_value_ = min(draw(max_value), MAX_TWO_WAY_TIMEDELTA)
+    return draw(timedeltas(min_value=min_value_, max_value=max_value_))
+
+
+@composite
+def zoned_datetimes(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
+    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
+    time_zone: MaybeSearchStrategy[ZoneInfo] = UTC,
+) -> dt.datetime:
+    """Strategy for generating zoned datetimes."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_, time_zone_ = (
+        draw(min_value),
+        draw(max_value),
+        draw(time_zone),
+    )
+    _ = ensure_local_datetime(min_value_)
+    _ = ensure_local_datetime(max_value_)
+    min_value_ = min_value_.replace(tzinfo=time_zone_)
+    max_value_ = max_value_.replace(tzinfo=time_zone_)
     return draw(
-        timedeltas(min_value=draw(min_value_use), max_value=draw(max_value_use))
+        datetimes(
+            min_value=draw(min_value).replace(tzinfo=None),
+            max_value=draw(max_value).replace(tzinfo=None),
+            timezones=just(time_zone),
+        )
     )
 
 
@@ -743,4 +764,5 @@ __all__ = [
     "text_clean",
     "text_printable",
     "timedeltas_2w",
+    "zoned_datetimes",
 ]

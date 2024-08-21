@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import dataclass
 from operator import eq
 from typing import TYPE_CHECKING, Any
 
+from dacite import from_dict
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
@@ -110,14 +112,74 @@ class TestSerializeAndDeserialize:
         self, *, data: DataObject, elements: SearchStrategy[Any], two_way: bool
     ) -> None:
         x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(x, y, two_way=two_way, eq_obj_implies_eq_ser=True)
+        self._run_tests(x, y, two_way=two_way, eq_obj_implies_eq_ser=True)
+
+    # @mark.only
+    @given(x=int64s(), y=int64s())
+    def test_dataclasses(self, *, x: int, y: int) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            n: int
+
+        obj_x, obj_y = Example(n=x), Example(n=y)
+        self._run_tests(obj_x, obj_y, two_way=False, eq_obj_implies_eq_ser=True)
+        data = deserialize(serialize(obj_x))
+        result = from_dict(Example, data)
+        assert result == obj_x
+
+    @mark.only
+    @given(
+        date=dates(),
+        int_=int64s(),
+        local_datetime=datetimes(),
+        zoned_datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+    )
+    def test_dataclasses_simple(
+        self,
+        *,
+        date: dt.date,
+        int_: int,
+        local_datetime: dt.datetime,
+        zoned_datetime: dt.datetime,
+    ) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            date: dt.date
+            int_: int
+            local_datetime: dt.datetime
+            zoned_datetime: dt.datetime
+
+        obj = Example(
+            date=date,
+            int_=int_,
+            local_datetime=local_datetime,
+            zoned_datetime=zoned_datetime,
+        )
+        data = deserialize(serialize(obj))
+        result = from_dict(Example, data)
+        assert result == obj
+
+    @mark.only
+    @given(zoned_datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
+    def test_dataclasses_zoned_datetime(self, *, zoned_datetime: dt.datetime) -> None:
+        data = deserialize(serialize(zoned_datetime))
+        assert data == zoned_datetime
+
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            zoned_datetime: dt.datetime
+
+        obj = Example(zoned_datetime=zoned_datetime)
+        data = deserialize(serialize(obj))
+        result = from_dict(Example, data)
+        assert result == obj
 
     @given(x=sqlite_engines(), y=sqlite_engines())
     def test_engines(self, *, x: Engine, y: Engine) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
 
-        self._assert_standard(x, y, eq=eq, two_way=True, eq_obj_implies_eq_ser=True)
+        self._run_tests(x, y, eq=eq, two_way=True, eq_obj_implies_eq_ser=True)
 
     @given(data=data(), n=integers(0, 10))
     @mark.parametrize("outer_elements", [param(frozensets), param(sets)])
@@ -136,21 +198,19 @@ class TestSerializeAndDeserialize:
     ) -> None:
         elements = outer_elements(inner_elements, min_size=n, max_size=n)
         x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(
-            x, y, two_way=True, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser
-        )
+        self._run_tests(x, y, two_way=True, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser)
 
     @given(data=data(), n=integers(0, 3))
     def test_tuples(self, *, data: DataObject, n: int) -> None:
         elements = tuples(*(n * [int64s()]))
         x, y = data.draw(tuples(elements, elements))
-        self._assert_standard(x, y, eq=eq, two_way=False)
+        self._run_tests(x, y, eq=eq, two_way=False)
 
     def test_error(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
             _ = serialize(sentinel)
 
-    def _assert_standard(
+    def _run_tests(
         self,
         x: Any,
         y: Any,
