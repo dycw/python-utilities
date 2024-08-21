@@ -25,8 +25,10 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     timedeltas,
+    timezones,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
+from polars import time
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine

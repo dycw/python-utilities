@@ -270,6 +270,7 @@ class TestParseAndSerializeTimedelta:
         assert result == timedelta
 
 
+@mark.only
 class TestParseAndSerializeZonedDateTime:
     @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
