@@ -1,17 +1,37 @@
-import datetime as dt
-from collections.abc import Callable
-from dataclasses import dataclass
-from fractions import Fraction
-from operator import eq
-from typing import Any
+from __future__ import annotations
 
-from dacite import from_dict
-from hypothesis import given
+import datetime as dt
+from json import dumps
+from math import isnan
+from operator import eq, neg
+from typing import TYPE_CHECKING, Any
+
+from tests.scripts import test_pypi_server
+from utilities.hypothesis import (
+    assume_does_not_raise,
+    int64s,
+    slices,
+    sqlite_engines,
+    temp_paths,
+    text_ascii,
+    timedeltas_2w,
+)
+from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
+from utilities.sentinel import sentinel
+from utilities.zoneinfo import HONG_KONG, UTC
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from decimal import Decimal
+
+    from sqlalchemy import Engine
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
     binary,
     booleans,
+    characters,
     complex_numbers,
     data,
     dates,
@@ -33,195 +53,171 @@ from hypothesis.strategies import (
     uuids,
 )
 from pytest import mark, param, raises
-from sqlalchemy import Engine
+from typing_extensions import override
 
-from utilities.hypothesis import (
-    int64s,
-    slices,
-    sqlite_engines,
-    temp_paths,
-    text_ascii,
-    timedeltas_2w,
-    zoned_datetimes,
-)
-from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import deserialize, serialize
-from utilities.sentinel import sentinel
-from utilities.zoneinfo import HONG_KONG, UTC
 
-
-def _filter_binary(obj: bytes, /) -> bool:
-    try:
-        _ = obj.decode()
-    except UnicodeDecodeError:
-        return False
-    return True
-
-
-def _filter_fraction(obj: Fraction, /) -> bool:
-    return (MIN_INT64 <= obj.numerator <= MAX_INT64) and (
-        MIN_INT64 <= obj.denominator <= MAX_INT64
-    )
-
-
-def _map_abs(obj: Any, /) -> Any:
-    return abs(obj) if obj == 0.0 else obj
-
-
-def _map_complex(obj: complex, /) -> complex:
-    return complex(_map_abs(obj.real), _map_abs(obj.imag))
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class TestSerializeAndDeserialize:
     @given(data=data())
     @mark.parametrize(
-        ("elements", "two_way", "eq_obj_implies_eq_ser"),
+        ("elements", "two_way"),
         [
-            param(binary().filter(_filter_binary), True, True),
-            param(booleans(), True, True),
-            param(
-                complex_numbers(allow_infinity=False, allow_nan=False).map(
-                    _map_complex
-                ),
-                True,
-                True,
-            ),
-            param(dates(), True, True),
-            param(datetimes(), True, True),
-            param(
-                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
-                True,
-                True,
-            ),
-            param(
-                decimals(allow_nan=False, allow_infinity=False).map(_map_abs),
-                True,
-                True,
-            ),
-            param(
-                dictionaries(text_ascii(), int64s() | text_ascii(), max_size=3),
-                True,
-                True,
-            ),
-            param(
-                dictionaries(int64s(), int64s() | text_ascii(), max_size=3), False, True
-            ),
-            param(
-                floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
-            ),
-            param(fractions().filter(_filter_fraction), True, True),
-            param(frozensets(int64s() | text_ascii(), max_size=3), True, True),
-            param(ip_addresses(v=4), True, True),
-            param(ip_addresses(v=6), True, True),
-            param(lists(int64s(), max_size=3), True, True),
-            param(none(), True, True),
-            param(sets(int64s() | text_ascii(), max_size=3), True, True),
-            param(slices(integers(0, 10)), True, True),
-            param(temp_paths(), True, True),
-            param(text(), True, True),
-            param(timedeltas_2w(), True, True),
-            param(times(), True, True),
-            param(tuples(int64s(), int64s()), False, True),
-            param(uuids(), False, True),
+            param(booleans(), True),
+            param(dates(), True),
+            param(datetimes(), True),
+            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])), True),
+            param(dictionaries(text_ascii(), int64s(), max_size=3), True),
+            param(fractions(min_value=10, max_value=10), True),
+            param(ip_addresses(v=4), True),
+            param(ip_addresses(v=6), True),
+            param(lists(int64s(), max_size=3), True),
+            param(none(), True),
+            param(temp_paths(), True),
+            param(text(), True),
+            param(timedeltas_2w(), True),
+            param(times(), True),
+            param(uuids(), False),
         ],
     )
     def test_main(
-        self,
-        *,
-        data: DataObject,
-        elements: SearchStrategy[Any],
-        two_way: bool,
-        eq_obj_implies_eq_ser: bool,
+        self, *, data: DataObject, elements: SearchStrategy[Any], two_way: bool
     ) -> None:
-        self._run_tests(
-            data, elements, two_way=two_way, eq_obj_implies_eq_ser=eq_obj_implies_eq_ser
-        )
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, two_way=two_way)
+
+    @given(x=binary(), y=binary())
+    @settings(suppress_health_check=[HealthCheck.filter_too_much])
+    def test_binary(self, *, x: bytes, y: bytes) -> None:
+        with assume_does_not_raise(UnicodeDecodeError):
+            _ = x.decode()
+            _ = y.decode()
+        self._assert_standard(x, y, two_way=True)
 
     @given(
-        date=dates(),
-        int_=int64s(),
-        local_datetime=datetimes(),
-        text=text_ascii(),
-        zoned_datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])
-        ),
+        x=complex_numbers(allow_infinity=False, allow_nan=False),
+        y=complex_numbers(allow_infinity=False, allow_nan=False),
     )
-    def test_dataclasses(
-        self,
-        *,
-        date: dt.date,
-        int_: int,
-        local_datetime: dt.datetime,
-        text: str,
-        zoned_datetime: dt.datetime,
-    ) -> None:
-        @dataclass(kw_only=True)
-        class Inner:
-            date: dt.date
-            int_: int
-            local_datetime: dt.datetime
-            text: str
-            zoned_datetime: dt.datetime
+    def test_complex(self, *, x: complex, y: complex) -> None:
+        def eq(x: complex, y: complex, /) -> bool:
+            return ((x.real == y.real) or (x.real == y.real == 0.0)) and (
+                (x.imag == y.imag) or (x.imag == y.imag == 0.0)
+            )
 
-        @dataclass(kw_only=True)
-        class Outer:
-            inner: Inner
-            date: dt.date
-            int_: int
-            local_datetime: dt.datetime
-            text: str
-            zoned_datetime: dt.datetime
+        self._assert_standard(x, y, eq=eq, two_way=True)
 
-        obj = Outer(
-            inner=Inner(
-                date=date,
-                int_=int_,
-                local_datetime=local_datetime,
-                text=text,
-                zoned_datetime=zoned_datetime,
-            ),
-            date=date,
-            int_=int_,
-            local_datetime=local_datetime,
-            text=text,
-            zoned_datetime=zoned_datetime,
-        )
-        data = deserialize(serialize(obj))
-        result = from_dict(Outer, data)
-        assert result == obj
+    @given(x=decimals(), y=decimals())
+    def test_decimal(self, *, x: Decimal, y: Decimal) -> None:
+        def eq(x: Decimal, y: Decimal, /) -> bool:
+            x_nan, y_nan = x.is_nan(), y.is_nan()
+            if x_nan and y_nan:
+                return (x.is_qnan() == y.is_qnan()) and (x.is_signed() == y.is_signed())
+            return (x_nan == y_nan) and (x == y)
 
-    @given(data=data())
-    def test_engines(self, *, data: DataObject) -> None:
+        self._assert_standard(x, y, eq=eq)
+
+    # @given(data=data(), n=integers(0, 10))
+    # def test_dicts_sortable(self, *, data: DataObject, n: int) -> None:
+    #     elements = dictionaries(
+    #         text_ascii(), integers(0, 2 * n), min_size=n, max_size=n
+    #     )
+    #     x, y = data.draw(tuples(elements, elements))
+    #     self._assert_standard(x, y)
+    #
+    # @given(data=data(), n=integers(2, 10))
+    # def test_dicts_unsortable(self, *, data: DataObject, n: int) -> None:
+    #     elements = dictionaries(
+    #         integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
+    #         integers(0, 2 * n),
+    #         min_size=n,
+    #         max_size=n,
+    #     )
+    #     x, y = data.draw(tuples(elements, elements))
+    #     self._assert_unsortable_collection(x, y)
+
+    @given(x=sqlite_engines(), y=sqlite_engines())
+    def test_engines(self, *, x: Engine, y: Engine) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
 
-        self._run_tests(
-            data, sqlite_engines(), two_way=True, eq=eq, eq_obj_implies_eq_ser=True
+        self._assert_standard(x, y, eq=eq)
+
+    @given(
+        x=floats(allow_nan=False, allow_infinity=False),
+        y=floats(allow_nan=False, allow_infinity=False),
+    )
+    def test_floats(self, *, x: float, y: float) -> None:
+        def eq(x: float, y: float, /) -> bool:
+            return (x == y) or (x == y == 0.0)
+
+        self._assert_standard(x, y, eq=eq)
+
+    @given(data=data(), n=integers(0, 10))
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    def test_sets_sortable(
+        self, *, data: DataObject, n: int, strategy: Callable[..., SearchStrategy[int]]
+    ) -> None:
+        elements = strategy(integers(0, 2 * n), min_size=n, max_size=n)
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, eq=eq)
+
+    @given(data=data(), n=integers(2, 10))
+    @mark.parametrize("strategy", [param(frozensets), param(sets)])
+    def test_sets_unsortable(
+        self,
+        *,
+        data: DataObject,
+        n: int,
+        strategy: Callable[..., SearchStrategy[int | str]],
+    ) -> None:
+        elements = strategy(
+            integers(0, 2 * n) | text_ascii(min_size=1, max_size=1),
+            min_size=n,
+            max_size=n,
         )
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_unsortable_collection(x, y)
+
+    @given(data=data(), n=integers(0, 10))
+    def test_slices(self, *, data: DataObject, n: int) -> None:
+        elements = slices(n)
+        x, y = data.draw(tuples(elements, elements))
+        self._assert_standard(x, y, eq=eq)
+
+    # @given(data=data(), n=integers(0, 3))
+    # @mark.only
+    # def test_tuples(self, *, data: DataObject, n: int) -> None:
+    #     elements = tuples(*(n * [int64s()]))
+    #     x, y = data.draw(tuples(elements, elements))
+    #     self._assert_standard(x, y, eq=eq)
 
     def test_error(self) -> None:
         with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
             _ = serialize(sentinel)
 
-    def _run_tests(
+    def _assert_standard(
         self,
-        data: DataObject,
-        elements: SearchStrategy[Any],
+        x: Any,
+        y: Any,
         /,
         *,
         two_way: bool = False,
         eq: Callable[[Any, Any], bool] = eq,
-        eq_obj_implies_eq_ser: bool = False,
     ) -> None:
-        x = data.draw(elements)
-        ser_x = serialize(x)
+        ser = serialize(x)
         if two_way:
-            deser_x = deserialize(ser_x)
-            assert eq(deser_x, x)
-        y = data.draw(elements)
+            deser = deserialize(ser)
+            assert eq(deser, x)
+        res = ser == serialize(y)
+        expected = eq(x, y)
+        assert res is expected
+
+    def _assert_unsortable_collection(self, x: Any, y: Any, /) -> None:
+        ser_x = serialize(x)
+        assert deserialize(ser_x) == x
         ser_y = serialize(y)
-        if eq(x, y):
-            if eq_obj_implies_eq_ser:
-                assert ser_x == ser_y
-        else:
-            assert ser_x != ser_y
+        if ser_x == ser_y:
+            assert x == y

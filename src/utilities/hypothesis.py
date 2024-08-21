@@ -346,6 +346,22 @@ def int64s(
     return draw(integers(min_value_, max_value_))
 
 
+@composite
+def int64s(
+    _draw: DrawFn,
+    /,
+    *,
+    min_value: MaybeSearchStrategy[int | None] = None,
+    max_value: MaybeSearchStrategy[int | None] = None,
+) -> int:
+    """Strategy for generating int64s."""
+    draw = lift_draw(_draw)
+    min_value_, max_value_ = (draw(mv) for mv in (min_value, max_value))
+    min_value_ = MIN_INT64 if min_value_ is None else max(MIN_INT64, min_value_)
+    max_value_ = MAX_INT64 if max_value_ is None else min(MAX_INT64, max_value_)
+    return draw(integers(min_value_, max_value_))
+
+
 _MDF = TypeVar("_MDF")
 
 

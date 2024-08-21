@@ -407,6 +407,20 @@ class TestInt64s:
         assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
 
 
+class TestInt64s:
+    @given(data=data(), min_value=int64s() | none(), max_value=int64s() | none())
+    def test_main(
+        self, *, data: DataObject, min_value: int | None, max_value: int | None
+    ) -> None:
+        with assume_does_not_raise(InvalidArgument):
+            x = data.draw(int64s(min_value=min_value, max_value=max_value))
+        assert MIN_INT64 <= x <= MAX_INT64
+        if min_value is not None:
+            assert x >= min_value
+        if max_value is not None:
+            assert x <= max_value
+
+
 class TestLiftDraw:
     @given(data=data(), value=booleans())
     def test_fixed(self, *, data: DataObject, value: bool) -> None:

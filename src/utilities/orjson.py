@@ -5,20 +5,16 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import StrEnum, unique
 from fractions import Fraction
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address, IPv4Network, IPv6Address
+from operator import itemgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, assert_never, cast
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast
 
-from orjson import (
-    OPT_NON_STR_KEYS,
-    OPT_PASSTHROUGH_DATETIME,
-    OPT_SORT_KEYS,
-    dumps,
-    loads,
-)
+from orjson import OPT_PASSTHROUGH_DATETIME, dumps, loads
 from typing_extensions import override
 
-from utilities.types import get_class_name
+from utilities.enum import ensure_enum
+from utilities.types import ensure_class, ensure_member, get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -52,11 +48,7 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    return dumps(
-        obj,
-        default=_serialize_default,
-        option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
-    )
+    return dumps(obj, default=_serialize_default, option=OPT_PASSTHROUGH_DATETIME)
 
 
 class _SchemaDict(Generic[_T], TypedDict):
@@ -268,8 +260,6 @@ def _object_hook(obj: Any, /) -> Any:
         # third party
         case _Key.sqlalchemy_engine:
             return _object_hook_sqlalchemy_engine(value)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
 
 
 def _object_hook_bytes(value: str, /) -> bytes:
@@ -287,8 +277,8 @@ def _object_hook_date(value: str, /) -> dt.date:
     return parse_date(value)
 
 
-def _object_hook_decimal(value: str, /) -> Decimal:
-    return Decimal(value)
+def _object_hook_decimal(value: str, /) -> Path:
+    return Path(value)
 
 
 def _object_hook_fraction(value: tuple[int, int], /) -> Fraction:
