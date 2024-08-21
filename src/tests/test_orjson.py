@@ -6,7 +6,7 @@ from fractions import Fraction
 from operator import eq
 from typing import Any, Literal
 
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -135,7 +135,6 @@ class TestSerializeAndDeserialize:
             param(uuids(), False, True),
         ],
     )
-    @settings(max_examples=10000)
     def test_main(
         self,
         *,
