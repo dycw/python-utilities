@@ -39,7 +39,6 @@ from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
-    datetimes_utc,
     durations,
     float_arrays,
     floats_extra,
@@ -136,17 +135,6 @@ class TestBoolArrays:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
-
-
-class TestDatetimesUTC:
-    @given(data=data(), min_value=datetimes(), max_value=datetimes())
-    def test_main(
-        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
-    ) -> None:
-        min_value, max_value = (v.replace(tzinfo=UTC) for v in [min_value, max_value])
-        _ = assume(min_value <= max_value)
-        datetime = data.draw(datetimes_utc(min_value=min_value, max_value=max_value))
-        assert min_value <= datetime <= max_value
 
 
 class TestDurations:

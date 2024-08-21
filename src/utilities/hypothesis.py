@@ -132,25 +132,6 @@ def bool_arrays(
 
 
 @composite
-def datetimes_utc(
-    _draw: DrawFn,
-    /,
-    *,
-    min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
-    max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
-) -> dt.datetime:
-    """Strategy for generating datetimes with the UTC timezone."""
-    draw = lift_draw(_draw)
-    return draw(
-        datetimes(
-            min_value=draw(min_value).replace(tzinfo=None),
-            max_value=draw(max_value).replace(tzinfo=None),
-            timezones=just(UTC),
-        )
-    )
-
-
-@composite
 def durations(
     _draw: DrawFn,
     /,
@@ -732,7 +713,6 @@ __all__ = [
     "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
-    "datetimes_utc",
     "durations",
     "float_arrays",
     "floats_extra",

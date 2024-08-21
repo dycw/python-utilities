@@ -23,12 +23,12 @@ from redis.commands.timeseries import TimeSeries
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
-    datetimes_utc,
     int32s,
     lists_fixed_length,
     redis_clients,
     redis_time_series,
     text_ascii,
+    zoned_datetimes,
 )
 from utilities.polars import DatetimeUTC, check_polars_dataframe, zoned_datetime
 from utilities.redis import (
@@ -114,7 +114,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_error_at_upsert(
@@ -136,7 +136,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_invalid_timestamp(
@@ -479,7 +479,7 @@ class TestTimeSeriesMAddAndRange:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -505,7 +505,7 @@ class TestTimeSeriesMAddAndRange:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes_utc(max_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -580,7 +580,7 @@ class TestTimeSeriesMAddAndRange:
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
-        timestamp=datetimes_utc(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
     )
     def test_error_range_key_with_int64_and_float64(
