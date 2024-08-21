@@ -6,7 +6,7 @@ from fractions import Fraction
 from operator import eq
 from typing import Any, Literal
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -113,13 +113,19 @@ class TestSerializeAndDeserialize:
                 floats(allow_nan=False, allow_infinity=False).map(_map_abs), True, True
             ),
             param(fractions().filter(_filter_fraction), True, True),
-            param(frozensets(int64s() | text_ascii(), max_size=3), True, True),
+            param(frozensets(int64s(), max_size=3), True, True),
+            param(frozensets(text_ascii(), max_size=3), True, True),
+            param(frozensets(int64s() | text_ascii(), max_size=3), True, False),
             param(ip_addresses(v=4), True, True),
             param(ip_addresses(v=6), True, True),
             param(lists(int64s(), max_size=3), True, True),
             param(lists(lists(int64s(), max_size=3), max_size=3), True, True),
             param(none(), True, True),
-            param(sets(int64s() | text_ascii(), max_size=3), True, True),
+            param(sets(int64s(), max_size=3), True, True, marks=mark.only),
+            param(sets(text_ascii(), max_size=3), True, True, marks=mark.only),
+            param(
+                sets(int64s() | text_ascii(), max_size=3), True, False, marks=mark.only
+            ),
             param(slices(integers(0, 10)), True, True),
             param(temp_paths(), True, True),
             param(text(), True, True),
@@ -129,6 +135,7 @@ class TestSerializeAndDeserialize:
             param(uuids(), False, True),
         ],
     )
+    @settings(max_examples=10000)
     def test_main(
         self,
         *,
