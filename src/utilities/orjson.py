@@ -7,25 +7,37 @@ from enum import StrEnum, unique
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, assert_never, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    TypedDict,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
 from orjson import (
     OPT_NON_STR_KEYS,
     OPT_PASSTHROUGH_DATETIME,
+    OPT_PASSTHROUGH_SUBCLASS,
     OPT_SORT_KEYS,
     dumps,
     loads,
 )
 from typing_extensions import override
 
+from utilities.dataclasses import Dataclass
 from utilities.types import get_class_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from sqlalchemy.engine import Engine
 
 _T = TypeVar("_T")
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 _SCHEMA_KEY = "_k"
 _SCHEMA_VALUE = "_v"
 
@@ -55,7 +67,10 @@ def serialize(obj: Any, /) -> bytes:
     return dumps(
         obj,
         default=_serialize_default,
-        option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+        option=OPT_NON_STR_KEYS
+        | OPT_PASSTHROUGH_DATETIME
+        | OPT_PASSTHROUGH_SUBCLASS
+        | OPT_SORT_KEYS,
     )
 
 
@@ -219,9 +234,29 @@ class _GetSchemaError(Exception):
         return f"Unsupported type: {get_class_name(self.obj)!r}"  # pragma: no cover
 
 
-def deserialize(obj: bytes, /) -> Any:
+@overload
+def deserialize(
+    obj: bytes, /, *, cls: type[_TDataclass], cast: Iterable[type[Any]] | None = ...
+) -> _TDataclass: ...
+@overload
+def deserialize(
+    obj: bytes, /, *, cls: None = ..., cast: Iterable[type[Any]] | None = ...
+) -> Any: ...
+def deserialize(
+    obj: bytes,
+    /,
+    *,
+    cls: type[_TDataclass] | None = None,
+    cast: Iterable[type[Any]] | None = None,
+) -> Any:
     """Deserialize an object."""
-    return _object_hook(loads(obj))
+    data = _object_hook(loads(obj))
+    if cls is None:
+        return data
+    from dacite import Config, from_dict
+
+    cast_use = [] if cast is None else list(cast)
+    return from_dict(cls, data, config=Config(cast=cast_use))
 
 
 def _object_hook(obj: Any, /) -> Any:
