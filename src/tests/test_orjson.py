@@ -41,6 +41,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
     timedeltas_2w,
+    zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
 from utilities.orjson import deserialize, serialize
@@ -91,7 +92,9 @@ class TestSerializeAndDeserialize:
             ),
             param(dates(), True),
             param(datetimes(), True),
-            param(datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])), True),
+            param(
+                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])), True
+            ),
             param(decimals(allow_nan=False, allow_infinity=False).map(_map_abs), True),
             param(dictionaries(text_ascii(), int64s(), max_size=3), True),
             param(floats(allow_nan=False, allow_infinity=False).map(_map_abs), True),
@@ -132,7 +135,9 @@ class TestSerializeAndDeserialize:
         date=dates(),
         int_=int64s(),
         local_datetime=datetimes(),
-        zoned_datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        zoned_datetime=zoned_datetimes(
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])
+        ),
     )
     def test_dataclasses_simple(
         self,
@@ -155,21 +160,6 @@ class TestSerializeAndDeserialize:
             local_datetime=local_datetime,
             zoned_datetime=zoned_datetime,
         )
-        data = deserialize(serialize(obj))
-        result = from_dict(Example, data)
-        assert result == obj
-
-    @mark.only
-    @given(zoned_datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC])))
-    def test_dataclasses_zoned_datetime(self, *, zoned_datetime: dt.datetime) -> None:
-        data = deserialize(serialize(zoned_datetime))
-        assert data == zoned_datetime
-
-        @dataclass(frozen=True, kw_only=True)
-        class Example:
-            zoned_datetime: dt.datetime
-
-        obj = Example(zoned_datetime=zoned_datetime)
         data = deserialize(serialize(obj))
         result = from_dict(Example, data)
         assert result == obj
