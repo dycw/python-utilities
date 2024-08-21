@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 from typing_extensions import override
 
@@ -18,12 +18,23 @@ if TYPE_CHECKING:
 
 
 _E = TypeVar("_E", bound=Enum)
+MaybeStr = _E | str
 
 
+@overload
 def ensure_enum(
-    enum: type[_E], member: _E | str, /, *, case_sensitive: bool = True
-) -> _E:
+    enum: type[_E], /, *, member: None, case_sensitive: bool = ...
+) -> None: ...
+@overload
+def ensure_enum(
+    enum: type[_E], /, *, member: MaybeStr[_E], case_sensitive: bool = ...
+) -> _E: ...
+def ensure_enum(
+    enum: type[_E], /, *, member: MaybeStr[_E] | None, case_sensitive: bool = True
+) -> _E | None:
     """Ensure the object is a member of the enum."""
+    if member is None:
+        return None
     if isinstance(member, Enum):
         return member
     return parse_enum(enum, member, case_sensitive=case_sensitive)
@@ -74,4 +85,4 @@ class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
         return f"Enum {self.enum} does not contain {self.member!r} (case insensitive)."
 
 
-__all__ = ["ParseEnumError", "ensure_enum", "parse_enum"]
+__all__ = ["MaybeStr", "ParseEnumError", "ensure_enum", "parse_enum"]
