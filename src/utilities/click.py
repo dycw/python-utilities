@@ -9,8 +9,8 @@ from click import Context, Parameter, ParamType
 from typing_extensions import override
 
 import utilities.types
-from utilities.datetime import ParseMonthError, ensure_month
-from utilities.enum import MaybeStr, ParseEnumError, ensure_enum
+from utilities.datetime import EnsureMonthError, ParseMonthError, ensure_month
+from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
@@ -115,7 +115,7 @@ class Enum(ParamType, Generic[_E]):
         """Convert a value into the `Enum` type."""
         try:
             return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
-        except ParseEnumError:
+        except EnsureEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
     @override
@@ -273,7 +273,7 @@ class ListMonths(ParamType):
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(ensure_month, strs))
-        except ParseMonthError:
+        except EnsureMonthError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
     @override
