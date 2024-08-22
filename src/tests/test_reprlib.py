@@ -10,8 +10,8 @@ from pytest import mark, param
 from utilities.reprlib import (
     ReprLocals,
     _custom_mapping_repr,
-    _custom_repr,
     _filter_mapping,
+    custom_repr,
 )
 
 if TYPE_CHECKING:
@@ -35,26 +35,26 @@ class TestCustomRepr:
         ],
     )
     def test_main(self, *, mapping: Mapping[str, Any], expected: str) -> None:
-        result = _custom_repr(mapping)
+        result = custom_repr(mapping)
         assert result == expected
 
     def test_dataframe(self) -> None:
         df = int_range(start=0, end=100, eager=True).rename("int").to_frame()
-        result = _custom_repr(df)
+        result = custom_repr(df)
         expected = repr(df)
         assert result == expected
 
     def test_dataframe_fake(self) -> None:
         class DataFrame: ...
 
-        _ = _custom_repr(DataFrame())
+        _ = custom_repr(DataFrame())
 
     def test_enum_generic(self) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
 
-        result = _custom_repr(list(Truth))
+        result = custom_repr(list(Truth))
         expected = "['Truth.true', 'Truth.false']"
         assert result == expected
 
@@ -63,20 +63,20 @@ class TestCustomRepr:
             true_key = "true_value"
             false_key = "false_value"
 
-        result = _custom_repr(list(Truth))
+        result = custom_repr(list(Truth))
         expected = "['true_value', 'false_value']"
         assert result == expected
 
     def test_series(self) -> None:
         sr = int_range(start=0, end=100, eager=True).rename("int")
-        result = _custom_repr(sr)
+        result = custom_repr(sr)
         expected = repr(sr)
         assert result == expected
 
     def test_series_fake(self) -> None:
         class Series: ...
 
-        _ = _custom_repr(Series())
+        _ = custom_repr(Series())
 
 
 class TestCustomMappingRepr:

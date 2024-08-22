@@ -92,7 +92,7 @@ def _custom_mapping_repr(
 ) -> str:
     """Apply the custom representation to a mapping."""
     values = (
-        _custom_repr(
+        custom_repr(
             v,
             fillvalue=fillvalue,
             maxlevel=maxlevel,
@@ -112,7 +112,7 @@ def _custom_mapping_repr(
     return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
 
 
-def _custom_repr(
+def custom_repr(
     obj: Any,
     /,
     *,
@@ -253,4 +253,4 @@ def _filter_mapping(
     return mapping
 
 
-__all__ = ["ReprLocals"]
+__all__ = ["ReprLocals", "custom_repr"]
