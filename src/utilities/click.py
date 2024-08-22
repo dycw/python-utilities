@@ -126,48 +126,6 @@ class Enum(ParamType, Generic[_E]):
 class ListDates(ParamType):
     """A list-of-dates-valued parameter."""
 
-    name = "dates"
-
-    def __init__(
-        self,
-        choices: Sequence[str],
-        /,
-        *,
-        separator: str = ",",
-        empty: str = SENTINEL_REPR,
-        case_sensitive: bool = False,
-    ) -> None:
-        self._choices = choices
-        self._separator = separator
-        self._empty = empty
-        super().__init__()
-
-    @override
-    def convert(
-        self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[dt.date]:
-        """Convert a value into the `ListDates` type."""
-        from utilities.whenever import EnsureDateError, ensure_date
-
-        if isinstance(value, list):
-            return value
-
-        strs = split_str(value, separator=self._separator, empty=self._empty)
-        try:
-            return list(map(ensure_date, strs))
-        except EnsureDateError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = f"DATES; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
-class ListEnums(ParamType, Generic[_E]):
-    """A list-of-enums-valued parameter."""
-
     name = "enums"
 
     def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
@@ -214,7 +172,8 @@ class ListEnum(ParamType, Generic[_E]):
 
     @override
     def __repr__(self) -> str:
-        return f"ListEnum({join_strs(e.name for e in self._enum)})"
+        desc = join_strs(e.name for e in self._enum)
+        return f"ListEnum({desc})"
 
     @override
     def convert(
