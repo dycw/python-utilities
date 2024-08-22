@@ -369,14 +369,34 @@ class TestToSorted:
 
 
 class TestTryAwait:
-    async def awaitable(self) -> None:
-        async def not_async(*, value: bool) -> bool:
+    async def test_maybe_awaitable(self) -> None:
+        from utilities.random import SYSTEM_RANDOM
+
+        if SYSTEM_RANDOM.random() <= 0.5:
+
+            async def func(*, value: bool) -> bool:  # pyright: ignore[reportRedeclaration]
+                await sleep(0.01)
+                return not value
+
+        else:
+
+            def func(*, value: bool) -> bool:
+                return not value
+
+        result = await try_await(func(value=True))
+        assert result is False
+
+    async def test_awaitable(self) -> None:
+        async def func(*, value: bool) -> bool:
             await sleep(0.01)
             return not value
 
-        result = await try_await(not_async(value=True))
+        result = await try_await(func(value=True))
         assert result is False
 
-    async def test_non_awaitable(self) -> None:
-        result = await try_await(None)
-        assert result is None
+    async def test_sync(self) -> None:
+        def func(*, value: bool) -> bool:
+            return not value
+
+        result = await try_await(func(value=True))
+        assert result is False
