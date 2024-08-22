@@ -128,7 +128,16 @@ class ListDates(ParamType):
 
     name = "dates"
 
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+    def __init__(
+        self,
+        choices: Sequence[str],
+        /,
+        *,
+        separator: str = ",",
+        empty: str = SENTINEL_REPR,
+        case_sensitive: bool = False,
+    ) -> None:
+        self._choices = choices
         self._separator = separator
         self._empty = empty
         super().__init__()
@@ -205,7 +214,7 @@ class ListEnum(ParamType, Generic[_E]):
 
     @override
     def __repr__(self) -> str:
-        return f"ListEnum({self._enum})"
+        return f"ListEnum({join_strs(e.name for e in self._enum)})"
 
     @override
     def convert(
