@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from enum import Enum, StrEnum
 from inspect import signature
 from itertools import islice
 from reprlib import (
@@ -11,6 +12,8 @@ from reprlib import (
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
+
+from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -89,7 +92,7 @@ def _custom_mapping_repr(
 ) -> str:
     """Apply the custom representation to a mapping."""
     values = (
-        _custom_repr(
+        custom_repr(
             v,
             fillvalue=fillvalue,
             maxlevel=maxlevel,
@@ -109,7 +112,7 @@ def _custom_mapping_repr(
     return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
 
 
-def _custom_repr(
+def custom_repr(
     obj: Any,
     /,
     *,
@@ -127,7 +130,7 @@ def _custom_repr(
     maxother: int = _REPR.maxother,
 ) -> str:
     """Apply the custom representation."""
-    repr_obj = CustomRepr(
+    repr_obj = _CustomRepr(
         fillvalue=fillvalue,
         maxlevel=maxlevel,
         maxtuple=maxtuple,
@@ -144,7 +147,7 @@ def _custom_repr(
     return repr_obj.repr(obj)
 
 
-class CustomRepr(Repr):
+class _CustomRepr(Repr):
     """Custom representation."""
 
     def __init__(
@@ -176,6 +179,15 @@ class CustomRepr(Repr):
         self.maxstring = maxstring
         self.maxlong = maxlong
         self.maxother = maxother
+
+    @override
+    def repr1(self, x: Any, level: int) -> str:
+        if isinstance(x, Enum):
+            if isinstance(x, StrEnum):
+                return super().repr1(x.value, level)
+            cls_name = get_class_name(x)
+            return super().repr1(f"{cls_name}.{x.name}", level)
+        return super().repr1(x, level)
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
         try:
@@ -214,7 +226,7 @@ class CustomRepr(Repr):
         return ", ".join(pieces)
 
 
-_CUSTOM_REPR = CustomRepr()
+_CUSTOM_REPR = _CustomRepr()
 
 
 _FILTER_MAPPING_REGEX = re.compile(r"^_")
@@ -241,4 +253,4 @@ def _filter_mapping(
     return mapping
 
 
-__all__ = ["ReprLocals"]
+__all__ = ["ReprLocals", "custom_repr"]
