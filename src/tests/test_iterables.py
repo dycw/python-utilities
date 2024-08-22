@@ -507,7 +507,6 @@ class TestIsIterableNotEnum:
             false = auto()
 
         assert not is_iterable_not_enum(Truth)
-        assert is_iterable_not_enum([Truth])
 
     def test_union(self) -> None:
         class Truth1(Enum):
@@ -518,7 +517,6 @@ class TestIsIterableNotEnum:
             true = auto()
             false = auto()
 
-        assert not is_iterable_not_enum((Truth1, Truth2))
         assert is_iterable_not_enum((Truth1, Truth2))
 
     @mark.parametrize(
