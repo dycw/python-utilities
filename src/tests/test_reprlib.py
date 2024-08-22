@@ -55,7 +55,7 @@ class TestCustomRepr:
             false = auto()
 
         result = _custom_repr(list(Truth))
-        expected = "['true', 'false']"
+        expected = "['Truth.true', 'Truth.false']"
         assert result == expected
 
     def test_enum_str(self) -> None:

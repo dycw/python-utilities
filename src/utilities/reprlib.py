@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
+from utilities.types import get_class_name
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
@@ -183,7 +185,8 @@ class _CustomRepr(Repr):
         if isinstance(x, Enum):
             if isinstance(x, StrEnum):
                 return super().repr1(x.value, level)
-            return super().repr1(x.name, level)
+            cls_name = get_class_name(x)
+            return super().repr1(f"{cls_name}.{x.name}", level)
         return super().repr1(x, level)
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
