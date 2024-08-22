@@ -220,6 +220,42 @@ class ListDates(ParamType):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
+class ListEnum(ParamType, Generic[_E]):
+    """A list-of-enums-valued parameter."""
+
+    name = "enums"
+
+    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
+        self._enum = enum
+        self._case_sensitive = case_sensitive
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        return f"ListEnum({self._enum})"
+
+    @override
+    def convert(
+        self, value: list[_E] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[_E]:
+        """Convert a value into the `ListChoices` type."""
+        if isinstance(value, list):
+            return value
+        texts = split_str(value)
+        try:
+            return list(
+                ensure_enum(texts, self._enum, case_sensitive=self._case_sensitive)
+            )
+        except EnsureEnumError:
+            return self.fail(f"Unable to parse {value}", param, ctx)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        desc = "|".join(e.name for e in self._enum)
+        req_arg = param.required and param.param_type_name == "argument"
+        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
 class ListInts(ParamType):
     """A list-of-ints-valued parameter."""
 
@@ -414,6 +450,7 @@ __all__ = [
     "FilePath",
     "ListChoices",
     "ListDates",
+    "ListEnum",
     "ListInts",
     "ListMonths",
     "ListStrs",
