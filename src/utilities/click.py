@@ -11,13 +11,11 @@ from typing_extensions import override
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
-from utilities.iterables import OneStrError, one_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import join_strs, split_str
 
 if TYPE_CHECKING:
     import datetime as dt
-    from collections.abc import Sequence
 
     from sqlalchemy import Engine as _Engine
 
@@ -125,68 +123,6 @@ class Enum(ParamType, Generic[_E]):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
-class ListChoices(ParamType):
-    """A list-of-choices-valued parameter."""
-
-    name = "choices"
-
-    def __init__(
-        self,
-        choices: Sequence[str],
-        /,
-        *,
-        separator: str = ",",
-        empty: str = SENTINEL_REPR,
-        case_sensitive: bool = False,
-    ) -> None:
-        self._choices = choices
-        self._separator = separator
-        self._empty = empty
-        self._case_sensitive = case_sensitive
-        super().__init__()
-
-    @override
-    def __repr__(self) -> str:
-        return f"ListChoices({list(self._choices)})"
-
-    @override
-    def convert(
-        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[str]:
-        """Convert a value into the `ListChoices` type."""
-        if isinstance(value, list):
-            return self._convert_list_of_strs(value, param, ctx)
-        texts = split_str(value, separator=self._separator, empty=self._empty)
-        return self._convert_list_of_strs(texts, param, ctx)
-
-    def _convert_list_of_strs(
-        self, texts: list[str], param: Parameter | None, ctx: Context | None, /
-    ) -> list[str]:
-        results: list[str] = []
-        errors: list[str] = []
-        for text in texts:
-            try:
-                result = one_str(
-                    self._choices, text, case_sensitive=self._case_sensitive
-                )
-            except OneStrError:
-                errors.append(text)
-            else:
-                results.append(result)
-        if len(errors) >= 1:
-            return self.fail(
-                f"{errors} must be a subset of {self._choices}", param, ctx
-            )
-        return results
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        joined = "|".join(self._choices)
-        desc = f"{joined}; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
 class ListDates(ParamType):
     """A list-of-dates-valued parameter."""
 
@@ -232,7 +168,8 @@ class ListEnum(ParamType, Generic[_E]):
 
     @override
     def __repr__(self) -> str:
-        return f"ListEnum({join_strs(e.name for e in self._enum)})"
+        desc = join_strs(e.name for e in self._enum)
+        return f"ListEnum({desc})"
 
     @override
     def convert(
@@ -448,7 +385,6 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
-    "ListChoices",
     "ListDates",
     "ListEnum",
     "ListInts",
