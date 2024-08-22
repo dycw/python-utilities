@@ -202,14 +202,14 @@ class ListDates(ParamType):
         self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
     ) -> list[dt.date]:
         """Convert a value into the `ListDates` type."""
-        from utilities.whenever import EnsureDateError, parse_date
+        from utilities.whenever import EnsureDateError, ensure_date
 
         if isinstance(value, list):
             return value
 
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
-            return list(map(parse_date, strs))
+            return list(map(ensure_date, strs))
         except EnsureDateError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
