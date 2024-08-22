@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
@@ -38,6 +38,26 @@ class TestParseEnum:
         result = parse_enum(truth.name, Truth, case_sensitive=True)
         assert result is truth
 
+    @given(data=data())
+    def test_reserved_keyword(self, *, data: DataObject) -> None:
+        class SyncOrAsync(StrEnum):
+            sync = "sync"
+            async_ = "async"
+
+        value, expected = data.draw(
+            sampled_from([["sync", SyncOrAsync.sync], ["async", SyncOrAsync.async_]])
+        )
+        result = parse_enum(value, SyncOrAsync)
+        assert result is expected
+
+    def test_none(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = parse_enum(None, Truth)
+        assert result is None
+
     def test_error_case_sensitive_empty(self) -> None:
         class Example(Enum):
             true = auto()
@@ -69,14 +89,6 @@ class TestParseEnum:
             match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
         ):
             _ = parse_enum("invalid", Example)
-
-    def test_none(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        result = parse_enum(None, Truth)
-        assert result is None
 
 
 class TestEnsureEnum:
