@@ -9,6 +9,8 @@ from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
+    DataObject,
+    data,
     dates,
     datetimes,
     floats,
@@ -43,6 +45,7 @@ from utilities.datetime import (
     AddWeekdaysError,
     CheckDateNotDatetimeError,
     CheckZonedDatetimeError,
+    EnsureMonthError,
     MillisecondsSinceEpochError,
     Month,
     MonthError,
@@ -61,6 +64,7 @@ from utilities.datetime import (
     drop_milli_and_microseconds,
     duration_to_float,
     duration_to_timedelta,
+    ensure_month,
     format_datetime_local_and_utc,
     get_half_years,
     get_months,
@@ -507,6 +511,16 @@ class TestParseAndSerializeMonth:
     def test_error_parse(self) -> None:
         with raises(ParseMonthError, match="Unable to parse month; got 'invalid'"):
             _ = parse_month("invalid")
+
+    @given(data=data(), month=months())
+    def test_ensure(self, *, data: DataObject, month: Month) -> None:
+        str_or_value = data.draw(sampled_from([month, serialize_month(month)]))
+        result = ensure_month(str_or_value)
+        assert result == month
+
+    def test_error_ensure(self) -> None:
+        with raises(EnsureMonthError, match="Unable to ensure month; got 'invalid'"):
+            _ = ensure_month("invalid")
 
 
 class TestPeriod:

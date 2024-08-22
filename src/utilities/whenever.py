@@ -30,40 +30,130 @@ def ensure_date(date: dt.date | str, /) -> dt.date:
     if isinstance(date, dt.date):
         check_date_not_datetime(date)
         return date
-    return parse_date(date)
+    try:
+        return parse_date(date)
+    except ParseDateError as error:
+        raise EnsureDateError(date=error.date) from None
+
+
+@dataclass(kw_only=True)
+class EnsureDateError(Exception):
+    date: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure date; got {self.date!r}"
 
 
 def ensure_duration(duration: Duration | str, /) -> Duration:
     """Ensure the object is a Duration."""
     if isinstance(duration, Duration):
         return duration
-    return parse_duration(duration)
+    try:
+        return parse_duration(duration)
+    except ParseDurationError as error:
+        raise EnsureDurationError(duration=error.duration) from None
+
+
+@dataclass(kw_only=True)
+class EnsureDurationError(Exception):
+    duration: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure duration; got {self.duration!r}"
 
 
 def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a local datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
-    return parse_local_datetime(datetime)
+    try:
+        return parse_local_datetime(datetime)
+    except ParseLocalDateTimeError as error:
+        raise EnsureLocalDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True)
+class EnsureLocalDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure local datetime; got {self.datetime!r}"
 
 
 def ensure_time(time: dt.time | str, /) -> dt.time:
     """Ensure the object is a time."""
-    return time if isinstance(time, dt.time) else parse_time(time)
+    if isinstance(time, dt.time):
+        return time
+    try:
+        return parse_time(time)
+    except ParseTimeError as error:
+        raise EnsureTimeError(time=error.time) from None
+
+
+@dataclass(kw_only=True)
+class EnsureTimeError(Exception):
+    time: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure time; got {self.time!r}"
 
 
 def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
     """Ensure the object is a timedelta."""
     if isinstance(timedelta, dt.timedelta):
         return timedelta
-    return parse_timedelta(timedelta)
+    try:
+        return parse_timedelta(timedelta)
+    except _ParseTimedeltaParseError as error:
+        raise _EnsureTimedeltaParseError(timedelta=error.timedelta) from None
+    except _ParseTimedeltaNanosecondError as error:
+        raise _EnsureTimedeltaNanosecondError(
+            timedelta=error.timedelta, nanoseconds=error.nanoseconds
+        ) from None
+
+
+@dataclass(kw_only=True)
+class EnsureTimedeltaError(Exception):
+    timedelta: str
+
+
+@dataclass(kw_only=True)
+class _EnsureTimedeltaParseError(EnsureTimedeltaError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure timedelta; got {self.timedelta!r}"
+
+
+@dataclass(kw_only=True)
+class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
+    nanoseconds: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure timedelta; got {self.nanoseconds} nanoseconds"
 
 
 def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a zoned datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
-    return parse_zoned_datetime(datetime)
+    try:
+        return parse_zoned_datetime(datetime)
+    except ParseZonedDateTimeError as error:
+        raise EnsureZonedDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True)
+class EnsureZonedDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure zoned datetime; got {self.datetime!r}"
 
 
 _PARSE_DATE_REGEX = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
@@ -380,6 +470,11 @@ __all__ = [
     "MAX_TWO_WAY_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
     "MIN_TWO_WAY_TIMEDELTA",
+    "EnsureDateError",
+    "EnsureLocalDateTimeError",
+    "EnsureTimeError",
+    "EnsureTimedeltaError",
+    "EnsureZonedDateTimeError",
     "ParseDateError",
     "ParseDurationError",
     "ParseLocalDateTimeError",

@@ -143,7 +143,21 @@ def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
 
 def ensure_month(month: Month | str, /) -> Month:
     """Ensure the object is a month."""
-    return month if isinstance(month, Month) else parse_month(month)
+    if isinstance(month, Month):
+        return month
+    try:
+        return parse_month(month)
+    except ParseMonthError as error:
+        raise EnsureMonthError(month=error.month) from None
+
+
+@dataclass(kw_only=True)
+class EnsureMonthError(Exception):
+    month: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure month; got {self.month!r}"
 
 
 def format_datetime_local_and_utc(datetime: dt.datetime, /) -> str:
@@ -683,6 +697,7 @@ __all__ = [
     "AddWeekdaysError",
     "CheckDateNotDatetimeError",
     "CheckZonedDatetimeError",
+    "EnsureMonthError",
     "MillisecondsSinceEpochError",
     "Month",
     "MonthError",

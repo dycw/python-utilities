@@ -135,7 +135,7 @@ img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
 importlib-metadata==8.4.0
     # via keyring
-importlib-resources==6.4.3
+importlib-resources==6.4.4
     # via pypiserver
 iniconfig==2.0.0
     # via pytest
@@ -182,11 +182,11 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.5.0
+narwhals==1.5.2
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
-nodejs-wheel-binaries==20.16.0
+nodejs-wheel-binaries==20.17.0
     # via basedpyright
 nox==2024.4.15
     # via dycw-utilities (pyproject.toml)
@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.3.0
+uv==0.3.1
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

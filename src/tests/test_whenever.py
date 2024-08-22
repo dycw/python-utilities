@@ -36,6 +36,12 @@ from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
+    EnsureDateError,
+    EnsureDurationError,
+    EnsureLocalDateTimeError,
+    EnsureTimedeltaError,
+    EnsureTimeError,
+    EnsureZonedDateTimeError,
     ParseDateError,
     ParseDurationError,
     ParseLocalDateTimeError,
@@ -99,6 +105,10 @@ class TestParseAndSerializeDate:
         result = ensure_date(str_or_value)
         assert result == date
 
+    def test_error_ensure(self) -> None:
+        with raises(EnsureDateError, match="Unable to ensure date; got 'invalid'"):
+            _ = ensure_date("invalid")
+
 
 class TestParseAndSerializeDuration:
     @given(duration=durations())
@@ -129,6 +139,12 @@ class TestParseAndSerializeDuration:
         str_or_value = data.draw(sampled_from([duration, serialize_duration(duration)]))
         result = ensure_duration(str_or_value)
         assert result == duration
+
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureDurationError, match="Unable to ensure duration; got 'invalid'"
+        ):
+            _ = ensure_duration("invalid")
 
 
 class TestParseAndSerializeLocalDateTime:
@@ -174,6 +190,13 @@ class TestParseAndSerializeLocalDateTime:
         result = ensure_local_datetime(str_or_value)
         assert result == datetime
 
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureLocalDateTimeError,
+            match="Unable to ensure local datetime; got 'invalid'",
+        ):
+            _ = ensure_local_datetime("invalid")
+
 
 class TestParseAndSerializeTime:
     @given(time=times())
@@ -191,6 +214,10 @@ class TestParseAndSerializeTime:
         str_or_value = data.draw(sampled_from([time, serialize_time(time)]))
         result = ensure_time(str_or_value)
         assert result == time
+
+    def test_error_ensure(self) -> None:
+        with raises(EnsureTimeError, match="Unable to ensure time; got 'invalid'"):
+            _ = ensure_time("invalid")
 
 
 class TestParseAndSerializeTimedelta:
@@ -269,6 +296,19 @@ class TestParseAndSerializeTimedelta:
         result = ensure_timedelta(str_or_value)
         assert result == timedelta
 
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureTimedeltaError, match="Unable to ensure timedelta; got 'invalid'"
+        ):
+            _ = ensure_timedelta("invalid")
+
+    def test_error_ensure_nano_seconds(self) -> None:
+        with raises(
+            EnsureTimedeltaError,
+            match="Unable to ensure timedelta; got 333 nanoseconds",
+        ):
+            _ = ensure_timedelta("PT0.111222333S")
+
 
 class TestParseAndSerializeZonedDateTime:
     @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
@@ -325,6 +365,13 @@ class TestParseAndSerializeZonedDateTime:
         )
         result = ensure_zoned_datetime(str_or_value)
         assert result == datetime
+
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureZonedDateTimeError,
+            match="Unable to ensure zoned datetime; got 'invalid'",
+        ):
+            _ = ensure_zoned_datetime("invalid")
 
 
 class TestToDatetimeDelta:

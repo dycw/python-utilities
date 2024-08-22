@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum, auto
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
@@ -53,6 +54,7 @@ from utilities.iterables import (
     expanding_window,
     groupby_lists,
     is_iterable,
+    is_iterable_not_enum,
     is_iterable_not_str,
     one,
     one_str,
@@ -496,6 +498,33 @@ class TestIsIterable:
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         assert is_iterable(obj) is expected
+
+
+class TestIsIterableNotEnum:
+    def test_single(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        assert not is_iterable_not_enum(Truth)
+
+    def test_union(self) -> None:
+        class Truth1(Enum):
+            true = auto()
+            false = auto()
+
+        class Truth2(Enum):
+            true = auto()
+            false = auto()
+
+        assert is_iterable_not_enum((Truth1, Truth2))
+
+    @mark.parametrize(
+        ("obj", "expected"),
+        [param(None, False), param([], True), param((), True), param("", True)],
+    )
+    def test_others(self, *, obj: Any, expected: bool) -> None:
+        assert is_iterable_not_enum(obj) is expected
 
 
 class TestIsIterableNotStr:
