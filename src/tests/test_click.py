@@ -80,6 +80,19 @@ class TestEnum:
         expected = f"Enum({_Truth})"
         assert repr(param) == expected
 
+    @given(data=data(), truth=sampled_from(_Truth))
+    def test_case_insensitive(self, *, data: DataObject, truth: _Truth) -> None:
+        @command()
+        @argument("truth", type=utilities.click.Enum(_Truth))
+        def cli(*, truth: _Truth) -> None:
+            echo(f"truth = {truth}")
+
+        name = truth.name
+        as_str = data.draw(sampled_from([name, name.lower()]))
+        result = CliRunner().invoke(cli, [as_str])
+        assert result.exit_code == 0
+        assert result.stdout == f"truth = {truth}\n"
+
     @given(truth=sampled_from(_Truth))
     def test_case_sensitive(self, *, truth: _Truth) -> None:
         @command()
@@ -93,19 +106,6 @@ class TestEnum:
 
         result = CliRunner().invoke(cli, ["invalid"])
         assert result.exit_code == 2
-
-    @given(data=data(), truth=sampled_from(_Truth))
-    def test_case_insensitive(self, *, data: DataObject, truth: _Truth) -> None:
-        @command()
-        @argument("truth", type=utilities.click.Enum(_Truth, case_sensitive=False))
-        def cli(*, truth: _Truth) -> None:
-            echo(f"truth = {truth}")
-
-        name = truth.name
-        as_str = data.draw(sampled_from([name, name.lower()]))
-        result = CliRunner().invoke(cli, [as_str])
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {truth}\n"
 
     @given(truth=sampled_from(_Truth))
     def test_option(self, *, truth: _Truth) -> None:
