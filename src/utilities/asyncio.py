@@ -213,10 +213,6 @@ async def to_sorted(
     return [element for element, _ in sorted_pairs]
 
 
-@overload
-async def try_await(obj: Awaitable[_T], /) -> _T: ...
-@overload
-async def try_await(obj: _T, /) -> _T: ...
 async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
     """Try await a value from an object."""
     try:
