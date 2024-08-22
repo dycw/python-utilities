@@ -4,7 +4,6 @@ import datetime as dt
 import enum
 from enum import auto
 from re import search
-from string import ascii_lowercase
 from typing import TYPE_CHECKING, Any
 
 import sqlalchemy
@@ -34,8 +33,8 @@ from utilities.click import (
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
-    ListChoices,
     ListDates,
+    ListEnums,
     ListInts,
     ListMonths,
     ListStrs,
@@ -65,7 +64,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Sequence
     from pathlib import Path
 
 
@@ -207,53 +206,41 @@ class TestFileAndDirPaths:
         assert result.exit_code == 0
 
 
-class TestListChoices:
+def _serialize_iterable_enums(values: Iterable[enum.Enum], /) -> str:
+    return join_strs(e.name for e in values)
+
+
+class TestListEnums:
     def test_repr(self) -> None:
-        param = ListChoices(ascii_lowercase)
-        expected = f"ListChoices({list(ascii_lowercase)})"
+        param = ListEnums(_Truth)
+        expected = "ListEnum(true,false)"
         assert repr(param) == expected
 
-    @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
-    def test_command(self, *, choices: list[str]) -> None:
+    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
+    def test_command(self, *, values: Sequence[_Truth]) -> None:
         @command()
-        @argument("choices", type=ListChoices(ascii_lowercase))
-        def cli(*, choices: list[str]) -> None:
-            echo(f"choices = {choices}")
+        @argument("values", type=ListEnums(_Truth))
+        def cli(*, values: Sequence[_Truth]) -> None:
+            echo(f"values = {values}")
 
-        joined = join_strs(choices)
+        joined = _serialize_iterable_enums(values)
         result = CliRunner().invoke(cli, [joined])
         assert result.exit_code == 0
-        assert result.stdout == f"choices = {choices}\n"
+        assert result.stdout == f"values = {values}\n"
 
         result = CliRunner().invoke(cli, ["invalid"])
         assert result.exit_code == 2
 
-    @given(
-        data=data(),
-        choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True),
-    )
-    def test_case_insensitive(self, *, data: DataObject, choices: list[str]) -> None:
+    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
+    def test_option(self, *, values: list[str]) -> None:
         @command()
-        @argument("choices", type=ListChoices(ascii_lowercase, case_sensitive=False))
-        def cli(*, choices: list[str]) -> None:
-            echo(f"choices = {choices}")
-
-        variable = [data.draw(sampled_from([c, c.upper()])) for c in choices]
-        joined = join_strs(variable)
-        result = CliRunner().invoke(cli, [joined])
-        assert result.exit_code == 0
-        assert result.stdout == f"choices = {choices}\n"
-
-    @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
-    def test_option(self, *, choices: list[str]) -> None:
-        @command()
-        @option("--choices", type=ListChoices(ascii_lowercase), default=choices)
-        def cli(*, choices: list[str]) -> None:
-            echo(f"choices = {choices}")
+        @option("--values", type=ListEnums(_Truth), default=values)
+        def cli(*, values: Sequence[str]) -> None:
+            echo(f"values = {values}")
 
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
-        assert result.stdout == f"choices = {choices}\n"
+        assert result.stdout == f"values = {values}\n"
 
 
 def _serialize_iterable_dates(values: Iterable[dt.date], /) -> str:
