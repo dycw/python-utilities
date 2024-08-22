@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import reprlib
 from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
@@ -30,7 +31,7 @@ MaybeStr = _E | str
 @overload
 def ensure_enum(
     value_or_values: None,
-    enum_or_enums: type[_E] | tuple[type[_E1], type[_E2]],
+    enum_or_enums: type[_E] | tuple[_E1] | tuple[type[_E1], type[_E2]],
     /,
     *,
     case_sensitive: bool = ...,
@@ -53,6 +54,22 @@ def ensure_enum(
 ) -> Iterable[_E]: ...
 @overload
 def ensure_enum(
+    value_or_values: MaybeStr[_E1],
+    enum_or_enums: tuple[type[_E1]],
+    /,
+    *,
+    case_sensitive: bool = ...,
+) -> _E1: ...
+@overload
+def ensure_enum(
+    value_or_values: Iterable[MaybeStr[_E1]],
+    enum_or_enums: tuple[type[_E1]],
+    /,
+    *,
+    case_sensitive: bool = ...,
+) -> Iterable[_E1]: ...
+@overload
+def ensure_enum(
     value_or_values: MaybeStr[_E1 | _E2],
     enum_or_enums: tuple[type[_E1], type[_E2]],
     /,
@@ -71,8 +88,6 @@ def ensure_enum(
     value_or_values: Any, enum_or_enums: Any, /, *, case_sensitive: bool = False
 ) -> Any:
     """Ensure the object is a member of the enum."""
-    if value_or_values is None:
-        return None
     if is_iterable_not_str(value_or_values):
         values = cast(Iterable[MaybeStr[Enum]], value_or_values)
         return (
@@ -108,13 +123,13 @@ class EnsureEnumError(Exception): ...
 
 @dataclass(kw_only=True)
 class _EnsureEnumSingleValueSingleEnumError(EnsureEnumError):
-    value: Any
+    value: MaybeStr[Enum]
     enum: type[Enum]
     case_sensitive: bool
 
     @override
     def __str__(self) -> str:
-        return f"Value {self.value} is not an instance of {self.enum}"
+        return f"{self.value!r} is not an instance of {self.enum!r}"
 
 
 @dataclass(kw_only=True)
@@ -125,7 +140,7 @@ class _EnsureEnumSingleValueMultipleEnumsError(EnsureEnumError):
 
     @override
     def __str__(self) -> str:
-        return f"Value {self.value} is not an instance of any of {self.enums}"
+        return f"{self.value!r} is not an instance of any of {reprlib.repr(self.enums)}"
 
 
 @overload
