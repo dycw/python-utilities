@@ -31,7 +31,6 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
-from utilities.types import EnsureTimeError
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
@@ -41,6 +40,8 @@ from utilities.whenever import (
     EnsureDurationError,
     EnsureLocalDateTimeError,
     EnsureTimedeltaError,
+    EnsureTimeError,
+    EnsureZonedDateTimeError,
     ParseDateError,
     ParseDurationError,
     ParseLocalDateTimeError,
@@ -364,6 +365,13 @@ class TestParseAndSerializeZonedDateTime:
         )
         result = ensure_zoned_datetime(str_or_value)
         assert result == datetime
+
+    def test_error_ensure(self) -> None:
+        with raises(
+            EnsureZonedDateTimeError,
+            match="Unable to ensure zoned datetime; got 'invalid'",
+        ):
+            _ = ensure_zoned_datetime("invalid")
 
 
 class TestToDatetimeDelta:

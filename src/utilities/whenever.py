@@ -141,7 +141,19 @@ def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
     """Ensure the object is a zoned datetime."""
     if isinstance(datetime, dt.datetime):
         return datetime
-    return parse_zoned_datetime(datetime)
+    try:
+        return parse_zoned_datetime(datetime)
+    except ParseZonedDateTimeError as error:
+        raise EnsureZonedDateTimeError(datetime=error.datetime) from None
+
+
+@dataclass(kw_only=True)
+class EnsureZonedDateTimeError(Exception):
+    datetime: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure zoned datetime; got {self.datetime!r}"
 
 
 _PARSE_DATE_REGEX = re.compile(r"^(\d{4})(\d{2})(\d{2})$")
@@ -458,6 +470,11 @@ __all__ = [
     "MAX_TWO_WAY_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
     "MIN_TWO_WAY_TIMEDELTA",
+    "EnsureDateError",
+    "EnsureLocalDateTimeError",
+    "EnsureTimeError",
+    "EnsureTimedeltaError",
+    "EnsureZonedDateTimeError",
     "ParseDateError",
     "ParseDurationError",
     "ParseLocalDateTimeError",
