@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
+from typing import Literal, cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
@@ -113,40 +114,46 @@ class TestEnsureEnum:
 
 class TestParseEnum:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_generic_enum(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
 
-        truth = data.draw(sampled_from(Truth))
+        truth: Truth = data.draw(sampled_from(Truth))
         name = truth.name
         input_ = data.draw(sampled_from([name, name.upper(), name.lower()]))
-        result = parse_enum(input_, Truth, case_sensitive=False)
+        result = parse_enum(input_, Truth)
         assert result is truth
 
     @given(data=data())
-    def test_case_sensitive(self, *, data: DataObject) -> None:
+    def test_generic_enum_case_sensitive(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
 
-        truth = data.draw(sampled_from(Truth))
+        truth: Truth = data.draw(sampled_from(Truth))
         result = parse_enum(truth.name, Truth, case_sensitive=True)
         assert result is truth
 
     @given(data=data())
-    def test_reserved_keyword(self, *, data: DataObject) -> None:
-        class SyncOrAsync(StrEnum):
-            sync = "sync"
-            async_ = "async"
+    def test_generic_enum_reserved_keyword(self, *, data: DataObject) -> None:
+        class SyncOrAsync(Enum):
+            sync = auto()
+            async_ = auto()
 
-        value, expected = data.draw(
-            sampled_from([["sync", SyncOrAsync.sync], ["async", SyncOrAsync.async_]])
+        input_, expected = cast(
+            tuple[Literal["sync", "async"], SyncOrAsync],
+            data.draw(
+                sampled_from([
+                    ["sync", SyncOrAsync.sync],
+                    ["async", SyncOrAsync.async_],
+                ])
+            ),
         )
-        result = parse_enum(value, SyncOrAsync)
+        result = parse_enum(input_, SyncOrAsync)
         assert result is expected
 
-    def test_none(self) -> None:
+    def test_generic_enum_none(self) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -154,16 +161,36 @@ class TestParseEnum:
         result = parse_enum(None, Truth)
         assert result is None
 
+    @given(data=data())
+    def test_str_enum(self, *, data: DataObject) -> None:
+        class Truth(StrEnum):
+            true_ = "_true"
+            false_ = "_false"
+
+        input_, expected = cast(
+            tuple[str, Truth],
+            data.draw(
+                sampled_from([
+                    ("true_", Truth.true_),
+                    ("_true", Truth.true_),
+                    ("false_", Truth.false_),
+                    ("_false", Truth.false_),
+                ])
+            ),
+        )
+        result = parse_enum(input_, Truth)
+        assert result is expected
+
     def test_error_case_sensitive_empty(self) -> None:
         class Example(Enum):
             true = auto()
             false = auto()
 
-        with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
+        with raises(ParseEnumError, match="Enum .* does not contain 'invalid'"):
             _ = parse_enum("invalid", Example, case_sensitive=True)
 
     @given(data=data())
-    def test_error_bijection(self, *, data: DataObject) -> None:
+    def test_generic_enum_error_duplicates(self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
             MEMBER = auto()
@@ -171,7 +198,7 @@ class TestParseEnum:
         member = data.draw(sampled_from(Example))
         with raises(
             ParseEnumError,
-            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
+            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*",
         ):
             _ = parse_enum(member.name, Example)
 
