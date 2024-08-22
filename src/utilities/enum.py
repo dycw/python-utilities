@@ -128,8 +128,20 @@ class _EnsureEnumSingleValueMultipleEnumsError(EnsureEnumError):
         return f"Value {self.value} is not an instance of any of {self.enums}"
 
 
-def parse_enum(value: str, enum: type[_E], /, *, case_sensitive: bool = False) -> _E:
+@overload
+def parse_enum(
+    value: None, enum: type[_E], /, *, case_sensitive: bool = False
+) -> None: ...
+@overload
+def parse_enum(
+    value: str, enum: type[_E], /, *, case_sensitive: bool = False
+) -> _E: ...
+def parse_enum(
+    value: str | None, enum: type[_E], /, *, case_sensitive: bool = False
+) -> _E | None:
     """Parse a string into the enum."""
+    if value is None:
+        return None
     names = {e.name for e in enum}
     try:
         match = one_str(names, value, case_sensitive=case_sensitive)

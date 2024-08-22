@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
-from pytest import mark, raises
+from pytest import raises
 
 from utilities.enum import MaybeStr, ParseEnumError, ensure_enum, parse_enum
 
@@ -17,7 +17,7 @@ class TestParseEnum:
             false = auto()
 
         truth = data.draw(sampled_from(Truth))
-        result = parse_enum(Truth, truth.name)
+        result = parse_enum(truth.name, Truth)
         assert result is truth
 
     @given(data=data())
@@ -29,7 +29,7 @@ class TestParseEnum:
         truth = data.draw(sampled_from(Truth))
         name = truth.name
         input_ = data.draw(sampled_from([name, name.upper(), name.lower()]))
-        result = parse_enum(Truth, input_, case_sensitive=False)
+        result = parse_enum(input_, Truth, case_sensitive=False)
         assert result is truth
 
     def test_error_case_sensitive_empty(self) -> None:
@@ -38,7 +38,7 @@ class TestParseEnum:
             false = auto()
 
         with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
-            _ = parse_enum(Example, "invalid")
+            _ = parse_enum("invalid", Example)
 
     @given(data=data())
     def test_error_bijection_error(self, *, data: DataObject) -> None:
@@ -51,7 +51,7 @@ class TestParseEnum:
             ParseEnumError,
             match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
         ):
-            _ = parse_enum(Example, member.name, case_sensitive=False)
+            _ = parse_enum(member.name, Example, case_sensitive=False)
 
     def test_error_case_insensitive_empty_error(self) -> None:
         class Example(Enum):
@@ -62,10 +62,17 @@ class TestParseEnum:
             ParseEnumError,
             match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
         ):
-            _ = parse_enum(Example, "invalid", case_sensitive=False)
+            _ = parse_enum("invalid", Example, case_sensitive=False)
+
+    def test_none(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = parse_enum(None, Truth)
+        assert result is None
 
 
-@mark.only
 class TestEnsureEnum:
     @given(data=data())
     def test_single_value_single_enum(self, *, data: DataObject) -> None:
