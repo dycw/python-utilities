@@ -13,6 +13,7 @@ from collections.abc import (
 )
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from itertools import accumulate, chain, groupby, islice, product
 from typing import (
@@ -555,6 +556,11 @@ def is_iterable(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     return True
 
 
+def is_iterable_not_enum(obj: Any, /) -> TypeGuard[Iterable[Any]]:
+    """Check if an object is iterable, but not an Enum."""
+    return is_iterable(obj) and not (isinstance(obj, type) and issubclass(obj, Enum))
+
+
 def is_iterable_not_str(obj: Any, /) -> TypeGuard[Iterable[Any]]:
     """Check if an object is iterable, but not a string."""
     return is_iterable(obj) and not isinstance(obj, str)
@@ -736,6 +742,7 @@ __all__ = [
     "expanding_window",
     "groupby_lists",
     "is_iterable",
+    "is_iterable_not_enum",
     "is_iterable_not_str",
     "one",
     "product_dicts",
