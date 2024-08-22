@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
 from typing_extensions import override
 
+from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     _OneStrCaseInsensitiveBijectionError,
     _OneStrCaseInsensitiveEmptyError,
@@ -76,33 +77,13 @@ def ensure_enum(
     """Ensure the object is a member of the enum."""
     if value_or_values is None:
         return None
-    if (not is_iterable_not_str(value_or_values)) and not is_iterable_not_enum(
-        enum_or_enums
-    ):
-        value = cast(MaybeStr[Enum], value_or_values)
-        enum = cast(type[Enum], enum_or_enums)
-        if isinstance(value, Enum):
-            if isinstance(value, enum):
-                return value
-            raise _EnsureEnumSingleValueSingleEnumError(
-                value=value, enum=enum, case_sensitive=case_sensitive
-            )
-        try:
-            return parse_enum(enum, value, case_sensitive=case_sensitive)
-        except ParseEnumError:
-            raise _EnsureEnumSingleValueSingleEnumError(
-                value=value, enum=enum, case_sensitive=case_sensitive
-            ) from None
-    if is_iterable_not_str(value_or_values) and (
-        not is_iterable_not_enum(enum_or_enums)
-    ):
+    if is_iterable_not_str(value_or_values):
         values = cast(Iterable[MaybeStr[Enum]], value_or_values)
-        enum = cast(type[Enum], enum_or_enums)
-        return (ensure_enum(v, enum, case_sensitive=case_sensitive) for v in values)
-    if (not is_iterable_not_str(value_or_values)) and is_iterable_not_enum(
-        enum_or_enums
-    ):
-        value = cast(MaybeStr[Enum], value_or_values)
+        return (
+            ensure_enum(v, enum_or_enums, case_sensitive=case_sensitive) for v in values
+        )
+    value = cast(MaybeStr[Enum], value_or_values)
+    if is_iterable_not_enum(enum_or_enums):
         enums = cast(tuple[type[Enum], ...], enum_or_enums)
         for enum in enums:
             with suppress(_EnsureEnumSingleValueSingleEnumError):
@@ -110,11 +91,19 @@ def ensure_enum(
         raise _EnsureEnumSingleValueMultipleEnumsError(
             value=value, enums=enums, case_sensitive=case_sensitive
         )
-    if is_iterable_not_str(value_or_values) and is_iterable_not_enum(enum_or_enums):
-        values = cast(Iterable[MaybeStr[Enum]], value_or_values)
-        enums = cast(tuple[type[Enum], ...], enum_or_enums)
-        return (ensure_enum(v, enums, case_sensitive=case_sensitive) for v in values)
-    raise NotImplementedError
+    enum = cast(type[Enum], enum_or_enums)
+    if isinstance(value, Enum):
+        if isinstance(value, enum):
+            return value
+        raise _EnsureEnumSingleValueSingleEnumError(
+            value=value, enum=enum, case_sensitive=case_sensitive
+        )
+    try:
+        return parse_enum(enum, value, case_sensitive=case_sensitive)
+    except ParseEnumError:
+        raise _EnsureEnumSingleValueSingleEnumError(
+            value=value, enum=enum, case_sensitive=case_sensitive
+        ) from None
 
 
 @dataclass(kw_only=True)
