@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from enum import Enum, auto
+from enum import Enum, StrEnum, auto
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
@@ -13,70 +13,6 @@ from utilities.enum import (
     ensure_enum,
     parse_enum,
 )
-
-
-class TestParseEnum:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        truth = data.draw(sampled_from(Truth))
-        name = truth.name
-        input_ = data.draw(sampled_from([name, name.upper(), name.lower()]))
-        result = parse_enum(input_, Truth, case_sensitive=False)
-        assert result is truth
-
-    @given(data=data())
-    def test_case_sensitive(self, *, data: DataObject) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        truth = data.draw(sampled_from(Truth))
-        result = parse_enum(truth.name, Truth, case_sensitive=True)
-        assert result is truth
-
-    def test_error_case_sensitive_empty(self) -> None:
-        class Example(Enum):
-            true = auto()
-            false = auto()
-
-        with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
-            _ = parse_enum("invalid", Example, case_sensitive=True)
-
-    @given(data=data())
-    def test_error_bijection(self, *, data: DataObject) -> None:
-        class Example(Enum):
-            member = auto()
-            MEMBER = auto()
-
-        member = data.draw(sampled_from(Example))
-        with raises(
-            ParseEnumError,
-            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
-        ):
-            _ = parse_enum(member.name, Example)
-
-    def test_error_case_insensitive_empty(self) -> None:
-        class Example(Enum):
-            true = auto()
-            false = auto()
-
-        with raises(
-            ParseEnumError,
-            match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
-        ):
-            _ = parse_enum("invalid", Example)
-
-    def test_none(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        result = parse_enum(None, Truth)
-        assert result is None
 
 
 class TestEnsureEnum:
@@ -173,3 +109,79 @@ class TestEnsureEnum:
         truth: Truth1 = data.draw(sampled_from(Truth1))
         with raises(EnsureEnumError, match=".* is not an instance of .*"):
             _ = ensure_enum(truth, (Truth2,))
+
+
+class TestParseEnum:
+    @given(data=data())
+    def test_main(self, *, data: DataObject) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        truth = data.draw(sampled_from(Truth))
+        name = truth.name
+        input_ = data.draw(sampled_from([name, name.upper(), name.lower()]))
+        result = parse_enum(input_, Truth, case_sensitive=False)
+        assert result is truth
+
+    @given(data=data())
+    def test_case_sensitive(self, *, data: DataObject) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        truth = data.draw(sampled_from(Truth))
+        result = parse_enum(truth.name, Truth, case_sensitive=True)
+        assert result is truth
+
+    @given(data=data())
+    def test_reserved_keyword(self, *, data: DataObject) -> None:
+        class SyncOrAsync(StrEnum):
+            sync = "sync"
+            async_ = "async"
+
+        value, expected = data.draw(
+            sampled_from([["sync", SyncOrAsync.sync], ["async", SyncOrAsync.async_]])
+        )
+        result = parse_enum(value, SyncOrAsync)
+        assert result is expected
+
+    def test_none(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = parse_enum(None, Truth)
+        assert result is None
+
+    def test_error_case_sensitive_empty(self) -> None:
+        class Example(Enum):
+            true = auto()
+            false = auto()
+
+        with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
+            _ = parse_enum("invalid", Example, case_sensitive=True)
+
+    @given(data=data())
+    def test_error_bijection(self, *, data: DataObject) -> None:
+        class Example(Enum):
+            member = auto()
+            MEMBER = auto()
+
+        member = data.draw(sampled_from(Example))
+        with raises(
+            ParseEnumError,
+            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
+        ):
+            _ = parse_enum(member.name, Example)
+
+    def test_error_case_insensitive_empty(self) -> None:
+        class Example(Enum):
+            true = auto()
+            false = auto()
+
+        with raises(
+            ParseEnumError,
+            match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
+        ):
+            _ = parse_enum("invalid", Example)

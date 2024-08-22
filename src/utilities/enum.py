@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
+from keyword import iskeyword
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
 from typing_extensions import override
@@ -157,6 +158,8 @@ def parse_enum(
     """Parse a string into the enum."""
     if value is None:
         return None
+    if iskeyword(value):
+        return parse_enum(f"{value}_", enum, case_sensitive=case_sensitive)
     names = {e.name for e in enum}
     try:
         match = one_str(names, value, case_sensitive=case_sensitive)
