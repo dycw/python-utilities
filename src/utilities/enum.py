@@ -30,7 +30,7 @@ MaybeStr = _E | str
 @overload
 def ensure_enum(
     value_or_values: None,
-    enum_or_enums: type[_E | (_E1 | _E2)],
+    enum_or_enums: type[_E] | tuple[type[_E1], type[_E2]],
     /,
     *,
     case_sensitive: bool = ...,
@@ -95,7 +95,7 @@ def ensure_enum(
             value=value, enum=enum, case_sensitive=case_sensitive
         )
     try:
-        return parse_enum(enum, value, case_sensitive=case_sensitive)
+        return parse_enum(value, enum, case_sensitive=case_sensitive)
     except ParseEnumError:
         raise _EnsureEnumSingleValueSingleEnumError(
             value=value, enum=enum, case_sensitive=case_sensitive
@@ -128,36 +128,33 @@ class _EnsureEnumSingleValueMultipleEnumsError(EnsureEnumError):
         return f"Value {self.value} is not an instance of any of {self.enums}"
 
 
-# _EnsureEnumSingleValueSingleEnumError
-
-
-def parse_enum(enum: type[_E], member: str, /, *, case_sensitive: bool = False) -> _E:
+def parse_enum(value: str, enum: type[_E], /, *, case_sensitive: bool = False) -> _E:
     """Parse a string into the enum."""
     names = {e.name for e in enum}
     try:
-        match = one_str(names, member, case_sensitive=case_sensitive)
+        match = one_str(names, value, case_sensitive=case_sensitive)
     except _OneStrCaseSensitiveEmptyError:
-        raise _ParseEnumCaseSensitiveEmptyError(enum=enum, member=member) from None
+        raise _ParseEnumCaseSensitiveEmptyError(value=value, enum=enum) from None
     except _OneStrCaseInsensitiveBijectionError as error:
         raise _ParseEnumCaseInsensitiveBijectionError(
-            enum=enum, member=member, counts=error.counts
+            value=value, enum=enum, counts=error.counts
         ) from None
     except _OneStrCaseInsensitiveEmptyError:
-        raise _ParseEnumCaseInsensitiveEmptyError(enum=enum, member=member) from None
+        raise _ParseEnumCaseInsensitiveEmptyError(value=value, enum=enum) from None
     return enum[match]
 
 
 @dataclass(kw_only=True)
 class ParseEnumError(Exception, Generic[_E]):
+    value: str
     enum: type[_E]
-    member: str
 
 
 @dataclass(kw_only=True)
 class _ParseEnumCaseSensitiveEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
-        return f"Enum {self.enum} does not contain {self.member!r}."
+        return f"Enum {self.enum} does not contain {self.value!r}."
 
 
 @dataclass(kw_only=True)
@@ -173,7 +170,7 @@ class _ParseEnumCaseInsensitiveBijectionError(ParseEnumError):
 class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
-        return f"Enum {self.enum} does not contain {self.member!r} (case insensitive)."
+        return f"Enum {self.enum} does not contain {self.value!r} (case insensitive)."
 
 
 __all__ = ["EnsureEnumError", "MaybeStr", "ParseEnumError", "ensure_enum", "parse_enum"]
