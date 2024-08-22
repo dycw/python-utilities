@@ -34,7 +34,7 @@ from utilities.click import (
     ExistingFilePath,
     FilePath,
     ListDates,
-    ListEnum,
+    ListEnums,
     ListInts,
     ListMonths,
     ListStrs,
@@ -212,14 +212,14 @@ def _serialize_iterable_enums(values: Iterable[enum.Enum], /) -> str:
 
 class TestListEnums:
     def test_repr(self) -> None:
-        param = ListEnum(_Truth)
+        param = ListEnums(_Truth)
         expected = "ListEnum(true,false)"
         assert repr(param) == expected
 
     @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
     def test_command(self, *, values: Sequence[_Truth]) -> None:
         @command()
-        @argument("values", type=ListEnum(_Truth))
+        @argument("values", type=ListEnums(_Truth))
         def cli(*, values: Sequence[_Truth]) -> None:
             echo(f"values = {values}")
 
@@ -234,7 +234,7 @@ class TestListEnums:
     @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
     def test_option(self, *, values: list[str]) -> None:
         @command()
-        @option("--values", type=ListEnum(_Truth), default=values)
+        @option("--values", type=ListEnums(_Truth), default=values)
         def cli(*, values: Sequence[str]) -> None:
             echo(f"values = {values}")
 

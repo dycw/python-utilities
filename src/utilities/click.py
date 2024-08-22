@@ -156,7 +156,7 @@ class ListDates(ParamType):
         return f"{{{desc}}}" if req_arg else f"[{desc}]"
 
 
-class ListEnum(ParamType, Generic[_E]):
+class ListEnums(ParamType, Generic[_E]):
     """A list-of-enums-valued parameter."""
 
     name = "enums"
@@ -386,7 +386,7 @@ __all__ = [
     "ExistingFilePath",
     "FilePath",
     "ListDates",
-    "ListEnum",
+    "ListEnums",
     "ListInts",
     "ListMonths",
     "ListStrs",
