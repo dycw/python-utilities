@@ -13,7 +13,7 @@ from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.sentinel import SENTINEL_REPR
-from utilities.text import split_str
+from utilities.text import join_strs, split_str
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -137,7 +137,7 @@ class ListChoices(ParamType):
         *,
         separator: str = ",",
         empty: str = SENTINEL_REPR,
-        case_sensitive: bool = True,
+        case_sensitive: bool = False,
     ) -> None:
         self._choices = choices
         self._separator = separator
@@ -232,7 +232,7 @@ class ListEnum(ParamType, Generic[_E]):
 
     @override
     def __repr__(self) -> str:
-        return f"ListEnum({self._enum})"
+        return f"ListEnum({join_strs(e.name for e in self._enum)})"
 
     @override
     def convert(

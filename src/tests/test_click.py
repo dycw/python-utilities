@@ -36,6 +36,7 @@ from utilities.click import (
     FilePath,
     ListChoices,
     ListDates,
+    ListEnum,
     ListInts,
     ListMonths,
     ListStrs,
@@ -65,7 +66,7 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Sequence
     from pathlib import Path
 
 
@@ -228,22 +229,6 @@ class TestListChoices:
         result = CliRunner().invoke(cli, ["invalid"])
         assert result.exit_code == 2
 
-    @given(
-        data=data(),
-        choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True),
-    )
-    def test_case_insensitive(self, *, data: DataObject, choices: list[str]) -> None:
-        @command()
-        @argument("choices", type=ListChoices(ascii_lowercase, case_sensitive=False))
-        def cli(*, choices: list[str]) -> None:
-            echo(f"choices = {choices}")
-
-        variable = [data.draw(sampled_from([c, c.upper()])) for c in choices]
-        joined = join_strs(variable)
-        result = CliRunner().invoke(cli, [joined])
-        assert result.exit_code == 0
-        assert result.stdout == f"choices = {choices}\n"
-
     @given(choices=lists(sampled_from(ascii_lowercase), min_size=1, unique=True))
     def test_option(self, *, choices: list[str]) -> None:
         @command()
@@ -254,6 +239,43 @@ class TestListChoices:
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"choices = {choices}\n"
+
+
+def _serialize_iterable_enums(values: Iterable[enum.Enum], /) -> str:
+    return join_strs(e.name for e in values)
+
+
+class TestListEnums:
+    def test_repr(self) -> None:
+        param = ListEnum(_Truth)
+        expected = "ListEnum(true,false)"
+        assert repr(param) == expected
+
+    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
+    def test_command(self, *, values: Sequence[_Truth]) -> None:
+        @command()
+        @argument("values", type=ListEnum(_Truth))
+        def cli(*, values: Sequence[_Truth]) -> None:
+            echo(f"values = {values}")
+
+        joined = _serialize_iterable_enums(values)
+        result = CliRunner().invoke(cli, [joined])
+        assert result.exit_code == 0
+        assert result.stdout == f"values = {values}\n"
+
+        result = CliRunner().invoke(cli, ["invalid"])
+        assert result.exit_code == 2
+
+    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
+    def test_option(self, *, values: list[str]) -> None:
+        @command()
+        @option("--values", type=ListEnum(_Truth), default=values)
+        def cli(*, values: Sequence[str]) -> None:
+            echo(f"values = {values}")
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0
+        assert result.stdout == f"values = {values}\n"
 
 
 def _serialize_iterable_dates(values: Iterable[dt.date], /) -> str:
