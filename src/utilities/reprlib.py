@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from enum import Enum, StrEnum
 from inspect import signature
 from itertools import islice
 from reprlib import (
@@ -127,7 +128,7 @@ def _custom_repr(
     maxother: int = _REPR.maxother,
 ) -> str:
     """Apply the custom representation."""
-    repr_obj = CustomRepr(
+    repr_obj = _CustomRepr(
         fillvalue=fillvalue,
         maxlevel=maxlevel,
         maxtuple=maxtuple,
@@ -144,7 +145,7 @@ def _custom_repr(
     return repr_obj.repr(obj)
 
 
-class CustomRepr(Repr):
+class _CustomRepr(Repr):
     """Custom representation."""
 
     def __init__(
@@ -176,6 +177,14 @@ class CustomRepr(Repr):
         self.maxstring = maxstring
         self.maxlong = maxlong
         self.maxother = maxother
+
+    @override
+    def repr1(self, x: Any, level: int) -> str:
+        if isinstance(x, Enum):
+            if isinstance(x, StrEnum):
+                return super().repr1(x.value, level)
+            return super().repr1(x.name, level)
+        return super().repr1(x, level)
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
         try:
@@ -214,7 +223,7 @@ class CustomRepr(Repr):
         return ", ".join(pieces)
 
 
-_CUSTOM_REPR = CustomRepr()
+_CUSTOM_REPR = _CustomRepr()
 
 
 _FILTER_MAPPING_REGEX = re.compile(r"^_")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum, StrEnum, auto
 from itertools import chain
 from typing import TYPE_CHECKING, Any
 
@@ -47,6 +48,24 @@ class TestCustomRepr:
         class DataFrame: ...
 
         _ = _custom_repr(DataFrame())
+
+    def test_enum_generic(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        result = _custom_repr(list(Truth))
+        expected = "['true', 'false']"
+        assert result == expected
+
+    def test_enum_str(self) -> None:
+        class Truth(StrEnum):
+            true_key = "true_value"
+            false_key = "false_value"
+
+        result = _custom_repr(list(Truth))
+        expected = "['true_value', 'false_value']"
+        assert result == expected
 
     def test_series(self) -> None:
         sr = int_range(start=0, end=100, eager=True).rename("int")
