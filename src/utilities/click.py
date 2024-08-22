@@ -114,7 +114,7 @@ class Enum(ParamType, Generic[_E]):
     ) -> _E:
         """Convert a value into the `Enum` type."""
         try:
-            return ensure_enum(self._enum, value, case_sensitive=self._case_sensitive)
+            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
         except ParseEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
