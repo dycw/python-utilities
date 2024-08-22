@@ -4,18 +4,14 @@ from collections.abc import Iterable
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
-from os import RTLD_NOW
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
 from typing_extensions import override
 
-from utilities.errors import ImpossibleCaseError
 from utilities.iterables import (
     _OneStrCaseInsensitiveBijectionError,
     _OneStrCaseInsensitiveEmptyError,
     _OneStrCaseSensitiveEmptyError,
-    always_iterable,
-    is_iterable,
     is_iterable_not_enum,
     is_iterable_not_str,
     one_str,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 
-from hypothesis import given, reproduce_failure
+from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
 from pytest import mark, raises
 
