@@ -67,24 +67,6 @@ class TestCustomRepr:
         expected = "['true_value', 'false_value']"
         assert result == expected
 
-    def test_enum_generic(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        result = _custom_repr(list(Truth))
-        expected = "['Truth.true', 'Truth.false']"
-        assert result == expected
-
-    def test_enum_str(self) -> None:
-        class Truth(StrEnum):
-            true_key = "true_value"
-            false_key = "false_value"
-
-        result = _custom_repr(list(Truth))
-        expected = "['true_value', 'false_value']"
-        assert result == expected
-
     def test_series(self) -> None:
         sr = int_range(start=0, end=100, eager=True).rename("int")
         result = custom_repr(sr)
