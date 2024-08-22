@@ -519,7 +519,7 @@ class TestIsIterableNotEnum:
             false = auto()
 
         assert not is_iterable_not_enum((Truth1, Truth2))
-        assert is_iterable_not_enum([Truth1 | Truth2])
+        assert is_iterable_not_enum((Truth1, Truth2))
 
     @mark.parametrize(
         ("obj", "expected"),

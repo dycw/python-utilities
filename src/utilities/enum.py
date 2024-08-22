@@ -31,7 +31,7 @@ MaybeStr = _E | str
 @overload
 def ensure_enum(
     value_or_values: None,
-    enum_or_enums: type[_E] | tuple[_E1] | tuple[type[_E1], type[_E2]],
+    enum_or_enums: type[_E] | tuple[type[_E1]] | tuple[type[_E1], type[_E2]],
     /,
     *,
     case_sensitive: bool = ...,
