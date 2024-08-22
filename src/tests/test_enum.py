@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
+from typing import cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
-from pytest import raises
+from pytest import mark, param, raises
 
 from utilities.enum import (
     EnsureEnumError,
@@ -113,40 +114,28 @@ class TestEnsureEnum:
 
 class TestParseEnum:
     @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
+    def test_generic_enum(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
 
-        truth = data.draw(sampled_from(Truth))
+        truth: Truth = data.draw(sampled_from(Truth))
         name = truth.name
         input_ = data.draw(sampled_from([name, name.upper(), name.lower()]))
-        result = parse_enum(input_, Truth, case_sensitive=False)
+        result = parse_enum(input_, Truth)
         assert result is truth
 
     @given(data=data())
-    def test_case_sensitive(self, *, data: DataObject) -> None:
+    def test_generic_enum_case_sensitive(self, *, data: DataObject) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
 
-        truth = data.draw(sampled_from(Truth))
+        truth: Truth = data.draw(sampled_from(Truth))
         result = parse_enum(truth.name, Truth, case_sensitive=True)
         assert result is truth
 
-    @given(data=data())
-    def test_reserved_keyword(self, *, data: DataObject) -> None:
-        class SyncOrAsync(StrEnum):
-            sync = "sync"
-            async_ = "async"
-
-        value, expected = data.draw(
-            sampled_from([["sync", SyncOrAsync.sync], ["async", SyncOrAsync.async_]])
-        )
-        result = parse_enum(value, SyncOrAsync)
-        assert result is expected
-
-    def test_none(self) -> None:
+    def test_generic_enum_none(self) -> None:
         class Truth(Enum):
             true = auto()
             false = auto()
@@ -154,16 +143,30 @@ class TestParseEnum:
         result = parse_enum(None, Truth)
         assert result is None
 
-    def test_error_case_sensitive_empty(self) -> None:
-        class Example(Enum):
-            true = auto()
-            false = auto()
+    @given(data=data())
+    def test_str_enum(self, *, data: DataObject) -> None:
+        class Truth(StrEnum):
+            both = "both"
+            true_ = "_true"
+            false_ = "_false"
 
-        with raises(ParseEnumError, match=r"Enum .* does not contain 'invalid'"):
-            _ = parse_enum("invalid", Example, case_sensitive=True)
+        input_, expected = cast(
+            tuple[str, Truth],
+            data.draw(
+                sampled_from([
+                    ("both", Truth.both),
+                    ("true_", Truth.true_),
+                    ("_true", Truth.true_),
+                    ("false_", Truth.false_),
+                    ("_false", Truth.false_),
+                ])
+            ),
+        )
+        result = parse_enum(input_, Truth)
+        assert result is expected
 
     @given(data=data())
-    def test_error_bijection(self, *, data: DataObject) -> None:
+    def test_generic_enum_error_duplicates(self, *, data: DataObject) -> None:
         class Example(Enum):
             member = auto()
             MEMBER = auto()
@@ -171,17 +174,56 @@ class TestParseEnum:
         member = data.draw(sampled_from(Example))
         with raises(
             ParseEnumError,
-            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*\.",
+            match=r"Enum .* must not contain duplicates \(case insensitive\); got .*",
         ):
             _ = parse_enum(member.name, Example)
 
-    def test_error_case_insensitive_empty(self) -> None:
-        class Example(Enum):
+    @mark.parametrize(
+        ("case_sensitive", "desc"),
+        [param(True, "sensitive"), param(False, "insensitive")],
+    )
+    def test_generic_enum_error_empty(self, *, case_sensitive: bool, desc: str) -> None:
+        class Truth(Enum):
             true = auto()
             false = auto()
 
         with raises(
-            ParseEnumError,
-            match=r"Enum .* does not contain 'invalid' \(case insensitive\)\.",
+            ParseEnumError, match=rf"Enum .* does not contain 'invalid' \(case {desc}\)"
         ):
-            _ = parse_enum("invalid", Example)
+            _ = parse_enum("invalid", Truth, case_sensitive=case_sensitive)
+
+    @mark.parametrize(
+        ("case_sensitive", "desc"),
+        [param(True, "sensitive"), param(False, "insensitive")],
+    )
+    def test_str_enum_error_empty(self, *, case_sensitive: bool, desc: str) -> None:
+        class Truth(StrEnum):
+            true = "true"
+            false = "false"
+
+        with raises(
+            ParseEnumError, match=rf"Enum .* does not contain 'invalid' \(case {desc}\)"
+        ):
+            _ = parse_enum("invalid", Truth, case_sensitive=case_sensitive)
+
+    def test_str_enum_error_ambiguous(self) -> None:
+        class Truth(StrEnum):
+            true_or_false = "true"
+            false = "TRUE_OR_FALSE"
+
+        with raises(
+            ParseEnumError,
+            match=r"StrEnum .* contains 'true_or_false' in both its keys and values \(case insensitive\)",
+        ):
+            _ = parse_enum("true_or_false", Truth)
+
+    def test_str_enum_error_case_sensitive_ambiguous(self) -> None:
+        class Truth(StrEnum):
+            true_or_false = "true"
+            false = "true_or_false"
+
+        with raises(
+            ParseEnumError,
+            match=r"StrEnum .* contains 'true_or_false' in both its keys and values \(case sensitive\)",
+        ):
+            _ = parse_enum("true_or_false", Truth, case_sensitive=True)
