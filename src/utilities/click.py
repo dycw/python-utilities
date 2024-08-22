@@ -9,7 +9,7 @@ from click import Context, Parameter, ParamType
 from typing_extensions import override
 
 import utilities.types
-from utilities.datetime import EnsureMonthError, ParseMonthError, ensure_month
+from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
 from utilities.iterables import OneStrError, one_str
 from utilities.sentinel import SENTINEL_REPR
@@ -44,11 +44,11 @@ class Date(ParamType):
         self, value: dt.date | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
-        from utilities.whenever import ParseDateError, ensure_date
+        from utilities.whenever import EnsureDateError, ensure_date
 
         try:
             return ensure_date(value)
-        except ParseDateError:
+        except EnsureDateError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -65,11 +65,11 @@ class Duration(ParamType):
         ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
-        from utilities.whenever import ParseDurationError, ensure_duration
+        from utilities.whenever import EnsureDurationError, ensure_duration
 
         try:
             return ensure_duration(value)
-        except ParseDurationError:
+        except EnsureDurationError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -83,11 +83,11 @@ class LocalDateTime(ParamType):
         self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `LocalDateTime` type."""
-        from utilities.whenever import ParseLocalDateTimeError, ensure_local_datetime
+        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
 
         try:
             return ensure_local_datetime(value)
-        except ParseLocalDateTimeError:
+        except EnsureLocalDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -202,7 +202,7 @@ class ListDates(ParamType):
         self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
     ) -> list[dt.date]:
         """Convert a value into the `ListDates` type."""
-        from utilities.whenever import ParseDateError, parse_date
+        from utilities.whenever import EnsureDateError, parse_date
 
         if isinstance(value, list):
             return value
@@ -210,7 +210,7 @@ class ListDates(ParamType):
         strs = split_str(value, separator=self._separator, empty=self._empty)
         try:
             return list(map(parse_date, strs))
-        except ParseDateError:
+        except EnsureDateError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
     @override
@@ -324,7 +324,7 @@ class Month(ParamType):
         """Convert a value into the `Month` type."""
         try:
             return ensure_month(value)
-        except ParseMonthError:
+        except EnsureMonthError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -338,11 +338,11 @@ class Time(ParamType):
         self, value: dt.time | str, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
         """Convert a value into the `Time` type."""
-        from utilities.whenever import ParseTimeError, ensure_time
+        from utilities.whenever import EnsureTimeError, ensure_time
 
         try:
             return ensure_time(value)
-        except ParseTimeError:
+        except EnsureTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -356,11 +356,11 @@ class Timedelta(ParamType):
         self, value: dt.timedelta | str, param: Parameter | None, ctx: Context | None
     ) -> dt.timedelta:
         """Convert a value into the `Timedelta` type."""
-        from utilities.whenever import ParseTimedeltaError, ensure_timedelta
+        from utilities.whenever import EnsureTimedeltaError, ensure_timedelta
 
         try:
             return ensure_timedelta(value)
-        except ParseTimedeltaError:
+        except EnsureTimedeltaError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -374,11 +374,11 @@ class ZonedDateTime(ParamType):
         self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `DateTime` type."""
-        from utilities.whenever import ParseZonedDateTimeError, ensure_zoned_datetime
+        from utilities.whenever import EnsureZonedDateTimeError, ensure_zoned_datetime
 
         try:
             return ensure_zoned_datetime(value)
-        except ParseZonedDateTimeError:
+        except EnsureZonedDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
