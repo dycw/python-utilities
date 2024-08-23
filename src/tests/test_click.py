@@ -61,7 +61,7 @@ from utilities.hypothesis import (
     timedeltas_2w,
 )
 from utilities.sqlalchemy import serialize_engine
-from utilities.text import join_strs
+from utilities.text import join_strs, strip_and_dedent
 from utilities.whenever import (
     serialize_date,
     serialize_duration,
@@ -330,9 +330,6 @@ class TestParameters:
         def cli(*, value: cls) -> None:
             echo(f"value = {serialize(value)}")
 
-        result = CliRunner().invoke(cli, ["--help"])
-        assert result.exit_code == 0
-
         value_str = serialize(data.draw(strategy))
         result = CliRunner().invoke(cli, [value_str])
         assert result.exit_code == 0
@@ -366,11 +363,66 @@ class TestParameters:
         def cli(*, value: cls) -> None:
             echo(f"value = {serialize(value)}")
 
-        result = CliRunner().invoke(cli, ["--help"])
-        assert result.exit_code == 0
-
         result = CliRunner().invoke(cli)
         assert result.exit_code == 0
         assert result.stdout == f"value = {serialize(value)}\n"
 
         _ = failable
+
+
+class TestCLIHelp:
+    @mark.parametrize(
+        ("param", "expected"),
+        [
+            param(
+                str,
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value TEXT
+      --help        Show this message and exit.
+""",
+            ),
+            param(
+                ListStrs(),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [LIST[TEXT] SEP=,]
+      --help                      Show this message and exit.
+""",
+            ),
+            param(
+                Enum(_Truth),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [true,false]
+      --help                Show this message and exit.
+""",
+            ),
+            param(
+                ListEnums(_Truth),
+                """
+    Usage: cli [OPTIONS]
+
+    Options:
+      --value [LIST[true,false] SEP=,]
+      --help                          Show this message and exit.
+""",
+            ),
+        ],
+    )
+    def test_main(self, *, param: Any, expected: str) -> None:
+        @command()
+        @option("--value", type=param)
+        def cli(*, value: Any) -> None:
+            echo(f"value = {value}")
+
+        result = CliRunner().invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        expected = strip_and_dedent(expected, trailing=True)
+        assert result.stdout == expected
