@@ -109,7 +109,7 @@ class Enum(ParamType, Generic[_E]):
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self._enum)
-        return f"ENUM[{cls}]"
+        return f"Enum[{cls}]"
 
     @override
     def convert(
@@ -256,7 +256,7 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
     @override
     def __repr__(self) -> str:
         desc = repr(self._param)
-        return f"LIST[{desc}]"
+        return f"Enum[{desc}]"
 
     @override
     def convert(
