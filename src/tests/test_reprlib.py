@@ -11,11 +11,17 @@ from utilities.reprlib import (
     ReprLocals,
     _custom_mapping_repr,
     _filter_mapping,
+    custom_print,
     custom_repr,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+
+
+class TestCustomPrint:
+    def test_main(self) -> None:
+        custom_print({})
 
 
 class TestCustomRepr:

@@ -253,4 +253,45 @@ def _filter_mapping(
     return mapping
 
 
-__all__ = ["ReprLocals", "custom_repr"]
+def custom_print(
+    obj: Any,
+    /,
+    *,
+    fillvalue: str = _REPR.fillvalue,
+    maxlevel: int = _REPR.maxlevel,
+    maxtuple: int = _REPR.maxtuple,
+    maxlist: int = _REPR.maxlist,
+    maxarray: int = _REPR.maxarray,
+    maxdict: int = _REPR.maxdict,
+    maxset: int = _REPR.maxset,
+    maxfrozenset: int = _REPR.maxfrozenset,
+    maxdeque: int = _REPR.maxdeque,
+    maxstring: int = _REPR.maxstring,
+    maxlong: int = _REPR.maxlong,
+    maxother: int = _REPR.maxother,
+) -> None:
+    """Print the custom representation."""
+    text = custom_repr(
+        obj,
+        fillvalue=fillvalue,
+        maxlevel=maxlevel,
+        maxtuple=maxtuple,
+        maxlist=maxlist,
+        maxarray=maxarray,
+        maxdict=maxdict,
+        maxset=maxset,
+        maxfrozenset=maxfrozenset,
+        maxdeque=maxdeque,
+        maxstring=maxstring,
+        maxlong=maxlong,
+        maxother=maxother,
+    )
+    try:
+        import rich
+    except ModuleNotFoundError:  # pragma: no cover
+        print(text)  # noqa: T201
+    else:
+        rich.print(text)
+
+
+__all__ = ["ReprLocals", "custom_print", "custom_repr"]
