@@ -76,9 +76,10 @@ def split_str(
     return [] if text == empty else text.split(separator)
 
 
-def strip_and_dedent(text: str, /) -> str:
+def strip_and_dedent(text: str, /, *, trailing: bool = False) -> str:
     """Strip and dedent a string."""
-    return dedent(text.strip("\n")).strip("\n")
+    result = dedent(text.strip("\n")).strip("\n")
+    return f"{result}\n" if trailing else result
 
 
 __all__ = [

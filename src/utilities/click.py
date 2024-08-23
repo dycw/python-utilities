@@ -99,9 +99,9 @@ _E = TypeVar("_E", bound=enum.Enum)
 class Enum(ParamType, Generic[_E]):
     """An enum-valued parameter."""
 
-    name = "enum"
-
     def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
+        cls = get_class_name(enum)
+        self.name = f"ENUM[{cls}]"
         self._enum = enum
         self._case_sensitive = case_sensitive
         super().__init__()
@@ -247,7 +247,7 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
     def __init__(
         self, param: _TParam, /, *, separator: str = ",", empty: str = SENTINEL_REPR
     ) -> None:
-        self.name = param.name
+        self.name = f"LIST[{param.name}]"
         self._param = param
         self._separator = separator
         self._empty = empty
@@ -271,12 +271,12 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
-        name = self.name.upper()
-        sep = f"sep={self._separator!r}"
         if (metavar := self._param.get_metavar(param)) is None:
-            desc = f"{name}; {sep}"
+            name = self.name.upper()
         else:
-            desc = f"{name}; {metavar}; {sep}"
+            name = f"LIST{metavar}"
+        sep = f"SEP={self._separator}"
+        desc = f"{name} {sep}"
         return _make_metavar(param, desc)
 
 
