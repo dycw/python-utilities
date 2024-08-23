@@ -109,7 +109,7 @@ class Enum(ParamType, Generic[_E]):
     @override
     def __repr__(self) -> str:
         cls = get_class_name(self._enum)
-        return f"Enum[{cls}]"
+        return f"ENUM[{cls}]"
 
     @override
     def convert(
@@ -256,7 +256,7 @@ class ListParameter(ParamType, Generic[_TParam, _T]):
     @override
     def __repr__(self) -> str:
         desc = repr(self._param)
-        return f"Enum[{desc}]"
+        return f"LIST[{desc}]"
 
     @override
     def convert(
@@ -353,6 +353,10 @@ class Engine(ParamType):
     """An engine-valued parameter."""
 
     name = "engine"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
 
     @override
     def convert(
