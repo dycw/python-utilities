@@ -23,4 +23,4 @@ class TestSecond:
     @given(x=integers(), y=integers())
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
-        assert second(pair) == x
+        assert second(pair) == y
