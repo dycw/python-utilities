@@ -3,8 +3,10 @@ from __future__ import annotations
 import datetime as dt
 import enum
 from enum import auto
+from operator import attrgetter
 from re import search
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
+from uuid import UUID
 
 import sqlalchemy
 from click import ParamType, argument, command, echo, option
@@ -13,14 +15,17 @@ from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
+    booleans,
     data,
     dates,
     datetimes,
+    floats,
     integers,
     just,
     lists,
     sampled_from,
     times,
+    uuids,
 )
 from pytest import mark, param
 
@@ -30,14 +35,18 @@ import utilities.types
 from utilities.click import (
     Date,
     DirPath,
+    Enum,
     ExistingDirPath,
     ExistingFilePath,
     FilePath,
+    ListBools,
     ListDates,
     ListEnums,
+    ListFloats,
     ListInts,
     ListMonths,
     ListStrs,
+    ListUUIDs,
     LocalDateTime,
     Time,
     Timedelta,
@@ -64,58 +73,11 @@ from utilities.whenever import (
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Sequence
+    from collections.abc import Callable, Iterable
     from pathlib import Path
 
 
-class _Truth(enum.Enum):
-    true = auto()
-    false = auto()
-
-
-class TestEnum:
-    def test_repr(self) -> None:
-        param = utilities.click.Enum(_Truth)
-        expected = f"Enum({_Truth})"
-        assert repr(param) == expected
-
-    @given(data=data(), truth=sampled_from(_Truth))
-    def test_case_insensitive(self, *, data: DataObject, truth: _Truth) -> None:
-        @command()
-        @argument("truth", type=utilities.click.Enum(_Truth))
-        def cli(*, truth: _Truth) -> None:
-            echo(f"truth = {truth}")
-
-        name = truth.name
-        as_str = data.draw(sampled_from([name, name.lower()]))
-        result = CliRunner().invoke(cli, [as_str])
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {truth}\n"
-
-    @given(truth=sampled_from(_Truth))
-    def test_case_sensitive(self, *, truth: _Truth) -> None:
-        @command()
-        @argument("truth", type=utilities.click.Enum(_Truth, case_sensitive=True))
-        def cli(*, truth: _Truth) -> None:
-            echo(f"truth = {truth}")
-
-        result = CliRunner().invoke(cli, [truth.name])
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {truth}\n"
-
-        result = CliRunner().invoke(cli, ["invalid"])
-        assert result.exit_code == 2
-
-    @given(truth=sampled_from(_Truth))
-    def test_option(self, *, truth: _Truth) -> None:
-        @command()
-        @option("--truth", type=utilities.click.Enum(_Truth), default=truth)
-        def cli(*, truth: _Truth) -> None:
-            echo(f"truth = {truth}")
-
-        result = CliRunner().invoke(cli)
-        assert result.exit_code == 0
-        assert result.stdout == f"truth = {truth}\n"
+_T = TypeVar("_T")
 
 
 class TestFileAndDirPaths:
@@ -206,64 +168,32 @@ class TestFileAndDirPaths:
         assert result.exit_code == 0
 
 
-def _serialize_iterable_enums(values: Iterable[enum.Enum], /) -> str:
-    return join_strs(e.name for e in values)
+class _Truth(enum.Enum):
+    true = auto()
+    false = auto()
 
 
-class TestListEnums:
-    def test_repr(self) -> None:
-        param = ListEnums(_Truth)
-        expected = "ListEnum(true,false)"
-        assert repr(param) == expected
+def _lift_serializer(serializer: Callable[[_T], str]) -> Callable[[Iterable[_T]], str]:
+    def wrapped(values: Iterable[_T], /) -> str:
+        return join_strs(map(serializer, values))
 
-    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
-    def test_command(self, *, values: Sequence[_Truth]) -> None:
-        @command()
-        @argument("values", type=ListEnums(_Truth))
-        def cli(*, values: Sequence[_Truth]) -> None:
-            echo(f"values = {values}")
-
-        joined = _serialize_iterable_enums(values)
-        result = CliRunner().invoke(cli, [joined])
-        assert result.exit_code == 0
-        assert result.stdout == f"values = {values}\n"
-
-        result = CliRunner().invoke(cli, ["invalid"])
-        assert result.exit_code == 2
-
-    @given(values=lists(sampled_from(_Truth), min_size=1, unique=True))
-    def test_option(self, *, values: list[str]) -> None:
-        @command()
-        @option("--values", type=ListEnums(_Truth), default=values)
-        def cli(*, values: Sequence[str]) -> None:
-            echo(f"values = {values}")
-
-        result = CliRunner().invoke(cli)
-        assert result.exit_code == 0
-        assert result.stdout == f"values = {values}\n"
-
-
-def _serialize_iterable_dates(values: Iterable[dt.date], /) -> str:
-    return join_strs(map(serialize_date, values))
-
-
-def _serialize_iterable_ints(values: Iterable[int], /) -> str:
-    return join_strs(map(str, values))
-
-
-def _serialize_iterable_months(values: Iterable[utilities.datetime.Month], /) -> str:
-    return join_strs(map(serialize_month, values))
-
-
-def _serialize_iterable_strs(values: Iterable[str], /) -> str:
-    return join_strs(values)
+    return wrapped
 
 
 class TestParameters:
     cases = (
-        param(Date(), dt.date, dates(), serialize_date, True),
+        param(Date(), "DATE", dt.date, dates(), serialize_date, True),
+        param(
+            Enum(_Truth),
+            "ENUM[_Truth]",
+            _Truth,
+            sampled_from(_Truth),
+            attrgetter("name"),
+            True,
+        ),
         param(
             utilities.click.Duration(),
+            "DURATION",
             utilities.types.Duration,
             durations(min_number=0, min_timedelta=dt.timedelta(0), two_way=True),
             serialize_duration,
@@ -271,48 +201,96 @@ class TestParameters:
         ),
         param(
             utilities.click.Engine(),
+            "ENGINE",
             sqlalchemy.Engine,
             sqlite_engines(),
             serialize_engine,
             True,
         ),
         param(
-            ListDates(), list[dt.date], lists(dates()), _serialize_iterable_dates, True
+            ListBools(),
+            "LIST[BOOL]",
+            list[bool],
+            lists(booleans()),
+            _lift_serializer(str),
+            True,
+        ),
+        param(
+            ListDates(),
+            "LIST[DATE]",
+            list[dt.date],
+            lists(dates()),
+            _lift_serializer(serialize_date),
+            True,
+        ),
+        param(
+            ListEnums(_Truth),
+            "LIST[ENUM[_Truth]]",
+            list[_Truth],
+            lists(sampled_from(_Truth)),
+            _lift_serializer(attrgetter("name")),
+            True,
+        ),
+        param(
+            ListFloats(),
+            "LIST[FLOAT]",
+            list[float],
+            lists(floats(0, 10)),
+            _lift_serializer(str),
+            True,
         ),
         param(
             ListInts(),
+            "LIST[INT]",
             list[int],
             lists(integers(0, 10)),
-            _serialize_iterable_ints,
+            _lift_serializer(str),
             True,
         ),
         param(
             ListMonths(),
+            "LIST[MONTH]",
             list[utilities.datetime.Month],
             lists(months()),
-            _serialize_iterable_months,
+            _lift_serializer(serialize_month),
             True,
         ),
         param(
             ListStrs(),
+            "LIST[STRING]",
             list[str],
-            lists(text_ascii(), min_size=5),
-            _serialize_iterable_strs,
+            lists(text_ascii()),
+            _lift_serializer(str),
             False,
         ),
         param(
-            LocalDateTime(), dt.datetime, datetimes(), serialize_local_datetime, True
+            ListUUIDs(),
+            "LIST[UUID]",
+            list[UUID],
+            lists(uuids()),
+            _lift_serializer(str),
+            True,
+        ),
+        param(
+            LocalDateTime(),
+            "LOCAL DATETIME",
+            dt.datetime,
+            datetimes(),
+            serialize_local_datetime,
+            True,
         ),
         param(
             utilities.click.Month(),
+            "MONTH",
             utilities.datetime.Month,
             months(),
             serialize_month,
             True,
         ),
-        param(Time(), dt.time, times(), serialize_time, True),
+        param(Time(), "TIME", dt.time, times(), serialize_time, True),
         param(
             Timedelta(),
+            "TIMEDELTA",
             dt.timedelta,
             timedeltas_2w(min_value=dt.timedelta(0)),
             serialize_timedelta,
@@ -320,6 +298,7 @@ class TestParameters:
         ),
         param(
             ZonedDateTime(),
+            "ZONED DATETIME",
             dt.datetime,
             datetimes(timezones=just(UTC)),
             serialize_zoned_datetime,
@@ -328,17 +307,22 @@ class TestParameters:
     )
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
+    @mark.parametrize(
+        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"), cases
+    )
     def test_argument(
         self,
         *,
         data: DataObject,
         param: ParamType,
+        exp_repr: str,
         cls: Any,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
         failable: bool,
     ) -> None:
+        assert repr(param) == exp_repr
+
         runner = CliRunner()
 
         @command()
@@ -359,17 +343,22 @@ class TestParameters:
         assert result.exit_code == expected
 
     @given(data=data())
-    @mark.parametrize(("param", "cls", "strategy", "serialize", "failable"), cases)
+    @mark.parametrize(
+        ("param", "exp_repr", "cls", "strategy", "serialize", "failable"), cases
+    )
     def test_option(
         self,
         *,
         data: DataObject,
         param: ParamType,
+        exp_repr: str,
         cls: Any,
         strategy: SearchStrategy[Any],
         serialize: Callable[[Any], str],
         failable: bool,
     ) -> None:
+        assert repr(param) == exp_repr
+
         value = data.draw(strategy)
 
         @command()
