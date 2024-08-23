@@ -1,25 +1,36 @@
 from __future__ import annotations
 
+import datetime as dt
 import enum
 import pathlib
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from uuid import UUID
 
 import click
 from click import Context, Parameter, ParamType
+from click.types import (
+    BoolParamType,
+    FloatParamType,
+    IntParamType,
+    StringParamType,
+    UUIDParameterType,
+)
 from typing_extensions import override
 
+import utilities.datetime
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
 from utilities.sentinel import SENTINEL_REPR
-from utilities.text import join_strs, split_str
+from utilities.text import split_str
+from utilities.types import get_class_name
 
 if TYPE_CHECKING:
-    import datetime as dt
-
     from sqlalchemy import Engine as _Engine
 
-    import utilities.datetime
+
+_T = TypeVar("_T")
+_TParam = TypeVar("_TParam", bound=ParamType)
 
 
 FilePath = click.Path(file_okay=True, dir_okay=False, path_type=pathlib.Path)
@@ -32,10 +43,17 @@ ExistingDirPath = click.Path(
 )
 
 
+# parameters
+
+
 class Date(ParamType):
     """A date-valued parameter."""
 
     name = "date"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
 
     @override
     def convert(
@@ -56,6 +74,10 @@ class Duration(ParamType):
     name = "duration"
 
     @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
     def convert(
         self,
         value: utilities.types.Duration | str,
@@ -68,24 +90,6 @@ class Duration(ParamType):
         try:
             return ensure_duration(value)
         except EnsureDurationError:
-            self.fail(f"Unable to parse {value}", param, ctx)
-
-
-class LocalDateTime(ParamType):
-    """A local-datetime-valued parameter."""
-
-    name = "local datetime"
-
-    @override
-    def convert(
-        self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
-    ) -> dt.date:
-        """Convert a value into the `LocalDateTime` type."""
-        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
-
-        try:
-            return ensure_local_datetime(value)
-        except EnsureLocalDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
@@ -104,7 +108,8 @@ class Enum(ParamType, Generic[_E]):
 
     @override
     def __repr__(self) -> str:
-        return f"Enum({self._enum})"
+        cls = get_class_name(self._enum)
+        return f"Enum[{cls}]"
 
     @override
     def convert(
@@ -118,174 +123,40 @@ class Enum(ParamType, Generic[_E]):
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
-        desc = "|".join(e.name for e in self._enum)
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+        desc = ",".join(e.name for e in self._enum)
+        return _make_metavar(param, desc)
 
 
-class ListDates(ParamType):
-    """A list-of-dates-valued parameter."""
+class LocalDateTime(ParamType):
+    """A local-datetime-valued parameter."""
 
-    name = "dates"
-
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        self._separator = separator
-        self._empty = empty
-        super().__init__()
-
-    @override
-    def convert(
-        self, value: list[dt.date] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[dt.date]:
-        """Convert a value into the `ListDates` type."""
-        from utilities.whenever import EnsureDateError, ensure_date
-
-        if isinstance(value, list):
-            return value
-
-        strs = split_str(value, separator=self._separator, empty=self._empty)
-        try:
-            return list(map(ensure_date, strs))
-        except EnsureDateError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = f"DATES; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
-class ListEnums(ParamType, Generic[_E]):
-    """A list-of-enums-valued parameter."""
-
-    name = "enums"
-
-    def __init__(self, enum: type[_E], /, *, case_sensitive: bool = False) -> None:
-        self._enum = enum
-        self._case_sensitive = case_sensitive
-        super().__init__()
+    name = "local datetime"
 
     @override
     def __repr__(self) -> str:
-        desc = join_strs(e.name for e in self._enum)
-        return f"ListEnum({desc})"
+        return self.name.upper()
 
     @override
     def convert(
-        self, value: list[_E] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[_E]:
-        """Convert a value into the `ListChoices` type."""
-        if isinstance(value, list):
-            return value
-        texts = split_str(value)
+        self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
+    ) -> dt.date:
+        """Convert a value into the `LocalDateTime` type."""
+        from utilities.whenever import EnsureLocalDateTimeError, ensure_local_datetime
+
         try:
-            return list(
-                ensure_enum(texts, self._enum, case_sensitive=self._case_sensitive)
-            )
-        except EnsureEnumError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = "|".join(e.name for e in self._enum)
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
-class ListInts(ParamType):
-    """A list-of-ints-valued parameter."""
-
-    name = "ints"
-
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        self._separator = separator
-        self._empty = empty
-        super().__init__()
-
-    @override
-    def convert(
-        self, value: list[int] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[int]:
-        """Convert a value into the `ListInts` type."""
-        if isinstance(value, list):
-            return value
-        strs = split_str(value, separator=self._separator, empty=self._empty)
-        try:
-            return list(map(int, strs))
-        except ValueError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = f"INTS; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
-class ListMonths(ParamType):
-    """A list-of-months-valued parameter."""
-
-    name = "months"
-
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        self._separator = separator
-        self._empty = empty
-        super().__init__()
-
-    @override
-    def convert(
-        self,
-        value: list[utilities.datetime.Month] | str,
-        param: Parameter | None,
-        ctx: Context | None,
-    ) -> list[utilities.datetime.Month]:
-        """Convert a value into the `ListMonths` type."""
-        if isinstance(value, list):
-            return value
-        strs = split_str(value, separator=self._separator, empty=self._empty)
-        try:
-            return list(map(ensure_month, strs))
-        except EnsureMonthError:
-            return self.fail(f"Unable to parse {value}", param, ctx)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = f"MONTHS; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
-
-
-class ListStrs(ParamType):
-    """A list-of-strs-valued parameter."""
-
-    name = "strs"
-
-    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
-        self._separator = separator
-        self._empty = empty
-        super().__init__()
-
-    @override
-    def convert(
-        self, value: list[str] | str, param: Parameter | None, ctx: Context | None
-    ) -> list[str]:
-        """Convert a value into the `ListStrs` type."""
-        if isinstance(value, list):
-            return value
-        return split_str(value, separator=self._separator, empty=self._empty)
-
-    @override
-    def get_metavar(self, param: Parameter) -> str | None:
-        desc = f"STRS; sep={self._separator!r}"
-        req_arg = param.required and param.param_type_name == "argument"
-        return f"{{{desc}}}" if req_arg else f"[{desc}]"
+            return ensure_local_datetime(value)
+        except EnsureLocalDateTimeError:
+            self.fail(f"Unable to parse {value}", param, ctx)
 
 
 class Month(ParamType):
     """A month-valued parameter."""
 
     name = "month"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
 
     @override
     def convert(
@@ -307,6 +178,10 @@ class Time(ParamType):
     name = "time"
 
     @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
     def convert(
         self, value: dt.time | str, param: Parameter | None, ctx: Context | None
     ) -> dt.time:
@@ -323,6 +198,10 @@ class Timedelta(ParamType):
     """A timedelta-valued parameter."""
 
     name = "timedelta"
+
+    @override
+    def __repr__(self) -> str:
+        return self.name.upper()
 
     @override
     def convert(
@@ -343,6 +222,10 @@ class ZonedDateTime(ParamType):
     name = "zoned datetime"
 
     @override
+    def __repr__(self) -> str:
+        return self.name.upper()
+
+    @override
     def convert(
         self, value: dt.datetime | str, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
@@ -353,6 +236,114 @@ class ZonedDateTime(ParamType):
             return ensure_zoned_datetime(value)
         except EnsureZonedDateTimeError:
             self.fail(f"Unable to parse {value}", param, ctx)
+
+
+# parameters - list
+
+
+class ListParameter(ParamType, Generic[_TParam, _T]):
+    """A list-valued parameter."""
+
+    def __init__(
+        self, param: _TParam, /, *, separator: str = ",", empty: str = SENTINEL_REPR
+    ) -> None:
+        self.name = param.name
+        self._param = param
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        desc = repr(self._param)
+        return f"Enum[{desc}]"
+
+    @override
+    def convert(
+        self, value: list[_T] | str, param: Parameter | None, ctx: Context | None
+    ) -> list[_T]:
+        """Convert a value into the `ListDates` type."""
+        if isinstance(value, list):
+            return value
+
+        values = split_str(value, separator=self._separator, empty=self._empty)
+        return [self._param.convert(v, param, ctx) for v in values]
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        name = self.name.upper()
+        sep = f"sep={self._separator!r}"
+        if (metavar := self._param.get_metavar(param)) is None:
+            desc = f"{name}; {sep}"
+        else:
+            desc = f"{name}; {metavar}; {sep}"
+        return _make_metavar(param, desc)
+
+
+class ListBools(ListParameter[BoolParamType, str]):
+    """A list-of-bools-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(BoolParamType(), separator=separator, empty=empty)
+
+
+class ListDates(ListParameter[Date, dt.date]):
+    """A list-of-dates-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(Date(), separator=separator, empty=empty)
+
+
+class ListEnums(ListParameter[Enum[_E], _E]):
+    """A list-of-enums-valued parameter."""
+
+    def __init__(
+        self,
+        enum: type[_E],
+        /,
+        *,
+        case_sensitive: bool = False,
+        separator: str = ",",
+        empty: str = SENTINEL_REPR,
+    ) -> None:
+        super().__init__(
+            Enum(enum, case_sensitive=case_sensitive), separator=separator, empty=empty
+        )
+
+
+class ListFloats(ListParameter[FloatParamType, float]):
+    """A list-of-floats-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(FloatParamType(), separator=separator, empty=empty)
+
+
+class ListInts(ListParameter[IntParamType, int]):
+    """A list-of-ints-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(IntParamType(), separator=separator, empty=empty)
+
+
+class ListMonths(ListParameter[Month, utilities.datetime.Month]):
+    """A list-of-months-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(Month(), separator=separator, empty=empty)
+
+
+class ListStrs(ListParameter[StringParamType, str]):
+    """A list-of-strs-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(StringParamType(), separator=separator, empty=empty)
+
+
+class ListUUIDs(ListParameter[UUIDParameterType, UUID]):
+    """A list-of-UUIDs-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(UUIDParameterType(), separator=separator, empty=empty)
 
 
 # sqlalchemy
@@ -376,6 +367,14 @@ class Engine(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
+# private
+
+
+def _make_metavar(param: Parameter, desc: str, /) -> str:
+    req_arg = param.required and param.param_type_name == "argument"
+    return f"{{{desc}}}" if req_arg else f"[{desc}]"
+
+
 __all__ = [
     "Date",
     "DirPath",
@@ -385,11 +384,14 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "ListBools",
     "ListDates",
     "ListEnums",
+    "ListFloats",
     "ListInts",
     "ListMonths",
     "ListStrs",
+    "ListUUIDs",
     "LocalDateTime",
     "Month",
     "Time",
