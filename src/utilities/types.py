@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
+from types import FunctionType, MethodType
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
@@ -373,6 +375,15 @@ def get_class_name(obj: Any, /) -> str:
     return get_class(obj).__name__
 
 
+def get_func_name(obj: Callable[..., Any], /) -> str:
+    """Get the name of a callable."""
+    if isinstance(obj, FunctionType | MethodType):
+        return obj.__name__
+    if isinstance(obj, partial):
+        return get_func_name(obj.func)
+    return get_class_name(obj)
+
+
 def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
     """Return the first value if it is not None, else the second value."""
     return x if x is not None else y
@@ -447,6 +458,7 @@ __all__ = [
     "ensure_time",
     "get_class",
     "get_class_name",
+    "get_func_name",
     "if_not_none",
     "is_hashable",
     "is_sized",
