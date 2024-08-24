@@ -80,6 +80,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
+from utilities.functions import get_class_name
 from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
@@ -159,7 +160,6 @@ from utilities.sqlalchemy import (
     yield_connection_async,
     yield_primary_key_columns,
 )
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

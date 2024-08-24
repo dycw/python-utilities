@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any, Self
 
 from typing_extensions import override
 
-from utilities.types import EnsureClassError, ensure_class, get_class_name
+from utilities.functions import get_class_name
+from utilities.types import EnsureClassError, ensure_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -85,7 +86,7 @@ class TimerError(Exception):
     def __str__(self) -> str:
         return (
             "Timer must be compared to a number, Timer, or timedelta; got "
-            f"{get_class_name(self.obj)} instead"
+            f"{get_class_name(self.obj)!r} instead"
         )
 
 

@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Any
 from pytest import mark, param
 
 from tests.modules import package_with, package_without, standalone
+from utilities.functions import get_class_name
 from utilities.modules import (
     yield_module_contents,
     yield_module_subclasses,
     yield_modules,
 )
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable

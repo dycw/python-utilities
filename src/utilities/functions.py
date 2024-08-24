@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 from functools import partial
-from types import FunctionType, MethodType
+from types import (
+    BuiltinFunctionType,
+    FunctionType,
+    MethodDescriptorType,
+    MethodType,
+    MethodWrapperType,
+    WrapperDescriptorType,
+)
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 if TYPE_CHECKING:
@@ -31,8 +38,12 @@ def get_class_name(obj: Any, /) -> str:
 
 def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
-    if isinstance(obj, FunctionType | MethodType):
+    if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
         return obj.__name__
+    if isinstance(
+        obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
+    ):
+        return obj.__qualname__
     if isinstance(obj, partial):
         return get_func_name(obj.func)
     return get_class_name(obj)

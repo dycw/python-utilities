@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pytest import mark, param
 
+from utilities.functions import get_class_name
 from utilities.pqdm import _get_desc, pmap, pstarmap
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
