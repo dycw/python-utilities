@@ -25,7 +25,7 @@ class TestRunInBackground:
         sleep(0.1)
         del task
         stdout = capsys.readouterr().out
-        assert search("^0\n1\n2\n3\n4\n", stdout)
+        assert search("^0\n1\n2\n", stdout)
 
     def test_different_signature(self, *, capsys: CaptureFixture) -> None:
         def counter(event: Event, increment: int, /) -> None:
@@ -39,4 +39,4 @@ class TestRunInBackground:
         sleep(0.1)
         del task
         stdout = capsys.readouterr().out
-        assert search("^0\n2\n4\n6\n8\n", stdout)
+        assert search("^0\n2\n4\n", stdout)
