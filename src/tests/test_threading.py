@@ -37,5 +37,5 @@ class TestRunInBackground:
         task = run_in_background(counter, 2)
         sleep(0.05)
         del task
-        expected = "0\n2\n4\n6\n6\n"
+        expected = "0\n2\n4\n6\n8\n"
         assert capsys.readouterr().out == expected
