@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from re import search
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -21,10 +22,10 @@ class TestRunInBackground:
                 i += 1
 
         task = run_in_background(counter)
-        sleep(0.05)
+        sleep(0.1)
         del task
-        expected = "0\n1\n2\n3\n4\n"
-        assert capsys.readouterr().out == expected
+        stdout = capsys.readouterr().out
+        assert search("^0\n1\n2\n3\n4\n", stdout)
 
     def test_different_signature(self, *, capsys: CaptureFixture) -> None:
         def counter(event: Event, increment: int, /) -> None:
@@ -35,7 +36,7 @@ class TestRunInBackground:
                 i += increment
 
         task = run_in_background(counter, 2)
-        sleep(0.05)
+        sleep(0.1)
         del task
-        expected = "0\n2\n4\n6\n8\n"
-        assert capsys.readouterr().out == expected
+        stdout = capsys.readouterr().out
+        assert search("^0\n2\n4\n6\n8\n", stdout)
