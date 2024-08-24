@@ -63,7 +63,7 @@ async def groupby_async(
         return iterator1()
 
     async def iterator2() -> AsyncIterator[tuple[_U, Sequence[_T]]]:
-        keys = [cast(_U, await try_await(key(e))) for e in as_list]
+        keys = [await try_await(key(e)) for e in as_list]
         pairs = zip(keys, as_list, strict=True)
         for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
             group = [v for _, v in pairs_group]
