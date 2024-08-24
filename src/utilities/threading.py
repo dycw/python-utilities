@@ -14,6 +14,8 @@ _P = ParamSpec("_P")
 
 @dataclass(frozen=True, kw_only=True)
 class _BackgroundTask:
+    """An event and daemon thread, running a task in the background."""
+
     event: Event
     thread: Thread
 
