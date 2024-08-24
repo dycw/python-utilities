@@ -6,6 +6,7 @@ from collections.abc import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Coroutine,
     Iterable,
     Sequence,
 )
@@ -27,7 +28,9 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
+Coroutine1 = Coroutine[Any, Any, _T]
 MaybeAwaitable = _T | Awaitable[_T]
+MaybeCoroutine1 = _T | Coroutine1[_T]
 _MaybeAsyncIterable = Iterable[_T] | AsyncIterable[_T]
 _MaybeAwaitableMaybeAsyncIterable = MaybeAwaitable[_MaybeAsyncIterable[_T]]
 _TSupportsRichComparison = TypeVar(
@@ -222,6 +225,9 @@ async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
 
 
 __all__ = [
+    "Coroutine1",
+    "MaybeAwaitable",
+    "MaybeCoroutine1",
     "ReduceAsyncError",
     "groupby_async",
     "groupby_async_list",
