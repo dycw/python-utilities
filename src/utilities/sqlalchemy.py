@@ -69,6 +69,7 @@ from typing_extensions import override
 
 from utilities.datetime import get_now
 from utilities.errors import redirect_error
+from utilities.functions import get_class_name
 from utilities.iterables import (
     CheckLengthError,
     MaybeIterable,
@@ -79,7 +80,6 @@ from utilities.iterables import (
     one,
 )
 from utilities.text import ensure_str
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     import datetime as dt

@@ -17,9 +17,9 @@ from utilities.datetime import (
     milliseconds_since_epoch_to_datetime,
 )
 from utilities.errors import ImpossibleCaseError
+from utilities.functions import get_class_name
 from utilities.iterables import always_iterable, one
 from utilities.text import ensure_str
-from utilities.types import get_class_name
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:

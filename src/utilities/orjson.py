@@ -28,7 +28,7 @@ from orjson import (
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass
-from utilities.types import get_class_name
+from utilities.functions import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable

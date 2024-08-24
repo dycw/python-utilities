@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
 
 from typing_extensions import override
 
+from utilities.functions import get_class_name
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Hashable, Sized
 
@@ -16,7 +18,6 @@ PathLike = Path | str
 
 
 _T = TypeVar("_T")
-_U = TypeVar("_U")
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _T3 = TypeVar("_T3")
@@ -359,25 +360,6 @@ class EnsureTimeError(Exception):
         return f"Object {self.obj} must be a time{desc}; got {get_class_name(self.obj)} instead"
 
 
-@overload
-def get_class(obj: type[_T], /) -> type[_T]: ...
-@overload
-def get_class(obj: _T, /) -> type[_T]: ...
-def get_class(obj: _T | type[_T], /) -> type[_T]:
-    """Get the class of an object, unless it is already a class."""
-    return obj if isinstance(obj, type) else type(obj)
-
-
-def get_class_name(obj: Any, /) -> str:
-    """Get the name of the class of an object, unless it is already a class."""
-    return get_class(obj).__name__
-
-
-def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
-    """Return the first value if it is not None, else the second value."""
-    return x if x is not None else y
-
-
 def is_hashable(obj: Any, /) -> TypeGuard[Hashable]:
     """Check if an object is hashable."""
     try:
@@ -445,9 +427,6 @@ __all__ = [
     "ensure_sized",
     "ensure_sized_not_str",
     "ensure_time",
-    "get_class",
-    "get_class_name",
-    "if_not_none",
     "is_hashable",
     "is_sized",
     "is_sized_not_str",

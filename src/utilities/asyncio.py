@@ -63,7 +63,7 @@ async def groupby_async(
         return iterator1()
 
     async def iterator2() -> AsyncIterator[tuple[_U, Sequence[_T]]]:
-        keys = [cast(_U, await try_await(key(e))) for e in as_list]
+        keys = [await try_await(key(e)) for e in as_list]
         pairs = zip(keys, as_list, strict=True)
         for k, pairs_group in groupby(pairs, key=lambda x: x[0]):
             group = [v for _, v in pairs_group]
@@ -208,7 +208,7 @@ async def to_sorted(
         return sorted(as_list, reverse=reverse)
 
     as_list = cast(list[_T], as_list)
-    values = [cast(SupportsRichComparison, await try_await(key(e))) for e in as_list]
+    values = [await try_await(key(e)) for e in as_list]
     sorted_pairs = sorted(zip(as_list, values, strict=True), key=lambda x: x[1])
     return [element for element, _ in sorted_pairs]
 

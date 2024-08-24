@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from pathlib import Path
-from types import NoneType
 from typing import Any, cast
 
 from pytest import mark, param, raises
@@ -39,9 +38,6 @@ from utilities.types import (
     ensure_sized,
     ensure_sized_not_str,
     ensure_time,
-    get_class,
-    get_class_name,
-    if_not_none,
     is_hashable,
     is_sized,
     is_sized_not_str,
@@ -294,36 +290,6 @@ class TestEnsureTime:
     def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureTimeError, match=f"{match}; got .* instead"):
             _ = ensure_time(sentinel, nullable=nullable)
-
-
-class TestGetClass:
-    @mark.parametrize(
-        ("obj", "expected"), [param(None, NoneType), param(NoneType, NoneType)]
-    )
-    def test_main(self, *, obj: Any, expected: type[Any]) -> None:
-        assert get_class(obj) is expected
-
-
-class TestGetClassName:
-    def test_class(self) -> None:
-        class Example: ...
-
-        assert get_class_name(Example) == "Example"
-
-    def test_instance(self) -> None:
-        class Example: ...
-
-        assert get_class_name(Example()) == "Example"
-
-
-class TestIfNotNone:
-    def test_uses_first(self) -> None:
-        result = if_not_none(0, "0")
-        assert result == 0
-
-    def test_uses_second(self) -> None:
-        result = if_not_none(None, 0)
-        assert result == 0
 
 
 class TestIsHashable:

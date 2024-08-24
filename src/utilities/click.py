@@ -21,9 +21,9 @@ import utilities.datetime
 import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
+from utilities.functions import get_class_name
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine as _Engine

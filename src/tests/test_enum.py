@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum, auto
-from typing import cast
 
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, sampled_from
@@ -150,17 +149,14 @@ class TestParseEnum:
             true_ = "_true"
             false_ = "_false"
 
-        input_, expected = cast(
-            tuple[str, Truth],
-            data.draw(
-                sampled_from([
-                    ("both", Truth.both),
-                    ("true_", Truth.true_),
-                    ("_true", Truth.true_),
-                    ("false_", Truth.false_),
-                    ("_false", Truth.false_),
-                ])
-            ),
+        input_, expected = data.draw(
+            sampled_from([
+                ("both", Truth.both),
+                ("true_", Truth.true_),
+                ("_true", Truth.true_),
+                ("false_", Truth.false_),
+                ("_false", Truth.false_),
+            ])
         )
         result = parse_enum(input_, Truth)
         assert result is expected

@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, assert_never
 from pqdm import processes, threads
 from tqdm.auto import tqdm as tqdm_auto
 
+from utilities.functions import get_func_name
 from utilities.sentinel import Sentinel, sentinel
-from utilities.types import get_class_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -98,15 +98,7 @@ def _get_n_jobs(n_jobs: int | None, /) -> int:
 def _get_desc(
     desc: str | None | Sentinel, func: Callable[..., Any], /
 ) -> dict[str, str]:
-    if isinstance(desc, Sentinel):
-        if isinstance(func, partial):
-            return _get_desc(desc, func.func)
-        try:
-            desc_use = func.__name__
-        except AttributeError:
-            desc_use = get_class_name(func) if isinstance(func, object) else None
-    else:
-        desc_use = desc
+    desc_use = get_func_name(func) if isinstance(desc, Sentinel) else desc
     return {} if desc_use is None else {"desc": desc_use}
 
 
