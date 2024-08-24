@@ -145,6 +145,7 @@ class TestDurations:
         min_timedelta=timedeltas(),
         max_timedelta=timedeltas(),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
