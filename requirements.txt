@@ -37,7 +37,7 @@ attrs==24.2.0
     #   referencing
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.16.0
+basedpyright==1.17.0
     # via dycw-utilities (pyproject.toml)
 blinker==1.8.2
     # via streamlit
@@ -305,7 +305,7 @@ pytest==8.3.2
     #   pytest-randomly
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.23.8
+pytest-asyncio==0.24.0
     # via dycw-utilities (pyproject.toml)
 pytest-cov==5.0.0
     # via dycw-utilities (pyproject.toml)
