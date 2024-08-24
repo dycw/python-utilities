@@ -208,7 +208,7 @@ async def to_sorted(
         return sorted(as_list, reverse=reverse)
 
     as_list = cast(list[_T], as_list)
-    values = [cast(SupportsRichComparison, await try_await(key(e))) for e in as_list]
+    values = [await try_await(key(e)) for e in as_list]
     sorted_pairs = sorted(zip(as_list, values, strict=True), key=lambda x: x[1])
     return [element for element, _ in sorted_pairs]
 
