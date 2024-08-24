@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from itertools import chain
 from threading import Event, Thread
-from typing import TYPE_CHECKING, Any, ParamSpec
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -26,7 +26,7 @@ class _BackgroundTask:
 
 
 def run_in_background(
-    func: Callable[_P, Any], *args: _P.args, **kwargs: _P.kwargs
+    func: Callable[Concatenate[Event, _P], Any], *args: _P.args, **kwargs: _P.kwargs
 ) -> _BackgroundTask:
     """Run a function in the background."""
     event = Event()
