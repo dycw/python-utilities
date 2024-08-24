@@ -32,11 +32,10 @@ def lru_cache(
 ) -> Callable[_P, _R] | Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """Typed version of `lru_cache`."""
     if func is None:
-        return cast(
-            Callable[[Callable[_P, _R]], Callable[_P, _R]],
-            _lru_cache(maxsize=max_size, typed=typed),
-        )
-    return lru_cache(max_size=max_size, typed=typed)(func)
+        result = partial(lru_cache, max_size=max_size, typed=typed)
+        return cast(Any, result)
+    wrapped = _lru_cache(maxsize=max_size, typed=typed)(func)
+    return cast(Any, wrapped)
 
 
 class partial(_partial[_T]):  # noqa: N801
