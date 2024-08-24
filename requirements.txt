@@ -124,7 +124,7 @@ hyperlink==21.0.0
     # via hatch
 hypothesis==6.111.1
     # via dycw-utilities (pyproject.toml)
-idna==3.7
+idna==3.8
     # via
     #   anyio
     #   httpx
@@ -182,7 +182,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.5.2
+narwhals==1.5.4
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -241,7 +241,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-pikepdf==9.1.2
+pikepdf==9.2.0
     # via img2pdf
 pillow==10.4.0
     # via
@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.3.1
+uv==0.3.3
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
