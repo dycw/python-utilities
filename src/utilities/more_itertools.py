@@ -21,6 +21,7 @@ from more_itertools import partition, split_into
 from more_itertools import peekable as _peekable
 from typing_extensions import override
 
+from utilities.functions import get_class_name
 from utilities.iterables import always_iterable
 from utilities.sentinel import Sentinel, sentinel
 
@@ -149,13 +150,14 @@ class Split(Generic[_T]):
 
     @override
     def __repr__(self) -> str:
+        cls = get_class_name(self)
         spaces = 4 * " "
         head_first = indent("head=", spaces)
         head_rest = indent(repr(self.head), 2 * spaces)
         tail_first = indent("tail=", spaces)
         tail_rest = indent(repr(self.tail), 2 * spaces)
         joined = f"{head_first}\n{head_rest}\n{tail_first}\n{tail_rest}"
-        return f"{type(self).__name__}(\n{joined}\n)"
+        return f"{cls}(\n{joined}\n)"
 
 
 def yield_splits(

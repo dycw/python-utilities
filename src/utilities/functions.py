@@ -64,4 +64,12 @@ def second(pair: tuple[Any, _U], /) -> _U:
     return pair[1]
 
 
-__all__ = ["first", "get_func_name", "identity", "second"]
+__all__ = [
+    "first",
+    "get_class",
+    "get_class_name",
+    "get_func_name",
+    "identity",
+    "if_not_none",
+    "second",
+]
