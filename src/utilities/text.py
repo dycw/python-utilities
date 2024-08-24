@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from typing_extensions import override
 
+from utilities.functions import get_class_name
 from utilities.sentinel import SENTINEL_REPR
-from utilities.types import EnsureClassError, ensure_class, get_class_name
+from utilities.types import EnsureClassError, ensure_class
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
