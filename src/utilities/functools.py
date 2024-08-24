@@ -34,8 +34,7 @@ def lru_cache(
     if func is None:
         result = partial(lru_cache, max_size=max_size, typed=typed)
         return cast(Any, result)
-    wrapper = _lru_cache(maxsize=max_size, typed=typed)
-    wrapped = wrapper(func)
+    wrapped = _lru_cache(maxsize=max_size, typed=typed)(func)
     return cast(Any, wrapped)
 
 
