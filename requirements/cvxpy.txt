@@ -10,7 +10,7 @@ cvxpy==1.5.3
     # via dycw-utilities (pyproject.toml)
 ecos==2.0.14
     # via cvxpy
-hypothesis==6.111.1
+hypothesis==6.111.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -56,7 +56,7 @@ scipy==1.14.1
     #   osqp
     #   qdldl
     #   scs
-scs==3.2.6
+scs==3.2.7
     # via cvxpy
 sortedcontainers==2.4.0
     # via hypothesis
