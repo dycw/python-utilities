@@ -6,7 +6,7 @@ click==8.1.7
     # via dycw-utilities (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.111.1
+hypothesis==6.111.2
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest

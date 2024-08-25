@@ -23,7 +23,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
-hypothesis==6.111.1
+hypothesis==6.111.2
     # via dycw-utilities (pyproject.toml)
 idna==3.8
     # via requests
@@ -43,7 +43,7 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.5.4
+narwhals==1.5.5
     # via altair
 numpy==2.1.0
     # via
