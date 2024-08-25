@@ -13,7 +13,7 @@ _P = ParamSpec("_P")
 
 
 @dataclass(frozen=True, kw_only=True)
-class _BackgroundTask:
+class BackgroundTask:
     """An event and daemon thread, running a task in the background."""
 
     event: Event
@@ -29,13 +29,13 @@ class _BackgroundTask:
 
 def run_in_background(
     func: Callable[Concatenate[Event, _P], Any], *args: _P.args, **kwargs: _P.kwargs
-) -> _BackgroundTask:
+) -> BackgroundTask:
     """Run a function in the background."""
     event = Event()
     thread = Thread(
         target=func, args=tuple(chain([event], args)), kwargs=kwargs, daemon=True
     )
-    return _BackgroundTask(event=event, thread=thread)
+    return BackgroundTask(event=event, thread=thread)
 
 
-__all__ = ["run_in_background"]
+__all__ = ["BackgroundTask", "run_in_background"]
