@@ -582,7 +582,9 @@ class TestSQLiteEngines:
         table = Table("example", metadata, Column("id_", Integer, primary_key=True))
         return metadata, table
 
-    def _base_and_mapped_class(self) -> tuple[type[Any], type[Any]]:
+    def _base_and_mapped_class(
+        self,
+    ) -> tuple[type[DeclarativeBase], type[DeclarativeBase]]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -593,7 +595,11 @@ class TestSQLiteEngines:
         return Base, Example
 
     def _run_test_sync(
-        self, engine: Engine, table_or_mapped_class: Table | type[Any], ids: set[int], /
+        self,
+        engine: Engine,
+        table_or_mapped_class: Table | type[DeclarativeBase],
+        ids: set[int],
+        /,
     ) -> None:
         insert_items(engine, ([(id_,) for id_ in ids], table_or_mapped_class))
         sel = self._get_select(table_or_mapped_class)
@@ -604,7 +610,7 @@ class TestSQLiteEngines:
     async def _run_test_async(
         self,
         engine: AsyncEngine,
-        table_or_mapped_class: Table | type[Any],
+        table_or_mapped_class: Table | type[DeclarativeBase],
         ids: set[int],
         /,
     ) -> None:
@@ -616,7 +622,9 @@ class TestSQLiteEngines:
             res = (await conn.execute(sel)).scalars().all()
         self._assert_results(res, ids)
 
-    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+    def _get_select(
+        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+    ) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 
     def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
