@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import datetime as dt  # noqa: TCH003
 import enum
 from enum import auto
 from re import escape
+from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
@@ -79,6 +81,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
+from utilities.datetime import get_now
 from utilities.functions import get_class_name
 from utilities.hypothesis import (
     aiosqlite_engines,
@@ -1941,6 +1944,78 @@ class TestUpsert:
             case "all":
                 expected2 = (id_, x_post, None)
         assert result2 == expected2
+
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @mark.parametrize("case", [param("table"), param("mapped_class")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    def test_mapping_updated(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool],
+    ) -> None:
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_class.__name__}_{case[:3]}_{dialect[:3]}"
+        match case:
+            case "table":
+                table_or_mapped_class = Table(
+                    name,
+                    MetaData(),
+                    Column("id_", Integer, primary_key=True),
+                    Column("value", Boolean, nullable=False),
+                    Column(
+                        "updated_at",
+                        DateTime(timezone=True),
+                        server_default=func.now(),
+                        onupdate=func.now(),
+                    ),
+                )
+            case "mapped_class":
+
+                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+                class Example(Base):
+                    __tablename__ = name
+
+                    id_: Mapped[int] = mapped_column(
+                        Integer, kw_only=True, primary_key=True
+                    )
+                    value: Mapped[bool] = mapped_column(
+                        Boolean, kw_only=True, nullable=False
+                    )
+                    updated_at: Mapped[dt.datetime] = mapped_column(
+                        DateTime(timezone=True),
+                        default_factory=get_now,
+                        kw_only=True,
+                        server_default=func.now(),
+                        onupdate=func.now(),
+                    )
+
+                table_or_mapped_class = Example
+
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            table_or_mapped_class,
+            dialect=dialect,
+        )
+        id_, init, post = triple
+        _, _, updated1 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            table_or_mapped_class,
+            values={"id_": id_, "value": init},
+        )
+        sleep(0.01)
+        _, _, updated2 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            table_or_mapped_class,
+            values={"id_": id_, "value": post},
+        )
+        assert updated1 < updated2
 
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
