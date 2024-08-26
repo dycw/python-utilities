@@ -854,7 +854,7 @@ class TestEnsureTablesCreated:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
     @property
-    def _mapped_class(self) -> type[Any]:
+    def _mapped_class(self) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -867,7 +867,7 @@ class TestEnsureTablesCreated:
     def _run_test_sync(
         self,
         engine_or_conn: Engine | Connection,
-        table_or_mapped_class: Table | type[Any],
+        table_or_mapped_class: Table | type[DeclarativeBase],
         /,
         *,
         use_conn: bool = False,
@@ -885,7 +885,7 @@ class TestEnsureTablesCreated:
     async def _run_test_async(
         self,
         engine_or_conn: AsyncEngine | AsyncConnection,
-        table_or_mapped_class: Table | type[Any],
+        table_or_mapped_class: Table | type[DeclarativeBase],
         /,
         *,
         use_conn: bool = False,
@@ -900,7 +900,9 @@ class TestEnsureTablesCreated:
         async with yield_connection_async(engine_or_conn) as conn:
             _ = (await conn.execute(sel)).all()
 
-    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+    def _get_select(
+        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+    ) -> Select[Any]:
         return select(get_table(table_or_mapped_class))
 
 
@@ -924,7 +926,11 @@ class TestEnsureTablesDropped:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self, table_or_mapped_class: Table | type[Any], engine: Engine, runs: int, /
+        self,
+        table_or_mapped_class: Table | type[DeclarativeBase],
+        engine: Engine,
+        runs: int,
+        /,
     ) -> None:
         table = get_table(table_or_mapped_class)
         with engine.begin() as conn:
@@ -976,7 +982,9 @@ class TestGetColumnNames:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+    def _run_test(
+        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+    ) -> None:
         assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
@@ -995,7 +1003,9 @@ class TestGetColumns:
 
         self._run_test(Example)
 
-    def _run_test(self, table_or_mapped_class: Table | type[Any], /) -> None:
+    def _run_test(
+        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+    ) -> None:
         columns = get_columns(table_or_mapped_class)
         assert isinstance(columns, list)
         assert len(columns) == 1
@@ -1259,7 +1269,7 @@ class TestInsertItems:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
     @property
-    def _mapped_class(self) -> type[Any]:
+    def _mapped_class(self) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -1325,7 +1335,9 @@ class TestInsertItems:
             results = (await conn.execute(sel)).scalars().all()
         self._assert_results(results, ids)
 
-    def _get_select(self, table_or_mapped_class: Table | type[Any], /) -> Select[Any]:
+    def _get_select(
+        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+    ) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 
     def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
