@@ -1817,7 +1817,7 @@ class TestUpsert:
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_selected_or_all_table(
+    def test_sel_or_all_table(
         self,
         *,
         sqlite_engine: Engine,
@@ -1830,7 +1830,7 @@ class TestUpsert:
         x_post: bool,
         y: bool,
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all_table.__name__}_{case}_{dialect}_{selected_or_all}"
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_table.__name__}_{case}_{dialect}_{selected_or_all}"
         match case:
             case "table":
                 table_or_mapped_class = Table(
@@ -1896,7 +1896,7 @@ class TestUpsert:
     )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_selected_or_all_mapped_class(
+    def test_sel_or_all_mapped_class(
         self,
         *,
         sqlite_engine: Engine,
@@ -1908,7 +1908,7 @@ class TestUpsert:
         x_post: bool,
         y: bool,
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all_mapped_class.__name__}"
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_mapped_class.__name__}"
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
