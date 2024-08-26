@@ -293,6 +293,8 @@ pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
 pyinstrument==4.7.2
     # via dycw-utilities (pyproject.toml)
+pyodbc==5.1.0
+    # via dycw-utilities (pyproject.toml)
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
 pytest==8.3.2

@@ -49,6 +49,7 @@ dev = [
   "pydantic >= 2.8.2, < 2.9",
   "pyhumps >= 3.8.0, < 3.9",
   "pyinstrument >= 4.7.2, < 4.8",
+  "pyodbc >= 5.1.0, < 5.2",  # for sqlalchemy
   "pypiserver[passlib] >= 2.1.1, < 2.2",
   "pytest >= 8.3.2, < 8.4",
   "python-dotenv >= 1.0.1, < 1.1",
@@ -220,6 +221,7 @@ zzz-test-sqlalchemy = [
   "psycopg2-binary >= 2.9.9, < 2.10",
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
+  "pyodbc >= 5.1.0, < 5.2",
 ]
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",

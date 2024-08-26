@@ -1030,12 +1030,20 @@ class TestGetColumns:
 
 
 class TestGetDialect:
+    def test_mssql(self) -> None:
+        engine = create_engine("mssql")
+        assert get_dialect(engine) is Dialect.mssql
+
+    def test_mysql(self) -> None:
+        engine = create_engine("mysql")
+        assert get_dialect(engine) is Dialect.mysql
+
     @given(engine=sqlite_engines())
-    def test_sync(self, *, engine: Engine) -> None:
+    def test_sqlite(self, *, engine: Engine) -> None:
         assert get_dialect(engine) is Dialect.sqlite
 
     @given(data=data())
-    async def test_async(self, *, data: DataObject) -> None:
+    async def test_sqlite_async(self, *, data: DataObject) -> None:
         engine = await aiosqlite_engines(data)
         assert get_dialect(engine) is Dialect.sqlite
 
