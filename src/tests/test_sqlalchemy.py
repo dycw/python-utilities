@@ -2214,6 +2214,51 @@ class TestUpsert:
         expected2 = id_, post
         assert result2 == expected2
 
+    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
+    @mark.parametrize("case", [param("table"), param("mapped_class")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    def test_mappings(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mappings.__name__}"
+        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            table_or_mapped_class,
+            dialect=dialect,
+        )
+        with assume_does_not_raise(OneEmptyError):
+            result1 = self._run_upsert(
+                engine,
+                table_or_mapped_class,
+                dialect=dialect,
+                values=[{"id_": id_, "value": init} for id_, init, _ in triples],
+            )
+        expected1 = {(id_, init) for id_, init, _ in triples}
+        assert result1 == expected1
+        with assume_does_not_raise(OneEmptyError):
+            result2 = self._run_upsert(
+                engine,
+                table_or_mapped_class,
+                dialect=dialect,
+                values=[
+                    {"id_": id_, "value": post}
+                    for id_, _, post in triples
+                    if post is not None
+                ],
+            )
+        expected2 = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        assert result2 == expected2
+
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
     ) -> Table | type[DeclarativeBase]:
@@ -2287,7 +2332,7 @@ class TestUpsert:
         dialect: Literal["sqlite", "postgres"],
         values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
         selected_or_all: Literal["selected", "all"] = "selected",
-    ) -> Sequence[Row[Any]]:
+    ) -> set[Row[Any]]:
         match dialect:
             case "sqlite":
                 ups = sqlite_upsert(
@@ -2300,7 +2345,7 @@ class TestUpsert:
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
-            return conn.execute(select(item)).all()
+            return set(conn.execute(select(item)).all())
 
 
 class TestYieldConnection:
