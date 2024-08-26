@@ -1980,6 +1980,88 @@ class TestUpsert:
         }
         assert result2 == expected2
 
+    @given(
+        sqlite_engine=sqlite_engines(),
+        id_=integers(0, 10),
+        x_init=booleans(),
+        x_post=booleans(),
+        y=booleans(),
+    )
+    @mark.parametrize("case", [param("table"), param("mapped_class")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    def test_selected_or_all(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        x_init: bool,
+        x_post: bool,
+        y: bool,
+    ) -> None:
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all.__name__}"
+        match case:
+            case "table":
+                table_or_mapped_class = Table(
+                    name,
+                    MetaData(),
+                    Column("id_", Integer, primary_key=True),
+                    Column("x", Boolean, nullable=False),
+                    Column("y", Boolean, nullable=True),
+                )
+            case "mapped_class":
+
+                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+                class Example(Base):
+                    __tablename__ = name
+
+                    id_: Mapped[int] = mapped_column(
+                        Integer, kw_only=True, primary_key=True
+                    )
+                    x: Mapped[bool] = mapped_column(
+                        Boolean, kw_only=True, nullable=False
+                    )
+                    y: Mapped[bool | None] = mapped_column(
+                        Boolean, default=None, kw_only=True, nullable=True
+                    )
+
+                table_or_mapped_class = Example
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            table_or_mapped_class,
+            dialect=dialect,
+        )
+        result1 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            table_or_mapped_class,
+            dialect=dialect,
+            values={"id_": id_, "x": x_init, "y": y},
+            selected_or_all=selected_or_all,
+        )
+        expected1 = id_, x_init, y
+        assert result1 == expected1
+        result2 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            table_or_mapped_class,
+            dialect=dialect,
+            values={"id_": id_, "x": x_post},
+            selected_or_all=selected_or_all,
+        )
+        match selected_or_all:
+            case "selected":
+                expected2 = (id_, x_post, y)
+            case "all":
+                expected2 = (id_, x_post, None)
+        assert result2 == expected2
+
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
     ) -> Table | type[DeclarativeBase]:
