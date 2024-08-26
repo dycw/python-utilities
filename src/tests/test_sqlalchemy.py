@@ -2023,10 +2023,7 @@ class TestUpsert:
             )
 
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            Example,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
         result1 = self._run_upsert_one(
             engine,
@@ -2060,8 +2057,7 @@ class TestUpsert:
             case "postgres":
                 error = SqliteUpsertError
         with raises(
-            error,
-            match=escape("Unsupported item and values; got None and []"),
+            error, match=escape("Unsupported item and values; got None and []")
         ):
             _ = self._run_upsert(cast(Any, None), values=[])
 
