@@ -1030,7 +1030,6 @@ class TestGetColumns:
         assert isinstance(columns[0], Column)
 
 
-@mark.only
 class TestGetDialect:
     @mark.skipif(condition=not is_installed("pyodbc"), reason="'pyodbc' not installed")
     def test_mssql(self) -> None:
