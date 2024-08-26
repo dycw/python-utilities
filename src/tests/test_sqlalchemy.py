@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 import enum
-from enum import auto, unique
+from enum import auto
 from re import escape
 from time import sleep
-from typing import TYPE_CHECKING, Any, Literal, cast, reveal_type
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DataObject,
-    DrawFn,
     SearchStrategy,
     booleans,
-    composite,
     data,
     floats,
     integers,
@@ -88,7 +86,6 @@ from utilities.functions import get_class_name
 from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
-    lift_draw,
     lists_fixed_length,
     sqlite_engines,
     temp_paths,
@@ -168,12 +165,23 @@ from utilities.sqlalchemy import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Mapping, Sequence
     from pathlib import Path
 
 
-_upsert_triples = tuples(integers(0, 10), booleans(), booleans() | none())
-_upsert_lists = lists(_upsert_triples, unique_by=lambda x: x[0])
+def _upsert_triples(
+    *, nullable: bool = False
+) -> SearchStrategy[tuple[int, bool, bool | None]]:
+    elements = booleans()
+    if nullable:
+        elements |= none()
+    return tuples(integers(0, 10), booleans(), elements)
+
+
+def _upsert_lists(
+    *, nullable: bool = False
+) -> SearchStrategy[list[tuple[int, bool, bool | None]]]:
+    return lists(_upsert_triples(nullable=nullable), unique_by=lambda x: x[0])
 
 
 class TestCheckColumnCollectionsEqual:
@@ -1591,33 +1599,14 @@ class TestPostgresEngine:
 class TestPostgresUpsert:
     @given(data=data())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
-    def test_pair_with_mapping(
+    def test_mappings(
         self,
         *,
         create_postgres_engine: Callable[..., Engine],
         case: Literal["table", "mapped_class"],
         data: DataObject,
     ) -> None:
-        name = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_pair_with_mapping.__name__}"
-        engine, table_or_mapped_class = self._prepare_main_test(
-            create_postgres_engine, case, name
-        )
-        id_, old, new = data.draw(_upsert_triples())
-        ups = postgres_upsert(table_or_mapped_class, values={"id_": id_, "value": old})
-        assert one(self._run_upsert(engine, table_or_mapped_class, ups)) == (id_, old)
-        ups = postgres_upsert(table_or_mapped_class, values={"id_": id_, "value": new})
-        assert one(self._run_upsert(engine, table_or_mapped_class, ups)) == (id_, new)
-
-    @given(data=data())
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
-    def test_table_with_mappings(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
-        data: DataObject,
-    ) -> None:
-        name = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_table_with_mappings.__name__}"
+        name = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mappings.__name__}"
         engine, table_or_mapped_class = self._prepare_main_test(
             create_postgres_engine, case, name
         )
@@ -1839,40 +1828,6 @@ class TestPostgresUpsert:
         ):
             _ = postgres_upsert(cast(Any, None), values=[])
 
-    def _prepare_main_test(
-        self,
-        create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
-        name: str,
-        /,
-    ) -> tuple[Engine, Table | type[DeclarativeBase]]:
-        match case:
-            case "table":
-                table_or_mapped_class = self._get_table(name)
-            case "mapped_class":
-                table_or_mapped_class = self._get_mapped_class(name)
-        engine = create_postgres_engine(table_or_mapped_class)
-        return engine, table_or_mapped_class
-
-    def _get_table(self, name: str, /) -> Table:
-        return Table(
-            name,
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-        )
-
-    def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = name
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
-
-        return Example
-
     def _run_upsert(
         self, engine: Engine, table: Any, ups: Insert
     ) -> Sequence[Row[Any]]:
@@ -1928,40 +1883,24 @@ class TestSerializeEngine:
 
 
 class TestSqliteUpsert:
-    @given(
-        engine=sqlite_engines(), id_=integers(0, 10), init=booleans(), post=booleans()
-    )
-    @mark.only
-    def test_mapping(
-        self,
-        *,
-        engine: Engine,
-        id_: int,
-        init: bool,
-        post: bool,
-    ) -> None:
+    @given(engine=sqlite_engines(), triple=_upsert_triples(nullable=False))
+    def test_mapping(self, *, engine: Engine, triple: tuple[int, bool, bool]) -> None:
         table = Table(
             "example",
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", Boolean, nullable=False),
         )
+        id_, init, post = triple
         ensure_tables_created(engine, table)
         ups = sqlite_upsert(table, values={"id_": id_, "value": init})
         assert one(self._run_upsert(engine, table, ups)) == (id_, init)
         ups = sqlite_upsert(table, values={"id_": id_, "value": post})
         assert one(self._run_upsert(engine, table, ups)) == (id_, post)
 
-    @given(
-        engine=sqlite_engines(),
-        triples=_upsert_lists,
-    )
-    @mark.only
+    @given(engine=sqlite_engines(), triples=_upsert_lists())
     def test_mappings(
-        self,
-        *,
-        engine: Engine,
-        triples: list[tuple[int, bool, bool | None]],
+        self, *, engine: Engine, triples: list[tuple[int, bool, bool | None]]
     ) -> None:
         table = Table(
             "example",
@@ -1972,8 +1911,7 @@ class TestSqliteUpsert:
         ensure_tables_created(engine, table)
         with assume_does_not_raise(OneEmptyError):
             ups = sqlite_upsert(
-                table,
-                values=[{"id_": id_, "value": init} for id_, init, _ in triples],
+                table, values=[{"id_": id_, "value": init} for id_, init, _ in triples]
             )
         result1 = self._run_upsert(engine, table, ups)
         expected1 = {(id_, init) for id_, init, _ in triples}
@@ -2234,6 +2172,135 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
+
+
+@mark.only
+class TestUpsert:
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @mark.parametrize("case", [param("table"), param("mapped_class")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    def test_mapping(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool],
+    ) -> None:
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapping.__name__}"
+        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            table_or_mapped_class,
+            dialect=dialect,
+        )
+        id_, init, post = triple
+        result1 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            dialect=dialect,
+            values={"id_": id_, "value": init},
+        )
+        expected1 = id_, init
+        assert result1 == expected1
+        result2 = self._run_upsert_one(
+            engine,
+            table_or_mapped_class,
+            dialect=dialect,
+            values={"id_": id_, "value": post},
+        )
+        expected2 = id_, post
+        assert result2 == expected2
+
+    def _get_table_or_mapped_class(
+        self, name: str, /, *, case: Literal["table", "mapped_class"]
+    ) -> Table | type[DeclarativeBase]:
+        match case:
+            case "table":
+                return self._get_table(name)
+            case "mapped_class":
+                return self._get_mapped_class(name)
+
+    def _get_table(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+
+    def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = name
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+
+        return Example
+
+    def _get_engine(
+        self,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        table_or_mapped_class: Table | type[DeclarativeBase],
+        /,
+        *,
+        dialect: Literal["sqlite", "postgres"],
+    ) -> Engine:
+        match dialect:
+            case "sqlite":
+                ensure_tables_created(sqlite_engine, table_or_mapped_class)
+                return sqlite_engine
+            case "postgres":
+                return create_postgres_engine(table_or_mapped_class)
+
+    def _run_upsert_one(
+        self,
+        engine: Engine,
+        item: Table | type[DeclarativeBase],
+        /,
+        *,
+        dialect: Literal["sqlite", "postgres"],
+        values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+        selected_or_all: Literal["selected", "all"] = "selected",
+    ) -> Row[Any]:
+        return one(
+            self._run_upsert(
+                engine,
+                item,
+                dialect=dialect,
+                values=values,
+                selected_or_all=selected_or_all,
+            )
+        )
+
+    def _run_upsert(
+        self,
+        engine: Engine,
+        item: Table | type[DeclarativeBase],
+        /,
+        *,
+        dialect: Literal["sqlite", "postgres"],
+        values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+        selected_or_all: Literal["selected", "all"] = "selected",
+    ) -> Sequence[Row[Any]]:
+        match dialect:
+            case "sqlite":
+                ups = sqlite_upsert(
+                    item, values=values, selected_or_all=selected_or_all
+                )
+            case "postgres":
+                ups = postgres_upsert(
+                    item, values=values, selected_or_all=selected_or_all
+                )
+        with engine.begin() as conn:
+            _ = conn.execute(ups)
+        with engine.begin() as conn:
+            return conn.execute(select(item)).all()
 
 
 class TestYieldConnection:
