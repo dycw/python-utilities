@@ -324,14 +324,17 @@ class _CheckColumnTypesUuidEqualError(Exception): ...
 
 
 def check_engine(
-    engine: Engine, /, *, num_tables: int | tuple[int, float] | None = None
+    engine_or_conn: Engine | Connection,
+    /,
+    *,
+    num_tables: int | tuple[int, float] | None = None,
 ) -> None:
     """Check that an engine can connect.
 
     Optionally query for the number of tables, or the number of columns in
     such a table.
     """
-    match get_dialect(engine):
+    match get_dialect(engine_or_conn):
         case (  # skipif-ci-and-not-linux
             Dialect.mssql
             | Dialect.mysql
@@ -345,11 +348,11 @@ def check_engine(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     statement = text(query)
-    with engine.begin() as conn:
+    with yield_connection(engine_or_conn) as conn:
         rows = conn.execute(statement).all()
     if num_tables is not None:
         with redirect_error(
-            CheckLengthError, CheckEngineError(f"{engine=}, {num_tables=}")
+            CheckLengthError, CheckEngineError(f"{engine_or_conn=}, {num_tables=}")
         ):
             check_length(rows, equal_or_approx=num_tables)
 
@@ -359,7 +362,7 @@ class CheckEngineError(Exception): ...
 
 def check_table_against_reflection(
     table_or_mapped_class: Table | type[DeclarativeBase],
-    engine: Engine,
+    engine_or_conn: Engine | Connection,
     /,
     *,
     schema: str | None = None,
@@ -369,7 +372,7 @@ def check_table_against_reflection(
     primary_key: bool = True,
 ) -> None:
     """Check that a table equals its reflection."""
-    reflected = reflect_table(table_or_mapped_class, engine, schema=schema)
+    reflected = reflect_table(table_or_mapped_class, engine_or_conn, schema=schema)
     _check_tables_equal(
         reflected,
         table_or_mapped_class,
@@ -568,14 +571,14 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    engine: Engine | Connection,
+    engine_or_conn: Engine | Connection,
     /,
     *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
+    prepared = _ensure_tables_created_prepare(engine_or_conn, *tables_or_mapped_classes)
     for table in prepared.tables:
-        with yield_connection(engine) as conn:
+        with yield_connection(engine_or_conn) as conn:
             try:
                 table.create(conn)
             except DatabaseError as error:
@@ -583,14 +586,14 @@ def ensure_tables_created(
 
 
 async def ensure_tables_created_async(
-    engine: AsyncEngine | AsyncConnection,
+    engine_or_conn: AsyncEngine | AsyncConnection,
     /,
     *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
-    prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
+    prepared = _ensure_tables_created_prepare(engine_or_conn, *tables_or_mapped_classes)
     for table in prepared.tables:
-        async with yield_connection_async(engine) as conn:
+        async with yield_connection_async(engine_or_conn) as conn:
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
@@ -616,10 +619,10 @@ def _ensure_tables_created_prepare(
 
 
 def _ensure_tables_created_match(
-    engine: Engine | Connection | AsyncEngine | AsyncConnection, /
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
 ) -> str:
     """Get the match statement for the given engine."""
-    match dialect := get_dialect(engine):
+    match dialect := get_dialect(engine_or_conn):
         case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
         case Dialect.postgresql:  # skipif-ci-and-not-linux
@@ -641,13 +644,14 @@ def _ensure_tables_created_maybe_reraise(error: DatabaseError, match: str, /) ->
 
 
 def ensure_tables_dropped(
-    engine: Engine, *tables_or_mapped_classes: Table | type[DeclarativeBase]
+    engine_or_conn: Engine | Connection,
+    *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
-    match = get_table_does_not_exist_message(engine)
+    match = get_table_does_not_exist_message(engine_or_conn)
     for table_or_mapped_class in tables_or_mapped_classes:
         table = get_table(table_or_mapped_class)
-        with engine.begin() as conn:
+        with yield_connection(engine_or_conn) as conn:
             try:
                 table.drop(conn)
             except DatabaseError as error:
@@ -729,9 +733,11 @@ class GetTableError(Exception):
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
 
 
-def get_table_does_not_exist_message(engine: Engine, /) -> str:
+def get_table_does_not_exist_message(
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
+) -> str:
     """Get the message for a non-existent table."""
-    match dialect := get_dialect(engine):
+    match dialect := get_dialect(engine_or_conn):
         case Dialect.mysql:  # pragma: no cover
             raise NotImplementedError(dialect)
         case Dialect.postgresql:  # skipif-ci-and-not-linux
@@ -811,7 +817,7 @@ def insert_items(
 
 
 async def insert_items_async(
-    engine: AsyncEngine | AsyncConnection,
+    engine_or_conn: AsyncEngine | AsyncConnection,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
@@ -825,11 +831,13 @@ async def insert_items_async(
      - [dict[str, Any], table
      - Model
     """
-    prepared = _insert_items_prepare(engine, *items, chunk_size_frac=chunk_size_frac)
+    prepared = _insert_items_prepare(
+        engine_or_conn, *items, chunk_size_frac=chunk_size_frac
+    )
     if not assume_tables_exist:
-        await ensure_tables_created_async(engine, *prepared.tables)
+        await ensure_tables_created_async(engine_or_conn, *prepared.tables)
     for ins, values in prepared.yield_pairs():
-        async with yield_connection_async(engine) as conn:
+        async with yield_connection_async(engine_or_conn) as conn:
             if prepared.dialect is Dialect.oracle:  # pragma: no cover
                 _ = await conn.execute(ins, cast(Any, values))
             else:
@@ -1021,7 +1029,7 @@ class ParseEngineError(Exception): ...
 
 def reflect_table(
     table_or_mapped_class: Table | type[DeclarativeBase],
-    engine: Engine,
+    engine_or_conn: Engine | Connection,
     /,
     *,
     schema: str | None = None,
@@ -1029,7 +1037,7 @@ def reflect_table(
     """Reflect a table from a database."""
     name = get_table_name(table_or_mapped_class)
     metadata = MetaData(schema=schema)
-    with engine.begin() as conn:
+    with yield_connection(engine_or_conn) as conn:
         return Table(name, metadata, autoload_with=conn)
 
 
@@ -1050,7 +1058,7 @@ class TablenameMixin:
 
 @overload
 def upsert(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     item: Table | type[DeclarativeBase],
     /,
     *,
@@ -1059,7 +1067,7 @@ def upsert(
 ) -> Insert: ...
 @overload
 def upsert(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     item: DeclarativeBase | Sequence[DeclarativeBase],
     /,
     *,
@@ -1067,7 +1075,7 @@ def upsert(
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
 def upsert(  # skipif-ci-in-environ
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     item: Any,
     /,
     *,
@@ -1109,7 +1117,7 @@ def upsert(  # skipif-ci-in-environ
 
 
 def _upsert_core(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     table_or_mapped_class: Table | type[DeclarativeBase],
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
