@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from os import environ
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pytest import fixture, mark
 
@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from sqlalchemy import Engine, Table
+    from sqlalchemy.orm import DeclarativeBase
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
@@ -42,7 +43,7 @@ else:
     def create_postgres_engine() -> Callable[..., Engine]:
         """Create a Postgres engine."""
 
-        def inner(*tables_or_mapped_classes: Table | type[Any]) -> Engine:
+        def inner(*tables_or_mapped_classes: Table | type[DeclarativeBase]) -> Engine:
             from utilities.sqlalchemy import (
                 create_engine,
                 ensure_tables_created,

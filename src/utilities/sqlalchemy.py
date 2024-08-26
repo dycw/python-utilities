@@ -354,7 +354,7 @@ class CheckEngineError(Exception): ...
 
 
 def check_table_against_reflection(
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     engine: Engine,
     /,
     *,
@@ -564,7 +564,9 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    engine: Engine | Connection, /, *tables_or_mapped_classes: Table | type[Any]
+    engine: Engine | Connection,
+    /,
+    *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
@@ -579,7 +581,7 @@ def ensure_tables_created(
 async def ensure_tables_created_async(
     engine: AsyncEngine | AsyncConnection,
     /,
-    *tables_or_mapped_classes: Table | type[Any],
+    *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine, *tables_or_mapped_classes)
@@ -600,7 +602,7 @@ class _EnsureTablesCreatedPrepare:
 def _ensure_tables_created_prepare(
     engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
     /,
-    *tables_or_mapped_classes: Table | type[Any],
+    *tables_or_mapped_classes: Table | type[DeclarativeBase],
 ) -> _EnsureTablesCreatedPrepare:
     """Prepare the arguments for `ensure_tables_created`."""
     return _EnsureTablesCreatedPrepare(
@@ -635,7 +637,7 @@ def _ensure_tables_created_maybe_reraise(error: DatabaseError, match: str, /) ->
 
 
 def ensure_tables_dropped(
-    engine: Engine, *tables_or_mapped_classes: Table | type[Any]
+    engine: Engine, *tables_or_mapped_classes: Table | type[DeclarativeBase]
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     match = get_table_does_not_exist_message(engine)
@@ -662,12 +664,16 @@ def get_chunk_size(
     return max(floor(chunk_size_frac * max_params / scaling), 1)
 
 
-def get_column_names(table_or_mapped_class: Table | type[Any], /) -> list[str]:
+def get_column_names(
+    table_or_mapped_class: Table | type[DeclarativeBase], /
+) -> list[str]:
     """Get the column names from a table or model."""
     return [col.name for col in get_columns(table_or_mapped_class)]
 
 
-def get_columns(table_or_mapped_class: Table | type[Any], /) -> list[Column[Any]]:
+def get_columns(
+    table_or_mapped_class: Table | type[DeclarativeBase], /
+) -> list[Column[Any]]:
     """Get the columns from a table or model."""
     return list(get_table(table_or_mapped_class).columns)
 
@@ -740,7 +746,7 @@ def get_table_does_not_exist_message(engine: Engine, /) -> str:
 
 
 def get_table_updated_column(
-    table_or_mapped_class: Table | type[Any], /, *, pattern: str = "updated"
+    table_or_mapped_class: Table | type[DeclarativeBase], /, *, pattern: str = "updated"
 ) -> str | None:
     """Get the name of the unique `updated_at` column, if it exists."""
 
@@ -766,7 +772,7 @@ def get_table_updated_column(
         return None
 
 
-def get_table_name(table_or_mapped_class: Table | type[Any], /) -> str:
+def get_table_name(table_or_mapped_class: Table | type[DeclarativeBase], /) -> str:
     """Get the table name from a Table or mapped class."""
     return get_table(table_or_mapped_class).name
 
@@ -937,7 +943,7 @@ class _InsertItemsCollectInvalidItemError(_InsertItemsCollectError):
 
 
 def _insert_items_collect_iterable(
-    items: Iterable[Any], table_or_mapped_class: Table | type[Any], /
+    items: Iterable[Any], table_or_mapped_class: Table | type[DeclarativeBase], /
 ) -> Iterator[_InsertionItem]:
     """Collect the insertion items, for an iterable."""
     table = get_table(table_or_mapped_class)
@@ -1116,7 +1122,7 @@ class PostgresUpsertError(Exception):
 
 
 def reflect_table(
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     engine: Engine,
     /,
     *,
