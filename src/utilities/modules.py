@@ -9,6 +9,15 @@ if TYPE_CHECKING:
     from types import ModuleType
 
 
+def is_installed(module: str, /) -> bool:
+    """Check if a module is installed."""
+    try:
+        _ = import_module(module)
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
 def yield_modules(
     module: ModuleType, /, *, recursive: bool = False
 ) -> Iterator[ModuleType]:
@@ -74,4 +83,9 @@ def yield_module_subclasses(
     )
 
 
-__all__ = ["yield_module_contents", "yield_module_subclasses", "yield_modules"]
+__all__ = [
+    "is_installed",
+    "yield_module_contents",
+    "yield_module_subclasses",
+    "yield_modules",
+]

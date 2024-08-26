@@ -10,6 +10,7 @@ from pytest import mark, param
 from tests.modules import package_with, package_without, standalone
 from utilities.functions import get_class_name
 from utilities.modules import (
+    is_installed,
     yield_module_contents,
     yield_module_subclasses,
     yield_modules,
@@ -18,6 +19,15 @@ from utilities.modules import (
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import ModuleType
+
+
+class TestIsInstalled:
+    @mark.parametrize(
+        ("module", "expected"), [param("importlib", True), param("invalid", False)]
+    )
+    def test_main(self, *, module: str, expected: int) -> None:
+        result = is_installed(module)
+        assert result is expected
 
 
 class TestYieldModules:

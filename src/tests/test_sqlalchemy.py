@@ -92,6 +92,7 @@ from utilities.hypothesis import (
     text_ascii,
 )
 from utilities.iterables import OneEmptyError, one
+from utilities.modules import is_installed
 from utilities.sqlalchemy import (
     CheckEngineError,
     Dialect,
@@ -1029,16 +1030,23 @@ class TestGetColumns:
         assert isinstance(columns[0], Column)
 
 
+@mark.only
 class TestGetDialect:
-    @mark.skip
+    @mark.skipif(condition=not is_installed("pyodbc"), reason="'pyodbc' not installed")
     def test_mssql(self) -> None:
         engine = create_engine("mssql")
         assert get_dialect(engine) is Dialect.mssql
 
+    @mark.skipif(
+        condition=not is_installed("mysqldb"), reason="'mysqldb' not installed"
+    )
     def test_mysql(self) -> None:
         engine = create_engine("mysql")
         assert get_dialect(engine) is Dialect.mysql
 
+    @mark.skipif(
+        condition=not is_installed("oracledb"), reason="'oracledb' not installed"
+    )
     def test_oracle(self) -> None:
         engine = create_engine("oracle+oracledb")
         assert get_dialect(engine) is Dialect.oracle
@@ -1047,6 +1055,9 @@ class TestGetDialect:
         engine = create_engine("postgresql")
         assert get_dialect(engine) is Dialect.postgresql
 
+    @mark.skipif(
+        condition=not is_installed("asyncpg"), reason="'asyncpg' not installed"
+    )
     def test_postgres_async(self) -> None:
         engine = create_engine("postgresql+asyncpg")
         assert get_dialect(engine) is Dialect.postgresql
