@@ -2,10 +2,18 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-sqlalchemy --prerelease=disallow --output-file=requirements/sqlalchemy.txt --python-version=3.11 pyproject.toml
 aiosqlite==0.20.0
     # via dycw-utilities (pyproject.toml)
+async-timeout==4.0.3
+    # via asyncpg
+asyncpg==0.29.0
+    # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
+cffi==1.17.0
+    # via cryptography
 coverage==7.6.1
     # via pytest-cov
+cryptography==43.0.0
+    # via oracledb
 greenlet==3.0.3
     # via dycw-utilities (pyproject.toml)
 hypothesis==6.111.2
@@ -16,6 +24,8 @@ mysqlclient==2.2.4
     # via dycw-utilities (pyproject.toml)
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
+oracledb==2.4.1
+    # via dycw-utilities (pyproject.toml)
 packaging==24.1
     # via
     #   pytest
@@ -24,6 +34,8 @@ pluggy==1.5.0
     # via pytest
 psycopg2-binary==2.9.9
     # via dycw-utilities (pyproject.toml)
+pycparser==2.22
+    # via cffi
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
 pyodbc==5.1.0
