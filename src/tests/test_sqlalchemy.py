@@ -1985,28 +1985,27 @@ class TestUpsert:
     ) -> Table | type[DeclarativeBase]:
         match case:
             case "table":
-                return self._get_table(name)
+                return Table(
+                    name,
+                    MetaData(),
+                    Column("id_", Integer, primary_key=True),
+                    Column("value", Boolean, nullable=False),
+                )
             case "mapped_class":
-                return self._get_mapped_class(name)
 
-    def _get_table(self, name: str, /) -> Table:
-        return Table(
-            name,
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=False),
-        )
+                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
-    def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+                class Example(Base):
+                    __tablename__ = name
 
-        class Example(Base):
-            __tablename__ = name
+                    id_: Mapped[int] = mapped_column(
+                        Integer, kw_only=True, primary_key=True
+                    )
+                    value: Mapped[bool] = mapped_column(
+                        Boolean, kw_only=True, nullable=False
+                    )
 
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-        return Example
+                return Example
 
     def _get_engine(
         self,
