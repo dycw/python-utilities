@@ -1597,27 +1597,6 @@ class TestPostgresEngine:
 
 @SKIPIF_CI
 class TestPostgresUpsert:
-    @given(id_=integers(0, 10), old=booleans(), new=booleans())
-    @settings(max_examples=1, phases={Phase.generate})
-    @mark.skip
-    def test_mapped_class(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        id_: int,
-        old: bool,
-        new: bool,
-    ) -> None:
-        name = f"test_{get_class_name(TestPostgresEngine)}_{TestPostgresUpsert.test_mapped_class.__name__}"
-        engine, Example = self._prepare_main_test(  # noqa: N806
-            create_postgres_engine, "mapped_class", name
-        )
-        engine = create_postgres_engine(Example)
-        ups = postgres_upsert(Example(id_=id_, value=old))
-        assert one(self._run_upsert(engine, Example, ups)) == (id_, old)
-        ups = postgres_upsert(Example(id_=id_, value=new))
-        assert one(self._run_upsert(engine, Example, ups)) == (id_, new)
-
     @given(data=data(), ids=sets(integers(0, 10)))
     @settings(max_examples=1, phases={Phase.generate})
     def test_classes(
@@ -1947,6 +1926,94 @@ class TestUpsert:
         }
         assert result2 == expected2
 
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    def test_mapped_class(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool],
+    ) -> None:
+        name = (
+            f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_class.__name__}"
+        )
+
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = name
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            Example,
+            dialect=dialect,
+        )
+        id_, init, post = triple
+        result1 = self._run_upsert_one(
+            engine,
+            Example(id_=id_, value=init),
+            dialect=dialect,
+        )
+        expected1 = id_, init
+        assert result1 == expected1
+        result2 = self._run_upsert_one(
+            engine,
+            Example(id_=id_, value=post),
+            dialect=dialect,
+        )
+        expected2 = id_, post
+        assert result2 == expected2
+
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    def test_mapped_classes(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool],
+    ) -> None:
+        name = (
+            f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_classes.__name__}"
+        )
+
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = name
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            Example,
+            dialect=dialect,
+        )
+        id_, init, post = triple
+        result1 = self._run_upsert_one(
+            engine,
+            Example(id_=id_, value=init),
+            dialect=dialect,
+        )
+        expected1 = id_, init
+        assert result1 == expected1
+        result2 = self._run_upsert_one(
+            engine,
+            Example(id_=id_, value=post),
+            dialect=dialect,
+        )
+        expected2 = id_, post
+        assert result2 == expected2
+
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
     ) -> Table | type[DeclarativeBase]:
@@ -1961,7 +2028,7 @@ class TestUpsert:
             name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
+            Column("value", Boolean, nullable=False),
         )
 
     def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
@@ -1971,7 +2038,7 @@ class TestUpsert:
             __tablename__ = name
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         return Example
 
@@ -1994,7 +2061,7 @@ class TestUpsert:
     def _run_upsert_one(
         self,
         engine: Engine,
-        item: Table | type[DeclarativeBase],
+        item: Any,
         /,
         *,
         dialect: Literal["sqlite", "postgres"],
@@ -2014,7 +2081,7 @@ class TestUpsert:
     def _run_upsert(
         self,
         engine: Engine,
-        item: Table | type[DeclarativeBase],
+        item: Any,
         /,
         *,
         dialect: Literal["sqlite", "postgres"],
@@ -2033,7 +2100,7 @@ class TestUpsert:
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
-            return set(conn.execute(select(item)).all())
+            return set(conn.execute(select(get_table(item))).all())
 
 
 class TestYieldConnection:
