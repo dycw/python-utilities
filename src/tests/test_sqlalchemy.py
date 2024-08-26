@@ -97,6 +97,7 @@ from utilities.sqlalchemy import (
     GetTableError,
     ParseEngineError,
     PostgresUpsertError,
+    SqliteUpsertError,
     TablenameMixin,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -1596,75 +1597,6 @@ class TestPostgresEngine:
 
 @SKIPIF_CI
 class TestPostgresUpsert:
-    @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    @settings(max_examples=1, phases={Phase.generate})
-    def test_table_sel_or_all(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        selected_or_all: Literal["selected", "all"],
-        id_: int,
-        x_old: bool,
-        x_new: bool,
-        y: bool,
-    ) -> None:
-        metadata = MetaData()
-        table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_table_sel_or_all.__name__}_{selected_or_all}",
-            metadata,
-            Column("id_", Integer, primary_key=True),
-            Column("x", Boolean, nullable=False),
-            Column("y", Boolean, nullable=True),
-        )
-        engine = create_postgres_engine(table)
-        ups = postgres_upsert(table, values={"id_": id_, "x": x_old, "y": y})
-        assert one(self._run_upsert(engine, table, ups)) == (id_, x_old, y)
-        ups = postgres_upsert(
-            table, values={"id_": id_, "x": x_new}, selected_or_all=selected_or_all
-        )
-        if selected_or_all == "selected":
-            expected = (id_, x_new, y)
-        else:
-            expected = (id_, x_new, None)
-        assert one(self._run_upsert(engine, table, ups)) == expected
-
-    @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    @settings(max_examples=1, phases={Phase.generate})
-    def test_class_sel_or_all(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        selected_or_all: Literal["selected", "all"],
-        id_: int,
-        x_old: bool,
-        x_new: bool,
-        y: bool,
-    ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_class_sel_or_all.__name__}_{selected_or_all}"
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-            y: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-
-        engine = create_postgres_engine(Example)
-        ups = postgres_upsert(Example(id_=id_, x=x_old, y=y))
-        assert one(self._run_upsert(engine, Example, ups)) == (id_, x_old, y)
-        ups = postgres_upsert(
-            Example(id_=id_, x=x_new), selected_or_all=selected_or_all
-        )
-        if selected_or_all == "selected":
-            expected = (id_, x_new, y)
-        else:
-            expected = (id_, x_new, None)
-        assert one(self._run_upsert(engine, Example, ups)) == expected
-
     @given(id_=integers(0, 10), old=booleans(), new=booleans())
     @settings(max_examples=1, phases={Phase.generate})
     def test_mapping_updated(
@@ -1735,13 +1667,6 @@ class TestPostgresUpsert:
         _, _, update2 = one(self._run_upsert(engine, table, ups))
         assert update1 < update2
 
-    def test_error(self) -> None:
-        with raises(
-            PostgresUpsertError,
-            match=escape("Unsupported item and values; got None and []"),
-        ):
-            _ = postgres_upsert(cast(Any, None), values=[])
-
     def _run_upsert(
         self, engine: Engine, table: Any, ups: Insert
     ) -> Sequence[Row[Any]]:
@@ -1806,7 +1731,7 @@ class TestTablenameMixin:
         assert get_table_name(Example) == "example"
 
 
-@mark.only
+# @mark.only
 class TestUpsert:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
@@ -1990,7 +1915,7 @@ class TestUpsert:
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_selected_or_all(
+    def test_selected_or_all_table(
         self,
         *,
         sqlite_engine: Engine,
@@ -2003,7 +1928,7 @@ class TestUpsert:
         x_post: bool,
         y: bool,
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all.__name__}"
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all_table.__name__}"
         match case:
             case "table":
                 table_or_mapped_class = Table(
@@ -2061,6 +1986,84 @@ class TestUpsert:
             case "all":
                 expected2 = (id_, x_post, None)
         assert result2 == expected2
+
+    @given(
+        sqlite_engine=sqlite_engines(),
+        id_=integers(0, 10),
+        x_init=booleans(),
+        x_post=booleans(),
+        y=booleans(),
+    )
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    @mark.only
+    def test_selected_or_all_mapped_class(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        x_init: bool,
+        x_post: bool,
+        y: bool,
+    ) -> None:
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_selected_or_all_mapped_class.__name__}"
+
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = name
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+            y: Mapped[bool | None] = mapped_column(
+                Boolean, default=None, kw_only=True, nullable=True
+            )
+
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            Example,
+            dialect=dialect,
+        )
+        result1 = self._run_upsert_one(
+            engine,
+            Example,
+            Example(id_=id_, x=x_init, y=y),
+            dialect=dialect,
+            selected_or_all=selected_or_all,
+        )
+        expected1 = id_, x_init, y
+        assert result1 == expected1
+        result2 = self._run_upsert_one(
+            engine,
+            Example,
+            Example(id_=id_, x=x_post),
+            dialect=dialect,
+            selected_or_all=selected_or_all,
+        )
+        match selected_or_all:
+            case "selected":
+                expected2 = (id_, x_post, y)
+            case "all":
+                expected2 = (id_, x_post, None)
+        assert result2 == expected2
+
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.skip
+    def test_error(self, *, dialect: Literal["sqlite", "postgres"]) -> None:
+        match dialect:
+            case "sqlite":
+                error = PostgresUpsertError
+            case "postgres":
+                error = SqliteUpsertError
+        with raises(
+            error,
+            match=escape("Unsupported item and values; got None and []"),
+        ):
+            _ = self._run_upsert(cast(Any, None), values=[])
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
