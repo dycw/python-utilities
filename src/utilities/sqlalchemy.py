@@ -1174,7 +1174,7 @@ def _upsert_apply_on_conflict_do_update(
             assert_never(never)
     set_ = {c: getattr(insert.excluded, c) for c in columns}
     match insert:
-        case postgresql_Insert():
+        case postgresql_Insert():  # skipif-ci
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
         case sqlite_Insert():
             return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
