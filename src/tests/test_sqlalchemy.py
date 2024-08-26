@@ -2038,8 +2038,8 @@ class TestUpsert:
         return one(
             self._run_upsert(
                 engine,
-                item,
                 table_or_mapped_class,
+                item,
                 dialect=dialect,
                 values=values,
                 selected_or_all=selected_or_all,
@@ -2069,7 +2069,7 @@ class TestUpsert:
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
-            return set(conn.execute(select(table_or_mapped_class)).all())
+            return set(conn.execute(select(get_table(table_or_mapped_class))).all())
 
 
 class TestYieldConnection:
