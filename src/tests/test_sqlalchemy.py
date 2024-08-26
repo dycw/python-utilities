@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
 from hypothesis import Phase, assume, given, settings
-from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -1597,40 +1596,6 @@ class TestPostgresEngine:
 
 @SKIPIF_CI
 class TestPostgresUpsert:
-    @given(data=data(), ids=sets(integers(0, 10)))
-    @settings(max_examples=1, phases={Phase.generate})
-    def test_classes(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        data: DataObject,
-        ids: set[int],
-    ) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_classes.__name__}"
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-        engine = create_postgres_engine(Example)
-        with assume_does_not_raise(InvalidArgument):
-            id_ins = data.draw(sets(sampled_from(sorted(ids))))
-        old = data.draw(lists_fixed_length(booleans(), len(id_ins)))
-        values = [
-            Example(id_=id_, value=v) for (id_, v) in zip(id_ins, old, strict=True)
-        ]
-        with assume_does_not_raise(OneEmptyError):
-            ups = postgres_upsert(values)
-        assert self._run_upsert(engine, Example, ups) == [
-            (v.id_, v.value) for v in values
-        ]
-        new = data.draw(lists_fixed_length(booleans(), len(ids)))
-        rows = list(zip(sorted(ids), new, strict=True))
-        ups = postgres_upsert([Example(id_=id_, value=v) for id_, v in rows])
-        assert self._run_upsert(engine, Example, ups) == rows
-
     @given(id_=integers(0, 10), x_old=booleans(), x_new=booleans(), y=booleans())
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @settings(max_examples=1, phases={Phase.generate})
@@ -1867,6 +1832,7 @@ class TestUpsert:
         result1 = self._run_upsert_one(
             engine,
             table_or_mapped_class,
+            table_or_mapped_class,
             dialect=dialect,
             values={"id_": id_, "value": init},
         )
@@ -1874,6 +1840,7 @@ class TestUpsert:
         assert result1 == expected1
         result2 = self._run_upsert_one(
             engine,
+            table_or_mapped_class,
             table_or_mapped_class,
             dialect=dialect,
             values={"id_": id_, "value": post},
@@ -1905,6 +1872,7 @@ class TestUpsert:
             result1 = self._run_upsert(
                 engine,
                 table_or_mapped_class,
+                table_or_mapped_class,
                 dialect=dialect,
                 values=[{"id_": id_, "value": init} for id_, init, _ in triples],
             )
@@ -1913,6 +1881,7 @@ class TestUpsert:
         with assume_does_not_raise(OneEmptyError):
             result2 = self._run_upsert(
                 engine,
+                table_or_mapped_class,
                 table_or_mapped_class,
                 dialect=dialect,
                 values=[
@@ -1949,28 +1918,21 @@ class TestUpsert:
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            Example,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
         id_, init, post = triple
         result1 = self._run_upsert_one(
-            engine,
-            Example(id_=id_, value=init),
-            dialect=dialect,
+            engine, Example, Example(id_=id_, value=init), dialect=dialect
         )
         expected1 = id_, init
         assert result1 == expected1
         result2 = self._run_upsert_one(
-            engine,
-            Example(id_=id_, value=post),
-            dialect=dialect,
+            engine, Example, Example(id_=id_, value=post), dialect=dialect
         )
         expected2 = id_, post
         assert result2 == expected2
 
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
     def test_mapped_classes(
         self,
@@ -1978,11 +1940,9 @@ class TestUpsert:
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
         dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
+        triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        name = (
-            f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_classes.__name__}"
-        )
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_classes.__name__}"
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -1993,25 +1953,31 @@ class TestUpsert:
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            Example,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
-        id_, init, post = triple
-        result1 = self._run_upsert_one(
-            engine,
-            Example(id_=id_, value=init),
-            dialect=dialect,
-        )
-        expected1 = id_, init
+        with assume_does_not_raise(OneEmptyError):
+            result1 = self._run_upsert(
+                engine,
+                Example,
+                [Example(id_=id_, value=init) for id_, init, _ in triples],
+                dialect=dialect,
+            )
+        expected1 = {(id_, init) for id_, init, _ in triples}
         assert result1 == expected1
-        result2 = self._run_upsert_one(
-            engine,
-            Example(id_=id_, value=post),
-            dialect=dialect,
-        )
-        expected2 = id_, post
+        with assume_does_not_raise(OneEmptyError):
+            result2 = self._run_upsert(
+                engine,
+                Example,
+                [
+                    Example(id_=id_, value=post)
+                    for id_, _, post in triples
+                    if post is not None
+                ],
+                dialect=dialect,
+            )
+        expected2 = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
         assert result2 == expected2
 
     def _get_table_or_mapped_class(
@@ -2061,6 +2027,7 @@ class TestUpsert:
     def _run_upsert_one(
         self,
         engine: Engine,
+        table_or_mapped_class: Table | type[DeclarativeBase],
         item: Any,
         /,
         *,
@@ -2072,6 +2039,7 @@ class TestUpsert:
             self._run_upsert(
                 engine,
                 item,
+                table_or_mapped_class,
                 dialect=dialect,
                 values=values,
                 selected_or_all=selected_or_all,
@@ -2081,6 +2049,7 @@ class TestUpsert:
     def _run_upsert(
         self,
         engine: Engine,
+        table_or_mapped_class: Table | type[DeclarativeBase],
         item: Any,
         /,
         *,
@@ -2100,7 +2069,7 @@ class TestUpsert:
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:
-            return set(conn.execute(select(get_table(item))).all())
+            return set(conn.execute(select(table_or_mapped_class)).all())
 
 
 class TestYieldConnection:
