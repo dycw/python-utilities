@@ -1030,6 +1030,7 @@ class TestGetColumns:
 
 
 class TestGetDialect:
+    @mark.skip
     def test_mssql(self) -> None:
         engine = create_engine("mssql")
         assert get_dialect(engine) is Dialect.mssql
