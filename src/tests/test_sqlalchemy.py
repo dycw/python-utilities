@@ -1579,7 +1579,7 @@ class TestPostgresEngine:
     ) -> None:
         metadata = MetaData()
         table = Table(
-            f"test_{get_class_name(TestPostgresEngine)}",
+            get_class_name(TestPostgresEngine),
             metadata,
             Column("id_", Integer, primary_key=True),
         )
@@ -1659,7 +1659,7 @@ class TestUpsert:
         dialect: Literal["sqlite", "postgres"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapping.__name__}_{case}_{dialect}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mapping.__name__}_{case[:3]}_{dialect[:3]}"
         table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
         engine = self._get_engine(
             sqlite_engine,
@@ -1697,7 +1697,7 @@ class TestUpsert:
         dialect: Literal["sqlite", "postgres"],
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mappings.__name__}_{case}_{dialect}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mappings.__name__}_{case[:3]}_{dialect[:3]}"
         table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
         engine = self._get_engine(
             sqlite_engine,
@@ -1740,7 +1740,7 @@ class TestUpsert:
         dialect: Literal["sqlite", "postgres"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_class.__name__}_{dialect}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_class.__name__}_{dialect[:3]}"
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -1771,7 +1771,7 @@ class TestUpsert:
         dialect: Literal["sqlite", "postgres"],
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_classes.__name__}_{dialect}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_classes.__name__}_{dialect[:3]}"
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -1830,7 +1830,7 @@ class TestUpsert:
         x_post: bool,
         y: bool,
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_table.__name__}_{case}_{dialect}_{selected_or_all}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_table.__name__}_{case[:3]}_{dialect[:3]}_{selected_or_all[:3]}"
         match case:
             case "table":
                 table_or_mapped_class = Table(
@@ -1908,7 +1908,7 @@ class TestUpsert:
         x_post: bool,
         y: bool,
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_mapped_class.__name__}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_mapped_class.__name__}_{dialect[:3]}_{selected_or_all[:3]}"
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -1953,7 +1953,7 @@ class TestUpsert:
         case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
     ) -> None:
-        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_error.__name__}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_error.__name__}_{case[:3]}_{dialect[:3]}"
         table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
         engine = self._get_engine(
             sqlite_engine,
