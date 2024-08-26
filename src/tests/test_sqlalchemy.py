@@ -1038,6 +1038,10 @@ class TestGetDialect:
         engine = create_engine("mysql")
         assert get_dialect(engine) is Dialect.mysql
 
+    def test_oracle(self) -> None:
+        engine = create_engine("oracle")
+        assert get_dialect(engine) is Dialect.oracle
+
     @given(engine=sqlite_engines())
     def test_sqlite(self, *, engine: Engine) -> None:
         assert get_dialect(engine) is Dialect.sqlite

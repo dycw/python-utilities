@@ -182,6 +182,8 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
+mysqlclient==2.2.4
+    # via dycw-utilities (pyproject.toml)
 narwhals==1.5.5
     # via altair
 nest-asyncio==1.6.0
