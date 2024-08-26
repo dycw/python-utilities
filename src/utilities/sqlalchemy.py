@@ -1122,7 +1122,7 @@ class PostgresUpsertError(Exception):
 
 
 def reflect_table(
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     engine: Engine,
     /,
     *,
