@@ -1948,16 +1948,18 @@ class TestUpsert:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_mapping_updated(
+    @mark.parametrize("single_or_many", [param("single"), param("many")])
+    def test_updated(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
         case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
+        single_or_many: Literal["single", "many"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_mapped_class.__name__}_{case[:3]}_{dialect[:3]}"
+        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_updated.__name__}_{case[:3]}_{dialect[:3]}_{single_or_many[:3]}"
         match case:
             case "table":
                 table_or_mapped_class = Table(
@@ -2002,18 +2004,22 @@ class TestUpsert:
             dialect=dialect,
         )
         id_, init, post = triple
+        match single_or_many:
+            case "single":
+                values_use = {"id_": id_, "value": init}
+            case "many":
+                values_use = [{"id_": id_, "value": init}]
         _, _, updated1 = self._run_upsert_one(
-            engine,
-            table_or_mapped_class,
-            table_or_mapped_class,
-            values={"id_": id_, "value": init},
+            engine, table_or_mapped_class, table_or_mapped_class, values=values_use
         )
         sleep(0.01)
+        match single_or_many:
+            case "single":
+                values_use = {"id_": id_, "value": post}
+            case "many":
+                values_use = [{"id_": id_, "value": post}]
         _, _, updated2 = self._run_upsert_one(
-            engine,
-            table_or_mapped_class,
-            table_or_mapped_class,
-            values={"id_": id_, "value": post},
+            engine, table_or_mapped_class, table_or_mapped_class, values=values_use
         )
         assert updated1 < updated2
 
