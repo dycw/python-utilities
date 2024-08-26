@@ -96,9 +96,8 @@ from utilities.sqlalchemy import (
     Dialect,
     GetTableError,
     ParseEngineError,
-    PostgresUpsertError,
-    SqliteUpsertError,
     TablenameMixin,
+    UpsertError,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
     _check_column_types_datetime_equal,
@@ -158,7 +157,7 @@ from utilities.sqlalchemy import (
     postgres_upsert,
     reflect_table,
     serialize_engine,
-    sqlite_upsert,
+    upsert,
     yield_connection,
     yield_connection_async,
     yield_primary_key_columns,
@@ -1731,7 +1730,7 @@ class TestTablenameMixin:
         assert get_table_name(Example) == "example"
 
 
-# @mark.only
+@mark.only
 class TestUpsert:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
@@ -1758,7 +1757,6 @@ class TestUpsert:
             engine,
             table_or_mapped_class,
             table_or_mapped_class,
-            dialect=dialect,
             values={"id_": id_, "value": init},
         )
         expected1 = id_, init
@@ -1767,7 +1765,6 @@ class TestUpsert:
             engine,
             table_or_mapped_class,
             table_or_mapped_class,
-            dialect=dialect,
             values={"id_": id_, "value": post},
         )
         expected2 = id_, post
@@ -1798,7 +1795,6 @@ class TestUpsert:
                 engine,
                 table_or_mapped_class,
                 table_or_mapped_class,
-                dialect=dialect,
                 values=[{"id_": id_, "value": init} for id_, init, _ in triples],
             )
         expected1 = {(id_, init) for id_, init, _ in triples}
@@ -1808,7 +1804,6 @@ class TestUpsert:
                 engine,
                 table_or_mapped_class,
                 table_or_mapped_class,
-                dialect=dialect,
                 values=[
                     {"id_": id_, "value": post}
                     for id_, _, post in triples
@@ -1846,14 +1841,10 @@ class TestUpsert:
             sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
         id_, init, post = triple
-        result1 = self._run_upsert_one(
-            engine, Example, Example(id_=id_, value=init), dialect=dialect
-        )
+        result1 = self._run_upsert_one(engine, Example, Example(id_=id_, value=init))
         expected1 = id_, init
         assert result1 == expected1
-        result2 = self._run_upsert_one(
-            engine, Example, Example(id_=id_, value=post), dialect=dialect
-        )
+        result2 = self._run_upsert_one(engine, Example, Example(id_=id_, value=post))
         expected2 = id_, post
         assert result2 == expected2
 
@@ -1885,7 +1876,6 @@ class TestUpsert:
                 engine,
                 Example,
                 [Example(id_=id_, value=init) for id_, init, _ in triples],
-                dialect=dialect,
             )
         expected1 = {(id_, init) for id_, init, _ in triples}
         assert result1 == expected1
@@ -1898,7 +1888,6 @@ class TestUpsert:
                     for id_, _, post in triples
                     if post is not None
                 ],
-                dialect=dialect,
             )
         expected2 = {
             (id_, init if post is None else post) for id_, init, post in triples
@@ -1966,7 +1955,6 @@ class TestUpsert:
             engine,
             table_or_mapped_class,
             table_or_mapped_class,
-            dialect=dialect,
             values={"id_": id_, "x": x_init, "y": y},
             selected_or_all=selected_or_all,
         )
@@ -1976,7 +1964,6 @@ class TestUpsert:
             engine,
             table_or_mapped_class,
             table_or_mapped_class,
-            dialect=dialect,
             values={"id_": id_, "x": x_post},
             selected_or_all=selected_or_all,
         )
@@ -1996,7 +1983,6 @@ class TestUpsert:
     )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    @mark.only
     def test_selected_or_all_mapped_class(
         self,
         *,
@@ -2029,17 +2015,12 @@ class TestUpsert:
             engine,
             Example,
             Example(id_=id_, x=x_init, y=y),
-            dialect=dialect,
             selected_or_all=selected_or_all,
         )
         expected1 = id_, x_init, y
         assert result1 == expected1
         result2 = self._run_upsert_one(
-            engine,
-            Example,
-            Example(id_=id_, x=x_post),
-            dialect=dialect,
-            selected_or_all=selected_or_all,
+            engine, Example, Example(id_=id_, x=x_post), selected_or_all=selected_or_all
         )
         match selected_or_all:
             case "selected":
@@ -2048,18 +2029,29 @@ class TestUpsert:
                 expected2 = (id_, x_post, None)
         assert result2 == expected2
 
+    @given(sqlite_engine=sqlite_engines())
+    @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
-    @mark.skip
-    def test_error(self, *, dialect: Literal["sqlite", "postgres"]) -> None:
-        match dialect:
-            case "sqlite":
-                error = PostgresUpsertError
-            case "postgres":
-                error = SqliteUpsertError
+    def test_error(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+    ) -> None:
+        name = f"test_{get_class_name(TestUpsert)}_{TestUpsert.test_error.__name__}"
+        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        engine = self._get_engine(
+            sqlite_engine,
+            create_postgres_engine,
+            table_or_mapped_class,
+            dialect=dialect,
+        )
         with raises(
-            error, match=escape("Unsupported item and values; got None and []")
+            UpsertError, match=escape("Unsupported item and values; got None and []")
         ):
-            _ = self._run_upsert(cast(Any, None), values=[])
+            _ = self._run_upsert(engine, table_or_mapped_class, None, values=[])
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
@@ -2111,7 +2103,6 @@ class TestUpsert:
         item: Any,
         /,
         *,
-        dialect: Literal["sqlite", "postgres"],
         values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
         selected_or_all: Literal["selected", "all"] = "selected",
     ) -> Row[Any]:
@@ -2120,7 +2111,6 @@ class TestUpsert:
                 engine,
                 table_or_mapped_class,
                 item,
-                dialect=dialect,
                 values=values,
                 selected_or_all=selected_or_all,
             )
@@ -2133,19 +2123,10 @@ class TestUpsert:
         item: Any,
         /,
         *,
-        dialect: Literal["sqlite", "postgres"],
         values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
         selected_or_all: Literal["selected", "all"] = "selected",
     ) -> set[Row[Any]]:
-        match dialect:
-            case "sqlite":
-                ups = sqlite_upsert(
-                    item, values=values, selected_or_all=selected_or_all
-                )
-            case "postgres":
-                ups = postgres_upsert(
-                    item, values=values, selected_or_all=selected_or_all
-                )
+        ups = upsert(engine, item, values=values, selected_or_all=selected_or_all)
         with engine.begin() as conn:
             _ = conn.execute(ups)
         with engine.begin() as conn:

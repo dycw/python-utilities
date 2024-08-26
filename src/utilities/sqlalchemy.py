@@ -35,6 +35,7 @@ from sqlalchemy import (
     LargeBinary,
     MetaData,
     Numeric,
+    PrimaryKeyConstraint,
     String,
     Table,
     Unicode,
@@ -50,8 +51,10 @@ from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
+from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import ArgumentError, DatabaseError
@@ -1257,6 +1260,150 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
+@overload
+def upsert(
+    engine_or_conn: Engine | Connection,
+    item: Table | type[DeclarativeBase],
+    /,
+    *,
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> Insert: ...
+@overload
+def upsert(
+    engine_or_conn: Engine | Connection,
+    item: DeclarativeBase | Sequence[DeclarativeBase],
+    /,
+    *,
+    values: None = None,
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> Insert: ...
+def upsert(  # skipif-ci-in-environ
+    engine_or_conn: Engine | Connection,
+    item: Any,
+    /,
+    *,
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    """Upsert statement for a database.
+
+    These can be:
+
+    - tuple[Table, Mapping[str, Any]]
+    - tuple[Table, Sequence[Mapping[str, Any]]]
+    - Model
+    - Sequence[Model]
+    """
+    if (
+        isinstance(item, Table)
+        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
+    ) and (values is not None):
+        return _upsert_core(
+            engine_or_conn, item, values, selected_or_all=selected_or_all
+        )
+    if is_mapped_class(item) and (values is None):
+        table = get_table(item)
+        mappings = [mapped_class_to_dict(item)]
+    elif (
+        is_iterable_not_str(item)
+        and all(map(is_mapped_class, item))
+        and (values is None)
+    ):
+        table = one(set(map(get_table, item)))
+        mappings = map(mapped_class_to_dict, item)
+    else:
+        raise UpsertError(item=item, values=values)
+    values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
+    return _upsert_core(
+        engine_or_conn, table, values_use, selected_or_all=selected_or_all
+    )
+
+
+def _upsert_core(
+    engine_or_conn: Engine | Connection,
+    table_or_mapped_class: Table | type[DeclarativeBase],
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    table = get_table(table_or_mapped_class)
+    if (updated_col := get_table_updated_column(table)) is not None:
+        updated_mapping = {updated_col: get_now()}
+        values = _upsert_add_updated(values, updated_mapping)
+    match get_dialect(engine_or_conn):
+        case Dialect.postgresql:  # skipif-ci-and-not-linux
+            insert = postgresql_insert
+        case Dialect.sqlite:  # skipif-ci-and-not-linux
+            insert = sqlite_insert
+        case (  # pragma: no cover
+            (Dialect.mssql | Dialect.mysql | Dialect.oracle) as dialect
+        ):
+            raise NotImplementedError(dialect)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    ins = insert(table).values(values)
+    primary_key = cast(Any, table.primary_key)
+    return _upsert_apply_on_conflict_do_update(
+        values, ins, primary_key, selected_or_all=selected_or_all
+    )
+
+
+def _upsert_add_updated(  # skipif-ci-in-environ
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    updated: Mapping[str, dt.datetime],
+    /,
+) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
+    if isinstance(values, Mapping):
+        return _upsert_add_updated_to_mapping(values, updated)
+    return [_upsert_add_updated_to_mapping(v, updated) for v in values]
+
+
+def _upsert_add_updated_to_mapping(  # skipif-ci-in-environ
+    value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
+) -> Mapping[str, Any]:
+    return {**value, **updated_at}
+
+
+def _upsert_apply_on_conflict_do_update(
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
+    insert: postgresql_Insert | sqlite_Insert,
+    primary_key: PrimaryKeyConstraint,
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    match selected_or_all:
+        case "selected":
+            if isinstance(values, Mapping):
+                columns = set(values)
+            else:
+                columns = one(set(map(frozenset, values)))
+        case "all":
+            columns = {c.name for c in insert.excluded}
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    set_ = {c: getattr(insert.excluded, c) for c in columns}
+    match insert:
+        case postgresql_Insert():
+            return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
+        case sqlite_Insert():
+            return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+@dataclass(kw_only=True)
+class UpsertError(Exception):
+    item: Any
+    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
+
+    @override
+    def __str__(self) -> str:  # skipif-ci-in-environ
+        return f"Unsupported item and values; got {self.item} and {self.values}"
+
+
 @contextmanager
 def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
     """Yield a synchronous connection."""
@@ -1295,6 +1442,7 @@ __all__ = [
     "PostgresUpsertError",
     "SqliteUpsertError",
     "TablenameMixin",
+    "UpsertError",
     "check_engine",
     "check_table_against_reflection",
     "columnwise_max",
@@ -1320,6 +1468,7 @@ __all__ = [
     "postgres_upsert",
     "serialize_engine",
     "sqlite_upsert",
+    "upsert",
     "yield_connection",
     "yield_connection_async",
     "yield_primary_key_columns",
