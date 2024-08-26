@@ -54,6 +54,7 @@ from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -697,7 +698,9 @@ def get_dialect(
         return Dialect.mysql
     if isinstance(dialect, oracle_dialect):  # pragma: no cover
         return Dialect.oracle
-    if isinstance(dialect, postgresql_dialect):  # skipif-ci-and-not-linux
+    if isinstance(  # skipif-ci-and-not-linux
+        dialect, postgresql_dialect | PGDialect_asyncpg
+    ):
         return Dialect.postgresql
     if isinstance(dialect, sqlite_dialect):
         return Dialect.sqlite
