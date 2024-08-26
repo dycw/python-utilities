@@ -3,7 +3,6 @@ from __future__ import annotations
 import enum
 from enum import auto
 from re import escape
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
@@ -57,7 +56,6 @@ from sqlalchemy import (
     Double,
     Engine,
     Float,
-    Insert,
     Integer,
     Interval,
     LargeBinary,
@@ -154,7 +152,6 @@ from utilities.sqlalchemy import (
     is_table_or_mapped_class,
     mapped_class_to_dict,
     parse_engine,
-    postgres_upsert,
     reflect_table,
     serialize_engine,
     upsert,
@@ -1594,87 +1591,6 @@ class TestPostgresEngine:
         assert set(res) == ids
 
 
-@SKIPIF_CI
-class TestPostgresUpsert:
-    @given(id_=integers(0, 10), old=booleans(), new=booleans())
-    @settings(max_examples=1, phases={Phase.generate})
-    def test_mapping_updated(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        id_: int,
-        old: bool,
-        new: bool,
-    ) -> None:
-        metadata = MetaData()
-        table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mapping_updated.__name__}",
-            metadata,
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-            Column(
-                "updated_at",
-                DateTime(timezone=True),
-                server_default=func.now(),
-                onupdate=func.now(),
-            ),
-        )
-        engine = create_postgres_engine(table)
-        ups = postgres_upsert(table, values={"id_": id_, "value": old})
-        _, _, update1 = one(self._run_upsert(engine, table, ups))
-        sleep(0.1)
-        ups = postgres_upsert(table, values={"id_": id_, "value": new})
-        _, _, update2 = one(self._run_upsert(engine, table, ups))
-        assert update1 < update2
-
-    @given(data=data(), ids=sets(integers(0, 10)))
-    @settings(max_examples=1, phases={Phase.generate})
-    def test_mappings_updated(
-        self,
-        *,
-        create_postgres_engine: Callable[..., Engine],
-        data: DataObject,
-        ids: set[int],
-    ) -> None:
-        metadata = MetaData()
-        table = Table(
-            f"test_{get_class_name(TestPostgresUpsert)}_{TestPostgresUpsert.test_mappings_updated.__name__}",
-            metadata,
-            Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=True),
-            Column(
-                "updated_at",
-                DateTime(timezone=True),
-                server_default=func.now(),
-                onupdate=func.now(),
-            ),
-        )
-        engine = create_postgres_engine(table)
-        old = data.draw(lists_fixed_length(booleans(), len(ids)))
-        old_values = [
-            {"id_": id_, "value": v} for (id_, v) in zip(ids, old, strict=True)
-        ]
-        with assume_does_not_raise(OneEmptyError):
-            ups = postgres_upsert(table, values=old_values)
-        _, _, update1 = one(self._run_upsert(engine, table, ups))
-        sleep(0.1)
-        new = data.draw(lists_fixed_length(booleans(), len(ids)))
-        new_values = [
-            {"id_": id_, "value": v} for (id_, v) in zip(ids, new, strict=True)
-        ]
-        ups = postgres_upsert(table, values=new_values)
-        _, _, update2 = one(self._run_upsert(engine, table, ups))
-        assert update1 < update2
-
-    def _run_upsert(
-        self, engine: Engine, table: Any, ups: Insert
-    ) -> Sequence[Row[Any]]:
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            return conn.execute(select(table)).all()
-
-
 class TestRedirectToNoSuchSequenceError:
     @given(engine=sqlite_engines())
     def test_main(self, *, engine: Engine) -> None:
@@ -1730,11 +1646,10 @@ class TestTablenameMixin:
         assert get_table_name(Example) == "example"
 
 
-@mark.only
 class TestUpsert:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_mapping(
         self,
         *,
@@ -1772,7 +1687,7 @@ class TestUpsert:
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
     @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_mappings(
         self,
         *,
@@ -1816,7 +1731,7 @@ class TestUpsert:
         assert result2 == expected2
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_mapped_class(
         self,
         *,
@@ -1849,7 +1764,7 @@ class TestUpsert:
         assert result2 == expected2
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_mapped_classes(
         self,
         *,
@@ -1902,7 +1817,7 @@ class TestUpsert:
         y=booleans(),
     )
     @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     def test_selected_or_all_table(
         self,
@@ -1981,7 +1896,7 @@ class TestUpsert:
         x_post=booleans(),
         y=booleans(),
     )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     def test_selected_or_all_mapped_class(
         self,
@@ -2031,7 +1946,7 @@ class TestUpsert:
 
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres")])
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_error(
         self,
         *,

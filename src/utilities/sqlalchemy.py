@@ -1019,112 +1019,6 @@ def parse_engine(engine: str, /) -> Engine:
 class ParseEngineError(Exception): ...
 
 
-@overload
-def postgres_upsert(
-    item: Table | type[DeclarativeBase],
-    /,
-    *,
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-@overload
-def postgres_upsert(
-    item: DeclarativeBase | Sequence[DeclarativeBase],
-    /,
-    *,
-    values: None = None,
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-def postgres_upsert(  # skipif-ci-in-environ
-    item: Any,
-    /,
-    *,
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    """Upsert statement for a database (postgres only).
-
-    These can be:
-
-    - tuple[Table, Mapping[str, Any]]
-    - tuple[Table, Sequence[Mapping[str, Any]]]
-    - Model
-    - Sequence[Model]
-    """
-    if (
-        isinstance(item, Table)
-        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
-    ) and (values is not None):
-        return _postgres_upsert_core(item, values, selected_or_all=selected_or_all)
-    if is_mapped_class(item) and (values is None):
-        table = get_table(item)
-        mappings = [mapped_class_to_dict(item)]
-    elif (
-        is_iterable_not_str(item)
-        and all(map(is_mapped_class, item))
-        and (values is None)
-    ):
-        table = one(set(map(get_table, item)))
-        mappings = map(mapped_class_to_dict, item)
-    else:
-        raise PostgresUpsertError(item=item, values=values)
-    mappings2 = [{k: v for k, v in m.items() if v is not None} for m in mappings]
-    return _postgres_upsert_core(table, mappings2, selected_or_all=selected_or_all)
-
-
-def _postgres_upsert_core(  # skipif-ci-in-environ
-    table_or_mapped_class: Table | type[DeclarativeBase],
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    table = get_table(table_or_mapped_class)
-    if (updated_col := get_table_updated_column(table)) is not None:
-        updated_mapping = {updated_col: get_now()}
-        values = _postgres_upsert_add_updated(values, updated_mapping)
-    constraint = cast(Any, table.primary_key)
-    ins = postgresql_insert(table).values(values)
-    if selected_or_all == "selected":
-        if isinstance(values, Mapping):
-            columns = set(values)
-        else:
-            all_columns = set(map(frozenset, values))
-            columns = one(all_columns)
-    elif selected_or_all == "all":
-        columns = {c.name for c in ins.excluded}
-    else:
-        assert_never(selected_or_all)
-    set_ = {c: getattr(ins.excluded, c) for c in columns}
-    return ins.on_conflict_do_update(constraint=constraint, set_=set_)
-
-
-def _postgres_upsert_add_updated(  # skipif-ci-in-environ
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    updated: Mapping[str, dt.datetime],
-    /,
-) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
-    if isinstance(values, Mapping):
-        return _postgres_upsert_add_updated_to_mapping(values, updated)
-    return [_postgres_upsert_add_updated_to_mapping(v, updated) for v in values]
-
-
-def _postgres_upsert_add_updated_to_mapping(  # skipif-ci-in-environ
-    value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
-) -> Mapping[str, Any]:
-    return {**value, **updated_at}
-
-
-@dataclass(kw_only=True)
-class PostgresUpsertError(Exception):
-    item: Any
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
-
-    @override
-    def __str__(self) -> str:  # skipif-ci-in-environ
-        return f"Unsupported item and values; got {self.item} and {self.values}"
-
-
 def reflect_table(
     table_or_mapped_class: Table | type[DeclarativeBase],
     engine: Engine,
@@ -1142,112 +1036,6 @@ def reflect_table(
 def serialize_engine(engine: Engine, /) -> str:
     """Serialize an Engine."""
     return engine.url.render_as_string(hide_password=False)
-
-
-@overload
-def sqlite_upsert(
-    item: Table | type[DeclarativeBase],
-    /,
-    *,
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-@overload
-def sqlite_upsert(
-    item: DeclarativeBase | Sequence[DeclarativeBase],
-    /,
-    *,
-    values: None = None,
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-def sqlite_upsert(  # skipif-ci-in-environ
-    item: Any,
-    /,
-    *,
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    """Upsert statement for a database (sqlite only).
-
-    These can be:
-
-    - tuple[Table, Mapping[str, Any]]
-    - tuple[Table, Sequence[Mapping[str, Any]]]
-    - Model
-    - Sequence[Model]
-    """
-    if (
-        isinstance(item, Table)
-        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
-    ) and (values is not None):
-        return _sqlite_upsert_core(item, values, selected_or_all=selected_or_all)
-    if is_mapped_class(item) and (values is None):
-        table = get_table(item)
-        mappings = [mapped_class_to_dict(item)]
-    elif (
-        is_iterable_not_str(item)
-        and all(map(is_mapped_class, item))
-        and (values is None)
-    ):
-        table = one(set(map(get_table, item)))
-        mappings = map(mapped_class_to_dict, item)
-    else:
-        raise SqliteUpsertError(item=item, values=values)
-    mappings2 = [{k: v for k, v in m.items() if v is not None} for m in mappings]
-    return _sqlite_upsert_core(table, mappings2, selected_or_all=selected_or_all)
-
-
-def _sqlite_upsert_core(  # skipif-ci-in-environ
-    table_or_mapped_class: Table | type[DeclarativeBase],
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    table = get_table(table_or_mapped_class)
-    if (updated_col := get_table_updated_column(table)) is not None:
-        updated_mapping = {updated_col: get_now()}
-        values = _sqlite_upsert_add_updated(values, updated_mapping)
-    index_elements = cast(Any, table.primary_key)
-    ins = sqlite_insert(table).values(values)
-    if selected_or_all == "selected":
-        if isinstance(values, Mapping):
-            columns = set(values)
-        else:
-            all_columns = set(map(frozenset, values))
-            columns = one(all_columns)
-    elif selected_or_all == "all":
-        columns = {c.name for c in ins.excluded}
-    else:
-        assert_never(selected_or_all)
-    set_ = {c: getattr(ins.excluded, c) for c in columns}
-    return ins.on_conflict_do_update(index_elements=index_elements, set_=set_)
-
-
-def _sqlite_upsert_add_updated(  # skipif-ci-in-environ
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
-    updated: Mapping[str, dt.datetime],
-    /,
-) -> Mapping[str, Any] | Sequence[Mapping[str, Any]]:
-    if isinstance(values, Mapping):
-        return _sqlite_upsert_add_updated_to_mapping(values, updated)
-    return [_sqlite_upsert_add_updated_to_mapping(v, updated) for v in values]
-
-
-def _sqlite_upsert_add_updated_to_mapping(  # skipif-ci-in-environ
-    value: Mapping[str, Any], updated_at: Mapping[str, dt.datetime], /
-) -> Mapping[str, Any]:
-    return {**value, **updated_at}
-
-
-@dataclass(kw_only=True)
-class SqliteUpsertError(Exception):
-    item: Any
-    values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None
-
-    @override
-    def __str__(self) -> str:  # skipif-ci-in-environ
-        return f"Unsupported item and values; got {self.item} and {self.values}"
 
 
 class TablenameMixin:
@@ -1439,8 +1227,6 @@ __all__ = [
     "GetDialectError",
     "GetTableError",
     "ParseEngineError",
-    "PostgresUpsertError",
-    "SqliteUpsertError",
     "TablenameMixin",
     "UpsertError",
     "check_engine",
@@ -1465,9 +1251,7 @@ __all__ = [
     "is_table_or_mapped_class",
     "mapped_class_to_dict",
     "parse_engine",
-    "postgres_upsert",
     "serialize_engine",
-    "sqlite_upsert",
     "upsert",
     "yield_connection",
     "yield_connection_async",
