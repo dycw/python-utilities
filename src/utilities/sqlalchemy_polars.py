@@ -45,6 +45,7 @@ from utilities.polars import (
 )
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
+    TableOrMappedClass,
     ensure_tables_created,
     ensure_tables_created_async,
     get_chunk_size,
@@ -75,7 +76,7 @@ if TYPE_CHECKING:
 
 def insert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: Table | type[DeclarativeBase],
+    table_or_mapped_class: TableOrMappedClass,
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -100,7 +101,7 @@ def insert_dataframe(
 
 async def insert_dataframe_async(
     df: DataFrame,
-    table_or_mapped_class: Table | type[DeclarativeBase],
+    table_or_mapped_class: TableOrMappedClass,
     engine: AsyncEngine,
     /,
     *,
@@ -158,7 +159,7 @@ class InsertDataFrameError(Exception):
 
 def _insert_dataframe_map_df_schema_to_table(
     df_schema: SchemaDict,
-    table_or_mapped_class: Table | type[DeclarativeBase],
+    table_or_mapped_class: TableOrMappedClass,
     /,
     *,
     snake: bool = False,
@@ -578,7 +579,7 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
 
 def upsert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: Table | type[DeclarativeBase],
+    table_or_mapped_class: TableOrMappedClass,
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -604,7 +605,7 @@ def upsert_dataframe(
 
 async def upsert_dataframe_async(
     df: DataFrame,
-    table_or_mapped_class: Table | type[DeclarativeBase],
+    table_or_mapped_class: TableOrMappedClass,
     engine: AsyncEngine,
     /,
     *,

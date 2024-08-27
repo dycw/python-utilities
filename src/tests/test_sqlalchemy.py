@@ -127,11 +127,11 @@ from utilities.sqlalchemy import (
     _CheckColumnTypesStringEqualError,
     _CheckColumnTypesUuidEqualError,
     _CheckTableOrColumnNamesEqualError,
-    _insert_items_collect,
     _insert_items_collect_iterable,
-    _insert_items_collect_valid,
-    _InsertionItem,
+    _insert_items_is_tuple_or_mapping,
+    _insert_items_normalize,
     _InsertItem,
+    _InsertItemPair,
     _InsertItemsCollectError,
     _InsertItemsCollectIterableError,
     check_engine,
@@ -886,7 +886,7 @@ class TestEnsureTablesCreated:
     def _run_test_sync(
         self,
         engine_or_conn: Engine | Connection,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         /,
         *,
         use_conn: bool = False,
@@ -904,7 +904,7 @@ class TestEnsureTablesCreated:
     async def _run_test_async(
         self,
         engine_or_conn: AsyncEngine | AsyncConnection,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         /,
         *,
         use_conn: bool = False,
@@ -919,9 +919,7 @@ class TestEnsureTablesCreated:
         async with yield_connection_async(engine_or_conn) as conn:
             _ = (await conn.execute(sel)).all()
 
-    def _get_select(
-        self, table_or_mapped_class: Table | type[DeclarativeBase], /
-    ) -> Select[Any]:
+    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
         return select(get_table(table_or_mapped_class))
 
 
@@ -946,7 +944,7 @@ class TestEnsureTablesDropped:
 
     def _run_test(
         self,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         engine: Engine,
         runs: int,
         /,
@@ -1001,9 +999,7 @@ class TestGetColumnNames:
 
         self._run_test(Example)
 
-    def _run_test(
-        self, table_or_mapped_class: Table | type[DeclarativeBase], /
-    ) -> None:
+    def _run_test(self, table_or_mapped_class: TableOrMappedClass, /) -> None:
         assert get_column_names(table_or_mapped_class) == ["id_"]
 
 
@@ -1022,9 +1018,7 @@ class TestGetColumns:
 
         self._run_test(Example)
 
-    def _run_test(
-        self, table_or_mapped_class: Table | type[DeclarativeBase], /
-    ) -> None:
+    def _run_test(self, table_or_mapped_class: TableOrMappedClass, /) -> None:
         columns = get_columns(table_or_mapped_class)
         assert isinstance(columns, list)
         assert len(columns) == 1
@@ -1226,10 +1220,7 @@ class TestInsertItems:
         self, *, engine: Engine, ids: set[int], use_conn: bool
     ) -> None:
         self._run_test_sync(
-            engine,
-            ids,
-            [self._mapped_class(id_=id_) for id_ in ids],
-            use_conn=use_conn,
+            engine, ids, [self._mapped_class(id_=id_) for id_ in ids], use_conn=use_conn
         )
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
@@ -1322,10 +1313,7 @@ class TestInsertItems:
     ) -> None:
         engine = await aiosqlite_engines(data)
         await self._run_test_async(
-            engine,
-            ids,
-            [self._mapped_class(id_=id_) for id_ in ids],
-            use_conn=use_conn,
+            engine, ids, [self._mapped_class(id_=id_) for id_ in ids], use_conn=use_conn
         )
 
     @given(data=data(), id_=integers(0, 10))
@@ -1413,9 +1401,7 @@ class TestInsertItems:
             results = (await conn.execute(sel)).scalars().all()
         self._assert_results(results, ids)
 
-    def _get_select(
-        self, table_or_mapped_class: Table | type[DeclarativeBase], /
-    ) -> Select[Any]:
+    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 
     def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:
@@ -1432,8 +1418,8 @@ class TestInsertItemsCollect:
                 values = (id_,)
             case "dict":
                 values = {"id": id_}
-        result = list(_insert_items_collect((values, table)))
-        expected = [_InsertionItem(values=values, table=table)]
+        result = list(_insert_items_normalize((values, table)))
+        expected = [_InsertItemPair(values=values, table=table)]
         assert result == expected
 
     @given(ids=sets(integers()))
@@ -1471,8 +1457,8 @@ class TestInsertItemsCollect:
             case "list_of_pairs_of_dicts":
                 item = [({"id_": id_}, table) for id_ in ids]
                 values = [{"id_": id_} for id_ in ids]
-        result = list(_insert_items_collect(item))
-        expected = [_InsertionItem(values=v, table=table) for v in values]
+        result = list(_insert_items_normalize(item))
+        expected = [_InsertItemPair(values=v, table=table) for v in values]
         assert result == expected
 
     @given(id_=integers())
@@ -1485,8 +1471,8 @@ class TestInsertItemsCollect:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         item = Example(id_=id_)
-        result = list(_insert_items_collect(item))
-        expected = [_InsertionItem(values={"id_": id_}, table=get_table(Example))]
+        result = list(_insert_items_normalize(item))
+        expected = [_InsertItemPair(values={"id_": id_}, table=get_table(Example))]
         assert result == expected
 
     @mark.parametrize(
@@ -1501,13 +1487,13 @@ class TestInsertItemsCollect:
     )
     def test_errors(self, *, item: Any, match: str) -> None:
         with raises(_InsertItemsCollectError, match=escape(match)):
-            _ = list(_insert_items_collect(item))
+            _ = list(_insert_items_normalize(item))
 
     def test_error_tuple_but_first_argument_invalid(self) -> None:
         with raises(
             _InsertItemsCollectError, match="First element must be valid; got None"
         ):
-            _ = list(_insert_items_collect((None, self._table())))
+            _ = list(_insert_items_normalize((None, self._table())))
 
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
@@ -1526,7 +1512,7 @@ class TestInsertItemsCollectIterable:
                 items = [{"id": id_} for id_ in ids]
                 exp_values = [{"id": id_} for id_ in ids]
         result = list(_insert_items_collect_iterable(items, table))
-        expected = [_InsertionItem(values=v, table=table) for v in exp_values]
+        expected = [_InsertItemPair(values=v, table=table) for v in exp_values]
         assert result == expected
 
     def test_error(self) -> None:
@@ -1551,7 +1537,7 @@ class TestInsertItemsCollectValid:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _insert_items_collect_valid(obj)
+        result = _insert_items_is_tuple_or_mapping(obj)
         assert result is expected
 
 
@@ -2110,7 +2096,7 @@ class TestUpsert:
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
-    ) -> Table | type[DeclarativeBase]:
+    ) -> TableOrMappedClass:
         match case:
             case "table":
                 return Table(
@@ -2139,7 +2125,7 @@ class TestUpsert:
         self,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         /,
         *,
         dialect: Literal["sqlite", "postgres"],
@@ -2154,7 +2140,7 @@ class TestUpsert:
     def _run_upsert_one(
         self,
         engine: Engine,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         item: Any,
         /,
         *,
@@ -2174,7 +2160,7 @@ class TestUpsert:
     def _run_upsert(
         self,
         engine: Engine,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         item: Any,
         /,
         *,

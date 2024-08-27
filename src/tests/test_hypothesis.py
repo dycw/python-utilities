@@ -597,7 +597,7 @@ class TestSQLiteEngines:
     def _run_test_sync(
         self,
         engine: Engine,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         ids: set[int],
         /,
     ) -> None:
@@ -610,7 +610,7 @@ class TestSQLiteEngines:
     async def _run_test_async(
         self,
         engine: AsyncEngine,
-        table_or_mapped_class: Table | type[DeclarativeBase],
+        table_or_mapped_class: TableOrMappedClass,
         ids: set[int],
         /,
     ) -> None:
@@ -623,7 +623,7 @@ class TestSQLiteEngines:
         self._assert_results(res, ids)
 
     def _get_select(
-        self, table_or_mapped_class: Table | type[DeclarativeBase], /
+        self, table_or_mapped_class: TableOrMappedClass, /
     ) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 

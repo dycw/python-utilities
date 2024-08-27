@@ -43,7 +43,7 @@ else:
     def create_postgres_engine() -> Callable[..., Engine]:
         """Create a Postgres engine."""
 
-        def inner(*tables_or_mapped_classes: Table | type[DeclarativeBase]) -> Engine:
+        def inner(*tables_or_mapped_classes: TableOrMappedClass) -> Engine:
             from utilities.sqlalchemy import (
                 create_engine,
                 ensure_tables_created,
