@@ -919,7 +919,7 @@ class InsertItemsAsyncError(Exception):
 
 
 @dataclass(frozen=True, kw_only=True)
-class _InsertItemsPrepare:
+class _PreInsertUpsertItems:
     tables: Sequence[Table]
     yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
 
@@ -931,7 +931,7 @@ def _insert_items_prepare(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     kind: Literal["insert", "upsert"] = "insert",
     selected_or_all: Literal["selected", "all"] = "selected",
-) -> _InsertItemsPrepare:
+) -> _PreInsertUpsertItems:
     """Prepare the arguments for `insert_items`."""
     mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
@@ -941,7 +941,7 @@ def _insert_items_prepare(
                 values = normed.values
                 mapping[normed.table].append(values)
                 lengths.add(len(values))
-    except _NormalizeInsertItemError as error:
+    except NormalizeInsertItemError as error:
         raise _InsertItemsPrepareError(item=error.item) from None
     tables = list(mapping)
     max_length = max(lengths, default=1)
@@ -975,7 +975,7 @@ def _insert_items_prepare(
                     )
                     yield ups, None
 
-    return _InsertItemsPrepare(tables=tables, yield_pairs=yield_pairs)
+    return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
 
 
 @dataclass(kw_only=True)
@@ -1056,11 +1056,7 @@ def normalize_insert_item(
 ) -> Iterator[_NormalizedInsertItem[tuple[Any, ...]]]: ...
 @overload
 def normalize_insert_item(
-    item: _PairOfDictAndTable
-    | _PairOfListOfDictsAndTable
-    | _ListOfPairOfDictAndTable
-    | MaybeIterable[DeclarativeBase],
-    /,
+    item: _UpsertItem, /
 ) -> Iterator[_NormalizedInsertItem[StrMapping]]: ...
 def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem[Any]]:
     """Normalize an insertion item."""
@@ -1114,12 +1110,45 @@ def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIte
             )
         return
 
-    raise _NormalizeInsertItemError(item=item)
+    raise NormalizeInsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
-class _NormalizeInsertItemError(Exception):
+class NormalizeInsertItemError(Exception):
     item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
+
+
+def normalize_upsert_item(
+    item: _UpsertItem,
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Iterator[_NormalizedInsertItem[StrMapping]]:
+    """Normalize an upsert item."""
+    normalized = normalize_insert_item(item)
+    try:
+        match selected_or_all:
+            case "selected":
+                for normed in normalized:
+                    yield _NormalizedInsertItem(
+                        values={
+                            k: v for k, v in normed.values.items() if v is not None
+                        },
+                        table=normed.table,
+                    )
+            case "all":
+                yield from normalized
+    except NormalizeInsertItemError as error:
+        raise NormalizeUpsertItemError(item=error.item) from None
+
+
+@dataclass(kw_only=True)
+class NormalizeUpsertItemError(Exception):
+    item: _UpsertItem
 
     @override
     def __str__(self) -> str:
@@ -1170,7 +1199,7 @@ def upsert(
     item: TableOrMappedClass,
     /,
     *,
-    values: StrMapping | Sequence[StrMapping],
+    values: MaybeIterable[StrMapping],
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
 @overload
@@ -1187,7 +1216,7 @@ def upsert(  # skipif-ci-in-environ
     item: Any,
     /,
     *,
-    values: StrMapping | Sequence[StrMapping] | None = None,
+    values: MaybeIterable[StrMapping] | None = None,
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
     """Upsert statement for a database.
@@ -1205,14 +1234,7 @@ def upsert(  # skipif-ci-in-environ
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    breakpoint()
-
     if is_table_or_mapped_class(item) and (values is not None):
-        #     pass
-        # if (
-        #     isinstance(item, Table)
-        #     or (isinstance(item, type) and issubclass(item, DeclarativeBase))
-        # ) and (values is not None):
         return _upsert_core(
             engine_or_conn, item, values, selected_or_all=selected_or_all
         )
@@ -1228,8 +1250,6 @@ def upsert(  # skipif-ci-in-environ
         mappings = map(mapped_class_to_dict, item)
     else:
         raise UpsertError(item=item, values=values)
-    breakpoint()
-
     values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
     return _upsert_core(
         engine_or_conn, table, values_use, selected_or_all=selected_or_all
@@ -1299,8 +1319,6 @@ def _upsert_apply_on_conflict_do_update(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     set_ = {c: getattr(insert.excluded, c) for c in columns}
-    breakpoint()
-
     match insert:
         case postgresql_Insert():  # skipif-ci
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
@@ -1352,11 +1370,10 @@ def upsert_items(
                                                ...]
     """
     try:
-        prepared = _insert_items_prepare(
+        prepared = _upsert_items_prepare(
             engine_or_conn,
             *items,
             chunk_size_frac=chunk_size_frac,
-            kind="upsert",
             selected_or_all=selected_or_all,
         )
     except _InsertItemsPrepareError as error:
@@ -1366,6 +1383,57 @@ def upsert_items(
     for ins, parameters in prepared.yield_pairs():
         with yield_connection(engine_or_conn) as conn:
             _ = conn.execute(ins, parameters=parameters)
+
+
+def _upsert_items_prepare(
+    engine_or_conn: MaybeAsyncEngineOrConnection,
+    /,
+    *items: _UpsertItem,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> _PreInsertUpsertItems:
+    """Prepare the arguments for `insert_items`."""
+    mapping: dict[Table, list[StrMapping]] = defaultdict(list)
+    lengths: set[int] = set()
+    try:
+        for item in items:
+            for normed in normalize_upsert_item(item, selected_or_all=selected_or_all):
+                values = normed.values
+                mapping[normed.table].append(values)
+                lengths.add(len(values))
+    except NormalizeUpsertItemError as error:
+        raise _UpsertItemsPrepareError(item=error.item) from None
+    tables = list(mapping)
+    max_length = max(lengths, default=1)
+    chunk_size = get_chunk_size(
+        engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
+    )
+
+    def yield_tables_and_chunks() -> Iterator[tuple[Table, Iterable[StrMapping]]]:
+        for table, values in mapping.items():
+            for chunk in chunked(values, chunk_size):
+                yield table, chunk
+
+    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
+        for table, values in yield_tables_and_chunks():
+            ups = upsert(
+                engine_or_conn,
+                table,
+                values=values,
+                selected_or_all=selected_or_all,
+            )
+            yield ups, None
+
+    return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
+
+
+@dataclass(kw_only=True)
+class _UpsertItemsPrepareError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 @dataclass(kw_only=True)
@@ -1450,6 +1518,7 @@ __all__ = [
     "GetTableError",
     "InsertItemsAsyncError",
     "InsertItemsError",
+    "NormalizeInsertItemError",
     "ParseEngineError",
     "TablenameMixin",
     "UpsertError",
@@ -1476,6 +1545,7 @@ __all__ = [
     "is_table_or_mapped_class",
     "is_tuple_or_string_mapping",
     "mapped_class_to_dict",
+    "normalize_insert_item",
     "parse_engine",
     "serialize_engine",
     "upsert",

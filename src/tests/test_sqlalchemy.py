@@ -101,6 +101,7 @@ from utilities.sqlalchemy import (
     GetTableError,
     InsertItemsAsyncError,
     InsertItemsError,
+    NormalizeInsertItemError,
     ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
@@ -135,7 +136,6 @@ from utilities.sqlalchemy import (
     _CheckTableOrColumnNamesEqualError,
     _InsertItem,
     _NormalizedInsertItem,
-    _NormalizeInsertItemError,
     _UpsertItem,
     check_engine,
     check_table_against_reflection,
@@ -1621,7 +1621,7 @@ class TestNormalizeInsertItem:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(_NormalizeInsertItemError, match="Item must be valid; got .*"):
+        with raises(NormalizeInsertItemError, match="Item must be valid; got .*"):
             _ = list(normalize_insert_item(item))
 
     def _table(self) -> Table:
@@ -1964,6 +1964,8 @@ class TestUpsert:
         x_post=booleans(),
         y=booleans(),
     )
+    @mark.only
+    @reproduce_failure("6.111.2", b"AXicY2BAAgAADQAB")
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     def test_sel_or_all_mapped_class(
@@ -1979,6 +1981,7 @@ class TestUpsert:
         y: bool,
     ) -> None:
         name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_mapped_class.__name__}_{dialect[:3]}_{selected_or_all[:3]}"
+        id_, x_init, x_post, y = 0, False, False, False
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -2435,6 +2438,7 @@ class TestUpsertItems:
         x_post=booleans(),
         y=booleans(),
     )
+    @mark.only
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     @reproduce_failure("6.111.2", b"AXicY2BAAgAADQAB")
@@ -2473,8 +2477,6 @@ class TestUpsertItems:
             selected_or_all=selected_or_all,
             expected={(id_, x_init, y)},
         )
-        breakpoint()  # !!!!!
-
         match selected_or_all:
             case "selected":
                 expected2 = (id_, x_post, y)
@@ -2641,8 +2643,6 @@ class TestUpsertItems:
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> Sequence[Row[Any]]:
-        breakpoint()
-
         upsert_items(
             engine_or_conn,
             *items,
