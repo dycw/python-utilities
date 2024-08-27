@@ -8,7 +8,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, settings
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -2109,7 +2109,9 @@ class TestUpsert:
             table_or_mapped_class,
             dialect=dialect,
         )
-        with raises(UpsertError, match="Item must be valid; got None"):
+        with raises(
+            UpsertError, match="Unsupported item and values; got None and None"
+        ):
             _ = self._run_upsert(engine, table_or_mapped_class, cast(Any, None))
 
     def _get_table_or_mapped_class(
@@ -2435,6 +2437,7 @@ class TestUpsertItems:
     )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    @reproduce_failure("6.111.2", b"AXicY2BAAgAADQAB")
     def test_sel_or_all_mapped_class(
         self,
         *,
@@ -2470,6 +2473,8 @@ class TestUpsertItems:
             selected_or_all=selected_or_all,
             expected={(id_, x_init, y)},
         )
+        breakpoint()  # !!!!!
+
         match selected_or_all:
             case "selected":
                 expected2 = (id_, x_post, y)
@@ -2636,6 +2641,8 @@ class TestUpsertItems:
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> Sequence[Row[Any]]:
+        breakpoint()
+
         upsert_items(
             engine_or_conn,
             *items,

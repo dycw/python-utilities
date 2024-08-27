@@ -1205,10 +1205,14 @@ def upsert(  # skipif-ci-in-environ
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    if (
-        isinstance(item, Table)
-        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
-    ) and (values is not None):
+    breakpoint()
+
+    if is_table_or_mapped_class(item) and (values is not None):
+        #     pass
+        # if (
+        #     isinstance(item, Table)
+        #     or (isinstance(item, type) and issubclass(item, DeclarativeBase))
+        # ) and (values is not None):
         return _upsert_core(
             engine_or_conn, item, values, selected_or_all=selected_or_all
         )
@@ -1224,6 +1228,8 @@ def upsert(  # skipif-ci-in-environ
         mappings = map(mapped_class_to_dict, item)
     else:
         raise UpsertError(item=item, values=values)
+    breakpoint()
+    
     values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
     return _upsert_core(
         engine_or_conn, table, values_use, selected_or_all=selected_or_all
