@@ -104,6 +104,7 @@ from utilities.sqlalchemy import (
     TablenameMixin,
     TableOrMappedClass,
     UpsertError,
+    UpsertItemsAsyncError,
     UpsertItemsError,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -2479,7 +2480,7 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
-        with raises(UpsertItemsError, match="Item must be valid; got None"):
+        with raises(UpsertItemsAsyncError, match="Item must be valid; got None"):
             _ = await self._run_test_async(engine, table, cast(Any, None))
 
     def _get_table(self, name: str, /) -> Table:
