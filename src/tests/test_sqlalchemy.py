@@ -23,7 +23,6 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
-from pyarrow import MetadataVersion
 from pytest import mark, param, raises
 from sqlalchemy import (
     BIGINT,
@@ -95,8 +94,10 @@ from utilities.hypothesis import (
 from utilities.iterables import OneEmptyError, one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
+    AsyncEngineOrConnection,
     CheckEngineError,
     Dialect,
+    EngineOrConnection,
     GetTableError,
     ParseEngineError,
     TablenameMixin,
@@ -944,11 +945,7 @@ class TestEnsureTablesDropped:
         self._run_test(Example, engine, runs)
 
     def _run_test(
-        self,
-        table_or_mapped_class: TableOrMappedClass,
-        engine: Engine,
-        runs: int,
-        /,
+        self, table_or_mapped_class: TableOrMappedClass, engine: Engine, runs: int, /
     ) -> None:
         table = get_table(table_or_mapped_class)
         with engine.begin() as conn:
@@ -1410,7 +1407,6 @@ class TestInsertItems:
 
 
 class TestIsInsertItemPair:
-    @mark.only
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -1599,10 +1595,7 @@ class TestNormalizeInsertItem:
             param(
                 (None, Table("example", MetaData())), id="pair, first element invalid"
             ),
-            param(
-                ((1, 2, 3), None),
-                id="pair, second element invalid",
-            ),
+            param(((1, 2, 3), None), id="pair, second element invalid"),
             param([None], id="iterable, invalid"),
             param(None, id="outright invalid"),
         ],

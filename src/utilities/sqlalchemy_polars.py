@@ -24,7 +24,7 @@ from polars import (
     read_database,
 )
 from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
-from sqlalchemy import Column, Connection, Engine, Select, Table, select
+from sqlalchemy import Column, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
@@ -45,6 +45,8 @@ from utilities.polars import (
 )
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
+    EngineOrConnection,
+    MaybeAsyncEngineOrConnection,
     TableOrMappedClass,
     ensure_tables_created,
     ensure_tables_created_async,
@@ -68,7 +70,6 @@ if TYPE_CHECKING:
     )
     from zoneinfo import ZoneInfo
 
-    from sqlalchemy.ext.asyncio import AsyncConnection
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 

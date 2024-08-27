@@ -61,7 +61,6 @@ from sqlalchemy import (
     VARCHAR,
     BigInteger,
     Column,
-    Connection,
     DateTime,
     Double,
     Engine,
