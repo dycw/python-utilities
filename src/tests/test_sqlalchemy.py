@@ -1311,6 +1311,7 @@ class TestInsertItems:
                 item = [({"id_": id_}, self._table) for id_ in ids]
         await self._run_test_async(engine, ids, item, use_conn=use_conn)
 
+    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
     @mark.parametrize("use_conn", [param(True), param(False)])
     async def test_async_many_items(
         self, *, data: DataObject, ids: set[int], use_conn: bool
