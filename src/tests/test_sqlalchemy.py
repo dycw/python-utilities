@@ -1243,12 +1243,7 @@ class TestInsertItems:
     @mark.parametrize("use_conn", [param(True), param(False)])
     def test_sync_error(self, *, engine: Engine, use_conn: bool) -> None:
         with raises(InsertItemsError, match="Item must be valid; got None"):
-            self._run_test_sync(
-                engine,
-                set(),
-                cast(Any, None),
-                use_conn=use_conn,
-            )
+            self._run_test_sync(engine, set(), cast(Any, None), use_conn=use_conn)
 
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
@@ -1350,10 +1345,7 @@ class TestInsertItems:
         engine = await aiosqlite_engines(data)
         with raises(InsertItemsAsyncError, match="Item must be valid; got None"):
             await self._run_test_async(
-                engine,
-                set(),
-                cast(Any, None),
-                use_conn=use_conn,
+                engine, set(), cast(Any, None), use_conn=use_conn
             )
 
     @property
@@ -2117,10 +2109,8 @@ class TestUpsert:
             table_or_mapped_class,
             dialect=dialect,
         )
-        with raises(
-            UpsertError, match=escape("Unsupported item and values; got None and []")
-        ):
-            _ = self._run_upsert(engine, table_or_mapped_class, None, values=[])
+        with raises(UpsertError, match="Item must be valid; got None"):
+            _ = self._run_upsert(engine, table_or_mapped_class, cast(Any, None))
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
@@ -2309,16 +2299,10 @@ class TestUpsertItems:
         )
         id_, init, post = triple
         _ = self._run_test_sync(
-            engine,
-            Example,
-            Example(id_=id_, value=init),
-            expected={(id_, init)},
+            engine, Example, Example(id_=id_, value=init), expected={(id_, init)}
         )
         _ = self._run_test_sync(
-            engine,
-            Example,
-            Example(id_=id_, value=post),
-            expected={(id_, post)},
+            engine, Example, Example(id_=id_, value=post), expected={(id_, post)}
         )
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
@@ -2580,7 +2564,6 @@ class TestUpsertItems:
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.only
     def test_error(
         self,
         *,
@@ -2597,10 +2580,7 @@ class TestUpsertItems:
             table_or_mapped_class,
             dialect=dialect,
         )
-        with raises(
-            UpsertItemsError,
-            match="Unsupported item and values; got None",
-        ):
+        with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
 
     def _get_table_or_mapped_class(
