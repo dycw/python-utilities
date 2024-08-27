@@ -1308,16 +1308,6 @@ def _upsert_apply_on_conflict_do_update(
             assert_never(never)
 
 
-@dataclass(kw_only=True)
-class UpsertError(Exception):
-    item: Any
-    values: MaybeIterable[StrMapping] | None = None
-
-    @override
-    def __str__(self) -> str:  # skipif-ci-in-environ
-        return f"Unsupported item and values; got {self.item} and {self.values}"
-
-
 _UpsertItem = (
     _PairOfDictAndTable
     | _PairOfListOfDictsAndTable
@@ -1504,11 +1494,8 @@ __all__ = [
     "InsertItemsError",
     "ParseEngineError",
     "TablenameMixin",
-    "UpsertError",
     "UpsertItemsAsyncError",
     "UpsertItemsError",
-    "_normalize_insert_item",
-    "_normalize_upsert_item",
     "check_engine",
     "check_table_against_reflection",
     "columnwise_max",
