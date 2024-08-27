@@ -69,7 +69,12 @@ from utilities.hypothesis import (
 from utilities.math import MAX_INT32, MAX_INT64, MIN_INT32, MIN_INT64
 from utilities.os import temp_environ
 from utilities.platform import maybe_yield_lower_case
-from utilities.sqlalchemy import get_table, insert_items, insert_items_async
+from utilities.sqlalchemy import (
+    TableOrMappedClass,
+    get_table,
+    insert_items,
+    insert_items_async,
+)
 from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
