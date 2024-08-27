@@ -1560,7 +1560,7 @@ class TestNormalizeInsertItem:
     def test_pair_of_obj_and_table(
         self, *, case: Literal["tuple", "dict"], id_: int
     ) -> None:
-        table = self._table()
+        table = self._table
         match case:
             case "tuple":
                 item = (id_,), table
@@ -1575,7 +1575,7 @@ class TestNormalizeInsertItem:
     def test_pair_of_list_of_objs_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
-        table = self._table()
+        table = self._table
         match case:
             case "tuple":
                 item = [((id_,)) for id_ in ids], table
@@ -1590,7 +1590,7 @@ class TestNormalizeInsertItem:
     def test_list_of_pairs_of_objs_and_table(
         self, *, case: Literal["tuple", "dict"], ids: set[int]
     ) -> None:
-        table = self._table()
+        table = self._table
         match case:
             case "tuple":
                 item = [(((id_,), table)) for id_ in ids]
@@ -1602,16 +1602,19 @@ class TestNormalizeInsertItem:
 
     @given(id_=integers())
     def test_mapped_class(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        cls = self._mapped_class
+        result = one(normalize_insert_item(cls(id_=id_)))
+        expected = _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
+        assert result == expected
 
-        class Example(Base):
-            __tablename__ = "example"
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-
-        item = Example(id_=id_)
-        result = one(normalize_insert_item(item))
-        expected = _NormalizedInsertItem(values={"id_": id_}, table=get_table(Example))
+    @given(ids=sets(integers(0, 10), min_size=1))
+    def test_mapped_classes(self, *, ids: set[int]) -> None:
+        cls = self._mapped_class
+        result = [normalize_insert_item(cls(id_=id_)) for id_ in ids]
+        expected = [
+            _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
+            for id_ in ids
+        ]
         assert result == expected
 
     @mark.parametrize(
@@ -1630,37 +1633,12 @@ class TestNormalizeInsertItem:
         with raises(NormalizeInsertItemError, match="Item must be valid; got .*"):
             _ = list(normalize_insert_item(item))
 
+    @property
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
-
-class TestNormalizeUpsertItem:
-    @given(id_=integers())
-    def test_pair_of_dict_and_table(self, *, id_: int) -> None:
-        table = self._table()
-        item = {"id": id_}, table
-        result = one(normalize_upsert_item(item))
-        expected = _NormalizedUpsertItem(values=item[0], table=table)
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_pair_of_list_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table()
-        item = [({"id_": id_}) for id_ in ids], table
-        result = list(normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i, table=table) for i in item[0]]
-        assert result == expected
-
-    @given(ids=sets(integers()))
-    def test_list_of_pairs_of_dicts_and_table(self, *, ids: set[int]) -> None:
-        table = self._table()
-        item = [({"id_": id_}, table) for id_ in ids]
-        result = list(normalize_upsert_item(item))
-        expected = [_NormalizedUpsertItem(values=i[0], table=table) for i in item]
-        assert result == expected
-
-    @given(id_=integers())
-    def test_mapped_class(self, *, id_: int) -> None:
+    @property
+    def _mapped_class(self) -> type[DeclarativeBase]:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
         class Example(Base):
@@ -1668,9 +1646,49 @@ class TestNormalizeUpsertItem:
 
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
-        item = Example(id_=id_)
+        return Example
+
+
+class TestNormalizeUpsertItem:
+    @given(id_=integers())
+    def test_pair_of_dict_and_table(self, *, id_: int) -> None:
+        table = self._table
+        item = {"id": id_}, table
         result = one(normalize_upsert_item(item))
-        expected = _NormalizedUpsertItem(values={"id_": id_}, table=get_table(Example))
+        expected = _NormalizedUpsertItem(values=item[0], table=table)
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_pair_of_list_of_dicts_and_table(self, *, ids: set[int]) -> None:
+        table = self._table
+        item = [({"id_": id_}) for id_ in ids], table
+        result = list(normalize_upsert_item(item))
+        expected = [_NormalizedUpsertItem(values=i, table=table) for i in item[0]]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    def test_list_of_pairs_of_dicts_and_table(self, *, ids: set[int]) -> None:
+        table = self._table
+        item = [({"id_": id_}, table) for id_ in ids]
+        result = list(normalize_upsert_item(item))
+        expected = [_NormalizedUpsertItem(values=i[0], table=table) for i in item]
+        assert result == expected
+
+    @given(id_=integers())
+    def test_mapped_class(self, *, id_: int) -> None:
+        cls = self._mapped_class
+        result = one(normalize_upsert_item(cls(id_=id_)))
+        expected = _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
+        assert result == expected
+
+    @given(ids=sets(integers(0, 10), min_size=1))
+    def test_mapped_classes(self, *, ids: set[int]) -> None:
+        cls = self._mapped_class
+        result = [normalize_upsert_item(cls(id_=id_)) for id_ in ids]
+        expected = [
+            _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
+            for id_ in ids
+        ]
         assert result == expected
 
     @mark.parametrize(
@@ -1689,8 +1707,20 @@ class TestNormalizeUpsertItem:
         with raises(NormalizeUpsertItemError, match="Item must be valid; got .*"):
             _ = list(normalize_upsert_item(item))
 
+    @property
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
+
+    @property
+    def _mapped_class(self) -> type[DeclarativeBase]:
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = "example"
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+
+        return Example
 
 
 class TestParseEngine:
