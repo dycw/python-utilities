@@ -1435,7 +1435,7 @@ class TestInsertItemPrepare:
     @given(engine=sqlite_engines())
     def test_error(self, *, engine: Engine) -> None:
         with raises(_InsertItemsPrepareError, match="Item must be valid; got None"):
-            _ = list(_insert_items_prepare(engine, cast(Any, None)))
+            _ = _insert_items_prepare(engine, cast(Any, None))
 
 
 class TestIsInsertItemPair:
@@ -2344,7 +2344,7 @@ class TestUpsertItemPrepare:
     @given(engine=sqlite_engines())
     def test_error(self, *, engine: Engine) -> None:
         with raises(_UpsertItemsPrepareError, match="Item must be valid; got None"):
-            _ = list(_upsert_items_prepare(engine, cast(Any, None)))
+            _ = _upsert_items_prepare(engine, cast(Any, None))
 
 
 class TestYieldConnection:
