@@ -2064,19 +2064,16 @@ class TestUpsertItems:
                 ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
+        items = [
+            ({"id_": id_, "value": post}, table)
+            for id_, _, post in triples
+            if post is not None
+        ]
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
         with assume_does_not_raise(OperationalError, match="no such table"):
-            _ = self._run_test_sync(
-                engine,
-                table,
-                [
-                    ({"id_": id_, "value": post}, table)
-                    for id_, _, post in triples
-                    if post is not None
-                ],
-                expected={
-                    (id_, init if post is None else post) for id_, init, post in triples
-                },
-            )
+            _ = self._run_test_sync(engine, table, items, expected=expected)
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
@@ -2300,6 +2297,67 @@ class TestUpsertItems:
         }
         with assume_does_not_raise(OperationalError, match="no such table"):
             _ = await self._run_test_async(engine, table, items, expected=expected)
+
+    @given(data=data(), triples=_upsert_lists(nullable=True))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_list_of_pairs_of_dicts_and_table(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        key = (
+            TestUpsertItems.test_async_list_of_pairs_of_dicts_and_table.__qualname__,
+            dialect,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        with assume_does_not_raise(OperationalError, match="no such table"):
+            _ = await self._run_test_async(
+                engine,
+                table,
+                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+                expected={(id_, init) for id_, init, _ in triples},
+            )
+        items = [
+            ({"id_": id_, "value": post}, table)
+            for id_, _, post in triples
+            if post is not None
+        ]
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        with assume_does_not_raise(OperationalError, match="no such table"):
+            _ = await self._run_test_async(engine, table, items, expected=expected)
+
+    @given(data=data(), triple=_upsert_triples())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_mapped_class(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool],
+    ) -> None:
+        key = TestUpsertItems.test_async_mapped_class.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        cls = self._get_mapped_class(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, cls, dialect=dialect
+        )
+        id_, init, post = triple
+        _ = await self._run_test_async(
+            engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
+        )
+        _ = await self._run_test_async(
+            engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
+        )
 
     def _get_table(self, name: str, /) -> Table:
         return Table(
