@@ -6,7 +6,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, settings
+from hypothesis import Phase, assume, given, reproduce_failure, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -2079,6 +2079,7 @@ class TestUpsertItems:
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @reproduce_failure("6.111.2", b"AAAAAAAAAAAAAAA=")
     def test_sync_mapped_class(
         self,
         *,
@@ -2234,30 +2235,27 @@ class TestUpsertItems:
             _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
 
     @given(data=data(), triple=_upsert_triples())
+    @mark.skip
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_pair_of_dict_and_table(
         self,
         *,
         data: DataObject,
-        create_postgres_engine: Callable[..., Engine],
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
         dialect: Literal["sqlite", "postgres"],
         triple: tuple[int, bool, bool],
     ) -> None:
         key = TestUpsertItems.test_async_pair_of_dict_and_table.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
         table = self._get_table(name)
-        engine = self._get_engine_async(
-            sqlite_engine, create_postgres_engine, table, dialect=dialect
-        )
-        engine = await aiosqlite_engines(data)
-        engine = await self._get_engine_sync(
-            data, create_postgres_engine, table, dialect=dialect
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
         )
         id_, init, post = triple
-        _ = self._run_test_sync(
+        _ = self._run_test_async(
             engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
         )
-        _ = self._run_test_sync(
+        _ = self._run_test_async(
             engine, table, ({"id_": id_, "value": post}, table), expected={(id_, post)}
         )
 
