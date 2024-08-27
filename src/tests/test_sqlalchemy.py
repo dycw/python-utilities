@@ -129,11 +129,10 @@ from utilities.sqlalchemy import (
     _CheckColumnTypesStringEqualError,
     _CheckColumnTypesUuidEqualError,
     _CheckTableOrColumnNamesEqualError,
-    _insert_items_is_tuple_or_mapping,
-    _insert_items_normalize,
     _InsertItem,
-    _InsertItemPair,
-    _InsertItemsNormalizeError,
+    _normalize_insert_item,
+    _NormalizedInsertItem,
+    _NormalizeInsertItemsError,
     check_engine,
     check_table_against_reflection,
     columnwise_max,
@@ -153,8 +152,10 @@ from utilities.sqlalchemy import (
     get_table_updated_column,
     insert_items,
     insert_items_async,
+    is_insert_item_pair,
     is_mapped_class,
     is_table_or_mapped_class,
+    is_tuple_or_string_mapping,
     mapped_class_to_dict,
     parse_engine,
     reflect_table,
@@ -1416,11 +1417,11 @@ class TestInsertItemsNormalize:
         match case:
             case "tuple":
                 item = (id_,), table
-                result = one(_insert_items_normalize(item))
+                result = one(_normalize_insert_item(item))
             case "dict":
                 item = {"id": id_}, table
-                result = one(_insert_items_normalize(item))
-        expected = _InsertItemPair(values=item[0], table=table)
+                result = one(_normalize_insert_item(item))
+        expected = _NormalizedInsertItem(values=item[0], table=table)
         assert result == expected
 
     @given(ids=sets(integers()))
@@ -1448,17 +1449,31 @@ class TestInsertItemsNormalize:
         match case:
             case "pair_of_list_of_tuples":
                 item = [((id_,)) for id_ in ids], table
-                result = list(_insert_items_normalize(item))
+                result = list(_normalize_insert_item(item))
             case "pair_of_list_of_dicts":
                 item = [({"id_": id_}) for id_ in ids], table
-                result = list(_insert_items_normalize(item))
+                result = list(_normalize_insert_item(item))
             case "list_of_pairs_of_tuples":
                 item = [(((id_,), table)) for id_ in ids], table
-                result = list(_insert_items_normalize(item))
+                result = list(_normalize_insert_item(item))
             case "list_of_pairs_of_dicts":
                 item = [({"id_": id_}, table) for id_ in ids], table
-                result = list(_insert_items_normalize(item))
-        expected = [_InsertItemPair(values=i, table=table) for i in item[0]]
+                result = list(_normalize_insert_item(item))
+        expected = [_NormalizedInsertItem(values=i, table=table) for i in item[0]]
+        assert result == expected
+
+    @given(ids=sets(integers()))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    def test_lists(self, *, case: Literal["tuple", "dict"], ids: set[int]) -> None:
+        table = self._table()
+        match case:
+            case "tuple":
+                items = [(id_,) for id_ in ids], table
+                result = list(_normalize_insert_item(items))
+            case "dict":
+                items = [{"id": id_} for id_ in ids], table
+                result = list(_normalize_insert_item(items))
+        expected = [_NormalizedInsertItem(values=i, table=table) for i in items[0]]
         assert result == expected
 
     @given(id_=integers())
@@ -1471,8 +1486,8 @@ class TestInsertItemsNormalize:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         item = Example(id_=id_)
-        result = one(_insert_items_normalize(item))
-        expected = _InsertItemPair(values={"id_": id_}, table=get_table(Example))
+        result = one(_normalize_insert_item(item))
+        expected = _NormalizedInsertItem(values={"id_": id_}, table=get_table(Example))
         assert result == expected
 
     @mark.parametrize(
@@ -1486,45 +1501,20 @@ class TestInsertItemsNormalize:
                 ((1, 2, 3), None),
                 id="pair, second element invalid",
             ),
+            param([None], id="iterable, invalid"),
             param(None, id="outright invalid"),
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(_InsertItemsNormalizeError, match="Item must be valid; got .*"):
-            _ = list(_insert_items_normalize(item))
+        with raises(_NormalizeInsertItemsError, match="Item must be valid; got .*"):
+            _ = list(_normalize_insert_item(item))
 
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
 
 
-class TestInsertItemsCollectIterable:
-    @given(ids=sets(integers()))
-    @mark.parametrize("case", [param("tuple"), param("dict")])
-    def test_main(self, *, case: Literal["tuple", "dict"], ids: set[int]) -> None:
-        table = self._table()
-        match case:
-            case "tuple":
-                items = [(id_,) for id_ in ids]
-                exp_values = [(id_,) for id_ in ids]
-            case "dict":
-                items = [{"id": id_} for id_ in ids]
-                exp_values = [{"id": id_} for id_ in ids]
-        result = list(_insert_items_collect_iterable(items, table))
-        expected = [_InsertItemPair(values=v, table=table) for v in exp_values]
-        assert result == expected
-
-    def test_error(self) -> None:
-        with raises(
-            _InsertItemsCollectIterableError,
-            match="Iterable item must be valid; got None",
-        ):
-            _ = list(_insert_items_collect_iterable([None], self._table()))
-
-    def _table(self) -> Table:
-        return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
-
-
-class TestInsertItemsCollectValid:
+class TestIsInsertItemPair:
+    @mark.only
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -1535,7 +1525,7 @@ class TestInsertItemsCollectValid:
         ],
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = _insert_items_is_tuple_or_mapping(obj)
+        result = is_insert_item_pair(obj)
         assert result is expected
 
 
@@ -1572,6 +1562,21 @@ class TestIsTableOrMappedClass:
 
     def test_other(self) -> None:
         assert not is_table_or_mapped_class(None)
+
+
+class TestIsTupleOrStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param((1, 2, 3), True),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple_or_string_mapping(obj)
+        assert result is expected
 
 
 class TestMappedClassToDict:

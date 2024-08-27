@@ -69,7 +69,6 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from sqlalchemy.ext.asyncio import AsyncConnection
-    from sqlalchemy.orm import DeclarativeBase
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 

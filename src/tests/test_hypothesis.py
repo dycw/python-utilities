@@ -622,9 +622,7 @@ class TestSQLiteEngines:
             res = (await conn.execute(sel)).scalars().all()
         self._assert_results(res, ids)
 
-    def _get_select(
-        self, table_or_mapped_class: TableOrMappedClass, /
-    ) -> Select[Any]:
+    def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
         return select(get_table(table_or_mapped_class).c["id_"])
 
     def _assert_results(self, results: Sequence[Any], ids: set[int], /) -> None:

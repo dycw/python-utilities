@@ -10,8 +10,7 @@ from utilities.platform import IS_NOT_LINUX
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from sqlalchemy import Engine, Table
-    from sqlalchemy.orm import DeclarativeBase
+    from sqlalchemy import Engine
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
