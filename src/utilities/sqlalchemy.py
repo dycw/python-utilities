@@ -846,14 +846,26 @@ def insert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    prepared = _insert_items_prepare(
-        engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
-    )
+    try:
+        prepared = _insert_items_prepare(
+            engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
+        )
+    except _InsertItemsPrepareError as error:
+        raise InsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         ensure_tables_created(engine_or_conn, *prepared.tables)
     for ins, parameters in prepared.yield_pairs():
         with yield_connection(engine_or_conn) as conn:
             _ = conn.execute(ins, parameters=parameters)
+
+
+@dataclass(kw_only=True)
+class InsertItemsError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 async def insert_items_async(
@@ -884,14 +896,26 @@ async def insert_items_async(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    prepared = _insert_items_prepare(
-        engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
-    )
+    try:
+        prepared = _insert_items_prepare(
+            engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
+        )
+    except _InsertItemsPrepareError as error:
+        raise InsertItemsAsyncError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created_async(engine_or_conn, *prepared.tables)
     for ins, parameters in prepared.yield_pairs():
         async with yield_connection_async(engine_or_conn) as conn:
             _ = await conn.execute(ins, parameters=parameters)
+
+
+@dataclass(kw_only=True)
+class InsertItemsAsyncError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -911,11 +935,14 @@ def _insert_items_prepare(
     """Prepare the arguments for `insert_items`."""
     mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
-    for item in items:
-        for normed in normalize_insert_item(item):
-            values = normed.values
-            mapping[normed.table].append(values)
-            lengths.add(len(values))
+    try:
+        for item in items:
+            for normed in normalize_insert_item(item):
+                values = normed.values
+                mapping[normed.table].append(values)
+                lengths.add(len(values))
+    except _NormalizeInsertItemError as error:
+        raise _InsertItemsPrepareError(item=error.item) from None
     tables = list(mapping)
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
@@ -949,6 +976,15 @@ def _insert_items_prepare(
                     yield ups, None
 
     return _InsertItemsPrepare(tables=tables, yield_pairs=yield_pairs)
+
+
+@dataclass(kw_only=True)
+class _InsertItemsPrepareError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 def is_insert_item_pair(
@@ -1078,11 +1114,11 @@ def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIte
             )
         return
 
-    raise _NormalizeInsertItemsError(item=item)
+    raise _NormalizeInsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
-class _NormalizeInsertItemsError(Exception):
+class _NormalizeInsertItemError(Exception):
     item: _InsertItem
 
     @override
@@ -1307,18 +1343,30 @@ def upsert_items(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    prepared = _insert_items_prepare(
-        engine_or_conn,
-        *items,
-        chunk_size_frac=chunk_size_frac,
-        kind="upsert",
-        selected_or_all=selected_or_all,
-    )
+    try:
+        prepared = _insert_items_prepare(
+            engine_or_conn,
+            *items,
+            chunk_size_frac=chunk_size_frac,
+            kind="upsert",
+            selected_or_all=selected_or_all,
+        )
+    except _InsertItemsPrepareError as error:
+        raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         ensure_tables_created(engine_or_conn, *prepared.tables)
     for ins, parameters in prepared.yield_pairs():
         with yield_connection(engine_or_conn) as conn:
             _ = conn.execute(ins, parameters=parameters)
+
+
+@dataclass(kw_only=True)
+class UpsertItemsError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 async def upsert_items_async(
@@ -1392,6 +1440,8 @@ __all__ = [
     "Dialect",
     "GetDialectError",
     "GetTableError",
+    "InsertItemsAsyncError",
+    "InsertItemsError",
     "ParseEngineError",
     "TablenameMixin",
     "UpsertError",

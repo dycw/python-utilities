@@ -99,10 +99,13 @@ from utilities.sqlalchemy import (
     Dialect,
     EngineOrConnection,
     GetTableError,
+    InsertItemsAsyncError,
+    InsertItemsError,
     ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
     UpsertError,
+    UpsertItemsError,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
     _check_column_types_datetime_equal,
@@ -132,7 +135,7 @@ from utilities.sqlalchemy import (
     _CheckTableOrColumnNamesEqualError,
     _InsertItem,
     _NormalizedInsertItem,
-    _NormalizeInsertItemsError,
+    _NormalizeInsertItemError,
     _UpsertItem,
     check_engine,
     check_table_against_reflection,
@@ -1236,6 +1239,17 @@ class TestInsertItems:
             use_conn=use_conn,
         )
 
+    @given(engine=sqlite_engines())
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_error(self, *, engine: Engine, use_conn: bool) -> None:
+        with raises(InsertItemsError, match="Item must be valid; got None"):
+            self._run_test_sync(
+                engine,
+                set(),
+                cast(Any, None),
+                use_conn=use_conn,
+            )
+
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
     @mark.parametrize("use_conn", [param(True), param(False)])
@@ -1329,6 +1343,18 @@ class TestInsertItems:
             assume_tables_exist=True,
             use_conn=use_conn,
         )
+
+    @given(data=data())
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_error(self, *, data: DataObject, use_conn: bool) -> None:
+        engine = await aiosqlite_engines(data)
+        with raises(InsertItemsAsyncError, match="Item must be valid; got None"):
+            await self._run_test_async(
+                engine,
+                set(),
+                cast(Any, None),
+                use_conn=use_conn,
+            )
 
     @property
     def _table(self) -> Table:
@@ -1603,7 +1629,7 @@ class TestNormalizeInsertItem:
         ],
     )
     def test_errors(self, *, item: Any) -> None:
-        with raises(_NormalizeInsertItemsError, match="Item must be valid; got .*"):
+        with raises(_NormalizeInsertItemError, match="Item must be valid; got .*"):
             _ = list(normalize_insert_item(item))
 
     def _table(self) -> Table:
@@ -2176,7 +2202,6 @@ class TestUpsert:
             return set(conn.execute(select(get_table(table_or_mapped_class))).all())
 
 
-# @mark.only
 class TestUpsertItems:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
@@ -2199,17 +2224,17 @@ class TestUpsertItems:
             dialect=dialect,
         )
         id_, init, post = triple
-        self._run_test_sync(
+        _ = self._run_test_sync(
             engine,
             table_or_mapped_class,
-            {(id_, init)},
             ({"id_": id_, "value": init}, table_or_mapped_class),
+            expected={(id_, init)},
         )
-        self._run_test_sync(
+        _ = self._run_test_sync(
             engine,
             table_or_mapped_class,
-            {(id_, post)},
             ({"id_": id_, "value": post}, table_or_mapped_class),
+            expected={(id_, post)},
         )
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
@@ -2233,20 +2258,19 @@ class TestUpsertItems:
             dialect=dialect,
         )
         with assume_does_not_raise(OneEmptyError):
-            self._run_test_sync(
+            _ = self._run_test_sync(
                 engine,
                 table_or_mapped_class,
-                {(id_, init) for id_, init, _ in triples},
                 (
                     [{"id_": id_, "value": init} for id_, init, _ in triples],
                     table_or_mapped_class,
                 ),
+                expected={(id_, init) for id_, init, _ in triples},
             )
         with assume_does_not_raise(OneEmptyError):
-            self._run_test_sync(
+            _ = self._run_test_sync(
                 engine,
                 table_or_mapped_class,
-                {(id_, init if post is None else post) for id_, init, post in triples},
                 (
                     [
                         {"id_": id_, "value": post}
@@ -2255,6 +2279,9 @@ class TestUpsertItems:
                     ],
                     table_or_mapped_class,
                 ),
+                expected={
+                    (id_, init if post is None else post) for id_, init, post in triples
+                },
             )
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
@@ -2281,11 +2308,17 @@ class TestUpsertItems:
             sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
         id_, init, post = triple
-        self._run_test_sync(
-            engine, Example, {(id_, init)}, Example(id_=id_, value=init)
+        _ = self._run_test_sync(
+            engine,
+            Example,
+            Example(id_=id_, value=init),
+            expected={(id_, init)},
         )
-        self._run_test_sync(
-            engine, Example, {(id_, post)}, Example(id_=id_, value=post)
+        _ = self._run_test_sync(
+            engine,
+            Example,
+            Example(id_=id_, value=post),
+            expected={(id_, post)},
         )
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
@@ -2312,25 +2345,26 @@ class TestUpsertItems:
             sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
         with assume_does_not_raise(OneEmptyError):
-            self._run_test_sync(
+            _ = self._run_test_sync(
                 engine,
                 Example,
-                {(id_, init) for id_, init, _ in triples},
                 [Example(id_=id_, value=init) for id_, init, _ in triples],
+                expected={(id_, init) for id_, init, _ in triples},
             )
         with assume_does_not_raise(OneEmptyError):
-            self._run_test_sync(
+            _ = self._run_test_sync(
                 engine,
                 Example,
-                {(id_, init if post is None else post) for id_, init, post in triples},
                 [
                     Example(id_=id_, value=post)
                     for id_, _, post in triples
                     if post is not None
                 ],
+                expected={
+                    (id_, init if post is None else post) for id_, init, post in triples
+                },
             )
 
-    @mark.only
     @given(
         sqlite_engine=sqlite_engines(),
         id_=integers(0, 10),
@@ -2388,24 +2422,24 @@ class TestUpsertItems:
             table_or_mapped_class,
             dialect=dialect,
         )
-        self._run_test_sync(
+        _ = self._run_test_sync(
             engine,
             table_or_mapped_class,
-            {(id_, x_init, y)},
             ({"id_": id_, "x": x_init, "y": y}, table_or_mapped_class),
             selected_or_all=selected_or_all,
+            expected={(id_, x_init, y)},
         )
         match selected_or_all:
             case "selected":
                 expected2 = (id_, x_post, y)
             case "all":
                 expected2 = (id_, x_post, None)
-        self._run_test_sync(
+        _ = self._run_test_sync(
             engine,
             table_or_mapped_class,
-            {expected2},
             ({"id_": id_, "x": x_post}, table_or_mapped_class),
             selected_or_all=selected_or_all,
+            expected={expected2},
         )
 
     @given(
@@ -2445,23 +2479,25 @@ class TestUpsertItems:
         engine = self._get_engine(
             sqlite_engine, create_postgres_engine, Example, dialect=dialect
         )
-        result1 = self._run_test_sync_one(
+        _ = self._run_test_sync(
             engine,
             Example,
             Example(id_=id_, x=x_init, y=y),
             selected_or_all=selected_or_all,
-        )
-        expected1 = id_, x_init, y
-        assert result1 == expected1
-        result2 = self._run_test_sync_one(
-            engine, Example, Example(id_=id_, x=x_post), selected_or_all=selected_or_all
+            expected={(id_, x_init, y)},
         )
         match selected_or_all:
             case "selected":
                 expected2 = (id_, x_post, y)
             case "all":
                 expected2 = (id_, x_post, None)
-        assert result2 == expected2
+        _ = self._run_test_sync(
+            engine,
+            Example,
+            Example(id_=id_, x=x_post),
+            selected_or_all=selected_or_all,
+            expected={expected2},
+        )
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
@@ -2524,26 +2560,27 @@ class TestUpsertItems:
         id_, init, post = triple
         match single_or_many:
             case "single":
-                values_use = {"id_": id_, "value": init}
+                values1 = {"id_": id_, "value": init}, table_or_mapped_class
             case "many":
-                values_use = [{"id_": id_, "value": init}]
-        _, _, updated1 = self._run_test_sync_one(
-            engine, table_or_mapped_class, table_or_mapped_class, values=values_use
+                values1 = [{"id_": id_, "value": init}], table_or_mapped_class
+        ((_, _, updated1),) = self._run_test_sync(
+            engine, table_or_mapped_class, values1
         )
         sleep(0.01)
         match single_or_many:
             case "single":
-                values_use = {"id_": id_, "value": post}
+                values2 = {"id_": id_, "value": post}, table_or_mapped_class
             case "many":
-                values_use = [{"id_": id_, "value": post}]
-        _, _, updated2 = self._run_test_sync_one(
-            engine, table_or_mapped_class, table_or_mapped_class, values=values_use
+                values2 = [{"id_": id_, "value": post}], table_or_mapped_class
+        ((_, _, updated2),) = self._run_test_sync(
+            engine, table_or_mapped_class, values2
         )
         assert updated1 < updated2
 
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.only
     def test_error(
         self,
         *,
@@ -2561,9 +2598,10 @@ class TestUpsertItems:
             dialect=dialect,
         )
         with raises(
-            UpsertError, match=escape("Unsupported item and values; got None and []")
+            UpsertItemsError,
+            match="Unsupported item and values; got None",
         ):
-            _ = self._run_test_sync(engine, table_or_mapped_class, None, values=[])
+            _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
@@ -2612,12 +2650,12 @@ class TestUpsertItems:
         self,
         engine_or_conn: EngineOrConnection,
         table_or_mapped_class: TableOrMappedClass,
-        expected: set[tuple[Any, ...]],
         /,
         *items: _UpsertItem,
         assume_tables_exist: bool = False,
         selected_or_all: Literal["selected", "all"] = "selected",
-    ) -> None:
+        expected: set[tuple[Any, ...]] | None = None,
+    ) -> Sequence[Row[Any]]:
         upsert_items(
             engine_or_conn,
             *items,
@@ -2627,7 +2665,9 @@ class TestUpsertItems:
         sel = self._get_select(table_or_mapped_class)
         with yield_connection(engine_or_conn) as conn:
             results = conn.execute(sel).all()
-        self._assert_results(results, expected)
+        if expected is not None:
+            self._assert_results(results, expected)
+        return results
 
     def _get_select(self, table_or_mapped_class: TableOrMappedClass, /) -> Select[Any]:
         return select(get_table(table_or_mapped_class))
