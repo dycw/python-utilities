@@ -2079,7 +2079,6 @@ class TestUpsertItems:
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @reproduce_failure("6.111.2", b"AAAAAAAAAAAAAAA=")
     def test_sync_mapped_class(
         self,
         *,
