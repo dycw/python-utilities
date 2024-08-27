@@ -973,7 +973,7 @@ class _InsertItemPair:
 def _insert_items_normalize(item: _InsertItem, /) -> Iterator[_InsertItemPair]:
     """Normalize the insertion items into pairs."""
     if _insert_items_is_pair_of_tuple_or_mapping_and_table(item):
-        yield _InsertItemPair(values=item, table=get_table(item[1]))
+        yield _InsertItemPair(values=item[0], table=get_table(item[1]))
         return
 
     item = cast(

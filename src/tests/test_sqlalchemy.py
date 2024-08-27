@@ -23,6 +23,7 @@ from hypothesis.strategies import (
     sets,
     tuples,
 )
+from pyarrow import MetadataVersion
 from pytest import mark, param, raises
 from sqlalchemy import (
     BIGINT,
@@ -99,6 +100,7 @@ from utilities.sqlalchemy import (
     GetTableError,
     ParseEngineError,
     TablenameMixin,
+    TableOrMappedClass,
     UpsertError,
     _check_column_collections_equal,
     _check_column_types_boolean_equal,
@@ -127,13 +129,11 @@ from utilities.sqlalchemy import (
     _CheckColumnTypesStringEqualError,
     _CheckColumnTypesUuidEqualError,
     _CheckTableOrColumnNamesEqualError,
-    _insert_items_collect_iterable,
     _insert_items_is_tuple_or_mapping,
     _insert_items_normalize,
     _InsertItem,
     _InsertItemPair,
-    _InsertItemsCollectError,
-    _InsertItemsCollectIterableError,
+    _InsertItemsNormalizeError,
     check_engine,
     check_table_against_reflection,
     columnwise_max,
@@ -1408,18 +1408,19 @@ class TestInsertItems:
         assert set(results) == ids
 
 
-class TestInsertItemsCollect:
+class TestInsertItemsNormalize:
     @given(id_=integers())
     @mark.parametrize("case", [param("tuple"), param("dict")])
     def test_single_item(self, *, case: Literal["tuple", "dict"], id_: int) -> None:
         table = self._table()
         match case:
             case "tuple":
-                values = (id_,)
+                item = (id_,), table
+                result = one(_insert_items_normalize(item))
             case "dict":
-                values = {"id": id_}
-        result = list(_insert_items_normalize((values, table)))
-        expected = [_InsertItemPair(values=values, table=table)]
+                item = {"id": id_}, table
+                result = one(_insert_items_normalize(item))
+        expected = _InsertItemPair(values=item[0], table=table)
         assert result == expected
 
     @given(ids=sets(integers()))
@@ -1447,18 +1448,17 @@ class TestInsertItemsCollect:
         match case:
             case "pair_of_list_of_tuples":
                 item = [((id_,)) for id_ in ids], table
-                values = [(id_,) for id_ in ids]
+                result = list(_insert_items_normalize(item))
             case "pair_of_list_of_dicts":
                 item = [({"id_": id_}) for id_ in ids], table
-                values = [{"id_": id_} for id_ in ids]
+                result = list(_insert_items_normalize(item))
             case "list_of_pairs_of_tuples":
-                item = [(((id_,), table)) for id_ in ids]
-                values = [(id_,) for id_ in ids]
+                item = [(((id_,), table)) for id_ in ids], table
+                result = list(_insert_items_normalize(item))
             case "list_of_pairs_of_dicts":
-                item = [({"id_": id_}, table) for id_ in ids]
-                values = [{"id_": id_} for id_ in ids]
-        result = list(_insert_items_normalize(item))
-        expected = [_InsertItemPair(values=v, table=table) for v in values]
+                item = [({"id_": id_}, table) for id_ in ids], table
+                result = list(_insert_items_normalize(item))
+        expected = [_InsertItemPair(values=i, table=table) for i in item[0]]
         assert result == expected
 
     @given(id_=integers())
@@ -1471,29 +1471,27 @@ class TestInsertItemsCollect:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         item = Example(id_=id_)
-        result = list(_insert_items_normalize(item))
-        expected = [_InsertItemPair(values={"id_": id_}, table=get_table(Example))]
+        result = one(_insert_items_normalize(item))
+        expected = _InsertItemPair(values={"id_": id_}, table=get_table(Example))
         assert result == expected
 
     @mark.parametrize(
-        ("item", "match"),
+        "item",
         [
-            param((None,), "Tuple must be a pair; got (None,)"),
+            param((None,), id="tuple, not pair"),
             param(
-                (None, None), "Second element must be a table or mapped class; got None"
+                (None, Table("example", MetaData())), id="pair, first element invalid"
             ),
-            param(None, "Item must be valid; got None"),
+            param(
+                ((1, 2, 3), None),
+                id="pair, second element invalid",
+            ),
+            param(None, id="outright invalid"),
         ],
     )
-    def test_errors(self, *, item: Any, match: str) -> None:
-        with raises(_InsertItemsCollectError, match=escape(match)):
+    def test_errors(self, *, item: Any) -> None:
+        with raises(_InsertItemsNormalizeError, match="Item must be valid; got .*"):
             _ = list(_insert_items_normalize(item))
-
-    def test_error_tuple_but_first_argument_invalid(self) -> None:
-        with raises(
-            _InsertItemsCollectError, match="First element must be valid; got None"
-        ):
-            _ = list(_insert_items_normalize((None, self._table())))
 
     def _table(self) -> Table:
         return Table("example", MetaData(), Column("id_", Integer, primary_key=True))
