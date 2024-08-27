@@ -207,9 +207,17 @@ def _upsert_triples(
 
 
 def _upsert_lists(
-    *, nullable: bool = False
+    *,
+    nullable: bool = False,
+    min_size: int = 0,
+    max_size: int | None = None,
 ) -> SearchStrategy[list[tuple[int, bool, bool | None]]]:
-    return lists(_upsert_triples(nullable=nullable), unique_by=lambda x: x[0])
+    return lists(
+        _upsert_triples(nullable=nullable),
+        min_size=min_size,
+        max_size=max_size,
+        unique_by=lambda x: x[0],
+    )
 
 
 class TestCheckColumnCollectionsEqual:
@@ -1795,15 +1803,15 @@ class TestParseEngine:
 
 @SKIPIF_CI
 class TestPostgresEngine:
-    @given(ids=sets(integers(0, 10)))
-    @settings(max_examples=1, phases={Phase.generate})
+    @given(ids=sets(integers(0, 10), min_size=1))
     def test_main(
         self, *, create_postgres_engine: Callable[..., Engine], ids: set[int]
     ) -> None:
-        metadata = MetaData()
+        key = TestPostgresEngine.test_main.__qualname__
+        name = f"test_{md5_hash(key)}"
         table = Table(
-            get_class_name(TestPostgresEngine),
-            metadata,
+            name,
+            MetaData(),
             Column("id_", Integer, primary_key=True),
         )
         engine = create_postgres_engine(table)
@@ -1897,7 +1905,9 @@ class TestUpsertItems:
             expected={(id_, init if post is None else post)},
         )
 
-    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
+    @given(
+        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
+    )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_pair_of_list_of_dicts_and_table(
         self,
@@ -1916,13 +1926,12 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(
-                engine,
-                table,
-                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = self._run_test_sync(
+            engine,
+            table,
+            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = (
             [
                 {"id_": id_, "value": post}
@@ -1934,10 +1943,11 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(engine, table, items, expected=expected)
+        _ = self._run_test_sync(engine, table, items, expected=expected)
 
-    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
+    @given(
+        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
+    )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_list_of_pairs_of_dicts_and_table(
         self,
@@ -1956,13 +1966,12 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(
-                engine,
-                table,
-                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = self._run_test_sync(
+            engine,
+            table,
+            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = [
             ({"id_": id_, "value": post}, table)
             for id_, _, post in triples
@@ -1971,8 +1980,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(engine, table, items, expected=expected)
+        _ = self._run_test_sync(engine, table, items, expected=expected)
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
@@ -1998,7 +2006,9 @@ class TestUpsertItems:
             engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
+    @given(
+        sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True, min_size=1)
+    )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_mapped_classes(
         self,
@@ -2014,21 +2024,19 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, cls, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(
-                engine,
-                cls,
-                [cls(id_=id_, value=init) for id_, init, _ in triples],
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = self._run_test_sync(
+            engine,
+            cls,
+            [cls(id_=id_, value=init) for id_, init, _ in triples],
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = [
             cls(id_=id_, value=post) for id_, _, post in triples if post is not None
         ]
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = self._run_test_sync(engine, cls, items, expected=expected)
+        _ = self._run_test_sync(engine, cls, items, expected=expected)
 
     @given(
         sqlite_engine=sqlite_engines(),
@@ -2180,7 +2188,7 @@ class TestUpsertItems:
             expected={(id_, init if post is None else post)},
         )
 
-    @given(data=data(), triples=_upsert_lists(nullable=True))
+    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_pair_of_list_of_dicts_and_table(
         self,
@@ -2199,13 +2207,12 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(
-                engine,
-                table,
-                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = await self._run_test_async(
+            engine,
+            table,
+            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = (
             [
                 {"id_": id_, "value": post}
@@ -2217,8 +2224,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(engine, table, items, expected=expected)
+        _ = await self._run_test_async(engine, table, items, expected=expected)
 
     @given(data=data(), triples=_upsert_lists(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])

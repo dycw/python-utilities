@@ -139,8 +139,17 @@ _T = TypeVar("_T")
 
 
 @composite
-def _upsert_dataframes(draw: DrawFn, /, *, nullable: bool = False) -> DataFrame:
-    values = draw(_upsert_lists(nullable=nullable))
+def _upsert_dataframes(
+    draw: DrawFn,
+    /,
+    *,
+    nullable: bool = False,
+    min_height: int = 0,
+    max_height: int | None = None,
+) -> DataFrame:
+    values = draw(
+        _upsert_lists(nullable=nullable, min_size=min_height, max_size=max_height)
+    )
     return DataFrame(
         values,
         schema={"id_": Int64, "init": pl.Boolean, "post": pl.Boolean},
