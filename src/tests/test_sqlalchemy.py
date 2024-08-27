@@ -2251,10 +2251,10 @@ class TestUpsertItems:
             data, create_postgres_engine_async, table, dialect=dialect
         )
         id_, init, post = triple
-        _ = self._run_test_async(
+        _ = await self._run_test_async(
             engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
         )
-        _ = self._run_test_async(
+        _ = await self._run_test_async(
             engine,
             table,
             ({"id_": id_, "value": post}, table),
