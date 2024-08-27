@@ -167,7 +167,6 @@ class TestInsertDataFrame:
 
     @given(data=data(), engine=sqlite_engines())
     @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
-    @mark.parametrize("use_conn", [param(True), param(False)])
     def test_sync(
         self,
         *,
@@ -177,23 +176,11 @@ class TestInsertDataFrame:
         pl_dtype: PolarsDataType,
         col_type: Any,
         check: Callable[[Any, Any], bool],
-        use_conn: bool,
     ) -> None:
         values, df, table, sel = self._prepare_main_test(
             data, strategy, pl_dtype, col_type
         )
-        self._run_test_sync(df, table, engine, sel, values, check, use_conn=use_conn)
-
-    @given(engine=sqlite_engines(), values=lists(booleans() | none(), max_size=100))
-    @mark.parametrize("sr_name", [param("Value"), param("value")])
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_snake(
-        self, *, engine: Engine, values: list[bool | None], sr_name: str, use_conn: bool
-    ) -> None:
-        df, table, sel = self._prepare_snake_test(sr_name, values)
-        self._run_test_sync(
-            df, table, engine, sel, values, eq, snake=True, use_conn=use_conn
-        )
+        self._run_test_sync(df, table, engine, sel, values, check)
 
     @given(
         values=lists(booleans() | none(), min_size=1, max_size=100),
@@ -225,18 +212,6 @@ class TestInsertDataFrame:
         async with engine.begin() as conn:
             res = (await conn.execute(sel)).scalars().all()
         self._assert_results(res, values, check)
-
-    @given(data=data(), values=lists(booleans() | none(), max_size=100))
-    @mark.parametrize("sr_name", [param("Value"), param("value")])
-    async def test_async_snake(
-        self, *, data: DataObject, values: list[bool | None], sr_name: str
-    ) -> None:
-        df, table, sel = self._prepare_snake_test(sr_name, values)
-        engine = await aiosqlite_engines(data)
-        await insert_dataframe_async(df, table, engine, snake=True)
-        async with engine.begin() as conn:
-            res = (await conn.execute(sel)).scalars().all()
-        assert res == values
 
     @given(data=data(), values=lists(booleans() | none(), min_size=1, max_size=100))
     async def test_async_error(
@@ -281,15 +256,8 @@ class TestInsertDataFrame:
         values: Sequence[Any],
         check: Callable[[Any, Any], bool],
         /,
-        *,
-        snake: bool = False,
-        use_conn: bool = False,
     ) -> None:
-        if use_conn:
-            with yield_connection(engine_or_conn) as conn:
-                self._run_test_sync(df, table, conn, sel, values, check, snake=snake)
-            return
-        insert_dataframe(df, table, engine_or_conn, snake=snake)
+        insert_dataframe(df, table, engine_or_conn)
         with yield_connection(engine_or_conn) as conn:
             res = conn.execute(sel).scalars().all()
         self._assert_results(res, values, check)
@@ -303,14 +271,6 @@ class TestInsertDataFrame:
     ) -> None:
         for r, v in zip(results, values, strict=True):
             assert ((r is None) == (v is None)) or check(r, v)
-
-    def _prepare_snake_test(
-        self, sr_name: str, values: Sequence[bool | None], /
-    ) -> tuple[DataFrame, Table, Select[Any]]:
-        df = DataFrame({sr_name: values}, schema={sr_name: pl.Boolean})
-        table = self._make_table(sqlalchemy.Boolean, title=True)
-        sel = select(table.c["Value"])
-        return df, table, sel
 
     def _prepare_empty_test(
         self, values: Sequence[bool | None], /
@@ -854,7 +814,6 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
             assert isinstance(sel, Select)
 
 
-@mark.only
 class TestUpsertDataFrame:
     @given(df=_upsert_dataframes(), engine=sqlite_engines())
     def test_sync(self, *, df: DataFrame, engine: Engine) -> None:
