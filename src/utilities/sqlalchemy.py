@@ -95,7 +95,12 @@ from utilities.iterables import (
     one,
 )
 from utilities.text import ensure_str
-from utilities.types import StrMapping, is_string_mapping
+from utilities.types import (
+    StrMapping,
+    TupleOrStrMapping,
+    is_string_mapping,
+    is_tuple_or_string_mapping,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -991,22 +996,24 @@ def is_insert_item_pair(
     obj: Any, /
 ) -> TypeGuard[tuple[_TupleOrStrMapping, TableOrMappedClass]]:
     """Check if an object is an insert-ready pair."""
-    return (
-        isinstance(obj, tuple)
-        and (len(obj) == 2)
-        and is_tuple_or_string_mapping(obj[0])
-        and is_table_or_mapped_class(obj[1])
-    )
+    return _is_insert_or_upsert_pair(obj, is_tuple_or_string_mapping)
 
 
 def is_upsert_item_pair(
     obj: Any, /
 ) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
     """Check if an object is an upsert-ready pair."""
+    return _is_insert_or_upsert_pair(obj, is_string_mapping)
+
+
+def _is_insert_or_upsert_pair(
+    obj: Any, predicate: Callable[[TupleOrStrMapping], bool], /
+) -> bool:
+    """Check if an object is an insert/upsert-ready pair."""
     return (
         isinstance(obj, tuple)
         and (len(obj) == 2)
-        and is_string_mapping(obj[0])
+        and predicate(obj[0])
         and is_table_or_mapped_class(obj[1])
     )
 
@@ -1128,10 +1135,7 @@ class NormalizeInsertItemError(Exception):
 
 
 def normalize_upsert_item(
-    item: _UpsertItem,
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
+    item: _UpsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
 ) -> Iterator[_NormalizedInsertItem[StrMapping]]:
     """Normalize an upsert item."""
     normalized = normalize_insert_item(item)
@@ -1320,7 +1324,7 @@ def upsert(  # skipif-ci-in-environ
 def _upsert_core(
     engine_or_conn: MaybeAsyncEngineOrConnection,
     table_or_mapped_class: TableOrMappedClass,
-    values: StrMapping | Sequence[StrMapping],
+    values: MaybeIterable[StrMapping],
     /,
     *,
     selected_or_all: Literal["selected", "all"] = "selected",
@@ -1340,6 +1344,7 @@ def _upsert_core(
             raise NotImplementedError(dialect)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
+    values = list(always_iterable(values))
     ins = insert(table).values(values)
     primary_key = cast(Any, table.primary_key)
     return _upsert_apply_on_conflict_do_update(
@@ -1348,11 +1353,11 @@ def _upsert_core(
 
 
 def _upsert_add_updated(  # skipif-ci-in-environ
-    values: StrMapping | Sequence[StrMapping], updated: Mapping[str, dt.datetime], /
-) -> StrMapping | Sequence[StrMapping]:
-    if isinstance(values, Mapping):
+    values: MaybeIterable[StrMapping], updated: Mapping[str, dt.datetime], /
+) -> MaybeIterable[StrMapping]:
+    if is_string_mapping(values):
         return _upsert_add_updated_to_mapping(values, updated)
-    return [_upsert_add_updated_to_mapping(v, updated) for v in values]
+    return [_upsert_add_updated_to_mapping(v, updated) for v in always_iterable(values)]
 
 
 def _upsert_add_updated_to_mapping(  # skipif-ci-in-environ
@@ -1392,7 +1397,7 @@ def _upsert_apply_on_conflict_do_update(
 @dataclass(kw_only=True)
 class UpsertError(Exception):
     item: Any
-    values: StrMapping | Sequence[StrMapping] | None
+    values: MaybeIterable[StrMapping] | None = None
 
     @override
     def __str__(self) -> str:  # skipif-ci-in-environ
@@ -1478,10 +1483,7 @@ def _upsert_items_prepare(
     def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in yield_tables_and_chunks():
             ups = upsert(
-                engine_or_conn,
-                table,
-                values=values,
-                selected_or_all=selected_or_all,
+                engine_or_conn, table, values=values, selected_or_all=selected_or_all
             )
             yield ups, None
 
@@ -1604,7 +1606,7 @@ __all__ = [
     "is_insert_item_pair",
     "is_mapped_class",
     "is_table_or_mapped_class",
-    "is_tuple_or_string_mapping",
+    "is_upsert_item_pair",
     "is_upsert_item_pair",
     "mapped_class_to_dict",
     "normalize_insert_item",

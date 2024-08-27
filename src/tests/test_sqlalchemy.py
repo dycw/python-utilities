@@ -3,12 +3,11 @@ from __future__ import annotations
 import datetime as dt  # noqa: TCH003
 import enum
 from enum import auto
-from re import escape
 from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -159,7 +158,6 @@ from utilities.sqlalchemy import (
     is_insert_item_pair,
     is_mapped_class,
     is_table_or_mapped_class,
-    is_tuple_or_string_mapping,
     mapped_class_to_dict,
     normalize_insert_item,
     parse_engine,
@@ -1445,6 +1443,25 @@ class TestIsInsertItemPair:
         assert result is expected
 
 
+class TestIsUpsertItemPair:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param((), False),
+            param((1,), False),
+            param((1, 2), False),
+            param(((1, 2, 3), None), False),
+            param(((1, 2, 3), Table("example", MetaData())), True),
+            param(({"a": 1, "b": 2, "c": 3}, None), False),
+            param(({"a": 1, "b": 2, "c": 3}, Table("example", MetaData())), True),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_insert_item_pair(obj)
+        assert result is expected
+
+
 class TestIsMappedClass:
     def test_mapped_class_instance(self) -> None:
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
@@ -1949,8 +1966,6 @@ class TestUpsert:
         x_post=booleans(),
         y=booleans(),
     )
-    @mark.only
-    @reproduce_failure("6.111.2", b"AXicY2BAAgAADQAB")
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
     def test_sel_or_all_mapped_class(
@@ -1966,7 +1981,6 @@ class TestUpsert:
         y: bool,
     ) -> None:
         name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_sel_or_all_mapped_class.__name__}_{dialect[:3]}_{selected_or_all[:3]}"
-        id_, x_init, x_post, y = 0, False, False, False
 
         class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
 
@@ -2423,10 +2437,8 @@ class TestUpsertItems:
         x_post=booleans(),
         y=booleans(),
     )
-    @mark.only
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    @reproduce_failure("6.111.2", b"AXicY2BAAgAADQAB")
     def test_sel_or_all_mapped_class(
         self,
         *,
