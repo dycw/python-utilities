@@ -5,11 +5,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 import polars as pl
 import sqlalchemy
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
+    DrawFn,
     SearchStrategy,
     booleans,
+    composite,
     data,
     dates,
     datetimes,
@@ -31,6 +33,8 @@ from polars import (
     Int32,
     Int64,
     Utf8,
+    col,
+    when,
 )
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
@@ -82,17 +86,27 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import DuplicateColumnError
 
+from tests.test_sqlalchemy import _upsert_lists
 from utilities.datetime import is_equal_mod_tz
-from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
+from utilities.hypothesis import (
+    aiosqlite_engines,
+    assume_does_not_raise,
+    sqlite_engines,
+    text_ascii,
+)
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import (
+    EngineOrConnection,
     ensure_tables_created,
     ensure_tables_created_async,
     yield_connection,
 )
 from utilities.sqlalchemy_polars import (
+    InsertDataFrameAsyncError,
     InsertDataFrameError,
+    UpsertDataFrameAsyncError,
+    UpsertDataFrameError,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -107,6 +121,8 @@ from utilities.sqlalchemy_polars import (
     insert_dataframe_async,
     select_to_dataframe,
     select_to_dataframe_async,
+    upsert_dataframe,
+    upsert_dataframe_async,
 )
 from utilities.zoneinfo import UTC
 
@@ -116,9 +132,20 @@ if TYPE_CHECKING:
     from _pytest.mark import ParameterSet
     from polars._typing import PolarsDataType
     from polars.datatypes import DataTypeClass
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 _T = TypeVar("_T")
+
+
+@composite
+def _upsert_dataframes(draw: DrawFn, /, *, nullable: bool = False) -> DataFrame:
+    values = draw(_upsert_lists(nullable=nullable))
+    return DataFrame(
+        values,
+        schema={"id_": Int64, "init": pl.Boolean, "post": pl.Boolean},
+        orient="row",
+    )
 
 
 class TestInsertDataFrame:
@@ -218,7 +245,7 @@ class TestInsertDataFrame:
         df, table = self._prepare_empty_test(values)
         engine = await aiosqlite_engines(data)
         with raises(
-            InsertDataFrameError,
+            InsertDataFrameAsyncError,
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
             _ = await insert_dataframe_async(df, table, engine)
@@ -715,8 +742,8 @@ class TestSelectToDataFrameApplySnake:
         sel = select(table)
         res = _select_to_dataframe_apply_snake(sel)
         expected = ["id", "value"]
-        for col, exp in zip(res.selected_columns, expected, strict=True):
-            assert col.name == exp
+        for column, exp in zip(res.selected_columns, expected, strict=True):
+            assert column.name == exp
 
 
 class TestSelectToDataFrameCheckDuplicates:
@@ -825,3 +852,119 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
             sels = list(iterator)
         for sel in sels:
             assert isinstance(sel, Select)
+
+
+@mark.only
+class TestUpsertDataFrame:
+    @given(df=_upsert_dataframes(), engine=sqlite_engines())
+    def test_sync(self, *, df: DataFrame, engine: Engine) -> None:
+        table = self._table
+        with assume_does_not_raise(UpsertDataFrameError):
+            upsert_dataframe(
+                df.select("id_", col("init").alias("value")), table, engine
+            )
+        with engine.begin() as conn:
+            res = conn.execute(select(table)).all()
+        self._assert_results(res, df.select("id_", "init"))
+        with assume_does_not_raise(UpsertDataFrameError):
+            upsert_dataframe(
+                df.select("id_", col("post").alias("value")).drop_nulls(), table, engine
+            )
+        with engine.begin() as conn:
+            res = conn.execute(select(table)).all()
+        expected = df.select(
+            "id_", when(col("post").is_null()).then("init").otherwise("post")
+        )
+        self._assert_results(res, expected)
+
+    @given(df=_upsert_dataframes(), engine=sqlite_engines())
+    def test_sync_error(self, *, df: DataFrame, engine: Engine) -> None:
+        _ = assume(not df.is_empty())
+        with raises(
+            UpsertDataFrameError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            upsert_dataframe(
+                df.select(col("id_").alias("not_id"), col("init").alias("not_value")),
+                self._table,
+                engine,
+            )
+
+    @given(data=data(), df=_upsert_dataframes())
+    async def test_async(self, *, data: DataObject, df: DataFrame) -> None:
+        table = self._table
+        engine = await aiosqlite_engines(data)
+        with assume_does_not_raise(UpsertDataFrameAsyncError):
+            await upsert_dataframe_async(
+                df.select("id_", col("init").alias("value")), table, engine
+            )
+        async with engine.begin() as conn:
+            res = (await conn.execute(select(table))).all()
+        self._assert_results(res, df.select("id_", "init"))
+        with assume_does_not_raise(UpsertDataFrameAsyncError):
+            await upsert_dataframe_async(
+                df.select("id_", col("post").alias("value")).drop_nulls(), table, engine
+            )
+        async with engine.begin() as conn:
+            res = (await conn.execute(select(table))).all()
+        expected = df.select(
+            "id_", when(col("post").is_null()).then("init").otherwise("post")
+        )
+        self._assert_results(res, expected)
+
+    @given(data=data(), df=_upsert_dataframes())
+    async def test_async_error(self, *, data: DataObject, df: DataFrame) -> None:
+        _ = assume(not df.is_empty())
+        engine = await aiosqlite_engines(data)
+        with raises(
+            UpsertDataFrameAsyncError,
+            match="Non-empty DataFrame must resolve to at least 1 item",
+        ):
+            await upsert_dataframe_async(
+                df.select(col("id_").alias("not_id"), col("init").alias("not_value")),
+                self._table,
+                engine,
+            )
+
+    @property
+    def _table(self) -> Table:
+        return Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", sqlalchemy.Boolean),
+        )
+
+    async def _run_test_async(
+        self,
+        df: DataFrame,
+        table: Table,
+        engine: AsyncEngine,
+        /,
+        *,
+        snake: bool = False,
+        sr_name: str = "value",
+    ) -> None:
+        with assume_does_not_raise(UpsertDataFrameAsyncError):
+            await upsert_dataframe_async(
+                df.select("id_", col("init").alias(sr_name)), table, engine, snake=snake
+            )
+        async with engine.begin() as conn:
+            res = (await conn.execute(select(table))).all()
+        self._assert_results(res, df.select("id_", "init"))
+        with assume_does_not_raise(UpsertDataFrameAsyncError):
+            await upsert_dataframe_async(
+                df.select("id_", col("post").alias(sr_name)).drop_nulls(),
+                table,
+                engine,
+                snake=snake,
+            )
+        async with engine.begin() as conn:
+            res = (await conn.execute(select(table))).all()
+        expected = df.select(
+            "id_", when(col("post").is_null()).then("init").otherwise("post")
+        )
+        self._assert_results(res, expected)
+
+    def _assert_results(self, results: Sequence[Any], expected: DataFrame, /) -> None:
+        assert set(results) == set(expected.rows())

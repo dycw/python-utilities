@@ -101,10 +101,19 @@ def insert_dataframe(
     )
 
 
+@dataclass(kw_only=True)
+class InsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
 async def insert_dataframe_async(
     df: DataFrame,
     table_or_mapped_class: TableOrMappedClass,
-    engine: AsyncEngine,
+    engine: AsyncEngine,  # does not support connection
     /,
     *,
     snake: bool = False,
@@ -117,13 +126,22 @@ async def insert_dataframe_async(
         await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
-        raise InsertDataFrameError(df=df)
+        raise InsertDataFrameAsyncError(df=df)
     await insert_items_async(
         engine,
         prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
     )
+
+
+@dataclass(kw_only=True)
+class InsertDataFrameAsyncError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -148,15 +166,6 @@ def _insert_dataframe_prepare(
         no_items_empty_df=no_items and df_is_empty,
         no_items_non_empty_df=no_items and not df_is_empty,
     )
-
-
-@dataclass(kw_only=True)
-class InsertDataFrameError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 def _insert_dataframe_map_df_schema_to_table(
@@ -606,10 +615,19 @@ def upsert_dataframe(
     )
 
 
+@dataclass(kw_only=True)
+class UpsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
 async def upsert_dataframe_async(
     df: DataFrame,
     table_or_mapped_class: TableOrMappedClass,
-    engine: AsyncEngine,
+    engine: AsyncEngine,  # does not support connection
     /,
     *,
     snake: bool = False,
@@ -623,7 +641,7 @@ async def upsert_dataframe_async(
         await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
-        raise UpsertDataFrameError(df=df)
+        raise UpsertDataFrameAsyncError(df=df)
     await upsert_items_async(
         engine,
         prepared.items,
@@ -634,7 +652,7 @@ async def upsert_dataframe_async(
 
 
 @dataclass(kw_only=True)
-class UpsertDataFrameError(Exception):
+class UpsertDataFrameAsyncError(Exception):
     df: DataFrame
 
     @override
@@ -643,7 +661,9 @@ class UpsertDataFrameError(Exception):
 
 
 __all__ = [
+    "InsertDataFrameAsyncError",
     "InsertDataFrameError",
+    "UpsertDataFrameAsyncError",
     "UpsertDataFrameError",
     "insert_dataframe",
     "insert_dataframe_async",
