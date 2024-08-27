@@ -2171,15 +2171,15 @@ class TestUpsertItems:
         )
         match selected_or_all:
             case "selected":
-                expected2 = (id_, x_post, y)
+                expected = (id_, x_post, y)
             case "all":
-                expected2 = (id_, x_post, None)
+                expected = (id_, x_post, None)
         _ = self._run_test_sync(
             engine,
             table,
             ({"id_": id_, "x": x_post}, table),
             selected_or_all=selected_or_all,
-            expected={expected2},
+            expected={expected},
         )
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
@@ -2390,6 +2390,57 @@ class TestUpsertItems:
         }
         with assume_does_not_raise(OperationalError, match="no such table"):
             _ = await self._run_test_async(engine, cls, items, expected=expected)
+
+    @given(
+        data=data(),
+        id_=integers(0, 10),
+        x_init=booleans(),
+        x_post=booleans(),
+        y=booleans(),
+    )
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    async def test_async_sel_or_all(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        x_init: bool,
+        x_post: bool,
+        y: bool,
+    ) -> None:
+        key = (
+            TestUpsertItems.test_async_sel_or_all.__qualname__,
+            dialect,
+            selected_or_all,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table_sel_or_all(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        _ = await self._run_test_async(
+            engine,
+            table,
+            ({"id_": id_, "x": x_init, "y": y}, table),
+            selected_or_all=selected_or_all,
+            expected={(id_, x_init, y)},
+        )
+        match selected_or_all:
+            case "selected":
+                expected = (id_, x_post, y)
+            case "all":
+                expected = (id_, x_post, None)
+        _ = await self._run_test_async(
+            engine,
+            table,
+            ({"id_": id_, "x": x_post}, table),
+            selected_or_all=selected_or_all,
+            expected={expected},
+        )
 
     def _get_table(self, name: str, /) -> Table:
         return Table(
