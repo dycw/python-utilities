@@ -1916,7 +1916,7 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(
                 engine,
                 table,
@@ -1934,7 +1934,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(engine, table, items, expected=expected)
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
@@ -1956,7 +1956,7 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(
                 engine,
                 table,
@@ -1971,7 +1971,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(engine, table, items, expected=expected)
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
@@ -2014,7 +2014,7 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, cls, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(
                 engine,
                 cls,
@@ -2027,7 +2027,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = self._run_test_sync(engine, cls, items, expected=expected)
 
     @given(
@@ -2199,7 +2199,7 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(
                 engine,
                 table,
@@ -2217,7 +2217,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(engine, table, items, expected=expected)
 
     @given(data=data(), triples=_upsert_lists(nullable=True))
@@ -2239,7 +2239,7 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(
                 engine,
                 table,
@@ -2254,7 +2254,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(engine, table, items, expected=expected)
 
     @given(data=data(), triple=_upsert_triples())
@@ -2297,7 +2297,7 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, cls, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(
                 engine,
                 cls,
@@ -2310,7 +2310,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, match="no such table"):
+        with assume_does_not_raise(OperationalError, ProgrammingError):
             _ = await self._run_test_async(engine, cls, items, expected=expected)
 
     @given(
@@ -2398,7 +2398,7 @@ class TestUpsertItems:
         ((_, _, updated2),) = await self._run_test_async(engine, table, item2)
         assert updated1 < updated2
 
-    @given(data=data(), sqlite_engine=sqlite_engines(), id_=integers(0, 10))
+    @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_assume_table_exists(
         self,
