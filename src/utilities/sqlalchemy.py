@@ -15,7 +15,6 @@ from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
-from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
@@ -912,10 +911,11 @@ def _insert_items_prepare(
     """Prepare the arguments for `insert_items`."""
     mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
-    for item in chain(*map(normalize_insert_item, items)):
-        values = item.values
-        mapping[item.table].append(values)
-        lengths.add(len(values))
+    for item in items:
+        for normed in normalize_insert_item(item):
+            values = normed.values
+            mapping[normed.table].append(values)
+            lengths.add(len(values))
     tables = list(mapping)
     max_length = max(lengths, default=1)
     chunk_size = get_chunk_size(
