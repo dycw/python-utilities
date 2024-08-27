@@ -7,7 +7,7 @@ from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, settings
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -85,11 +85,9 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
-from utilities.functions import get_class_name
 from utilities.hashlib import md5_hash
 from utilities.hypothesis import (
     aiosqlite_engines,
-    assume_does_not_raise,
     lists_fixed_length,
     sqlite_engines,
     temp_paths,
@@ -207,10 +205,7 @@ def _upsert_triples(
 
 
 def _upsert_lists(
-    *,
-    nullable: bool = False,
-    min_size: int = 0,
-    max_size: int | None = None,
+    *, nullable: bool = False, min_size: int = 0, max_size: int | None = None
 ) -> SearchStrategy[list[tuple[int, bool, bool | None]]]:
     return lists(
         _upsert_triples(nullable=nullable),
@@ -1809,11 +1804,7 @@ class TestPostgresEngine:
     ) -> None:
         key = TestPostgresEngine.test_main.__qualname__
         name = f"test_{md5_hash(key)}"
-        table = Table(
-            name,
-            MetaData(),
-            Column("id_", Integer, primary_key=True),
-        )
+        table = Table(name, MetaData(), Column("id_", Integer, primary_key=True))
         engine = create_postgres_engine(table)
         insert_items(engine, ([(id_,) for id_ in ids], table))
         sel = select(table.c["id_"])
@@ -2226,7 +2217,7 @@ class TestUpsertItems:
         }
         _ = await self._run_test_async(engine, table, items, expected=expected)
 
-    @given(data=data(), triples=_upsert_lists(nullable=True))
+    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_list_of_pairs_of_dicts_and_table(
         self,
@@ -2245,13 +2236,12 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(
-                engine,
-                table,
-                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = await self._run_test_async(
+            engine,
+            table,
+            ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = [
             ({"id_": id_, "value": post}, table)
             for id_, _, post in triples
@@ -2260,8 +2250,7 @@ class TestUpsertItems:
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(engine, table, items, expected=expected)
+        _ = await self._run_test_async(engine, table, items, expected=expected)
 
     @given(data=data(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
@@ -2287,7 +2276,7 @@ class TestUpsertItems:
             engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
         )
 
-    @given(data=data(), triples=_upsert_lists(nullable=True))
+    @given(data=data(), triples=_upsert_lists(nullable=True, min_size=1))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_mapped_classes(
         self,
@@ -2303,21 +2292,19 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, cls, dialect=dialect
         )
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(
-                engine,
-                cls,
-                [cls(id_=id_, value=init) for id_, init, _ in triples],
-                expected={(id_, init) for id_, init, _ in triples},
-            )
+        _ = await self._run_test_async(
+            engine,
+            cls,
+            [cls(id_=id_, value=init) for id_, init, _ in triples],
+            expected={(id_, init) for id_, init, _ in triples},
+        )
         items = [
             cls(id_=id_, value=post) for id_, _, post in triples if post is not None
         ]
         expected = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OperationalError, ProgrammingError):
-            _ = await self._run_test_async(engine, cls, items, expected=expected)
+        _ = await self._run_test_async(engine, cls, items, expected=expected)
 
     @given(
         data=data(),
