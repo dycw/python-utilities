@@ -1220,92 +1220,6 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
-def upsert(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
-    table_or_mapped_class: TableOrMappedClass,
-    values: Iterable[StrMapping],
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    """Upsert statement for a database.
-
-    These can be one of the following:
-     - pair of dict & table/class:            {k1=v1, k2=v2, ...), table_cls
-     - pair of list of dicts & table/class:   [{k1=v11, k2=v12, ...},
-                                               {k1=v21, k2=v22, ...},
-                                               ...], table/class
-     - list of pairs of dict & table/class:   [({k1=v11, k2=v12, ...}, table_cls1),
-                                               ({k1=v21, k2=v22, ...}, table_cls2),
-                                               ...]
-     - mapped class:                          Obj(k1=v1, k2=v2, ...)
-     - list of mapped classes:                [Obj(k1=v11, k2=v12, ...),
-                                               Obj(k1=v21, k2=v22, ...),
-                                               ...]
-    """
-    table = get_table(table_or_mapped_class)
-    if (updated_col := get_table_updated_column(table)) is not None:
-        updated_mapping = {updated_col: get_now()}
-        values = _upsert_add_updated(values, updated_mapping)
-    match get_dialect(engine_or_conn):
-        case Dialect.postgresql:  # skipif-ci-and-not-linux
-            insert = postgresql_insert
-        case Dialect.sqlite:
-            insert = sqlite_insert
-        case (  # pragma: no cover
-            (Dialect.mssql | Dialect.mysql | Dialect.oracle) as dialect
-        ):
-            raise NotImplementedError(dialect)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-    values = list(values)
-    ins = insert(table).values(values)
-    primary_key = cast(Any, table.primary_key)
-    return _upsert_apply_on_conflict_do_update(
-        values, ins, primary_key, selected_or_all=selected_or_all
-    )
-
-
-def _upsert_add_updated(
-    values: Iterable[StrMapping], updated: Mapping[str, dt.datetime], /
-) -> Iterable[StrMapping]:
-    return [_upsert_add_updated_to_mapping(v, updated) for v in always_iterable(values)]
-
-
-def _upsert_add_updated_to_mapping(
-    value: StrMapping, updated_at: Mapping[str, dt.datetime], /
-) -> StrMapping:
-    return {**value, **updated_at}
-
-
-def _upsert_apply_on_conflict_do_update(
-    values: StrMapping | Sequence[StrMapping],
-    insert: postgresql_Insert | sqlite_Insert,
-    primary_key: PrimaryKeyConstraint,
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
-    match selected_or_all:
-        case "selected":
-            if isinstance(values, Mapping):
-                columns = set(values)
-            else:
-                columns = one(set(map(frozenset, values)))
-        case "all":
-            columns = {c.name for c in insert.excluded}
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-    set_ = {c: getattr(insert.excluded, c) for c in columns}
-    match insert:
-        case postgresql_Insert():  # skipif-ci
-            return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
-        case sqlite_Insert():
-            return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
-
-
 _UpsertItem = (
     _PairOfDictAndTable
     | _PairOfListOfDictsAndTable
@@ -1389,12 +1303,76 @@ def _upsert_items_prepare(
     def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
-                ups = upsert(
+                ups = _upsert_items_build(
                     engine_or_conn, table, chunk, selected_or_all=selected_or_all
                 )
                 yield ups, None
 
     return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
+
+
+def _upsert_items_build(
+    engine_or_conn: MaybeAsyncEngineOrConnection,
+    table: Table,
+    values: Iterable[StrMapping],
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    values = list(values)
+    if (updated_col := get_table_updated_column(table)) is not None:
+        updated_mapping = {updated_col: get_now()}
+        values = list(_upsert_items_add_updated(values, updated_mapping))
+    match get_dialect(engine_or_conn):
+        case Dialect.postgresql:  # skipif-ci-and-not-linux
+            insert = postgresql_insert
+        case Dialect.sqlite:
+            insert = sqlite_insert
+        case (  # pragma: no cover
+            (Dialect.mssql | Dialect.mysql | Dialect.oracle) as dialect
+        ):
+            raise NotImplementedError(dialect)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    ins = insert(table).values(values)
+    primary_key = cast(Any, table.primary_key)
+    return _upsert_items_apply_on_conflict_do_update(
+        values, ins, primary_key, selected_or_all=selected_or_all
+    )
+
+
+def _upsert_items_add_updated(
+    values: Iterable[StrMapping], updated: Mapping[str, dt.datetime], /
+) -> Iterable[StrMapping]:
+    return [{**v, **updated} for v in values]
+
+
+def _upsert_items_apply_on_conflict_do_update(
+    values: StrMapping | Sequence[StrMapping],
+    insert: postgresql_Insert | sqlite_Insert,
+    primary_key: PrimaryKeyConstraint,
+    /,
+    *,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> Insert:
+    match selected_or_all:
+        case "selected":
+            if isinstance(values, Mapping):
+                columns = set(values)
+            else:
+                columns = one(set(map(frozenset, values)))
+        case "all":
+            columns = {c.name for c in insert.excluded}
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    set_ = {c: getattr(insert.excluded, c) for c in columns}
+    match insert:
+        case postgresql_Insert():  # skipif-ci
+            return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
+        case sqlite_Insert():
+            return insert.on_conflict_do_update(index_elements=primary_key, set_=set_)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 @dataclass(kw_only=True)
@@ -1520,7 +1498,6 @@ __all__ = [
     "mapped_class_to_dict",
     "parse_engine",
     "serialize_engine",
-    "upsert",
     "upsert_items",
     "upsert_items_async",
     "yield_connection",
