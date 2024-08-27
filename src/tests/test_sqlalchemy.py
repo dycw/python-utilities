@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import enum
+import time
 from enum import auto
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
@@ -2202,7 +2203,7 @@ class TestUpsertItems:
         ((_, _, updated1),) = self._run_test_sync(
             engine, table, ({"id_": id_, "value": init}, table)
         )
-        sleep(0.01)
+        time.sleep(0.01)
         ((_, _, updated2),) = self._run_test_sync(
             engine, table, ({"id_": id_, "value": post}, table)
         )
@@ -2441,6 +2442,32 @@ class TestUpsertItems:
             selected_or_all=selected_or_all,
             expected={expected},
         )
+
+    @given(data=data(), triple=_upsert_triples())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_updated(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool | None],
+    ) -> None:
+        key = TestUpsertItems.test_async_updated.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table_updated(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        id_, init, post = triple
+        ((_, _, updated1),) = await self._run_test_async(
+            engine, table, ({"id_": id_, "value": init}, table)
+        )
+        await asyncio.sleep(0.01)
+        ((_, _, updated2),) = await self._run_test_async(
+            engine, table, ({"id_": id_, "value": post}, table)
+        )
+        assert updated1 < updated2
 
     def _get_table(self, name: str, /) -> Table:
         return Table(
