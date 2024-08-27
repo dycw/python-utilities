@@ -2092,7 +2092,7 @@ class TestUpsertItems:
         single_or_list: Literal["single", "list"],
         triple: tuple[int, bool, bool | None],
     ) -> None:
-        key = TestUpsertItems.test_sync_updated.__qualname__, dialect
+        key = TestUpsertItems.test_sync_updated.__qualname__, dialect, single_or_list
         name = f"test_{md5_hash(key)}"
         table = self._get_table_updated(name)
         engine = self._get_engine_sync(
@@ -2369,7 +2369,7 @@ class TestUpsertItems:
         single_or_list: Literal["single", "list"],
         triple: tuple[int, bool, bool | None],
     ) -> None:
-        key = TestUpsertItems.test_async_updated.__qualname__, dialect
+        key = TestUpsertItems.test_async_updated.__qualname__, dialect, single_or_list
         name = f"test_{md5_hash(key)}"
         table = self._get_table_updated(name)
         engine = await self._get_engine_async(
