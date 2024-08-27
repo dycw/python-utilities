@@ -88,6 +88,7 @@ from sqlalchemy.exc import DuplicateColumnError
 
 from tests.test_sqlalchemy import _upsert_lists
 from utilities.datetime import is_equal_mod_tz
+from utilities.hashlib import md5_hash
 from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
@@ -821,7 +822,9 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
 class TestUpsertDataFrame:
     @given(df=_upsert_dataframes(min_height=1), engine=sqlite_engines())
     def test_sync(self, *, df: DataFrame, engine: Engine) -> None:
-        table = self._table
+        key = TestUpsertDataFrame.test_sync.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         upsert_dataframe(df.select("id_", col("init").alias("value")), table, engine)
         with engine.begin() as conn:
             res = conn.execute(select(table)).all()
@@ -838,19 +841,24 @@ class TestUpsertDataFrame:
 
     @given(df=_upsert_dataframes(min_height=1), engine=sqlite_engines())
     def test_sync_error(self, *, df: DataFrame, engine: Engine) -> None:
+        key = TestUpsertDataFrame.test_sync_error.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         with raises(
             UpsertDataFrameError,
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
             upsert_dataframe(
                 df.select(col("id_").alias("not_id"), col("init").alias("not_value")),
-                self._table,
+                table,
                 engine,
             )
 
     @given(data=data(), df=_upsert_dataframes(min_height=1))
     async def test_async(self, *, data: DataObject, df: DataFrame) -> None:
-        table = self._table
+        key = TestUpsertDataFrame.test_async.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         engine = await aiosqlite_engines(data)
         await upsert_dataframe_async(
             df.select("id_", col("init").alias("value")), table, engine
@@ -870,6 +878,9 @@ class TestUpsertDataFrame:
 
     @given(data=data(), df=_upsert_dataframes(min_height=1))
     async def test_async_error(self, *, data: DataObject, df: DataFrame) -> None:
+        key = TestUpsertDataFrame.test_async_error.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         engine = await aiosqlite_engines(data)
         with raises(
             UpsertDataFrameAsyncError,
@@ -877,14 +888,13 @@ class TestUpsertDataFrame:
         ):
             await upsert_dataframe_async(
                 df.select(col("id_").alias("not_id"), col("init").alias("not_value")),
-                self._table,
+                table,
                 engine,
             )
 
-    @property
-    def _table(self) -> Table:
+    def _get_table(self, name: str, /) -> Table:
         return Table(
-            "example",
+            name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
             Column("value", sqlalchemy.Boolean),
