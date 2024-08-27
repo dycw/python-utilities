@@ -6,7 +6,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
-from hypothesis import Phase, assume, given, reproduce_failure, settings
+from hypothesis import Phase, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -89,7 +89,7 @@ from utilities.hypothesis import (
     temp_paths,
     text_ascii,
 )
-from utilities.iterables import OneEmptyError, one
+from utilities.iterables import one
 from utilities.modules import is_installed
 from utilities.sqlalchemy import (
     AsyncEngineOrConnection,
@@ -171,6 +171,7 @@ from utilities.sqlalchemy import (
     serialize_engine,
     upsert,
     upsert_items,
+    upsert_items_async,
     yield_connection,
     yield_connection_async,
     yield_primary_key_columns,
@@ -1970,7 +1971,7 @@ class TestUpsert:
 
 
 class TestUpsertItems:
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_pair_of_dict_and_table(
         self,
@@ -1978,7 +1979,7 @@ class TestUpsertItems:
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
         dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
+        triple: tuple[int, bool, bool | None],
     ) -> None:
         key = TestUpsertItems.test_sync_pair_of_dict_and_table.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
@@ -1991,7 +1992,10 @@ class TestUpsertItems:
             engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
         )
         _ = self._run_test_sync(
-            engine, table, ({"id_": id_, "value": post}, table), expected={(id_, post)}
+            engine,
+            table,
+            ({"id_": id_, "value": post}, table),
+            expected={(id_, init if post is None else post)},
         )
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
@@ -2020,22 +2024,19 @@ class TestUpsertItems:
                 ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
+        items = (
+            [
+                {"id_": id_, "value": post}
+                for id_, _, post in triples
+                if post is not None
+            ],
+            table,
+        )
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
         with assume_does_not_raise(OperationalError, match="no such table"):
-            _ = self._run_test_sync(
-                engine,
-                table,
-                (
-                    [
-                        {"id_": id_, "value": post}
-                        for id_, _, post in triples
-                        if post is not None
-                    ],
-                    table,
-                ),
-                expected={
-                    (id_, init if post is None else post) for id_, init, post in triples
-                },
-            )
+            _ = self._run_test_sync(engine, table, items, expected=expected)
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
@@ -2233,8 +2234,7 @@ class TestUpsertItems:
         with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
 
-    @given(data=data(), triple=_upsert_triples())
-    @mark.skip
+    @given(data=data(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_pair_of_dict_and_table(
         self,
@@ -2242,7 +2242,7 @@ class TestUpsertItems:
         data: DataObject,
         create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
         dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
+        triple: tuple[int, bool, bool | None],
     ) -> None:
         key = TestUpsertItems.test_async_pair_of_dict_and_table.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
@@ -2255,7 +2255,10 @@ class TestUpsertItems:
             engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
         )
         _ = self._run_test_async(
-            engine, table, ({"id_": id_, "value": post}, table), expected={(id_, post)}
+            engine,
+            table,
+            ({"id_": id_, "value": post}, table),
+            expected={(id_, init if post is None else post)},
         )
 
     def _get_table(self, name: str, /) -> Table:
@@ -2263,7 +2266,7 @@ class TestUpsertItems:
             name,
             MetaData(),
             Column("id_", Integer, primary_key=True),
-            Column("value", Boolean, nullable=False),
+            Column("value", Boolean, nullable=True),
         )
 
     def _get_table_sel_or_all(self, name: str, /) -> Table:
@@ -2376,6 +2379,29 @@ class TestUpsertItems:
         sel = self._get_select(table_or_mapped_class)
         with yield_connection(engine_or_conn) as conn:
             results = conn.execute(sel).all()
+        if expected is not None:
+            self._assert_results(results, expected)
+        return results
+
+    async def _run_test_async(
+        self,
+        engine_or_conn: AsyncEngineOrConnection,
+        table_or_mapped_class: TableOrMappedClass,
+        /,
+        *items: _UpsertItem,
+        assume_tables_exist: bool = False,
+        selected_or_all: Literal["selected", "all"] = "selected",
+        expected: set[tuple[Any, ...]] | None = None,
+    ) -> Sequence[Row[Any]]:
+        await upsert_items_async(
+            engine_or_conn,
+            *items,
+            assume_tables_exist=assume_tables_exist,
+            selected_or_all=selected_or_all,
+        )
+        sel = self._get_select(table_or_mapped_class)
+        async with yield_connection_async(engine_or_conn) as conn:
+            results = (await conn.execute(sel)).all()
         if expected is not None:
             self._assert_results(results, expected)
         return results
