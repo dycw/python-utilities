@@ -1223,7 +1223,7 @@ class TablenameMixin:
 def upsert(
     engine_or_conn: MaybeAsyncEngineOrConnection,
     table_or_mapped_class: TableOrMappedClass,
-    values: MaybeIterable[StrMapping],
+    values: Iterable[StrMapping],
     /,
     *,
     selected_or_all: Literal["selected", "all"] = "selected",
@@ -1250,7 +1250,7 @@ def upsert(
     match get_dialect(engine_or_conn):
         case Dialect.postgresql:  # skipif-ci-and-not-linux
             insert = postgresql_insert
-        case Dialect.sqlite:  # skipif-ci-and-not-linux
+        case Dialect.sqlite:
             insert = sqlite_insert
         case (  # pragma: no cover
             (Dialect.mssql | Dialect.mysql | Dialect.oracle) as dialect
@@ -1258,7 +1258,7 @@ def upsert(
             raise NotImplementedError(dialect)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
-    values = list(always_iterable(values))
+    values = list(values)
     ins = insert(table).values(values)
     primary_key = cast(Any, table.primary_key)
     return _upsert_apply_on_conflict_do_update(
@@ -1266,15 +1266,13 @@ def upsert(
     )
 
 
-def _upsert_add_updated(  # skipif-ci-in-environ
-    values: MaybeIterable[StrMapping], updated: Mapping[str, dt.datetime], /
-) -> MaybeIterable[StrMapping]:
-    if is_string_mapping(values):
-        return _upsert_add_updated_to_mapping(values, updated)
+def _upsert_add_updated(
+    values: Iterable[StrMapping], updated: Mapping[str, dt.datetime], /
+) -> Iterable[StrMapping]:
     return [_upsert_add_updated_to_mapping(v, updated) for v in always_iterable(values)]
 
 
-def _upsert_add_updated_to_mapping(  # skipif-ci-in-environ
+def _upsert_add_updated_to_mapping(
     value: StrMapping, updated_at: Mapping[str, dt.datetime], /
 ) -> StrMapping:
     return {**value, **updated_at}

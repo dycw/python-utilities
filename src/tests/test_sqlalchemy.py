@@ -2078,12 +2078,14 @@ class TestUpsertItems:
 
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.parametrize("single_or_list", [param("single"), param("list")])
     def test_sync_updated(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
         dialect: Literal["sqlite", "postgres"],
+        single_or_list: Literal["single", "list"],
         triple: tuple[int, bool, bool | None],
     ) -> None:
         key = TestUpsertItems.test_sync_updated.__qualname__, dialect
@@ -2093,13 +2095,19 @@ class TestUpsertItems:
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
         id_, init, post = triple
-        ((_, _, updated1),) = self._run_test_sync(
-            engine, table, ({"id_": id_, "value": init}, table)
-        )
+        match single_or_list:
+            case "single":
+                item1 = ({"id_": id_, "value": init}, table)
+            case "list":
+                item1 = [({"id_": id_, "value": init}, table)]
+        ((_, _, updated1),) = self._run_test_sync(engine, table, item1)
         time.sleep(0.01)
-        ((_, _, updated2),) = self._run_test_sync(
-            engine, table, ({"id_": id_, "value": post}, table)
-        )
+        match single_or_list:
+            case "single":
+                item2 = ({"id_": id_, "value": post}, table)
+            case "list":
+                item2 = [({"id_": id_, "value": post}, table)]
+        ((_, _, updated2),) = self._run_test_sync(engine, table, item2)
         assert updated1 < updated2
 
     @given(sqlite_engine=sqlite_engines())
@@ -2333,12 +2341,14 @@ class TestUpsertItems:
 
     @given(data=data(), triple=_upsert_triples())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.parametrize("single_or_list", [param("single"), param("list")])
     async def test_async_updated(
         self,
         *,
         data: DataObject,
         create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
         dialect: Literal["sqlite", "postgres"],
+        single_or_list: Literal["single", "list"],
         triple: tuple[int, bool, bool | None],
     ) -> None:
         key = TestUpsertItems.test_async_updated.__qualname__, dialect
@@ -2348,13 +2358,19 @@ class TestUpsertItems:
             data, create_postgres_engine_async, table, dialect=dialect
         )
         id_, init, post = triple
-        ((_, _, updated1),) = await self._run_test_async(
-            engine, table, ({"id_": id_, "value": init}, table)
-        )
+        match single_or_list:
+            case "single":
+                item1 = ({"id_": id_, "value": init}, table)
+            case "list":
+                item1 = [({"id_": id_, "value": init}, table)]
+        ((_, _, updated1),) = await self._run_test_async(engine, table, item1)
         await asyncio.sleep(0.01)
-        ((_, _, updated2),) = await self._run_test_async(
-            engine, table, ({"id_": id_, "value": post}, table)
-        )
+        match single_or_list:
+            case "single":
+                item2 = ({"id_": id_, "value": post}, table)
+            case "list":
+                item2 = [({"id_": id_, "value": post}, table)]
+        ((_, _, updated2),) = await self._run_test_async(engine, table, item2)
         assert updated1 < updated2
 
     @given(data=data())
