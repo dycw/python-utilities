@@ -11,24 +11,14 @@ from collections.abc import (
     Sequence,
 )
 from collections.abc import Set as AbstractSet
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager, suppress
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Literal,
-    TypeGuard,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
 
 import sqlalchemy
 from sqlalchemy import (
@@ -113,10 +103,6 @@ AsyncEngineOrConnection = AsyncEngine | AsyncConnection
 MaybeAsyncEngineOrConnection = EngineOrConnection | AsyncEngineOrConnection
 TableOrMappedClass = Table | type[DeclarativeBase]
 CHUNK_SIZE_FRAC = 0.95
-_TupleOrStrMapping = tuple[Any, ...] | StrMapping
-_TTupleOrStrMapping = TypeVar(
-    "_TTupleOrStrMapping", tuple[Any, ...], StrMapping, _TupleOrStrMapping
-)
 
 
 def _check_column_collections_equal(
@@ -853,7 +839,7 @@ def insert_items(
     """
     try:
         prepared = _insert_items_prepare(
-            engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
+            engine_or_conn, *items, chunk_size_frac=chunk_size_frac
         )
     except _InsertItemsPrepareError as error:
         raise InsertItemsError(item=error.item) from None
@@ -903,7 +889,7 @@ async def insert_items_async(
     """
     try:
         prepared = _insert_items_prepare(
-            engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
+            engine_or_conn, *items, chunk_size_frac=chunk_size_frac
         )
     except _InsertItemsPrepareError as error:
         raise InsertItemsAsyncError(item=error.item) from None
@@ -934,11 +920,9 @@ def _insert_items_prepare(
     /,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    kind: Literal["insert", "upsert"] = "insert",
-    selected_or_all: Literal["selected", "all"] = "selected",
 ) -> _PreInsertUpsertItems:
     """Prepare the arguments for `insert_items`."""
-    mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
+    mapping: dict[Table, list[TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
     try:
         for item in items:
@@ -954,31 +938,14 @@ def _insert_items_prepare(
         engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
-    def yield_tables_and_chunks() -> (
-        Iterator[tuple[Table, Iterable[_TupleOrStrMapping]]]
-    ):
+    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
-                yield table, chunk
-
-    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
-        for table, values in yield_tables_and_chunks():
-            match kind:
-                case "insert":
-                    match get_dialect(engine_or_conn):
-                        case Dialect.oracle:  # pragma: no cover
-                            yield insert(table), values
-                        case _:
-                            yield insert(table).values(list(values)), None
-                case "upsert":
-                    values = cast(list[StrMapping], values)
-                    ups = upsert(
-                        engine_or_conn,
-                        table,
-                        values=values,
-                        selected_or_all=selected_or_all,
-                    )
-                    yield ups, None
+                match get_dialect(engine_or_conn):
+                    case Dialect.oracle:  # pragma: no cover
+                        yield insert(table), chunk
+                    case _:
+                        yield insert(table).values(list(chunk)), None
 
     return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
 
@@ -994,7 +961,7 @@ class _InsertItemsPrepareError(Exception):
 
 def is_insert_item_pair(
     obj: Any, /
-) -> TypeGuard[tuple[_TupleOrStrMapping, TableOrMappedClass]]:
+) -> TypeGuard[tuple[TupleOrStrMapping, TableOrMappedClass]]:
     """Check if an object is an insert-ready pair."""
     return _is_insert_or_upsert_pair(obj, is_tuple_or_string_mapping)
 
@@ -1054,37 +1021,23 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
 
 
 @dataclass(kw_only=True)
-class _NormalizedInsertItem(Generic[_TTupleOrStrMapping]):
-    values: _TTupleOrStrMapping
+class _NormalizedInsertItem:
+    values: TupleOrStrMapping
     table: Table
 
 
-@overload
-def normalize_insert_item(
-    item: _PairOfTupleAndTable
-    | _PairOfListOfTuplesAndTable
-    | _ListOfPairOfTupleAndTable,
-    /,
-) -> Iterator[_NormalizedInsertItem[tuple[Any, ...]]]: ...
-@overload
-def normalize_insert_item(
-    item: _UpsertItem, /
-) -> Iterator[_NormalizedInsertItem[StrMapping]]: ...
-def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem[Any]]:
+def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
     """Normalize an insertion item."""
+    with suppress(NormalizeUpsertItemError):
+        for norm in normalize_upsert_item(cast(Any, item)):
+            yield _NormalizedInsertItem(values=norm.values, table=norm.table)
+        return
+
     if is_insert_item_pair(item):
         yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
         return
 
-    item = cast(
-        _PairOfListOfTuplesAndTable
-        | _PairOfListOfDictsAndTable
-        | _ListOfPairOfTupleAndTable
-        | _ListOfPairOfDictAndTable
-        | DeclarativeBase
-        | Sequence[DeclarativeBase],
-        item,
-    )
+    item = cast(_PairOfListOfTuplesAndTable | _ListOfPairOfTupleAndTable, item)
 
     if (
         isinstance(item, tuple)
@@ -1093,33 +1046,17 @@ def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIte
         and all(is_tuple_or_string_mapping(i) for i in item[0])
         and is_table_or_mapped_class(item[1])
     ):
-        item = cast(_PairOfListOfTuplesAndTable | _PairOfListOfDictsAndTable, item)
+        item = cast(_PairOfListOfTuplesAndTable, item)
         for i in item[0]:
             yield _NormalizedInsertItem(values=i, table=get_table(item[1]))
         return
 
-    item = cast(
-        _ListOfPairOfTupleAndTable
-        | _ListOfPairOfDictAndTable
-        | DeclarativeBase
-        | Sequence[DeclarativeBase],
-        item,
-    )
+    item = cast(_ListOfPairOfDictAndTable, item)
 
     if is_iterable_not_str(item) and all(is_insert_item_pair(i) for i in item):
         item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
         for i in item:
             yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
-        return
-
-    item = cast(MaybeIterable[DeclarativeBase], item)
-    if isinstance(item, DeclarativeBase) or (
-        is_iterable_not_str(item) and all(isinstance(i, DeclarativeBase) for i in item)
-    ):
-        for i in always_iterable(item):
-            yield _NormalizedInsertItem(
-                values=mapped_class_to_dict(i), table=get_table(i)
-            )
         return
 
     raise NormalizeInsertItemError(item=item)
@@ -1147,9 +1084,9 @@ def normalize_upsert_item(
     normalized = _normalize_upsert_item_inner(item)
     match selected_or_all:
         case "selected":
-            for normed in normalized:
-                values = {k: v for k, v in normed.values.items() if v is not None}
-                yield _NormalizedUpsertItem(values=values, table=normed.table)
+            for norm in normalized:
+                values = {k: v for k, v in norm.values.items() if v is not None}
+                yield _NormalizedUpsertItem(values=values, table=norm.table)
         case "all":
             yield from normalized
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
@@ -1522,11 +1459,10 @@ async def upsert_items_async(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    prepared = _insert_items_prepare(
+    prepared = _upsert_items_prepare(
         engine_or_conn,
         *items,
         chunk_size_frac=chunk_size_frac,
-        kind="upsert",
         selected_or_all=selected_or_all,
     )
     if not assume_tables_exist:
