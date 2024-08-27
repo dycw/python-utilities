@@ -591,7 +591,7 @@ def ensure_tables_created(
             try:
                 table.create(conn)
             except DatabaseError as error:
-                _ensure_tables_created_maybe_reraise(error, prepared.match)
+                _ensure_tables_maybe_reraise(error, prepared.match)
 
 
 async def ensure_tables_created_async(
@@ -606,11 +606,11 @@ async def ensure_tables_created_async(
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
-                _ensure_tables_created_maybe_reraise(error, prepared.match)
+                _ensure_tables_maybe_reraise(error, prepared.match)
 
 
 @dataclass(frozen=True, kw_only=True)
-class _EnsureTablesCreatedPrepare:
+class _EnsureTablesCreatedOrDroppedPrepare:
     match: str
     tables: AbstractSet[Table]
 
@@ -619,9 +619,9 @@ def _ensure_tables_created_prepare(
     engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
-) -> _EnsureTablesCreatedPrepare:
+) -> _EnsureTablesCreatedOrDroppedPrepare:
     """Prepare the arguments for `ensure_tables_created`."""
-    return _EnsureTablesCreatedPrepare(
+    return _EnsureTablesCreatedOrDroppedPrepare(
         match=_ensure_tables_created_match(engine_or_conn),
         tables=set(map(get_table, tables_or_mapped_classes)),
     )
@@ -646,7 +646,7 @@ def _ensure_tables_created_match(
             assert_never(never)
 
 
-def _ensure_tables_created_maybe_reraise(error: DatabaseError, match: str, /) -> None:
+def _ensure_tables_maybe_reraise(error: DatabaseError, match: str, /) -> None:
     """Re-raise the error if it does not match the required statement."""
     if not search(match, ensure_str(one(error.args))):
         raise error  # pragma: no cover
@@ -656,15 +656,64 @@ def ensure_tables_dropped(
     engine_or_conn: EngineOrConnection, *tables_or_mapped_classes: TableOrMappedClass
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
-    match = get_table_does_not_exist_message(engine_or_conn)
-    for table_or_mapped_class in tables_or_mapped_classes:
-        table = get_table(table_or_mapped_class)
+    prepared = _ensure_tables_dropped_prepare(engine_or_conn, *tables_or_mapped_classes)
+    for table in prepared.tables:
         with yield_connection(engine_or_conn) as conn:
             try:
                 table.drop(conn)
             except DatabaseError as error:
-                if not search(match, ensure_str(one(error.args))):
-                    raise  # pragma: no cover
+                _ensure_tables_dropped_maybe_reraise(error, prepared.match)
+
+
+async def ensure_tables_dropped_async(
+    engine_or_conn: AsyncEngineOrConnection,
+    *tables_or_mapped_classes: TableOrMappedClass,
+) -> None:
+    """Ensure a table/set of tables is/are dropped."""
+    prepared = _ensure_tables_dropped_prepare(engine_or_conn, *tables_or_mapped_classes)
+    for table in prepared.tables:
+        async with yield_connection_async(engine_or_conn) as conn:
+            try:
+                await conn.run_sync(table.drop)
+            except DatabaseError as error:
+                _ensure_tables_maybe_reraise(error, prepared.match)
+
+
+def _ensure_tables_dropped_prepare(
+    engine_or_conn: MaybeAsyncEngineOrConnection,
+    /,
+    *tables_or_mapped_classes: TableOrMappedClass,
+) -> _EnsureTablesCreatedOrDroppedPrepare:
+    """Prepare the arguments for `ensure_tables_dropped`."""
+    return _EnsureTablesCreatedOrDroppedPrepare(
+        match=_ensure_tables_dropped_match(engine_or_conn),
+        tables=set(map(get_table, tables_or_mapped_classes)),
+    )
+
+
+def _ensure_tables_dropped_match(
+    engine_or_conn: MaybeAsyncEngineOrConnection, /
+) -> str:
+    """Get the match statement for the given engine."""
+    match dialect := get_dialect(engine_or_conn):
+        case Dialect.mysql:  # pragma: no cover
+            raise NotImplementedError(dialect)
+        case Dialect.postgresql:  # skipif-ci-and-not-linux
+            return "table .* does not exist"
+        case Dialect.mssql:  # pragma: no cover
+            return "Cannot drop the table .*, because it does not exist or you do not have permission"
+        case Dialect.oracle:  # pragma: no cover
+            return "ORA-00942: table or view does not exist"
+        case Dialect.sqlite:
+            return "no such table"
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _ensure_tables_dropped_maybe_reraise(error: DatabaseError, match: str, /) -> None:
+    """Re-raise the error if it does not match the required statement."""
+    if not search(match, ensure_str(one(error.args))):
+        raise error  # pragma: no cover
 
 
 def get_chunk_size(
@@ -735,28 +784,6 @@ class GetTableError(Exception):
     @override
     def __str__(self) -> str:
         return f"Object {self.obj} must be a Table or mapped class; got {get_class_name(self.obj)!r}"
-
-
-def get_table_does_not_exist_message(
-    engine_or_conn: MaybeAsyncEngineOrConnection, /
-) -> str:
-    """Get the message for a non-existent table."""
-    match dialect := get_dialect(engine_or_conn):
-        case Dialect.mysql:  # pragma: no cover
-            raise NotImplementedError(dialect)
-        case Dialect.postgresql:  # skipif-ci-and-not-linux
-            return "table .* does not exist"
-        case Dialect.mssql:  # pragma: no cover
-            return (
-                "Cannot drop the table .*, because it does not exist or you do "
-                "not have permission"
-            )
-        case Dialect.oracle:  # pragma: no cover
-            return "ORA-00942: table or view does not exist"
-        case Dialect.sqlite:
-            return "no such table"
-        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
 
 
 def get_table_updated_column(
@@ -926,11 +953,11 @@ def _insert_items_prepare(
     lengths: set[int] = set()
     try:
         for item in items:
-            for normed in normalize_insert_item(item):
+            for normed in _normalize_insert_item(item):
                 values = normed.values
                 mapping[normed.table].append(values)
                 lengths.add(len(values))
-    except NormalizeInsertItemError as error:
+    except _NormalizeInsertItemError as error:
         raise _InsertItemsPrepareError(item=error.item) from None
     tables = list(mapping)
     max_length = max(lengths, default=1)
@@ -1026,12 +1053,12 @@ class _NormalizedInsertItem:
     table: Table
 
 
-def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
+def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
     """Normalize an insertion item."""
     try:
-        for norm in normalize_upsert_item(cast(Any, item), selected_or_all="all"):
+        for norm in _normalize_upsert_item(cast(Any, item), selected_or_all="all"):
             yield _NormalizedInsertItem(values=norm.values, table=norm.table)
-    except NormalizeUpsertItemError:
+    except _NormalizeUpsertItemError:
         pass
     else:
         return
@@ -1062,11 +1089,11 @@ def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIte
             yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
         return
 
-    raise NormalizeInsertItemError(item=item)
+    raise _NormalizeInsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
-class NormalizeInsertItemError(Exception):
+class _NormalizeInsertItemError(Exception):
     item: _InsertItem
 
     @override
@@ -1080,7 +1107,7 @@ class _NormalizedUpsertItem:
     table: Table
 
 
-def normalize_upsert_item(
+def _normalize_upsert_item(
     item: _UpsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
 ) -> Iterator[_NormalizedUpsertItem]:
     """Normalize an upsert item."""
@@ -1143,11 +1170,11 @@ def _normalize_upsert_item_inner(
             )
         return
 
-    raise NormalizeUpsertItemError(item=item)
+    raise _NormalizeUpsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
-class NormalizeUpsertItemError(Exception):
+class _NormalizeUpsertItemError(Exception):
     item: _UpsertItem
 
     @override
@@ -1386,6 +1413,15 @@ def upsert_items(
             _ = conn.execute(ins, parameters=parameters)
 
 
+@dataclass(kw_only=True)
+class UpsertItemsError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
+
+
 def _upsert_items_prepare(
     engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
@@ -1398,11 +1434,11 @@ def _upsert_items_prepare(
     lengths: set[int] = set()
     try:
         for item in items:
-            for normed in normalize_upsert_item(item, selected_or_all=selected_or_all):
+            for normed in _normalize_upsert_item(item, selected_or_all=selected_or_all):
                 values = normed.values
                 mapping[normed.table].append(values)
                 lengths.add(len(values))
-    except NormalizeUpsertItemError as error:
+    except _NormalizeUpsertItemError as error:
         raise _UpsertItemsPrepareError(item=error.item) from None
     tables = list(mapping)
     max_length = max(lengths, default=1)
@@ -1423,15 +1459,6 @@ def _upsert_items_prepare(
 
 @dataclass(kw_only=True)
 class _UpsertItemsPrepareError(Exception):
-    item: _InsertItem
-
-    @override
-    def __str__(self) -> str:
-        return f"Item must be valid; got {self.item}"
-
-
-@dataclass(kw_only=True)
-class UpsertItemsError(Exception):
     item: _InsertItem
 
     @override
@@ -1462,17 +1489,29 @@ async def upsert_items_async(
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    prepared = _upsert_items_prepare(
-        engine_or_conn,
-        *items,
-        chunk_size_frac=chunk_size_frac,
-        selected_or_all=selected_or_all,
-    )
+    try:
+        prepared = _upsert_items_prepare(
+            engine_or_conn,
+            *items,
+            chunk_size_frac=chunk_size_frac,
+            selected_or_all=selected_or_all,
+        )
+    except _UpsertItemsPrepareError as error:
+        raise UpsertItemsAsyncError(item=error.item) from None
     if not assume_tables_exist:
         await ensure_tables_created_async(engine_or_conn, *prepared.tables)
     for ins, parameters in prepared.yield_pairs():
         async with yield_connection_async(engine_or_conn) as conn:
             _ = await conn.execute(ins, parameters=parameters)
+
+
+@dataclass(kw_only=True)
+class UpsertItemsAsyncError(Exception):
+    item: _InsertItem
+
+    @override
+    def __str__(self) -> str:
+        return f"Item must be valid; got {self.item}"
 
 
 @contextmanager
@@ -1511,10 +1550,13 @@ __all__ = [
     "GetTableError",
     "InsertItemsAsyncError",
     "InsertItemsError",
-    "NormalizeInsertItemError",
     "ParseEngineError",
     "TablenameMixin",
     "UpsertError",
+    "UpsertItemsAsyncError",
+    "UpsertItemsError",
+    "_normalize_insert_item",
+    "_normalize_upsert_item",
     "check_engine",
     "check_table_against_reflection",
     "columnwise_max",
@@ -1523,12 +1565,12 @@ __all__ = [
     "ensure_engine",
     "ensure_tables_created",
     "ensure_tables_dropped",
+    "ensure_tables_dropped_async",
     "get_chunk_size",
     "get_column_names",
     "get_columns",
     "get_dialect",
     "get_table",
-    "get_table_does_not_exist_message",
     "get_table_name",
     "get_table_updated_column",
     "insert_items",
@@ -1539,11 +1581,11 @@ __all__ = [
     "is_upsert_item_pair",
     "is_upsert_item_pair",
     "mapped_class_to_dict",
-    "normalize_insert_item",
-    "normalize_upsert_item",
     "parse_engine",
     "serialize_engine",
     "upsert",
+    "upsert_items",
+    "upsert_items_async",
     "yield_connection",
     "yield_connection_async",
     "yield_primary_key_columns",
