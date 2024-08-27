@@ -54,9 +54,11 @@ from utilities.sqlalchemy import (
     get_columns,
     insert_items,
     insert_items_async,
+    upsert_items,
+    upsert_items_async,
     yield_connection,
 )
-from utilities.types import ensure_not_none
+from utilities.types import StrMapping, ensure_not_none
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -93,7 +95,7 @@ def insert_dataframe(
         raise InsertDataFrameError(df=df)
     insert_items(
         engine_or_conn,
-        prepared.insert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
     )
@@ -118,7 +120,7 @@ async def insert_dataframe_async(
         raise InsertDataFrameError(df=df)
     await insert_items_async(
         engine,
-        prepared.insert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
     )
@@ -126,7 +128,7 @@ async def insert_dataframe_async(
 
 @dataclass(frozen=True, kw_only=True)
 class _InsertDataFramePrepare:
-    insert_item: tuple[Sequence[Mapping[str, Any]], Table | type[Any]]
+    items: tuple[Sequence[StrMapping], TableOrMappedClass]
     no_items_empty_df: bool
     no_items_non_empty_df: bool
 
@@ -142,7 +144,7 @@ def _insert_dataframe_prepare(
     no_items = len(items) == 0
     df_is_empty = df.is_empty()
     return _InsertDataFramePrepare(
-        insert_item=(items, table_or_mapped_class),
+        items=(items, table_or_mapped_class),
         no_items_empty_df=no_items and df_is_empty,
         no_items_non_empty_df=no_items and not df_is_empty,
     )
@@ -589,17 +591,18 @@ def upsert_dataframe(
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> None:
     """Upsert a DataFrame into a database."""
-    prepared = _upsert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         ensure_tables_created(engine_or_conn, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
-        raise upsertDataFrameError(df=df)
+        raise UpsertDataFrameError(df=df)
     upsert_items(
         engine_or_conn,
-        prepared.upsert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
+        selected_or_all=selected_or_all,
     )
 
 
@@ -615,24 +618,37 @@ async def upsert_dataframe_async(
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> None:
     """Upsert a DataFrame into a database."""
-    prepared = _upsert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
-        raise upsertDataFrameError(df=df)
+        raise UpsertDataFrameError(df=df)
     await upsert_items_async(
         engine,
-        prepared.upsert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
+        selected_or_all=selected_or_all,
     )
+
+
+@dataclass(kw_only=True)
+class UpsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
 __all__ = [
     "InsertDataFrameError",
+    "UpsertDataFrameError",
     "insert_dataframe",
     "insert_dataframe_async",
     "select_to_dataframe",
     "select_to_dataframe_async",
+    "upsert_dataframe",
+    "upsert_dataframe_async",
 ]

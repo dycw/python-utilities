@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 Number = int | float
 Duration = Number | dt.timedelta
 PathLike = Path | str
+StrMapping = Mapping[str, Any]
 
 
 _T = TypeVar("_T")

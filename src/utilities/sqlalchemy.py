@@ -95,6 +95,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.text import ensure_str
+from utilities.types import StrMapping
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -107,10 +108,9 @@ AsyncEngineOrConnection = AsyncEngine | AsyncConnection
 MaybeAsyncEngineOrConnection = EngineOrConnection | AsyncEngineOrConnection
 TableOrMappedClass = Table | type[DeclarativeBase]
 CHUNK_SIZE_FRAC = 0.95
-_StrMapping = Mapping[str, Any]
-_TupleOrStrMapping = tuple[Any, ...] | _StrMapping
+_TupleOrStrMapping = tuple[Any, ...] | StrMapping
 _TTupleOrStrMapping = TypeVar(
-    "_TTupleOrStrMapping", tuple[Any, ...], _StrMapping, _TupleOrStrMapping
+    "_TTupleOrStrMapping", tuple[Any, ...], StrMapping, _TupleOrStrMapping
 )
 
 
@@ -489,7 +489,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: _StrMapping | None = ...,
+    query: StrMapping | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: Literal[True],
 ) -> AsyncEngine: ...
@@ -503,7 +503,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: _StrMapping | None = ...,
+    query: StrMapping | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: Literal[False] = False,
 ) -> Engine: ...
@@ -517,7 +517,7 @@ def create_engine(
     host: str | None = ...,
     port: int | None = ...,
     database: str | None = ...,
-    query: _StrMapping | None = ...,
+    query: StrMapping | None = ...,
     poolclass: type[Pool] | None = ...,
     async_: bool = False,
 ) -> Engine | AsyncEngine: ...
@@ -530,7 +530,7 @@ def create_engine(
     host: str | None = None,
     port: int | None = None,
     database: str | None = None,
-    query: _StrMapping | None = None,
+    query: StrMapping | None = None,
     poolclass: type[Pool] | None = NullPool,
     async_: bool = False,
 ) -> Engine | AsyncEngine:
@@ -801,11 +801,11 @@ def get_table_name(table_or_mapped_class: TableOrMappedClass, /) -> str:
 
 
 _PairOfTupleAndTable = tuple[tuple[Any, ...], TableOrMappedClass]
-_PairOfDictAndTable = tuple[_StrMapping, TableOrMappedClass]
+_PairOfDictAndTable = tuple[StrMapping, TableOrMappedClass]
 _PairOfListOfTuplesAndTable = tuple[Sequence[tuple[Any, ...]], TableOrMappedClass]
-_PairOfListOfDictsAndTable = tuple[Sequence[_StrMapping], TableOrMappedClass]
+_PairOfListOfDictsAndTable = tuple[Sequence[StrMapping], TableOrMappedClass]
 _ListOfPairOfTupleAndTable = Sequence[tuple[tuple[Any, ...], TableOrMappedClass]]
-_ListOfPairOfDictAndTable = Sequence[tuple[_StrMapping, TableOrMappedClass]]
+_ListOfPairOfDictAndTable = Sequence[tuple[StrMapping, TableOrMappedClass]]
 _InsertItem = (
     _PairOfTupleAndTable
     | _PairOfDictAndTable
@@ -939,7 +939,7 @@ def _insert_items_prepare(
                         case _:
                             yield insert(table).values(list(values)), None
                 case "upsert":
-                    values = cast(list[_StrMapping], values)
+                    values = cast(list[StrMapping], values)
                     ups = upsert(
                         engine_or_conn,
                         table,
@@ -1025,7 +1025,7 @@ def normalize_insert_item(
     | _ListOfPairOfDictAndTable
     | MaybeIterable[DeclarativeBase],
     /,
-) -> Iterator[_NormalizedInsertItem[_StrMapping]]: ...
+) -> Iterator[_NormalizedInsertItem[StrMapping]]: ...
 def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem[Any]]:
     """Normalize an insertion item."""
     if is_insert_item_pair(item):
@@ -1134,7 +1134,7 @@ def upsert(
     item: TableOrMappedClass,
     /,
     *,
-    values: _StrMapping | Sequence[_StrMapping],
+    values: StrMapping | Sequence[StrMapping],
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
 @overload
@@ -1151,7 +1151,7 @@ def upsert(  # skipif-ci-in-environ
     item: Any,
     /,
     *,
-    values: _StrMapping | Sequence[_StrMapping] | None = None,
+    values: StrMapping | Sequence[StrMapping] | None = None,
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
     """Upsert statement for a database.
@@ -1197,7 +1197,7 @@ def upsert(  # skipif-ci-in-environ
 def _upsert_core(
     engine_or_conn: MaybeAsyncEngineOrConnection,
     table_or_mapped_class: TableOrMappedClass,
-    values: _StrMapping | Sequence[_StrMapping],
+    values: StrMapping | Sequence[StrMapping],
     /,
     *,
     selected_or_all: Literal["selected", "all"] = "selected",
@@ -1225,21 +1225,21 @@ def _upsert_core(
 
 
 def _upsert_add_updated(  # skipif-ci-in-environ
-    values: _StrMapping | Sequence[_StrMapping], updated: Mapping[str, dt.datetime], /
-) -> _StrMapping | Sequence[_StrMapping]:
+    values: StrMapping | Sequence[StrMapping], updated: Mapping[str, dt.datetime], /
+) -> StrMapping | Sequence[StrMapping]:
     if isinstance(values, Mapping):
         return _upsert_add_updated_to_mapping(values, updated)
     return [_upsert_add_updated_to_mapping(v, updated) for v in values]
 
 
 def _upsert_add_updated_to_mapping(  # skipif-ci-in-environ
-    value: _StrMapping, updated_at: Mapping[str, dt.datetime], /
-) -> _StrMapping:
+    value: StrMapping, updated_at: Mapping[str, dt.datetime], /
+) -> StrMapping:
     return {**value, **updated_at}
 
 
 def _upsert_apply_on_conflict_do_update(
-    values: _StrMapping | Sequence[_StrMapping],
+    values: StrMapping | Sequence[StrMapping],
     insert: postgresql_Insert | sqlite_Insert,
     primary_key: PrimaryKeyConstraint,
     /,
@@ -1269,7 +1269,7 @@ def _upsert_apply_on_conflict_do_update(
 @dataclass(kw_only=True)
 class UpsertError(Exception):
     item: Any
-    values: _StrMapping | Sequence[_StrMapping] | None
+    values: StrMapping | Sequence[StrMapping] | None
 
     @override
     def __str__(self) -> str:  # skipif-ci-in-environ
@@ -1319,6 +1319,43 @@ def upsert_items(
     for ins, parameters in prepared.yield_pairs():
         with yield_connection(engine_or_conn) as conn:
             _ = conn.execute(ins, parameters=parameters)
+
+
+async def upsert_items_async(
+    engine_or_conn: AsyncEngineOrConnection,
+    /,
+    *items: _UpsertItem,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a set of items into a database.
+
+    These can be one of the following:
+     - pair of dict & table/class:            {k1=v1, k2=v2, ...), table_cls
+     - pair of list of dicts & table/class:   [{k1=v11, k2=v12, ...},
+                                               {k1=v21, k2=v22, ...},
+                                               ...], table/class
+     - list of pairs of dict & table/class:   [({k1=v11, k2=v12, ...}, table_cls1),
+                                               ({k1=v21, k2=v22, ...}, table_cls2),
+                                               ...]
+     - mapped class:                          Obj(k1=v1, k2=v2, ...)
+     - list of mapped classes:                [Obj(k1=v11, k2=v12, ...),
+                                               Obj(k1=v21, k2=v22, ...),
+                                               ...]
+    """
+    prepared = _insert_items_prepare(
+        engine_or_conn,
+        *items,
+        chunk_size_frac=chunk_size_frac,
+        kind="upsert",
+        selected_or_all=selected_or_all,
+    )
+    if not assume_tables_exist:
+        await ensure_tables_created_async(engine_or_conn, *prepared.tables)
+    for ins, parameters in prepared.yield_pairs():
+        async with yield_connection_async(engine_or_conn) as conn:
+            _ = await conn.execute(ins, parameters=parameters)
 
 
 @contextmanager
