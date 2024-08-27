@@ -1220,30 +1220,12 @@ class TablenameMixin:
         return snake_case(get_class_name(cls))
 
 
-@overload
 def upsert(
     engine_or_conn: MaybeAsyncEngineOrConnection,
-    item: TableOrMappedClass,
-    /,
-    *,
+    table_or_mapped_class: TableOrMappedClass,
     values: MaybeIterable[StrMapping],
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-@overload
-def upsert(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
-    item: DeclarativeBase | Sequence[DeclarativeBase],
     /,
     *,
-    values: None = None,
-    selected_or_all: Literal["selected", "all"] = ...,
-) -> Insert: ...
-def upsert(  # skipif-ci-in-environ
-    engine_or_conn: MaybeAsyncEngineOrConnection,
-    item: Any,
-    /,
-    *,
-    values: MaybeIterable[StrMapping] | None = None,
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
     """Upsert statement for a database.
@@ -1261,36 +1243,6 @@ def upsert(  # skipif-ci-in-environ
                                                Obj(k1=v21, k2=v22, ...),
                                                ...]
     """
-    if is_table_or_mapped_class(item) and (values is not None):
-        return _upsert_core(
-            engine_or_conn, item, values, selected_or_all=selected_or_all
-        )
-    if is_mapped_class(item) and (values is None):
-        table = get_table(item)
-        mappings = [mapped_class_to_dict(item)]
-    elif (
-        is_iterable_not_str(item)
-        and all(map(is_mapped_class, item))
-        and (values is None)
-    ):
-        table = one(set(map(get_table, item)))
-        mappings = map(mapped_class_to_dict, item)
-    else:
-        raise UpsertError(item=item, values=values)
-    values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
-    return _upsert_core(
-        engine_or_conn, table, values_use, selected_or_all=selected_or_all
-    )
-
-
-def _upsert_core(
-    engine_or_conn: MaybeAsyncEngineOrConnection,
-    table_or_mapped_class: TableOrMappedClass,
-    values: MaybeIterable[StrMapping],
-    /,
-    *,
-    selected_or_all: Literal["selected", "all"] = "selected",
-) -> Insert:
     table = get_table(table_or_mapped_class)
     if (updated_col := get_table_updated_column(table)) is not None:
         updated_mapping = {updated_col: get_now()}
@@ -1450,7 +1402,7 @@ def _upsert_items_prepare(
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
                 ups = upsert(
-                    engine_or_conn, table, values=chunk, selected_or_all=selected_or_all
+                    engine_or_conn, table, chunk, selected_or_all=selected_or_all
                 )
                 yield ups, None
 

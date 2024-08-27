@@ -103,7 +103,6 @@ from utilities.sqlalchemy import (
     ParseEngineError,
     TablenameMixin,
     TableOrMappedClass,
-    UpsertError,
     UpsertItemsAsyncError,
     UpsertItemsError,
     _check_column_collections_equal,
@@ -171,7 +170,6 @@ from utilities.sqlalchemy import (
     parse_engine,
     reflect_table,
     serialize_engine,
-    upsert,
     upsert_items,
     upsert_items_async,
     yield_connection,
@@ -180,7 +178,7 @@ from utilities.sqlalchemy import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
     from utilities.asyncio import Coroutine1
@@ -1864,112 +1862,6 @@ class TestTablenameMixin:
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
 
         assert get_table_name(Example) == "example"
-
-
-@mark.skip
-class TestUpsert:
-    @given(sqlite_engine=sqlite_engines())
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_error(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
-        dialect: Literal["sqlite", "postgres"],
-    ) -> None:
-        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_error.__name__}_{case[:3]}_{dialect[:3]}"
-        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
-        engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
-        )
-        with raises(
-            UpsertError, match="Unsupported item and values; got None and None"
-        ):
-            _ = self._run_upsert(engine, table_or_mapped_class, cast(Any, None))
-
-    def _get_table_or_mapped_class(
-        self, name: str, /, *, case: Literal["table", "mapped_class"]
-    ) -> TableOrMappedClass:
-        match case:
-            case "table":
-                return Table(
-                    name,
-                    MetaData(),
-                    Column("id_", Integer, primary_key=True),
-                    Column("value", Boolean, nullable=False),
-                )
-            case "mapped_class":
-
-                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-                class Example(Base):
-                    __tablename__ = name
-
-                    id_: Mapped[int] = mapped_column(
-                        Integer, kw_only=True, primary_key=True
-                    )
-                    value: Mapped[bool] = mapped_column(
-                        Boolean, kw_only=True, nullable=False
-                    )
-
-                return Example
-
-    def _get_engine(
-        self,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        table_or_mapped_class: TableOrMappedClass,
-        /,
-        *,
-        dialect: Literal["sqlite", "postgres"],
-    ) -> Engine:
-        match dialect:
-            case "sqlite":
-                ensure_tables_created(sqlite_engine, table_or_mapped_class)
-                return sqlite_engine
-            case "postgres":
-                return create_postgres_engine(table_or_mapped_class)
-
-    def _run_upsert_one(
-        self,
-        engine: Engine,
-        table_or_mapped_class: TableOrMappedClass,
-        item: Any,
-        /,
-        *,
-        values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
-        selected_or_all: Literal["selected", "all"] = "selected",
-    ) -> Row[Any]:
-        return one(
-            self._run_upsert(
-                engine,
-                table_or_mapped_class,
-                item,
-                values=values,
-                selected_or_all=selected_or_all,
-            )
-        )
-
-    def _run_upsert(
-        self,
-        engine: Engine,
-        table_or_mapped_class: TableOrMappedClass,
-        item: Any,
-        /,
-        *,
-        values: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
-        selected_or_all: Literal["selected", "all"] = "selected",
-    ) -> set[Row[Any]]:
-        ups = upsert(engine, item, values=values, selected_or_all=selected_or_all)
-        with engine.begin() as conn:
-            _ = conn.execute(ups)
-        with engine.begin() as conn:
-            return set(conn.execute(select(get_table(table_or_mapped_class))).all())
 
 
 class TestUpsertItems:
