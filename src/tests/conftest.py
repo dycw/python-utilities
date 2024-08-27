@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark
 
 from utilities.platform import IS_NOT_LINUX
-from utilities.sqlalchemy import (
-    ensure_tables_created_async,
-    ensure_tables_dropped_async,
-)
+from utilities.sqlalchemy import ensure_tables_dropped_async
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -51,17 +48,12 @@ else:
         """Create a Postgres engine."""
 
         def inner(*tables_or_mapped_classes: TableOrMappedClass) -> Engine:
-            from utilities.sqlalchemy import (
-                create_engine,
-                ensure_tables_created,
-                ensure_tables_dropped,
-            )
+            from utilities.sqlalchemy import create_engine, ensure_tables_dropped
 
             engine = create_engine(
                 "postgresql", host="localhost", port=5432, database="testing"
             )
             ensure_tables_dropped(engine, *tables_or_mapped_classes)
-            ensure_tables_created(engine, *tables_or_mapped_classes)
             return engine
 
         return inner
@@ -81,7 +73,6 @@ else:
                 async_=True,
             )
             await ensure_tables_dropped_async(engine, *tables_or_mapped_classes)
-            await ensure_tables_created_async(engine, *tables_or_mapped_classes)
             return engine
 
         return inner

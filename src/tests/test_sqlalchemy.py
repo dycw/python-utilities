@@ -75,7 +75,12 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.exc import DatabaseError, NoSuchTableError, OperationalError
+from sqlalchemy.exc import (
+    DatabaseError,
+    NoSuchTableError,
+    OperationalError,
+    ProgrammingError,
+)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
@@ -2110,6 +2115,26 @@ class TestUpsertItems:
         ((_, _, updated2),) = self._run_test_sync(engine, table, item2)
         assert updated1 < updated2
 
+    @given(sqlite_engine=sqlite_engines(), id_=integers(0, 10))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    def test_sync_assume_table_exists(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        id_: int,
+    ) -> None:
+        key = TestUpsertItems.test_sync_assume_table_exists.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = self._get_engine_sync(
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
+        )
+        _ = self._run_test_sync(
+            engine, table, ({"id_": id_}, table), assume_tables_exist=True
+        )
+
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_error(
@@ -2373,6 +2398,26 @@ class TestUpsertItems:
         ((_, _, updated2),) = await self._run_test_async(engine, table, item2)
         assert updated1 < updated2
 
+    @given(data=data(), sqlite_engine=sqlite_engines(), id_=integers(0, 10))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_assume_table_exists(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        id_: int,
+    ) -> None:
+        key = TestUpsertItems.test_async_assume_table_exists.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        _ = await self._run_test_async(
+            engine, table, ({"id_": id_}, table), assume_tables_exist=True
+        )
+
     @given(data=data())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_error(
@@ -2473,6 +2518,15 @@ class TestUpsertItems:
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> Sequence[Row[Any]]:
+        if assume_tables_exist:
+            with raises((OperationalError, ProgrammingError)):
+                upsert_items(
+                    engine_or_conn,
+                    *items,
+                    assume_tables_exist=assume_tables_exist,
+                    selected_or_all=selected_or_all,
+                )
+            return []
         upsert_items(
             engine_or_conn,
             *items,
@@ -2496,6 +2550,15 @@ class TestUpsertItems:
         selected_or_all: Literal["selected", "all"] = "selected",
         expected: set[tuple[Any, ...]] | None = None,
     ) -> Sequence[Row[Any]]:
+        if assume_tables_exist:
+            with raises((OperationalError, ProgrammingError)):
+                await upsert_items_async(
+                    engine_or_conn,
+                    *items,
+                    assume_tables_exist=assume_tables_exist,
+                    selected_or_all=selected_or_all,
+                )
+            return []
         await upsert_items_async(
             engine_or_conn,
             *items,
