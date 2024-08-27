@@ -5,7 +5,7 @@ import decimal
 from contextlib import suppress
 from dataclasses import dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from uuid import UUID
 
 import polars as pl
@@ -68,13 +68,14 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from sqlalchemy.ext.asyncio import AsyncConnection
+    from sqlalchemy.orm import DeclarativeBase
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 
 def insert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     engine_or_conn: Engine | Connection,
     /,
     *,
@@ -99,7 +100,7 @@ def insert_dataframe(
 
 async def insert_dataframe_async(
     df: DataFrame,
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     engine: AsyncEngine,
     /,
     *,
@@ -157,7 +158,7 @@ class InsertDataFrameError(Exception):
 
 def _insert_dataframe_map_df_schema_to_table(
     df_schema: SchemaDict,
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: Table | type[DeclarativeBase],
     /,
     *,
     snake: bool = False,
@@ -573,6 +574,58 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     else:
         chunk_size = in_clauses_chunk_size
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
+
+
+def upsert_dataframe(
+    df: DataFrame,
+    table_or_mapped_class: Table | type[DeclarativeBase],
+    engine_or_conn: Engine | Connection,
+    /,
+    *,
+    snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a DataFrame into a database."""
+    prepared = _upsert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.no_items_empty_df:
+        ensure_tables_created(engine_or_conn, table_or_mapped_class)
+        return
+    if prepared.no_items_non_empty_df:
+        raise upsertDataFrameError(df=df)
+    upsert_items(
+        engine_or_conn,
+        prepared.upsert_item,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+    )
+
+
+async def upsert_dataframe_async(
+    df: DataFrame,
+    table_or_mapped_class: Table | type[DeclarativeBase],
+    engine: AsyncEngine,
+    /,
+    *,
+    snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a DataFrame into a database."""
+    prepared = _upsert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.no_items_empty_df:
+        await ensure_tables_created_async(engine, table_or_mapped_class)
+        return
+    if prepared.no_items_non_empty_df:
+        raise upsertDataFrameError(df=df)
+    await upsert_items_async(
+        engine,
+        prepared.upsert_item,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+    )
 
 
 __all__ = [

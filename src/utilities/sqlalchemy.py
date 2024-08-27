@@ -51,6 +51,7 @@ from sqlalchemy import create_engine as _create_engine
 from sqlalchemy.dialects.mssql import dialect as mssql_dialect
 from sqlalchemy.dialects.mysql import dialect as mysql_dialect
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
+from sqlalchemy.dialects.oracle.cx_oracle import oracle
 from sqlalchemy.dialects.postgresql import Insert as postgresql_Insert
 from sqlalchemy.dialects.postgresql import dialect as postgresql_dialect
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
@@ -84,7 +85,7 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.text import ensure_str
+from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -790,24 +791,51 @@ def get_table_name(table_or_mapped_class: Table | type[DeclarativeBase], /) -> s
     return get_table(table_or_mapped_class).name
 
 
+_InsertItemPairOfTupleAndTable = tuple[tuple[Any, ...], Table]
+_InsertItemPairOfDictAndTable = tuple[Mapping[str, Any], Table]
+_InsertItemPairOfListOfTuplesAndTable = tuple[Sequence[tuple[Any, ...]], Table]
+_InsertItemPairOfListOfDictsAndTable = tuple[Sequence[Mapping[str, Any]], Table]
+_InsertItemListOfPairOfTupleAndTable = Sequence[tuple[tuple[Any, ...], Table]]
+_InsertItemListOfPairOfDictAndTable = Sequence[tuple[Mapping[str, Any], Table]]
+_InsertItem = (
+    _InsertItemPairOfTupleAndTable
+    | _InsertItemPairOfDictAndTable
+    | _InsertItemPairOfListOfTuplesAndTable
+    | _InsertItemPairOfListOfDictsAndTable
+    | _InsertItemListOfPairOfTupleAndTable
+    | _InsertItemListOfPairOfDictAndTable
+    | MaybeIterable[DeclarativeBase]
+)
+
+
 def insert_items(
     engine_or_conn: Engine | Connection,
     /,
-    *items: Any,
+    *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
 ) -> None:
     """Insert a set of items into a database.
 
-    These can be either a:
-     - tuple[Any, ...], table
-     - dict[str, Any], table
-     - [tuple[Any ,...]], table
-     - [dict[str, Any], table
-     - Model
+    These can be one of the following:
+     - pair of tuple & table:           (x1, x2, ...), table
+     - pair of dict & table:            {k1=v1, k2=v2, ...), table
+     - pair of list of tuples & table:  [(x11, x12, ...),
+                                         (x21, x22, ...),
+                                         ...], table
+     - pair of list of dicts & table:   [{k1=v11, k2=v12, ...},
+                                         {k1=v21, k2=v22, ...},
+                                         ...], table
+     - list of pairs of tuple & table:  [((x11, x12, ...), table1),
+                                         ((x21, x22, ...), table2),
+                                         ...]
+     - list of pairs of dict & table:   [({k1=v11, k2=v12, ...}, table1),
+                                         ({k1=v21, k2=v22, ...}, table2),
+                                         ...]
+     - mapped class:                    Obj(k1=v1, k2=v2, ...)
     """
     prepared = _insert_items_prepare(
-        engine_or_conn, *items, chunk_size_frac=chunk_size_frac
+        engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
     )
     if not assume_tables_exist:
         ensure_tables_created(engine_or_conn, *prepared.tables)
@@ -821,21 +849,31 @@ def insert_items(
 
 async def insert_items_async(
     engine_or_conn: AsyncEngine | AsyncConnection,
-    *items: Any,
+    *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
 ) -> None:
     """Insert a set of items into a database.
 
-    These can be either a:
-     - tuple[Any, ...], table
-     - dict[str, Any], table
-     - [tuple[Any ,...]], table
-     - [dict[str, Any], table
-     - Model
+    These can be one of the following:
+     - pair of tuple & table:           (x1, x2, ...), table
+     - pair of dict & table:            {k1=v1, k2=v2, ...), table
+     - pair of list of tuples & table:  [(x11, x12, ...),
+                                         (x21, x22, ...),
+                                         ...], table
+     - pair of list of dicts & table:   [{k1=v11, k2=v12, ...},
+                                         {k1=v21, k2=v22, ...},
+                                         ...], table
+     - list of pairs of tuple & table:  [((x11, x12, ...), table1),
+                                         ((x21, x22, ...), table2),
+                                         ...]
+     - list of pairs of dict & table:   [({k1=v11, k2=v12, ...}, table1),
+                                         ({k1=v21, k2=v22, ...}, table2),
+                                         ...]
+     - mapped class:                    Obj(k1=v1, k2=v2, ...)
     """
     prepared = _insert_items_prepare(
-        engine_or_conn, *items, chunk_size_frac=chunk_size_frac
+        engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="insert"
     )
     if not assume_tables_exist:
         await ensure_tables_created_async(engine_or_conn, *prepared.tables)
@@ -847,7 +885,7 @@ async def insert_items_async(
                 _ = await conn.execute(ins.values(list(values)))
 
 
-_InsertItemValues = tuple[Any, ...] | dict[str, Any]
+_InsertItemValues = tuple[Any, ...] | Mapping[str, Any]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -862,6 +900,8 @@ def _insert_items_prepare(
     /,
     *items: Any,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    kind: Literal["insert", "upsert"],
+    selected_or_all: Literal["selected", "all"] = "selected",
 ) -> _InsertItemsPrepare:
     """Prepare the arguments for `insert_items`."""
     dialect = get_dialect(engine_or_conn)
@@ -877,11 +917,29 @@ def _insert_items_prepare(
         engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
+    def yield_tables_and_chunks() -> (
+        Iterator[tuple[Table, Iterable[_InsertItemValues]]]
+    ):
+        for table, values in mapping.items():
+            for chunk in chunked(values, chunk_size):
+                yield table, chunk
+
     def yield_pairs() -> Iterator[tuple[Insert, Iterable[_InsertItemValues]]]:
         for table, values in mapping.items():
-            ins = insert(table)
-            for chunk in chunked(values, chunk_size):
-                yield ins, chunk
+            match kind:
+                case "insert":
+                    match dialect:
+                        case Dialect.oracle:  # pragma: no cover
+                            yield insert(table), values
+                        case _:
+                            yield insert(table).values(list(values)), None
+                case "upsert":
+                    yield upsert(
+                        engine_or_conn,
+                        table,
+                        values=values,
+                        selected_or_all=selected_or_all,
+                    )
 
     return _InsertItemsPrepare(dialect=dialect, tables=tables, yield_pairs=yield_pairs)
 
@@ -1201,6 +1259,51 @@ class UpsertError(Exception):
     @override
     def __str__(self) -> str:  # skipif-ci-in-environ
         return f"Unsupported item and values; got {self.item} and {self.values}"
+
+
+def upsert_items(
+    engine_or_conn: Engine | Connection,
+    /,
+    *items: Any,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a set of items into a database.
+
+    These can be:
+
+    - tuple[Table, Mapping[str, Any]]
+    - tuple[Table, Sequence[Mapping[str, Any]]]
+    - Model
+    - Sequence[Model]
+    """
+    prepared = _insert_items_prepare(
+        engine_or_conn, *items, chunk_size_frac=chunk_size_frac, kind="upsert"
+    )
+    if (
+        isinstance(item, Table)
+        or (isinstance(item, type) and issubclass(item, DeclarativeBase))
+    ) and (values is not None):
+        return _upsert_core(
+            engine_or_conn, item, values, selected_or_all=selected_or_all
+        )
+    if is_mapped_class(item) and (values is None):
+        table = get_table(item)
+        mappings = [mapped_class_to_dict(item)]
+    elif (
+        is_iterable_not_str(item)
+        and all(map(is_mapped_class, item))
+        and (values is None)
+    ):
+        table = one(set(map(get_table, item)))
+        mappings = map(mapped_class_to_dict, item)
+    else:
+        raise UpsertError(item=item, values=values)
+    values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
+    return _upsert_core(
+        engine_or_conn, table, values_use, selected_or_all=selected_or_all
+    )
 
 
 @contextmanager

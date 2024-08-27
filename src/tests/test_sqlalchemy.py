@@ -131,6 +131,7 @@ from utilities.sqlalchemy import (
     _insert_items_collect_iterable,
     _insert_items_collect_valid,
     _InsertionItem,
+    _InsertItem,
     _InsertItemsCollectError,
     _InsertItemsCollectIterableError,
     check_engine,
@@ -1165,10 +1166,11 @@ class TestInsertItems:
     ) -> None:
         match tuple_or_dict:
             case "tuple":
-                value = (id_,)
+                item = (id_,), self._table
+                self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
             case "dict":
-                value = {"id_": id_}
-        self._run_test_sync(engine, {id_}, (value, self._table), use_conn=use_conn)
+                item = {"id_": id_}, self._table
+                self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
 
     @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize(
@@ -1187,13 +1189,16 @@ class TestInsertItems:
         match case:
             case "pair_of_list_of_tuples":
                 item = [((id_,)) for id_ in ids], self._table
+                self._run_test_sync(engine, ids, item, use_conn=use_conn)
             case "pair_of_list_of_dicts":
                 item = [({"id_": id_}) for id_ in ids], self._table
+                self._run_test_sync(engine, ids, item, use_conn=use_conn)
             case "list_of_pairs_of_tuples":
                 item = [(((id_,), self._table)) for id_ in ids]
+                self._run_test_sync(engine, ids, item, use_conn=use_conn)
             case "list_of_pairs_of_dicts":
                 item = [({"id_": id_}, self._table) for id_ in ids]
-        self._run_test_sync(engine, ids, item, use_conn=use_conn)
+                self._run_test_sync(engine, ids, item, use_conn=use_conn)
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
@@ -1213,6 +1218,18 @@ class TestInsertItems:
     ) -> None:
         self._run_test_sync(
             engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
+        )
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_mapped_classes(
+        self, *, engine: Engine, ids: set[int], use_conn: bool
+    ) -> None:
+        self._run_test_sync(
+            engine,
+            ids,
+            [self._mapped_class(id_=id_) for id_ in ids],
+            use_conn=use_conn,
         )
 
     @given(engine=sqlite_engines(), id_=integers(0, 10))
@@ -1298,6 +1315,19 @@ class TestInsertItems:
             engine, {id_}, self._mapped_class(id_=id_), use_conn=use_conn
         )
 
+    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_mapped_classes(
+        self, *, data: DataObject, ids: set[int], use_conn: bool
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        await self._run_test_async(
+            engine,
+            ids,
+            [self._mapped_class(id_=id_) for id_ in ids],
+            use_conn=use_conn,
+        )
+
     @given(data=data(), id_=integers(0, 10))
     @mark.parametrize("use_conn", [param(True), param(False)])
     async def test_async_assume_table_exists(
@@ -1332,7 +1362,7 @@ class TestInsertItems:
         engine_or_conn: Engine | Connection,
         ids: set[int],
         /,
-        *args: Any,
+        *args: _InsertItem,
         assume_tables_exist: bool = False,
         use_conn: bool = False,
     ) -> None:
@@ -1359,7 +1389,7 @@ class TestInsertItems:
         engine_or_conn: AsyncEngine | AsyncConnection,
         ids: set[int],
         /,
-        *args: Any,
+        *args: _InsertItem,
         assume_tables_exist: bool = False,
         use_conn: bool = False,
     ) -> None:
