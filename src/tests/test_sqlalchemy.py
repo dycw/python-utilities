@@ -1292,8 +1292,7 @@ class TestInsertItems:
                 item = [({"id_": id_}) for id_ in ids], self._table
         await self._run_test_async(engine, ids, item, use_conn=use_conn)
 
-    @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
+    @given(data=data(), ids=sets(integers(0, 10), min_size=1))
     @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
     async def test_async_list_of_pairs_of_objs_and_table(
