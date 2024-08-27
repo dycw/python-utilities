@@ -1480,21 +1480,6 @@ class TestIsTableOrMappedClass:
         assert not is_table_or_mapped_class(None)
 
 
-class TestIsTupleOrStringMapping:
-    @mark.parametrize(
-        ("obj", "expected"),
-        [
-            param(None, False),
-            param((1, 2, 3), True),
-            param({"a": 1, "b": 2, "c": 3}, True),
-            param({1: "a", 2: "b", 3: "c"}, False),
-        ],
-    )
-    def test_main(self, *, obj: Any, expected: bool) -> None:
-        result = is_tuple_or_string_mapping(obj)
-        assert result is expected
-
-
 class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:

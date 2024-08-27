@@ -95,7 +95,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.text import ensure_str
-from utilities.types import StrMapping
+from utilities.types import StrMapping, is_string_mapping
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -999,6 +999,18 @@ def is_insert_item_pair(
     )
 
 
+def is_upsert_item_pair(
+    obj: Any, /
+) -> TypeGuard[tuple[StrMapping, TableOrMappedClass]]:
+    """Check if an object is an upsert-ready pair."""
+    return (
+        isinstance(obj, tuple)
+        and (len(obj) == 2)
+        and is_string_mapping(obj[0])
+        and is_table_or_mapped_class(obj[1])
+    )
+
+
 def is_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a mapped class."""
     if isinstance(obj, type):
@@ -1013,13 +1025,6 @@ def is_mapped_class(obj: Any, /) -> bool:
 def is_table_or_mapped_class(obj: Any, /) -> bool:
     """Check if an object is a Table or a mapped class."""
     return isinstance(obj, Table) or is_mapped_class(obj)
-
-
-def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[_TupleOrStrMapping]:
-    """Check if an object is a tuple or string mapping."""
-    return isinstance(obj, tuple) or (
-        isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
-    )
 
 
 def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
@@ -1144,6 +1149,62 @@ def normalize_upsert_item(
                 yield from normalized
     except NormalizeInsertItemError as error:
         raise NormalizeUpsertItemError(item=error.item) from None
+
+
+def _normalize_upsert_item_inner(
+    item: _UpsertItem, /
+) -> Iterator[_NormalizedInsertItem[StrMapping]]:
+    if is_insert_item_pair(item):
+        yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
+        return
+
+    item = cast(
+        _PairOfListOfTuplesAndTable
+        | _PairOfListOfDictsAndTable
+        | _ListOfPairOfTupleAndTable
+        | _ListOfPairOfDictAndTable
+        | DeclarativeBase
+        | Sequence[DeclarativeBase],
+        item,
+    )
+
+    if (
+        isinstance(item, tuple)
+        and (len(item) == 2)
+        and is_iterable_not_str(item[0])
+        and all(is_tuple_or_string_mapping(i) for i in item[0])
+        and is_table_or_mapped_class(item[1])
+    ):
+        item = cast(_PairOfListOfTuplesAndTable | _PairOfListOfDictsAndTable, item)
+        for i in item[0]:
+            yield _NormalizedInsertItem(values=i, table=get_table(item[1]))
+        return
+
+    item = cast(
+        _ListOfPairOfTupleAndTable
+        | _ListOfPairOfDictAndTable
+        | DeclarativeBase
+        | Sequence[DeclarativeBase],
+        item,
+    )
+
+    if is_iterable_not_str(item) and all(is_insert_item_pair(i) for i in item):
+        item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
+        for i in item:
+            yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
+        return
+
+    item = cast(MaybeIterable[DeclarativeBase], item)
+    if isinstance(item, DeclarativeBase) or (
+        is_iterable_not_str(item) and all(isinstance(i, DeclarativeBase) for i in item)
+    ):
+        for i in always_iterable(item):
+            yield _NormalizedInsertItem(
+                values=mapped_class_to_dict(i), table=get_table(i)
+            )
+        return
+
+    raise NormalizeInsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
@@ -1544,6 +1605,7 @@ __all__ = [
     "is_mapped_class",
     "is_table_or_mapped_class",
     "is_tuple_or_string_mapping",
+    "is_upsert_item_pair",
     "mapped_class_to_dict",
     "normalize_insert_item",
     "parse_engine",
