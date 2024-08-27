@@ -1184,8 +1184,7 @@ def _normalize_upsert_item_inner(
         return
 
     item = cast(
-        _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase],
-        item,
+        _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase], item
     )
 
     if is_iterable_not_str(item) and all(is_upsert_item_pair(i) for i in item):
@@ -1475,10 +1474,7 @@ def _upsert_items_prepare(
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
                 ups = upsert(
-                    engine_or_conn,
-                    table,
-                    values=chunk,
-                    selected_or_all=selected_or_all,
+                    engine_or_conn, table, values=chunk, selected_or_all=selected_or_all
                 )
                 yield ups, None
 

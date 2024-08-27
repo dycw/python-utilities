@@ -2129,7 +2129,7 @@ class TestUpsertItems:
         single_or_many: Literal["single", "many"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_updated.__name__}_{case[:3]}_{dialect[:3]}_{single_or_many[:3]}"
+        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_updated.__name__}_{case[:3]}_{dialect[:3]}_{single_or_many[:3]}"
         match case:
             case "table":
                 table_or_mapped_class = Table(
