@@ -19,7 +19,17 @@ from itertools import chain
 from math import floor
 from operator import ge, itemgetter, le
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    TypeGuard,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
 import sqlalchemy
 from sqlalchemy import (
@@ -58,6 +68,7 @@ from sqlalchemy.dialects.postgresql.asyncpg import PGDialect_asyncpg
 from sqlalchemy.dialects.sqlite import Insert as sqlite_Insert
 from sqlalchemy.dialects.sqlite import dialect as sqlite_dialect
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.engine import Connectable
 from sqlalchemy.exc import ArgumentError, DatabaseError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.orm import (
@@ -93,8 +104,15 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 
+EngineOrConnection = Engine | Connection
+AsyncEngineOrConnection = AsyncEngine | AsyncConnection
+MaybeAsyncEngineOrConnection = EngineOrConnection | AsyncEngineOrConnection
 TableOrMappedClass = Table | type[DeclarativeBase]
 CHUNK_SIZE_FRAC = 0.95
+_TupleOrStrMapping = tuple[Any, ...] | Mapping[str, Any]
+_TTupleOrStrMapping = TypeVar(
+    "_TTupleOrStrMapping", tuple[Any, ...], Mapping[str, Any], _TupleOrStrMapping
+)
 
 
 def _check_column_collections_equal(
@@ -327,7 +345,7 @@ class _CheckColumnTypesUuidEqualError(Exception): ...
 
 
 def check_engine(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     num_tables: int | tuple[int, float] | None = None,
@@ -365,7 +383,7 @@ class CheckEngineError(Exception): ...
 
 def check_table_against_reflection(
     table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     schema: str | None = None,
@@ -574,7 +592,7 @@ def ensure_engine(engine: Engine | str, /) -> Engine:
 
 
 def ensure_tables_created(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
 ) -> None:
@@ -589,7 +607,7 @@ def ensure_tables_created(
 
 
 async def ensure_tables_created_async(
-    engine_or_conn: AsyncEngine | AsyncConnection,
+    engine_or_conn: AsyncEngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
 ) -> None:
@@ -610,7 +628,7 @@ class _EnsureTablesCreatedPrepare:
 
 
 def _ensure_tables_created_prepare(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
 ) -> _EnsureTablesCreatedPrepare:
@@ -622,7 +640,7 @@ def _ensure_tables_created_prepare(
 
 
 def _ensure_tables_created_match(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
+    engine_or_conn: MaybeAsyncEngineOrConnection, /
 ) -> str:
     """Get the match statement for the given engine."""
     match dialect := get_dialect(engine_or_conn):
@@ -647,7 +665,7 @@ def _ensure_tables_created_maybe_reraise(error: DatabaseError, match: str, /) ->
 
 
 def ensure_tables_dropped(
-    engine_or_conn: Engine | Connection, *tables_or_mapped_classes: TableOrMappedClass
+    engine_or_conn: EngineOrConnection, *tables_or_mapped_classes: TableOrMappedClass
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     match = get_table_does_not_exist_message(engine_or_conn)
@@ -662,7 +680,7 @@ def ensure_tables_dropped(
 
 
 def get_chunk_size(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
     *,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -684,9 +702,7 @@ def get_columns(table_or_mapped_class: TableOrMappedClass, /) -> list[Column[Any
     return list(get_table(table_or_mapped_class).columns)
 
 
-def get_dialect(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
-) -> Dialect:
+def get_dialect(engine_or_conn: MaybeAsyncEngineOrConnection, /) -> Dialect:
     """Get the dialect of a database."""
     dialect = engine_or_conn.dialect
     if isinstance(dialect, mssql_dialect):  # pragma: no cover
@@ -734,7 +750,7 @@ class GetTableError(Exception):
 
 
 def get_table_does_not_exist_message(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection, /
+    engine_or_conn: MaybeAsyncEngineOrConnection, /
 ) -> str:
     """Get the message for a non-existent table."""
     match dialect := get_dialect(engine_or_conn):
@@ -805,7 +821,7 @@ _InsertItem = (
 
 
 def insert_items(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -847,7 +863,7 @@ def insert_items(
 
 
 async def insert_items_async(
-    engine_or_conn: AsyncEngine | AsyncConnection,
+    engine_or_conn: AsyncEngineOrConnection,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
@@ -888,28 +904,43 @@ async def insert_items_async(
 
 
 @dataclass(frozen=True, kw_only=True)
-class _InsertItemsPrepare:
+class _InsertItemsPrepare(Generic[_TTupleOrStrMapping]):
     dialect: Dialect
     tables: Sequence[Table]
-    yield_pairs: Callable[[], Iterator[tuple[Insert, Iterable[_InsertItemTupleOrDict]]]]
+    yield_pairs: Callable[[], Iterator[tuple[Insert, Iterable[_TTupleOrStrMapping]]]]
 
 
-_InsertItemTupleOrDict = tuple[Any, ...] | Mapping[str, Any]
-
-
+@overload
 def _insert_items_prepare(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
+    /,
+    *items: _UpsertItem,
+    chunk_size_frac: float = ...,
+    kind: Literal["insert"],
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> _InsertItemsPrepare: ...
+@overload
+def _insert_items_prepare(
+    engine_or_conn: MaybeAsyncEngineOrConnection,
+    /,
+    *items: _UpsertItem,
+    chunk_size_frac: float = ...,
+    kind: Literal["insert"],
+    selected_or_all: Literal["selected", "all"] = ...,
+) -> _InsertItemsPrepare: ...
+def _insert_items_prepare(
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    kind: Literal["insert", "upsert"],
+    kind: Literal["insert", "upsert"] = "insert",
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> _InsertItemsPrepare:
     """Prepare the arguments for `insert_items`."""
     dialect = get_dialect(engine_or_conn)
-    mapping: dict[Table, list[_InsertItemTupleOrDict]] = defaultdict(list)
+    mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
-    for item in chain(*map(_normalize_insert_item, items)):
+    for item in chain(*map(normalize_insert_item, items)):
         values = item.values
         mapping[item.table].append(values)
         lengths.add(len(values))
@@ -920,7 +951,7 @@ def _insert_items_prepare(
     )
 
     def yield_tables_and_chunks() -> (
-        Iterator[tuple[Table, Iterable[_InsertItemTupleOrDict]]]
+        Iterator[tuple[Table, Iterable[_TupleOrStrMapping]]]
     ):
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
@@ -947,13 +978,86 @@ def _insert_items_prepare(
     return _InsertItemsPrepare(dialect=dialect, tables=tables, yield_pairs=yield_pairs)
 
 
+def is_insert_item_pair(
+    obj: Any, /
+) -> TypeGuard[tuple[_TupleOrStrMapping, TableOrMappedClass]]:
+    """Check if an object is an insert-ready pair."""
+    return (
+        isinstance(obj, tuple)
+        and (len(obj) == 2)
+        and is_tuple_or_string_mapping(obj[0])
+        and is_table_or_mapped_class(obj[1])
+    )
+
+
+def is_mapped_class(obj: Any, /) -> bool:
+    """Check if an object is a mapped class."""
+    if isinstance(obj, type):
+        try:
+            _ = class_mapper(cast(Any, obj))
+        except (ArgumentError, UnmappedClassError):
+            return False
+        return True
+    return is_mapped_class(type(obj))
+
+
+def is_table_or_mapped_class(obj: Any, /) -> bool:
+    """Check if an object is a Table or a mapped class."""
+    return isinstance(obj, Table) or is_mapped_class(obj)
+
+
+def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[_TupleOrStrMapping]:
+    """Check if an object is a tuple or string mapping."""
+    return isinstance(obj, tuple) or (
+        isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
+    )
+
+
+def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
+    """Construct a dictionary of elements for insertion."""
+    cls = type(obj)
+
+    def is_attr(attr: str, key: str, /) -> str | None:
+        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
+            value.name == key
+        ):
+            return attr
+        return None
+
+    def yield_items() -> Iterator[tuple[str, Any]]:
+        for key in get_column_names(cls):
+            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
+            yield key, getattr(obj, attr)
+
+    return dict(yield_items())
+
+
 @dataclass(kw_only=True)
-class _NormalizedInsertItem:
-    values: _InsertItemTupleOrDict
+class _NormalizedInsertItem(Generic[_TTupleOrStrMapping]):
+    values: _TTupleOrStrMapping
     table: Table
 
 
-def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
+@overload
+def normalize_insert_item(
+    item: _PairOfTupleAndTable
+    | _PairOfListOfTuplesAndTable
+    | _ListOfPairOfTupleAndTable,
+    /,
+) -> Iterator[_NormalizedInsertItem[tuple[Any, ...]]]: ...
+@overload
+def normalize_insert_item(
+    item: _PairOfDictAndTable
+    | _PairOfListOfDictsAndTable
+    | _ListOfPairOfDictAndTable
+    | MaybeIterable[DeclarativeBase],
+    /,
+) -> Iterator[_NormalizedInsertItem[Mapping[str, Any]]]: ...
+@overload
+def normalize_insert_item(
+    item: _InsertItem, /
+) -> Iterator[_NormalizedInsertItem[_TupleOrStrMapping]]: ...
+def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem[Any]]:
     """Normalize an insertion item."""
     if is_insert_item_pair(item):
         yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
@@ -1023,60 +1127,6 @@ class _NormalizeInsertItemsError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-def is_insert_item_pair(
-    obj: Any, /
-) -> TypeGuard[tuple[_InsertItemTupleOrDict, TableOrMappedClass]]:
-    """Check if an object is an insert-ready pair."""
-    return (
-        isinstance(obj, tuple)
-        and (len(obj) == 2)
-        and is_tuple_or_string_mapping(obj[0])
-        and is_table_or_mapped_class(obj[1])
-    )
-
-
-def is_mapped_class(obj: Any, /) -> bool:
-    """Check if an object is a mapped class."""
-    if isinstance(obj, type):
-        try:
-            _ = class_mapper(cast(Any, obj))
-        except (ArgumentError, UnmappedClassError):
-            return False
-        return True
-    return is_mapped_class(type(obj))
-
-
-def is_table_or_mapped_class(obj: Any, /) -> bool:
-    """Check if an object is a Table or a mapped class."""
-    return isinstance(obj, Table) or is_mapped_class(obj)
-
-
-def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[_InsertItemTupleOrDict]:
-    """Check if an object is a tuple or string mapping."""
-    return isinstance(obj, tuple) or (
-        isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
-    )
-
-
-def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
-    """Construct a dictionary of elements for insertion."""
-    cls = type(obj)
-
-    def is_attr(attr: str, key: str, /) -> str | None:
-        if isinstance(value := getattr(cls, attr), InstrumentedAttribute) and (
-            value.name == key
-        ):
-            return attr
-        return None
-
-    def yield_items() -> Iterator[tuple[str, Any]]:
-        for key in get_column_names(cls):
-            attr = one(attr for attr in dir(cls) if is_attr(attr, key) is not None)
-            yield key, getattr(obj, attr)
-
-    return dict(yield_items())
-
-
 def parse_engine(engine: str, /) -> Engine:
     """Parse a string into an Engine."""
     with redirect_error(ArgumentError, ParseEngineError(f"{engine=}")):
@@ -1088,7 +1138,7 @@ class ParseEngineError(Exception): ...
 
 def reflect_table(
     table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     schema: str | None = None,
@@ -1117,7 +1167,7 @@ class TablenameMixin:
 
 @overload
 def upsert(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     item: TableOrMappedClass,
     /,
     *,
@@ -1126,7 +1176,7 @@ def upsert(
 ) -> Insert: ...
 @overload
 def upsert(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     item: DeclarativeBase | Sequence[DeclarativeBase],
     /,
     *,
@@ -1134,7 +1184,7 @@ def upsert(
     selected_or_all: Literal["selected", "all"] = ...,
 ) -> Insert: ...
 def upsert(  # skipif-ci-in-environ
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     item: Any,
     /,
     *,
@@ -1176,7 +1226,7 @@ def upsert(  # skipif-ci-in-environ
 
 
 def _upsert_core(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     table_or_mapped_class: TableOrMappedClass,
     values: Mapping[str, Any] | Sequence[Mapping[str, Any]],
     /,
@@ -1268,7 +1318,7 @@ _UpsertItem = (
 
 
 def upsert_items(
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *items: _UpsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -1326,7 +1376,7 @@ class _UpsertItemsPrepare:
 
 
 def _upsert_items_prepare(
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     /,
     *items: _UpsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
@@ -1335,9 +1385,9 @@ def _upsert_items_prepare(
 ) -> _InsertItemsPrepare:
     """Prepare the arguments for `insert_items`."""
     dialect = get_dialect(engine_or_conn)
-    mapping: dict[Table, list[_InsertItemTupleOrDict]] = defaultdict(list)
+    mapping: dict[Table, list[_TupleOrStrMapping]] = defaultdict(list)
     lengths: set[int] = set()
-    for item in chain(*map(_normalize_insert_item, items)):
+    for item in chain(*map(normalize_insert_item, items)):
         values = item.values
         mapping[item.table].append(values)
         lengths.add(len(values))
@@ -1348,7 +1398,7 @@ def _upsert_items_prepare(
     )
 
     def yield_tables_and_chunks() -> (
-        Iterator[tuple[Table, Iterable[_InsertItemTupleOrDict]]]
+        Iterator[tuple[Table, Iterable[_TupleOrStrMapping]]]
     ):
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
@@ -1356,27 +1406,19 @@ def _upsert_items_prepare(
 
     def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in mapping.items():
-            match kind:
-                case "insert":
-                    match dialect:
-                        case Dialect.oracle:  # pragma: no cover
-                            yield insert(table), values
-                        case _:
-                            yield insert(table).values(list(values)), None
-                case "upsert":
-                    ups = upsert(
-                        engine_or_conn,
-                        table,
-                        values=values,
-                        selected_or_all=selected_or_all,
-                    )
-                    yield ups, None
+            ups = upsert(
+                engine_or_conn,
+                table,
+                values=values,
+                selected_or_all=selected_or_all,
+            )
+            yield ups, None
 
     return _InsertItemsPrepare(dialect=dialect, tables=tables, yield_pairs=yield_pairs)
 
 
 @contextmanager
-def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connection]:
+def yield_connection(engine_or_conn: EngineOrConnection, /) -> Iterator[Connection]:
     """Yield a synchronous connection."""
     if isinstance(engine_or_conn, Engine):
         with engine_or_conn.begin() as conn:
@@ -1387,7 +1429,7 @@ def yield_connection(engine_or_conn: Engine | Connection, /) -> Iterator[Connect
 
 @asynccontextmanager
 async def yield_connection_async(
-    engine_or_conn: AsyncEngine | AsyncConnection, /
+    engine_or_conn: AsyncEngineOrConnection, /
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an asynchronous connection."""
     if isinstance(engine_or_conn, AsyncEngine):

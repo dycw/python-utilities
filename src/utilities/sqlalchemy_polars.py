@@ -76,7 +76,7 @@ if TYPE_CHECKING:
 def insert_dataframe(
     df: DataFrame,
     table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = False,
@@ -238,7 +238,7 @@ def _insert_dataframe_check_df_and_db_types(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = ...,
@@ -252,7 +252,7 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = ...,
@@ -265,7 +265,7 @@ def select_to_dataframe(
 ) -> Iterable[DataFrame]: ...
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = False,
@@ -465,7 +465,7 @@ class _SelectToDataFramePrepare:
 
 def _select_to_dataframe_prepare(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection | AsyncEngine,
+    engine_or_conn: EngineOrConnection | AsyncEngine,
     /,
     *,
     snake: bool = False,
@@ -558,7 +558,7 @@ def _select_to_dataframe_check_duplicates(
 
 def _select_to_dataframe_yield_selects_with_in_clauses(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     in_clauses: tuple[Column[Any], Iterable[Any]],
     /,
     *,
@@ -579,7 +579,7 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
 def upsert_dataframe(
     df: DataFrame,
     table_or_mapped_class: TableOrMappedClass,
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = False,
