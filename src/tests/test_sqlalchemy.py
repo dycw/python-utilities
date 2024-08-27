@@ -2261,6 +2261,46 @@ class TestUpsertItems:
             expected={(id_, init if post is None else post)},
         )
 
+    @given(data=data(), triples=_upsert_lists(nullable=True))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_pair_of_list_of_dicts_and_table(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        key = (
+            TestUpsertItems.test_async_pair_of_list_of_dicts_and_table.__qualname__,
+            dialect,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        with assume_does_not_raise(OperationalError, match="no such table"):
+            _ = await self._run_test_async(
+                engine,
+                table,
+                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
+                expected={(id_, init) for id_, init, _ in triples},
+            )
+        items = (
+            [
+                {"id_": id_, "value": post}
+                for id_, _, post in triples
+                if post is not None
+            ],
+            table,
+        )
+        expected = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        with assume_does_not_raise(OperationalError, match="no such table"):
+            _ = await self._run_test_async(engine, table, items, expected=expected)
+
     def _get_table(self, name: str, /) -> Table:
         return Table(
             name,
