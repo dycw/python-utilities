@@ -1134,38 +1134,37 @@ class NormalizeInsertItemError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
+@dataclass(kw_only=True)
+class _NormalizedUpsertItem:
+    values: StrMapping
+    table: Table
+
+
 def normalize_upsert_item(
     item: _UpsertItem, /, *, selected_or_all: Literal["selected", "all"] = "selected"
-) -> Iterator[_NormalizedInsertItem[StrMapping]]:
+) -> Iterator[_NormalizedUpsertItem]:
     """Normalize an upsert item."""
-    normalized = normalize_insert_item(item)
-    try:
-        match selected_or_all:
-            case "selected":
-                for normed in normalized:
-                    yield _NormalizedInsertItem(
-                        values={
-                            k: v for k, v in normed.values.items() if v is not None
-                        },
-                        table=normed.table,
-                    )
-            case "all":
-                yield from normalized
-    except NormalizeInsertItemError as error:
-        raise NormalizeUpsertItemError(item=error.item) from None
+    normalized = _normalize_upsert_item_inner(item)
+    match selected_or_all:
+        case "selected":
+            for normed in normalized:
+                values = {k: v for k, v in normed.values.items() if v is not None}
+                yield _NormalizedUpsertItem(values=values, table=normed.table)
+        case "all":
+            yield from normalized
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
 
 
 def _normalize_upsert_item_inner(
     item: _UpsertItem, /
-) -> Iterator[_NormalizedInsertItem[StrMapping]]:
-    if is_insert_item_pair(item):
-        yield _NormalizedInsertItem(values=item[0], table=get_table(item[1]))
+) -> Iterator[_NormalizedUpsertItem]:
+    if is_upsert_item_pair(item):
+        yield _NormalizedUpsertItem(values=item[0], table=get_table(item[1]))
         return
 
     item = cast(
-        _PairOfListOfTuplesAndTable
-        | _PairOfListOfDictsAndTable
-        | _ListOfPairOfTupleAndTable
+        _PairOfListOfDictsAndTable
         | _ListOfPairOfDictAndTable
         | DeclarativeBase
         | Sequence[DeclarativeBase],
@@ -1176,26 +1175,23 @@ def _normalize_upsert_item_inner(
         isinstance(item, tuple)
         and (len(item) == 2)
         and is_iterable_not_str(item[0])
-        and all(is_tuple_or_string_mapping(i) for i in item[0])
+        and all(is_string_mapping(i) for i in item[0])
         and is_table_or_mapped_class(item[1])
     ):
-        item = cast(_PairOfListOfTuplesAndTable | _PairOfListOfDictsAndTable, item)
+        item = cast(_PairOfListOfDictsAndTable, item)
         for i in item[0]:
-            yield _NormalizedInsertItem(values=i, table=get_table(item[1]))
+            yield _NormalizedUpsertItem(values=i, table=get_table(item[1]))
         return
 
     item = cast(
-        _ListOfPairOfTupleAndTable
-        | _ListOfPairOfDictAndTable
-        | DeclarativeBase
-        | Sequence[DeclarativeBase],
+        _ListOfPairOfDictAndTable | DeclarativeBase | Sequence[DeclarativeBase],
         item,
     )
 
-    if is_iterable_not_str(item) and all(is_insert_item_pair(i) for i in item):
-        item = cast(_ListOfPairOfTupleAndTable | _ListOfPairOfDictAndTable, item)
+    if is_iterable_not_str(item) and all(is_upsert_item_pair(i) for i in item):
+        item = cast(_ListOfPairOfDictAndTable, item)
         for i in item:
-            yield _NormalizedInsertItem(values=i[0], table=get_table(i[1]))
+            yield _NormalizedUpsertItem(values=i[0], table=get_table(i[1]))
         return
 
     item = cast(MaybeIterable[DeclarativeBase], item)
@@ -1203,12 +1199,12 @@ def _normalize_upsert_item_inner(
         is_iterable_not_str(item) and all(isinstance(i, DeclarativeBase) for i in item)
     ):
         for i in always_iterable(item):
-            yield _NormalizedInsertItem(
+            yield _NormalizedUpsertItem(
                 values=mapped_class_to_dict(i), table=get_table(i)
             )
         return
 
-    raise NormalizeInsertItemError(item=item)
+    raise NormalizeUpsertItemError(item=item)
 
 
 @dataclass(kw_only=True)
@@ -1442,7 +1438,7 @@ def upsert_items(
             chunk_size_frac=chunk_size_frac,
             selected_or_all=selected_or_all,
         )
-    except _InsertItemsPrepareError as error:
+    except _UpsertItemsPrepareError as error:
         raise UpsertItemsError(item=error.item) from None
     if not assume_tables_exist:
         ensure_tables_created(engine_or_conn, *prepared.tables)
@@ -1475,17 +1471,16 @@ def _upsert_items_prepare(
         engine_or_conn, chunk_size_frac=chunk_size_frac, scaling=max_length
     )
 
-    def yield_tables_and_chunks() -> Iterator[tuple[Table, Iterable[StrMapping]]]:
+    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
         for table, values in mapping.items():
             for chunk in chunked(values, chunk_size):
-                yield table, chunk
-
-    def yield_pairs() -> Iterator[tuple[Insert, Any]]:
-        for table, values in yield_tables_and_chunks():
-            ups = upsert(
-                engine_or_conn, table, values=values, selected_or_all=selected_or_all
-            )
-            yield ups, None
+                ups = upsert(
+                    engine_or_conn,
+                    table,
+                    values=chunk,
+                    selected_or_all=selected_or_all,
+                )
+                yield ups, None
 
     return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
 
@@ -1610,6 +1605,7 @@ __all__ = [
     "is_upsert_item_pair",
     "mapped_class_to_dict",
     "normalize_insert_item",
+    "normalize_upsert_item",
     "parse_engine",
     "serialize_engine",
     "upsert",
