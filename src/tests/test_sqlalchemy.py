@@ -2013,14 +2013,14 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(
                 engine,
                 table,
                 ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(
                 engine,
                 table,
@@ -2056,14 +2056,14 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(
                 engine,
                 table,
                 ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(
                 engine,
                 table,
@@ -2118,7 +2118,7 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, cls, dialect=dialect
         )
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(
                 engine,
                 cls,
@@ -2131,7 +2131,7 @@ class TestUpsertItems:
         expected2 = {
             (id_, init if post is None else post) for id_, init, post in triples
         }
-        with assume_does_not_raise(OneEmptyError):
+        with assume_does_not_raise(OperationalError, match="no such table"):
             _ = self._run_test_sync(engine, cls, values2, expected=expected2)
 
     @given(
