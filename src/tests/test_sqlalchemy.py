@@ -2210,27 +2210,22 @@ class TestUpsertItems:
         assert updated1 < updated2
 
     @given(sqlite_engine=sqlite_engines())
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_error(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
     ) -> None:
-        key = TestUpsertItems.test_sync_error.__qualname__, case, dialect
+        key = TestUpsertItems.test_sync_error.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
-        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        table = self._get_table(name)
         engine = self._get_engine_sync(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
         with raises(UpsertItemsError, match="Item must be valid; got None"):
-            _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
+            _ = self._run_test_sync(engine, table, cast(Any, None))
 
     @given(data=data(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
@@ -2469,6 +2464,24 @@ class TestUpsertItems:
         )
         assert updated1 < updated2
 
+    @given(data=data())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_error(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+    ) -> None:
+        key = TestUpsertItems.test_async_error.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        with raises(UpsertItemsError, match="Item must be valid; got None"):
+            _ = await self._run_test_async(engine, table, cast(Any, None))
+
     def _get_table(self, name: str, /) -> Table:
         return Table(
             name,
@@ -2510,33 +2523,6 @@ class TestUpsertItems:
             value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
 
         return Example
-
-    def _get_table_or_mapped_class(
-        self, name: str, /, *, case: Literal["table", "mapped_class"]
-    ) -> TableOrMappedClass:
-        match case:
-            case "table":
-                return Table(
-                    name,
-                    MetaData(),
-                    Column("id_", Integer, primary_key=True),
-                    Column("value", Boolean, nullable=False),
-                )
-            case "mapped_class":
-
-                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-                class Example(Base):
-                    __tablename__ = name
-
-                    id_: Mapped[int] = mapped_column(
-                        Integer, kw_only=True, primary_key=True
-                    )
-                    value: Mapped[bool] = mapped_column(
-                        Boolean, kw_only=True, nullable=False
-                    )
-
-                return Example
 
     def _get_engine_sync(
         self,
