@@ -2,14 +2,7 @@ from __future__ import annotations
 
 import enum
 from collections import defaultdict
-from collections.abc import (
-    AsyncIterator,
-    Callable,
-    Iterable,
-    Iterator,
-    Mapping,
-    Sequence,
-)
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
@@ -93,8 +86,6 @@ from utilities.types import (
 )
 
 if TYPE_CHECKING:
-    import datetime as dt
-
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 
@@ -1321,8 +1312,8 @@ def _upsert_items_build(
 ) -> Insert:
     values = list(values)
     if (updated_col := get_table_updated_column(table)) is not None:
-        updated_mapping = {updated_col: get_now()}
-        values = list(_upsert_items_add_updated(values, updated_mapping))
+        up_map = {updated_col: get_now()}
+        values = [{**v, **up_map} for v in values]
     match get_dialect(engine_or_conn):
         case Dialect.postgresql:  # skipif-ci-and-not-linux
             insert = postgresql_insert
@@ -1341,14 +1332,8 @@ def _upsert_items_build(
     )
 
 
-def _upsert_items_add_updated(
-    values: Iterable[StrMapping], updated: Mapping[str, dt.datetime], /
-) -> Iterable[StrMapping]:
-    return [{**v, **updated} for v in values]
-
-
 def _upsert_items_apply_on_conflict_do_update(
-    values: StrMapping | Sequence[StrMapping],
+    values: Iterable[StrMapping],
     insert: postgresql_Insert | sqlite_Insert,
     primary_key: PrimaryKeyConstraint,
     /,
@@ -1357,10 +1342,7 @@ def _upsert_items_apply_on_conflict_do_update(
 ) -> Insert:
     match selected_or_all:
         case "selected":
-            if isinstance(values, Mapping):
-                columns = set(values)
-            else:
-                columns = one(set(map(frozenset, values)))
+            columns = one(set(map(frozenset, values)))
         case "all":
             columns = {c.name for c in insert.excluded}
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
