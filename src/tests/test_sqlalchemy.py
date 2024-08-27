@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import datetime as dt  # noqa: TCH003
 import enum
 from enum import auto
 from time import sleep
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
 from hypothesis import Phase, assume, given, settings
@@ -80,8 +79,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 from tests.conftest import SKIPIF_CI
-from utilities.datetime import get_now
 from utilities.functions import get_class_name
+from utilities.hashlib import md5_hash
 from utilities.hypothesis import (
     aiosqlite_engines,
     assume_does_not_raise,
@@ -182,6 +181,14 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+@overload
+def _upsert_triples(
+    *, nullable: Literal[True]
+) -> SearchStrategy[tuple[int, bool, bool]]: ...
+@overload
+def _upsert_triples(
+    *, nullable: bool = ...
+) -> SearchStrategy[tuple[int, bool, bool | None]]: ...
 def _upsert_triples(
     *, nullable: bool = False
 ) -> SearchStrategy[tuple[int, bool, bool | None]]:
@@ -1919,120 +1926,75 @@ class TestUpsert:
 
 class TestUpsertItems:
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_mapping(
+    def test_sync_pair_of_dict_and_table(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_mapping.__name__}_{case[:3]}_{dialect[:3]}"
-        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        key = (TestUpsertItems.test_sync_pair_of_dict_and_table.__qualname__, dialect)
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
         id_, init, post = triple
         _ = self._run_test_sync(
-            engine,
-            table_or_mapped_class,
-            ({"id_": id_, "value": init}, table_or_mapped_class),
-            expected={(id_, init)},
+            engine, table, ({"id_": id_, "value": init}, table), expected={(id_, init)}
         )
         _ = self._run_test_sync(
-            engine,
-            table_or_mapped_class,
-            ({"id_": id_, "value": post}, table_or_mapped_class),
-            expected={(id_, post)},
+            engine, table, ({"id_": id_, "value": post}, table), expected={(id_, post)}
         )
 
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_mappings(
+    def test_sync_pair_of_list_of_dicts_and_table(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_mappings.__name__}_{case[:3]}_{dialect[:3]}"
-        table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
+        key = (
+            TestUpsertItems.test_sync_pair_of_list_of_dicts_and_table.__qualname__,
+            dialect,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
         with assume_does_not_raise(OneEmptyError):
             _ = self._run_test_sync(
                 engine,
-                table_or_mapped_class,
-                (
-                    [{"id_": id_, "value": init} for id_, init, _ in triples],
-                    table_or_mapped_class,
-                ),
+                table,
+                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
         with assume_does_not_raise(OneEmptyError):
             _ = self._run_test_sync(
                 engine,
-                table_or_mapped_class,
+                table,
                 (
                     [
                         {"id_": id_, "value": post}
                         for id_, _, post in triples
                         if post is not None
                     ],
-                    table_or_mapped_class,
+                    table,
                 ),
                 expected={
                     (id_, init if post is None else post) for id_, init, post in triples
                 },
             )
 
-    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_mapped_class(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        triple: tuple[int, bool, bool],
-    ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_mapped_class.__name__}_{dialect[:3]}"
-
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = name
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
-        engine = self._get_engine(
-            sqlite_engine, create_postgres_engine, Example, dialect=dialect
-        )
-        id_, init, post = triple
-        _ = self._run_test_sync(
-            engine, Example, Example(id_=id_, value=init), expected={(id_, init)}
-        )
-        _ = self._run_test_sync(
-            engine, Example, Example(id_=id_, value=post), expected={(id_, post)}
-        )
-
     @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_mapped_classes(
+    def test_sync_list_of_pairs_of_dicts_and_table(
         self,
         *,
         sqlite_engine: Engine,
@@ -2040,32 +2002,28 @@ class TestUpsertItems:
         dialect: Literal["sqlite", "postgres"],
         triples: list[tuple[int, bool, bool | None]],
     ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_mapped_classes.__name__}_{dialect[:3]}"
-
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = name
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-
+        key = (
+            TestUpsertItems.test_sync_list_of_pairs_of_dicts_and_table.__qualname__,
+            dialect,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
         engine = self._get_engine(
-            sqlite_engine, create_postgres_engine, Example, dialect=dialect
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
         with assume_does_not_raise(OneEmptyError):
             _ = self._run_test_sync(
                 engine,
-                Example,
-                [Example(id_=id_, value=init) for id_, init, _ in triples],
+                table,
+                ([{"id_": id_, "value": init} for id_, init, _ in triples], table),
                 expected={(id_, init) for id_, init, _ in triples},
             )
         with assume_does_not_raise(OneEmptyError):
             _ = self._run_test_sync(
                 engine,
-                Example,
+                table,
                 [
-                    Example(id_=id_, value=post)
+                    ({"id_": id_, "value": post}, table)
                     for id_, _, post in triples
                     if post is not None
                 ],
@@ -2074,222 +2032,206 @@ class TestUpsertItems:
                 },
             )
 
-    @given(
-        sqlite_engine=sqlite_engines(),
-        id_=integers(0, 10),
-        x_init=booleans(),
-        x_post=booleans(),
-        y=booleans(),
-    )
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_sel_or_all_table(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
-        dialect: Literal["sqlite", "postgres"],
-        selected_or_all: Literal["selected", "all"],
-        id_: int,
-        x_init: bool,
-        x_post: bool,
-        y: bool,
-    ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_sel_or_all_table.__name__}_{case[:3]}_{dialect[:3]}_{selected_or_all[:3]}"
-        match case:
-            case "table":
-                table_or_mapped_class = Table(
-                    name,
-                    MetaData(),
-                    Column("id_", Integer, primary_key=True),
-                    Column("x", Boolean, nullable=False),
-                    Column("y", Boolean, nullable=True),
-                )
-            case "mapped_class":
-
-                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-                class Example(Base):
-                    __tablename__ = name
-
-                    id_: Mapped[int] = mapped_column(
-                        Integer, kw_only=True, primary_key=True
-                    )
-                    x: Mapped[bool] = mapped_column(
-                        Boolean, kw_only=True, nullable=False
-                    )
-                    y: Mapped[bool | None] = mapped_column(
-                        Boolean, default=None, kw_only=True, nullable=True
-                    )
-
-                table_or_mapped_class = Example
-        engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
-        )
-        _ = self._run_test_sync(
-            engine,
-            table_or_mapped_class,
-            ({"id_": id_, "x": x_init, "y": y}, table_or_mapped_class),
-            selected_or_all=selected_or_all,
-            expected={(id_, x_init, y)},
-        )
-        match selected_or_all:
-            case "selected":
-                expected2 = (id_, x_post, y)
-            case "all":
-                expected2 = (id_, x_post, None)
-        _ = self._run_test_sync(
-            engine,
-            table_or_mapped_class,
-            ({"id_": id_, "x": x_post}, table_or_mapped_class),
-            selected_or_all=selected_or_all,
-            expected={expected2},
-        )
-
-    @given(
-        sqlite_engine=sqlite_engines(),
-        id_=integers(0, 10),
-        x_init=booleans(),
-        x_post=booleans(),
-        y=booleans(),
-    )
-    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
-    def test_sel_or_all_mapped_class(
-        self,
-        *,
-        sqlite_engine: Engine,
-        create_postgres_engine: Callable[..., Engine],
-        dialect: Literal["sqlite", "postgres"],
-        selected_or_all: Literal["selected", "all"],
-        id_: int,
-        x_init: bool,
-        x_post: bool,
-        y: bool,
-    ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_sel_or_all_mapped_class.__name__}_{dialect[:3]}_{selected_or_all[:3]}"
-
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-        class Example(Base):
-            __tablename__ = name
-
-            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
-            x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
-            y: Mapped[bool | None] = mapped_column(
-                Boolean, default=None, kw_only=True, nullable=True
-            )
-
-        engine = self._get_engine(
-            sqlite_engine, create_postgres_engine, Example, dialect=dialect
-        )
-        _ = self._run_test_sync(
-            engine,
-            Example,
-            Example(id_=id_, x=x_init, y=y),
-            selected_or_all=selected_or_all,
-            expected={(id_, x_init, y)},
-        )
-        match selected_or_all:
-            case "selected":
-                expected2 = (id_, x_post, y)
-            case "all":
-                expected2 = (id_, x_post, None)
-        _ = self._run_test_sync(
-            engine,
-            Example,
-            Example(id_=id_, x=x_post),
-            selected_or_all=selected_or_all,
-            expected={expected2},
-        )
-
     @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
-    @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.parametrize("single_or_many", [param("single"), param("many")])
-    def test_updated(
+    def test_sync_mapped_class(
         self,
         *,
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
-        case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
-        single_or_many: Literal["single", "many"],
         triple: tuple[int, bool, bool],
     ) -> None:
-        name = f"{get_class_name(TestUpsertItems)}_{TestUpsertItems.test_updated.__name__}_{case[:3]}_{dialect[:3]}_{single_or_many[:3]}"
-        match case:
-            case "table":
-                table_or_mapped_class = Table(
-                    name,
-                    MetaData(),
-                    Column("id_", Integer, primary_key=True),
-                    Column("value", Boolean, nullable=False),
-                    Column(
-                        "updated_at",
-                        DateTime(timezone=True),
-                        server_default=func.now(),
-                        onupdate=func.now(),
-                    ),
-                )
-            case "mapped_class":
-
-                class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
-
-                class Example(Base):
-                    __tablename__ = name
-
-                    id_: Mapped[int] = mapped_column(
-                        Integer, kw_only=True, primary_key=True
-                    )
-                    value: Mapped[bool] = mapped_column(
-                        Boolean, kw_only=True, nullable=False
-                    )
-                    updated_at: Mapped[dt.datetime] = mapped_column(
-                        DateTime(timezone=True),
-                        default_factory=get_now,
-                        kw_only=True,
-                        server_default=func.now(),
-                        onupdate=func.now(),
-                    )
-
-                table_or_mapped_class = Example
-
+        key = TestUpsertItems.test_sync_mapped_class.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        cls = self._get_mapped_class(name)
         engine = self._get_engine(
-            sqlite_engine,
-            create_postgres_engine,
-            table_or_mapped_class,
-            dialect=dialect,
+            sqlite_engine, create_postgres_engine, cls, dialect=dialect
         )
         id_, init, post = triple
-        match single_or_many:
-            case "single":
-                values1 = {"id_": id_, "value": init}, table_or_mapped_class
-            case "many":
-                values1 = [{"id_": id_, "value": init}], table_or_mapped_class
+        _ = self._run_test_sync(
+            engine, cls, cls(id_=id_, value=init), expected={(id_, init)}
+        )
+        _ = self._run_test_sync(
+            engine, cls, cls(id_=id_, value=post), expected={(id_, post)}
+        )
+
+    @given(sqlite_engine=sqlite_engines(), triples=_upsert_lists(nullable=True))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    def test_sync_mapped_classes(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        triples: list[tuple[int, bool, bool | None]],
+    ) -> None:
+        key = TestUpsertItems.test_sync_mapped_classes.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        cls = self._get_mapped_class(name)
+        engine = self._get_engine(
+            sqlite_engine, create_postgres_engine, cls, dialect=dialect
+        )
+        with assume_does_not_raise(OneEmptyError):
+            _ = self._run_test_sync(
+                engine,
+                cls,
+                [cls(id_=id_, value=init) for id_, init, _ in triples],
+                expected={(id_, init) for id_, init, _ in triples},
+            )
+        values2 = [
+            cls(id_=id_, value=post) for id_, _, post in triples if post is not None
+        ]
+        expected2 = {
+            (id_, init if post is None else post) for id_, init, post in triples
+        }
+        with assume_does_not_raise(OneEmptyError):
+            _ = self._run_test_sync(engine, cls, values2, expected=expected2)
+
+    @given(
+        sqlite_engine=sqlite_engines(),
+        id_=integers(0, 10),
+        x_init=booleans(),
+        x_post=booleans(),
+        y=booleans(),
+    )
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    def test_sync_sel_or_all(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+        selected_or_all: Literal["selected", "all"],
+        id_: int,
+        x_init: bool,
+        x_post: bool,
+        y: bool,
+    ) -> None:
+        key = (
+            TestUpsertItems.test_sync_sel_or_all.__qualname__,
+            dialect,
+            selected_or_all,
+        )
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table_sel_or_all(name)
+        engine = self._get_engine(
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
+        )
+        _ = self._run_test_sync(
+            engine,
+            table,
+            ({"id_": id_, "x": x_init, "y": y}, table),
+            selected_or_all=selected_or_all,
+            expected={(id_, x_init, y)},
+        )
+        match selected_or_all:
+            case "selected":
+                expected2 = (id_, x_post, y)
+            case "all":
+                expected2 = (id_, x_post, None)
+        _ = self._run_test_sync(
+            engine,
+            table,
+            ({"id_": id_, "x": x_post}, table),
+            selected_or_all=selected_or_all,
+            expected={expected2},
+        )
+
+    # @given(
+    #     sqlite_engine=sqlite_engines(),
+    #     id_=integers(0, 10),
+    #     x_init=booleans(),
+    #     x_post=booleans(),
+    #     y=booleans(),
+    # )
+    # @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    # @mark.parametrize("selected_or_all", [param("selected"), param("all")])
+    # def test_sel_or_all_mapped_class(
+    #     self,
+    #     *,
+    #     sqlite_engine: Engine,
+    #     create_postgres_engine: Callable[..., Engine],
+    #     dialect: Literal["sqlite", "postgres"],
+    #     selected_or_all: Literal["selected", "all"],
+    #     id_: int,
+    #     x_init: bool,
+    #     x_post: bool,
+    #     y: bool,
+    # ) -> None:
+    #     key = (
+    #         TestUpsertItems.test_sel_or_all_mapped_class.__qualname__,
+    #         dialect,
+    #         selected_or_all,
+    #     )
+    #     name = f"test_{md5_hash(key)}"
+    #
+    #     class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+    #
+    #     class Example(Base):
+    #         __tablename__ = name
+    #
+    #         id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+    #         x: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+    #         y: Mapped[bool | None] = mapped_column(
+    #             Boolean, default=None, kw_only=True, nullable=True
+    #         )
+    #
+    #     engine = self._get_engine(
+    #         sqlite_engine, create_postgres_engine, Example, dialect=dialect
+    #     )
+    #     _ = self._run_test_sync(
+    #         engine,
+    #         Example,
+    #         Example(id_=id_, x=x_init, y=y),
+    #         selected_or_all=selected_or_all,
+    #         expected={(id_, x_init, y)},
+    #     )
+    #     match selected_or_all:
+    #         case "selected":
+    #             expected2 = (id_, x_post, y)
+    #         case "all":
+    #             expected2 = (id_, x_post, None)
+    #     _ = self._run_test_sync(
+    #         engine,
+    #         Example,
+    #         Example(id_=id_, x=x_post),
+    #         selected_or_all=selected_or_all,
+    #         expected={expected2},
+    #     )
+
+    @given(sqlite_engine=sqlite_engines(), triple=_upsert_triples())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    def test_sync_updated(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        case: Literal["table", "mapped_class"],
+        dialect: Literal["sqlite", "postgres"],
+        triple: tuple[int, bool, bool | None],
+    ) -> None:
+        key = TestUpsertItems.test_sync_updated.__qualname__, case, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table_sel_or_all(name)
+        engine = self._get_engine(
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
+        )
+        id_, init, post = triple
         ((_, _, updated1),) = self._run_test_sync(
-            engine, table_or_mapped_class, values1
+            engine, table, ({"id_": id_, "value": init}, table)
         )
         sleep(0.01)
-        match single_or_many:
-            case "single":
-                values2 = {"id_": id_, "value": post}, table_or_mapped_class
-            case "many":
-                values2 = [{"id_": id_, "value": post}], table_or_mapped_class
         ((_, _, updated2),) = self._run_test_sync(
-            engine, table_or_mapped_class, values2
+            engine, table, ({"id_": id_, "value": post}, table)
         )
         assert updated1 < updated2
 
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("case", [param("table"), param("mapped_class")])
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    def test_error(
+    def test_sync_error(
         self,
         *,
         sqlite_engine: Engine,
@@ -2297,7 +2239,8 @@ class TestUpsertItems:
         case: Literal["table", "mapped_class"],
         dialect: Literal["sqlite", "postgres"],
     ) -> None:
-        name = f"{get_class_name(TestUpsert)}_{TestUpsert.test_error.__name__}_{case[:3]}_{dialect[:3]}"
+        key = TestUpsertItems.test_sync_error.__qualname__, case, dialect
+        name = f"test_{md5_hash(key)}"
         table_or_mapped_class = self._get_table_or_mapped_class(name, case=case)
         engine = self._get_engine(
             sqlite_engine,
@@ -2307,6 +2250,48 @@ class TestUpsertItems:
         )
         with raises(UpsertItemsError, match="Item must be valid; got None"):
             _ = self._run_test_sync(engine, table_or_mapped_class, cast(Any, None))
+
+    def _get_table(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=False),
+        )
+
+    def _get_table_sel_or_all(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("x", Boolean, nullable=False),
+            Column("y", Boolean, nullable=True),
+        )
+
+    def _get_table_updated(self, name: str, /) -> Table:
+        return Table(
+            name,
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=False),
+            Column(
+                "updated_at",
+                DateTime(timezone=True),
+                server_default=func.now(),
+                onupdate=func.now(),
+            ),
+        )
+
+    def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
+        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+
+        class Example(Base):
+            __tablename__ = name
+
+            id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
+            value: Mapped[bool] = mapped_column(Boolean, kw_only=True, nullable=False)
+
+        return Example
 
     def _get_table_or_mapped_class(
         self, name: str, /, *, case: Literal["table", "mapped_class"]
