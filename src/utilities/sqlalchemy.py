@@ -11,7 +11,7 @@ from collections.abc import (
     Sequence,
 )
 from collections.abc import Set as AbstractSet
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from enum import auto
 from functools import reduce
@@ -1028,9 +1028,12 @@ class _NormalizedInsertItem:
 
 def normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertItem]:
     """Normalize an insertion item."""
-    with suppress(NormalizeUpsertItemError):
-        for norm in normalize_upsert_item(cast(Any, item)):
+    try:
+        for norm in normalize_upsert_item(cast(Any, item), selected_or_all="all"):
             yield _NormalizedInsertItem(values=norm.values, table=norm.table)
+    except NormalizeUpsertItemError:
+        pass
+    else:
         return
 
     if is_insert_item_pair(item):
