@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, TypeVar, overload
@@ -15,6 +16,8 @@ if TYPE_CHECKING:
 Number = int | float
 Duration = Number | dt.timedelta
 PathLike = Path | str
+StrMapping = Mapping[str, Any]
+TupleOrStrMapping = tuple[Any, ...] | StrMapping
 
 
 _T = TypeVar("_T")
@@ -388,6 +391,16 @@ def is_sized_not_str(obj: Any, /) -> TypeGuard[Sized]:
     return is_sized(obj) and not isinstance(obj, str)
 
 
+def is_string_mapping(obj: Any, /) -> TypeGuard[StrMapping]:
+    """Check if an object is a string mapping."""
+    return isinstance(obj, dict) and all(isinstance(key, str) for key in obj)
+
+
+def is_tuple_or_string_mapping(obj: Any, /) -> TypeGuard[TupleOrStrMapping]:
+    """Check if an object is a tuple or string mapping."""
+    return isinstance(obj, tuple) or is_string_mapping(obj)
+
+
 def make_isinstance(cls: type[_T], /) -> Callable[[Any], TypeGuard[_T]]:
     """Check if an object is hashable."""
 
@@ -430,6 +443,8 @@ __all__ = [
     "is_hashable",
     "is_sized",
     "is_sized_not_str",
+    "is_string_mapping",
+    "is_tuple_or_string_mapping",
     "issubclass_except_bool_int",
     "make_isinstance",
 ]

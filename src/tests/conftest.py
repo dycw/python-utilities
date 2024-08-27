@@ -6,12 +6,16 @@ from typing import TYPE_CHECKING
 from pytest import fixture, mark
 
 from utilities.platform import IS_NOT_LINUX
+from utilities.sqlalchemy import ensure_tables_dropped_async
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from sqlalchemy import Engine, Table
-    from sqlalchemy.orm import DeclarativeBase
+    from sqlalchemy import Engine
+    from sqlalchemy.ext.asyncio import AsyncEngine
+
+    from utilities.asyncio import Coroutine1
+    from utilities.sqlalchemy import TableOrMappedClass
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
@@ -43,18 +47,32 @@ else:
     def create_postgres_engine() -> Callable[..., Engine]:
         """Create a Postgres engine."""
 
-        def inner(*tables_or_mapped_classes: Table | type[DeclarativeBase]) -> Engine:
-            from utilities.sqlalchemy import (
-                create_engine,
-                ensure_tables_created,
-                ensure_tables_dropped,
-            )
+        def inner(*tables_or_mapped_classes: TableOrMappedClass) -> Engine:
+            from utilities.sqlalchemy import create_engine, ensure_tables_dropped
 
             engine = create_engine(
                 "postgresql", host="localhost", port=5432, database="testing"
             )
             ensure_tables_dropped(engine, *tables_or_mapped_classes)
-            ensure_tables_created(engine, *tables_or_mapped_classes)
+            return engine
+
+        return inner
+
+    @fixture(scope="session")
+    def create_postgres_engine_async() -> Callable[..., Coroutine1[AsyncEngine]]:
+        """Create a Postgres engine."""
+
+        async def inner(*tables_or_mapped_classes: TableOrMappedClass) -> AsyncEngine:
+            from utilities.sqlalchemy import create_engine
+
+            engine = create_engine(
+                "postgresql+asyncpg",
+                host="localhost",
+                port=5432,
+                database="testing",
+                async_=True,
+            )
+            await ensure_tables_dropped_async(engine, *tables_or_mapped_classes)
             return engine
 
         return inner

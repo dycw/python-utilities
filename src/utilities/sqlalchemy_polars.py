@@ -5,7 +5,7 @@ import decimal
 from contextlib import suppress
 from dataclasses import dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from uuid import UUID
 
 import polars as pl
@@ -24,7 +24,7 @@ from polars import (
     read_database,
 )
 from polars._typing import ConnectionOrCursor, PolarsDataType, SchemaDict
-from sqlalchemy import Column, Connection, Engine, Select, Table, select
+from sqlalchemy import Column, Select, Table, select
 from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
@@ -45,15 +45,20 @@ from utilities.polars import (
 )
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
+    EngineOrConnection,
+    MaybeAsyncEngineOrConnection,
+    TableOrMappedClass,
     ensure_tables_created,
     ensure_tables_created_async,
     get_chunk_size,
     get_columns,
     insert_items,
     insert_items_async,
+    upsert_items,
+    upsert_items_async,
     yield_connection,
 )
-from utilities.types import ensure_not_none
+from utilities.types import StrMapping, ensure_not_none
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -67,15 +72,14 @@ if TYPE_CHECKING:
     )
     from zoneinfo import ZoneInfo
 
-    from sqlalchemy.ext.asyncio import AsyncConnection
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
 
 def insert_dataframe(
     df: DataFrame,
-    table_or_mapped_class: Table | type[Any],
-    engine_or_conn: Engine | Connection,
+    table_or_mapped_class: TableOrMappedClass,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = False,
@@ -91,16 +95,25 @@ def insert_dataframe(
         raise InsertDataFrameError(df=df)
     insert_items(
         engine_or_conn,
-        prepared.insert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
     )
 
 
+@dataclass(kw_only=True)
+class InsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
 async def insert_dataframe_async(
     df: DataFrame,
-    table_or_mapped_class: Table | type[Any],
-    engine: AsyncEngine,
+    table_or_mapped_class: TableOrMappedClass,
+    engine: AsyncEngine,  # does not support connection
     /,
     *,
     snake: bool = False,
@@ -113,18 +126,27 @@ async def insert_dataframe_async(
         await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
-        raise InsertDataFrameError(df=df)
+        raise InsertDataFrameAsyncError(df=df)
     await insert_items_async(
         engine,
-        prepared.insert_item,
+        prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
     )
 
 
+@dataclass(kw_only=True)
+class InsertDataFrameAsyncError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
 @dataclass(frozen=True, kw_only=True)
 class _InsertDataFramePrepare:
-    insert_item: tuple[Sequence[Mapping[str, Any]], Table | type[Any]]
+    items: tuple[Sequence[StrMapping], TableOrMappedClass]
     no_items_empty_df: bool
     no_items_non_empty_df: bool
 
@@ -140,24 +162,15 @@ def _insert_dataframe_prepare(
     no_items = len(items) == 0
     df_is_empty = df.is_empty()
     return _InsertDataFramePrepare(
-        insert_item=(items, table_or_mapped_class),
+        items=(items, table_or_mapped_class),
         no_items_empty_df=no_items and df_is_empty,
         no_items_non_empty_df=no_items and not df_is_empty,
     )
 
 
-@dataclass(kw_only=True)
-class InsertDataFrameError(Exception):
-    df: DataFrame
-
-    @override
-    def __str__(self) -> str:
-        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
-
-
 def _insert_dataframe_map_df_schema_to_table(
     df_schema: SchemaDict,
-    table_or_mapped_class: Table | type[Any],
+    table_or_mapped_class: TableOrMappedClass,
     /,
     *,
     snake: bool = False,
@@ -237,7 +250,7 @@ def _insert_dataframe_check_df_and_db_types(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = ...,
@@ -251,7 +264,7 @@ def select_to_dataframe(
 @overload
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = ...,
@@ -264,7 +277,7 @@ def select_to_dataframe(
 ) -> Iterable[DataFrame]: ...
 def select_to_dataframe(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection,
+    engine_or_conn: EngineOrConnection,
     /,
     *,
     snake: bool = False,
@@ -464,7 +477,7 @@ class _SelectToDataFramePrepare:
 
 def _select_to_dataframe_prepare(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection | AsyncEngine,
+    engine_or_conn: EngineOrConnection | AsyncEngine,
     /,
     *,
     snake: bool = False,
@@ -557,7 +570,7 @@ def _select_to_dataframe_check_duplicates(
 
 def _select_to_dataframe_yield_selects_with_in_clauses(
     sel: Select[Any],
-    engine_or_conn: Engine | Connection | AsyncEngine | AsyncConnection,
+    engine_or_conn: MaybeAsyncEngineOrConnection,
     in_clauses: tuple[Column[Any], Iterable[Any]],
     /,
     *,
@@ -575,10 +588,87 @@ def _select_to_dataframe_yield_selects_with_in_clauses(
     return (sel.where(in_col.in_(values)) for values in chunked(in_values, chunk_size))
 
 
+def upsert_dataframe(
+    df: DataFrame,
+    table_or_mapped_class: TableOrMappedClass,
+    engine_or_conn: EngineOrConnection,
+    /,
+    *,
+    snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a DataFrame into a database."""
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.no_items_empty_df:
+        ensure_tables_created(engine_or_conn, table_or_mapped_class)
+        return
+    if prepared.no_items_non_empty_df:
+        raise UpsertDataFrameError(df=df)
+    upsert_items(
+        engine_or_conn,
+        prepared.items,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+        selected_or_all=selected_or_all,
+    )
+
+
+@dataclass(kw_only=True)
+class UpsertDataFrameError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
+async def upsert_dataframe_async(
+    df: DataFrame,
+    table_or_mapped_class: TableOrMappedClass,
+    engine: AsyncEngine,  # does not support connection
+    /,
+    *,
+    snake: bool = False,
+    chunk_size_frac: float = CHUNK_SIZE_FRAC,
+    assume_tables_exist: bool = False,
+    selected_or_all: Literal["selected", "all"] = "selected",
+) -> None:
+    """Upsert a DataFrame into a database."""
+    prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
+    if prepared.no_items_empty_df:
+        await ensure_tables_created_async(engine, table_or_mapped_class)
+        return
+    if prepared.no_items_non_empty_df:
+        raise UpsertDataFrameAsyncError(df=df)
+    await upsert_items_async(
+        engine,
+        prepared.items,
+        chunk_size_frac=chunk_size_frac,
+        assume_tables_exist=assume_tables_exist,
+        selected_or_all=selected_or_all,
+    )
+
+
+@dataclass(kw_only=True)
+class UpsertDataFrameAsyncError(Exception):
+    df: DataFrame
+
+    @override
+    def __str__(self) -> str:
+        return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
+
+
 __all__ = [
+    "InsertDataFrameAsyncError",
     "InsertDataFrameError",
+    "UpsertDataFrameAsyncError",
+    "UpsertDataFrameError",
     "insert_dataframe",
     "insert_dataframe_async",
     "select_to_dataframe",
     "select_to_dataframe_async",
+    "upsert_dataframe",
+    "upsert_dataframe_async",
 ]

@@ -41,6 +41,8 @@ from utilities.types import (
     is_hashable,
     is_sized,
     is_sized_not_str,
+    is_string_mapping,
+    is_tuple_or_string_mapping,
     issubclass_except_bool_int,
     make_isinstance,
 )
@@ -319,6 +321,20 @@ class TestIsSizedNotStr:
         assert is_sized_not_str(obj) is expected
 
 
+class TestIsStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_string_mapping(obj)
+        assert result is expected
+
+
 class TestIsSubclassExceptBoolInt:
     @mark.parametrize(
         ("x", "y", "expected"),
@@ -331,6 +347,21 @@ class TestIsSubclassExceptBoolInt:
         class MyInt(int): ...
 
         assert not issubclass_except_bool_int(bool, MyInt)
+
+
+class TestIsTupleOrStringMapping:
+    @mark.parametrize(
+        ("obj", "expected"),
+        [
+            param(None, False),
+            param((1, 2, 3), True),
+            param({"a": 1, "b": 2, "c": 3}, True),
+            param({1: "a", 2: "b", 3: "c"}, False),
+        ],
+    )
+    def test_main(self, *, obj: Any, expected: bool) -> None:
+        result = is_tuple_or_string_mapping(obj)
+        assert result is expected
 
 
 class TestMakeIsInstance:
