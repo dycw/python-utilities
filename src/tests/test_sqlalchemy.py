@@ -1610,7 +1610,7 @@ class TestNormalizeInsertItem:
     @given(ids=sets(integers(0, 10), min_size=1))
     def test_mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._mapped_class
-        result = [normalize_insert_item(cls(id_=id_)) for id_ in ids]
+        result = list(normalize_insert_item([cls(id_=id_) for id_ in ids]))
         expected = [
             _NormalizedInsertItem(values={"id_": id_}, table=get_table(cls))
             for id_ in ids
@@ -1684,7 +1684,7 @@ class TestNormalizeUpsertItem:
     @given(ids=sets(integers(0, 10), min_size=1))
     def test_mapped_classes(self, *, ids: set[int]) -> None:
         cls = self._mapped_class
-        result = [normalize_upsert_item(cls(id_=id_)) for id_ in ids]
+        result = list(normalize_upsert_item([cls(id_=id_) for id_ in ids]))
         expected = [
             _NormalizedUpsertItem(values={"id_": id_}, table=get_table(cls))
             for id_ in ids
