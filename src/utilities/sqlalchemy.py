@@ -1229,7 +1229,7 @@ def upsert(  # skipif-ci-in-environ
     else:
         raise UpsertError(item=item, values=values)
     breakpoint()
-    
+
     values_use = [{k: v for k, v in m.items() if v is not None} for m in mappings]
     return _upsert_core(
         engine_or_conn, table, values_use, selected_or_all=selected_or_all
@@ -1299,6 +1299,8 @@ def _upsert_apply_on_conflict_do_update(
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
     set_ = {c: getattr(insert.excluded, c) for c in columns}
+    breakpoint()
+
     match insert:
         case postgresql_Insert():  # skipif-ci
             return insert.on_conflict_do_update(constraint=primary_key, set_=set_)
