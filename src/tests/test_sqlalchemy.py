@@ -1152,55 +1152,59 @@ class TestGetTableUpdatedColumn:
 
 
 class TestInsertItems:
-    TupleOrDict = Literal["tuple", "dict"]
-    CaseMultipleItems = Literal[
-        "pair_of_list_of_tuples",
-        "pair_of_list_of_dicts",
-        "list_of_pairs_of_tuples",
-        "list_of_pairs_of_dicts",
-    ]
-
     @given(engine=sqlite_engines(), id_=integers(0, 10))
-    @mark.parametrize("tuple_or_dict", [param("tuple"), param("dict")])
+    @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_single_item(
-        self, *, tuple_or_dict: TupleOrDict, engine: Engine, id_: int, use_conn: bool
-    ) -> None:
-        match tuple_or_dict:
-            case "tuple":
-                item = (id_,), self._table
-                self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
-            case "dict":
-                item = {"id_": id_}, self._table
-                self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
-
-    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize(
-        "case",
-        [
-            param("pair_of_list_of_tuples"),
-            param("pair_of_list_of_dicts"),
-            param("list_of_pairs_of_tuples"),
-            param("list_of_pairs_of_dicts"),
-        ],
-    )
-    @mark.parametrize("use_conn", [param(True), param(False)])
-    def test_sync_multiple_items(
-        self, *, case: CaseMultipleItems, engine: Engine, ids: set[int], use_conn: bool
+    def test_sync_pair_of_obj_and_table(
+        self,
+        *,
+        case: Literal["tuple", "dict"],
+        engine: Engine,
+        id_: int,
+        use_conn: bool,
     ) -> None:
         match case:
-            case "pair_of_list_of_tuples":
+            case "tuple":
+                item = (id_,), self._table
+            case "dict":
+                item = {"id_": id_}, self._table
+        self._run_test_sync(engine, {id_}, item, use_conn=use_conn)
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_pair_of_list_of_objs_and_table(
+        self,
+        *,
+        case: Literal["tuple", "dict"],
+        engine: Engine,
+        ids: set[int],
+        use_conn: bool,
+    ) -> None:
+        match case:
+            case "tuple":
                 item = [((id_,)) for id_ in ids], self._table
-                self._run_test_sync(engine, ids, item, use_conn=use_conn)
-            case "pair_of_list_of_dicts":
+            case "dict":
                 item = [({"id_": id_}) for id_ in ids], self._table
-                self._run_test_sync(engine, ids, item, use_conn=use_conn)
-            case "list_of_pairs_of_tuples":
-                item = [(((id_,), self._table)) for id_ in ids]
-                self._run_test_sync(engine, ids, item, use_conn=use_conn)
-            case "list_of_pairs_of_dicts":
+        self._run_test_sync(engine, ids, item, use_conn=use_conn)
+
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_list_of_pairs_of_objs_and_table(
+        self,
+        *,
+        case: Literal["tuple", "dict"],
+        engine: Engine,
+        ids: set[int],
+        use_conn: bool,
+    ) -> None:
+        match case:
+            case "tuple":
+                item = [((id_,), self._table) for id_ in ids]
+            case "dict":
                 item = [({"id_": id_}, self._table) for id_ in ids]
-                self._run_test_sync(engine, ids, item, use_conn=use_conn)
+        self._run_test_sync(engine, ids, item, use_conn=use_conn)
 
     @given(
         engine=sqlite_engines(), ids=sets(integers(0, 1000), min_size=10, max_size=100)
@@ -1251,56 +1255,63 @@ class TestInsertItems:
             self._run_test_sync(engine, set(), cast(Any, None), use_conn=use_conn)
 
     @given(data=data(), id_=integers(0, 10))
-    @mark.parametrize("case", [param("tuple_and_table"), param("dict_and_table")])
+    @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_single_item(
+    async def test_async_pair_of_obj_and_table(
         self,
         *,
-        case: Literal["tuple_and_table", "dict_and_table"],
+        case: Literal["tuple", "dict"],
         data: DataObject,
         id_: int,
         use_conn: bool,
     ) -> None:
         engine = await aiosqlite_engines(data)
         match case:
-            case "tuple_and_table":
-                pair = (id_,), self._table
-            case "dict_and_table":
-                pair = {"id_": id_}, self._table
-        await self._run_test_async(engine, {id_}, pair, use_conn=use_conn)
+            case "tuple":
+                item = (id_,), self._table
+            case "dict":
+                item = {"id_": id_}, self._table
+        await self._run_test_async(engine, {id_}, item, use_conn=use_conn)
 
     @given(data=data(), ids=sets(integers(0, 10), min_size=1))
-    @mark.parametrize(
-        "case",
-        [
-            param("pair_of_list_of_tuples"),
-            param("pair_of_list_of_dicts"),
-            param("list_of_pairs_of_tuples"),
-            param("list_of_pairs_of_dicts"),
-        ],
-    )
+    @mark.parametrize("case", [param("tuple"), param("dict")])
     @mark.parametrize("use_conn", [param(True), param(False)])
-    async def test_async_multiple_items(
+    async def test_async_pair_of_objs_and_table(
         self,
         *,
-        case: CaseMultipleItems,
+        case: Literal["tuple", "dict"],
         data: DataObject,
         ids: set[int],
         use_conn: bool,
     ) -> None:
         engine = await aiosqlite_engines(data)
         match case:
-            case "pair_of_list_of_tuples":
+            case "tuple":
                 item = [((id_,)) for id_ in ids], self._table
-            case "pair_of_list_of_dicts":
+            case "dict":
                 item = [({"id_": id_}) for id_ in ids], self._table
-            case "list_of_pairs_of_tuples":
-                item = [(((id_,), self._table)) for id_ in ids]
-            case "list_of_pairs_of_dicts":
-                item = [({"id_": id_}, self._table) for id_ in ids]
         await self._run_test_async(engine, ids, item, use_conn=use_conn)
 
     @given(data=data(), ids=sets(integers(0, 1000), min_size=10, max_size=100))
+    @given(engine=sqlite_engines(), ids=sets(integers(0, 10), min_size=1))
+    @mark.parametrize("case", [param("tuple"), param("dict")])
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    async def test_async_list_of_pairs_of_objs_and_table(
+        self,
+        *,
+        case: Literal["tuple", "dict"],
+        data: DataObject,
+        ids: set[int],
+        use_conn: bool,
+    ) -> None:
+        engine = await aiosqlite_engines(data)
+        match case:
+            case "tuple":
+                item = [((id_,), self._table) for id_ in ids]
+            case "dict":
+                item = [({"id_": id_}, self._table) for id_ in ids]
+        await self._run_test_async(engine, ids, item, use_conn=use_conn)
+
     @mark.parametrize("use_conn", [param(True), param(False)])
     async def test_async_many_items(
         self, *, data: DataObject, ids: set[int], use_conn: bool
