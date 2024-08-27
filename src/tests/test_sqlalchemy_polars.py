@@ -820,7 +820,7 @@ class TestSelectToDataFrameYieldSelectsWithInClauses:
 
 
 class TestUpsertDataFrame:
-    @given(df=_upsert_dataframes(min_height=1), engine=sqlite_engines())
+    @given(df=_upsert_dataframes(), engine=sqlite_engines())
     def test_sync(self, *, df: DataFrame, engine: Engine) -> None:
         key = TestUpsertDataFrame.test_sync.__qualname__
         name = f"test_{md5_hash(key)}"
@@ -854,7 +854,7 @@ class TestUpsertDataFrame:
                 engine,
             )
 
-    @given(data=data(), df=_upsert_dataframes(min_height=1))
+    @given(data=data(), df=_upsert_dataframes())
     async def test_async(self, *, data: DataObject, df: DataFrame) -> None:
         key = TestUpsertDataFrame.test_async.__qualname__
         name = f"test_{md5_hash(key)}"
