@@ -211,6 +211,7 @@ class TestTimeSeriesAddAndGet:
                 _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
 
 
+@mark.only
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndReadDataFrame:
     schema: ClassVar[SchemaDict] = {
@@ -293,63 +294,81 @@ class TestTimeSeriesAddAndReadDataFrame:
     @given(yield_redis=redis_cms())
     def test_error_add_key_missing(self, *, yield_redis: YieldRedisContainer) -> None:
         df = DataFrame()
-        with raises(
-            TimeSeriesAddDataFrameError,
-            match="DataFrame must have a 'key' column; got .*",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesAddDataFrameError,
+                match="DataFrame must have a 'key' column; got .*",
+            ),
         ):
-            _ = time_series_add_dataframe(ts_pair[0], df)
+            _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_add_timestamp_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8})
-        with raises(
-            TimeSeriesAddDataFrameError,
-            match="DataFrame must have a 'timestamp' column; got .*",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesAddDataFrameError,
+                match="DataFrame must have a 'timestamp' column; got .*",
+            ),
         ):
-            _ = time_series_add_dataframe(ts_pair[0], df)
+            _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_add_key_is_not_utf8(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Boolean, "timestamp": DatetimeUTC})
-        with raises(
-            TimeSeriesAddDataFrameError,
-            match="The 'key' column must be Utf8; got Boolean",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesAddDataFrameError,
+                match="The 'key' column must be Utf8; got Boolean",
+            ),
         ):
-            _ = time_series_add_dataframe(ts_pair[0], df)
+            _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
-        with raises(
-            TimeSeriesAddDataFrameError,
-            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesAddDataFrameError,
+                match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+            ),
         ):
-            _ = time_series_add_dataframe(ts_pair[0], df)
+            _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_read_no_keys_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
-        with raises(
-            TimeSeriesReadDataFrameError, match="At least 1 key must be requested"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesReadDataFrameError, match="At least 1 key must be requested"
+            ),
         ):
-            _ = time_series_read_dataframe(ts_pair[0], [], [])
+            _ = time_series_read_dataframe(redis.ts, [], [])
 
     @given(yield_redis=redis_cms())
     def test_error_read_no_columns_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
-        ts, uuid = ts_pair
-        with raises(
-            TimeSeriesReadDataFrameError, match="At least 1 column must be requested"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesReadDataFrameError,
+                match="At least 1 column must be requested",
+            ),
         ):
-            _ = time_series_read_dataframe(ts, f"{uuid}_{key}", [])
+            _ = time_series_read_dataframe(redis.ts, redis.key, [])
 
 
 @dataclass(frozen=True, kw_only=True)
