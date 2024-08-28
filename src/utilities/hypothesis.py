@@ -663,6 +663,10 @@ def timedeltas_2w(
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
+_ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
+_ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
+
+
 @composite
 def zoned_datetimes(
     _draw: DrawFn,
@@ -692,10 +696,10 @@ def zoned_datetimes(
     )
     datetime = draw(strategy)
     with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(ZoneInfo("Asia/Manila"))  # for dt.datetime.min
+        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
     with assume_does_not_raise(OverflowError, match="date value out of range"):
         _ = datetime.astimezone(  # for dt.datetime.max
-            ZoneInfo("Pacific/Kiritimati")
+            _ZONED_DATETIMES_RIGHT_MOST
         )
     return datetime.astimezone(time_zone_)
 
