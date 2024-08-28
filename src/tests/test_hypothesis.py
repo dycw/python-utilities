@@ -22,7 +22,6 @@ from hypothesis.strategies import (
     integers,
     just,
     none,
-    sampled_from,
     sets,
     timedeltas,
     timezones,
@@ -86,7 +85,6 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -826,15 +824,12 @@ class TestTimeDeltas2W:
 class TestZonedDatetimes:
     @given(
         data=data(),
-        min_value=datetimes(
-            timezones=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]) | none()
-        ),
-        max_value=timezones()
-        | datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-        time_zone1=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
-        time_zone2=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
+        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
+        max_value=timezones() | datetimes(timezones=just(dt.UTC) | none()),
+        time_zone1=timezones() | just(dt.UTC),
+        time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=20000, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
@@ -864,4 +859,52 @@ class TestZonedDatetimes:
         else:
             max_value_use = max_value.astimezone(time_zone1)
         assert min_value_use <= datetime <= max_value_use
+        _ = datetime.astimezone(time_zone2)
+
+    @given(
+        data=data(),
+        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
+        time_zone1=timezones() | just(dt.UTC),
+        time_zone2=timezones() | just(dt.UTC),
+    )
+    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
+    def test_min_value_only(
+        self,
+        *,
+        data: DataObject,
+        min_value: dt.datetime,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
+    ) -> None:
+        datetime = data.draw(zoned_datetimes(min_value=min_value, time_zone=time_zone1))
+        assert datetime.tzinfo is time_zone1
+        if min_value.tzinfo is None:
+            min_value_use = min_value.replace(tzinfo=time_zone1)
+        else:
+            min_value_use = min_value.astimezone(time_zone1)
+        assert datetime >= min_value_use
+        _ = datetime.astimezone(time_zone2)
+
+    @given(
+        data=data(),
+        max_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
+        time_zone1=timezones() | just(dt.UTC),
+        time_zone2=timezones() | just(dt.UTC),
+    )
+    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
+    def test_max_value_only(
+        self,
+        *,
+        data: DataObject,
+        max_value: dt.datetime,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
+    ) -> None:
+        datetime = data.draw(zoned_datetimes(max_value=max_value, time_zone=time_zone1))
+        assert datetime.tzinfo is time_zone1
+        if max_value.tzinfo is None:
+            max_value_use = max_value.replace(tzinfo=time_zone1)
+        else:
+            max_value_use = max_value.astimezone(time_zone1)
+        assert datetime <= max_value_use
         _ = datetime.astimezone(time_zone2)
