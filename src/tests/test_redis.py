@@ -43,6 +43,7 @@ from utilities.redis import (
     time_series_add,
     time_series_add_async,
     time_series_add_dataframe,
+    time_series_add_dataframe_async,
     time_series_get,
     time_series_get_async,
     time_series_madd,
@@ -50,6 +51,7 @@ from utilities.redis import (
     time_series_range,
     time_series_range_async,
     time_series_read_dataframe,
+    time_series_read_dataframe_async,
     yield_client,
     yield_client_async,
     yield_time_series,
@@ -240,7 +242,6 @@ class TestTimeSeriesAddAndReadDataFrame:
         ),
         time_zone=sampled_from([HONG_KONG, UTC]),
     )
-    @mark.only
     @mark.parametrize(
         ("strategy1", "dtype1"),
         [
@@ -374,6 +375,130 @@ class TestTimeSeriesAddAndReadDataFrame:
             ),
         ):
             _ = time_series_read_dataframe(redis.ts, redis.key, [])
+
+    @given(
+        data=data(),
+        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
+        key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
+            tuple
+        ),
+        time_zone=sampled_from([HONG_KONG, UTC]),
+    )
+    @mark.parametrize(
+        ("strategy1", "dtype1"),
+        [
+            param(int32s(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
+    @mark.parametrize(
+        ("strategy2", "dtype2"),
+        [
+            param(int32s(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
+    async def test_async(
+        self,
+        *,
+        data: DataObject,
+        series_names: tuple[str, str],
+        strategy1: SearchStrategy[Number],
+        strategy2: SearchStrategy[Number],
+        key_timestamp_values: tuple[str, str, str, str],
+        time_zone: ZoneInfo,
+        dtype1: DataType,
+        dtype2: DataType,
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            prepared = self._prepare_main_test(
+                data,
+                redis.key,
+                series_names,
+                strategy1,
+                strategy2,
+                key_timestamp_values,
+                time_zone,
+                dtype1,
+                dtype2,
+            )
+            await time_series_add_dataframe_async(
+                redis.ts, prepared.df, key=prepared.key, timestamp=prepared.timestamp
+            )
+            result = await time_series_read_dataframe_async(
+                redis.ts,
+                prepared.keys,
+                prepared.columns,
+                output_key=prepared.key,
+                output_timestamp=prepared.timestamp,
+                output_time_zone=prepared.time_zone,
+            )
+            check_polars_dataframe(result, height=2, schema_list=prepared.schema)
+        assert_frame_equal(result, prepared.df)
+
+    @given(data=data())
+    async def test_async_error_add_key_missing(self, *, data: DataObject) -> None:
+        df = DataFrame()
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesAddDataFrameError,
+                match="DataFrame must have a 'key' column; got .*",
+            ):
+                _ = await time_series_add_dataframe_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_add_timestamp_missing(self, *, data: DataObject) -> None:
+        df = DataFrame(schema={"key": Utf8})
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesAddDataFrameError,
+                match="DataFrame must have a 'timestamp' column; got .*",
+            ):
+                _ = await time_series_add_dataframe_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_add_key_is_not_utf8(self, *, data: DataObject) -> None:
+        df = DataFrame(schema={"key": Boolean, "timestamp": DatetimeUTC})
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesAddDataFrameError,
+                match="The 'key' column must be Utf8; got Boolean",
+            ):
+                _ = await time_series_add_dataframe_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_madd_timestamp_is_not_a_zoned_datetime(
+        self, *, data: DataObject
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesAddDataFrameError,
+                match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+            ):
+                _ = await time_series_add_dataframe_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_read_no_keys_requested(
+        self, *, data: DataObject
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesReadDataFrameError,
+                match="At least 1 key must be requested",
+            ):
+                _ = await time_series_read_dataframe_async(redis.ts, [], [])
+
+    @given(data=data())
+    async def test_async_error_read_no_columns_requested(
+        self, *, data: DataObject
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesReadDataFrameError,
+                match="At least 1 column must be requested",
+            ):
+                _ = await time_series_read_dataframe_async(redis.ts, redis.key, [])
 
     def _prepare_main_test(
         self,
