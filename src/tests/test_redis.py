@@ -876,7 +876,7 @@ class TestTimeSeriesMAddAndRange:
     def _prepare_test_error_madd_invalid_timestamp(
         self, data: DataObject, key: str, case: Literal["values", "DataFrame"], /
     ) -> list[tuple[str, dt.datetime, int]] | DataFrame:
-        timestamp = data.draw(valid_zoned_datetimes)
+        timestamp = data.draw(invalid_zoned_datetimes)
         _ = assume(timestamp < EPOCH_UTC)
         value = data.draw(int32s())
         values = [(f"{key}_{case}", timestamp, value)]
