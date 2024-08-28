@@ -60,6 +60,9 @@ from hypothesis.strategies import (
     timedeltas,
     uuids,
 )
+from hypothesis.strategies import (
+    tuples as _tuples,
+)
 from hypothesis.utils.conventions import not_set
 from redis.exceptions import ResponseError
 from redis.typing import KeyT
@@ -86,6 +89,11 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
 
@@ -812,5 +820,6 @@ __all__ = [
     "text_clean",
     "text_printable",
     "timedeltas_2w",
+    "tuples",
     "zoned_datetimes",
 ]
