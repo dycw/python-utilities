@@ -114,10 +114,6 @@ class DataObject(_DataObject):
         strategy: SearchStrategy[tuple[_T1, _T2, _T3, _T4, _T5]],
         label: Any = None,
     ) -> tuple[_T1, _T2, _T3, _T4, _T5]: ...
-    # @overload
-    # def draw(
-    #     self, strategy: SearchStrategy[Iterable[_T]], label: Any = None
-    # ) -> Iterable[_T]: ...
     @overload
     def draw(
         self, strategy: SearchStrategy[type[_T]], label: Any = None
