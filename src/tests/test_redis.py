@@ -10,7 +10,6 @@ from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
     data,
-    datetimes,
     floats,
     sampled_from,
     tuples,
@@ -20,8 +19,8 @@ from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
 
-from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
+from utilities.datetime import EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
     YieldRedisContainer,
     int32s,
@@ -64,15 +63,6 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-def _clean_datetime_zzzzzzzzz(
-    datetime: dt.datetime, /, *, time_zone: ZoneInfo | None = None
-) -> dt.datetime:
-    _ = assume(datetime.fold == 0)
-    if time_zone is not None:
-        datetime = datetime.replace(tzinfo=time_zone)
-    return max(datetime, EPOCH_UTC.astimezone(datetime.tzinfo))
-
-
 @SKIPIF_CI_AND_NOT_LINUX
 class TestEnsureTimeSeriesCreated:
     @given(yield_redis=redis_cms())
@@ -97,7 +87,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
         timestamp=zoned_datetimes(
-            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -116,7 +106,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
         timestamp=zoned_datetimes(
-            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -134,7 +124,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
         timestamp=zoned_datetimes(
-            max_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -154,8 +144,8 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=datetimes(
-            min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
     )
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
@@ -173,7 +163,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         data=data(),
         timestamp=zoned_datetimes(
-            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -192,7 +182,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         data=data(),
         timestamp=zoned_datetimes(
-            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -210,7 +200,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         data=data(),
         timestamp=zoned_datetimes(
-            max_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -229,7 +219,7 @@ class TestTimeSeriesAddAndGet:
     @given(
         data=data(),
         timestamp=zoned_datetimes(
-            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
     )
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
@@ -287,8 +277,8 @@ class TestTimeSeriesAddAndReadDataFrame:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
         ts, uuid = ts_pair
         full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
-        datetime1 = (datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),)
-        datetime2 = (datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),)
+        datetime1 = (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
+        datetime2 = (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
         timestamp1, timestamp2 = (
             _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
             for d in [datetime1, datetime2]
@@ -385,6 +375,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_read_dataframe(ts, f"{uuid}_{key}", [])
 
 
+@mark.only
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesMAddAndRange:
     int_schema: ClassVar[SchemaDict] = {
@@ -413,8 +404,6 @@ class TestTimeSeriesMAddAndRange:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @mark.only
-    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
@@ -470,35 +459,42 @@ class TestTimeSeriesMAddAndRange:
 
     @given(yield_redis=redis_cms())
     def test_error_madd_key_missing(self, *, yield_redis: YieldRedisContainer) -> None:
-        ts, _ = ts_pair
         df = DataFrame()
-        with raises(
-            TimeSeriesMAddError, match="DataFrame must have a 'key' column; got .*"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError, match="DataFrame must have a 'key' column; got .*"
+            ),
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_timestamp_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
-        ts, _ = ts_pair
         df = DataFrame(schema={"key": Utf8})
-        with raises(
-            TimeSeriesMAddError,
-            match="DataFrame must have a 'timestamp' column; got .*",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError,
+                match="DataFrame must have a 'timestamp' column; got .*",
+            ),
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_value_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
-        ts, _ = ts_pair
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
-        with raises(
-            TimeSeriesMAddError, match="DataFrame must have a 'value' column; got .*"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError,
+                match="DataFrame must have a 'value' column; got .*",
+            ),
         ):
-            _ = time_series_madd(ts, df)
+            _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_key_is_not_utf8(
@@ -507,36 +503,47 @@ class TestTimeSeriesMAddAndRange:
         df = DataFrame(
             schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
         )
-        with raises(
-            TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError, match="The 'key' column must be Utf8; got Boolean"
+            ),
         ):
-            _ = time_series_madd(ts_pair[0], df)
+            _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
-        with raises(
-            TimeSeriesMAddError,
-            match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError,
+                match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+            ),
         ):
-            _ = time_series_madd(ts_pair[0], df)
+            _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
     def test_error_madd_value_is_not_numeric(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
-        with raises(
-            TimeSeriesMAddError, match="The 'value' column must be numeric; got Boolean"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError,
+                match="The 'value' column must be numeric; got Boolean",
+            ),
         ):
-            _ = time_series_madd(ts_pair[0], df)
+            _ = time_series_madd(redis.ts, df)
 
-    @FLAKY
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
         value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -548,19 +555,23 @@ class TestTimeSeriesMAddAndRange:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
-        with raises(TimeSeriesMAddError, match="The key '.*' must exist"):
-            _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
+        with yield_redis() as redis:
+            data = [(f"{redis.key}_{case}", timestamp, value)]
+            match case:
+                case "values":
+                    values_or_df = data
+                case "DataFrame":
+                    values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
+            with raises(TimeSeriesMAddError, match="The key '.*' must exist"):
+                _ = time_series_madd(
+                    redis.ts, values_or_df, assume_time_series_exist=True
+                )
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(
+            max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
         value=int32s(),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -573,22 +584,23 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", timestamp, value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
-        with raises(
-            TimeSeriesMAddError, match="Timestamps must be at least the Epoch; got .*"
-        ):
-            _ = time_series_madd(ts, values_or_df)
+        with yield_redis() as redis:
+            data = [(f"{redis.key}_{case}", timestamp, value)]
+            match case:
+                case "values":
+                    values_or_df = data
+                case "DataFrame":
+                    values_or_df = DataFrame(data, schema=self.int_schema, orient="row")
+            with raises(
+                TimeSeriesMAddError,
+                match="Timestamps must be at least the Epoch; got .*",
+            ):
+                _ = time_series_madd(redis.ts, values_or_df)
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=datetimes(
-            min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -601,52 +613,62 @@ class TestTimeSeriesMAddAndRange:
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", _clean_datetime_zzzzzzzzz(timestamp), value)]
-        match case:
-            case "values":
-                values_or_df = data
-            case "DataFrame":
-                values_or_df = DataFrame(data, schema=self.float_schema, orient="row")
-        with raises(TimeSeriesMAddError, match="The value .* is invalid"):
-            _ = time_series_madd(ts, values_or_df)
+        with yield_redis() as redis:
+            data = [(f"{redis.key}_{case}", timestamp, value)]
+            match case:
+                case "values":
+                    values_or_df = data
+                case "DataFrame":
+                    values_or_df = DataFrame(
+                        data, schema=self.float_schema, orient="row"
+                    )
+            with raises(TimeSeriesMAddError, match="The value .* is invalid"):
+                _ = time_series_madd(redis.ts, values_or_df)
 
     @given(yield_redis=redis_cms())
     def test_error_range_no_keys_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
-        ts, _ = ts_pair
-        with raises(
-            TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
+            ),
         ):
-            _ = time_series_range(ts, [])
+            _ = time_series_range(redis.ts, [])
 
     @given(yield_redis=redis_cms())
     def test_error_range_invalid_key(self, *, yield_redis: YieldRedisContainer) -> None:
-        ts, uuid = ts_pair
-        with raises(TimeSeriesRangeError, match="The key '.*' must exist"):
-            _ = time_series_range(ts, f"{uuid}_{key}")
+        with (
+            yield_redis() as redis,
+            raises(TimeSeriesRangeError, match="The key '.*' must exist"),
+        ):
+            _ = time_series_range(redis.ts, redis.key)
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
         value=int32s(),
     )
     def test_error_range_key_with_int64_and_float64(
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: int
     ) -> None:
-        ts, uuid = ts_pair
-        _ = time_series_madd(
-            ts, [(f"{uuid}_{key}", timestamp, value)], duplicate_policy="last"
-        )
-        _ = time_series_madd(
-            ts, [(f"{uuid}_{key}", timestamp, float(value))], duplicate_policy="last"
-        )
-        with raises(
-            TimeSeriesRangeError,
-            match="The key '.*' contains both Int64 and Float64 data",
-        ):
-            _ = time_series_range(ts, f"{uuid}_{key}")
+        with yield_redis() as redis:
+            _ = time_series_madd(
+                redis.ts, [(redis.key, timestamp, value)], duplicate_policy="last"
+            )
+            _ = time_series_madd(
+                redis.ts,
+                [(redis.key, timestamp, float(value))],
+                duplicate_policy="last",
+            )
+            with raises(
+                TimeSeriesRangeError,
+                match="The key '.*' contains both Int64 and Float64 data",
+            ):
+                _ = time_series_range(redis.ts, redis.key)
 
 
 class TestYieldClient:
