@@ -93,7 +93,6 @@ class TestEnsureTimeSeriesCreated:
 
 
 @SKIPIF_CI_AND_NOT_LINUX
-@mark.only
 class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
@@ -256,8 +255,6 @@ class TestTimeSeriesAddAndReadDataFrame:
         data=data(),
         yield_redis=redis_cms(),
         keys=lists_fixed_length(text_ascii(), 6, unique=True),
-        datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         time_zone=sampled_from([HONG_KONG, UTC]),
     )
     @mark.parametrize(
@@ -281,8 +278,6 @@ class TestTimeSeriesAddAndReadDataFrame:
         data: DataObject,
         yield_redis: YieldRedisContainer,
         keys: list[str],
-        datetime1: dt.datetime,
-        datetime2: dt.datetime,
         time_zone: ZoneInfo,
         strategy1: SearchStrategy[Number],
         dtype1: DataType,
@@ -292,6 +287,8 @@ class TestTimeSeriesAddAndReadDataFrame:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
         ts, uuid = ts_pair
         full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
+        datetime1 = (datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),)
+        datetime2 = (datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),)
         timestamp1, timestamp2 = (
             _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
             for d in [datetime1, datetime2]
@@ -401,14 +398,12 @@ class TestTimeSeriesMAddAndRange:
         "value": Float64,
     }
 
-    @FLAKY
     @given(
         data=data(),
         yield_redis=redis_cms(),
-        keys=lists_fixed_length(text_ascii(), 5, unique=True),
-        datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
-        datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
         time_zone=sampled_from([HONG_KONG, UTC]),
+        key_timestamp_value=lists_fixed_length(text_ascii(), 3, unique=True).map(tuple),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize(
@@ -418,60 +413,60 @@ class TestTimeSeriesMAddAndRange:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @mark.only
+    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
         data: DataObject,
         yield_redis: YieldRedisContainer,
-        case: Literal["values", "DataFrame"],
-        keys: list[str],
-        datetime1: dt.datetime,
-        datetime2: dt.datetime,
+        series_names: tuple[str, str],
         time_zone: ZoneInfo,
+        key_timestamp_value: tuple[str, str, str],
+        case: Literal["values", "DataFrame"],
         strategy: SearchStrategy[Number],
         dtype: PolarsDataType,
     ) -> None:
-        key, key1, key2, timestamp, value = keys
-        ts, uuid = ts_pair
-        full_keys = [f"{uuid}_{case}_{key}" for key in [key1, key2]]
-        timestamps = [
-            _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
-            for d in [datetime1, datetime2]
-        ]
+        st_datetimes = zoned_datetimes(min_value=EPOCH_UTC, time_zone=time_zone).map(
+            drop_microseconds
+        )
+        timestamps = data.draw(tuples(st_datetimes, st_datetimes))
         values = data.draw(tuples(strategy, strategy))
-        triples = list(zip(full_keys, timestamps, values, strict=True))
-        schema = {
-            key: Utf8,
-            timestamp: zoned_datetime(time_zone=time_zone),
-            value: dtype,
-        }
-        match case:
-            case "values":
-                values_or_df = triples
-            case "DataFrame":
-                values_or_df = DataFrame(triples, schema=schema, orient="row")
-        res_madd = time_series_madd(
-            ts,
-            values_or_df,
-            key=key,
-            timestamp=timestamp,
-            value=value,
-            duplicate_policy="last",
-        )
-        assert isinstance(res_madd, list)
-        for i in res_madd:
-            assert isinstance(i, int)
-        res_range = time_series_range(
-            ts,
-            full_keys,
-            output_key=key,
-            output_timestamp=timestamp,
-            output_time_zone=time_zone,
-            output_value=value,
-        )
-        check_polars_dataframe(res_range, height=2, schema_list=schema)
-        assert res_range.rows() == triples
+        with yield_redis() as redis:
+            keys = [f"{redis.key}_{case}_{name}" for name in series_names]
+            triples = list(zip(keys, timestamps, values, strict=True))
+            key, timestamp, value = key_timestamp_value
+            schema = {
+                key: Utf8,
+                timestamp: zoned_datetime(time_zone=time_zone),
+                value: dtype,
+            }
+            match case:
+                case "values":
+                    values_or_df = triples
+                case "DataFrame":
+                    values_or_df = DataFrame(triples, schema=schema, orient="row")
+            res_madd = time_series_madd(
+                redis.ts,
+                values_or_df,
+                key=key,
+                timestamp=timestamp,
+                value=value,
+                duplicate_policy="last",
+            )
+            assert isinstance(res_madd, list)
+            for i in res_madd:
+                assert isinstance(i, int)
+            res_range = time_series_range(
+                redis.ts,
+                keys,
+                output_key=key,
+                output_timestamp=timestamp,
+                output_time_zone=time_zone,
+                output_value=value,
+            )
+            check_polars_dataframe(res_range, height=2, schema_list=schema)
+            assert res_range.rows() == triples
 
     @given(yield_redis=redis_cms())
     def test_error_madd_key_missing(self, *, yield_redis: YieldRedisContainer) -> None:

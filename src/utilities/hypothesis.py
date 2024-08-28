@@ -753,19 +753,11 @@ def zoned_datetimes(
             min_value_ = min_value_.astimezone(time_zone_)
         min_value_ = min_value_.replace(tzinfo=None)
     if max_value_.tzinfo is not None:
-        with assume_does_not_raise(OverflowError, match="date value out of range"):
-            max_value_ = max_value_.astimezone(time_zone_)
-        max_value_ = max_value_.replace(tzinfo=None)
+        max_value_ = max_value_.astimezone(time_zone_).replace(tzinfo=None)
     strategy = datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )
     datetime = draw(strategy)
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
-    with assume_does_not_raise(OverflowError, match="date value out of range"):
-        _ = datetime.astimezone(  # for dt.datetime.max
-            _ZONED_DATETIMES_RIGHT_MOST
-        )
     return datetime.astimezone(time_zone_)
 
 

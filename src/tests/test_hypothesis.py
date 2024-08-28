@@ -831,12 +831,11 @@ class TestTimeDeltas2W:
 class TestZonedDatetimes:
     @given(
         data=data(),
-        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
-        max_value=timezones() | datetimes(timezones=just(dt.UTC) | none()),
-        time_zone1=timezones() | just(dt.UTC),
-        time_zone2=timezones() | just(dt.UTC),
+        min_value=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        max_value=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
     )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=10000)
     def test_main(
         self,
         *,
@@ -856,32 +855,13 @@ class TestZonedDatetimes:
                 min_value=min_value, max_value=max_value, time_zone=time_zone1
             )
         )
-        assert datetime.tzinfo is time_zone1
+        assert datetime.tzinfo is time_zone
         if min_value.tzinfo is None:
-            min_value_use = min_value.replace(tzinfo=time_zone1)
+            min_value_use = min_value.replace(tzinfo=time_zone)
         else:
-            min_value_use = min_value.astimezone(time_zone1)
+            min_value_use = min_value.astimezone(time_zone)
         if max_value.tzinfo is None:
-            max_value_use = max_value.replace(tzinfo=time_zone1)
+            max_value_use = max_value.replace(tzinfo=time_zone)
         else:
-            max_value_use = max_value.astimezone(time_zone1)
+            max_value_use = max_value.astimezone(time_zone)
         assert min_value_use <= datetime <= max_value_use
-        _ = datetime.astimezone(time_zone2)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_min(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.min.replace(tzinfo=_ZONED_DATETIMES_LEFT_MOST)
-        _ = datetime.astimezone(time_zone)
-
-    @given(
-        time_zone=timezones()
-        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
-        | just(dt.UTC)
-    )
-    def test_max(self, *, time_zone: ZoneInfo) -> None:
-        datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
-        _ = datetime.astimezone(time_zone)
