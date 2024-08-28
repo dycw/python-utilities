@@ -833,10 +833,7 @@ class TestZonedDatetimes:
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(
-        max_examples=n,
-        suppress_health_check={HealthCheck.filter_too_much, HealthCheck.too_slow},
-    )
+    @settings(max_examples=n)
     def test_main(
         self,
         *,
@@ -873,7 +870,7 @@ class TestZonedDatetimes:
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=n, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=n)
     def test_min_value_only(
         self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
@@ -888,7 +885,7 @@ class TestZonedDatetimes:
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=n, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=n)
     def test_max_value_only(
         self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
