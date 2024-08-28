@@ -36,6 +36,7 @@ from typing import (
     cast,
     overload,
 )
+from zoneinfo import ZoneInfo
 
 import redis
 import redis.asyncio
@@ -760,6 +761,12 @@ def zoned_datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )
     datetime = draw(strategy)
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(  # for dt.datetime.max
+            _ZONED_DATETIMES_RIGHT_MOST
+        )
     return datetime.astimezone(time_zone_)
 
 
