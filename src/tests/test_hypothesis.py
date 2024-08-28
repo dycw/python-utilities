@@ -468,7 +468,7 @@ class TestRandomStates:
 
 
 @SKIPIF_CI_AND_NOT_LINUX
-class TestRedisClients:
+class TestRedisCMs:
     @given(yield_redis=redis_cms(), value=integers())
     def test_sync_core(
         self,

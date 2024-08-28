@@ -12,6 +12,7 @@ from hypothesis.strategies import (
     data,
     datetimes,
     floats,
+    integers,
     sampled_from,
     tuples,
 )
@@ -28,7 +29,6 @@ from utilities.hypothesis import (
     lists_fixed_length,
     redis_cms,
     redis_cms_async,
-    redis_time_series,
     text_ascii,
     zoned_datetimes,
 )
@@ -56,6 +56,7 @@ from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     import datetime as dt
+    from contextlib import AbstractContextManager
     from uuid import UUID
     from zoneinfo import ZoneInfo
 
@@ -74,40 +75,40 @@ def _clean_datetime(
 
 
 @SKIPIF_CI_AND_NOT_LINUX
+@mark.only
 class TestEnsureTimeSeriesCreated:
-    @given(container=redis_cms(), key=text_ascii())
-    @mark.repeat(5)
-    @settings(suppress_health_check={HealthCheck.differing_executors})
-    def test_sync(self, *, container: RedisContainer[redis.Redis], key: str) -> None:
-        full_key = f"{container.uuid}_{key}"
-        assert container.client.exists(full_key) == 0
-        for _ in range(2):
-            ensure_time_series_created(container.client.ts(), full_key)
-        assert container.client.exists(full_key) == 1
-
-    @given(data=data(), key=text_ascii())
-    @mark.repeat(5)
-    @settings(suppress_health_check={HealthCheck.differing_executors})
-    async def test_async(self, *, data: DataObject, key: str) -> None:
-        async with redis_cms_async(data) as container:
-            full_key = f"{container.uuid}_{key}"
-            assert await container.client.exists(full_key) == 0
+    @given(yield_redis=redis_cms())
+    def test_sync(
+        self, *, yield_redis: AbstractContextManager[RedisContainer[redis.Redis]]
+    ) -> None:
+        with yield_redis as redis:
+            assert redis.client.exists(redis.key) == 0
             for _ in range(2):
-                await ensure_time_series_created_async(container.client.ts(), full_key)
-            assert await container.client.exists(full_key) == 1
+                ensure_time_series_created(redis.client.ts(), redis.key)
+            assert redis.client.exists(redis.key) == 1
+
+    @given(data=data())
+    async def test_async(self, *, data: DataObject) -> None:
+        async with redis_cms_async(data) as redis:
+            assert await redis.client.exists(redis.key) == 0
+            for _ in range(2):
+                await ensure_time_series_created_async(redis.client.ts(), redis.key)
+            assert await redis.client.exists(redis.key) == 1
+
+
+redis_time_series_zzzzzzz = integers
 
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndGet:
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=datetimes(
             min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
     def test_sync(
         self,
         *,
@@ -128,7 +129,7 @@ class TestTimeSeriesAddAndGet:
         assert res_value == value
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
@@ -150,7 +151,7 @@ class TestTimeSeriesAddAndGet:
                 _ = time_series_add(ts, f"{uuid}_{key}", timestamp, value)
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
@@ -173,7 +174,7 @@ class TestTimeSeriesAddAndGet:
             )
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=datetimes(
             min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
@@ -209,7 +210,7 @@ class TestTimeSeriesAddAndReadDataFrame:
 
     @given(
         data=data(),
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         keys=lists_fixed_length(text_ascii(), 6, unique=True),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
@@ -280,7 +281,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         check_polars_dataframe(result, height=2, schema_list=schema)
         assert_frame_equal(result, df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_add_key_missing(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         df = DataFrame()
         with raises(
@@ -289,7 +290,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_add_dataframe(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_add_timestamp_missing(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -300,7 +301,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_add_dataframe(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_add_key_is_not_utf8(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -311,7 +312,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_add_dataframe(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -322,7 +323,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_add_dataframe(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_read_no_keys_requested(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -331,7 +332,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         ):
             _ = time_series_read_dataframe(ts_pair[0], [], [])
 
-    @given(ts_pair=redis_time_series(), key=text_ascii())
+    @given(ts_pair=redis_time_series_zzzzzzz(), key=text_ascii())
     def test_error_read_no_columns_requested(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
@@ -358,7 +359,7 @@ class TestTimeSeriesMAddAndRange:
     @FLAKY
     @given(
         data=data(),
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         keys=lists_fixed_length(text_ascii(), 5, unique=True),
         datetime1=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         datetime2=datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
@@ -426,7 +427,7 @@ class TestTimeSeriesMAddAndRange:
         check_polars_dataframe(res_range, height=2, schema_list=schema)
         assert res_range.rows() == triples
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_key_missing(self, *, ts_pair: tuple[TimeSeries, UUID]) -> None:
         ts, _ = ts_pair
         df = DataFrame()
@@ -435,7 +436,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_madd(ts, df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_timestamp_missing(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -447,7 +448,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_madd(ts, df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_value_missing(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -458,7 +459,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_madd(ts, df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_key_is_not_utf8(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -470,7 +471,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_madd(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -481,7 +482,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_madd(ts_pair[0], df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_madd_value_is_not_numeric(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -493,7 +494,7 @@ class TestTimeSeriesMAddAndRange:
 
     @FLAKY
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
@@ -519,7 +520,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(ts, values_or_df, assume_time_series_exist=True)
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
@@ -548,7 +549,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(ts, values_or_df)
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=datetimes(
             min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
@@ -575,7 +576,7 @@ class TestTimeSeriesMAddAndRange:
         with raises(TimeSeriesMAddError, match="The value .* is invalid"):
             _ = time_series_madd(ts, values_or_df)
 
-    @given(ts_pair=redis_time_series())
+    @given(ts_pair=redis_time_series_zzzzzzz())
     def test_error_range_no_keys_requested(
         self, *, ts_pair: tuple[TimeSeries, UUID]
     ) -> None:
@@ -585,7 +586,7 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_range(ts, [])
 
-    @given(ts_pair=redis_time_series(), key=text_ascii())
+    @given(ts_pair=redis_time_series_zzzzzzz(), key=text_ascii())
     def test_error_range_invalid_key(
         self, *, ts_pair: tuple[TimeSeries, UUID], key: str
     ) -> None:
@@ -594,7 +595,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_range(ts, f"{uuid}_{key}")
 
     @given(
-        ts_pair=redis_time_series(),
+        ts_pair=redis_time_series_zzzzzzz(),
         key=text_ascii(),
         timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s(),
