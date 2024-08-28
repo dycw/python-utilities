@@ -590,7 +590,7 @@ class TestSQLiteEngines:
     def _base_and_mapped_class(
         self,
     ) -> tuple[type[DeclarativeBase], type[DeclarativeBase]]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"

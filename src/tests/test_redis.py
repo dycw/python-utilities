@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import inf, nan
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 import redis
 import redis.asyncio
@@ -57,6 +57,8 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from polars._typing import PolarsDataType, SchemaDict
+
+    from utilities.types import Number
 
 
 def _clean_datetime(
@@ -223,9 +225,9 @@ class TestTimeSeriesAddAndReadDataFrame:
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        strategy1: SearchStrategy[Any],
+        strategy1: SearchStrategy[Number],
         dtype1: DataType,
-        strategy2: SearchStrategy[Any],
+        strategy2: SearchStrategy[Number],
         dtype2: DataType,
     ) -> None:
         key, id1, id2, timestamp, key_value1, key_value2 = keys
@@ -367,7 +369,7 @@ class TestTimeSeriesMAddAndRange:
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        strategy: SearchStrategy[Any],
+        strategy: SearchStrategy[Number],
         dtype: PolarsDataType,
     ) -> None:
         key, key1, key2, timestamp, value = keys
