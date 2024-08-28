@@ -583,31 +583,21 @@ class TestTimeSeriesMAddAndRange:
             ):
                 _ = time_series_madd(redis.ts, values_or_df)
 
-    @given(
-        yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
-    )
+    @given(data=data(), yield_redis=redis_cms())
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    def test_error_madd_invalid_value(
+    def test_sync_error_madd_invalid_value(
         self,
         *,
+        data: DataObject,
         yield_redis: YieldRedisContainer,
         case: Literal["values", "DataFrame"],
-        timestamp: dt.datetime,
         value: float,
     ) -> None:
         with yield_redis() as redis:
-            data = [(f"{redis.key}_{case}", timestamp, value)]
-            match case:
-                case "values":
-                    values_or_df = data
-                case "DataFrame":
-                    values_or_df = DataFrame(
-                        data, schema=self.float_schema, orient="row"
-                    )
+            values_or_df = self._prepare_test_error_madd_invalid_value(
+                data, redis.key, case, value
+            )
             with raises(TimeSeriesMAddError, match="The value .* is invalid"):
                 _ = time_series_madd(redis.ts, values_or_df)
 
@@ -797,10 +787,7 @@ class TestTimeSeriesMAddAndRange:
     @given(data=data())
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     async def test_async_error_madd_invalid_timestamp(
-        self,
-        *,
-        data: DataObject,
-        case: Literal["values", "DataFrame"],
+        self, *, data: DataObject, case: Literal["values", "DataFrame"]
     ) -> None:
         async with redis_cms_async(data) as redis:
             values_or_df = self._prepare_test_error_madd_invalid_timestamp(
@@ -810,6 +797,19 @@ class TestTimeSeriesMAddAndRange:
                 TimeSeriesMAddError,
                 match="Timestamps must be at least the Epoch; got .*",
             ):
+                _ = await time_series_madd_async(redis.ts, values_or_df)
+
+    @given(data=data())
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
+    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
+    async def test_async_error_madd_invalid_value(
+        self, *, data: DataObject, case: Literal["values", "DataFrame"], value: float
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            values_or_df = self._prepare_test_error_madd_invalid_value(
+                data, redis.key, case, value
+            )
+            with raises(TimeSeriesMAddError, match="The value .* is invalid"):
                 _ = await time_series_madd_async(redis.ts, values_or_df)
 
     def _prepare_main_test(
@@ -887,6 +887,26 @@ class TestTimeSeriesMAddAndRange:
                 return values
             case "DataFrame":
                 return DataFrame(values, schema=self.int_schema, orient="row")
+
+    def _prepare_test_error_madd_invalid_value(
+        self,
+        data: DataObject,
+        key: str,
+        case: Literal["values", "DataFrame"],
+        value: float,
+        /,
+    ) -> list[tuple[str, dt.datetime, float]] | DataFrame:
+        timestamp = data.draw(
+            zoned_datetimes(
+                min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+            ).map(drop_microseconds)
+        )
+        values = [(f"{key}_{case}", timestamp, value)]
+        match case:
+            case "values":
+                return values
+            case "DataFrame":
+                return DataFrame(values, schema=self.float_schema, orient="row")
 
 
 class TestYieldClient:
