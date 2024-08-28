@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 import redis
 import redis.asyncio
-from hypothesis import HealthCheck, assume, given, settings
+from hypothesis import assume, given
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -222,7 +222,10 @@ class TestTimeSeriesAddAndReadDataFrame:
     @given(
         data=data(),
         yield_redis=redis_cms(),
-        keys=lists_fixed_length(text_ascii(), 6, unique=True),
+        ids=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
+        key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
+            tuple
+        ),
         time_zone=sampled_from([HONG_KONG, UTC]),
     )
     @mark.only
@@ -240,43 +243,46 @@ class TestTimeSeriesAddAndReadDataFrame:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
         data: DataObject,
         yield_redis: YieldRedisContainer,
-        keys: list[str],
-        time_zone: ZoneInfo,
+        ids: tuple[str, str],
         strategy1: SearchStrategy[Number],
-        dtype1: DataType,
         strategy2: SearchStrategy[Number],
+        key_timestamp_values: tuple[str, str, str, str],
+        time_zone: ZoneInfo,
+        dtype1: DataType,
         dtype2: DataType,
     ) -> None:
         with yield_redis() as redis:
-            key, id1, id2, timestamp, key_value1, key_value2 = keys
-            full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
+            id1, id2 = (f"{redis.key}_{id_}" for id_ in ids)
+            timestamp1, timestamp2 = data.draw(
+                tuples(valid_zoned_datetimes, valid_zoned_datetimes)
+            )
             value11, value21 = data.draw(tuples(strategy1, strategy1))
             value12, value22 = data.draw(tuples(strategy2, strategy2))
+            key, timestamp, value1, value2 = key_timestamp_values
             schema = {
                 key: Utf8,
                 timestamp: zoned_datetime(time_zone=time_zone),
-                key_value1: dtype1,
-                key_value2: dtype2,
+                value1: dtype1,
+                value2: dtype2,
             }
             df = DataFrame(
                 [
-                    (full_id1, timestamp1, value11, value12),
-                    (full_id2, timestamp2, value21, value22),
+                    (id1, timestamp1, value11, value12),
+                    (id2, timestamp2, value21, value22),
                 ],
                 schema=schema,
                 orient="row",
             )
-            time_series_add_dataframe(ts, df, key=key, timestamp=timestamp)
+            time_series_add_dataframe(redis.ts, df, key=key, timestamp=timestamp)
             result = time_series_read_dataframe(
-                ts,
-                [full_id1, full_id2],
-                [key_value1, key_value2],
+                redis.ts,
+                [id1, id2],
+                [value1, value2],
                 output_key=key,
                 output_timestamp=timestamp,
                 output_time_zone=time_zone,

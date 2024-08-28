@@ -28,7 +28,6 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
     from polars import DataFrame
-    from polars._typing import SelectorType
     from polars.datatypes import DataType
     from redis.commands.timeseries import TimeSeries
     from redis.typing import KeyT, Number
@@ -276,11 +275,11 @@ def time_series_add_dataframe(
         raise _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
             df=df, timestamp=timestamp, dtype=timestamp_dtype
         ) from None
+
     for selector in [integer(), float()]:  # skipif-ci-and-not-linux
         _time_series_add_dataframe_one_selector(
             ts,
-            df,
-            selector,
+            df.select(key, timestamp, selector),
             key=key,
             timestamp=timestamp,
             assume_time_series_exist=assume_time_series_exist,
@@ -297,7 +296,6 @@ def time_series_add_dataframe(
 def _time_series_add_dataframe_one_selector(
     ts: TimeSeries,
     df: DataFrame,
-    selector: SelectorType,
     /,
     *,
     key: str = _KEY,
@@ -315,10 +313,13 @@ def _time_series_add_dataframe_one_selector(
     import polars as pl  # skipif-ci-and-not-linux
 
     df_long = (  # skipif-ci-and-not-linux
-        df.unpivot(on=selector, index=[key, timestamp])
+        df.unpivot(index=[key, timestamp])
         .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
+    if df_long.is_empty():
+        return
+
     _ = time_series_madd(  # skipif-ci-and-not-linux
         ts,
         df_long,
