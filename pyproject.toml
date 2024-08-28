@@ -53,11 +53,11 @@ dev = [
   "pytest >= 8.3.2, < 8.4",
   "python-dotenv >= 1.0.1, < 1.1",
   "redis >= 5.0.8, < 5.1",
-  "rich >= 13.7.1, < 13.8",
+  "rich >= 13.8.0, < 13.9",
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.31.0, < 3.32",
   "sqlalchemy >= 2.0.32, < 2.1",
-  "streamlit >= 1.37.1, < 1.38",
+  "streamlit >= 1.38.0, < 1.39",
   "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
   "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.4.0, < 24.5",
@@ -230,7 +230,7 @@ zzz-test-sqlalchemy-polars = [
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.32, < 2.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.37.1, < 1.38"]
+zzz-test-streamlit = ["streamlit >= 1.38.0, < 1.39"]
 zzz-test-subprocess = []
 zzz-test-sys = []
 zzz-test-tempfile = []
