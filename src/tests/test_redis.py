@@ -23,9 +23,11 @@ from redis.commands.timeseries import TimeSeries
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
+    RedisClientContainer,
     int32s,
     lists_fixed_length,
     redis_clients,
+    redis_clients_async,
     redis_time_series,
     text_ascii,
     zoned_datetimes,
@@ -38,6 +40,7 @@ from utilities.redis import (
     TimeSeriesRangeError,
     TimeSeriesReadDataFrameError,
     ensure_time_series_created,
+    ensure_time_series_created_async,
     time_series_add,
     time_series_add_dataframe,
     time_series_get,
@@ -71,16 +74,30 @@ def _clean_datetime(
 
 
 @SKIPIF_CI_AND_NOT_LINUX
+@mark.only
 class TestEnsureTimeSeriesCreated:
-    @FLAKY
-    @given(client_pair=redis_clients(), key=text_ascii())
-    def test_main(self, *, client_pair: tuple[redis.Redis, UUID], key: str) -> None:
-        client, uuid = client_pair
-        full_key = f"{uuid}_{key}"
-        assert client.exists(full_key) == 0
+    @given(container=redis_clients(), key=text_ascii())
+    @mark.repeat(10)
+    @settings(suppress_health_check={HealthCheck.differing_executors})
+    def test_sync(
+        self, *, container: RedisClientContainer[redis.Redis], key: str
+    ) -> None:
+        full_key = f"{container.uuid}_{key}"
+        assert container.client.exists(full_key) == 0
         for _ in range(2):
-            ensure_time_series_created(client.ts(), full_key)
-        assert client.exists(full_key) == 1
+            ensure_time_series_created(container.client.ts(), full_key)
+        assert container.client.exists(full_key) == 1
+
+    @given(data=data(), key=text_ascii())
+    @mark.repeat(10)
+    @settings(suppress_health_check={HealthCheck.differing_executors})
+    async def test_async(self, *, data: DataObject, key: str) -> None:
+        container = await data.draw(redis_clients_async())
+        full_key = f"{container.uuid}_{key}"
+        assert container.client.exists(full_key) == 0
+        for _ in range(2):
+            await ensure_time_series_created_async(container.client.ts(), full_key)
+        assert container.client.exists(full_key) == 1
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -94,7 +111,7 @@ class TestTimeSeriesAddAndGet:
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    def test_main(
+    def test_sync(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],
@@ -119,7 +136,7 @@ class TestTimeSeriesAddAndGet:
         timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    def test_error_at_upsert(
+    def test_sync_error_at_upsert(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],
@@ -141,7 +158,7 @@ class TestTimeSeriesAddAndGet:
         timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    def test_invalid_timestamp(
+    def test_sync_invalid_timestamp(
         self,
         *,
         ts_pair: tuple[TimeSeries, UUID],

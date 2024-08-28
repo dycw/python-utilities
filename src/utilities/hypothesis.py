@@ -4,6 +4,7 @@ import builtins
 import datetime as dt
 from collections.abc import Collection, Hashable, Iterable, Iterator
 from contextlib import contextmanager, suppress
+from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -12,9 +13,19 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
-from zoneinfo import ZoneInfo
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Protocol,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
+import redis
+import redis.asyncio
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -37,7 +48,7 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from typing_extensions import override
+from redis.typing import KeyT, Number
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
@@ -50,7 +61,6 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from uuid import UUID
 
-    import redis
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
     from redis.commands.timeseries import TimeSeries
@@ -396,24 +406,45 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
+_TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
+
+
+@dataclass(repr=False, frozen=True, kw_only=True)
+class RedisClientContainer(Generic[_TRedis]):
+    """A container for `redis.Client`."""
+
+    client: _TRedis
+    uuid: UUID
+
+
 @composite
-def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
-    """Strategy for generating redis clients."""
+def redis_clients(_draw: DrawFn, /) -> RedisClientContainer[redis.Redis]:
+    """Strategy for generating redis clients (with cleanup)."""
     import redis  # skipif-ci-and-not-linux
+    import redis.asyncio  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
 
+    client = redis.Redis(db=15, decode_responses=True)  # skipif-ci-and-not-linux
     uuid = _draw(uuids())  # skipif-ci-and-not-linux
+    keys = cast(list[KeyT], client.keys(pattern=f"{uuid}_*"))  # skipif-ci-and-not-linux
+    with suppress(ResponseError):  # skipif-ci-and-not-linux
+        _ = client.delete(*keys)
+    return RedisClientContainer(client=client, uuid=uuid)  # skipif-ci-and-not-linux
 
-    class RedisWithCleanup(redis.Redis):  # skipif-ci-and-not-linux
-        @override
-        def __del__(self) -> Any:
-            keys = self.keys(pattern=f"{uuid}_*")
-            with suppress(ResponseError):
-                _ = self.delete(*cast(Iterable[Any], keys))
-            return super().__del__()
 
-    client = RedisWithCleanup(db=15, decode_responses=True)  # skipif-ci-and-not-linux
-    return client, uuid  # skipif-ci-and-not-linux
+@composite
+async def redis_clients_async(
+    _draw: DrawFn, /
+) -> RedisClientContainer[redis.asyncio.Redis]:
+    """Strategy for generating asynchronous redis clients."""
+    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+
+    client = redis.Redis(db=15, decode_responses=True)  # skipif-ci-and-not-linux
+    uuid = _draw(uuids())  # skipif-ci-and-not-linux
+    keys = cast(list[KeyT], client.keys(pattern=f"{uuid}_*"))  # skipif-ci-and-not-linux
+    with suppress(ResponseError):  # skipif-ci-and-not-linux
+        _ = client.delete(*keys)
+    return RedisClientContainer(client=client, uuid=uuid)  # skipif-ci-and-not-linux
 
 
 @composite
@@ -724,6 +755,7 @@ def _draw_text(
 
 __all__ = [
     "MaybeSearchStrategy",
+    "RedisClientContainer",
     "Shape",
     "aiosqlite_engines",
     "assume_does_not_raise",
@@ -741,6 +773,7 @@ __all__ = [
     "months",
     "random_states",
     "redis_clients",
+    "redis_clients_async",
     "redis_time_series",
     "setup_hypothesis_profiles",
     "slices",

@@ -86,11 +86,9 @@ async def ensure_time_series_created_async(
     ignore_max_val_diff: Number | None = None,
 ) -> None:
     """Ensure a time series/set of time series is/are created."""
-    # note: we do not do coverage for this yet as we don't have async clients
-
-    for key in set(keys):  # pragma: no cover
+    for key in set(keys):  # skipif-ci-and-not-linux
         try:
-            _ = await ts.create(
+            _ = ts.create(
                 key,
                 retention_msecs=retention_msecs,
                 uncompressed=uncompressed,
@@ -109,7 +107,7 @@ def _ensure_time_series_created_maybe_reraise(error: ResponseError, /) -> None:
     if not search(  # skipif-ci-and-not-linux
         "TSDB: key already exists", ensure_str(one(error.args))
     ):
-        raise error  # pragma: no cover
+        raise error
 
 
 def time_series_add(
