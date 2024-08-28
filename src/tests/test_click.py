@@ -13,7 +13,6 @@ from click import ParamType, argument, command, echo, option
 from click.testing import CliRunner
 from hypothesis import given
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     booleans,
     data,
@@ -54,6 +53,7 @@ from utilities.click import (
 )
 from utilities.datetime import serialize_month
 from utilities.hypothesis import (
+    DataObject,
     durations,
     months,
     sqlite_engines,

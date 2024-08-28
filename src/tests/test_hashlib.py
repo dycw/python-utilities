@@ -4,7 +4,6 @@ from typing import Any
 
 from hypothesis import given
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     data,
     dictionaries,
@@ -16,7 +15,7 @@ from hypothesis.strategies import (
 from pytest import mark, param
 
 from utilities.hashlib import md5_hash
-from utilities.hypothesis import int64s, text_ascii
+from utilities.hypothesis import DataObject, int64s, text_ascii
 
 
 class TestMD5Hash:
