@@ -224,7 +224,6 @@ class _TestTimeSeriesAddAndReadDataFramePrepare:
     schema: SchemaDict
 
 
-@mark.only
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndReadDataFrame:
     schema: ClassVar[SchemaDict] = {
