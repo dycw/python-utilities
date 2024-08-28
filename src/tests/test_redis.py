@@ -65,6 +65,15 @@ if TYPE_CHECKING:
 
     from utilities.types import Number
 
+valid_zoned_datetimes = zoned_datetimes(
+    min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+).map(drop_microseconds)
+invalid_zoned_datetimes = (
+    zoned_datetimes(max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]))
+    .map(drop_microseconds)
+    .filter(lambda t: t < EPOCH_UTC)
+)
+
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestEnsureTimeSeriesCreated:
@@ -89,9 +98,7 @@ class TestEnsureTimeSeriesCreated:
 class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_sync(
@@ -108,9 +115,7 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_sync_error_at_upsert(
@@ -126,9 +131,7 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=invalid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_sync_invalid_timestamp(
@@ -145,12 +148,7 @@ class TestTimeSeriesAddAndGet:
                 redis.ts, redis.key, timestamp, value, duplicate_policy="last"
             )
 
-    @given(
-        yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
-    )
+    @given(yield_redis=redis_cms(), timestamp=valid_zoned_datetimes)
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
     def test_sync_invalid_value(
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: float
@@ -165,9 +163,7 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         data=data(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     async def test_async(
@@ -184,9 +180,7 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         data=data(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     async def test_async_error_at_upsert(
@@ -202,9 +196,7 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         data=data(),
-        timestamp=zoned_datetimes(
-            max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
+        timestamp=invalid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     async def test_async_invalid_timestamp(
@@ -219,12 +211,7 @@ class TestTimeSeriesAddAndGet:
                     redis.ts, redis.key, timestamp, value, duplicate_policy="last"
                 )
 
-    @given(
-        data=data(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
-    )
+    @given(data=data(), timestamp=valid_zoned_datetimes)
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
     async def test_async_invalid_value(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
@@ -850,10 +837,7 @@ class TestTimeSeriesMAddAndRange:
             tuple[str, str],
             tuple(f"{redis_key}_{case}_{name}" for name in series_names),
         )
-        st_datetimes = zoned_datetimes(min_value=EPOCH_UTC, time_zone=time_zone).map(
-            drop_microseconds
-        )
-        timestamps = data.draw(tuples(st_datetimes, st_datetimes))
+        timestamps = data.draw(tuples(valid_zoned_datetimes, valid_zoned_datetimes))
         values = data.draw(tuples(strategy, strategy))
         triples = list(zip(keys, timestamps, values, strict=True))
         key, timestamp, value = key_timestamp_value
@@ -880,11 +864,7 @@ class TestTimeSeriesMAddAndRange:
     def _prepare_test_error_madd_invalid_key(
         self, data: DataObject, key: str, case: Literal["values", "DataFrame"], /
     ) -> list[tuple[str, dt.datetime, int]] | DataFrame:
-        timestamp = data.draw(
-            zoned_datetimes(
-                min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-            ).map(drop_microseconds)
-        )
+        timestamp = data.draw(valid_zoned_datetimes)
         value = data.draw(int32s())
         values = [(f"{key}_{case}", timestamp, value)]
         match case:
@@ -896,11 +876,7 @@ class TestTimeSeriesMAddAndRange:
     def _prepare_test_error_madd_invalid_timestamp(
         self, data: DataObject, key: str, case: Literal["values", "DataFrame"], /
     ) -> list[tuple[str, dt.datetime, int]] | DataFrame:
-        timestamp = data.draw(
-            zoned_datetimes(
-                max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-            ).map(drop_microseconds)
-        )
+        timestamp = data.draw(valid_zoned_datetimes)
         _ = assume(timestamp < EPOCH_UTC)
         value = data.draw(int32s())
         values = [(f"{key}_{case}", timestamp, value)]
@@ -918,11 +894,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
         /,
     ) -> list[tuple[str, dt.datetime, float]] | DataFrame:
-        timestamp = data.draw(
-            zoned_datetimes(
-                min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-            ).map(drop_microseconds)
-        )
+        timestamp = data.draw(valid_zoned_datetimes)
         values = [(f"{key}_{case}", timestamp, value)]
         match case:
             case "values":
@@ -935,11 +907,7 @@ class TestTimeSeriesMAddAndRange:
     ) -> tuple[
         list[tuple[str, dt.datetime, int]], list[tuple[str, dt.datetime, float]]
     ]:
-        timestamp = data.draw(
-            zoned_datetimes(
-                min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-            ).map(drop_microseconds)
-        )
+        timestamp = data.draw(valid_zoned_datetimes)
         value = data.draw(int32s())
         return [(key, timestamp, value)], [(key, timestamp, float(value))]
 
