@@ -57,7 +57,7 @@ from hypothesis.utils.conventions import not_set
 from redis.exceptions import ResponseError
 from redis.typing import KeyT
 
-from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
+from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
@@ -70,7 +70,7 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from redis.commands.timeseries import TimeSeries
+    from redis.commands.timeseries.commands import TimeSeriesCommands
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -417,62 +417,65 @@ _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
 
 
 @dataclass(repr=False, frozen=True, kw_only=True)
-class RedisClientContainer(Generic[_TRedis]):
+class RedisContainer(Generic[_TRedis]):
     """A container for `redis.Client`."""
 
     client: _TRedis
+    timestamp: dt.datetime
     uuid: UUID
+    key: str
+
+    @property
+    def ts(self) -> TimeSeriesCommands:
+        return self.client.ts()
 
 
 @composite
-def redis_cms(
-    draw: DrawFn, /
-) -> AbstractContextManager[RedisClientContainer[redis.Redis]]:
+def redis_cms(draw: DrawFn, /) -> AbstractContextManager[RedisContainer[redis.Redis]]:
     """Strategy for generating redis clients (with cleanup)."""
     from redis import Redis  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
 
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = draw(uuids())
+    key = f"{now}_{uuid}"
+
     @contextmanager
-    def iterator() -> Iterator[RedisClientContainer[redis.Redis]]:
+    def iterator() -> Iterator[RedisContainer[redis.Redis]]:
         with Redis(db=15) as client:  # skipif-ci-and-not-linux
-            uuid = draw(uuids())
-            keys = cast(list[KeyT], client.keys(pattern=f"{uuid}_*"))
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)
-            yield RedisClientContainer(client=client, uuid=uuid)
-            keys = cast(list[KeyT], client.keys(pattern=f"{uuid}_*"))
+            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)
 
     return iterator()
 
 
-def redis_clients_async(
+def redis_cms_async(
     data: DataObject, /
-) -> AbstractAsyncContextManager[RedisClientContainer[redis.asyncio.Redis]]:
+) -> AbstractAsyncContextManager[RedisContainer[redis.asyncio.Redis]]:
     """Strategy for generating asynchronous redis clients."""
     from redis.asyncio import Redis  # skipif-ci-and-not-linux
 
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = data.draw(uuids())
+    key = f"{now}_{uuid}"
+
     @asynccontextmanager
-    async def iterator() -> AsyncIterator[RedisClientContainer[redis.asyncio.Redis]]:
+    async def iterator() -> AsyncIterator[RedisContainer[redis.asyncio.Redis]]:
         async with Redis(db=15) as client:  # skipif-ci-and-not-linux
-            uuid = data.draw(uuids())
-            keys = cast(list[KeyT], await client.keys(pattern=f"{uuid}_*"))
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
-            yield RedisClientContainer(client=client, uuid=uuid)
-            keys = cast(list[KeyT], await client.keys(pattern=f"{uuid}_*"))
+            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
 
     return iterator()
-
-
-@composite
-def redis_time_series(_draw: DrawFn, /) -> tuple[TimeSeries, UUID]:
-    """Strategy for generating redis time series."""
-    client, uuid = _draw(redis_cms())  # skipif-ci-and-not-linux
-    return client.ts(), uuid  # skipif-ci-and-not-linux
 
 
 def setup_hypothesis_profiles(
@@ -776,7 +779,7 @@ def _draw_text(
 
 __all__ = [
     "MaybeSearchStrategy",
-    "RedisClientContainer",
+    "RedisContainer",
     "Shape",
     "aiosqlite_engines",
     "assume_does_not_raise",
@@ -793,9 +796,8 @@ __all__ = [
     "lists_fixed_length",
     "months",
     "random_states",
-    "redis_clients_async",
     "redis_cms",
-    "redis_time_series",
+    "redis_cms_async",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",

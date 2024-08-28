@@ -23,11 +23,11 @@ from redis.commands.timeseries import TimeSeries
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
-    RedisClientContainer,
+    RedisContainer,
     int32s,
     lists_fixed_length,
-    redis_clients_async,
     redis_cms,
+    redis_cms_async,
     redis_time_series,
     text_ascii,
     zoned_datetimes,
@@ -78,9 +78,7 @@ class TestEnsureTimeSeriesCreated:
     @given(container=redis_cms(), key=text_ascii())
     @mark.repeat(5)
     @settings(suppress_health_check={HealthCheck.differing_executors})
-    def test_sync(
-        self, *, container: RedisClientContainer[redis.Redis], key: str
-    ) -> None:
+    def test_sync(self, *, container: RedisContainer[redis.Redis], key: str) -> None:
         full_key = f"{container.uuid}_{key}"
         assert container.client.exists(full_key) == 0
         for _ in range(2):
@@ -91,7 +89,7 @@ class TestEnsureTimeSeriesCreated:
     @mark.repeat(5)
     @settings(suppress_health_check={HealthCheck.differing_executors})
     async def test_async(self, *, data: DataObject, key: str) -> None:
-        async with redis_clients_async(data) as container:
+        async with redis_cms_async(data) as container:
             full_key = f"{container.uuid}_{key}"
             assert await container.client.exists(full_key) == 0
             for _ in range(2):

@@ -37,7 +37,7 @@ from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
-    RedisClientContainer,
+    RedisContainer,
     Shape,
     aiosqlite_engines,
     assume_does_not_raise,
@@ -54,9 +54,8 @@ from utilities.hypothesis import (
     lists_fixed_length,
     months,
     random_states,
-    redis_clients_async,
     redis_cms,
-    redis_time_series,
+    redis_cms_async,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
@@ -93,11 +92,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
     from contextlib import AbstractContextManager
-    from uuid import UUID
     from zoneinfo import ZoneInfo
 
     import redis
-    from redis.commands.timeseries import TimeSeries
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
@@ -472,50 +469,40 @@ class TestRandomStates:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisClients:
-    @given(yield_redis=redis_cms(), suffix=text_ascii(), value=integers())
-    def test_sync(
+    @given(yield_redis=redis_cms(), value=integers())
+    def test_sync_core(
         self,
         *,
-        yield_redis: AbstractContextManager[RedisClientContainer[redis.Redis]],
-        suffix: str,
+        yield_redis: AbstractContextManager[RedisContainer[redis.Redis]],
         value: int,
     ) -> None:
         with yield_redis as redis:
-            key = f"{redis.uuid}_{suffix}"
-            assert not redis.client.exists(key)
-            _ = redis.client.set(key, value)
-            result = int(cast(str, redis.client.get(key)))
+            assert not redis.client.exists(redis.key)
+            _ = redis.client.set(redis.key, value)
+            result = int(cast(str, redis.client.get(redis.key)))
             assert result == value
 
-    @given(data=data(), suffix=text_ascii(), value=integers())
-    async def test_async(
+    @given(yield_redis=redis_cms(), value=int32s())
+    def test_sync_ts(
         self,
         *,
-        data: DataObject,
-        suffix: str,
+        yield_redis: AbstractContextManager[RedisContainer[redis.Redis]],
         value: int,
     ) -> None:
-        async with redis_clients_async(data) as redis:
-            key = f"{redis.uuid}_{suffix}"
-            assert not await redis.client.exists(key)
-            _ = await redis.client.set(key, value)
-            result = int(cast(str, await redis.client.get(key)))
+        with yield_redis as redis:
+            assert not redis.client.exists(redis.key)
+            _ = redis.ts.add(redis.key, "*", value)
+            res_timestamp, res_value = redis.ts.get(redis.key)
+            assert isinstance(res_timestamp, int)
+            assert int(res_value) == value
+
+    @given(data=data(), suffix=text_ascii(), value=int64s())
+    async def test_async(self, *, data: DataObject, suffix: str, value: int) -> None:
+        async with redis_cms_async(data) as redis:
+            assert not await redis.client.exists(redis.key)
+            _ = await redis.client.set(redis.key, value)
+            result = int(cast(str, await redis.client.get(redis.key)))
             assert result == value
-
-
-@mark.skip
-@SKIPIF_CI_AND_NOT_LINUX
-class TestRedisTimeSeries:
-    @given(ts_pair=redis_time_series(), key=text_ascii(), value=int32s())
-    def test_main(
-        self, *, ts_pair: tuple[TimeSeries, UUID], key: str, value: int
-    ) -> None:
-        ts, uuid = ts_pair
-        full_key = f"{uuid}_{key}"
-        _ = ts.add(full_key, "*", value)
-        res_timestamp, res_value = ts.get(full_key)
-        assert isinstance(res_timestamp, int)
-        assert res_value == value
 
 
 class TestReducedExamples:
