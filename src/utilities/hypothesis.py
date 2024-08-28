@@ -753,7 +753,9 @@ def zoned_datetimes(
             min_value_ = min_value_.astimezone(time_zone_)
         min_value_ = min_value_.replace(tzinfo=None)
     if max_value_.tzinfo is not None:
-        max_value_ = max_value_.astimezone(time_zone_).replace(tzinfo=None)
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            max_value_ = max_value_.astimezone(time_zone_)
+        max_value_ = max_value_.replace(tzinfo=None)
     strategy = datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )

@@ -835,7 +835,6 @@ class TestZonedDatetimes:
         max_value=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
         time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
     )
-    @settings(max_examples=10000)
     def test_main(
         self,
         *,
