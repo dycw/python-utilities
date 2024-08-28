@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import partial
 from itertools import product
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, assert_never, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, assert_never, cast
 
 import redis
 import redis.asyncio
@@ -145,21 +145,7 @@ def time_series_add(
             on_duplicate=on_duplicate,
         )
     except ResponseError as error:  # skipif-ci-and-not-linux
-        match _classify_response_error(error):
-            case "error at upsert":
-                raise _TimeSeriesAddErrorAtUpsertError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid timestamp":
-                raise _TimeSeriesAddInvalidTimestampError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid value":
-                raise _TimeSeriesAddInvalidValueError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid key":  # pragma: no cover
-                raise
+        _time_series_add_classify_error(error, timestamp, value)
 
 
 async def time_series_add_async(
@@ -197,21 +183,28 @@ async def time_series_add_async(
             on_duplicate=on_duplicate,
         )
     except ResponseError as error:  # skipif-ci-and-not-linux
-        match _classify_response_error(error):
-            case "error at upsert":
-                raise _TimeSeriesAddErrorAtUpsertError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid timestamp":
-                raise _TimeSeriesAddInvalidTimestampError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid value":
-                raise _TimeSeriesAddInvalidValueError(
-                    timestamp=timestamp, value=value
-                ) from None
-            case "invalid key":  # pragma: no cover
-                raise
+        _time_series_add_classify_error(error, timestamp, value)
+
+
+def _time_series_add_classify_error(
+    error: ResponseError, timestamp: dt.datetime, value: Number, /
+) -> NoReturn:
+    """Re-direct the response error from adding a time series."""
+    match _classify_response_error(error):  # skipif-ci-and-not-linux
+        case "error at upsert":
+            raise _TimeSeriesAddErrorAtUpsertError(
+                timestamp=timestamp, value=value
+            ) from None
+        case "invalid timestamp":
+            raise _TimeSeriesAddInvalidTimestampError(
+                timestamp=timestamp, value=value
+            ) from None
+        case "invalid value":
+            raise _TimeSeriesAddInvalidValueError(
+                timestamp=timestamp, value=value
+            ) from None
+        case "invalid key":  # pragma: no cover
+            raise error
 
 
 @dataclass(kw_only=True)

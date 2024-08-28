@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-def _clean_datetime(
+def _clean_datetime_zzzzzzzzz(
     datetime: dt.datetime, /, *, time_zone: ZoneInfo | None = None
 ) -> dt.datetime:
     _ = assume(datetime.fold == 0)
@@ -105,19 +105,20 @@ class TestTimeSeriesAddAndGet:
     def test_sync(
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: float
     ) -> None:
-        timestamp = _clean_datetime(timestamp)
         with yield_redis() as redis:
-            res_add = time_series_add(
+            result = time_series_add(
                 redis.ts, redis.key, timestamp, value, duplicate_policy="last"
             )
-            assert isinstance(res_add, int)
+            assert isinstance(result, int)
             res_timestamp, res_value = time_series_get(redis.ts, redis.key)
             assert res_timestamp == timestamp.astimezone(UTC)
             assert res_value == value
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(min_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_sync_error_at_upsert(
@@ -133,7 +134,9 @@ class TestTimeSeriesAddAndGet:
 
     @given(
         yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
+        timestamp=zoned_datetimes(
+            max_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
     def test_sync_invalid_timestamp(
@@ -165,11 +168,7 @@ class TestTimeSeriesAddAndGet:
             raises(TimeSeriesAddError, match="Invalid value; got .*"),
         ):
             _ = time_series_add(
-                redis.ts,
-                redis.key,
-                _clean_datetime(timestamp),
-                value,
-                duplicate_policy="last",
+                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
             )
 
     @given(
@@ -182,15 +181,67 @@ class TestTimeSeriesAddAndGet:
     async def test_async(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
-        timestamp = _clean_datetime(timestamp)
         async with redis_cms_async(data) as redis:
-            res_add = await time_series_add_async(
+            result = await time_series_add_async(
                 redis.ts, redis.key, timestamp, value, duplicate_policy="last"
             )
-            assert isinstance(res_add, int)
+            assert isinstance(result, int)
             res_timestamp, res_value = await time_series_get_async(redis.ts, redis.key)
             assert res_timestamp == timestamp.astimezone(UTC)
             assert res_value == value
+
+    @given(
+        data=data(),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
+    )
+    async def test_async_error_at_upsert(
+        self, *, data: DataObject, timestamp: dt.datetime, value: float
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
+            with raises(
+                TimeSeriesAddError,
+                match="Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*",
+            ):
+                _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
+
+    @given(
+        data=data(),
+        timestamp=zoned_datetimes(
+            max_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
+    )
+    async def test_async_invalid_timestamp(
+        self, *, data: DataObject, timestamp: dt.datetime, value: float
+    ) -> None:
+        _ = assume(timestamp < EPOCH_UTC)
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
+            ):
+                _ = await time_series_add_async(
+                    redis.ts, redis.key, timestamp, value, duplicate_policy="last"
+                )
+
+    @given(
+        data=data(),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
+    )
+    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
+    async def test_async_invalid_value(
+        self, *, data: DataObject, timestamp: dt.datetime, value: float
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            with raises(TimeSeriesAddError, match="Invalid value; got .*"):
+                _ = await time_series_add_async(
+                    redis.ts, redis.key, timestamp, value, duplicate_policy="last"
+                )
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -242,7 +293,8 @@ class TestTimeSeriesAddAndReadDataFrame:
         ts, uuid = ts_pair
         full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
         timestamp1, timestamp2 = (
-            _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
+            _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
+            for d in [datetime1, datetime2]
         )
         value11, value21 = data.draw(tuples(strategy1, strategy1))
         value12, value22 = data.draw(tuples(strategy2, strategy2))
@@ -384,7 +436,8 @@ class TestTimeSeriesMAddAndRange:
         ts, uuid = ts_pair
         full_keys = [f"{uuid}_{case}_{key}" for key in [key1, key2]]
         timestamps = [
-            _clean_datetime(d, time_zone=time_zone) for d in [datetime1, datetime2]
+            _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
+            for d in [datetime1, datetime2]
         ]
         values = data.draw(tuples(strategy, strategy))
         triples = list(zip(full_keys, timestamps, values, strict=True))
@@ -554,7 +607,7 @@ class TestTimeSeriesMAddAndRange:
         value: float,
     ) -> None:
         ts, uuid = ts_pair
-        data = [(f"{uuid}_{case}_{key}", _clean_datetime(timestamp), value)]
+        data = [(f"{uuid}_{case}_{key}", _clean_datetime_zzzzzzzzz(timestamp), value)]
         match case:
             case "values":
                 values_or_df = data
