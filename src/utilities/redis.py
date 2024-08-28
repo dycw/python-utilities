@@ -106,7 +106,7 @@ def _ensure_time_series_created_maybe_reraise(error: ResponseError, /) -> None:
     if not search(  # skipif-ci-and-not-linux
         "TSDB: key already exists", ensure_str(one(error.args))
     ):
-        raise error
+        raise error  # pragma: no cover
 
 
 def time_series_add(
