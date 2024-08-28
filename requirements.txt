@@ -337,7 +337,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.7.1
+rich==13.8.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   hatch
@@ -378,7 +378,7 @@ sqlalchemy==2.0.32
     #   dycw-utilities (pyproject.toml)
     #   alembic
     #   optuna
-streamlit==1.37.1
+streamlit==1.38.0
     # via dycw-utilities (pyproject.toml)
 tenacity==8.5.0
     # via
