@@ -452,7 +452,9 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @contextmanager
-    def yield_redis() -> Iterator[RedisContainer[redis.Redis]]:
+    def yield_redis() -> (  # skipif-ci-and-not-linux
+        Iterator[RedisContainer[redis.Redis]]
+    ):
         with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
@@ -476,7 +478,9 @@ def redis_cms_async(
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @asynccontextmanager
-    async def yield_redis_async() -> AsyncIterator[RedisContainer[redis.asyncio.Redis]]:
+    async def yield_redis_async() -> (  # skipif-ci-and-not-linux
+        AsyncIterator[RedisContainer[redis.asyncio.Redis]]
+    ):
         async with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
