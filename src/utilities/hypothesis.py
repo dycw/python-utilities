@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import AsyncIterator, Collection, Hashable, Iterable, Iterator
+from collections.abc import (
+    AsyncIterator,
+    Callable,
+    Collection,
+    Hashable,
+    Iterable,
+    Iterator,
+)
 from contextlib import (
     AbstractAsyncContextManager,
     AbstractContextManager,
@@ -70,7 +77,7 @@ if TYPE_CHECKING:
 
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from redis.commands.timeseries.commands import TimeSeriesCommands
+    from redis.commands.timeseries import TimeSeries
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -426,12 +433,15 @@ class RedisContainer(Generic[_TRedis]):
     key: str
 
     @property
-    def ts(self) -> TimeSeriesCommands:
+    def ts(self) -> TimeSeries:
         return self.client.ts()
 
 
+YieldRedisContainer = Callable[[], AbstractContextManager[RedisContainer[redis.Redis]]]
+
+
 @composite
-def redis_cms(draw: DrawFn, /) -> AbstractContextManager[RedisContainer[redis.Redis]]:
+def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
     """Strategy for generating redis clients (with cleanup)."""
     from redis import Redis  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
@@ -441,7 +451,7 @@ def redis_cms(draw: DrawFn, /) -> AbstractContextManager[RedisContainer[redis.Re
     key = f"{now}_{uuid}"
 
     @contextmanager
-    def iterator() -> Iterator[RedisContainer[redis.Redis]]:
+    def yield_redis() -> Iterator[RedisContainer[redis.Redis]]:
         with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
@@ -451,7 +461,7 @@ def redis_cms(draw: DrawFn, /) -> AbstractContextManager[RedisContainer[redis.Re
             with suppress(ResponseError):
                 _ = client.delete(*keys)
 
-    return iterator()
+    return yield_redis
 
 
 def redis_cms_async(
@@ -465,7 +475,7 @@ def redis_cms_async(
     key = f"{now}_{uuid}"
 
     @asynccontextmanager
-    async def iterator() -> AsyncIterator[RedisContainer[redis.asyncio.Redis]]:
+    async def yield_redis_async() -> AsyncIterator[RedisContainer[redis.asyncio.Redis]]:
         async with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
@@ -475,7 +485,7 @@ def redis_cms_async(
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
 
-    return iterator()
+    return yield_redis_async
 
 
 def setup_hypothesis_profiles(

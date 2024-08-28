@@ -7,7 +7,6 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-import redis.asyncio
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -37,7 +36,6 @@ from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
-    RedisContainer,
     Shape,
     aiosqlite_engines,
     assume_does_not_raise,
@@ -91,10 +89,7 @@ from utilities.whenever import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from collections.abc import Set as AbstractSet
-    from contextlib import AbstractContextManager
     from zoneinfo import ZoneInfo
-
-    import redis
 
     from utilities.datetime import Month
     from utilities.tempfile import TemporaryDirectory
@@ -470,12 +465,7 @@ class TestRandomStates:
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisCMs:
     @given(yield_redis=redis_cms(), value=integers())
-    def test_sync_core(
-        self,
-        *,
-        yield_redis: AbstractContextManager[RedisContainer[redis.Redis]],
-        value: int,
-    ) -> None:
+    def test_sync_core(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
         with yield_redis as redis:
             assert not redis.client.exists(redis.key)
             _ = redis.client.set(redis.key, value)
@@ -483,12 +473,7 @@ class TestRedisCMs:
             assert result == value
 
     @given(yield_redis=redis_cms(), value=int32s())
-    def test_sync_ts(
-        self,
-        *,
-        yield_redis: AbstractContextManager[RedisContainer[redis.Redis]],
-        value: int,
-    ) -> None:
+    def test_sync_ts(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
         with yield_redis as redis:
             assert not redis.client.exists(redis.key)
             _ = redis.ts.add(redis.key, "*", value)
