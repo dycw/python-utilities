@@ -105,9 +105,7 @@ class TestTimeSeriesAddAndGet:
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: float
     ) -> None:
         with yield_redis() as redis:
-            result = time_series_add(
-                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-            )
+            result = time_series_add(redis.ts, redis.key, timestamp, value)
             assert isinstance(result, int)
             res_timestamp, res_value = time_series_get(redis.ts, redis.key)
             assert res_timestamp == timestamp.astimezone(UTC)
@@ -144,9 +142,7 @@ class TestTimeSeriesAddAndGet:
                 TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
             ),
         ):
-            _ = time_series_add(
-                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-            )
+            _ = time_series_add(redis.ts, redis.key, timestamp, value)
 
     @given(yield_redis=redis_cms(), timestamp=valid_zoned_datetimes)
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
@@ -157,9 +153,7 @@ class TestTimeSeriesAddAndGet:
             yield_redis() as redis,
             raises(TimeSeriesAddError, match="Invalid value; got .*"),
         ):
-            _ = time_series_add(
-                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-            )
+            _ = time_series_add(redis.ts, redis.key, timestamp, value)
 
     @given(
         data=data(),
@@ -170,9 +164,7 @@ class TestTimeSeriesAddAndGet:
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
         async with redis_cms_async(data) as redis:
-            result = await time_series_add_async(
-                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-            )
+            result = await time_series_add_async(redis.ts, redis.key, timestamp, value)
             assert isinstance(result, int)
             res_timestamp, res_value = await time_series_get_async(redis.ts, redis.key)
             assert res_timestamp == timestamp.astimezone(UTC)
@@ -207,9 +199,7 @@ class TestTimeSeriesAddAndGet:
             with raises(
                 TimeSeriesAddError, match="Timestamp must be at least the Epoch; got .*"
             ):
-                _ = await time_series_add_async(
-                    redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-                )
+                _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
 
     @given(data=data(), timestamp=valid_zoned_datetimes)
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
@@ -218,9 +208,7 @@ class TestTimeSeriesAddAndGet:
     ) -> None:
         async with redis_cms_async(data) as redis:
             with raises(TimeSeriesAddError, match="Invalid value; got .*"):
-                _ = await time_series_add_async(
-                    redis.ts, redis.key, timestamp, value, duplicate_policy="last"
-                )
+                _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -237,6 +225,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         keys=lists_fixed_length(text_ascii(), 6, unique=True),
         time_zone=sampled_from([HONG_KONG, UTC]),
     )
+    @mark.only
     @mark.parametrize(
         ("strategy1", "dtype1"),
         [
@@ -264,39 +253,35 @@ class TestTimeSeriesAddAndReadDataFrame:
         strategy2: SearchStrategy[Number],
         dtype2: DataType,
     ) -> None:
-        key, id1, id2, timestamp, key_value1, key_value2 = keys
-        ts, uuid = ts_pair
-        full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
-        (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
-        (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
-        value11, value21 = data.draw(tuples(strategy1, strategy1))
-        value12, value22 = data.draw(tuples(strategy2, strategy2))
-        schema = {
-            key: Utf8,
-            timestamp: zoned_datetime(time_zone=time_zone),
-            key_value1: dtype1,
-            key_value2: dtype2,
-        }
-        df = DataFrame(
-            [
-                (full_id1, timestamp1, value11, value12),
-                (full_id2, timestamp2, value21, value22),
-            ],
-            schema=schema,
-            orient="row",
-        )
-        time_series_add_dataframe(
-            ts, df, key=key, timestamp=timestamp, duplicate_policy="last"
-        )
-        result = time_series_read_dataframe(
-            ts,
-            [full_id1, full_id2],
-            [key_value1, key_value2],
-            output_key=key,
-            output_timestamp=timestamp,
-            output_time_zone=time_zone,
-        )
-        check_polars_dataframe(result, height=2, schema_list=schema)
+        with yield_redis() as redis:
+            key, id1, id2, timestamp, key_value1, key_value2 = keys
+            full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
+            value11, value21 = data.draw(tuples(strategy1, strategy1))
+            value12, value22 = data.draw(tuples(strategy2, strategy2))
+            schema = {
+                key: Utf8,
+                timestamp: zoned_datetime(time_zone=time_zone),
+                key_value1: dtype1,
+                key_value2: dtype2,
+            }
+            df = DataFrame(
+                [
+                    (full_id1, timestamp1, value11, value12),
+                    (full_id2, timestamp2, value21, value22),
+                ],
+                schema=schema,
+                orient="row",
+            )
+            time_series_add_dataframe(ts, df, key=key, timestamp=timestamp)
+            result = time_series_read_dataframe(
+                ts,
+                [full_id1, full_id2],
+                [key_value1, key_value2],
+                output_key=key,
+                output_timestamp=timestamp,
+                output_time_zone=time_zone,
+            )
+            check_polars_dataframe(result, height=2, schema_list=schema)
         assert_frame_equal(result, df)
 
     @given(yield_redis=redis_cms())
@@ -372,7 +357,6 @@ class _TestTimeSeriesMAddAndRangePrepare:
     schema: SchemaDict
 
 
-@mark.only
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesMAddAndRange:
     int_schema: ClassVar[SchemaDict] = {
@@ -430,7 +414,6 @@ class TestTimeSeriesMAddAndRange:
                 key=prepared.key,
                 timestamp=prepared.timestamp,
                 value=prepared.value,
-                duplicate_policy="last",
             )
             assert isinstance(res_madd, list)
             for i in res_madd:
@@ -665,7 +648,6 @@ class TestTimeSeriesMAddAndRange:
                 key=prepared.key,
                 timestamp=prepared.timestamp,
                 value=prepared.value,
-                duplicate_policy="last",
             )
             assert isinstance(res_madd, list)
             for i in res_madd:
