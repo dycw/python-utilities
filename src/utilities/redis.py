@@ -373,7 +373,7 @@ def _time_series_add_dataframe_one_selector(
         .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
-    if df_long.is_empty():
+    if df_long.is_empty():  # skipif-ci-and-not-linux
         return
 
     _ = time_series_madd(  # skipif-ci-and-not-linux
@@ -416,7 +416,7 @@ async def _time_series_add_dataframe_one_selector_async(
         .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
         .drop(key, "variable")
     )
-    if df_long.is_empty():
+    if df_long.is_empty():  # skipif-ci-and-not-linux
         return
 
     _ = await time_series_madd_async(  # skipif-ci-and-not-linux

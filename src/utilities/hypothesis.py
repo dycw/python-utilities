@@ -435,7 +435,7 @@ class RedisContainer(Generic[_TRedis]):
 
     @property
     def ts(self) -> TimeSeries:
-        return self.client.ts()
+        return self.client.ts()  # skipif-ci-and-not-linux
 
 
 YieldRedisContainer = Callable[[], AbstractContextManager[RedisContainer[redis.Redis]]]
@@ -448,8 +448,8 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
 
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = draw(uuids())
-    key = f"{now}_{uuid}"
+    uuid = draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @contextmanager
     def yield_redis() -> Iterator[RedisContainer[redis.Redis]]:
@@ -462,7 +462,7 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
             with suppress(ResponseError):
                 _ = client.delete(*keys)
 
-    return yield_redis
+    return yield_redis  # skipif-ci-and-not-linux
 
 
 def redis_cms_async(
@@ -472,8 +472,8 @@ def redis_cms_async(
     from redis.asyncio import Redis  # skipif-ci-and-not-linux
 
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = data.draw(uuids())
-    key = f"{now}_{uuid}"
+    uuid = data.draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
     @asynccontextmanager
     async def yield_redis_async() -> AsyncIterator[RedisContainer[redis.asyncio.Redis]]:
@@ -486,7 +486,7 @@ def redis_cms_async(
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
 
-    return yield_redis_async()
+    return yield_redis_async()  # skipif-ci-and-not-linux
 
 
 def setup_hypothesis_profiles(
