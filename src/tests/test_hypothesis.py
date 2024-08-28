@@ -496,13 +496,22 @@ class TestRedisClients:
             assert isinstance(res_timestamp, int)
             assert int(res_value) == value
 
-    @given(data=data(), suffix=text_ascii(), value=int64s())
-    async def test_async(self, *, data: DataObject, suffix: str, value: int) -> None:
+    @given(data=data(), value=integers())
+    async def test_async_core(self, *, data: DataObject, value: int) -> None:
         async with redis_cms_async(data) as redis:
             assert not await redis.client.exists(redis.key)
             _ = await redis.client.set(redis.key, value)
             result = int(cast(str, await redis.client.get(redis.key)))
             assert result == value
+
+    @given(data=data(), value=int32s())
+    async def test_async_ts(self, *, data: DataObject, value: int) -> None:
+        async with redis_cms_async(data) as redis:
+            assert not await redis.client.exists(redis.key)
+            _ = await redis.ts.add(redis.key, "*", value)
+            res_timestamp, res_value = await redis.ts.get(redis.key)
+            assert isinstance(res_timestamp, int)
+            assert int(res_value) == value
 
 
 class TestReducedExamples:
