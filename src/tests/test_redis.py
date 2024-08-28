@@ -602,7 +602,7 @@ class TestTimeSeriesMAddAndRange:
                 _ = time_series_madd(redis.ts, values_or_df)
 
     @given(yield_redis=redis_cms())
-    def test_error_range_no_keys_requested(
+    def test_sync_error_range_no_keys_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         with (
@@ -614,7 +614,9 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_range(redis.ts, [])
 
     @given(yield_redis=redis_cms())
-    def test_error_range_invalid_key(self, *, yield_redis: YieldRedisContainer) -> None:
+    def test_sync_error_range_invalid_key(
+        self, *, yield_redis: YieldRedisContainer
+    ) -> None:
         with (
             yield_redis() as redis,
             raises(TimeSeriesRangeError, match="The key '.*' must exist"),
@@ -810,6 +812,22 @@ class TestTimeSeriesMAddAndRange:
                 data, redis.key, case, value
             )
             with raises(TimeSeriesMAddError, match="The value .* is invalid"):
+                _ = await time_series_madd_async(redis.ts, values_or_df)
+
+    @given(data=data())
+    async def test_async_error_range_no_keys_requested(
+        self, *, data: DataObject
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
+            ):
+                _ = await time_series_madd_async(redis.ts, values_or_df)
+
+    @given(data=data())
+    async def test_async_error_range_invalid_key(self, *, data: DataObject) -> None:
+        async with redis_cms_async(data) as redis:
+            with raises(TimeSeriesRangeError, match="The key '.*' must exist"):
                 _ = await time_series_madd_async(redis.ts, values_or_df)
 
     def _prepare_main_test(
