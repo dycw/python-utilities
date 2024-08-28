@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import inf, nan
-from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 import redis
 import redis.asyncio
@@ -622,10 +622,7 @@ class TestTimeSeriesMAddAndRange:
 
     @given(data=data(), yield_redis=redis_cms())
     def test_sync_error_range_key_with_int64_and_float64(
-        self,
-        *,
-        data: DataObject,
-        yield_redis: YieldRedisContainer,
+        self, *, data: DataObject, yield_redis: YieldRedisContainer
     ) -> None:
         with yield_redis() as redis:
             values = self._prepare_test_error_range_key_with_int64_and_float64(
