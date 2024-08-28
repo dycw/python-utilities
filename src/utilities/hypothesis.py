@@ -13,6 +13,7 @@ from re import search
 from string import ascii_letters, printable
 from subprocess import run
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -48,7 +49,6 @@ from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from zoneinfo import ZoneInfo
 
     import redis
     from hypothesis.database import ExampleDatabase
@@ -691,6 +691,12 @@ def zoned_datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )
     datetime = draw(strategy)
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(ZoneInfo("Asia/Manila"))  # for dt.datetime.min
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(  # for dt.datetime.max
+            ZoneInfo("Pacific/Kiritimati")
+        )
     return datetime.astimezone(time_zone_)
 
 

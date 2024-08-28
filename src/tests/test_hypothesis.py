@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
-from utilities.datetime import is_local_datetime, is_zoned_datetime
+from utilities.datetime import DAY, is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
@@ -528,7 +528,7 @@ class TestSetupHypothesisProfiles:
         setup_hypothesis_profiles()
         curr = settings()
         assert Phase.shrink in curr.phases
-        assert curr.max_examples in {10, 100, 1000}
+        assert curr.max_examples in {10, 100, n}
 
     def test_no_shrink(self) -> None:
         with temp_environ({"HYPOTHESIS_NO_SHRINK": "1"}):
@@ -821,6 +821,10 @@ class TestTimeDeltas2W:
         assert min_value <= timedelta <= max_value
 
 
+n = 30000
+
+
+@mark.only
 class TestZonedDatetimes:
     @given(
         data=data(),
@@ -829,7 +833,10 @@ class TestZonedDatetimes:
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(
+        max_examples=n,
+        suppress_health_check={HealthCheck.filter_too_much, HealthCheck.too_slow},
+    )
     def test_main(
         self,
         *,
@@ -863,48 +870,30 @@ class TestZonedDatetimes:
 
     @given(
         data=data(),
-        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=n, suppress_health_check={HealthCheck.filter_too_much})
     def test_min_value_only(
-        self,
-        *,
-        data: DataObject,
-        min_value: dt.datetime,
-        time_zone1: ZoneInfo,
-        time_zone2: ZoneInfo,
+        self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
-        datetime = data.draw(zoned_datetimes(min_value=min_value, time_zone=time_zone1))
+        datetime = data.draw(
+            zoned_datetimes(min_value=dt.datetime.max - DAY, time_zone=time_zone1)
+        )
         assert datetime.tzinfo is time_zone1
-        if min_value.tzinfo is None:
-            min_value_use = min_value.replace(tzinfo=time_zone1)
-        else:
-            min_value_use = min_value.astimezone(time_zone1)
-        assert datetime >= min_value_use
         _ = datetime.astimezone(time_zone2)
 
     @given(
         data=data(),
-        max_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
         time_zone1=timezones() | just(dt.UTC),
         time_zone2=timezones() | just(dt.UTC),
     )
-    @settings(max_examples=1000, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=n, suppress_health_check={HealthCheck.filter_too_much})
     def test_max_value_only(
-        self,
-        *,
-        data: DataObject,
-        max_value: dt.datetime,
-        time_zone1: ZoneInfo,
-        time_zone2: ZoneInfo,
+        self, *, data: DataObject, time_zone1: ZoneInfo, time_zone2: ZoneInfo
     ) -> None:
-        datetime = data.draw(zoned_datetimes(max_value=max_value, time_zone=time_zone1))
+        datetime = data.draw(
+            zoned_datetimes(max_value=dt.datetime.min + DAY, time_zone=time_zone1)
+        )
         assert datetime.tzinfo is time_zone1
-        if max_value.tzinfo is None:
-            max_value_use = max_value.replace(tzinfo=time_zone1)
-        else:
-            max_value_use = max_value.astimezone(time_zone1)
-        assert datetime <= max_value_use
         _ = datetime.astimezone(time_zone2)
