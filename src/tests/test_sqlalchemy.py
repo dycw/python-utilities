@@ -729,7 +729,7 @@ class TestCheckTablesEqual:
         _check_tables_equal(x, y, snake_columns=True)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -759,7 +759,7 @@ class TestCheckTableOrColumnNamesEqual:
                 _check_table_or_column_names_equal(x, y, snake=snake)
 
     def test_id(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -769,7 +769,7 @@ class TestCheckTableOrColumnNamesEqual:
         _check_table_or_column_names_equal(Example.id_.name, "id_")
 
     def test_id_as_x(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -904,7 +904,7 @@ class TestEnsureTablesCreated:
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -984,7 +984,7 @@ class TestEnsureTablesDropped:
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1065,7 +1065,7 @@ class TestGetColumnNames:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1084,7 +1084,7 @@ class TestGetColumns:
         self._run_test(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1148,7 +1148,7 @@ class TestGetTable:
         assert result is table
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1174,7 +1174,7 @@ class TestGetTableName:
         assert result == expected
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1431,7 +1431,7 @@ class TestInsertItems:
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1550,7 +1550,7 @@ class TestIsUpsertItemPair:
 
 class TestIsMappedClass:
     def test_mapped_class_instance(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1569,7 +1569,7 @@ class TestIsTableOrMappedClass:
         assert is_table_or_mapped_class(table)
 
     def test_mapped_class(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1586,7 +1586,7 @@ class TestIsTableOrMappedClass:
 class TestMappedClassToDict:
     @given(id_=integers())
     def test_main(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1600,7 +1600,7 @@ class TestMappedClassToDict:
 
     @given(id_=integers())
     def test_explicitly_named_column(self, *, id_: int) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1700,7 +1700,7 @@ class TestNormalizeInsertItem:
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1774,7 +1774,7 @@ class TestNormalizeUpsertItem:
 
     @property
     def _mapped_class(self) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = "example"
@@ -1860,7 +1860,7 @@ class TestSerializeEngine:
 
 class TestTablenameMixin:
     def test_main(self) -> None:
-        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass, TablenameMixin): ...
 
         class Example(Base):
             id_: Mapped[int] = mapped_column(Integer, kw_only=True, primary_key=True)
@@ -2461,7 +2461,7 @@ class TestUpsertItems:
         )
 
     def _get_mapped_class(self, name: str, /) -> type[DeclarativeBase]:
-        class Base(DeclarativeBase, MappedAsDataclass): ...  # pyright: ignore[reportUnsafeMultipleInheritance]
+        class Base(DeclarativeBase, MappedAsDataclass): ...
 
         class Example(Base):
             __tablename__ = name

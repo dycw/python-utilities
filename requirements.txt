@@ -41,8 +41,6 @@ attrs==24.2.0
     #   referencing
 backports-tarfile==1.2.0
     # via jaraco-context
-basedpyright==1.17.0
-    # via dycw-utilities (pyproject.toml)
 blinker==1.8.2
     # via streamlit
 bottleneck==1.4.0
@@ -122,7 +120,7 @@ hatchling==1.25.0
     # via hatch
 httpcore==1.0.5
     # via httpx
-httpx==0.27.0
+httpx==0.27.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
@@ -190,8 +188,6 @@ narwhals==1.5.5
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
-nodejs-wheel-binaries==20.17.0
-    # via basedpyright
 nox==2024.4.15
     # via dycw-utilities (pyproject.toml)
 numba==0.60.0
@@ -267,7 +263,7 @@ polars-lts-cpu==1.5.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.27.3
+protobuf==5.27.4
     # via
     #   streamlit
     #   vegafusion
@@ -428,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.3.4
+uv==0.3.5
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

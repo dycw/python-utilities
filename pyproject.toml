@@ -23,7 +23,6 @@ dev = [
   "astor >= 0.8.1, < 0.9",
   "atomicwrites >= 1.4.1, < 1.5",
   "atools >= 0.14.2, < 0.15",
-  "basedpyright >= 1.17.0, < 1.18",
   "bottleneck >= 1.4.0, < 1.5",
   "cachetools >= 5.5.0, < 5.6",
   "click >= 8.1.7, < 8.2",
@@ -258,20 +257,6 @@ zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
 [project.scripts]
 start-pypi-server = "utilities.scripts.pypi_server:main"
 
-# basedpyright
-[tool.basedpyright]
-pythonVersion = "3.11"
-reportAny = false
-reportMissingTypeArgument = false
-reportMissingTypeStubs = false
-reportPrivateUsage = false
-reportUnknownArgumentType = false
-reportUnknownMemberType = false
-reportUnknownParameterType = false
-reportUnknownVariableType = false
-reportUnusedImport = false
-reportUnusedVariable = false
-
 # coverage
 [tool.coverage]
 
@@ -330,6 +315,33 @@ style = [
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/3.11.toml",
   "https://raw.githubusercontent.com/dycw/nitpick/master/styles/common.toml",
 ]
+
+# pyright
+[tool.pyright]
+deprecateTypingAliases = true
+enableReachabilityAnalysis = false
+pythonVersion = "3.11"
+reportAny = false
+reportCallInDefaultInitializer = true
+reportImplicitOverride = true
+reportImplicitStringConcatenation = true
+reportImportCycles = true
+reportMissingSuperCall = true
+reportMissingTypeArgument = false
+reportMissingTypeStubs = false
+reportPrivateUsage = false
+reportPropertyTypeMismatch = true
+reportShadowedImports = true
+reportUninitializedInstanceVariable = true
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryTypeIgnoreComment = true
+reportUnusedCallResult = true
+reportUnusedImport = false
+reportUnusedVariable = false
+typeCheckingMode = "strict"
 
 # pytest
 [tool.pytest]
