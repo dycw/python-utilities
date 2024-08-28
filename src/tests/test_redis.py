@@ -484,8 +484,7 @@ class TestTimeSeriesAddAndReadDataFrame:
     ) -> None:
         async with redis_cms_async(data) as redis:
             with raises(
-                TimeSeriesReadDataFrameError,
-                match="At least 1 key must be requested",
+                TimeSeriesReadDataFrameError, match="At least 1 key must be requested"
             ):
                 _ = await time_series_read_dataframe_async(redis.ts, [], [])
 

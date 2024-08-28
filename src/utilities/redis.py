@@ -293,6 +293,62 @@ def time_series_add_dataframe(
         )
 
 
+async def time_series_add_dataframe_async(
+    ts: TimeSeries,
+    df: DataFrame,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Append a DataFrame of time series."""
+    from polars import Utf8  # skipif-ci-and-not-linux
+    from polars.selectors import float, integer  # skipif-ci-and-not-linux
+
+    from utilities.polars import (  # skipif-ci-and-not-linux
+        CheckZonedDTypeOrSeriesError,
+        check_zoned_dtype_or_series,
+    )
+
+    if key not in df.columns:  # skipif-ci-and-not-linux
+        raise _TimeSeriesAddDataFrameKeyMissingError(df=df, key=key)
+    if timestamp not in df.columns:  # skipif-ci-and-not-linux
+        raise _TimeSeriesAddDataFrameTimestampMissingError(df=df, timestamp=timestamp)
+    if not isinstance(key_dtype := df.schema[key], Utf8):  # skipif-ci-and-not-linux
+        raise _TimeSeriesAddDataFrameKeyIsNotUtf8Error(df=df, key=key, dtype=key_dtype)
+    timestamp_dtype = df.schema[timestamp]  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
+        check_zoned_dtype_or_series(timestamp_dtype)
+    except CheckZonedDTypeOrSeriesError:  # skipif-ci-and-not-linux
+        raise _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError(
+            df=df, timestamp=timestamp, dtype=timestamp_dtype
+        ) from None
+
+    for selector in [integer(), float()]:  # skipif-ci-and-not-linux
+        await _time_series_add_dataframe_one_selector_async(
+            ts,
+            df.select(key, timestamp, selector),
+            key=key,
+            timestamp=timestamp,
+            assume_time_series_exist=assume_time_series_exist,
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+        )
+
+
 def _time_series_add_dataframe_one_selector(
     ts: TimeSeries,
     df: DataFrame,
@@ -321,6 +377,49 @@ def _time_series_add_dataframe_one_selector(
         return
 
     _ = time_series_madd(  # skipif-ci-and-not-linux
+        ts,
+        df_long,
+        key=f"_{_KEY}",
+        timestamp=timestamp,
+        assume_time_series_exist=assume_time_series_exist,
+        retention_msecs=retention_msecs,
+        uncompressed=uncompressed,
+        labels=labels,
+        chunk_size=chunk_size,
+        duplicate_policy=duplicate_policy,
+        ignore_max_time_diff=ignore_max_time_diff,
+        ignore_max_val_diff=ignore_max_val_diff,
+    )
+
+
+async def _time_series_add_dataframe_one_selector_async(
+    ts: TimeSeries,
+    df: DataFrame,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> None:
+    """Append a DataFrame of time series, one selector."""
+    import polars as pl  # skipif-ci-and-not-linux
+
+    df_long = (  # skipif-ci-and-not-linux
+        df.unpivot(index=[key, timestamp])
+        .with_columns(pl.format(f"{{}}{_SPLIT}{{}}", key, "variable").alias(f"_{_KEY}"))
+        .drop(key, "variable")
+    )
+    if df_long.is_empty():
+        return
+
+    _ = await time_series_madd_async(  # skipif-ci-and-not-linux
         ts,
         df_long,
         key=f"_{_KEY}",
@@ -1239,6 +1338,83 @@ def time_series_read_dataframe(
     raise ImpossibleCaseError(case=[f"{df_int=}", f"{df_float=}"])  # pragma: no cover
 
 
+async def time_series_read_dataframe_async(
+    ts: TimeSeries,
+    keys: MaybeIterable[KeyT],
+    columns: MaybeIterable[str],
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+) -> DataFrame:
+    """Read a DataFrame of time series."""
+    from polars import Float64, Int64  # skipif-ci-and-not-linux
+
+    keys = list(always_iterable(keys))  # skipif-ci-and-not-linux
+    if len(keys) == 0:  # skipif-ci-and-not-linux
+        raise _TimeSeriesReadDataFrameNoKeysRequestedError(keys=keys)
+    columns = list(always_iterable(columns))  # skipif-ci-and-not-linux
+    if len(columns) == 0:  # skipif-ci-and-not-linux
+        raise _TimeSeriesReadDataFrameNoColumnsRequestedError(columns=columns)
+    pairs = list(  # skipif-ci-and-not-linux
+        product(always_iterable(keys), always_iterable(columns))
+    )
+    dfs = [  # skipif-ci-and-not-linux
+        await time_series_range_async(
+            ts,
+            f"{key}{_SPLIT}{column}",
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+            output_key=f"_{_KEY}",
+            output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
+        )
+        for key, column in pairs
+    ]
+    df_int, df_float = (  # skipif-ci-and-not-linux
+        _time_series_read_dataframe_concat(
+            (df for df in dfs if isinstance(df["value"].dtype, dtype)),
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+        )
+        for dtype in [Int64, Float64]
+    )
+    if (df_int is not None) and (df_float is None):  # skipif-ci-and-not-linux
+        return df_int
+    if (df_int is None) and (df_float is not None):  # skipif-ci-and-not-linux
+        return df_float
+    if (df_int is not None) and (df_float is not None):  # skipif-ci-and-not-linux
+        return (  # skipif-ci-and-not-linux
+            df_int.join(df_float, on=[output_key, output_timestamp], how="full")
+            .drop(f"{output_key}_right", f"{output_timestamp}_right")
+            .select(output_key, output_timestamp, *columns)
+        )
+    raise ImpossibleCaseError(case=[f"{df_int=}", f"{df_float=}"])  # pragma: no cover
+
+
 def _time_series_read_dataframe_concat(
     dfs: Iterable[DataFrame],
     /,
@@ -1416,6 +1592,7 @@ __all__ = [
     "time_series_add",
     "time_series_add_async",
     "time_series_add_dataframe",
+    "time_series_add_dataframe_async",
     "time_series_get",
     "time_series_get_async",
     "time_series_madd",
@@ -1423,6 +1600,7 @@ __all__ = [
     "time_series_range",
     "time_series_range_async",
     "time_series_read_dataframe",
+    "time_series_read_dataframe_async",
     "yield_client",
     "yield_client_async",
     "yield_time_series",
