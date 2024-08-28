@@ -831,16 +831,18 @@ class TestZonedDatetimes:
         ),
         max_value=timezones()
         | datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-        time_zone=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
+        time_zone1=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
+        time_zone2=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
     )
-    @settings(max_examples=10000, suppress_health_check={HealthCheck.filter_too_much})
+    @settings(max_examples=20000, suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
         data: DataObject,
         min_value: dt.datetime,
         max_value: dt.datetime,
-        time_zone: ZoneInfo,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
     ) -> None:
         _ = assume(
             (is_local_datetime(min_value) and is_local_datetime(max_value))
@@ -849,16 +851,17 @@ class TestZonedDatetimes:
         _ = assume(min_value <= max_value)
         datetime = data.draw(
             zoned_datetimes(
-                min_value=min_value, max_value=max_value, time_zone=time_zone
+                min_value=min_value, max_value=max_value, time_zone=time_zone1
             )
         )
-        assert datetime.tzinfo is time_zone
+        assert datetime.tzinfo is time_zone1
         if min_value.tzinfo is None:
-            min_value_use = min_value.replace(tzinfo=time_zone)
+            min_value_use = min_value.replace(tzinfo=time_zone1)
         else:
-            min_value_use = min_value.astimezone(time_zone)
+            min_value_use = min_value.astimezone(time_zone1)
         if max_value.tzinfo is None:
-            max_value_use = max_value.replace(tzinfo=time_zone)
+            max_value_use = max_value.replace(tzinfo=time_zone1)
         else:
-            max_value_use = max_value.astimezone(time_zone)
+            max_value_use = max_value.astimezone(time_zone1)
         assert min_value_use <= datetime <= max_value_use
+        _ = datetime.astimezone(time_zone2)
