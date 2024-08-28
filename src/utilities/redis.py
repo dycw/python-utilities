@@ -481,6 +481,75 @@ def time_series_madd(
             raise error
 
 
+async def time_series_madd_async(
+    ts: TimeSeries,
+    values_or_df: Iterable[tuple[KeyT, dt.datetime, Number]] | DataFrame,
+    /,
+    *,
+    key: str = _KEY,
+    timestamp: str = _TIMESTAMP,
+    value: str = _VALUE,
+    assume_time_series_exist: bool = False,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: Number | None = None,
+) -> list[int]:
+    """Append new samples to one or more time series."""
+    from polars import DataFrame  # skipif-ci-and-not-linux
+
+    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
+        triples = _time_series_madd_prepare_dataframe(
+            values_or_df, key=key, timestamp=timestamp, value=value
+        )
+    else:  # skipif-ci-and-not-linux
+        values_or_df = list(values_or_df)
+        triples = list(_time_series_madd_prepare_triples(values_or_df))
+    if not assume_time_series_exist:  # skipif-ci-and-not-linux
+        await ensure_time_series_created_async(
+            ts,
+            *{key for key, _, _ in triples},
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+        )
+    result: list[int | ResponseError] = await ts.madd(  # skipif-ci-and-not-linux
+        list(triples)
+    )
+    try:  # skipif-ci-and-not-linux
+        i, error = next(
+            (i, r) for i, r in enumerate(result) if isinstance(r, ResponseError)
+        )
+    except StopIteration:  # skipif-ci-and-not-linux
+        return cast(list[int], result)
+    if isinstance(values_or_df, DataFrame):  # skipif-ci-and-not-linux
+        error_key, error_timestamp, error_value = values_or_df.row(i)
+    else:  # skipif-ci-and-not-linux
+        error_key, error_timestamp, error_value = values_or_df[i]
+    match _classify_response_error(error):  # skipif-ci-and-not-linux
+        case "invalid key":
+            raise _TimeSeriesMAddInvalidKeyError(
+                values_or_df=values_or_df, key=error_key
+            )
+        case "invalid timestamp":
+            raise _TimeSeriesMAddInvalidTimestampError(
+                values_or_df=values_or_df, timestamp=error_timestamp
+            )
+        case "invalid value":
+            raise _TimeSeriesMAddInvalidValueError(
+                values_or_df=values_or_df, value=error_value
+            )
+        case _:  # pragma: no cover
+            raise error
+
+
 def _time_series_madd_prepare_dataframe(
     df: DataFrame,
     /,
@@ -698,6 +767,61 @@ def time_series_range(
         raise _TimeSeriesRangeNoKeysRequestedError(key=key) from None
 
 
+async def time_series_range_async(
+    ts: TimeSeries,
+    key: MaybeIterable[KeyT],
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+    output_value: str = _VALUE,
+) -> DataFrame:
+    """Get a range in forward direction."""
+    from polars import concat  # skipif-ci-and-not-linux
+
+    key = list(always_iterable(key))  # skipif-ci-and-not-linux)
+    dfs = [  # skipif-ci-and-not-linux
+        await _time_series_range_one_key_async(
+            ts,
+            k,
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
+            output_value=output_value,
+        )
+        for k in key
+    ]
+    try:  # skipif-ci-and-not-linux
+        return concat(dfs)
+    except ValueError:  # skipif-ci-and-not-linux
+        raise _TimeSeriesRangeNoKeysRequestedError(key=key) from None
+
+
 def _time_series_range_one_key(
     ts: TimeSeries,
     key: KeyT,
@@ -745,6 +869,66 @@ def _time_series_range_one_key(
         )
         for dtype in ["Int64", "Float64"]
     )
+    if (res_int64 is None) and (res_float64 is None):  # skipif-ci-and-not-linux
+        raise _TimeSeriesRangeInvalidKeyError(key=key)
+    if (res_int64 is not None) and (res_float64 is None):  # skipif-ci-and-not-linux
+        return res_int64
+    if (res_int64 is None) and (res_float64 is not None):  # skipif-ci-and-not-linux
+        return res_float64
+    if (res_int64 is not None) and (res_float64 is not None):  # skipif-ci-and-not-linux
+        raise _TimeSeriesRangeKeyWithInt64AndFloat64Error(key=key)
+    raise ImpossibleCaseError(  # pragma: no cover
+        case=[f"{res_int64=}", f"{res_float64=}"]
+    )
+
+
+async def _time_series_range_one_key_async(
+    ts: TimeSeries,
+    key: KeyT,
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+    output_value: str = _VALUE,
+) -> DataFrame:
+    """Get a range for one key."""
+    res_int64, res_float64 = [  # skipif-ci-and-not-linux
+        await _time_series_range_one_key_one_dtype_async(
+            ts,
+            key,
+            cast(Literal["Int64", "Float64"], dtype),
+            from_time=from_time,
+            to_time=to_time,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts,
+            filter_by_min_value=filter_by_min_value,
+            filter_by_max_value=filter_by_max_value,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+            output_key=output_key,
+            output_timestamp=output_timestamp,
+            output_time_zone=output_time_zone,
+            output_value=output_value,
+        )
+        for dtype in ["Int64", "Float64"]
+    ]
     if (res_int64 is None) and (res_float64 is None):  # skipif-ci-and-not-linux
         raise _TimeSeriesRangeInvalidKeyError(key=key)
     if (res_int64 is not None) and (res_float64 is None):  # skipif-ci-and-not-linux
@@ -814,6 +998,100 @@ def _time_series_range_one_key_one_dtype(
     output_dtype = zoned_datetime(time_zone=output_time_zone)  # skipif-ci-and-not-linux
     try:  # skipif-ci-and-not-linux
         values = ts.range(
+            f"{key}{_SPLIT}{dtype}",
+            from_time_use,
+            to_time_use,
+            count=count,
+            aggregation_type=aggregation_type,
+            bucket_size_msec=bucket_size_msec,
+            filter_by_ts=filter_by_ts_use,
+            filter_by_min_value=filter_by_min_value_use,
+            filter_by_max_value=filter_by_max_value_use,
+            align=align,
+            latest=latest,
+            bucket_timestamp=bucket_timestamp,
+            empty=empty,
+        )
+    except ResponseError as error:  # skipif-ci-and-not-linux
+        match _classify_response_error(error):
+            case "invalid key":
+                return None
+            case _:  # pragma: no cover
+                raise
+    match dtype:  # skipif-ci-and-not-linux
+        case "Int64":
+            dtype_use = Int64
+        case "Float64":
+            dtype_use = Float64
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+    return DataFrame(  # skipif-ci-and-not-linux
+        values, schema={output_timestamp: Int64, output_value: dtype_use}, orient="row"
+    ).select(
+        lit(key, dtype=Utf8).alias(output_key),
+        from_epoch(output_timestamp, time_unit="ms")
+        .cast(DatetimeUTC)
+        .cast(output_dtype),
+        output_value,
+    )
+
+
+async def _time_series_range_one_key_one_dtype_async(
+    ts: TimeSeries,
+    key: KeyT,
+    dtype: Literal["Int64", "Float64"],
+    /,
+    *,
+    from_time: dt.datetime | None = None,
+    to_time: dt.datetime | None = None,
+    count: int | None = None,
+    aggregation_type: str | None = None,
+    bucket_size_msec: int | None = 0,
+    filter_by_ts: list[dt.datetime] | None = None,
+    filter_by_min_value: dt.datetime | None = None,
+    filter_by_max_value: dt.datetime | None = None,
+    align: int | str | None = None,
+    latest: bool | None = False,
+    bucket_timestamp: str | None = None,
+    empty: bool | None = False,
+    output_key: str = _KEY,
+    output_timestamp: str = _TIMESTAMP,
+    output_time_zone: ZoneInfo = UTC,
+    output_value: str = _VALUE,
+) -> DataFrame | None:
+    """Get a range for one key, one dtype."""
+    from polars import (  # skipif-ci-and-not-linux
+        DataFrame,
+        Float64,
+        Int64,
+        Utf8,
+        from_epoch,
+        lit,
+    )
+
+    from utilities.polars import DatetimeUTC, zoned_datetime  # skipif-ci-and-not-linux
+
+    ms_since_epoch = partial(  # skipif-ci-and-not-linux
+        milliseconds_since_epoch, strict=True
+    )
+    from_time_use = (  # skipif-ci-and-not-linux
+        "-" if from_time is None else ms_since_epoch(from_time)
+    )
+    to_time_use = (  # skipif-ci-and-not-linux
+        "+" if to_time is None else ms_since_epoch(to_time)
+    )
+    filter_by_ts_use = (  # skipif-ci-and-not-linux
+        None if filter_by_ts is None else list(map(ms_since_epoch, filter_by_ts))
+    )
+    filter_by_min_value_use = (  # skipif-ci-and-not-linux
+        None if filter_by_min_value is None else ms_since_epoch(filter_by_min_value)
+    )
+    filter_by_max_value_use = (  # skipif-ci-and-not-linux
+        None if filter_by_max_value is None else ms_since_epoch(filter_by_max_value)
+    )
+    output_dtype = zoned_datetime(time_zone=output_time_zone)  # skipif-ci-and-not-linux
+    try:  # skipif-ci-and-not-linux
+        values = await ts.range(
             f"{key}{_SPLIT}{dtype}",
             from_time_use,
             to_time_use,
@@ -1133,13 +1411,16 @@ __all__ = [
     "TimeSeriesRangeError",
     "TimeSeriesReadDataFrameError",
     "ensure_time_series_created",
+    "ensure_time_series_created_async",
     "time_series_add",
     "time_series_add_async",
     "time_series_add_dataframe",
     "time_series_get",
     "time_series_get_async",
     "time_series_madd",
+    "time_series_madd_async",
     "time_series_range",
+    "time_series_range_async",
     "time_series_read_dataframe",
     "yield_client",
     "yield_client_async",

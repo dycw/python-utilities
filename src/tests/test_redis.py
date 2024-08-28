@@ -45,7 +45,9 @@ from utilities.redis import (
     time_series_get,
     time_series_get_async,
     time_series_madd,
+    time_series_madd_async,
     time_series_range,
+    time_series_range_async,
     time_series_read_dataframe,
     yield_client,
     yield_client_async,
@@ -404,7 +406,7 @@ class TestTimeSeriesMAddAndRange:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    def test_main(
+    def test_sync(
         self,
         *,
         data: DataObject,
@@ -669,6 +671,72 @@ class TestTimeSeriesMAddAndRange:
                 match="The key '.*' contains both Int64 and Float64 data",
             ):
                 _ = time_series_range(redis.ts, redis.key)
+
+    @given(
+        data=data(),
+        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
+        time_zone=sampled_from([HONG_KONG, UTC]),
+        key_timestamp_value=lists_fixed_length(text_ascii(), 3, unique=True).map(tuple),
+    )
+    @mark.parametrize("case", [param("values"), param("DataFrame")])
+    @mark.parametrize(
+        ("strategy", "dtype"),
+        [
+            param(int32s(), Int64),
+            param(floats(allow_nan=False, allow_infinity=False), Float64),
+        ],
+    )
+    async def test_async(
+        self,
+        *,
+        data: DataObject,
+        series_names: tuple[str, str],
+        time_zone: ZoneInfo,
+        key_timestamp_value: tuple[str, str, str],
+        case: Literal["values", "DataFrame"],
+        strategy: SearchStrategy[Any],
+        dtype: PolarsDataType,
+    ) -> None:
+        st_datetimes = zoned_datetimes(min_value=EPOCH_UTC, time_zone=time_zone).map(
+            drop_microseconds
+        )
+        timestamps = data.draw(tuples(st_datetimes, st_datetimes))
+        values = data.draw(tuples(strategy, strategy))
+        async with redis_cms_async(data) as redis:
+            keys = [f"{redis.key}_{case}_{name}" for name in series_names]
+            triples = list(zip(keys, timestamps, values, strict=True))
+            key, timestamp, value = key_timestamp_value
+            schema = {
+                key: Utf8,
+                timestamp: zoned_datetime(time_zone=time_zone),
+                value: dtype,
+            }
+            match case:
+                case "values":
+                    values_or_df = triples
+                case "DataFrame":
+                    values_or_df = DataFrame(triples, schema=schema, orient="row")
+            res_madd = await time_series_madd_async(
+                redis.ts,
+                values_or_df,
+                key=key,
+                timestamp=timestamp,
+                value=value,
+                duplicate_policy="last",
+            )
+            assert isinstance(res_madd, list)
+            for i in res_madd:
+                assert isinstance(i, int)
+            res_range = await time_series_range_async(
+                redis.ts,
+                keys,
+                output_key=key,
+                output_timestamp=timestamp,
+                output_time_zone=time_zone,
+                output_value=value,
+            )
+            check_polars_dataframe(res_range, height=2, schema_list=schema)
+            assert res_range.rows() == triples
 
 
 class TestYieldClient:
