@@ -2,8 +2,22 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import Collection, Hashable, Iterable, Iterator
-from contextlib import contextmanager, suppress
+from collections.abc import (
+    AsyncIterator,
+    Callable,
+    Collection,
+    Hashable,
+    Iterable,
+    Iterator,
+)
+from contextlib import (
+    AbstractAsyncContextManager,
+    AbstractContextManager,
+    asynccontextmanager,
+    contextmanager,
+    suppress,
+)
+from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -12,9 +26,20 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Protocol,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 from zoneinfo import ZoneInfo
 
+import redis
+import redis.asyncio
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -37,9 +62,10 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from typing_extensions import override
+from redis.exceptions import ResponseError
+from redis.typing import KeyT
 
-from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month
+from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
@@ -50,7 +76,6 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     from uuid import UUID
 
-    import redis
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
     from redis.commands.timeseries import TimeSeries
@@ -396,31 +421,76 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
+_TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
+
+
+@dataclass(repr=False, frozen=True, kw_only=True)
+class RedisContainer(Generic[_TRedis]):
+    """A container for `redis.Client`."""
+
+    client: _TRedis
+    timestamp: dt.datetime
+    uuid: UUID
+    key: str
+
+    @property
+    def ts(self) -> TimeSeries:
+        return self.client.ts()  # skipif-ci-and-not-linux
+
+
+YieldRedisContainer = Callable[[], AbstractContextManager[RedisContainer[redis.Redis]]]
+
+
 @composite
-def redis_clients(_draw: DrawFn, /) -> tuple[redis.Redis, UUID]:
-    """Strategy for generating redis clients."""
-    import redis  # skipif-ci-and-not-linux
+def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
+    """Strategy for generating redis clients (with cleanup)."""
+    from redis import Redis  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
 
-    uuid = _draw(uuids())  # skipif-ci-and-not-linux
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
-    class RedisWithCleanup(redis.Redis):  # skipif-ci-and-not-linux
-        @override
-        def __del__(self) -> Any:
-            keys = self.keys(pattern=f"{uuid}_*")
+    @contextmanager
+    def yield_redis() -> (  # skipif-ci-and-not-linux
+        Iterator[RedisContainer[redis.Redis]]
+    ):
+        with Redis(db=15) as client:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
-                _ = self.delete(*cast(Iterable[Any], keys))
-            return super().__del__()
+                _ = client.delete(*keys)
+            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = client.delete(*keys)
 
-    client = RedisWithCleanup(db=15, decode_responses=True)  # skipif-ci-and-not-linux
-    return client, uuid  # skipif-ci-and-not-linux
+    return yield_redis  # skipif-ci-and-not-linux
 
 
-@composite
-def redis_time_series(_draw: DrawFn, /) -> tuple[TimeSeries, UUID]:
-    """Strategy for generating redis time series."""
-    client, uuid = _draw(redis_clients())  # skipif-ci-and-not-linux
-    return client.ts(), uuid  # skipif-ci-and-not-linux
+def redis_cms_async(
+    data: DataObject, /
+) -> AbstractAsyncContextManager[RedisContainer[redis.asyncio.Redis]]:
+    """Strategy for generating asynchronous redis clients."""
+    from redis.asyncio import Redis  # skipif-ci-and-not-linux
+
+    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
+    uuid = data.draw(uuids())  # skipif-ci-and-not-linux
+    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
+
+    @asynccontextmanager
+    async def yield_redis_async() -> (  # skipif-ci-and-not-linux
+        AsyncIterator[RedisContainer[redis.asyncio.Redis]]
+    ):
+        async with Redis(db=15) as client:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await client.delete(*keys)
+            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+            with suppress(ResponseError):
+                _ = await client.delete(*keys)
+
+    return yield_redis_async()  # skipif-ci-and-not-linux
 
 
 def setup_hypothesis_profiles(
@@ -724,6 +794,7 @@ def _draw_text(
 
 __all__ = [
     "MaybeSearchStrategy",
+    "RedisContainer",
     "Shape",
     "aiosqlite_engines",
     "assume_does_not_raise",
@@ -740,8 +811,8 @@ __all__ = [
     "lists_fixed_length",
     "months",
     "random_states",
-    "redis_clients",
-    "redis_time_series",
+    "redis_cms",
+    "redis_cms_async",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",
