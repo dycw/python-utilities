@@ -211,6 +211,17 @@ class TestTimeSeriesAddAndGet:
                 _ = await time_series_add_async(redis.ts, redis.key, timestamp, value)
 
 
+@dataclass(frozen=True, kw_only=True)
+class _TestTimeSeriesAddAndReadDataFramePrepare:
+    df: DataFrame
+    key: str
+    timestamp: str
+    keys: tuple[str, str]
+    columns: tuple[str, str]
+    time_zone: ZoneInfo
+    schema: SchemaDict
+
+
 @mark.only
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndReadDataFrame:
@@ -223,7 +234,7 @@ class TestTimeSeriesAddAndReadDataFrame:
     @given(
         data=data(),
         yield_redis=redis_cms(),
-        ids=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
+        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
         key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
             tuple
         ),
@@ -244,12 +255,12 @@ class TestTimeSeriesAddAndReadDataFrame:
             param(floats(allow_nan=False, allow_infinity=False), Float64),
         ],
     )
-    def test_main(
+    def test_sync(
         self,
         *,
         data: DataObject,
         yield_redis: YieldRedisContainer,
-        ids: tuple[str, str],
+        series_names: tuple[str, str],
         strategy1: SearchStrategy[Number],
         strategy2: SearchStrategy[Number],
         key_timestamp_values: tuple[str, str, str, str],
@@ -258,41 +269,35 @@ class TestTimeSeriesAddAndReadDataFrame:
         dtype2: DataType,
     ) -> None:
         with yield_redis() as redis:
-            id1, id2 = (f"{redis.key}_{id_}" for id_ in ids)
-            timestamp1, timestamp2 = data.draw(
-                tuples(valid_zoned_datetimes, valid_zoned_datetimes)
+            prepared = self._prepare_main_test(
+                data,
+                redis.key,
+                series_names,
+                strategy1,
+                strategy2,
+                key_timestamp_values,
+                time_zone,
+                dtype1,
+                dtype2,
             )
-            value11, value21 = data.draw(tuples(strategy1, strategy1))
-            value12, value22 = data.draw(tuples(strategy2, strategy2))
-            key, timestamp, value1, value2 = key_timestamp_values
-            schema = {
-                key: Utf8,
-                timestamp: zoned_datetime(time_zone=time_zone),
-                value1: dtype1,
-                value2: dtype2,
-            }
-            df = DataFrame(
-                [
-                    (id1, timestamp1, value11, value12),
-                    (id2, timestamp2, value21, value22),
-                ],
-                schema=schema,
-                orient="row",
+            time_series_add_dataframe(
+                redis.ts, prepared.df, key=prepared.key, timestamp=prepared.timestamp
             )
-            time_series_add_dataframe(redis.ts, df, key=key, timestamp=timestamp)
             result = time_series_read_dataframe(
                 redis.ts,
-                [id1, id2],
-                [value1, value2],
-                output_key=key,
-                output_timestamp=timestamp,
-                output_time_zone=time_zone,
+                prepared.keys,
+                prepared.columns,
+                output_key=prepared.key,
+                output_timestamp=prepared.timestamp,
+                output_time_zone=prepared.time_zone,
             )
-            check_polars_dataframe(result, height=2, schema_list=schema)
-        assert_frame_equal(result, df)
+            check_polars_dataframe(result, height=2, schema_list=prepared.schema)
+        assert_frame_equal(result, prepared.df)
 
     @given(yield_redis=redis_cms())
-    def test_error_add_key_missing(self, *, yield_redis: YieldRedisContainer) -> None:
+    def test_sync_error_add_key_missing(
+        self, *, yield_redis: YieldRedisContainer
+    ) -> None:
         df = DataFrame()
         with (
             yield_redis() as redis,
@@ -304,7 +309,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_add_timestamp_missing(
+    def test_sync_error_add_timestamp_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8})
@@ -318,7 +323,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_add_key_is_not_utf8(
+    def test_sync_error_add_key_is_not_utf8(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Boolean, "timestamp": DatetimeUTC})
@@ -332,7 +337,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_timestamp_is_not_a_zoned_datetime(
+    def test_sync_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
@@ -346,7 +351,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_add_dataframe(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_read_no_keys_requested(
+    def test_sync_error_read_no_keys_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         with (
@@ -358,7 +363,7 @@ class TestTimeSeriesAddAndReadDataFrame:
             _ = time_series_read_dataframe(redis.ts, [], [])
 
     @given(yield_redis=redis_cms())
-    def test_error_read_no_columns_requested(
+    def test_sync_error_read_no_columns_requested(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         with (
@@ -369,6 +374,52 @@ class TestTimeSeriesAddAndReadDataFrame:
             ),
         ):
             _ = time_series_read_dataframe(redis.ts, redis.key, [])
+
+    def _prepare_main_test(
+        self,
+        data: DataObject,
+        redis_key: str,
+        series_names: tuple[str, str],
+        strategy1: SearchStrategy[Number],
+        strategy2: SearchStrategy[Number],
+        key_timestamp_values: tuple[str, str, str, str],
+        time_zone: ZoneInfo,
+        dtype1: DataType,
+        dtype2: DataType,
+        /,
+    ) -> _TestTimeSeriesAddAndReadDataFramePrepare:
+        key1, key2 = keys = cast(
+            tuple[str, str], tuple(f"{redis_key}_{id_}" for id_ in series_names)
+        )
+        timestamp1, timestamp2 = data.draw(
+            tuples(valid_zoned_datetimes, valid_zoned_datetimes)
+        )
+        value11, value21 = data.draw(tuples(strategy1, strategy1))
+        value12, value22 = data.draw(tuples(strategy2, strategy2))
+        key, timestamp, column1, column2 = key_timestamp_values
+        schema = {
+            key: Utf8,
+            timestamp: zoned_datetime(time_zone=time_zone),
+            column1: dtype1,
+            column2: dtype2,
+        }
+        df = DataFrame(
+            [
+                (key1, timestamp1, value11, value12),
+                (key2, timestamp2, value21, value22),
+            ],
+            schema=schema,
+            orient="row",
+        )
+        return _TestTimeSeriesAddAndReadDataFramePrepare(
+            df=df,
+            key=key,
+            timestamp=timestamp,
+            keys=keys,
+            columns=(column1, column2),
+            time_zone=time_zone,
+            schema=schema,
+        )
 
 
 @dataclass(frozen=True, kw_only=True)
