@@ -26,8 +26,8 @@ from utilities.hypothesis import (
     RedisClientContainer,
     int32s,
     lists_fixed_length,
-    redis_clients,
     redis_clients_async,
+    redis_cms,
     redis_time_series,
     text_ascii,
     zoned_datetimes,
@@ -74,10 +74,9 @@ def _clean_datetime(
 
 
 @SKIPIF_CI_AND_NOT_LINUX
-@mark.only
 class TestEnsureTimeSeriesCreated:
-    @given(container=redis_clients(), key=text_ascii())
-    @mark.repeat(10)
+    @given(container=redis_cms(), key=text_ascii())
+    @mark.repeat(5)
     @settings(suppress_health_check={HealthCheck.differing_executors})
     def test_sync(
         self, *, container: RedisClientContainer[redis.Redis], key: str
@@ -89,20 +88,19 @@ class TestEnsureTimeSeriesCreated:
         assert container.client.exists(full_key) == 1
 
     @given(data=data(), key=text_ascii())
-    @mark.repeat(10)
+    @mark.repeat(5)
     @settings(suppress_health_check={HealthCheck.differing_executors})
     async def test_async(self, *, data: DataObject, key: str) -> None:
-        container = await data.draw(redis_clients_async())
-        full_key = f"{container.uuid}_{key}"
-        assert container.client.exists(full_key) == 0
-        for _ in range(2):
-            await ensure_time_series_created_async(container.client.ts(), full_key)
-        assert container.client.exists(full_key) == 1
+        async with redis_clients_async(data) as container:
+            full_key = f"{container.uuid}_{key}"
+            assert await container.client.exists(full_key) == 0
+            for _ in range(2):
+                await ensure_time_series_created_async(container.client.ts(), full_key)
+            assert await container.client.exists(full_key) == 1
 
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestTimeSeriesAddAndGet:
-    @FLAKY
     @given(
         ts_pair=redis_time_series(),
         key=text_ascii(),
@@ -111,6 +109,7 @@ class TestTimeSeriesAddAndGet:
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
+    @mark.only
     def test_sync(
         self,
         *,

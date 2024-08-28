@@ -88,7 +88,7 @@ async def ensure_time_series_created_async(
     """Ensure a time series/set of time series is/are created."""
     for key in set(keys):  # skipif-ci-and-not-linux
         try:
-            _ = ts.create(
+            _ = await ts.create(
                 key,
                 retention_msecs=retention_msecs,
                 uncompressed=uncompressed,
