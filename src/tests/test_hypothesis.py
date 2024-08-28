@@ -25,6 +25,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     timedeltas,
+    timezones,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
@@ -33,6 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
+from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
@@ -824,10 +826,14 @@ class TestTimeDeltas2W:
 class TestZonedDatetimes:
     @given(
         data=data(),
-        min_value=datetimes(),
-        max_value=datetimes(),
-        time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
+        min_value=datetimes(
+            timezones=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]) | none()
+        ),
+        max_value=timezones()
+        | datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        time_zone=timezones() | sampled_from([HONG_KONG, UTC, dt.UTC]),
     )
+    @settings(max_examples=10000, suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
@@ -836,6 +842,10 @@ class TestZonedDatetimes:
         max_value: dt.datetime,
         time_zone: ZoneInfo,
     ) -> None:
+        _ = assume(
+            (is_local_datetime(min_value) and is_local_datetime(max_value))
+            or (is_zoned_datetime(min_value) and is_zoned_datetime(max_value))
+        )
         _ = assume(min_value <= max_value)
         datetime = data.draw(
             zoned_datetimes(
@@ -843,8 +853,12 @@ class TestZonedDatetimes:
             )
         )
         assert datetime.tzinfo is time_zone
-        assert (
-            min_value.replace(tzinfo=time_zone)
-            <= datetime
-            <= max_value.replace(tzinfo=time_zone)
-        )
+        if min_value.tzinfo is None:
+            min_value_use = min_value.replace(tzinfo=time_zone)
+        else:
+            min_value_use = min_value.astimezone(time_zone)
+        if max_value.tzinfo is None:
+            max_value_use = max_value.replace(tzinfo=time_zone)
+        else:
+            max_value_use = max_value.astimezone(time_zone)
+        assert min_value_use <= datetime <= max_value_use

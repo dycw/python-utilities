@@ -44,7 +44,6 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
-from utilities.whenever import ensure_local_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -65,7 +64,6 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
-_INDEX_LENGTHS = integers(0, 10)
 
 
 async def aiosqlite_engines(
@@ -681,12 +679,19 @@ def zoned_datetimes(
         draw(max_value),
         draw(time_zone),
     )
-    _ = ensure_local_datetime(min_value_)
-    _ = ensure_local_datetime(max_value_)
+    if min_value_.tzinfo is not None:
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            min_value_ = min_value_.astimezone(time_zone_)
+        min_value_ = min_value_.replace(tzinfo=None)
+    if max_value_.tzinfo is not None:
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            max_value_ = max_value_.astimezone(time_zone_)
+        max_value_ = max_value_.replace(tzinfo=None)
     strategy = datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )
-    return draw(strategy)
+    datetime = draw(strategy)
+    return datetime.astimezone(time_zone_)
 
 
 @composite
