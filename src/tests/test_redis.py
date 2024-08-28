@@ -9,9 +9,7 @@ import redis.asyncio
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
     DataObject,
-    DrawFn,
     SearchStrategy,
-    composite,
     data,
     floats,
     sampled_from,
@@ -27,7 +25,6 @@ from utilities.datetime import EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
     YieldRedisContainer,
     int32s,
-    lift_draw,
     lists_fixed_length,
     redis_cms,
     redis_cms_async,
@@ -70,8 +67,6 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
-
-    from utilities.types import Number
 
 
 @SKIPIF_CI_AND_NOT_LINUX
@@ -290,10 +285,6 @@ class TestTimeSeriesAddAndReadDataFrame:
         full_id1, full_id2 = (f"{uuid}_{id_}" for id_ in [id1, id2])
         datetime1 = (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
         datetime2 = (datetimes(min_value=EPOCH_UTC).map(drop_microseconds),)
-        timestamp1, timestamp2 = (
-            _clean_datetime_zzzzzzzzz(d, time_zone=time_zone)
-            for d in [datetime1, datetime2]
-        )
         value11, value21 = data.draw(tuples(strategy1, strategy1))
         value12, value22 = data.draw(tuples(strategy2, strategy2))
         schema = {
@@ -389,12 +380,12 @@ class TestTimeSeriesAddAndReadDataFrame:
 @dataclass(frozen=True, kw_only=True)
 class _TestTimeSeriesMAddAndRangePrepare:
     keys: tuple[str, str]
-    triples = (triples,)
-    key = (key,)
-    timestamp = (timestamp,)
-    value = (value,)
-    values_or_df = (values_or_df,)
-    schema = (schema,)
+    triples: list[tuple[str, dt.datetime, Number]]
+    key: str
+    timestamp: str
+    value: str
+    values_or_df: list[tuple[str, dt.datetime, Number]] | DataFrame
+    schema: SchemaDict
 
 
 @mark.only
@@ -438,26 +429,23 @@ class TestTimeSeriesMAddAndRange:
         strategy: SearchStrategy[Number],
         dtype: PolarsDataType,
     ) -> None:
-        timestamps, values = self._run_main_test_step1(data, time_zone, strategy)
         with yield_redis() as redis:
-            keys, triples, key, timestamp, value, values_or_df, schema = (
-                self._run_main_test_step2(
-                    redis.key,
-                    case,
-                    series_names,
-                    timestamps,
-                    values,
-                    key_timestamp_value,
-                    time_zone,
-                    dtype,
-                )
+            prepared = self._prepare_main_test(
+                data,
+                redis.key,
+                series_names,
+                time_zone,
+                key_timestamp_value,
+                case,
+                strategy,
+                dtype,
             )
             res_madd = time_series_madd(
                 redis.ts,
-                values_or_df,
-                key=key,
-                timestamp=timestamp,
-                value=value,
+                prepared.values_or_df,
+                key=prepared.key,
+                timestamp=prepared.timestamp,
+                value=prepared.value,
                 duplicate_policy="last",
             )
             assert isinstance(res_madd, list)
@@ -465,17 +453,19 @@ class TestTimeSeriesMAddAndRange:
                 assert isinstance(i, int)
             res_range = time_series_range(
                 redis.ts,
-                keys,
-                output_key=key,
-                output_timestamp=timestamp,
+                prepared.keys,
+                output_key=prepared.key,
+                output_timestamp=prepared.timestamp,
                 output_time_zone=time_zone,
-                output_value=value,
+                output_value=prepared.value,
             )
-            check_polars_dataframe(res_range, height=2, schema_list=schema)
-            assert res_range.rows() == triples
+            check_polars_dataframe(res_range, height=2, schema_list=prepared.schema)
+            assert res_range.rows() == prepared.triples
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_key_missing(self, *, yield_redis: YieldRedisContainer) -> None:
+    def test_sync_error_madd_key_missing(
+        self, *, yield_redis: YieldRedisContainer
+    ) -> None:
         df = DataFrame()
         with (
             yield_redis() as redis,
@@ -486,7 +476,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_timestamp_missing(
+    def test_sync_error_madd_timestamp_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8})
@@ -500,7 +490,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_value_missing(
+    def test_sync_error_madd_value_missing(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
@@ -514,7 +504,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_key_is_not_utf8(
+    def test_sync_error_madd_key_is_not_utf8(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(
@@ -529,7 +519,7 @@ class TestTimeSeriesMAddAndRange:
             _ = time_series_madd(redis.ts, df)
 
     @given(yield_redis=redis_cms())
-    def test_error_madd_timestamp_is_not_a_zoned_datetime(
+    def test_sync_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, yield_redis: YieldRedisContainer
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
@@ -709,30 +699,26 @@ class TestTimeSeriesMAddAndRange:
         time_zone: ZoneInfo,
         key_timestamp_value: tuple[str, str, str],
         case: Literal["values", "DataFrame"],
-        strategy: SearchStrategy[Any],
+        strategy: SearchStrategy[Number],
         dtype: PolarsDataType,
     ) -> None:
-        timestamps, values = self._run_main_test_step1(data, time_zone, strategy)
         async with redis_cms_async(data) as redis:
-            keys = [f"{redis.key}_{case}_{name}" for name in series_names]
-            triples = list(zip(keys, timestamps, values, strict=True))
-            key, timestamp, value = key_timestamp_value
-            schema = {
-                key: Utf8,
-                timestamp: zoned_datetime(time_zone=time_zone),
-                value: dtype,
-            }
-            match case:
-                case "values":
-                    values_or_df = triples
-                case "DataFrame":
-                    values_or_df = DataFrame(triples, schema=schema, orient="row")
+            prepared = self._prepare_main_test(
+                data,
+                redis.key,
+                series_names,
+                time_zone,
+                key_timestamp_value,
+                case,
+                strategy,
+                dtype,
+            )
             res_madd = await time_series_madd_async(
                 redis.ts,
-                values_or_df,
-                key=key,
-                timestamp=timestamp,
-                value=value,
+                prepared.values_or_df,
+                key=prepared.key,
+                timestamp=prepared.timestamp,
+                value=prepared.value,
                 duplicate_policy="last",
             )
             assert isinstance(res_madd, list)
@@ -740,46 +726,94 @@ class TestTimeSeriesMAddAndRange:
                 assert isinstance(i, int)
             res_range = await time_series_range_async(
                 redis.ts,
-                keys,
-                output_key=key,
-                output_timestamp=timestamp,
+                prepared.keys,
+                output_key=prepared.key,
+                output_timestamp=prepared.timestamp,
                 output_time_zone=time_zone,
-                output_value=value,
+                output_value=prepared.value,
             )
-            check_polars_dataframe(res_range, height=2, schema_list=schema)
-            assert res_range.rows() == triples
+            check_polars_dataframe(res_range, height=2, schema_list=prepared.schema)
+            assert res_range.rows() == prepared.triples
+
+    @given(data=data())
+    async def test_async_error_madd_key_missing(self, *, data: DataObject) -> None:
+        df = DataFrame()
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesMAddError,
+                match="DataFrame must have a 'key' column; got .*",
+            ):
+                _ = await time_series_madd_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_madd_timestamp_missing(
+        self, *, data: DataObject
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8})
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesMAddError,
+                match="DataFrame must have a 'timestamp' column; got .*",
+            ):
+                _ = await time_series_madd_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_madd_value_missing(self, *, data: DataObject) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesMAddError,
+                match="DataFrame must have a 'value' column; got .*",
+            ):
+                _ = await time_series_madd_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_madd_key_is_not_utf8(self, *, data: DataObject) -> None:
+        df = DataFrame(
+            schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
+        )
+        async with redis_cms_async(data) as redis:
+            with raises(
+                TimeSeriesMAddError,
+                match="The 'key' column must be Utf8; got Boolean",
+            ):
+                _ = await time_series_madd_async(redis.ts, df)
+
+    @given(data=data())
+    async def test_async_error_madd_timestamp_is_not_a_zoned_datetime(
+        self, *, yield_redis: YieldRedisContainer
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
+        with (
+            yield_redis() as redis,
+            raises(
+                TimeSeriesMAddError,
+                match="The 'timestamp' column must be a zoned Datetime; got Boolean",
+            ),
+        ):
+            _ = time_series_madd(redis.ts, df)
 
     def _prepare_main_test(
         self,
         data: DataObject,
-        draw: DrawFn,
+        redis_key: str,
         series_names: tuple[str, str],
         time_zone: ZoneInfo,
         key_timestamp_value: tuple[str, str, str],
         case: Literal["values", "DataFrame"],
-        strategy: SearchStrategy[Any],
+        strategy: SearchStrategy[Number],
         dtype: PolarsDataType,
-        redis_key: str,
         /,
     ) -> _TestTimeSeriesMAddAndRangePrepare:
-        st_datetimes = zoned_datetimes(min_value=EPOCH_UTC, time_zone=time_zone).map(
-            drop_microseconds
-        )
-        from utilities.hypothesis import tuples as tuples2
-
-        timestamps = data.draw(tuples(st_datetimes, st_datetimes))
-        timestamps2 = data.draw(tuples(st_datetimes, st_datetimes, st_datetimes))
-        foo = lift_draw(data.draw)
-        timestamps = draw(tuples2(st_datetimes))
-        x = tuples2(st_datetimes, st_datetimes)
-        y = foo(x)
-        timestamps = data.draw(y)
-        timestamps2 = data.draw(tuples2(st_datetimes, st_datetimes, st_datetimes))
-        values = data.draw(tuples(strategy, strategy))
         keys = cast(
             tuple[str, str],
             tuple(f"{redis_key}_{case}_{name}" for name in series_names),
         )
+        st_datetimes = zoned_datetimes(min_value=EPOCH_UTC, time_zone=time_zone).map(
+            drop_microseconds
+        )
+        timestamps = data.draw(tuples(st_datetimes, st_datetimes))
+        values = data.draw(tuples(strategy, strategy))
         triples = list(zip(keys, timestamps, values, strict=True))
         key, timestamp, value = key_timestamp_value
         schema = {
