@@ -18,7 +18,6 @@ from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject as _DataObject
 from hypothesis.strategies import (
-    DrawFn,
     SearchStrategy,
     booleans,
     characters,
@@ -115,11 +114,6 @@ class DataObject(_DataObject):
         label: Any = None,
     ) -> tuple[_T1, _T2, _T3, _T4, _T5]: ...
     @overload
-    def draw(
-        self, strategy: SearchStrategy[type[_T]], label: Any = None
-    ) -> type[_T]: ...
-    @overload
-    @overload
     def draw(self, strategy: SearchStrategy[_T], label: Any = None) -> _T: ...
     @override
     def draw(self, strategy: SearchStrategy[_T], label: Any = None) -> _T:
@@ -187,6 +181,51 @@ def bool_arrays(
         bool, draw(shape_use), elements=booleans(), fill=fill, unique=draw(unique)
     )
     return draw(strategy)
+
+
+class DrawFn(Protocol):
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[Mapping[_K, _V]], label: Any = None
+    ) -> Mapping[_K, _V]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[frozenset[_T]], label: Any = None
+    ) -> frozenset[_T]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[list[_T]], label: Any = None
+    ) -> list[_T]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[set[_T]], label: Any = None
+    ) -> set[_T]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[tuple[_T1]], label: Any = None
+    ) -> tuple[_T1]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[tuple[_T1, _T2]], label: Any = None
+    ) -> tuple[_T1, _T2]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[tuple[_T1, _T2, _T3]], label: Any = None
+    ) -> tuple[_T1, _T2, _T3]: ...
+    @overload
+    def __call__(
+        self, strategy: SearchStrategy[tuple[_T1, _T2, _T3, _T4]], label: Any = None
+    ) -> tuple[_T1, _T2, _T3, _T4]: ...
+    @overload
+    def __call__(
+        self,
+        strategy: SearchStrategy[tuple[_T1, _T2, _T3, _T4, _T5]],
+        label: Any = None,
+    ) -> tuple[_T1, _T2, _T3, _T4, _T5]: ...
+    @overload
+    def __call__(self, strategy: SearchStrategy[_T], label: Any = None) -> _T: ...
+    def __call__(self, strategy: SearchStrategy[_T], label: Any = None) -> _T:
+        raise NotImplementedError
 
 
 @composite
