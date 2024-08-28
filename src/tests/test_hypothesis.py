@@ -7,25 +7,29 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
+import hypothesis.strategies
 import redis.asyncio
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
-    DataObject,
     DrawFn,
     booleans,
     composite,
     data,
     datetimes,
+    dictionaries,
     floats,
     integers,
     just,
+    lists,
     none,
     sampled_from,
     sets,
     timedeltas,
+    tuples,
 )
+from hypothesis.strategies._internal.core import frozensets
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
@@ -33,9 +37,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
+from utilities.functions import identity
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
+    DataObject,
     Shape,
+    _MaybeDrawFn,
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
@@ -140,6 +147,51 @@ class TestBoolArrays:
         array = data.draw(bool_arrays(shape=shape))
         assert array.dtype == bool
         assert array.shape == shape
+
+
+class TestDataObjectAndMaybeDrawFn:
+    @given(data=data())
+    def test_original(self, *, data: hypothesis.strategies.DataObject) -> None:
+        reveal_type = identity  # comment this to actually reveal types
+        reveal_type(data.draw(integers()))
+        reveal_type(data.draw(dictionaries(integers(), integers())))
+        reveal_type(data.draw(frozensets(integers())))
+        reveal_type(data.draw(lists(integers())))
+        reveal_type(data.draw(sampled_from([True, False])))
+        reveal_type(data.draw(sets(integers())))
+        reveal_type(data.draw(tuples(integers())))
+        reveal_type(data.draw(tuples(integers(), integers())))
+
+    @given(data=data())
+    def test_new(self, *, data: DataObject) -> None:
+        reveal_type = identity  # comment this to actually reveal types
+        reveal_type(data.draw(integers()))
+        reveal_type(data.draw(dictionaries(integers(), integers())))
+        reveal_type(data.draw(frozensets(integers())))
+        reveal_type(data.draw(lists(integers())))
+        reveal_type(data.draw(sampled_from([True, False])))
+        reveal_type(data.draw(sets(integers())))
+        reveal_type(data.draw(tuples(integers())))
+        reveal_type(data.draw(tuples(integers(), integers())))
+
+    @given(draw=none())
+    def test_maybe_draw_fn(self, draw: _MaybeDrawFn, /) -> None:
+        reveal_type = identity  # comment this to actually reveal types
+        reveal_type(draw(0))
+        reveal_type(draw({0: 0}))
+        reveal_type(draw(frozenset([0])))
+        reveal_type(draw([0]))
+        reveal_type(draw({0}))
+        reveal_type(draw((0,)))
+        reveal_type(draw((0, 0)))
+        reveal_type(draw(integers()))
+        reveal_type(draw(dictionaries(integers(), integers())))
+        reveal_type(draw(frozensets(integers())))
+        reveal_type(draw(lists(integers())))
+        reveal_type(draw(sampled_from([True, False])))
+        reveal_type(draw(sets(integers())))
+        reveal_type(draw(tuples(integers())))
+        reveal_type(draw(tuples(integers(), integers())))
 
 
 class TestDurations:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import Collection, Hashable, Iterable, Iterator
+from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from datetime import timezone
 from enum import Enum, auto
@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, ov
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import DataObject as _DataObject
 from hypothesis.strategies import (
-    DataObject,
     DrawFn,
     SearchStrategy,
     booleans,
@@ -62,10 +62,72 @@ if TYPE_CHECKING:
     from utilities.types import Duration, Number
 
 
+_K = TypeVar("_K")
 _T = TypeVar("_T")
+_V = TypeVar("_V")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
 _INDEX_LENGTHS = integers(0, 10)
+
+
+class DataObject(_DataObject):
+    """More generously typed version of `DataObject`."""
+
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[Mapping[_K, _V]], label: Any = None
+    ) -> Mapping[_K, _V]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[frozenset[_T]], label: Any = None
+    ) -> frozenset[_T]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[list[_T]], label: Any = None
+    ) -> list[_T]: ...
+    @overload
+    def draw(self, strategy: SearchStrategy[set[_T]], label: Any = None) -> set[_T]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[tuple[_T1]], label: Any = None
+    ) -> tuple[_T1]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[tuple[_T1, _T2]], label: Any = None
+    ) -> tuple[_T1, _T2]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[tuple[_T1, _T2, _T3]], label: Any = None
+    ) -> tuple[_T1, _T2, _T3]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[tuple[_T1, _T2, _T3, _T4]], label: Any = None
+    ) -> tuple[_T1, _T2, _T3, _T4]: ...
+    @overload
+    def draw(
+        self,
+        strategy: SearchStrategy[tuple[_T1, _T2, _T3, _T4, _T5]],
+        label: Any = None,
+    ) -> tuple[_T1, _T2, _T3, _T4, _T5]: ...
+    # @overload
+    # def draw(
+    #     self, strategy: SearchStrategy[Iterable[_T]], label: Any = None
+    # ) -> Iterable[_T]: ...
+    @overload
+    def draw(
+        self, strategy: SearchStrategy[type[_T]], label: Any = None
+    ) -> type[_T]: ...
+    @overload
+    @overload
+    def draw(self, strategy: SearchStrategy[_T], label: Any = None) -> _T: ...
+    @override
+    def draw(self, strategy: SearchStrategy[_T], label: Any = None) -> _T:
+        return super().draw(strategy, label=label)
 
 
 async def aiosqlite_engines(
@@ -327,22 +389,14 @@ def int64s(
     return draw(integers(min_value_, max_value_))
 
 
-_MDF = TypeVar("_MDF")
-
-
 class _MaybeDrawFn(Protocol):
-    @overload
-    def __call__(self, obj: SearchStrategy[_MDF], /) -> _MDF: ...
-    @overload
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF: ...
-    def __call__(self, obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
-        raise NotImplementedError(obj)  # pragma: no cover
+    def __call__(self, obj: MaybeSearchStrategy[_T], /) -> _T: ...
 
 
 def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
     """Lift the `draw` function to handle non-`SearchStrategy` types."""
 
-    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+    def func(obj: MaybeSearchStrategy[_T], /) -> _T:
         return draw(obj) if isinstance(obj, SearchStrategy) else obj
 
     return cast(Any, func)
@@ -708,6 +762,7 @@ def _draw_text(
 
 
 __all__ = [
+    "DataObject",
     "MaybeSearchStrategy",
     "Shape",
     "aiosqlite_engines",
