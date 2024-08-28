@@ -162,6 +162,58 @@ def time_series_add(
                 raise
 
 
+async def time_series_add_async(
+    ts: TimeSeries,
+    key: KeyT,
+    timestamp: dt.datetime,
+    value: Number,
+    /,
+    *,
+    retention_msecs: int | None = None,
+    uncompressed: bool | None = False,
+    labels: dict[str, str] | None = None,
+    chunk_size: int | None = None,
+    duplicate_policy: DuplicatePolicy | None = None,
+    ignore_max_time_diff: int | None = None,
+    ignore_max_val_diff: float | None = None,
+    on_duplicate: str | None = None,
+) -> int:
+    """Append a sample to a time series."""
+    milliseconds = milliseconds_since_epoch(  # skipif-ci-and-not-linux
+        timestamp, strict=True
+    )
+    try:  # skipif-ci-and-not-linux
+        return await ts.add(
+            key,
+            milliseconds,
+            value,
+            retention_msecs=retention_msecs,
+            uncompressed=uncompressed,
+            labels=labels,
+            chunk_size=chunk_size,
+            duplicate_policy=duplicate_policy,
+            ignore_max_time_diff=ignore_max_time_diff,
+            ignore_max_val_diff=ignore_max_val_diff,
+            on_duplicate=on_duplicate,
+        )
+    except ResponseError as error:  # skipif-ci-and-not-linux
+        match _classify_response_error(error):
+            case "error at upsert":
+                raise _TimeSeriesAddErrorAtUpsertError(
+                    timestamp=timestamp, value=value
+                ) from None
+            case "invalid timestamp":
+                raise _TimeSeriesAddInvalidTimestampError(
+                    timestamp=timestamp, value=value
+                ) from None
+            case "invalid value":
+                raise _TimeSeriesAddInvalidValueError(
+                    timestamp=timestamp, value=value
+                ) from None
+            case "invalid key":  # pragma: no cover
+                raise
+
+
 @dataclass(kw_only=True)
 class TimeSeriesAddError(Exception):
     timestamp: dt.datetime
@@ -342,6 +394,25 @@ def time_series_get(
 ) -> tuple[dt.datetime, float]:
     """Get the last sample of a time series."""
     milliseconds, value = ts.get(key, latest=latest)  # skipif-ci-and-not-linux
+    return _time_series_parse_millliseconds(  # skipif-ci-and-not-linux
+        milliseconds, value
+    )
+
+
+async def time_series_get_async(
+    ts: TimeSeries, key: KeyT, /, *, latest: bool | None = False
+) -> tuple[dt.datetime, float]:
+    """Get the last sample of a time series."""
+    milliseconds, value = await ts.get(key, latest=latest)  # skipif-ci-and-not-linux
+    return _time_series_parse_millliseconds(  # skipif-ci-and-not-linux
+        milliseconds, value
+    )
+
+
+def _time_series_parse_millliseconds(
+    milliseconds: int, value: float, /
+) -> tuple[dt.datetime, float]:
+    """Get the last sample of a time series."""
     timestamp = milliseconds_since_epoch_to_datetime(  # skipif-ci-and-not-linux
         milliseconds
     )
@@ -1070,8 +1141,10 @@ __all__ = [
     "TimeSeriesReadDataFrameError",
     "ensure_time_series_created",
     "time_series_add",
+    "time_series_add_async",
     "time_series_add_dataframe",
     "time_series_get",
+    "time_series_get_async",
     "time_series_madd",
     "time_series_range",
     "time_series_read_dataframe",

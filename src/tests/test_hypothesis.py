@@ -37,6 +37,7 @@ from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     Shape,
+    YieldRedisContainer,
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
@@ -466,7 +467,7 @@ class TestRandomStates:
 class TestRedisCMs:
     @given(yield_redis=redis_cms(), value=integers())
     def test_sync_core(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
-        with yield_redis as redis:
+        with yield_redis() as redis:
             assert not redis.client.exists(redis.key)
             _ = redis.client.set(redis.key, value)
             result = int(cast(str, redis.client.get(redis.key)))
@@ -474,7 +475,7 @@ class TestRedisCMs:
 
     @given(yield_redis=redis_cms(), value=int32s())
     def test_sync_ts(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
-        with yield_redis as redis:
+        with yield_redis() as redis:
             assert not redis.client.exists(redis.key)
             _ = redis.ts.add(redis.key, "*", value)
             res_timestamp, res_value = redis.ts.get(redis.key)

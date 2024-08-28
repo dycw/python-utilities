@@ -485,7 +485,7 @@ def redis_cms_async(
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
 
-    return yield_redis_async
+    return yield_redis_async()
 
 
 def setup_hypothesis_profiles(

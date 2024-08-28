@@ -41,8 +41,10 @@ from utilities.redis import (
     ensure_time_series_created,
     ensure_time_series_created_async,
     time_series_add,
+    time_series_add_async,
     time_series_add_dataframe,
     time_series_get,
+    time_series_get_async,
     time_series_madd,
     time_series_range,
     time_series_read_dataframe,
@@ -91,11 +93,12 @@ class TestEnsureTimeSeriesCreated:
 
 
 @SKIPIF_CI_AND_NOT_LINUX
+@mark.only
 class TestTimeSeriesAddAndGet:
     @given(
         yield_redis=redis_cms(),
-        timestamp=datetimes(
-            min_value=EPOCH_NAIVE, timezones=sampled_from([HONG_KONG, UTC])
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
         ).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
@@ -133,7 +136,6 @@ class TestTimeSeriesAddAndGet:
         timestamp=zoned_datetimes(max_value=EPOCH_NAIVE).map(drop_microseconds),
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
     def test_sync_invalid_timestamp(
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: float
     ) -> None:
@@ -155,18 +157,40 @@ class TestTimeSeriesAddAndGet:
         ).map(drop_microseconds),
     )
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    def test_invalid_value(
+    def test_sync_invalid_value(
         self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: float
     ) -> None:
-        ts, uuid = ts_pair
-        with raises(TimeSeriesAddError, match="Invalid value; got .*"):
+        with (
+            yield_redis() as redis,
+            raises(TimeSeriesAddError, match="Invalid value; got .*"),
+        ):
             _ = time_series_add(
-                ts,
-                f"{uuid}_{key}",
+                redis.ts,
+                redis.key,
                 _clean_datetime(timestamp),
                 value,
                 duplicate_policy="last",
             )
+
+    @given(
+        data=data(),
+        timestamp=zoned_datetimes(
+            min_value=EPOCH_NAIVE, time_zone=sampled_from([HONG_KONG, UTC])
+        ).map(drop_microseconds),
+        value=int32s() | floats(allow_nan=False, allow_infinity=False),
+    )
+    async def test_async(
+        self, *, data: DataObject, timestamp: dt.datetime, value: float
+    ) -> None:
+        timestamp = _clean_datetime(timestamp)
+        async with redis_cms_async(data) as redis:
+            res_add = await time_series_add_async(
+                redis.ts, redis.key, timestamp, value, duplicate_policy="last"
+            )
+            assert isinstance(res_add, int)
+            res_timestamp, res_value = await time_series_get_async(redis.ts, redis.key)
+            assert res_timestamp == timestamp.astimezone(UTC)
+            assert res_value == value
 
 
 @SKIPIF_CI_AND_NOT_LINUX
