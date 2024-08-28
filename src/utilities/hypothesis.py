@@ -13,6 +13,7 @@ from re import search
 from string import ascii_letters, printable
 from subprocess import run
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
+from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
@@ -44,12 +45,10 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
-from utilities.whenever import ensure_local_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from uuid import UUID
-    from zoneinfo import ZoneInfo
 
     import redis
     from hypothesis.database import ExampleDatabase
@@ -65,7 +64,6 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 MaybeSearchStrategy = _T | SearchStrategy[_T]
 Shape = int | tuple[int, ...]
-_INDEX_LENGTHS = integers(0, 10)
 
 
 async def aiosqlite_engines(
@@ -665,6 +663,10 @@ def timedeltas_2w(
     return draw(timedeltas(min_value=min_value_, max_value=max_value_))
 
 
+_ZONED_DATETIMES_LEFT_MOST = ZoneInfo("Asia/Manila")
+_ZONED_DATETIMES_RIGHT_MOST = ZoneInfo("Pacific/Kiritimati")
+
+
 @composite
 def zoned_datetimes(
     _draw: DrawFn,
@@ -681,12 +683,25 @@ def zoned_datetimes(
         draw(max_value),
         draw(time_zone),
     )
-    _ = ensure_local_datetime(min_value_)
-    _ = ensure_local_datetime(max_value_)
+    if min_value_.tzinfo is not None:
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            min_value_ = min_value_.astimezone(time_zone_)
+        min_value_ = min_value_.replace(tzinfo=None)
+    if max_value_.tzinfo is not None:
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            max_value_ = max_value_.astimezone(time_zone_)
+        max_value_ = max_value_.replace(tzinfo=None)
     strategy = datetimes(
         min_value=min_value_, max_value=max_value_, timezones=just(time_zone_)
     )
-    return draw(strategy)
+    datetime = draw(strategy)
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(_ZONED_DATETIMES_LEFT_MOST)  # for dt.datetime.min
+    with assume_does_not_raise(OverflowError, match="date value out of range"):
+        _ = datetime.astimezone(  # for dt.datetime.max
+            _ZONED_DATETIMES_RIGHT_MOST
+        )
+    return datetime.astimezone(time_zone_)
 
 
 @composite

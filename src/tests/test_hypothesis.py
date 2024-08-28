@@ -25,6 +25,7 @@ from hypothesis.strategies import (
     sampled_from,
     sets,
     timedeltas,
+    timezones,
 )
 from numpy import inf, int64, isfinite, isinf, isnan, ravel, rint
 from pytest import mark, param, raises
@@ -33,8 +34,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
+from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
+    _ZONED_DATETIMES_LEFT_MOST,
+    _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
     aiosqlite_engines,
     assume_does_not_raise,
@@ -84,7 +88,6 @@ from utilities.whenever import (
     serialize_duration,
     serialize_timedelta,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -824,27 +827,57 @@ class TestTimeDeltas2W:
 class TestZonedDatetimes:
     @given(
         data=data(),
-        min_value=datetimes(),
-        max_value=datetimes(),
-        time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]),
+        min_value=datetimes(timezones=timezones() | just(dt.UTC) | none()),
+        max_value=timezones() | datetimes(timezones=just(dt.UTC) | none()),
+        time_zone1=timezones() | just(dt.UTC),
+        time_zone2=timezones() | just(dt.UTC),
     )
+    @settings(suppress_health_check={HealthCheck.filter_too_much})
     def test_main(
         self,
         *,
         data: DataObject,
         min_value: dt.datetime,
         max_value: dt.datetime,
-        time_zone: ZoneInfo,
+        time_zone1: ZoneInfo,
+        time_zone2: ZoneInfo,
     ) -> None:
+        _ = assume(
+            (is_local_datetime(min_value) and is_local_datetime(max_value))
+            or (is_zoned_datetime(min_value) and is_zoned_datetime(max_value))
+        )
         _ = assume(min_value <= max_value)
         datetime = data.draw(
             zoned_datetimes(
-                min_value=min_value, max_value=max_value, time_zone=time_zone
+                min_value=min_value, max_value=max_value, time_zone=time_zone1
             )
         )
-        assert datetime.tzinfo is time_zone
-        assert (
-            min_value.replace(tzinfo=time_zone)
-            <= datetime
-            <= max_value.replace(tzinfo=time_zone)
-        )
+        assert datetime.tzinfo is time_zone1
+        if min_value.tzinfo is None:
+            min_value_use = min_value.replace(tzinfo=time_zone1)
+        else:
+            min_value_use = min_value.astimezone(time_zone1)
+        if max_value.tzinfo is None:
+            max_value_use = max_value.replace(tzinfo=time_zone1)
+        else:
+            max_value_use = max_value.astimezone(time_zone1)
+        assert min_value_use <= datetime <= max_value_use
+        _ = datetime.astimezone(time_zone2)
+
+    @given(
+        time_zone=timezones()
+        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
+        | just(dt.UTC)
+    )
+    def test_min(self, *, time_zone: ZoneInfo) -> None:
+        datetime = dt.datetime.min.replace(tzinfo=_ZONED_DATETIMES_LEFT_MOST)
+        _ = datetime.astimezone(time_zone)
+
+    @given(
+        time_zone=timezones()
+        | sampled_from([_ZONED_DATETIMES_LEFT_MOST, _ZONED_DATETIMES_RIGHT_MOST])
+        | just(dt.UTC)
+    )
+    def test_max(self, *, time_zone: ZoneInfo) -> None:
+        datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
+        _ = datetime.astimezone(time_zone)
