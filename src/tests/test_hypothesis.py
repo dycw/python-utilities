@@ -13,7 +13,6 @@ from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
 from hypothesis.strategies import (
-    DrawFn,
     booleans,
     composite,
     data,
@@ -41,6 +40,7 @@ from utilities.functions import identity
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
     DataObject,
+    DrawFn,
     Shape,
     _MaybeDrawFn,
     aiosqlite_engines,
@@ -151,44 +151,78 @@ class TestBoolArrays:
 
 class TestDataObjectAndMaybeDrawFn:
     @given(data=data())
-    def test_original(self, *, data: hypothesis.strategies.DataObject) -> None:
+    def test_data_original(self, *, data: hypothesis.strategies.DataObject) -> None:
         reveal_type = identity  # comment this to actually reveal types
         reveal_type(data.draw(integers()))
         reveal_type(data.draw(dictionaries(integers(), integers())))
         reveal_type(data.draw(frozensets(integers())))
         reveal_type(data.draw(lists(integers())))
-        reveal_type(data.draw(sampled_from([True, False])))
+        reveal_type(data.draw(sampled_from([1, 2, 3])))
         reveal_type(data.draw(sets(integers())))
         reveal_type(data.draw(tuples(integers())))
         reveal_type(data.draw(tuples(integers(), integers())))
 
     @given(data=data())
-    def test_new(self, *, data: DataObject) -> None:
+    def test_data_new(self, *, data: DataObject) -> None:
         reveal_type = identity  # comment this to actually reveal types
         reveal_type(data.draw(integers()))
         reveal_type(data.draw(dictionaries(integers(), integers())))
         reveal_type(data.draw(frozensets(integers())))
         reveal_type(data.draw(lists(integers())))
-        reveal_type(data.draw(sampled_from([True, False])))
+        reveal_type(data.draw(sampled_from([1, 2, 3])))
         reveal_type(data.draw(sets(integers())))
         reveal_type(data.draw(tuples(integers())))
         reveal_type(data.draw(tuples(integers(), integers())))
 
-    @given(draw=none())
-    def test_maybe_draw_fn(self, draw: _MaybeDrawFn, /) -> None:
+    @given(data=data())
+    def test_draw_original(self, *, data: hypothesis.strategies.DataObject) -> None:
         reveal_type = identity  # comment this to actually reveal types
-        reveal_type(draw(0))
-        reveal_type(draw({0: 0}))
-        reveal_type(draw(frozenset([0])))
-        reveal_type(draw([0]))
-        reveal_type(draw({0}))
-        reveal_type(draw((0,)))
-        reveal_type(draw((0, 0)))
+        draw: hypothesis.strategies.DrawFn = cast(Any, data.draw)
         reveal_type(draw(integers()))
         reveal_type(draw(dictionaries(integers(), integers())))
         reveal_type(draw(frozensets(integers())))
         reveal_type(draw(lists(integers())))
-        reveal_type(draw(sampled_from([True, False])))
+        reveal_type(draw(sampled_from([1, 2, 3])))
+        reveal_type(draw(sets(integers())))
+        reveal_type(draw(tuples(integers())))
+        reveal_type(draw(tuples(integers(), integers())))
+
+    @given(data=data())
+    def test_draw_new(self, *, data: DataObject) -> None:
+        draw: DrawFn = cast(Any, data.draw)
+        reveal_type = identity  # comment this to actually reveal types
+        reveal_type(draw(integers()))
+        reveal_type(draw(dictionaries(integers(), integers())))
+        reveal_type(draw(frozensets(integers())))
+        reveal_type(draw(lists(integers())))
+        reveal_type(draw(sampled_from([1, 2, 3])))
+        reveal_type(draw(sets(integers())))
+        reveal_type(draw(tuples(integers())))
+        reveal_type(draw(tuples(integers(), integers())))
+
+    @given(data=data())
+    def test_maybe_draw_fn(self, *, data: DataObject) -> None:
+        draw: _MaybeDrawFn = cast(Any, data.draw)
+        reveal_type = identity  # comment this to actually reveal types
+        with raises(InvalidArgument):
+            reveal_type(draw(0))
+        with raises(InvalidArgument):
+            reveal_type(draw({0: 0}))
+        with raises(InvalidArgument):
+            reveal_type(draw(frozenset([0])))
+        with raises(InvalidArgument):
+            reveal_type(draw([0]))
+        with raises(InvalidArgument):
+            reveal_type(draw({0}))
+        with raises(InvalidArgument):
+            reveal_type(draw((0,)))
+        with raises(InvalidArgument):
+            reveal_type(draw((0, 0)))
+        reveal_type(draw(integers()))
+        reveal_type(draw(dictionaries(integers(), integers())))
+        reveal_type(draw(frozensets(integers())))
+        reveal_type(draw(lists(integers())))
+        reveal_type(draw(sampled_from([1, 2, 3])))
         reveal_type(draw(sets(integers())))
         reveal_type(draw(tuples(integers())))
         reveal_type(draw(tuples(integers(), integers())))

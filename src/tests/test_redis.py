@@ -7,7 +7,6 @@ import redis
 import redis.asyncio
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis.strategies import (
-    DataObject,
     SearchStrategy,
     data,
     datetimes,
@@ -23,7 +22,9 @@ from redis.commands.timeseries import TimeSeries
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import EPOCH_NAIVE, EPOCH_UTC, drop_microseconds
 from utilities.hypothesis import (
+    DataObject,
     int32s,
+    lift_draw,
     lists_fixed_length,
     redis_clients,
     redis_time_series,
@@ -223,7 +224,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         datetime1: dt.datetime,
         datetime2: dt.datetime,
         time_zone: ZoneInfo,
-        strategy1: SearchStrategy[Any],
+        strategy1: SearchStrategy[int],
         dtype1: DataType,
         strategy2: SearchStrategy[Any],
         dtype2: DataType,

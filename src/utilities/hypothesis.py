@@ -6,6 +6,7 @@ from collections.abc import Collection, Hashable, Iterable, Iterator, Mapping
 from contextlib import contextmanager, suppress
 from datetime import timezone
 from enum import Enum, auto
+from inspect import Signature
 from math import ceil, floor, inf, isfinite, nan
 from os import environ
 from pathlib import Path
@@ -18,6 +19,7 @@ from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import DataObject as _DataObject
 from hypothesis.strategies import (
+    DrawFn,
     SearchStrategy,
     booleans,
     characters,
@@ -183,7 +185,11 @@ def bool_arrays(
     return draw(strategy)
 
 
-class DrawFn(Protocol):
+class DrawFn2:
+    def __init__(self) -> None:
+        msg = "Protocols cannot be instantiated"
+        raise TypeError(msg)  # pragma: no cover
+
     @overload
     def __call__(
         self, strategy: SearchStrategy[Mapping[_K, _V]], label: Any = None
@@ -226,6 +232,8 @@ class DrawFn(Protocol):
     def __call__(self, strategy: SearchStrategy[_T], label: Any = None) -> _T: ...
     def __call__(self, strategy: SearchStrategy[_T], label: Any = None) -> _T:
         raise NotImplementedError
+
+    __signature__: Signature = Signature(parameters=[])
 
 
 @composite
@@ -425,6 +433,10 @@ def int64s(
 
 
 class _MaybeDrawFn(Protocol):
+    @overload
+    def __call__(self, obj: SearchStrategy[_T], /) -> _T: ...
+    @overload
+    def __call__(self, obj: MaybeSearchStrategy[_T], /) -> _T: ...
     def __call__(self, obj: MaybeSearchStrategy[_T], /) -> _T: ...
 
 
