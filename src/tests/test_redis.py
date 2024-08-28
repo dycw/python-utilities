@@ -66,9 +66,6 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 
-_T = TypeVar("_T")
-
-
 @SKIPIF_CI_AND_NOT_LINUX
 class TestEnsureTimeSeriesCreated:
     @given(yield_redis=redis_cms())
@@ -623,25 +620,19 @@ class TestTimeSeriesMAddAndRange:
         ):
             _ = time_series_range(redis.ts, redis.key)
 
-    @given(
-        yield_redis=redis_cms(),
-        timestamp=zoned_datetimes(
-            min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
-        ).map(drop_microseconds),
-        value=int32s(),
-    )
-    def test_error_range_key_with_int64_and_float64(
-        self, *, yield_redis: YieldRedisContainer, timestamp: dt.datetime, value: int
+    @given(data=data(), yield_redis=redis_cms())
+    def test_sync_error_range_key_with_int64_and_float64(
+        self,
+        *,
+        data: DataObject,
+        yield_redis: YieldRedisContainer,
     ) -> None:
         with yield_redis() as redis:
-            _ = time_series_madd(
-                redis.ts, [(redis.key, timestamp, value)], duplicate_policy="last"
+            values = self._prepare_test_error_range_key_with_int64_and_float64(
+                data, redis.key
             )
-            _ = time_series_madd(
-                redis.ts,
-                [(redis.key, timestamp, float(value))],
-                duplicate_policy="last",
-            )
+            for vals in values:
+                _ = time_series_madd(redis.ts, vals)
             with raises(
                 TimeSeriesRangeError,
                 match="The key '.*' contains both Int64 and Float64 data",
@@ -822,13 +813,29 @@ class TestTimeSeriesMAddAndRange:
             with raises(
                 TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
             ):
-                _ = await time_series_madd_async(redis.ts, values_or_df)
+                _ = await time_series_range_async(redis.ts, [])
 
     @given(data=data())
     async def test_async_error_range_invalid_key(self, *, data: DataObject) -> None:
         async with redis_cms_async(data) as redis:
             with raises(TimeSeriesRangeError, match="The key '.*' must exist"):
-                _ = await time_series_madd_async(redis.ts, values_or_df)
+                _ = await time_series_range_async(redis.ts, redis.key)
+
+    @given(data=data())
+    async def test_async_error_range_key_with_int64_and_float64(
+        self, *, data: DataObject
+    ) -> None:
+        async with redis_cms_async(data) as redis:
+            values = self._prepare_test_error_range_key_with_int64_and_float64(
+                data, redis.key
+            )
+            for vals in values:
+                _ = await time_series_madd_async(redis.ts, vals)
+            with raises(
+                TimeSeriesRangeError,
+                match="The key '.*' contains both Int64 and Float64 data",
+            ):
+                _ = await time_series_range_async(redis.ts, redis.key)
 
     def _prepare_main_test(
         self,
@@ -925,6 +932,19 @@ class TestTimeSeriesMAddAndRange:
                 return values
             case "DataFrame":
                 return DataFrame(values, schema=self.float_schema, orient="row")
+
+    def _prepare_test_error_range_key_with_int64_and_float64(
+        self, data: DataObject, key: str, /
+    ) -> tuple[
+        list[tuple[str, dt.datetime, int]], list[tuple[str, dt.datetime, float]]
+    ]:
+        timestamp = data.draw(
+            zoned_datetimes(
+                min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC])
+            ).map(drop_microseconds)
+        )
+        value = data.draw(int32s())
+        return [(key, timestamp, value)], [(key, timestamp, float(value))]
 
 
 class TestYieldClient:
