@@ -4,6 +4,7 @@ import asyncio
 import logging
 import sys
 import time
+from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
 from typing import TYPE_CHECKING
@@ -12,7 +13,6 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.logging import LogLevel
 from utilities.reprlib import custom_repr
 
 if TYPE_CHECKING:
@@ -48,6 +48,19 @@ class InterceptHandler(Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(  # pragma: no cover
             level, record.getMessage()
         )
+
+
+@unique
+class LogLevel(StrEnum):
+    """An enumeration of the logging levels."""
+
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    SUCCESS = "SUCCESS"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 
 catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
@@ -244,6 +257,7 @@ class _LogFromDepthUpError(Exception):
 
 __all__ = [
     "InterceptHandler",
+    "LogLevel",
     "catch_message",
     "except_hook",
     "format_record",
