@@ -4,22 +4,26 @@ import asyncio
 import logging
 import sys
 import time
+from asyncio import AbstractEventLoop
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
-from loguru import logger
+from loguru import Message, logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.reprlib import custom_mapping_repr
+from utilities.slack_sdk import send_slack_async
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
     from types import TracebackType
 
     from loguru import Record
 
+    from utilities.asyncio import Coroutine1, MaybeCoroutine1
     from utilities.types import Duration
 
 
@@ -105,13 +109,12 @@ def format_record_json(record: Record, /) -> str:
     return " | ".join(parts) + "\n"
 
 
-def _log_call_bind_and_log(
-    func: Callable[..., Any], level: LogLevel, /, *args: Any, **kwargs: Any
-) -> None:
-    func_name = get_func_name(func)
-    key = f"<{func_name}>"
-    bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    _log_from_depth_up(logger, 3, level, "", exception=None, **{key: bound_args})
+def format_record_slack(record: Record, /) -> str:
+    """Format a record for Slack."""
+    parts = []
+    if "json" in record["extra"]:
+        parts.append("{extra[json]}")
+    return " | ".join(parts) + "\n"
 
 
 def logged_sleep_sync(
@@ -136,6 +139,56 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
+@overload
+def make_slack_sink(
+    url: str, /, *, loop: AbstractEventLoop
+) -> Callable[..., Coroutine1[None]]: ...
+@overload
+def make_slack_sink(url: str, /, *, loop: None = ...) -> Callable[..., None]: ...
+def make_slack_sink(
+    url: str, /, *, loop: AbstractEventLoop | None = None
+) -> Callable[..., MaybeCoroutine1[None]]:
+    """Make a `slack` sink."""
+    if loop is None:
+        from utilities.slack_sdk import send_slack_sync
+
+        def send_to_slack_sync(message: Message, /) -> None:
+            send_slack_sync(message, url=url)
+
+    async def send_to_slack_async(message: Message, /) -> None:
+        await send_slack_async(message, url=url)
+
+    return send_to_slack_async
+
+    messages: queue.Queue[Message] = queue.Queue()
+    _ = logger.add(
+        partial(_put_message_sync, messages=messages),
+        filter=_filter_levels(warning_or_error),
+        format=format_record,
+        backtrace=False,
+        diagnose=False,
+    )
+    task = run_in_background(
+        _process_slack_message_queue_sync,
+        warning_or_error=warning_or_error,
+        messages=messages,
+    )
+    _SLACK_BACKGROUND_OR_ASYNCIO_TASKS.append(task)
+    return None
+
+    # _add_slack_sink_async(loop, warning_or_error=warning_or_error)
+
+
+def _send_messages_to_slack_sync(
+    messages: Iterable[str], /, *, warning_or_error: WarningOrError
+) -> None:
+    """Send a set of messages to Slack."""
+    text = _messages_to_markdown(messages)
+    url = _get_url(warning_or_error=warning_or_error)
+    with suppress(SendSlackError):
+        send_slack_sync(text, url=url)
+
+
 def _patch_custom_repr(record: Record, /) -> None:
     """Add the `custom_repr` field to the extras."""
     mapping = {
@@ -149,7 +202,13 @@ def _patch_json(record: Record, /) -> None:
     record["extra"]["json"] = _serialize_record(record)
 
 
-patched_logger = logger.patch(_patch_custom_repr).patch(_patch_json)
+def _patch_slack(record: Record, /) -> None:
+    """Add the `slack` field to the extras."""
+    msg = "```{record[message]}\n```"
+    record["extra"]["slack"] = msg
+
+
+patched_logger = logger.patch(_patch_custom_repr).patch(_patch_json).patch(_patch_slack)
 
 
 def _serialize_record(record: Record, /) -> str:
@@ -169,90 +228,10 @@ def _serialize_record(record: Record, /) -> str:
     return dumps(use, default=str).decode()
 
 
-def make_filter(
-    *,
-    level: LogLevel | None = None,
-    min_level: LogLevel | None = None,
-    max_level: LogLevel | None = None,
-    name_include: MaybeIterable[str] | None = None,
-    name_exclude: MaybeIterable[str] | None = None,
-    extra_include_all: MaybeIterable[Hashable] | None = None,
-    extra_include_any: MaybeIterable[Hashable] | None = None,
-    extra_exclude_all: MaybeIterable[Hashable] | None = None,
-    extra_exclude_any: MaybeIterable[Hashable] | None = None,
-    _is_testing_override: bool = False,
-) -> FilterFunction:
-    """Make a filter."""
-    is_not_pytest_or_override = (not is_pytest()) or _is_testing_override
-
-    def filter_func(record: Record, /) -> bool:
-        rec_level_no = record["level"].no
-        if (level is not None) and (rec_level_no != get_logging_level(level)):
-            return False
-        if (min_level is not None) and (rec_level_no < get_logging_level(min_level)):
-            return False
-        if (max_level is not None) and (rec_level_no > get_logging_level(max_level)):
-            return False
-        name = record["name"]
-        if name is not None:
-            name_inc, name_exc = resolve_include_and_exclude(
-                include=name_include, exclude=name_exclude
-            )
-            if (name_inc is not None) and not any(name.startswith(n) for n in name_inc):
-                return False
-            if (name_exc is not None) and any(name.startswith(n) for n in name_exc):
-                return False
-        rec_extra_keys = set(record["extra"])
-        extra_inc_all, extra_exc_any = resolve_include_and_exclude(
-            include=extra_include_all, exclude=extra_exclude_any
-        )
-        if (extra_inc_all is not None) and not extra_inc_all.issubset(rec_extra_keys):
-            return False
-        if (extra_exc_any is not None) and (len(rec_extra_keys & extra_exc_any) >= 1):
-            return False
-        extra_inc_any, extra_exc_all = resolve_include_and_exclude(
-            include=extra_include_any, exclude=extra_exclude_all
-        )
-        if (extra_inc_any is not None) and (len(rec_extra_keys & extra_inc_any) == 0):
-            return False
-        if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
-            return False
-        return is_not_pytest_or_override
-
-    return filter_func
-
-
-def _log_from_depth_up(
-    logger: Logger,
-    depth: int,
-    level: LogLevel,
-    message: str,
-    /,
-    *args: Any,
-    exception: bool | ExcInfo | BaseException | None = None,
-    **kwargs: Any,
-) -> None:
-    """Log from a given depth up to 0, in case it would fail otherwise."""
-    if depth >= 0:
-        try:
-            logger.opt(exception=exception, record=True, depth=depth).log(
-                level, message, *args, **kwargs
-            )
-        except ValueError:  # pragma: no cover
-            return _log_from_depth_up(
-                logger, depth - 1, level, message, *args, exception=exception, **kwargs
-            )
-        return None
-    raise _LogFromDepthUpError(depth=depth)
-
-
-@dataclass(kw_only=True)
-class _LogFromDepthUpError(Exception):
-    depth: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Depth must be non-negative; got {self.depth}"
+def _wrap_markdown(messages: Iterable[str], /) -> str:
+    """Wrap a set of messages and markdown them."""
+    joined = "".join(messages)
+    return f"```{joined}```"
 
 
 __all__ = [

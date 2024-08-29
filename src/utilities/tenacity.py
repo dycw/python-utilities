@@ -20,7 +20,7 @@ def before_sleep_log(
     from utilities.loguru import get_logging_level
 
     return tenacity.before_sleep_log(
-        cast(Any, _LoguruAdapter()), level, exc_info=exc_info
+        cast(Any, _LoguruAdapter()), cast(Any, level), exc_info=exc_info
     )
 
 
