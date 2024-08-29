@@ -49,7 +49,7 @@ class InterceptHandler(Handler):
         )
 
 
-catch_message = "Uncaught {record[exception].value!r} | {record[process].name!r} ({record[process].id}) | {record[thread].name!r} ({record[thread].id})"
+catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
 
 
 def format_record(record: Record, /) -> str:
