@@ -10,7 +10,7 @@ from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
 from typing import TYPE_CHECKING, overload
 
-from loguru import Message, logger
+from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-    from loguru import Record
+    from loguru import Message, Record
 
     from utilities.asyncio import Coroutine1, MaybeCoroutine1
     from utilities.types import Duration
