@@ -5,11 +5,9 @@ import datetime as dt
 import logging
 import sys
 import time
-from collections.abc import Callable
-from functools import partial
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from typing_extensions import override
@@ -22,9 +20,6 @@ if TYPE_CHECKING:
     from loguru import Record
 
     from utilities.types import Duration
-
-
-_F = TypeVar("_F", bound=Callable[..., Any])
 
 
 class InterceptHandler(Handler):
@@ -54,18 +49,7 @@ class InterceptHandler(Handler):
         )
 
 
-def _catch_on_error(error: BaseException, /) -> None:
-    """Handle uncaught errors."""
-    logger.opt(exception=error).exception(f"Uncaught {error!r}")
-
-
-def catch(func: _F, /) -> _F:
-    decorator = partial(
-        logger.catch,
-        message="Uncaught {record[exception].value!r} | {record[process].name!r} ({record[process].id}) | {record[thread].name!r} ({record[thread].id})",
-        onerror=_catch_on_error,
-    )
-    return cast(Any, decorator)(func)
+catch_message = "Uncaught {record[exception].value!r} | {record[process].name!r} ({record[process].id}) | {record[thread].name!r} ({record[thread].id})"
 
 
 def format_record(record: Record, /) -> str:
@@ -251,7 +235,7 @@ class _LogFromDepthUpError(Exception):
 
 __all__ = [
     "InterceptHandler",
-    "catch",
+    "catch_message",
     "format_record",
     "format_record_json",
     "logged_sleep_async",
