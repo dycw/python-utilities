@@ -6,7 +6,7 @@ import logging
 import sys
 import time
 from logging import Handler, LogRecord
-from sys import _getframe
+from sys import __excepthook__, _getframe
 from typing import TYPE_CHECKING, Any
 
 from loguru import logger
@@ -17,6 +17,8 @@ from utilities.logging import LogLevel
 from utilities.reprlib import custom_repr
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from loguru import Record
 
     from utilities.types import Duration
@@ -50,6 +52,20 @@ class InterceptHandler(Handler):
 
 
 catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+
+
+def except_hook(
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+    /,
+) -> None:
+    """Exception hook which uses `loguru`."""
+    if issubclass(exc_type, KeyboardInterrupt):
+        __excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logger.opt(exception=exc_value, record=True).error(catch_message)
+    sys.exit(1)
 
 
 def format_record(record: Record, /) -> str:
@@ -236,6 +252,7 @@ class _LogFromDepthUpError(Exception):
 __all__ = [
     "InterceptHandler",
     "catch_message",
+    "except_hook",
     "format_record",
     "format_record_json",
     "logged_sleep_async",
