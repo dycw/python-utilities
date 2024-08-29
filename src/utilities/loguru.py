@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import datetime as dt
 import logging
 import sys
 import time
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from loguru import logger
 from typing_extensions import override
@@ -153,14 +152,7 @@ def _serialize_record(record: Record, /) -> str:
     use |= record["extra"]
     if record["exception"] is not None:
         use["exception"] = {"type": str(record["exception"])}
-    return dumps(use, default=_serialize_record_default).decode()
-
-
-def _serialize_record_default(x: Any, /) -> str:
-    """Extension to `orjson` for serialization."""
-    if isinstance(x, dt.datetime):
-        return x.isoformat()
-    raise TypeError
+    return dumps(use, default=str).decode()
 
 
 def make_filter(
