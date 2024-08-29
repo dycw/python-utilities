@@ -9,7 +9,7 @@ from collections.abc import Callable
 from functools import partial
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -60,11 +60,36 @@ def _catch_on_error(error: BaseException, /) -> None:
 
 
 def catch(func: _F, /) -> _F:
-    return partial(
+    decorator = partial(
         logger.catch,
         message="Uncaught {record[exception].value!r} | {record[process].name!r} ({record[process].id}) | {record[thread].name!r} ({record[thread].id})",
         onerror=_catch_on_error,
-    )(func)
+    )
+    return cast(Any, decorator)(func)
+
+
+def format_record(record: Record, /) -> str:
+    """Format a record."""
+    parts = [
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
+        "<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
+        "<level>{level}</level>",
+        "<level>{message}</level>",
+    ]
+    if "custom_repr" in record["extra"]:
+        parts.append("{extra[custom_repr]}")
+    fmt = " | ".join(parts) + "\n"
+    if record["exception"] is not None:
+        fmt += "{exception}\n"
+    return fmt
+
+
+def format_record_json(record: Record, /) -> str:
+    """Format a record for JSON."""
+    parts = []
+    if "json" in record["extra"]:
+        parts.append("{extra[json]}")
+    return " | ".join(parts) + "\n"
 
 
 def _log_call_bind_and_log(
@@ -96,24 +121,6 @@ async def logged_sleep_async(
         level, "Sleeping for {timedelta}...", timedelta=timedelta
     )
     await asyncio.sleep(timedelta.total_seconds())
-
-
-def format_record(record: Record, /) -> str:
-    """Format a record."""
-    if "json" in record["extra"]:
-        return "{extra[json]}\n"
-    parts = [
-        "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
-        "<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
-        "<level>{level}</level>",
-        "<level>{message}</level>",
-    ]
-    if "custom_repr" in record["extra"]:
-        parts.append("{extra[custom_repr]}")
-    fmt = " | ".join(parts) + "\n"
-    if record["exception"] is not None:
-        fmt += "{exception}\n"
-    return fmt
 
 
 def _patch_custom_repr(record: Record, /) -> None:
@@ -246,6 +253,7 @@ __all__ = [
     "InterceptHandler",
     "catch",
     "format_record",
+    "format_record_json",
     "logged_sleep_async",
     "logged_sleep_sync",
     "patched_logger",
