@@ -71,10 +71,11 @@ def format_record(record: Record, /) -> str:
     """Format a record."""
     parts = [
         "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
-        "<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
+        "<cyan>{name}</cyan>.<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
         "<level>{level}</level>",
-        "<level>{message}</level>",
     ]
+    if record["message"]:
+        parts.append("<level>{message}</level>")
     if "custom_repr" in record["extra"]:
         parts.append("{extra[custom_repr]}")
     fmt = " | ".join(parts) + "\n"
