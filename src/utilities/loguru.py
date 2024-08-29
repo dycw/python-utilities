@@ -215,6 +215,7 @@ __all__ = [
     "except_hook",
     "format_record",
     "format_record_json",
+    "format_record_slack",
     "logged_sleep_async",
     "logged_sleep_sync",
     "patched_logger",
