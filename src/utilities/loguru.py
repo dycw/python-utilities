@@ -1,85 +1,26 @@
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import logging
 import sys
 import time
-from asyncio import AbstractEventLoop
-from collections.abc import Callable, Hashable
-from dataclasses import dataclass
-from enum import StrEnum, unique
-from functools import partial, wraps
-from inspect import iscoroutinefunction
+from functools import partial
 from logging import Handler, LogRecord
-from sys import __excepthook__, _getframe
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
+from sys import _getframe
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.functions import get_func_name
-from utilities.inspect import bind_args_custom_repr
-from utilities.iterables import resolve_include_and_exclude
-from utilities.pytest import is_pytest
+from utilities.logging import LogLevel
+from utilities.reprlib import custom_repr
 
 if TYPE_CHECKING:
-    import datetime as dt
-    from multiprocessing.context import BaseContext
-    from types import TracebackType
+    from loguru import Record
 
-    from loguru import (
-        CompressionFunction,
-        ExcInfo,
-        FilterDict,
-        FilterFunction,
-        FormatFunction,
-        Logger,
-        Message,
-        Record,
-        RetentionFunction,
-        RotationFunction,
-        Writable,
-    )
-
-    from utilities.asyncio import MaybeCoroutine1
-    from utilities.iterables import MaybeIterable
-    from utilities.types import Duration, PathLike, StrMapping
-
-
-_F = TypeVar("_F", bound=Callable[..., Any])
-
-
-class HandlerConfiguration(TypedDict, total=False):
-    """A handler configuration."""
-
-    sink: (
-        TextIO
-        | Writable
-        | Callable[[Message], MaybeCoroutine1[None]]
-        | Handler
-        | PathLike
-    )
-    level: int | str
-    format: str | FormatFunction
-    filter: str | FilterFunction | FilterDict | None
-    colorize: bool | None
-    serialize: bool
-    backtrace: bool
-    diagnose: bool
-    enqueue: bool
-    context: str | BaseContext | None
-    catch: bool
-    loop: AbstractEventLoop
-    rotation: str | int | dt.time | dt.timedelta | RotationFunction | None
-    retention: str | int | dt.timedelta | RetentionFunction | None
-    compression: str | CompressionFunction | None
-    delay: bool
-    watch: bool
-    mode: str
-    buffering: int
-    encoding: str
-    kwargs: StrMapping
+    from utilities.types import Duration
 
 
 class InterceptHandler(Handler):
@@ -109,62 +50,16 @@ class InterceptHandler(Handler):
         )
 
 
-@unique
-class LogLevel(StrEnum):
-    """An enumeration of the logging levels."""
-
-    TRACE = "TRACE"
-    DEBUG = "DEBUG"
-    INFO = "INFO"
-    SUCCESS = "SUCCESS"
-    WARNING = "WARNING"
-    ERROR = "ERROR"
-    CRITICAL = "CRITICAL"
+def _catch_on_error(error: BaseException, /) -> None:
+    """Handle uncaught errors."""
+    logger.opt(exception=error).exception(f"Uncaught {error!r}")
 
 
-def get_logging_level(level: str, /) -> int:
-    """Get the logging level."""
-    try:
-        return logger.level(level).no
-    except ValueError:
-        raise GetLoggingLevelError(level=level) from None
-
-
-@dataclass(kw_only=True)
-class GetLoggingLevelError(Exception):
-    level: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid logging level: {self.level!r}"
-
-
-@overload
-def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
-@overload
-def log_call(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
-def log_call(
-    func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
-) -> _F | Callable[[_F], _F]:
-    """Log the function call."""
-    if func is None:
-        return partial(log_call, level=level)
-
-    if iscoroutinefunction(func):
-
-        @wraps(func)
-        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            _log_call_bind_and_log(func, level, *args, **kwargs)
-            return await func(*args, **kwargs)
-
-        return cast(_F, wrapped_async)
-
-    @wraps(func)
-    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        _log_call_bind_and_log(func, level, *args, **kwargs)
-        return func(*args, **kwargs)
-
-    return cast(_F, wrapped_sync)
+catch = partial(
+    logger.catch,
+    message="Uncaught {record[exception].value!r} | {record[process].name!r} ({record[process].id}) | {record[thread].name!r} ({record[thread].id})",
+    onerror=_catch_on_error,
+)
 
 
 def _log_call_bind_and_log(
@@ -198,42 +93,62 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
-def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
-    """Make a `logger.catch` hook."""
-    logger2 = logger.bind(**kwargs)
+def format_record(record: Record, /) -> str:
+    """Format a record."""
+    if "json" in record["extra"]:
+        return "{extra[json]}\n"
+    parts = [
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
+        "<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
+        "<level>{level}</level>",
+        "<level>{message}</level>",
+    ]
+    if "custom_repr" in record["extra"]:
+        parts.append("{extra[custom_repr]}")
+    fmt = " | ".join(parts) + "\n"
+    if record["exception"] is not None:
+        fmt += "{exception}\n"
+    return fmt
 
-    def callback(error: BaseException, /) -> None:
-        _log_from_depth_up(
-            logger2,
-            4,
-            LogLevel.ERROR,
-            "Uncaught {record[exception].value!r}",
-            exception=error,
-        )
 
-    return callback
+def _patch_custom_repr(record: Record, /) -> None:
+    """Add the `custom_repr` field to the extras."""
+    mapping = {
+        k: v for k, v in record["extra"].items() if k not in {"json", "custom_repr"}
+    }
+    record["extra"]["custom_repr"] = custom_repr(mapping)
 
 
-def make_except_hook(
-    **kwargs: Any,
-) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
-    """Make an `excepthook` which uses `loguru`."""
-    callback = make_catch_hook(**kwargs)
+def _patch_json(record: Record, /) -> None:
+    """Add the `json` field to the extras."""
+    record["extra"]["json"] = _serialize_record(record)
 
-    def except_hook(
-        exc_type: type[BaseException],
-        exc_value: BaseException,
-        exc_traceback: TracebackType | None,
-        /,
-    ) -> None:
-        """Exception hook which uses `loguru`."""
-        if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
-            __excepthook__(exc_type, exc_value, exc_traceback)
-            return
-        callback(exc_value)  # pragma: no cover
-        sys.exit(1)  # pragma: no cover
 
-    return except_hook
+patched_logger = logger.patch(_patch_custom_repr).patch(_patch_json)
+
+
+def _serialize_record(record: Record, /) -> str:
+    """Serialize a record."""
+    from orjson import dumps
+
+    use = {}
+    use["time"] = record["time"]
+    use["name"] = record["name"]
+    use["module"] = record["module"]
+    use["function"] = record["function"]
+    use["line"] = record["line"]
+    use["message"] = record["message"]
+    use |= record["extra"]
+    if record["exception"] is not None:
+        use["exception"] = {"type": str(record["exception"])}
+    return dumps(use, default=_serialize_record_default).decode()
+
+
+def _serialize_record_default(x: Any, /) -> str:
+    """Extension to `orjson` for serialization."""
+    if isinstance(x, dt.datetime):
+        return x.isoformat()
+    raise TypeError
 
 
 def make_filter(
@@ -323,15 +238,10 @@ class _LogFromDepthUpError(Exception):
 
 
 __all__ = [
-    "GetLoggingLevelError",
-    "HandlerConfiguration",
     "InterceptHandler",
-    "LogLevel",
-    "get_logging_level",
-    "log_call",
+    "catch",
+    "format_record",
     "logged_sleep_async",
     "logged_sleep_sync",
-    "make_catch_hook",
-    "make_except_hook",
-    "make_filter",
+    "patched_logger",
 ]
