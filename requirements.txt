@@ -259,11 +259,11 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-polars-lts-cpu==1.5.0
+polars-lts-cpu==1.6.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.27.4
+protobuf==5.28.0
     # via
     #   streamlit
     #   vegafusion
@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.3.5
+uv==0.4.0
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

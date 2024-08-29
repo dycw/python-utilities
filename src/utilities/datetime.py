@@ -404,10 +404,18 @@ class Month:
         year = self.year + years
         return replace(self, year=year, month=month)
 
-    def __sub__(self, other: Any, /) -> Self:
-        if not isinstance(other, int):  # pragma: no cover
-            return NotImplemented
-        return self + (-other)
+    @overload
+    def __sub__(self, other: Self, /) -> int: ...
+    @overload
+    def __sub__(self, other: int, /) -> Self: ...
+    def __sub__(self, other: Self | int, /) -> Self | int:
+        if isinstance(other, int):  # pragma: no cover
+            return self + (-other)
+        if isinstance(other, type(self)):
+            self_as_int = 12 * self.year + self.month
+            other_as_int = 12 * other.year + other.month
+            return self_as_int - other_as_int
+        return NotImplemented  # pragma: no cover
 
     @classmethod
     def from_date(cls, date: dt.date, /) -> Self:

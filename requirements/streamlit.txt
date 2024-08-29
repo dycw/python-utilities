@@ -63,7 +63,7 @@ pillow==10.4.0
     # via streamlit
 pluggy==1.5.0
     # via pytest
-protobuf==5.27.4
+protobuf==5.28.0
     # via streamlit
 pyarrow==17.0.0
     # via streamlit

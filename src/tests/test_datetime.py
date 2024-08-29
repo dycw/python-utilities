@@ -464,6 +464,22 @@ class TestMonth:
         result = month + n
         assert result == expected
 
+    @mark.parametrize(
+        ("x", "y", "expected"),
+        [
+            param(Month(2000, 1), Month(1999, 11), 2),
+            param(Month(2000, 1), Month(1999, 12), 1),
+            param(Month(2000, 1), Month(2000, 1), 0),
+            param(Month(2000, 1), Month(2000, 2), -1),
+            param(Month(2000, 1), Month(2000, 3), -2),
+            param(Month(2000, 1), Month(2000, 12), -11),
+            param(Month(2000, 1), Month(2001, 1), -12),
+        ],
+    )
+    def test_diff(self, *, x: Month, y: Month, expected: int) -> None:
+        result = x - y
+        assert result == expected
+
     @given(month=months())
     def test_hashable(self, *, month: Month) -> None:
         _ = hash(month)
