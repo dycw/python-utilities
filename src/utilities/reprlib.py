@@ -114,7 +114,7 @@ def custom_mapping_repr(
         )
         for v in mapping_use.values()
     )
-    return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
+    return ", ".join(f"{k}={v}" for k, v in zip(mapping_use, values, strict=True))
 
 
 def custom_repr(
