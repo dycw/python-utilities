@@ -9,8 +9,8 @@ from pytest import mark, param
 
 from utilities.reprlib import (
     ReprLocals,
-    _custom_mapping_repr,
     _filter_mapping,
+    custom_mapping_repr,
     custom_print,
     custom_repr,
 )
@@ -115,7 +115,7 @@ class TestCustomMappingRepr:
         ],
     )
     def test_main(self, *, mapping: Mapping[str, Any], expected: str) -> None:
-        result = _custom_mapping_repr(mapping)
+        result = custom_mapping_repr(mapping)
         assert result == expected
 
 

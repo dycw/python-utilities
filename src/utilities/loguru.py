@@ -7,7 +7,7 @@ import time
 from asyncio import AbstractEventLoop
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
-from sys import __excepthook__, _getframe
+from sys import __excepthook__, _getframe, stderr
 from typing import TYPE_CHECKING, overload
 
 from loguru import Message, logger
@@ -15,10 +15,9 @@ from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.reprlib import custom_mapping_repr
-from utilities.slack_sdk import send_slack_async
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable
     from types import TracebackType
 
     from loguru import Record
@@ -149,44 +148,25 @@ def make_slack_sink(
     url: str, /, *, loop: AbstractEventLoop | None = None
 ) -> Callable[..., MaybeCoroutine1[None]]:
     """Make a `slack` sink."""
+    from utilities.slack_sdk import SendSlackError, send_slack_async, send_slack_sync
+
     if loop is None:
-        from utilities.slack_sdk import send_slack_sync
 
-        def send_to_slack_sync(message: Message, /) -> None:
-            send_slack_sync(message, url=url)
+        def _send_slack_sync(message: Message, /) -> None:
+            try:
+                send_slack_sync(message, url=url)
+            except SendSlackError as error:
+                _ = stderr.write(str(error))
 
-    async def send_to_slack_async(message: Message, /) -> None:
-        await send_slack_async(message, url=url)
+        return _send_slack_sync
 
-    return send_to_slack_async
+    async def _send_slack_async(message: Message, /) -> None:
+        try:
+            await send_slack_async(message, url=url)
+        except SendSlackError as error:
+            _ = stderr.write(str(error))
 
-    messages: queue.Queue[Message] = queue.Queue()
-    _ = logger.add(
-        partial(_put_message_sync, messages=messages),
-        filter=_filter_levels(warning_or_error),
-        format=format_record,
-        backtrace=False,
-        diagnose=False,
-    )
-    task = run_in_background(
-        _process_slack_message_queue_sync,
-        warning_or_error=warning_or_error,
-        messages=messages,
-    )
-    _SLACK_BACKGROUND_OR_ASYNCIO_TASKS.append(task)
-    return None
-
-    # _add_slack_sink_async(loop, warning_or_error=warning_or_error)
-
-
-def _send_messages_to_slack_sync(
-    messages: Iterable[str], /, *, warning_or_error: WarningOrError
-) -> None:
-    """Send a set of messages to Slack."""
-    text = _messages_to_markdown(messages)
-    url = _get_url(warning_or_error=warning_or_error)
-    with suppress(SendSlackError):
-        send_slack_sync(text, url=url)
+    return _send_slack_async
 
 
 def _patch_custom_repr(record: Record, /) -> None:
@@ -226,12 +206,6 @@ def _serialize_record(record: Record, /) -> str:
     if record["exception"] is not None:
         use["exception"] = {"type": str(record["exception"])}
     return dumps(use, default=str).decode()
-
-
-def _wrap_markdown(messages: Iterable[str], /) -> str:
-    """Wrap a set of messages and markdown them."""
-    joined = "".join(messages)
-    return f"```{joined}```"
 
 
 __all__ = [
