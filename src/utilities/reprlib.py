@@ -52,7 +52,7 @@ class ReprLocals:
             include_underscore=self.include_underscore,
             include_none=self.include_none,
         )
-        return _custom_mapping_repr(
+        return custom_mapping_repr(
             mapping,
             fillvalue=self.fillvalue,
             maxlevel=self.maxlevel,
@@ -73,7 +73,7 @@ class ReprLocals:
         return self.__repr__()
 
 
-def _custom_mapping_repr(
+def custom_mapping_repr(
     mapping: Mapping[str, Any],
     /,
     *,
@@ -291,4 +291,4 @@ def custom_print(
         rich.print(text)
 
 
-__all__ = ["ReprLocals", "custom_print", "custom_repr"]
+__all__ = ["ReprLocals", "custom_mapping_repr", "custom_print", "custom_repr"]

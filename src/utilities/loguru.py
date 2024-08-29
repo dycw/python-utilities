@@ -13,7 +13,7 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.reprlib import custom_repr
+from utilities.reprlib import custom_mapping_repr
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -141,7 +141,7 @@ def _patch_custom_repr(record: Record, /) -> None:
     mapping = {
         k: v for k, v in record["extra"].items() if k not in {"json", "custom_repr"}
     }
-    record["extra"]["custom_repr"] = custom_repr(mapping)
+    record["extra"]["custom_repr"] = custom_mapping_repr(mapping)
 
 
 def _patch_json(record: Record, /) -> None:
