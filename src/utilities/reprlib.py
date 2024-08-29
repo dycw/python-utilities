@@ -77,6 +77,8 @@ def custom_mapping_repr(
     mapping: Mapping[str, Any],
     /,
     *,
+    include_underscore: bool = False,
+    include_none: bool = False,
     fillvalue: str = _REPR.fillvalue,
     maxlevel: int = _REPR.maxlevel,
     maxtuple: int = _REPR.maxtuple,
@@ -91,6 +93,9 @@ def custom_mapping_repr(
     maxother: int = _REPR.maxother,
 ) -> str:
     """Apply the custom representation to a mapping."""
+    mapping_use = _filter_mapping(
+        mapping, include_underscore=include_underscore, include_none=include_none
+    )
     values = (
         custom_repr(
             v,
@@ -107,7 +112,7 @@ def custom_mapping_repr(
             maxlong=maxlong,
             maxother=maxother,
         )
-        for v in mapping.values()
+        for v in mapping_use.values()
     )
     return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
 
