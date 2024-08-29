@@ -71,7 +71,7 @@ def format_record(record: Record, /) -> str:
     """Format a record."""
     parts = [
         "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
-        "<cyan>{name}</cyan>.<cyan>{module}</cyan>.<cyan>{function}</cyan>:{line}",
+        "<cyan>{name}</cyan>.<cyan>{function}</cyan>:{line}",
         "<level>{level}</level>",
     ]
     if record["message"]:
