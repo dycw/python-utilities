@@ -112,7 +112,7 @@ def format_record_slack(record: Record, /) -> str:
     """Format a record for Slack."""
     parts = []
     if "json" in record["extra"]:
-        parts.append("{extra[json]}")
+        parts.append("{extra[slack]}")
     return " | ".join(parts) + "\n"
 
 
