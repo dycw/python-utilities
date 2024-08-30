@@ -88,7 +88,7 @@ def except_hook(
     sys.exit(1)
 
 
-def format_record(record: Record, /) -> str:
+def format_record(record: Record, /, *, exception: bool = True) -> str:
     """Format a record."""
     parts = [
         "<green>{time:YYYY-MM-DD HH:mm:ss}</green>{time:.SSS zz/ddd}",
@@ -105,7 +105,7 @@ def format_record(record: Record, /) -> str:
         if cr:
             parts.append("{extra[custom_repr]}")
     fmt = " | ".join(parts) + "\n"
-    if record["exception"] is not None:
+    if (record["exception"] is not None) and exception:
         fmt += "{exception}\n"
     return fmt
 
@@ -118,9 +118,9 @@ def format_record_json(record: Record, /) -> str:
     return " | ".join(parts) + "\n"
 
 
-def format_record_slack(record: Record, /) -> str:
+def format_record_slack(record: Record, /, *, exception: bool = True) -> str:
     """Format a record for Slack."""
-    fmt = format_record(record)
+    fmt = format_record(record, exception=exception)
     return f"```{fmt}```"
 
 
