@@ -4,10 +4,15 @@ import asyncio
 import logging
 import sys
 import time
+from asyncio import AbstractEventLoop
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import StrEnum, unique
+from functools import partial, wraps
+from inspect import iscoroutinefunction, signature
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -15,10 +20,51 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    import datetime as dt
+    from multiprocessing.context import BaseContext
     from types import TracebackType
 
-    from utilities.types import Duration
+    from loguru import (
+        CompressionFunction,
+        FilterDict,
+        FilterFunction,
+        FormatFunction,
+        Message,
+        RetentionFunction,
+        RotationFunction,
+        Writable,
+    )
+
+    from utilities.types import Duration, StrMapping
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+
+class HandlerConfiguration(TypedDict, total=False):
+    """A handler configuration."""
+
+    sink: TextIO | Writable | Callable[[Message], None] | Handler
+    level: int | str
+    format: str | FormatFunction
+    filter: str | FilterFunction | FilterDict | None
+    colorize: bool | None
+    serialize: bool
+    backtrace: bool
+    diagnose: bool
+    enqueue: bool
+    context: str | BaseContext | None
+    catch: bool
+    loop: AbstractEventLoop
+    rotation: str | int | dt.time | dt.timedelta | RotationFunction | None
+    retention: str | int | dt.timedelta | RetentionFunction | None
+    compression: str | CompressionFunction | None
+    delay: bool
+    watch: bool
+    mode: str
+    buffering: int
+    encoding: str
+    kwargs: StrMapping
 
 
 class InterceptHandler(Handler):
@@ -59,6 +105,55 @@ class LogLevel(StrEnum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+def get_logging_level(level: str, /) -> int:
+    """Get the logging level."""
+    try:
+        return logger.level(level).no
+    except ValueError:
+        raise GetLoggingLevelError(level=level) from None
+
+
+@dataclass(kw_only=True)
+class GetLoggingLevelError(Exception):
+    level: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level!r}"
+
+
+@overload
+def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+@overload
+def log_call(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
+def log_call(
+    func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
+) -> _F | Callable[[_F], _F]:
+    """Log the function call."""
+    if func is None:
+        return partial(log_call, level=level)
+
+    sig = signature(func)
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+            arguments = sig.bind(*args, **kwargs).arguments
+            logger.opt(depth=1).log(level, "", **arguments)
+            return await func(*args, **kwargs)
+
+        return cast(_F, wrapped_async)
+
+    @wraps(func)
+    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+        arguments = sig.bind(*args, **kwargs).arguments
+        logger.opt(depth=1).log(level, "", **arguments)
+        return func(*args, **kwargs)
+
+    return cast(_F, wrapped_sync)
 
 
 def logged_sleep_sync(
