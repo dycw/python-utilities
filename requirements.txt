@@ -51,7 +51,7 @@ cachetools==5.5.0
     # via
     #   dycw-utilities (pyproject.toml)
     #   streamlit
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   httpcore
     #   httpx
@@ -184,7 +184,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.5.5
+narwhals==1.6.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.0
+uv==0.4.1
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

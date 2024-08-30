@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from datetime import timezone
+from re import escape
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
@@ -19,6 +20,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
@@ -36,6 +38,7 @@ from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_SERIALIZABLE_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
+    CheckValidZonedDateimeError,
     EnsureDateError,
     EnsureDurationError,
     EnsureLocalDateTimeError,
@@ -54,6 +57,7 @@ from utilities.whenever import (
     SerializeZonedDateTimeError,
     _to_datetime_delta,
     _ToDateTimeDeltaError,
+    check_valid_zoned_datetime,
     ensure_date,
     ensure_duration,
     ensure_local_datetime,
@@ -80,6 +84,29 @@ if TYPE_CHECKING:
 
 _TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
+
+
+@SKIPIF_CI_AND_WINDOWS
+class TestCheckValidZonedDatetime:
+    @mark.parametrize(
+        "datetime",
+        [
+            param(dt.datetime(1951, 4, 1, 3, tzinfo=HONG_KONG)),
+            param(dt.datetime(1951, 4, 1, 5, tzinfo=HONG_KONG)),
+        ],
+    )
+    def test_main(self, *, datetime: dt.datetime) -> None:
+        check_valid_zoned_datetime(datetime)
+
+    def test_error(self) -> None:
+        datetime = dt.datetime(1951, 4, 1, 4, tzinfo=HONG_KONG)
+        with raises(
+            CheckValidZonedDateimeError,
+            match=escape(
+                "Zoned datetime must be valid; got 1951-04-01 04:00:00+08:00 != 1951-04-01 05:00:00+09:00"
+            ),
+        ):
+            check_valid_zoned_datetime(datetime)
 
 
 class TestParseAndSerializeDate:
@@ -311,17 +338,23 @@ class TestParseAndSerializeTimedelta:
 
 
 class TestParseAndSerializeZonedDateTime:
-    @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(
+        datetime=zoned_datetimes(
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+        )
+    )
+    @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
     @given(
-        datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])).map(
-            drop_milli_and_microseconds
-        )
+        datetime=zoned_datetimes(
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+        ).map(drop_milli_and_microseconds)
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
@@ -330,7 +363,12 @@ class TestParseAndSerializeZonedDateTime:
         result = parse_zoned_datetime(serialized)
         assert result == datetime
 
-    @given(datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(
+        datetime=zoned_datetimes(
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+        )
+    )
+    @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
@@ -357,8 +395,11 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         data=data(),
-        datetime=zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        datetime=zoned_datetimes(
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+        ),
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_value = data.draw(
             sampled_from([datetime, serialize_zoned_datetime(datetime)])

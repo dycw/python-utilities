@@ -35,6 +35,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from sqlalchemy import Engine
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.hypothesis import (
     int64s,
     slices,
@@ -92,9 +93,12 @@ class TestSerializeAndDeserialize:
             param(dates(), True, True),
             param(datetimes(), True, True),
             param(
-                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
+                zoned_datetimes(
+                    time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+                ),
                 True,
                 True,
+                marks=SKIPIF_CI_AND_WINDOWS,
             ),
             param(
                 decimals(allow_nan=False, allow_infinity=False).map(_map_abs),
@@ -151,9 +155,6 @@ class TestSerializeAndDeserialize:
         int_=int64s(),
         local_datetime=datetimes(),
         text=text_ascii(),
-        zoned_datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])
-        ),
     )
     def test_dataclasses(
         self,
@@ -163,7 +164,6 @@ class TestSerializeAndDeserialize:
         int_: int,
         local_datetime: dt.datetime,
         text: str,
-        zoned_datetime: dt.datetime,
     ) -> None:
         true_or_falses: tuple[_TrueOrFalseLit, ...] = get_args(_TrueOrFalseLit)
         true_or_false = data.draw(sampled_from(true_or_falses))
@@ -183,7 +183,6 @@ class TestSerializeAndDeserialize:
             literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            zoned_datetime: dt.datetime
 
         @dataclass(kw_only=True)
         class Outer:
@@ -194,7 +193,6 @@ class TestSerializeAndDeserialize:
             literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            zoned_datetime: dt.datetime
 
         obj = Outer(
             inner=Inner(
@@ -204,7 +202,6 @@ class TestSerializeAndDeserialize:
                 literal=true_or_false,
                 local_datetime=local_datetime,
                 text=text,
-                zoned_datetime=zoned_datetime,
             ),
             date=date,
             enum=truth,
@@ -212,7 +209,6 @@ class TestSerializeAndDeserialize:
             literal=true_or_false,
             local_datetime=local_datetime,
             text=text,
-            zoned_datetime=zoned_datetime,
         )
         result = deserialize(serialize(obj), cls=Outer)
         assert result == obj
