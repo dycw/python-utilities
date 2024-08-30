@@ -94,8 +94,13 @@ def format_record(record: Record, /) -> str:
     ]
     if record["message"]:
         parts.append("<level>{message}</level>")
-    if "custom_repr" in record["extra"]:
-        parts.append("{extra[custom_repr]}")
+    try:
+        cr = record["extra"]["custom_repr"]
+    except KeyError:
+        pass
+    else:
+        if cr:
+            parts.append("{extra[custom_repr]}")
     fmt = " | ".join(parts) + "\n"
     if record["exception"] is not None:
         fmt += "{exception}\n"
