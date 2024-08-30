@@ -98,7 +98,6 @@ def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
-    message = "Uncaught {record[exception].value!r}"
 
     def except_hook(
         exc_type: type[BaseException],
@@ -110,7 +109,7 @@ def make_except_hook(
         if issubclass(exc_type, KeyboardInterrupt):
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        logger.bind(**kwargs).opt(exception=exc_value, record=True).error(message)
+        logger.bind(**kwargs).opt(exception=exc_value, record=True).error(catch_message)
         sys.exit(1)
 
     return except_hook
