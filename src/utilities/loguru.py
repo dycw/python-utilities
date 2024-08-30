@@ -6,9 +6,11 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum, unique
+from functools import partial, wraps
+from inspect import iscoroutinefunction, signature
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -62,22 +64,36 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-def contexualize_and_log() -> None:
-    pass
-
-
 @overload
-def contexualize_and_log(
-    func: _F, /, *, max_size: int = ..., typed: bool = ...
-) -> _F: ...
+def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
 @overload
-def contexualize_and_log(
-    func: None = None, /, *, max_size: int = ..., typed: bool = ...
-) -> Callable[[_F], _F]: ...
-def contexualize_and_log(
-    func: _F | None = None, /, *, level: LogLevel
+def log_call(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
+def log_call(
+    func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
 ) -> _F | Callable[[_F], _F]:
-    """Contextualize the logger and log upon entry."""
+    """Log the function call."""
+    if func is None:
+        return partial(log_call, level=level)
+
+    sig = signature(func)
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+            arguments = sig.bind(*args, **kwargs).arguments
+            logger.opt(depth=1).log(level, "", **arguments)
+            return await func(*args, **kwargs)
+
+        return cast(_F, wrapped_async)
+
+    @wraps(func)
+    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+        arguments = sig.bind(*args, **kwargs).arguments
+        logger.opt(depth=1).log(level, "", **arguments)
+        return func(*args, **kwargs)
+
+    return cast(_F, wrapped_sync)
 
 
 def get_logging_level(level: str, /) -> int:
@@ -124,6 +140,7 @@ __all__ = [
     "InterceptHandler",
     "LogLevel",
     "get_logging_level",
+    "log_call",
     "logged_sleep_async",
     "logged_sleep_sync",
 ]
