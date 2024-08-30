@@ -71,7 +71,7 @@ class HandlerConfiguration(TypedDict, total=False):
     level: int | str
     format: FormatFunction
     filter: FilterFunction
-    colorize: bool
+    colorize: bool | None
     serialize: bool
     backtrace: bool
     diagnose: bool
