@@ -270,6 +270,12 @@ def make_slack_sink(
     return sink_async
 
 
+def patch_record(record: Record, /) -> None:
+    """Apply all patchers."""
+    _patch_custom_repr(record)
+    _patch_json(record)
+
+
 def _patch_custom_repr(record: Record, /) -> None:
     """Add the `custom_repr` field to the extras."""
     mapping = {
@@ -317,5 +323,6 @@ __all__ = [
     "make_except_hook",
     "make_filter",
     "make_slack_formatter",
+    "patch_record",
     "patched_logger",
 ]
