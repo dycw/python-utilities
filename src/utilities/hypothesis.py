@@ -775,7 +775,9 @@ def zoned_datetimes(
         )
     result = datetime.astimezone(time_zone_)
     if valid:
-        with assume_does_not_raise(CheckValidZonedDateimeError):
+        with assume_does_not_raise(  # skipif-ci-and-windows
+            CheckValidZonedDateimeError
+        ):
             check_valid_zoned_datetime(result)
     return result
 

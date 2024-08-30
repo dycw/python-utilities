@@ -29,16 +29,18 @@ MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
 
 def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
-    check_zoned_datetime(datetime)
-    time_zone = ensure_time_zone(cast(dt.timezone, datetime.tzinfo))
-    datetime2 = datetime.replace(tzinfo=time_zone)
-    result = (
+    check_zoned_datetime(datetime)  # skipif-ci-and-windows
+    time_zone = ensure_time_zone(  # skipif-ci-and-windows
+        cast(dt.timezone, datetime.tzinfo)
+    )
+    datetime2 = datetime.replace(tzinfo=time_zone)  # skipif-ci-and-windows
+    result = (  # skipif-ci-and-windows
         ZonedDateTime.from_py_datetime(datetime2)
         .to_tz(get_time_zone_name(UTC))
         .to_tz(get_time_zone_name(time_zone))
         .py_datetime()
     )
-    if result != datetime2:
+    if result != datetime2:  # skipif-ci-and-windows
         raise CheckValidZonedDateimeError(datetime=datetime, result=result)
 
 
@@ -49,7 +51,7 @@ class CheckValidZonedDateimeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Zoned datetime must be valid; got {self.datetime} != {self.result}"
+        return f"Zoned datetime must be valid; got {self.datetime} != {self.result}"  # skipif-ci-and-windows
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -353,9 +355,9 @@ def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
         )
     except ValueError:
         raise ParseZonedDateTimeError(datetime=datetime) from None
-    try:
+    try:  # skipif-ci-and-windows
         microsecond_use = int(microsecond)
-    except ValueError:
+    except ValueError:  # skipif-ci-and-windows
         microsecond_use = 0
     return dt.datetime(
         year=int(year),
@@ -447,7 +449,9 @@ class SerializeTimeDeltaError(Exception):
 def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
     """Serialize a zoned datetime."""
     if datetime.tzinfo is dt.UTC:
-        return serialize_zoned_datetime(datetime.replace(tzinfo=UTC))
+        return serialize_zoned_datetime(  # skipif-ci-and-windows
+            datetime.replace(tzinfo=UTC)
+        )
     try:
         zdt = ZonedDateTime.from_py_datetime(datetime)
     except ValueError:
