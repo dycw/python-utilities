@@ -118,12 +118,6 @@ def format_record_json(record: Record, /) -> str:
     return " | ".join(parts) + "\n"
 
 
-def format_record_slack(record: Record, /, *, exception: bool = True) -> str:
-    """Format a record for Slack."""
-    fmt = format_record(record, exception=exception)
-    return f"```{fmt}```"
-
-
 def get_logging_level(level: str, /) -> int:
     """Get the logging level."""
     try:
@@ -210,12 +204,12 @@ def make_filter(
 def make_slack_formatter(*, exception: bool = True) -> FormatFunction:
     """Make a `slack` formatter."""
 
-    def format_record_slack(record: Record, /) -> str:
+    def fmt_rec(record: Record, /) -> str:
         """Format a record for Slack."""
         fmt = format_record(record, exception=exception)
         return f"```{fmt}```"
 
-    return format_record_slack
+    return fmt_rec
 
 
 @overload
@@ -291,7 +285,6 @@ __all__ = [
     "except_hook_message",
     "format_record",
     "format_record_json",
-    "format_record_slack",
     "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
