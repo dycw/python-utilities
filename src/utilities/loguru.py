@@ -68,14 +68,18 @@ class HandlerConfiguration(TypedDict, total=False):
     """A handler configuration."""
 
     sink: Any
+    level: int | str
     format: FormatFunction
     filter: FilterFunction
-    colorize: bool | None
+    colorize: bool
+    serialize: bool
     backtrace: bool
     diagnose: bool
+    enqueue: bool
+    catch: bool
+    loop: AbstractEventLoop
     rotation: int
     retention: str | int | dt.timedelta | RetentionFunction | None
-    loop: AbstractEventLoop | None
 
 
 @unique
