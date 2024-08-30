@@ -70,8 +70,8 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id}) [logger.catch]"
-except_hook_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id}) [excepthook]"
+catch_message = "[logger.catch] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+except_hook_message = "[excepthook] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
 
 
 def except_hook(
