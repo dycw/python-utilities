@@ -87,7 +87,7 @@ def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
     """Make a `logger.catch` hook."""
 
     def callback(error: BaseException, /) -> None:
-        logger.bind(**kwargs).opt(exception=error, record=True).error(
+        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
             "Uncaught {record[exception].value!r}"
         )
 
