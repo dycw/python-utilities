@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, TypedDict, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -20,10 +20,17 @@ from utilities.reprlib import custom_mapping_repr
 from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
+    import datetime as dt
     from collections.abc import Callable, Hashable
     from types import TracebackType
 
-    from loguru import FilterFunction, FormatFunction, Message, Record
+    from loguru import (
+        FilterFunction,
+        FormatFunction,
+        Message,
+        Record,
+        RetentionFunction,
+    )
 
     from utilities.asyncio import Coroutine1, MaybeCoroutine1
     from utilities.iterables import MaybeIterable
@@ -57,6 +64,20 @@ class InterceptHandler(Handler):
         )
 
 
+class HandlerConfiguration(TypedDict, total=False):
+    """A handler configuration."""
+
+    sink: Any
+    format: FormatFunction
+    filter: FilterFunction
+    colorize: bool | None
+    backtrace: bool
+    diagnose: bool
+    rotation: int
+    retention: str | int | dt.timedelta | RetentionFunction | None
+    loop: AbstractEventLoop | None
+
+
 @unique
 class LogLevel(StrEnum):
     """An enumeration of the logging levels."""
@@ -70,7 +91,7 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "`logger.catch` caught a/an {record[exception].type!r}"
+catch_message = "`logger.catch` caught {record[exception].type!r}"
 
 
 def make_except_hook(
@@ -285,6 +306,7 @@ def _serialize_record(record: Record, /) -> str:
 
 __all__ = [
     "GetLoggingLevelError",
+    "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
     "catch_message",
