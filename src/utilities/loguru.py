@@ -3,18 +3,25 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
+from cachetools.func import ttl_cache
 from loguru import logger
 from typing_extensions import override
 
-from utilities.datetime import duration_to_timedelta
+from utilities.datetime import duration_to_float, duration_to_timedelta
+from utilities.functions import identity
+from utilities.functools import lru_cache
 from utilities.logging import LogLevel
 
 if TYPE_CHECKING:
     from utilities.types import Duration
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
 
 
 class InterceptHandler(Handler):
@@ -42,6 +49,10 @@ class InterceptHandler(Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(  # pragma: no cover
             level, record.getMessage()
         )
+
+
+def contexualize_and_trace() -> None:
+    pass
 
 
 def logged_sleep_sync(
