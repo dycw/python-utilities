@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, TypedDict, overload
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -269,6 +269,41 @@ def make_slack_sink(
     return sink_async
 
 
+@overload
+def make_slack_sink2(
+    url: str, /, *, sync_or_async: Literal["sync"]
+) -> Callable[..., None]: ...
+@overload
+def make_slack_sink2(
+    url: str, /, *, sync_or_async: Literal["async"]
+) -> Callable[..., Coroutine1[None]]: ...
+def make_slack_sink2(
+    url: str, /, *, sync_or_async: Literal["sync", "async"]
+) -> Callable[..., MaybeCoroutine1[None]]:
+    """Make a `slack` sink."""
+    from utilities.slack_sdk import SendSlackError, send_slack_async, send_slack_sync
+
+    match sync_or_async:
+        case "sync":
+
+            def sink_sync(message: Message, /) -> None:
+                try:
+                    send_slack_sync(message, url=url)
+                except SendSlackError as error:
+                    _ = stderr.write(str(error))
+
+            return sink_sync
+        case "async":
+
+            async def sink_async(message: Message, /) -> None:
+                try:
+                    await send_slack_async(message, url=url)
+                except SendSlackError as error:
+                    _ = stderr.write(str(error))
+
+            return sink_async
+
+
 def patch_record(record: Record, /) -> None:
     """Apply all patchers."""
     _patch_custom_repr(record)
@@ -319,5 +354,7 @@ __all__ = [
     "logged_sleep_sync",
     "make_except_hook",
     "make_filter",
+    "make_slack_sink",
+    "make_slack_sink2",
     "patch_record",
 ]
