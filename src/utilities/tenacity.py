@@ -14,13 +14,13 @@ _INFO: LogLevel = cast(Any, "INFO")
 
 
 def before_sleep_log(
-    *, level: int | str = "INFO", exc_info: bool = False
+    *, level: str = "INFO", exc_info: bool = False
 ) -> Callable[[RetryCallState], None]:
     """Use `loguru` in around `before_sleep_log`."""
     from utilities.loguru import get_logging_level
 
     return tenacity.before_sleep_log(
-        cast(Any, _LoguruAdapter()), cast(Any, level), exc_info=exc_info
+        cast(Any, _LoguruAdapter()), get_logging_level(level), exc_info=exc_info
     )
 
 

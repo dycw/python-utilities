@@ -5,6 +5,7 @@ import logging
 import sys
 import time
 from asyncio import AbstractEventLoop
+from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
@@ -116,6 +117,23 @@ def format_record_slack(record: Record, /) -> str:
     return " | ".join(parts) + "\n"
 
 
+def get_logging_level(level: str, /) -> int:
+    """Get the logging level."""
+    try:
+        return logger.level(level).no
+    except ValueError:
+        raise GetLoggingLevelError(level=level) from None
+
+
+@dataclass(kw_only=True)
+class GetLoggingLevelError(Exception):
+    level: str
+
+    @override
+    def __str__(self) -> str:
+        return f"There is no level {self.level!r}"
+
+
 def logged_sleep_sync(
     duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
 ) -> None:
@@ -209,6 +227,7 @@ def _serialize_record(record: Record, /) -> str:
 
 
 __all__ = [
+    "GetLoggingLevelError",
     "InterceptHandler",
     "LogLevel",
     "catch_message",
@@ -216,6 +235,7 @@ __all__ = [
     "format_record",
     "format_record_json",
     "format_record_slack",
+    "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
     "patched_logger",
