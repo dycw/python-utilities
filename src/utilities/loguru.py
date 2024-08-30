@@ -35,7 +35,7 @@ if TYPE_CHECKING:
         Writable,
     )
 
-    from utilities.types import Duration, StrMapping
+    from utilities.types import Duration, PathLike, StrMapping
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
@@ -44,7 +44,7 @@ _F = TypeVar("_F", bound=Callable[..., Any])
 class HandlerConfiguration(TypedDict, total=False):
     """A handler configuration."""
 
-    sink: TextIO | Writable | Callable[[Message], None] | Handler
+    sink: TextIO | Writable | Callable[[Message], None] | Handler | PathLike
     level: int | str
     format: str | FormatFunction
     filter: str | FilterFunction | FilterDict | None
