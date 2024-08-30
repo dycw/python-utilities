@@ -97,7 +97,7 @@ def _get_schema(obj: _T, /) -> _Schema[_T]:
     if isinstance(obj, dt.datetime) and (obj.tzinfo is None):
         return cast(_Schema[_T], _get_schema_local_datetime())
     if isinstance(obj, dt.datetime) and (obj.tzinfo is not None):
-        return cast(_Schema[_T], _get_schema_zoned_datetime())
+        return cast(_Schema[_T], _get_schema_zoned_datetime())  # skipif-ci-and-windows
     if isinstance(obj, Decimal):
         return cast(_Schema[_T], _get_schema_decimal())
     if isinstance(obj, Fraction):

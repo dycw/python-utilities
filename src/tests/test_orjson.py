@@ -155,11 +155,7 @@ class TestSerializeAndDeserialize:
         int_=int64s(),
         local_datetime=datetimes(),
         text=text_ascii(),
-        zoned_datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
-        ),
     )
-    @SKIPIF_CI_AND_WINDOWS
     def test_dataclasses(
         self,
         *,
@@ -168,7 +164,6 @@ class TestSerializeAndDeserialize:
         int_: int,
         local_datetime: dt.datetime,
         text: str,
-        zoned_datetime: dt.datetime,
     ) -> None:
         true_or_falses: tuple[_TrueOrFalseLit, ...] = get_args(_TrueOrFalseLit)
         true_or_false = data.draw(sampled_from(true_or_falses))
@@ -188,7 +183,6 @@ class TestSerializeAndDeserialize:
             literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            zoned_datetime: dt.datetime
 
         @dataclass(kw_only=True)
         class Outer:
@@ -199,7 +193,6 @@ class TestSerializeAndDeserialize:
             literal: _TrueOrFalseLit
             local_datetime: dt.datetime
             text: str
-            zoned_datetime: dt.datetime
 
         obj = Outer(
             inner=Inner(
@@ -209,7 +202,6 @@ class TestSerializeAndDeserialize:
                 literal=true_or_false,
                 local_datetime=local_datetime,
                 text=text,
-                zoned_datetime=zoned_datetime,
             ),
             date=date,
             enum=truth,
@@ -217,7 +209,6 @@ class TestSerializeAndDeserialize:
             literal=true_or_false,
             local_datetime=local_datetime,
             text=text,
-            zoned_datetime=zoned_datetime,
         )
         result = deserialize(serialize(obj), cls=Outer)
         assert result == obj
