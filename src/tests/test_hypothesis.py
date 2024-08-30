@@ -894,7 +894,7 @@ class TestZonedDatetimes:
         min_value=zoned_datetimes(valid=True),
         max_value=zoned_datetimes(valid=True),
     )
-    def test_two_way(
+    def test_valid(
         self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
