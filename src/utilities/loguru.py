@@ -145,6 +145,16 @@ def format_record_json(record: Record, /) -> str:
     return " | ".join(parts) + "\n"
 
 
+def format_record_slack(record: Record, /) -> str:
+    """Format a record for Slack."""
+    parts = []
+    if "slack" in record["extra"]:
+        parts.append("```{extra[slack]}```")
+    return " | ".join(parts) + "\n"
+    fmt = format_record(record, exception=False)
+    return f"```{fmt}```"
+
+
 def get_logging_level(level: str, /) -> int:
     """Get the logging level."""
     try:
