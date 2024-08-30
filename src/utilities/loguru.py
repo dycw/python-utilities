@@ -139,12 +139,16 @@ def format_record(record: Record, /, *, exception: bool = True) -> str:
 
 def format_record_json(record: Record, /) -> str:
     """Format a record for JSON."""
-    return _format_record_using_extra(record, "json")
+    parts = []
+    if "json" in record["extra"]:
+        parts.append("```{extra[json]}```")
+    return " | ".join(parts) + "\n"
 
 
 def format_record_slack(record: Record, /) -> str:
     """Format a record for Slack."""
-    return _format_record_using_extra(record, "slack")
+    fmt = format_record(record, exception=False)
+    return f"```{fmt}```"
 
 
 def get_logging_level(level: str, /) -> int:
@@ -265,23 +269,12 @@ def patch_record(record: Record, /) -> None:
     """Apply all patchers."""
     _patch_custom_repr(record)
     _patch_json(record)
-    _patch_slack(record)
-
-
-def _format_record_using_extra(record: Record, key: str, /) -> str:
-    """Format a record using an `extra` field."""
-    parts = []
-    if key in record["extra"]:
-        parts.append(f"```{{extra[{key}]}}```")
-    return " | ".join(parts) + "\n"
 
 
 def _patch_custom_repr(record: Record, /) -> None:
     """Add the `custom_repr` field to the extras."""
     mapping = {
-        k: v
-        for k, v in record["extra"].items()
-        if k not in {"json", "custom_repr", "slack"}
+        k: v for k, v in record["extra"].items() if k not in {"json", "custom_repr"}
     }
     record["extra"]["custom_repr"] = custom_mapping_repr(mapping)
 
@@ -289,11 +282,6 @@ def _patch_custom_repr(record: Record, /) -> None:
 def _patch_json(record: Record, /) -> None:
     """Add the `json` field to the extras."""
     record["extra"]["json"] = _serialize_record(record)
-
-
-def _patch_slack(record: Record, /) -> None:
-    """Add the `slack` field to the extras."""
-    record["extra"]["slack"] = format_record(record, exception=False)
 
 
 def _serialize_record(record: Record, /) -> str:
