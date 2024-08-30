@@ -154,7 +154,7 @@ def format_record_json(record: Record, /) -> str:
     """Format a record for JSON."""
     parts = []
     if "json" in record["extra"]:
-        parts.append("```{extra[json]}```")
+        parts.append("{extra[json]}")
     return " | ".join(parts) + "\n"
 
 
