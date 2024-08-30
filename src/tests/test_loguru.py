@@ -3,12 +3,40 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
-from utilities.loguru import InterceptHandler, logged_sleep_async, logged_sleep_sync
+from utilities.loguru import (
+    GetLoggingLevelError,
+    InterceptHandler,
+    LogLevel,
+    get_logging_level,
+    logged_sleep_async,
+    logged_sleep_sync,
+)
 
 if TYPE_CHECKING:
     from utilities.types import Duration
+
+
+class TestGetLoggingLevel:
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(LogLevel.TRACE, 5),
+            param(LogLevel.DEBUG, 10),
+            param(LogLevel.INFO, 20),
+            param(LogLevel.SUCCESS, 25),
+            param(LogLevel.WARNING, 30),
+            param(LogLevel.ERROR, 40),
+            param(LogLevel.CRITICAL, 50),
+        ],
+    )
+    def test_main(self, *, level: str, expected: int) -> None:
+        assert get_logging_level(level) == expected
+
+    def test_error(self) -> None:
+        with raises(GetLoggingLevelError, match="Invalid logging level: 'invalid'"):
+            _ = get_logging_level("invalid")
 
 
 class TestInterceptHandler:

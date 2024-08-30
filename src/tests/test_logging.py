@@ -34,9 +34,7 @@ class TestGetLoggingLevel:
         assert get_logging_level(level) == expected
 
     def test_error(self) -> None:
-        with raises(
-            GetLoggingLevelError, match="Logging level 'invalid' must be valid"
-        ):
+        with raises(GetLoggingLevelError, match="Invalid logging level: 'invalid'"):
             _ = get_logging_level("invalid")
 
 
