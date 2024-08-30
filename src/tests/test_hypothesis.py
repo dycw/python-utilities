@@ -31,6 +31,7 @@ from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
+from whenever import ZonedDateTime
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import is_local_datetime, is_zoned_datetime
@@ -83,11 +84,13 @@ from utilities.types import Duration, Number, make_isinstance
 from utilities.whenever import (
     MAX_TWO_WAY_TIMEDELTA,
     MIN_TWO_WAY_TIMEDELTA,
+    check_valid_zoned_datetime,
     parse_duration,
     parse_timedelta,
     serialize_duration,
     serialize_timedelta,
 )
+from utilities.zoneinfo import HONG_KONG
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -887,3 +890,21 @@ class TestZonedDatetimes:
     def test_max(self, *, time_zone: ZoneInfo) -> None:
         datetime = dt.datetime.max.replace(tzinfo=_ZONED_DATETIMES_RIGHT_MOST)
         _ = datetime.astimezone(time_zone)
+
+    @given(
+        data=data(),
+        # min_value=zoned_datetimes(two_way=True),
+        # max_value=zoned_datetimes(two_way=True),
+        min_value=zoned_datetimes(two_way=True, time_zone=HONG_KONG),
+        max_value=zoned_datetimes(two_way=True, time_zone=HONG_KONG),
+    )
+    @settings(max_examples=100000)
+    # @settings(suppress_health_check={HealthCheck.filter_too_much})
+    @mark.only
+    def test_two_way(
+        self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
+    ) -> None:
+        _ = assume(min_value <= max_value)
+        datetime = data.draw(zoned_datetimes(two_way=True, time_zone=HONG_KONG))
+        # datetime = data.draw(zoned_datetimes(two_way=True))
+        check_valid_zoned_datetime(datetime)

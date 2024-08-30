@@ -4,6 +4,7 @@ import datetime as dt
 import re
 from contextlib import suppress
 from dataclasses import dataclass
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from typing_extensions import override
@@ -13,16 +14,41 @@ from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
     check_date_not_datetime,
+    check_zoned_datetime,
     get_months,
     timedelta_to_microseconds,
 )
 from utilities.types import Duration
-from utilities.zoneinfo import UTC
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
 MAX_TWO_WAY_TIMEDELTA = dt.timedelta(days=1000000, microseconds=-1)
 MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
+
+
+def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
+    """Check if a zoned datetime is valid."""
+    check_zoned_datetime(datetime)
+    time_zone = cast(dt.timezone, datetime.tzinfo)
+    result = (
+        ZonedDateTime.from_py_datetime(datetime)
+        .to_tz("UTC")
+        .to_tz(get_time_zone_name(time_zone))
+        .py_datetime()
+    )
+    if result != datetime:
+        raise CheckValidZonedDateimeError(datetime=datetime, result=result)
+
+
+@dataclass(kw_only=True)
+class CheckValidZonedDateimeError(Exception):
+    datetime: dt.datetime
+    result: dt.datetime
+
+    @override
+    def __str__(self) -> str:
+        return f"Zoned datetime must be valid; got {self.datetime} != {self.result}"
 
 
 def ensure_date(date: dt.date | str, /) -> dt.date:
@@ -470,6 +496,7 @@ __all__ = [
     "MAX_TWO_WAY_TIMEDELTA",
     "MIN_SERIALIZABLE_TIMEDELTA",
     "MIN_TWO_WAY_TIMEDELTA",
+    "CheckValidZonedDateimeError",
     "EnsureDateError",
     "EnsureLocalDateTimeError",
     "EnsureTimeError",
@@ -485,6 +512,7 @@ __all__ = [
     "SerializeLocalDateTimeError",
     "SerializeTimeDeltaError",
     "SerializeZonedDateTimeError",
+    "check_valid_zoned_datetime",
     "ensure_date",
     "ensure_duration",
     "ensure_local_datetime",

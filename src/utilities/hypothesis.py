@@ -71,6 +71,7 @@ from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
+from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -745,6 +746,7 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
     max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
+    two_way: bool = False,
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
     draw = lift_draw(_draw)
@@ -771,7 +773,11 @@ def zoned_datetimes(
         _ = datetime.astimezone(  # for dt.datetime.max
             _ZONED_DATETIMES_RIGHT_MOST
         )
-    return datetime.astimezone(time_zone_)
+    result = datetime.astimezone(time_zone_)
+    if two_way:
+        with assume_does_not_raise(CheckValidZonedDateimeError, match='sdfl'):
+            check_valid_zoned_datetime(result)
+    return result
 
 
 @composite
