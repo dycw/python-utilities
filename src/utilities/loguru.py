@@ -104,6 +104,23 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
+def get_logging_level(level: str, /) -> int:
+    """Get the logging level."""
+    try:
+        return logger.level(level).no
+    except ValueError:
+        raise GetLoggingLevelError(level=level) from None
+
+
+@dataclass(kw_only=True)
+class GetLoggingLevelError(Exception):
+    level: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Invalid logging level: {self.level!r}"
+
+
 @overload
 def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
 @overload
@@ -134,23 +151,6 @@ def log_call(
         return func(*args, **kwargs)
 
     return cast(_F, wrapped_sync)
-
-
-def get_logging_level(level: str, /) -> int:
-    """Get the logging level."""
-    try:
-        return logger.level(level).no
-    except ValueError:
-        raise GetLoggingLevelError(level=level) from None
-
-
-@dataclass(kw_only=True)
-class GetLoggingLevelError(Exception):
-    level: str
-
-    @override
-    def __str__(self) -> str:
-        return f"Invalid logging level: {self.level!r}"
 
 
 def logged_sleep_sync(
