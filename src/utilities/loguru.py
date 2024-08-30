@@ -225,6 +225,7 @@ __all__ = [
     "LogLevel",
     "catch_message",
     "except_hook",
+    "except_hook_message",
     "format_record",
     "format_record_json",
     "format_record_slack",
