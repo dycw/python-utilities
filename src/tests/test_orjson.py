@@ -6,7 +6,7 @@ from fractions import Fraction
 from operator import eq
 from typing import Any, Literal
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -78,6 +78,7 @@ def _map_complex(obj: complex, /) -> complex:
 
 class TestSerializeAndDeserialize:
     @given(data=data())
+    @settings(max_examples=100000)
     @mark.parametrize(
         ("elements", "two_way", "eq_obj_implies_eq_ser"),
         [
@@ -98,7 +99,7 @@ class TestSerializeAndDeserialize:
                 ),
                 True,
                 True,
-                marks=SKIPIF_CI_AND_WINDOWS,
+                marks=mark.only,
             ),
             param(
                 decimals(allow_nan=False, allow_infinity=False).map(_map_abs),

@@ -37,7 +37,7 @@ class GetLoggingLevelError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"There is no level {self.level!r}"
+        return f"Invalid level: {self.level!r}"
 
 
 @unique

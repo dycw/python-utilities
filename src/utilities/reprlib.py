@@ -54,6 +54,8 @@ class ReprLocals:
         )
         return custom_mapping_repr(
             mapping,
+            include_underscore=self.include_underscore,
+            include_none=self.include_none,
             fillvalue=self.fillvalue,
             maxlevel=self.maxlevel,
             maxtuple=self.maxtuple,

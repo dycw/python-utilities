@@ -145,17 +145,33 @@ class TestFilterMapping:
 
 class TestReprLocals:
     @mark.parametrize(
-        ("b", "include_none", "expected"),
+        ("b", "include_underscore", "include_none", "expected"),
         [
-            param(2, False, "a=1, b=2, total=3"),
-            param(2, True, "a=1, b=2, total=3"),
-            param(None, False, "a=1, total=1"),
-            param(None, True, "a=1, b=None, total=1"),
+            param(2, False, False, "a=1, b=2, total=3"),
+            param(2, False, True, "a=1, b=2, total=3"),
+            param(2, True, False, "a=1, b=2, total=3"),
+            param(2, True, True, "a=1, b=2, total=3"),
+            param(None, False, False, "a=1, total=1"),
+            param(None, False, True, "a=1, b=None, total=1"),
+            param(None, True, False, "a=1, total=1"),
+            param(None, True, True, "a=1, b=None, total=1"),
         ],
     )
-    def test_main(self, *, b: int | None, include_none: bool, expected: str) -> None:
+    def test_main(
+        self,
+        *,
+        b: int | None,
+        include_underscore: bool,
+        include_none: bool,
+        expected: str,
+    ) -> None:
         def func(a: int, /, *, b: int | None = None) -> str:
-            init = ReprLocals(locals(), func, include_none=include_none)
+            init = ReprLocals(
+                locals(),
+                func,
+                include_underscore=include_underscore,
+                include_none=include_none,
+            )
             total = a if b is None else (a + b)
             return f"{init}, total={total}"
 
