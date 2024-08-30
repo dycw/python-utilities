@@ -67,7 +67,8 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+catch_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id}) [logger.catch]"
+except_hook_message = "Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id}) [excepthook]"
 
 
 def except_hook(
@@ -80,7 +81,7 @@ def except_hook(
     if issubclass(exc_type, KeyboardInterrupt):
         __excepthook__(exc_type, exc_value, exc_traceback)
         return
-    logger.opt(exception=exc_value, record=True).error(catch_message)
+    logger.opt(exception=exc_value, record=True).error(except_hook_message)
     sys.exit(1)
 
 
@@ -198,15 +199,7 @@ def _patch_json(record: Record, /) -> None:
     record["extra"]["json"] = _serialize_record(record)
 
 
-# def _patch_slack(record: Record, /) -> None:
-#     """Add the `slack` field to the extras."""
-#     msg = "```{record[message]}\n```"
-#     record["extra"]["slack"] = msg
-
-
-patched_logger = logger.patch(_patch_custom_repr).patch(
-    _patch_json
-)  # .patch(_patch_slack)
+patched_logger = logger.patch(_patch_custom_repr).patch(_patch_json)
 
 
 def _serialize_record(record: Record, /) -> str:
