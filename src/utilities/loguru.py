@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -71,21 +71,28 @@ class LogLevel(StrEnum):
 
 
 catch_message = "[logger.catch] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
-except_hook_message = "[excepthook] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
 
 
-def except_hook(
-    exc_type: type[BaseException],
-    exc_value: BaseException,
-    exc_traceback: TracebackType | None,
-    /,
-) -> None:
-    """Exception hook which uses `loguru`."""
-    if issubclass(exc_type, KeyboardInterrupt):
-        __excepthook__(exc_type, exc_value, exc_traceback)
-        return
-    logger.opt(exception=exc_value, record=True).error(except_hook_message)
-    sys.exit(1)
+def make_except_hook(
+    **kwargs: Any,
+) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
+    """Make an `excepthook` which uses `loguru`."""
+    message = "[excepthook] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+
+    def except_hook(
+        exc_type: type[BaseException],
+        exc_value: BaseException,
+        exc_traceback: TracebackType | None,
+        /,
+    ) -> None:
+        """Exception hook which uses `loguru`."""
+        if issubclass(exc_type, KeyboardInterrupt):
+            __excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        logger.bind(**kwargs).opt(exception=exc_value, record=True).error(message)
+        sys.exit(1)
+
+    return except_hook
 
 
 def format_record(record: Record, /, *, exception: bool = True) -> str:
@@ -281,13 +288,12 @@ __all__ = [
     "InterceptHandler",
     "LogLevel",
     "catch_message",
-    "except_hook",
-    "except_hook_message",
     "format_record",
     "format_record_json",
     "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
+    "make_except_hook",
     "make_filter",
     "make_slack_formatter",
     "patched_logger",
