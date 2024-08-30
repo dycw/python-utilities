@@ -247,6 +247,19 @@ def make_filter(
     return filter_func
 
 
+def make_patcher(
+    *, ignore: MaybeIterable[str] | None = None
+) -> Callable[[Record], None]:
+    """Make a patcher."""
+
+    def patch_record(record: Record, /) -> None:
+        """Apply all patchers."""
+        _patch_custom_repr(record, ignore=ignore)
+        _patch_json(record)
+
+    return patch_record
+
+
 @overload
 def make_slack_sink(
     url: str, /, *, sync_or_async: Literal["sync"]
@@ -282,17 +295,14 @@ def make_slack_sink(
             return sink_async
 
 
-def patch_record(record: Record, /) -> None:
-    """Apply all patchers."""
-    _patch_custom_repr(record)
-    _patch_json(record)
-
-
-def _patch_custom_repr(record: Record, /) -> None:
+def _patch_custom_repr(
+    record: Record, /, *, ignore: MaybeIterable[str] | None = None
+) -> None:
     """Add the `custom_repr` field to the extras."""
-    mapping = {
-        k: v for k, v in record["extra"].items() if k not in {"json", "custom_repr"}
-    }
+    all_ignore = {"json", "custom_repr"}
+    if ignore is not None:
+        all_ignore |= set(always_iterable(ignore))
+    mapping = {k: v for k, v in record["extra"].items() if k not in all_ignore}
     record["extra"]["custom_repr"] = custom_mapping_repr(mapping)
 
 
@@ -332,6 +342,6 @@ __all__ = [
     "make_catch_hook",
     "make_except_hook",
     "make_filter",
+    "make_patcher",
     "make_slack_sink",
-    "patch_record",
 ]
