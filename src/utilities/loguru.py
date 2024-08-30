@@ -212,7 +212,12 @@ def make_except_hook(
 
 
 __all__ = [
+    "GetLoggingLevelError",
+    "HandlerConfiguration",
     "InterceptHandler",
+    "LogLevel",
+    "get_logging_level",
+    "log_call",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_catch_hook",
