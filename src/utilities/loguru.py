@@ -11,19 +11,22 @@ from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
 from typing import TYPE_CHECKING, overload
 
-from loguru import logger
+from loguru import FilterFunction, logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
+from utilities.iterables import always_iterable
 from utilities.reprlib import custom_mapping_repr
+from utilities.sentinel import Sentinel, sentinel
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Hashable
     from types import TracebackType
 
     from loguru import Message, Record
 
     from utilities.asyncio import Coroutine1, MaybeCoroutine1
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration
 
 
@@ -160,6 +163,47 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
+def make_filter(
+    *,
+    level: LogLevel | None = None,
+    min_level: LogLevel | None = None,
+    max_level: LogLevel | None = None,
+    name_include: MaybeIterable[str] | Sentinel = sentinel,
+    name_exclude: MaybeIterable[str] | Sentinel = sentinel,
+    extra_include: MaybeIterable[Hashable] | Sentinel = sentinel,
+    extra_exclude: MaybeIterable[Hashable] | Sentinel = sentinel,
+) -> FilterFunction:
+    """Make a filter."""
+
+    def filter_func(record: Record, /) -> bool:
+        rec_level_no = record["level"].no
+        if not (
+            ((level is None) or (rec_level_no == get_logging_level(level)))
+            and ((min_level is None) or (rec_level_no >= get_logging_level(min_level)))
+            and ((max_level is None) or (rec_level_no <= get_logging_level(max_level)))
+        ):
+            return False
+        name = record["name"]
+        if name is not None:
+            return (
+                isinstance(name_include, Sentinel)
+                or any(name.startswith(k) for k in always_iterable(name_include))
+            ) and (
+                isinstance(name_exclude, Sentinel)
+                or all(not name.startswith(k) for k in always_iterable(name_exclude))
+            )
+        rec_extra_keys = set(record["extra"])
+        return (
+            isinstance(extra_include, Sentinel)
+            or all(k in rec_extra_keys for k in always_iterable(extra_include))
+        ) and (
+            isinstance(extra_exclude, Sentinel)
+            or all(k not in rec_extra_keys for k in always_iterable(extra_exclude))
+        )
+
+    return filter_func
+
+
 @overload
 def make_slack_sink(
     url: str, /, *, loop: AbstractEventLoop
@@ -237,5 +281,6 @@ __all__ = [
     "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
+    "make_filter",
     "patched_logger",
 ]
