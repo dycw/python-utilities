@@ -14,7 +14,7 @@ _INFO: LogLevel = cast(Any, "INFO")
 
 
 def before_sleep_log(
-    *, level: str = "INFO", exc_info: bool = False
+    *, level: LogLevel = _INFO, exc_info: bool = False
 ) -> Callable[[RetryCallState], None]:
     """Use `loguru` in around `before_sleep_log`."""
     from utilities.loguru import get_logging_level
@@ -30,7 +30,7 @@ class _LoguruAdapter:
     def log(
         self,
         msg: Any,
-        level: int | str,
+        level: int,
         /,
         *,
         exc_info: BaseException | Literal[False] | None = None,
