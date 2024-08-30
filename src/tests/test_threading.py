@@ -9,7 +9,7 @@ from utilities.threading import run_in_background
 if TYPE_CHECKING:
     from threading import Event
 
-    from _pytest.capture import CaptureFixture
+    from pytest import CaptureFixture
 
 
 class TestRunInBackground:

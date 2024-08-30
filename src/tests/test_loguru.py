@@ -7,23 +7,16 @@ from typing import TYPE_CHECKING, Any, cast
 
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
-from pytest import mark, param, raises
+from pytest import CaptureFixture, mark, param, raises
 
-from tests.functions import (
-    add_sync_info,
-    diff_pairwise_then_add_async,
-    diff_pairwise_then_add_sync,
-)
 from utilities.loguru import (
-    GetLoggingLevelError,
-    HandlerConfiguration,
     InterceptHandler,
     LogLevel,
-    get_logging_level,
     logged_sleep_async,
     logged_sleep_sync,
+    make_catch_hook,
 )
-from utilities.text import ensure_str
+from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -134,3 +127,43 @@ class TestLoggedSleep:
     @mark.parametrize("duration", [param(0.01), param(dt.timedelta(seconds=0.1))])
     async def test_async(self, *, duration: Duration) -> None:
         await logged_sleep_async(duration)
+
+
+class TestMakeCatchHook:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        catch_on_error = make_catch_hook()
+
+        @logger.catch(onerror=catch_on_error)
+        def divide_by_zero(x: float, /) -> float:
+            return x / 0
+
+        _ = divide_by_zero(1.0)
+
+        out = capsys.readouterr().out
+        lines = out.splitlines()
+        exp_first = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| ERROR    \| tests\.test_loguru:test_main:\d+ - An error has been caught in function 'test_main', process 'MainProcess' \(\d+\), thread 'MainThread' \(\d+\)"
+        assert search(exp_first, lines[0])
+        exp_last = strip_and_dedent("""
+                return x / 0
+                       └ 1.0
+
+            ZeroDivisionError: float division by zero
+        """)
+        assert search(exp_last, "\n".join(lines[-4:]))
+
+    def test_without_catch(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        def divide_by_zero(x: float, /) -> float:
+            return x / 0
+
+        with raises(ZeroDivisionError):
+            _ = divide_by_zero(1.0)
+
+        out = capsys.readouterr().out
+        expected = ""
+        assert out == expected
