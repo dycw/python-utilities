@@ -82,8 +82,7 @@ def log_call(
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
             arguments = sig.bind(*args, **kwargs).arguments
-            logger.log(level, "", **arguments)
-            # logger.opt(depth=1).log(level, "", **arguments)
+            logger.opt(depth=1).log(level, "", **arguments)
             return await func(*args, **kwargs)
 
         return cast(_F, wrapped_async)
@@ -91,8 +90,7 @@ def log_call(
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
         arguments = sig.bind(*args, **kwargs).arguments
-        logger.log(level, "", **arguments)
-        # logger.opt(depth=1).log(level, "", **arguments)
+        logger.opt(depth=1).log(level, "", **arguments)
         return func(*args, **kwargs)
 
     return cast(_F, wrapped_sync)
