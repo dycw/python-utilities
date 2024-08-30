@@ -216,9 +216,11 @@ def _get_schema_timedelta() -> _Schema[dt.timedelta]:
 
 
 def _get_schema_zoned_datetime() -> _Schema[dt.datetime]:
-    from utilities.whenever import serialize_zoned_datetime
+    from utilities.whenever import serialize_zoned_datetime  # skipif-ci-and-windows
 
-    return _Schema(key=_Key.zoned_datetime, serializer=serialize_zoned_datetime)
+    return _Schema(  # skipif-ci-and-windows
+        key=_Key.zoned_datetime, serializer=serialize_zoned_datetime
+    )
 
 
 @dataclass(kw_only=True)
@@ -279,7 +281,7 @@ def _object_hook(obj: Any, /) -> Any:
         case _Key.timedelta:
             return _object_hook_timedelta(value)
         case _Key.zoned_datetime:
-            return _object_hook_zoned_datetime(value)
+            return _object_hook_zoned_datetime(value)  # skipif-ci-and-windows
         # collections
         case _Key.frozenset:
             return _object_hook_frozenset(value)
@@ -366,9 +368,9 @@ def _object_hook_timedelta(value: str, /) -> dt.timedelta:
 
 
 def _object_hook_zoned_datetime(value: str, /) -> dt.date:
-    from utilities.whenever import parse_zoned_datetime
+    from utilities.whenever import parse_zoned_datetime  # skipif-ci-and-windows
 
-    return parse_zoned_datetime(value)
+    return parse_zoned_datetime(value)  # skipif-ci-and-windows
 
 
 __all__ = ["deserialize", "serialize"]

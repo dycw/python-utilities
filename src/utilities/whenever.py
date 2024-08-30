@@ -355,11 +355,11 @@ def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
         )
     except ValueError:
         raise ParseZonedDateTimeError(datetime=datetime) from None
-    try:
+    try:  # skipif-ci-and-windows
         microsecond_use = int(microsecond)
-    except ValueError:
+    except ValueError:  # skipif-ci-and-windows
         microsecond_use = 0
-    return dt.datetime(
+    return dt.datetime(  # skipif-ci-and-windows
         year=int(year),
         month=int(month),
         day=int(day),
