@@ -263,6 +263,7 @@ start-pypi-server = "utilities.scripts.pypi_server:main"
 [tool.coverage.coverage_conditional_plugin.rules]
 skipif-ci = '"CI" in os_environ'
 skipif-ci-and-not-linux = '("CI" in os_environ) and (sys_platform != "linux")'
+skipif-ci-and-windows = '("CI" in os_environ) and (sys_platform != "windows")'
 skipif-linux = 'sys_platform == "linux"'
 skipif-mac = 'sys_platform == "darwin"'
 skipif-not-linux = 'sys_platform != "linux"'

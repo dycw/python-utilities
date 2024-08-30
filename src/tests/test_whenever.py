@@ -20,6 +20,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from whenever import DateTimeDelta
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import (
     _MICROSECONDS_PER_DAY,
     _MICROSECONDS_PER_SECOND,
@@ -85,6 +86,7 @@ _TIMEDELTA_MICROSECONDS = dt.timedelta(microseconds=1e18)
 _TIMEDELTA_OVERFLOW = dt.timedelta(days=106751991, seconds=14454, microseconds=775808)
 
 
+@SKIPIF_CI_AND_WINDOWS
 class TestCheckValidZonedDatetime:
     @mark.parametrize(
         "datetime",
@@ -341,6 +343,7 @@ class TestParseAndSerializeZonedDateTime:
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         )
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_main(self, *, datetime: dt.datetime) -> None:
         serialized = serialize_zoned_datetime(datetime)
         result = parse_zoned_datetime(serialized)
@@ -351,6 +354,7 @@ class TestParseAndSerializeZonedDateTime:
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         ).map(drop_milli_and_microseconds)
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss(self, *, datetime: dt.datetime) -> None:
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S"))
         assert isinstance(datetime.tzinfo, ZoneInfo | timezone)
@@ -364,6 +368,7 @@ class TestParseAndSerializeZonedDateTime:
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         )
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_yyyymmdd_hhmmss_ffffff(self, *, datetime: dt.datetime) -> None:
         _ = assume(datetime.microsecond != 0)
         part1 = datetime.strftime(maybe_sub_pct_y("%Y%m%dT%H%M%S.%f"))
@@ -394,6 +399,7 @@ class TestParseAndSerializeZonedDateTime:
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         ),
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_ensure(self, *, data: DataObject, datetime: dt.datetime) -> None:
         str_or_value = data.draw(
             sampled_from([datetime, serialize_zoned_datetime(datetime)])

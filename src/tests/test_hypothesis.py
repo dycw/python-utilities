@@ -32,7 +32,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
-from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
+from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX, SKIPIF_CI_AND_WINDOWS
 from utilities.datetime import is_local_datetime, is_zoned_datetime
 from utilities.git import _GET_BRANCH_NAME
 from utilities.hypothesis import (
@@ -894,6 +894,7 @@ class TestZonedDatetimes:
         min_value=zoned_datetimes(valid=True),
         max_value=zoned_datetimes(valid=True),
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_valid(
         self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:

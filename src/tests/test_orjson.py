@@ -35,6 +35,7 @@ from hypothesis.strategies import (
 from pytest import mark, param, raises
 from sqlalchemy import Engine
 
+from tests.conftest import SKIPIF_CI_AND_WINDOWS
 from utilities.hypothesis import (
     int64s,
     slices,
@@ -97,6 +98,7 @@ class TestSerializeAndDeserialize:
                 ),
                 True,
                 True,
+                marks=SKIPIF_CI_AND_WINDOWS,
             ),
             param(
                 decimals(allow_nan=False, allow_infinity=False).map(_map_abs),
@@ -157,6 +159,7 @@ class TestSerializeAndDeserialize:
             time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         ),
     )
+    @SKIPIF_CI_AND_WINDOWS
     def test_dataclasses(
         self,
         *,

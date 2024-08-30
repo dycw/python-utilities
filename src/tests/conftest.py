@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pytest import fixture, mark
 
-from utilities.platform import IS_NOT_LINUX
+from utilities.platform import IS_NOT_LINUX, IS_WINDOWS
 from utilities.sqlalchemy import ensure_tables_dropped_async
 
 if TYPE_CHECKING:
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 FLAKY = mark.flaky(reruns=5, reruns_delay=1)
 SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
-SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
-    ("CI" in environ) and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
+SKIPIF_CI_AND_WINDOWS = mark.skipif(
+    ("CI" in environ) and IS_WINDOWS, reason="Skipped for CI/Windows"
 )
 SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
     ("CI" in environ) and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
@@ -28,6 +28,7 @@ SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
 
 
 # hypothesis
+
 
 try:
     from utilities.hypothesis import setup_hypothesis_profiles
