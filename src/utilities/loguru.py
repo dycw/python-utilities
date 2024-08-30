@@ -11,7 +11,7 @@ from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
 from typing import TYPE_CHECKING, overload
 
-from loguru import logger
+from loguru import FormatFunction, logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
@@ -207,6 +207,17 @@ def make_filter(
     return filter_func
 
 
+def make_slack_formatter(*, exception: bool = True) -> FormatFunction:
+    """Make a `slack` formatter."""
+
+    def format_record_slack(record: Record, /) -> str:
+        """Format a record for Slack."""
+        fmt = format_record(record, exception=exception)
+        return f"```{fmt}```"
+
+    return format_record_slack
+
+
 @overload
 def make_slack_sink(
     url: str, /, *, loop: AbstractEventLoop
@@ -221,21 +232,21 @@ def make_slack_sink(
 
     if loop is None:
 
-        def _send_slack_sync(message: Message, /) -> None:
+        def sink_sync(message: Message, /) -> None:
             try:
                 send_slack_sync(message, url=url)
             except SendSlackError as error:
                 _ = stderr.write(str(error))
 
-        return _send_slack_sync
+        return sink_sync
 
-    async def _send_slack_async(message: Message, /) -> None:
+    async def sink_async(message: Message, /) -> None:
         try:
             await send_slack_async(message, url=url)
         except SendSlackError as error:
             _ = stderr.write(str(error))
 
-    return _send_slack_async
+    return sink_async
 
 
 def _patch_custom_repr(record: Record, /) -> None:
@@ -285,5 +296,6 @@ __all__ = [
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_filter",
+    "make_slack_formatter",
     "patched_logger",
 ]
