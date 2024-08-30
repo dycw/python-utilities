@@ -34,7 +34,7 @@ def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     datetime2 = datetime.replace(tzinfo=time_zone)
     result = (
         ZonedDateTime.from_py_datetime(datetime2)
-        .to_tz("UTC")
+        .to_tz(get_time_zone_name(UTC))
         .to_tz(get_time_zone_name(time_zone))
         .py_datetime()
     )
