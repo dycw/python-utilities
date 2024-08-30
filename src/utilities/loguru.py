@@ -202,11 +202,11 @@ def make_except_hook(
         /,
     ) -> None:
         """Exception hook which uses `loguru`."""
-        if issubclass(exc_type, KeyboardInterrupt):
+        if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        callback(exc_value)
-        sys.exit(1)
+        callback(exc_value)  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
 
     return except_hook
 
