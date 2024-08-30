@@ -111,10 +111,8 @@ def format_record_json(record: Record, /) -> str:
 
 def format_record_slack(record: Record, /) -> str:
     """Format a record for Slack."""
-    parts = []
-    if "json" in record["extra"]:
-        parts.append("{extra[slack]}")
-    return " | ".join(parts) + "\n"
+    fmt = format_record(record)
+    return f"```{fmt}```"
 
 
 def get_logging_level(level: str, /) -> int:
@@ -200,13 +198,15 @@ def _patch_json(record: Record, /) -> None:
     record["extra"]["json"] = _serialize_record(record)
 
 
-def _patch_slack(record: Record, /) -> None:
-    """Add the `slack` field to the extras."""
-    msg = "```{record[message]}\n```"
-    record["extra"]["slack"] = msg
+# def _patch_slack(record: Record, /) -> None:
+#     """Add the `slack` field to the extras."""
+#     msg = "```{record[message]}\n```"
+#     record["extra"]["slack"] = msg
 
 
-patched_logger = logger.patch(_patch_custom_repr).patch(_patch_json).patch(_patch_slack)
+patched_logger = logger.patch(_patch_custom_repr).patch(
+    _patch_json
+)  # .patch(_patch_slack)
 
 
 def _serialize_record(record: Record, /) -> str:
