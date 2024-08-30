@@ -77,7 +77,7 @@ def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
-    message = "Uncaught {record[exception].type!r} {record[exception.type]} {record[exception.value]!r} {record[exception.value]}"
+    message = "Uncaught {record[exception].type!r} {record[exception].type} {record[exception.value]!r} {record[exception.value]}"
 
     def except_hook(
         exc_type: type[BaseException],
