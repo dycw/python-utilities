@@ -19,7 +19,7 @@ from utilities.datetime import (
     timedelta_to_microseconds,
 )
 from utilities.types import Duration
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA
@@ -30,14 +30,15 @@ MIN_TWO_WAY_TIMEDELTA = -MAX_TWO_WAY_TIMEDELTA
 def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
     """Check if a zoned datetime is valid."""
     check_zoned_datetime(datetime)
-    time_zone = cast(dt.timezone, datetime.tzinfo)
+    time_zone = ensure_time_zone(cast(dt.timezone, datetime.tzinfo))
+    datetime2 = datetime.replace(tzinfo=time_zone)
     result = (
-        ZonedDateTime.from_py_datetime(datetime)
+        ZonedDateTime.from_py_datetime(datetime2)
         .to_tz("UTC")
         .to_tz(get_time_zone_name(time_zone))
         .py_datetime()
     )
-    if result != datetime:
+    if result != datetime2:
         raise CheckValidZonedDateimeError(datetime=datetime, result=result)
 
 
