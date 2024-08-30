@@ -95,13 +95,22 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "Uncaught {record[exception].value!r}"
+def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
+    """Make a `logger.catch` hook."""
+
+    def callback(error: BaseException, /) -> None:
+        logger.bind(**kwargs).opt(exception=error, record=True).error(
+            "Uncaught {record[exception].value!r}"
+        )
+
+    return callback
 
 
 def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
+    callback = make_catch_hook(**kwargs)
 
     def except_hook(
         exc_type: type[BaseException],
@@ -113,7 +122,7 @@ def make_except_hook(
         if issubclass(exc_type, KeyboardInterrupt):
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        logger.bind(**kwargs).opt(exception=exc_value, record=True).error(catch_message)
+        callback(exc_value)
         sys.exit(1)
 
     return except_hook
@@ -240,44 +249,13 @@ def make_filter(
 
 @overload
 def make_slack_sink(
-    url: str, /, *, loop: AbstractEventLoop
-) -> Callable[..., Coroutine1[None]]: ...
-@overload
-def make_slack_sink(url: str, /, *, loop: None = ...) -> Callable[..., None]: ...
-def make_slack_sink(
-    url: str, /, *, loop: AbstractEventLoop | None = None
-) -> Callable[..., MaybeCoroutine1[None]]:
-    """Make a `slack` sink."""
-    from utilities.slack_sdk import SendSlackError, send_slack_async, send_slack_sync
-
-    if loop is None:
-
-        def sink_sync(message: Message, /) -> None:
-            try:
-                send_slack_sync(message, url=url)
-            except SendSlackError as error:
-                _ = stderr.write(str(error))
-
-        return sink_sync
-
-    async def sink_async(message: Message, /) -> None:
-        try:
-            await send_slack_async(message, url=url)
-        except SendSlackError as error:
-            _ = stderr.write(str(error))
-
-    return sink_async
-
-
-@overload
-def make_slack_sink2(
     url: str, /, *, sync_or_async: Literal["sync"]
 ) -> Callable[..., None]: ...
 @overload
-def make_slack_sink2(
+def make_slack_sink(
     url: str, /, *, sync_or_async: Literal["async"]
 ) -> Callable[..., Coroutine1[None]]: ...
-def make_slack_sink2(
+def make_slack_sink(
     url: str, /, *, sync_or_async: Literal["sync", "async"]
 ) -> Callable[..., MaybeCoroutine1[None]]:
     """Make a `slack` sink."""
@@ -345,16 +323,15 @@ __all__ = [
     "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
-    "catch_message",
     "format_record",
     "format_record_json",
     "format_record_slack",
     "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
+    "make_catch_hook",
     "make_except_hook",
     "make_filter",
     "make_slack_sink",
-    "make_slack_sink2",
     "patch_record",
 ]
