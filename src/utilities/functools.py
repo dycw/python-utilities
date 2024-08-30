@@ -4,7 +4,7 @@ from collections.abc import Callable
 from functools import cache as _cache
 from functools import lru_cache as _lru_cache
 from functools import partial as _partial
-from typing import Any, ParamSpec, TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 
 from typing_extensions import override
 

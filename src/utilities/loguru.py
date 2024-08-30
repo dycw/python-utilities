@@ -6,15 +6,12 @@ import time
 from collections.abc import Callable
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from cachetools.func import ttl_cache
 from loguru import logger
 from typing_extensions import override
 
-from utilities.datetime import duration_to_float, duration_to_timedelta
-from utilities.functions import identity
-from utilities.functools import lru_cache
+from utilities.datetime import duration_to_timedelta
 from utilities.logging import LogLevel
 
 if TYPE_CHECKING:
