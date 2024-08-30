@@ -891,12 +891,12 @@ class TestZonedDatetimes:
 
     @given(
         data=data(),
-        min_value=zoned_datetimes(two_way=True),
-        max_value=zoned_datetimes(two_way=True),
+        min_value=zoned_datetimes(valid=True),
+        max_value=zoned_datetimes(valid=True),
     )
     def test_two_way(
         self, *, data: DataObject, min_value: dt.datetime, max_value: dt.datetime
     ) -> None:
         _ = assume(min_value <= max_value)
-        datetime = data.draw(zoned_datetimes(two_way=True))
+        datetime = data.draw(zoned_datetimes(valid=True))
         check_valid_zoned_datetime(datetime)

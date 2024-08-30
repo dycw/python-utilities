@@ -746,7 +746,7 @@ def zoned_datetimes(
     min_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.min,
     max_value: MaybeSearchStrategy[dt.datetime] = dt.datetime.max,
     time_zone: MaybeSearchStrategy[ZoneInfo | timezone] = UTC,
-    two_way: bool = False,
+    valid: bool = False,
 ) -> dt.datetime:
     """Strategy for generating zoned datetimes."""
     draw = lift_draw(_draw)
@@ -774,7 +774,7 @@ def zoned_datetimes(
             _ZONED_DATETIMES_RIGHT_MOST
         )
     result = datetime.astimezone(time_zone_)
-    if two_way:
+    if valid:
         with assume_does_not_raise(CheckValidZonedDateimeError):
             check_valid_zoned_datetime(result)
     return result

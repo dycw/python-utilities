@@ -92,7 +92,9 @@ class TestSerializeAndDeserialize:
             param(dates(), True, True),
             param(datetimes(), True, True),
             param(
-                zoned_datetimes(time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])),
+                zoned_datetimes(
+                    time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+                ),
                 True,
                 True,
             ),
@@ -152,7 +154,7 @@ class TestSerializeAndDeserialize:
         local_datetime=datetimes(),
         text=text_ascii(),
         zoned_datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC])
+            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
         ),
     )
     def test_dataclasses(
