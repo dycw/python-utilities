@@ -279,7 +279,9 @@ def _format_record_using_extra(record: Record, key: str, /) -> str:
 def _patch_custom_repr(record: Record, /) -> None:
     """Add the `custom_repr` field to the extras."""
     mapping = {
-        k: v for k, v in record["extra"].items() if k not in {"json", "custom_repr"}
+        k: v
+        for k, v in record["extra"].items()
+        if k not in {"json", "custom_repr", "slack"}
     }
     record["extra"]["custom_repr"] = custom_mapping_repr(mapping)
 
