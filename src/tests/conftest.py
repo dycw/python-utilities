@@ -22,6 +22,9 @@ SKIPIF_CI = mark.skipif("CI" in environ, reason="Skipped for CI")
 SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
     ("CI" in environ) and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
 )
+SKIPIF_CI_AND_NOT_LINUX = mark.skipif(
+    ("CI" in environ) and IS_NOT_LINUX, reason="Skipped for CI/non-Linux"
+)
 
 
 # hypothesis
