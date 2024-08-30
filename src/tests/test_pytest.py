@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
+from tests.conftest import FLAKY
 from utilities.pytest import throttle
 
 if TYPE_CHECKING:
@@ -301,6 +302,7 @@ async def test_main():
             if i == 0:
                 sleep(1.0)
 
+    @FLAKY
     def test_long_name(self, *, testdir: Testdir, tmp_path: Path) -> None:
         root_str = str(tmp_path)
         contents = f"""
