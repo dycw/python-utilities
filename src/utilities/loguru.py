@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 import time
 from asyncio import AbstractEventLoop
 from collections.abc import Callable
@@ -10,7 +11,7 @@ from enum import StrEnum, unique
 from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from logging import Handler, LogRecord
-from sys import _getframe
+from sys import __excepthook__, _getframe
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
 
 from loguru import logger
@@ -21,6 +22,7 @@ from utilities.datetime import duration_to_timedelta
 if TYPE_CHECKING:
     import datetime as dt
     from multiprocessing.context import BaseContext
+    from types import TracebackType
 
     from loguru import (
         CompressionFunction,
@@ -34,6 +36,7 @@ if TYPE_CHECKING:
     )
 
     from utilities.types import Duration, StrMapping
+
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
@@ -175,6 +178,39 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
+def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
+    """Make a `logger.catch` hook."""
+
+    def callback(error: BaseException, /) -> None:
+        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
+            "Uncaught {record[exception].value!r}"
+        )
+
+    return callback
+
+
+def make_except_hook(
+    **kwargs: Any,
+) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
+    """Make an `excepthook` which uses `loguru`."""
+    callback = make_catch_hook(**kwargs)
+
+    def except_hook(
+        exc_type: type[BaseException],
+        exc_value: BaseException,
+        exc_traceback: TracebackType | None,
+        /,
+    ) -> None:
+        """Exception hook which uses `loguru`."""
+        if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
+            __excepthook__(exc_type, exc_value, exc_traceback)
+            return
+        callback(exc_value)  # pragma: no cover
+        sys.exit(1)  # pragma: no cover
+
+    return except_hook
+
+
 __all__ = [
     "GetLoggingLevelError",
     "HandlerConfiguration",
@@ -184,4 +220,6 @@ __all__ = [
     "log_call",
     "logged_sleep_async",
     "logged_sleep_sync",
+    "make_catch_hook",
+    "make_except_hook",
 ]
