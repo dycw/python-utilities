@@ -91,7 +91,7 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "`logger.catch` caught {record[exception].type!r}"
+catch_message = "Uncaught {record[exception].value!r}"
 
 
 def make_except_hook(
