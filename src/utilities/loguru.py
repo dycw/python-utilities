@@ -184,14 +184,18 @@ def make_filter(
         ):
             return False
         name = record["name"]
-        if name is not None:
-            return (
+        if (
+            (name is not None)
+            and not (
                 isinstance(name_include, Sentinel)
                 or any(name.startswith(k) for k in always_iterable(name_include))
-            ) and (
+            )
+            and (
                 isinstance(name_exclude, Sentinel)
                 or all(not name.startswith(k) for k in always_iterable(name_exclude))
             )
+        ):
+            return False
         rec_extra_keys = set(record["extra"])
         return (
             isinstance(extra_include, Sentinel)
