@@ -1,20 +1,29 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import TYPE_CHECKING
+import sys  # do use `from sys import ...`
+from re import search
+from typing import TYPE_CHECKING, Any, cast
 
+from loguru import logger
+from loguru._defaults import LOGURU_FORMAT
 from pytest import mark, param, raises
 
+from tests.functions import diff_pairwise_then_add_async, diff_pairwise_then_add_sync
 from utilities.loguru import (
     GetLoggingLevelError,
+    HandlerConfiguration,
     InterceptHandler,
     LogLevel,
     get_logging_level,
     logged_sleep_async,
     logged_sleep_sync,
 )
+from utilities.text import ensure_str
 
 if TYPE_CHECKING:
+    from _pytest.capture import CaptureFixture
+
     from utilities.types import Duration
 
 
@@ -42,6 +51,60 @@ class TestGetLoggingLevel:
 class TestInterceptHandler:
     def test_main(self) -> None:
         _ = InterceptHandler()
+
+
+class TestLogCall:
+    def test_sync(self, *, capsys: CaptureFixture) -> None:
+        default_format = ensure_str(LOGURU_FORMAT)
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "level": LogLevel.TRACE,
+            "format": f"{default_format} | {{extra}}",
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert diff_pairwise_then_add_sync(1000, 100, 10, 1) == 909
+        out = capsys.readouterr().out
+        line1, line2, line3, line4 = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
+        expected1 = (
+            head
+            + r"tests\.test_loguru:test_sync:\d+ -  \| {'x': 1000, 'y': 100, 'z': 10, 'w': 1}"
+        )
+        assert search(expected1, line1)
+        head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:"
+        expected2 = head_mid + r"20 -  \| {'x': 1000, 'y': 100}"
+        assert search(expected2, line2)
+        expected3 = head_mid + r"21 -  \| {'x': 10, 'y': 1}"
+        assert search(expected3, line3)
+        expected4 = head_mid + r"22 -  \| {'x': 900, 'y': 9}"
+        assert search(expected4, line4)
+
+    async def test_async(self, *, capsys: CaptureFixture) -> None:
+        default_format = ensure_str(LOGURU_FORMAT)
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "level": LogLevel.TRACE,
+            "format": f"{default_format} | {{extra}}",
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await diff_pairwise_then_add_async(1000, 100, 10, 1) == 909
+        out = capsys.readouterr().out
+        line1, line2, line3, line4 = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
+        expected1 = (
+            head
+            + r"tests\.test_loguru:test_async:\d+ -  \| {'x': 1000, 'y': 100, 'z': 10, 'w': 1}"
+        )
+        assert search(expected1, line1)
+        head_mid = head + r"tests\.functions:diff_pairwise_then_add_async:"
+        expected2 = head_mid + r"39 -  \| {'x': 1000, 'y': 100}"
+        assert search(expected2, line2)
+        expected3 = head_mid + r"40 -  \| {'x': 10, 'y': 1}"
+        assert search(expected3, line3)
+        expected4 = head_mid + r"41 -  \| {'x': 900, 'y': 9}"
+        assert search(expected4, line4)
 
 
 class TestLoggedSleep:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+from asyncio import AbstractEventLoop
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum, unique
@@ -10,7 +11,7 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction, signature
 from logging import Handler, LogRecord
 from sys import _getframe
-from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
 
 from loguru import logger
 from typing_extensions import override
@@ -18,10 +19,49 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 
 if TYPE_CHECKING:
-    from utilities.types import Duration
+    import datetime as dt
+    from multiprocessing.context import BaseContext
 
+    from loguru import (
+        CompressionFunction,
+        FilterDict,
+        FilterFunction,
+        FormatFunction,
+        Message,
+        RetentionFunction,
+        RotationFunction,
+        Writable,
+    )
+
+    from utilities.types import Duration, StrMapping
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+
+
+class HandlerConfiguration(TypedDict, total=False):
+    """A handler configuration."""
+
+    sink: TextIO | Writable | Callable[[Message], None] | Handler
+    level: int | str
+    format: str | FormatFunction
+    filter: str | FilterFunction | FilterDict | None
+    colorize: bool | None
+    serialize: bool
+    backtrace: bool
+    diagnose: bool
+    enqueue: bool
+    context: str | BaseContext | None
+    catch: bool
+    loop: AbstractEventLoop
+    rotation: str | int | dt.time | dt.timedelta | RotationFunction | None
+    retention: str | int | dt.timedelta | RetentionFunction | None
+    compression: str | CompressionFunction | None
+    delay: bool
+    watch: bool
+    mode: str
+    buffering: int
+    encoding: str
+    kwargs: StrMapping
 
 
 class InterceptHandler(Handler):
@@ -137,6 +177,7 @@ async def logged_sleep_async(
 
 __all__ = [
     "GetLoggingLevelError",
+    "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
     "get_logging_level",
