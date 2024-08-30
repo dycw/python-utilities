@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from asyncio import sleep
 
-from utilities.loguru import log_call
+from utilities.loguru import LogLevel, log_call
+
+# test sync
 
 
 @log_call
@@ -22,6 +24,9 @@ def diff_pairwise_then_add_sync(x: int, y: int, z: int, w: int, /) -> int:
     return add_sync(first, second)
 
 
+# test async
+
+
 @log_call
 async def add_async(x: int, y: int, /) -> int:
     await sleep(0.01)
@@ -39,3 +44,11 @@ async def diff_pairwise_then_add_async(x: int, y: int, z: int, w: int, /) -> int
     first = await diff_async(x, y)
     second = await diff_async(z, w)
     return await add_async(first, second)
+
+
+# test custom level
+
+
+@log_call(level=LogLevel.INFO)
+def add_sync_info(x: int, y: int, /) -> int:
+    return x + y

@@ -9,7 +9,11 @@ from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from pytest import mark, param, raises
 
-from tests.functions import diff_pairwise_then_add_async, diff_pairwise_then_add_sync
+from tests.functions import (
+    add_sync_info,
+    diff_pairwise_then_add_async,
+    diff_pairwise_then_add_sync,
+)
 from utilities.loguru import (
     GetLoggingLevelError,
     HandlerConfiguration,
@@ -72,12 +76,12 @@ class TestLogCall:
             + r"tests\.test_loguru:test_sync:\d+ -  \| {'x': 1000, 'y': 100, 'z': 10, 'w': 1}"
         )
         assert search(expected1, line1)
-        head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:"
-        expected2 = head_mid + r"20 -  \| {'x': 1000, 'y': 100}"
+        head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:\d+ -  \| "
+        expected2 = head_mid + "{'x': 1000, 'y': 100}"
         assert search(expected2, line2)
-        expected3 = head_mid + r"21 -  \| {'x': 10, 'y': 1}"
+        expected3 = head_mid + "{'x': 10, 'y': 1}"
         assert search(expected3, line3)
-        expected4 = head_mid + r"22 -  \| {'x': 900, 'y': 9}"
+        expected4 = head_mid + "{'x': 900, 'y': 9}"
         assert search(expected4, line4)
 
     async def test_async(self, *, capsys: CaptureFixture) -> None:
@@ -98,13 +102,28 @@ class TestLogCall:
             + r"tests\.test_loguru:test_async:\d+ -  \| {'x': 1000, 'y': 100, 'z': 10, 'w': 1}"
         )
         assert search(expected1, line1)
-        head_mid = head + r"tests\.functions:diff_pairwise_then_add_async:"
-        expected2 = head_mid + r"39 -  \| {'x': 1000, 'y': 100}"
+        head_mid = head + r"tests\.functions:diff_pairwise_then_add_async:\d+ -  \| "
+        expected2 = head_mid + "{'x': 1000, 'y': 100}"
         assert search(expected2, line2)
-        expected3 = head_mid + r"40 -  \| {'x': 10, 'y': 1}"
+        expected3 = head_mid + "{'x': 10, 'y': 1}"
         assert search(expected3, line3)
-        expected4 = head_mid + r"41 -  \| {'x': 900, 'y': 9}"
+        expected4 = head_mid + "{'x': 900, 'y': 9}"
         assert search(expected4, line4)
+
+    def test_custom_level(self, *, capsys: CaptureFixture) -> None:
+        default_format = ensure_str(LOGURU_FORMAT)
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "level": LogLevel.TRACE,
+            "format": f"{default_format} | {{extra}}",
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert add_sync_info(1, 2) == 3
+        out = capsys.readouterr().out
+        (line,) = out.splitlines()
+        expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'x': 1, 'y': 2}"
+        assert search(expected, line)
 
 
 class TestLoggedSleep:
