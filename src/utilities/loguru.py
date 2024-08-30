@@ -70,14 +70,14 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-catch_message = "[logger.catch] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+catch_message = "Uncaught {record[exception].type!r} (logger.catch)"
 
 
 def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
-    message = "[excepthook] Uncaught {record[exception].value!r} ({record[process].name}/{record[process].id} | {record[thread].name}/{record[thread].id})"
+    message = "[excepthook] Uncaught {record[exception].type!r}"
 
     def except_hook(
         exc_type: type[BaseException],
