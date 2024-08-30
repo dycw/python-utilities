@@ -5,16 +5,20 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 import tenacity
 from tenacity import RetryCallState
 
-from utilities.logging import LogLevel, get_logging_level
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from utilities.loguru import LogLevel
+
+_INFO: LogLevel = cast(Any, "INFO")
+
 
 def before_sleep_log(
-    *, level: LogLevel = LogLevel.INFO, exc_info: bool = False
+    *, level: LogLevel = _INFO, exc_info: bool = False
 ) -> Callable[[RetryCallState], None]:
     """Use `loguru` in around `before_sleep_log`."""
+    from utilities.loguru import get_logging_level
+
     return tenacity.before_sleep_log(
         cast(Any, _LoguruAdapter()), get_logging_level(level), exc_info=exc_info
     )
