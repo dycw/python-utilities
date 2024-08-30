@@ -19,7 +19,7 @@ from utilities.datetime import (
     timedelta_to_microseconds,
 )
 from utilities.types import Duration
-from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
+from utilities.zoneinfo import UTC, get_time_zone_name
 
 MAX_SERIALIZABLE_TIMEDELTA = dt.timedelta(days=3659634, microseconds=-1)
 MIN_SERIALIZABLE_TIMEDELTA = -MAX_SERIALIZABLE_TIMEDELTA

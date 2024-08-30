@@ -31,7 +31,6 @@ from pytest import mark, param, raises
 from sqlalchemy import Column, Engine, Integer, MetaData, Select, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
-from whenever import ZonedDateTime
 
 from tests.conftest import FLAKY, SKIPIF_CI_AND_NOT_LINUX
 from utilities.datetime import is_local_datetime, is_zoned_datetime

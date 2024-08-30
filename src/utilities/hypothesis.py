@@ -775,7 +775,7 @@ def zoned_datetimes(
         )
     result = datetime.astimezone(time_zone_)
     if two_way:
-        with assume_does_not_raise(CheckValidZonedDateimeError, match='sdfl'):
+        with assume_does_not_raise(CheckValidZonedDateimeError, match="sdfl"):
             check_valid_zoned_datetime(result)
     return result
 
