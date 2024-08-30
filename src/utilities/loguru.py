@@ -238,17 +238,6 @@ def make_filter(
     return filter_func
 
 
-def make_slack_formatter(*, exception: bool = True) -> FormatFunction:
-    """Make a `slack` formatter."""
-
-    def fmt_rec(record: Record, /) -> str:
-        """Format a record for Slack."""
-        fmt = format_record(record, exception=exception)
-        return f"```{fmt}```"
-
-    return fmt_rec
-
-
 @overload
 def make_slack_sink(
     url: str, /, *, loop: AbstractEventLoop
@@ -327,12 +316,12 @@ __all__ = [
     "catch_message",
     "format_record",
     "format_record_json",
+    "format_record_slack",
     "get_logging_level",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_except_hook",
     "make_filter",
-    "make_slack_formatter",
     "patch_record",
     "patched_logger",
 ]
