@@ -247,10 +247,10 @@ def make_filter(
     extra_include_any: MaybeIterable[Hashable] | None = None,
     extra_exclude_all: MaybeIterable[Hashable] | None = None,
     extra_exclude_any: MaybeIterable[Hashable] | None = None,
-    _is_testing: bool = False,
+    _is_testing_override: bool = False,
 ) -> FilterFunction:
     """Make a filter."""
-    either_is_testing = _is_testing or is_pytest()
+    is_not_pytest_or_override = (not is_pytest()) or _is_testing_override
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
@@ -284,7 +284,7 @@ def make_filter(
             return False
         if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
-        return either_is_testing
+        return is_not_pytest_or_override
 
     return filter_func
 
