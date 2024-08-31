@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from functools import partial, wraps
@@ -20,6 +20,9 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
+from utilities.iterables import always_iterable, filter
+from utilities.sentinel import Sentinel, sentinel
+from utilities.sys import is_pytest
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -34,12 +37,14 @@ if TYPE_CHECKING:
         FormatFunction,
         Logger,
         Message,
+        Record,
         RetentionFunction,
         RotationFunction,
         Writable,
     )
 
     from utilities.asyncio import MaybeCoroutine1
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration, PathLike, StrMapping
 
 
@@ -232,37 +237,57 @@ def make_except_hook(
     return except_hook
 
 
-def _log_from_depth_up(
-    logger: Logger,
-    depth: int,
-    level: LogLevel,
-    message: str,
-    /,
-    *args: Any,
-    exception: bool | ExcInfo | BaseException | None = None,
-    **kwargs: Any,
-) -> None:
-    """Log from a given depth up to 0, in case it would fail otherwise."""
-    if depth >= 0:
-        try:
-            logger.opt(exception=exception, record=True, depth=depth).log(
-                level, message, *args, **kwargs
+def make_filter(
+    *,
+    level: LogLevel | None = None,
+    min_level: LogLevel | None = None,
+    max_level: LogLevel | None = None,
+    name_include: MaybeIterable[str] | None = None,
+    name_exclude: MaybeIterable[str] | None = None,
+    extra_include: MaybeIterable[Hashable] | None = None,
+    extra_exclude: MaybeIterable[Hashable] | None = None,
+    _is_testing: bool = False,
+) -> FilterFunction:
+    """Make a filter."""
+    either_is_testing = _is_testing or is_pytest()
+
+    def filter_func(record: Record, /) -> bool:
+        rec_level_no = record["level"].no
+        if not (
+            ((level is None) or (rec_level_no == get_logging_level(level)))
+            and ((min_level is None) or (rec_level_no >= get_logging_level(min_level)))
+            and ((max_level is None) or (rec_level_no <= get_logging_level(max_level)))
+        ):
+            return False
+        name = record["name"]
+        if name is not None:
+            asdf, basdf = filterinclu
+        if (name is not None) and not (
+            (
+                isinstance(name_include, Sentinel)
+                or any(name.startswith(k) for k in always_iterable(name_include))
             )
-        except ValueError:  # pragma: no cover
-            return _log_from_depth_up(
-                logger, depth - 1, level, message, *args, exception=exception, **kwargs
+            and (
+                isinstance(name_exclude, Sentinel)
+                or all(not name.startswith(k) for k in always_iterable(name_exclude))
             )
-        return None
-    raise _LogFromDepthUpError(depth=depth)
+        ):
+            return False
+        rec_extra_keys = set(record["extra"])
+        if not (
+            (
+                isinstance(extra_include, Sentinel)
+                or any(k in rec_extra_keys for k in always_iterable(extra_include))
+            )
+            and (
+                isinstance(extra_exclude, Sentinel)
+                or all(k not in rec_extra_keys for k in always_iterable(extra_exclude))
+            )
+        ):
+            return False
+        return either_is_testing
 
-
-@dataclass(kw_only=True)
-class _LogFromDepthUpError(Exception):
-    depth: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Depth must be non-negative; got {self.depth}"
+    return filter_func
 
 
 __all__ = [
@@ -276,4 +301,5 @@ __all__ = [
     "logged_sleep_sync",
     "make_catch_hook",
     "make_except_hook",
+    "make_filter",
 ]
