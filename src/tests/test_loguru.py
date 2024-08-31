@@ -75,15 +75,15 @@ class TestLogCall:
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"""tests\.test_loguru:test_sync:\d+ -  \| {'diff_pairwise_then_add_sync': "x='1000', y='100', z='10', w='1'"}"""
+            + r"""tests\.test_loguru:test_sync:\d+ -  \| {'<diff_pairwise_then_add_sync>': "x='1000', y='100', z='10', w='1'"}"""
         )
         assert search(expected1, line1)
         head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:\d+ -  \| "
-        expected2 = head_mid + """{'diff_sync': "x='1000', y='100'"}"""
+        expected2 = head_mid + """{'<diff_sync>': "x='1000', y='100'"}"""
         assert search(expected2, line2)
-        expected3 = head_mid + """{'diff_sync': "x='10', y='1'"}"""
+        expected3 = head_mid + """{'<diff_sync>': "x='10', y='1'"}"""
         assert search(expected3, line3)
-        expected4 = head_mid + """{'add_sync': "x='900', y='9'"}"""
+        expected4 = head_mid + """{'<add_sync>': "x='900', y='9'"}"""
         assert search(expected4, line4)
 
     async def test_async(self, *, capsys: CaptureFixture) -> None:
@@ -101,15 +101,15 @@ class TestLogCall:
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"""tests\.test_loguru:test_async:\d+ -  \| {'diff_pairwise_then_add_async': "x='1000', y='100', z='10', w='1'"}"""
+            + r"""tests\.test_loguru:test_async:\d+ -  \| {'<diff_pairwise_then_add_async>': "x='1000', y='100', z='10', w='1'"}"""
         )
         assert search(expected1, line1)
         head_mid = head + r"tests\.functions:diff_pairwise_then_add_async:\d+ -  \| "
-        expected2 = head_mid + """{'diff_async': "x='1000', y='100'"}"""
+        expected2 = head_mid + """{'<diff_async>': "x='1000', y='100'"}"""
         assert search(expected2, line2)
-        expected3 = head_mid + """{'diff_async': "x='10', y='1'"}"""
+        expected3 = head_mid + """{'<diff_async>': "x='10', y='1'"}"""
         assert search(expected3, line3)
-        expected4 = head_mid + """{'add_async': "x='900', y='9'"}"""
+        expected4 = head_mid + """{'<add_async>': "x='900', y='9'"}"""
         assert search(expected4, line4)
 
     def test_custom_level(self, *, capsys: CaptureFixture) -> None:
@@ -124,7 +124,7 @@ class TestLogCall:
         assert add_sync_info(1, 2) == 3
         out = capsys.readouterr().out
         (line,) = out.splitlines()
-        expected = r"""\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'add_sync_info': "x='1', y='2'"}"""
+        expected = r"""\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'<add_sync_info>': "x='1', y='2'"}"""
         assert search(expected, line)
 
 

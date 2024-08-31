@@ -165,9 +165,10 @@ def _log_call_bind_and_log(
     func: Callable[..., Any], level: LogLevel, /, *args: Any, **kwargs: Any
 ) -> None:
     func_name = get_func_name(func)
+    key = f"<{func_name}>"
     bound_args = bind_custom_repr(func, *args, **kwargs)
     extracted = extract_bound_args_repr(bound_args)
-    logger.opt(depth=2).log(level, "", **{func_name: extracted})
+    logger.opt(depth=2).log(level, "", **{key: extracted})
 
 
 def logged_sleep_sync(
