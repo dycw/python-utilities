@@ -5,10 +5,10 @@ from typing import Any
 from pytest import mark, param
 
 from utilities.functions import identity
-from utilities.inspect import bind_custom_repr
+from utilities.inspect import bind_args_custom_repr
 
 
-class TestBindCustomRepr:
+class TestBindArgsCustomRepr:
     @mark.parametrize(
         ("obj", "expected"),
         [
@@ -25,5 +25,5 @@ class TestBindCustomRepr:
         ],
     )
     def test_main(self, *, obj: Any, expected: str) -> None:
-        result = bind_custom_repr(identity, obj)
+        result = bind_args_custom_repr(identity, obj)
         assert result == expected

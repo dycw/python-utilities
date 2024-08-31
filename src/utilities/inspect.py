@@ -16,8 +16,8 @@ _PATTERN1 = re.compile(f"'{_LEFT}(.*?){_RIGHT}'", flags=MULTILINE)
 _PATTERN2 = re.compile(f'"{_LEFT}(.*?){_RIGHT}"', flags=MULTILINE)
 
 
-def bind_custom_repr(func: Callable[..., Any], *args: Any, **kwargs: Any) -> str:
-    """Bind the custom representations of the arguments to a function."""
+def bind_args_custom_repr(func: Callable[..., Any], *args: Any, **kwargs: Any) -> str:
+    """Bind a set of arguments and return a custom representation."""
     args_repr = tuple(map(_bind_custom_repr_bracketed, args))
     kwargs_repr = {k: _bind_custom_repr_bracketed(v) for k, v in kwargs.items()}
     bound_args = signature(func).bind(*args_repr, **kwargs_repr)
@@ -33,4 +33,4 @@ def _bind_custom_repr_bracketed(obj: Any) -> str:
     return "".join([_LEFT, custom_repr(obj), _RIGHT])
 
 
-__all__ = ["bind_custom_repr"]
+__all__ = ["bind_args_custom_repr"]
