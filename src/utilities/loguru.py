@@ -20,12 +20,8 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
-from utilities.iterables import always_iterable
-from utilities.more_itertools import (
-    filter_include_and_exclude,
-    resolve_include_and_exclude,
-)
-from utilities.sentinel import Sentinel, sentinel
+from utilities.iterables import always_iterable, resolve_include_and_exclude
+from utilities.sentinel import Sentinel
 from utilities.sys import is_pytest
 
 if TYPE_CHECKING:
@@ -35,11 +31,9 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
-        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
-        Logger,
         Message,
         Record,
         RetentionFunction,
@@ -178,7 +172,7 @@ def _log_call_bind_and_log(
     func_name = get_func_name(func)
     key = f"<{func_name}>"
     bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    _log_from_depth_up(logger, 3, level, "", exception=None, **{key: bound_args})
+    logger.opt(depth=2).log(level, "", **{key: bound_args})
 
 
 def logged_sleep_sync(
@@ -205,15 +199,10 @@ async def logged_sleep_async(
 
 def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
     """Make a `logger.catch` hook."""
-    logger2 = logger.bind(**kwargs)
 
     def callback(error: BaseException, /) -> None:
-        _log_from_depth_up(
-            logger2,
-            4,
-            LogLevel.ERROR,
-            "Uncaught {record[exception].value!r}",
-            exception=error,
+        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
+            "Uncaught {record[exception].value!r}"
         )
 
     return callback
