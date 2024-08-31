@@ -20,7 +20,11 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
-from utilities.iterables import always_iterable, filter
+from utilities.iterables import always_iterable
+from utilities.more_itertools import (
+    filter_include_and_exclude,
+    resolve_include_and_exclude,
+)
 from utilities.sentinel import Sentinel, sentinel
 from utilities.sys import is_pytest
 
@@ -261,18 +265,16 @@ def make_filter(
             return False
         name = record["name"]
         if name is not None:
-            asdf, basdf = filterinclu
-        if (name is not None) and not (
-            (
-                isinstance(name_include, Sentinel)
-                or any(name.startswith(k) for k in always_iterable(name_include))
+            name_inc, name_exc = resolve_include_and_exclude(
+                include=name_include, exclude=name_exclude
             )
-            and (
-                isinstance(name_exclude, Sentinel)
-                or all(not name.startswith(k) for k in always_iterable(name_exclude))
-            )
-        ):
-            return False
+            if not (
+                ((name_inc is None) or any(name.startswith(n) for n in name_inc))
+                and (
+                    (name_exc is None) or all(not name.startswith(n) for n in name_exc)
+                )
+            ):
+                return False
         rec_extra_keys = set(record["extra"])
         if not (
             (
