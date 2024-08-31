@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
+        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
@@ -241,7 +242,7 @@ def _log_from_depth_up(
     message: str,
     /,
     *args: Any,
-    exception: Any = None,
+    exception: bool | ExcInfo | BaseException | None = None,
     **kwargs: Any,
 ) -> None:
     """Log from a given depth up to 0, in case it would fail otherwise."""
