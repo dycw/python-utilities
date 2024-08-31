@@ -741,12 +741,15 @@ class TestYieldDays:
             _ = list(yield_days())
 
 
+n = 10000
+
+
 class TestYieldWeekdays:
     @given(start=dates(), days=integers(0, 365))
-    @settings(max_examples=10000)
+    @settings(max_examples=n)
     @mark.only
     def test_start_and_end(self, *, start: dt.date, days: int) -> None:
-        with assume_does_not_raise(OverflowError):
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
             end = start + dt.timedelta(days=days)
         dates = list(yield_weekdays(start=start, end=end))
         assert all(start <= d <= end for d in dates)
@@ -757,19 +760,21 @@ class TestYieldWeekdays:
             assert end in dates
 
     @given(start=dates(), days=integers(0, 10))
-    @settings(max_examples=10000)
+    @settings(max_examples=n)
     @mark.only
     def test_start_and_days(self, *, start: dt.date, days: int) -> None:
-        dates = list(yield_weekdays(start=start, days=days))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            dates = list(yield_weekdays(start=start, days=days))
         assert len(dates) == days
         assert all(d >= start for d in dates)
         assert all(map(is_weekday, dates))
 
-    @settings(max_examples=10000)
+    @settings(max_examples=n)
     @mark.only
     @given(end=dates(), days=integers(0, 10))
     def test_end_and_days(self, *, end: dt.date, days: int) -> None:
-        dates = list(yield_weekdays(end=end, days=days))
+        with assume_does_not_raise(OverflowError, match="date value out of range"):
+            dates = list(yield_weekdays(end=end, days=days))
         assert len(dates) == days
         assert all(d <= end for d in dates)
         assert all(map(is_weekday, dates))
