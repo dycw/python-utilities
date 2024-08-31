@@ -226,9 +226,6 @@ class _CustomRepr(Repr):
         return ", ".join(pieces)
 
 
-_CUSTOM_REPR = _CustomRepr()
-
-
 _FILTER_MAPPING_REGEX = re.compile(r"^_")
 
 
