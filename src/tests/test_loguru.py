@@ -329,7 +329,7 @@ class TestMakeFilter:
             param(None, "invalid", True),
         ],
     )
-    def test_extra(
+    def test_extra_inc_all_exc_any(
         self,
         *,
         extra_include_all: MaybeIterable[str] | None,
@@ -339,6 +339,41 @@ class TestMakeFilter:
         filter_func = make_filter(
             extra_include_all=extra_include_all,
             extra_exclude_any=extra_exclude_any,
+            _is_testing=True,
+        )
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("extra_include_any", "extra_exclude_all", "expected"),
+        [
+            param(None, None, True),
+            param("x", None, True),
+            param("y", None, True),
+            param("z", None, False),
+            param(["x", "y"], None, True),
+            param(["y", "z"], None, True),
+            param(["x", "z"], None, True),
+            param("invalid", None, False),
+            param(None, "x", False),
+            param(None, "y", False),
+            param(None, "z", True),
+            param(None, ["x", "y"], False),
+            param(None, ["y", "z"], True),
+            param(None, ["x", "z"], True),
+            param(None, "invalid", True),
+        ],
+    )
+    def test_extra_inc_any_exc_all(
+        self,
+        *,
+        extra_include_any: MaybeIterable[str] | None,
+        extra_exclude_all: MaybeIterable[str] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(
+            extra_include_any=extra_include_any,
+            extra_exclude_all=extra_exclude_all,
             _is_testing=True,
         )
         result = filter_func(self._record)

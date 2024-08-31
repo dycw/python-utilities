@@ -239,6 +239,8 @@ def make_filter(
     name_include: MaybeIterable[str] | None = None,
     name_exclude: MaybeIterable[str] | None = None,
     extra_include_all: MaybeIterable[Hashable] | None = None,
+    extra_include_any: MaybeIterable[Hashable] | None = None,
+    extra_exclude_all: MaybeIterable[Hashable] | None = None,
     extra_exclude_any: MaybeIterable[Hashable] | None = None,
     _is_testing: bool = False,
 ) -> FilterFunction:
@@ -247,35 +249,35 @@ def make_filter(
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
-        if not (
-            ((level is None) or (rec_level_no == get_logging_level(level)))
-            and ((min_level is None) or (rec_level_no >= get_logging_level(min_level)))
-            and ((max_level is None) or (rec_level_no <= get_logging_level(max_level)))
-        ):
+        if (level is not None) and (rec_level_no != get_logging_level(level)):
+            return False
+        if (min_level is not None) and (rec_level_no < get_logging_level(min_level)):
+            return False
+        if (max_level is not None) and (rec_level_no > get_logging_level(max_level)):
             return False
         name = record["name"]
         if name is not None:
             name_inc, name_exc = resolve_include_and_exclude(
                 include=name_include, exclude=name_exclude
             )
-            if not (
-                ((name_inc is None) or any(name.startswith(n) for n in name_inc))
-                and (
-                    (name_exc is None) or all(not name.startswith(n) for n in name_exc)
-                )
-            ):
+            if (name_inc is not None) and not any(name.startswith(n) for n in name_inc):
+                return False
+            if (name_exc is not None) and any(name.startswith(n) for n in name_exc):
                 return False
         rec_extra_keys = set(record["extra"])
         extra_inc_all, extra_exc_any = resolve_include_and_exclude(
             include=extra_include_all, exclude=extra_exclude_any
         )
-        if not (
-            ((extra_inc_all is None) or all(k in rec_extra_keys for k in extra_inc_all))
-            and (
-                (extra_exc_any is None)
-                or all(k not in rec_extra_keys for k in extra_exc_any)
-            )
-        ):
+        if (extra_inc_all is not None) and not extra_inc_all.issubset(rec_extra_keys):
+            return False
+        if (extra_exc_any is not None) and (len(rec_extra_keys & extra_exc_any) >= 1):
+            return False
+        extra_inc_any, extra_exc_all = resolve_include_and_exclude(
+            include=extra_include_any, exclude=extra_exclude_all
+        )
+        if (extra_inc_any is not None) and (len(rec_extra_keys & extra_inc_any) == 0):
+            return False
+        if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
         return either_is_testing
 
