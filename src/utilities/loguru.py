@@ -20,6 +20,8 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
+from utilities.iterables import one
+from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -31,6 +33,7 @@ if TYPE_CHECKING:
         FilterDict,
         FilterFunction,
         FormatFunction,
+        Logger,
         Message,
         RetentionFunction,
         RotationFunction,
@@ -223,6 +226,38 @@ def make_except_hook(
         sys.exit(1)  # pragma: no cover
 
     return except_hook
+
+
+def _log_from_depth_up(
+    logger: Logger,
+    depth: int,
+    level: LogLevel,
+    message: str,
+    /,
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """Log from a given depth up to 0, in case it would fail otherwise."""
+    if depth >= 0:
+        try:
+            logger.bind(depth=depth).log(level, message, *args, **kwargs)
+        except ValueError as error:
+            if ensure_str(one(error.args)) == "call stack is not deep enough":
+                return _log_from_depth_up(
+                    logger, depth - 1, level, message, *args, **kwargs
+                )
+            raise
+        return None
+    raise _LogFromDepthUpError(depth=depth)
+
+
+@dataclass(kw_only=True)
+class _LogFromDepthUpError(Exception):
+    depth: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Depth must be non-negative; got {self.depth}"
 
 
 __all__ = [
