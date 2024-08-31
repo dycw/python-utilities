@@ -20,8 +20,7 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
-from utilities.iterables import always_iterable, resolve_include_and_exclude
-from utilities.sentinel import Sentinel
+from utilities.iterables import resolve_include_and_exclude
 from utilities.sys import is_pytest
 
 if TYPE_CHECKING:
@@ -267,15 +266,12 @@ def make_filter(
             ):
                 return False
         rec_extra_keys = set(record["extra"])
+        extra_inc, extra_exc = resolve_include_and_exclude(
+            include=extra_include, exclude=extra_exclude
+        )
         if not (
-            (
-                isinstance(extra_include, Sentinel)
-                or any(k in rec_extra_keys for k in always_iterable(extra_include))
-            )
-            and (
-                isinstance(extra_exclude, Sentinel)
-                or all(k not in rec_extra_keys for k in always_iterable(extra_exclude))
-            )
+            ((extra_inc is None) or any(k in rec_extra_keys for k in extra_inc))
+            and ((extra_exc is None) or all(k not in rec_extra_keys for k in extra_exc))
         ):
             return False
         return either_is_testing

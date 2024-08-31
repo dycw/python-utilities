@@ -229,8 +229,8 @@ class TestMakeExceptHook:
         _ = make_except_hook(dummy_key="dummy_value")
 
 
+@mark.only
 class TestMakeFilter:
-    @mark.only
     def test_main(self) -> None:
         filter_func = make_filter(_is_testing=True)
         assert filter_func(self._record)
