@@ -20,8 +20,6 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
-from utilities.iterables import one
-from utilities.text import ensure_str
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -250,18 +248,10 @@ def _log_from_depth_up(
             logger.opt(exception=exception, record=True, depth=depth).log(
                 level, message, *args, **kwargs
             )
-        except ValueError as error:
-            if ensure_str(one(error.args)) == "call stack is not deep enough":
-                return _log_from_depth_up(
-                    logger,
-                    depth - 1,
-                    level,
-                    message,
-                    *args,
-                    exception=exception,
-                    **kwargs,
-                )
-            raise
+        except ValueError:  # pragma: no cover
+            return _log_from_depth_up(
+                logger, depth - 1, level, message, *args, exception=exception, **kwargs
+            )
         return None
     raise _LogFromDepthUpError(depth=depth)
 
