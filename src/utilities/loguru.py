@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
-from utilities.inspect import bind_custom_repr, extract_bound_args_repr
+from utilities.inspect import bind_custom_repr
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -167,8 +167,7 @@ def _log_call_bind_and_log(
     func_name = get_func_name(func)
     key = f"<{func_name}>"
     bound_args = bind_custom_repr(func, *args, **kwargs)
-    extracted = extract_bound_args_repr(bound_args)
-    logger.opt(depth=2).log(level, "", **{key: extracted})
+    logger.opt(depth=2).log(level, "", **{key: bound_args})
 
 
 def logged_sleep_sync(
