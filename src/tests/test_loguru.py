@@ -29,8 +29,6 @@ from utilities.loguru import (
     make_except_hook,
     make_filter,
 )
-from utilities.more_itertools import filter_include_and_exclude
-from utilities.sentinel import sentinel
 from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
@@ -38,7 +36,6 @@ if TYPE_CHECKING:
     from loguru import Record
 
     from utilities.iterables import MaybeIterable
-    from utilities.sentinel import Sentinel
     from utilities.types import Duration
 
 
@@ -68,8 +65,8 @@ class TestInterceptHandler:
         _ = InterceptHandler()
 
 
-@mark.only
 class TestMakeFilter:
+    @mark.only
     def test_main(self) -> None:
         filter_func = make_filter(_is_testing=True)
         assert filter_func(self._record)
