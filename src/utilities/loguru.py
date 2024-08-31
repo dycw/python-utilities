@@ -28,9 +28,11 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
+        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
+        Logger,
         Message,
         RetentionFunction,
         RotationFunction,
@@ -167,7 +169,7 @@ def _log_call_bind_and_log(
     func_name = get_func_name(func)
     key = f"<{func_name}>"
     bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    logger.opt(depth=2).log(level, "", **{key: bound_args})
+    _log_from_depth_up(logger, 3, level, "", exception=None, **{key: bound_args})
 
 
 def logged_sleep_sync(
@@ -194,10 +196,15 @@ async def logged_sleep_async(
 
 def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
     """Make a `logger.catch` hook."""
+    logger2 = logger.bind(**kwargs)
 
     def callback(error: BaseException, /) -> None:
-        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
-            "Uncaught {record[exception].value!r}"
+        _log_from_depth_up(
+            logger2,
+            4,
+            LogLevel.ERROR,
+            "Uncaught {record[exception].value!r}",
+            exception=error,
         )
 
     return callback
@@ -223,6 +230,39 @@ def make_except_hook(
         sys.exit(1)  # pragma: no cover
 
     return except_hook
+
+
+def _log_from_depth_up(
+    logger: Logger,
+    depth: int,
+    level: LogLevel,
+    message: str,
+    /,
+    *args: Any,
+    exception: bool | ExcInfo | BaseException | None = None,
+    **kwargs: Any,
+) -> None:
+    """Log from a given depth up to 0, in case it would fail otherwise."""
+    if depth >= 0:
+        try:
+            logger.opt(exception=exception, record=True, depth=depth).log(
+                level, message, *args, **kwargs
+            )
+        except ValueError:  # pragma: no cover
+            return _log_from_depth_up(
+                logger, depth - 1, level, message, *args, exception=exception, **kwargs
+            )
+        return None
+    raise _LogFromDepthUpError(depth=depth)
+
+
+@dataclass(kw_only=True)
+class _LogFromDepthUpError(Exception):
+    depth: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Depth must be non-negative; got {self.depth}"
 
 
 __all__ = [
