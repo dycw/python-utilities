@@ -31,9 +31,11 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
+        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
+        Logger,
         Message,
         Record,
         RetentionFunction,
@@ -279,6 +281,39 @@ def make_filter(
         return either_is_testing
 
     return filter_func
+
+
+def _log_from_depth_up(
+    logger: Logger,
+    depth: int,
+    level: LogLevel,
+    message: str,
+    /,
+    *args: Any,
+    exception: bool | ExcInfo | BaseException | None = None,
+    **kwargs: Any,
+) -> None:
+    """Log from a given depth up to 0, in case it would fail otherwise."""
+    if depth >= 0:
+        try:
+            logger.opt(exception=exception, record=True, depth=depth).log(
+                level, message, *args, **kwargs
+            )
+        except ValueError:  # pragma: no cover
+            return _log_from_depth_up(
+                logger, depth - 1, level, message, *args, exception=exception, **kwargs
+            )
+        return None
+    raise _LogFromDepthUpError(depth=depth)
+
+
+@dataclass(kw_only=True)
+class _LogFromDepthUpError(Exception):
+    depth: int
+
+    @override
+    def __str__(self) -> str:
+        return f"Depth must be non-negative; got {self.depth}"
 
 
 __all__ = [
