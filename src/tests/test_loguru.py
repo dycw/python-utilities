@@ -130,8 +130,37 @@ class TestLogCall:
         assert search(expected, line)
 
 
-class Test:
-    def test_erorr(self) -> None:
+class TestLogFromDepthUp:
+    @mark.parametrize(
+        ("depth", "expected"),
+        [
+            param(
+                0,
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| utilities\.loguru:_log_from_depth_up:\d+ - Hello world",
+            ),
+            param(
+                1,
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| tests\.test_loguru:test_main:\d+ - Hello world",
+            ),
+            param(
+                2,
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| _pytest\.python:pytest_pyfunc_call:\d+ - Hello world",
+            ),
+        ],
+    )
+    def test_main(self, *, capsys: CaptureFixture, depth: int, expected: str) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+        _log_from_depth_up(logger, depth, LogLevel.TRACE, "Hello world")
+        out = capsys.readouterr().out
+        (line,) = out.splitlines()
+        assert search(expected, line)
+
+    def test_error_call_stack_not_deep_enough(self) -> None:
+        with raises(_LogFromDepthUpError, match="Depth must be non-negative; got -1"):
+            _log_from_depth_up(logger, -1, LogLevel.TRACE, "")
+
+    def test_error_negative_depth(self) -> None:
         with raises(_LogFromDepthUpError, match="Depth must be non-negative; got -1"):
             _log_from_depth_up(logger, -1, LogLevel.TRACE, "")
 
