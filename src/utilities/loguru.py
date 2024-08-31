@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike, StrMapping
 
 
+_cached_is_pytest = cache(is_pytest)
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
@@ -251,7 +252,7 @@ def make_filter(
     _is_testing_override: bool = False,
 ) -> FilterFunction:
     """Make a filter."""
-    is_not_pytest_or_override = (not cache(is_pytest)()) or _is_testing_override
+    is_not_pytest_or_override = (not _cached_is_pytest()) or _is_testing_override
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
