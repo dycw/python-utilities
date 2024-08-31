@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from functools import partial, wraps
@@ -20,6 +20,8 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
+from utilities.iterables import resolve_include_and_exclude
+from utilities.sys import is_pytest
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -34,12 +36,14 @@ if TYPE_CHECKING:
         FormatFunction,
         Logger,
         Message,
+        Record,
         RetentionFunction,
         RotationFunction,
         Writable,
     )
 
     from utilities.asyncio import MaybeCoroutine1
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration, PathLike, StrMapping
 
 
@@ -232,6 +236,59 @@ def make_except_hook(
     return except_hook
 
 
+def make_filter(
+    *,
+    level: LogLevel | None = None,
+    min_level: LogLevel | None = None,
+    max_level: LogLevel | None = None,
+    name_include: MaybeIterable[str] | None = None,
+    name_exclude: MaybeIterable[str] | None = None,
+    extra_include_all: MaybeIterable[Hashable] | None = None,
+    extra_include_any: MaybeIterable[Hashable] | None = None,
+    extra_exclude_all: MaybeIterable[Hashable] | None = None,
+    extra_exclude_any: MaybeIterable[Hashable] | None = None,
+    _is_testing: bool = False,
+) -> FilterFunction:
+    """Make a filter."""
+    either_is_testing = _is_testing or is_pytest()
+
+    def filter_func(record: Record, /) -> bool:
+        rec_level_no = record["level"].no
+        if (level is not None) and (rec_level_no != get_logging_level(level)):
+            return False
+        if (min_level is not None) and (rec_level_no < get_logging_level(min_level)):
+            return False
+        if (max_level is not None) and (rec_level_no > get_logging_level(max_level)):
+            return False
+        name = record["name"]
+        if name is not None:
+            name_inc, name_exc = resolve_include_and_exclude(
+                include=name_include, exclude=name_exclude
+            )
+            if (name_inc is not None) and not any(name.startswith(n) for n in name_inc):
+                return False
+            if (name_exc is not None) and any(name.startswith(n) for n in name_exc):
+                return False
+        rec_extra_keys = set(record["extra"])
+        extra_inc_all, extra_exc_any = resolve_include_and_exclude(
+            include=extra_include_all, exclude=extra_exclude_any
+        )
+        if (extra_inc_all is not None) and not extra_inc_all.issubset(rec_extra_keys):
+            return False
+        if (extra_exc_any is not None) and (len(rec_extra_keys & extra_exc_any) >= 1):
+            return False
+        extra_inc_any, extra_exc_all = resolve_include_and_exclude(
+            include=extra_include_any, exclude=extra_exclude_all
+        )
+        if (extra_inc_any is not None) and (len(rec_extra_keys & extra_inc_any) == 0):
+            return False
+        if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
+            return False
+        return either_is_testing
+
+    return filter_func
+
+
 def _log_from_depth_up(
     logger: Logger,
     depth: int,
@@ -276,4 +333,5 @@ __all__ = [
     "logged_sleep_sync",
     "make_catch_hook",
     "make_except_hook",
+    "make_filter",
 ]

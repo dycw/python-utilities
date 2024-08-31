@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
+from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
@@ -26,12 +27,15 @@ from utilities.loguru import (
     logged_sleep_sync,
     make_catch_hook,
     make_except_hook,
+    make_filter,
 )
 from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
+    from loguru import Record
 
+    from utilities.iterables import MaybeIterable
     from utilities.types import Duration
 
 
@@ -223,3 +227,206 @@ class TestMakeCatchHook:
 class TestMakeExceptHook:
     def test_main(self) -> None:
         _ = make_except_hook(dummy_key="dummy_value")
+
+
+class TestMakeFilter:
+    def test_main(self) -> None:
+        filter_func = make_filter(_is_testing=True)
+        assert filter_func(self._record)
+
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(LogLevel.TRACE, False),
+            param(LogLevel.DEBUG, False),
+            param(LogLevel.INFO, True),
+            param(LogLevel.SUCCESS, False),
+            param(LogLevel.WARNING, False),
+            param(LogLevel.ERROR, False),
+            param(LogLevel.CRITICAL, False),
+        ],
+    )
+    def test_level(self, *, level: LogLevel, expected: bool) -> None:
+        filter_func = make_filter(level=level, _is_testing=True)
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(LogLevel.TRACE, True),
+            param(LogLevel.DEBUG, True),
+            param(LogLevel.INFO, True),
+            param(LogLevel.SUCCESS, False),
+            param(LogLevel.WARNING, False),
+            param(LogLevel.ERROR, False),
+            param(LogLevel.CRITICAL, False),
+        ],
+    )
+    def test_min_level(self, *, level: LogLevel, expected: bool) -> None:
+        filter_func = make_filter(min_level=level, _is_testing=True)
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("level", "expected"),
+        [
+            param(LogLevel.TRACE, False),
+            param(LogLevel.DEBUG, False),
+            param(LogLevel.INFO, True),
+            param(LogLevel.SUCCESS, True),
+            param(LogLevel.WARNING, True),
+            param(LogLevel.ERROR, True),
+            param(LogLevel.CRITICAL, True),
+        ],
+    )
+    def test_max_level(self, *, level: LogLevel, expected: bool) -> None:
+        filter_func = make_filter(max_level=level, _is_testing=True)
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("name_include", "name_exclude", "expected"),
+        [
+            param(None, None, True),
+            param("__main__", None, True),
+            param("invalid", None, False),
+            param(None, "__main__", False),
+            param(None, "invalid", True),
+        ],
+    )
+    def test_name_exists(
+        self,
+        *,
+        name_include: MaybeIterable[str] | None,
+        name_exclude: MaybeIterable[str] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(
+            name_include=name_include, name_exclude=name_exclude, _is_testing=True
+        )
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("name_include", "name_exclude"),
+        [
+            param(None, None),
+            param("__main__", None),
+            param("invalid", None),
+            param(None, "__main__"),
+            param(None, "invalid"),
+        ],
+    )
+    def test_name_does_not_exist(
+        self,
+        *,
+        name_include: MaybeIterable[str] | None,
+        name_exclude: MaybeIterable[str] | None,
+    ) -> None:
+        filter_func = make_filter(
+            name_include=name_include, name_exclude=name_exclude, _is_testing=True
+        )
+        record: Record = cast(Any, self._record | {"name": None})
+        assert filter_func(record)
+
+    @mark.parametrize(
+        ("extra_include_all", "extra_exclude_any", "expected"),
+        [
+            param(None, None, True),
+            param("x", None, True),
+            param("y", None, True),
+            param("z", None, False),
+            param(["x", "y"], None, True),
+            param(["y", "z"], None, False),
+            param(["x", "z"], None, False),
+            param("invalid", None, False),
+            param(None, "x", False),
+            param(None, "y", False),
+            param(None, "z", True),
+            param(None, ["x", "y"], False),
+            param(None, ["y", "z"], False),
+            param(None, ["x", "z"], False),
+            param(None, "invalid", True),
+        ],
+    )
+    def test_extra_inc_all_exc_any(
+        self,
+        *,
+        extra_include_all: MaybeIterable[str] | None,
+        extra_exclude_any: MaybeIterable[str] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(
+            extra_include_all=extra_include_all,
+            extra_exclude_any=extra_exclude_any,
+            _is_testing=True,
+        )
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("extra_include_any", "extra_exclude_all", "expected"),
+        [
+            param(None, None, True),
+            param("x", None, True),
+            param("y", None, True),
+            param("z", None, False),
+            param(["x", "y"], None, True),
+            param(["y", "z"], None, True),
+            param(["x", "z"], None, True),
+            param("invalid", None, False),
+            param(None, "x", False),
+            param(None, "y", False),
+            param(None, "z", True),
+            param(None, ["x", "y"], False),
+            param(None, ["y", "z"], True),
+            param(None, ["x", "z"], True),
+            param(None, "invalid", True),
+        ],
+    )
+    def test_extra_inc_any_exc_all(
+        self,
+        *,
+        extra_include_any: MaybeIterable[str] | None,
+        extra_exclude_all: MaybeIterable[str] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(
+            extra_include_any=extra_include_any,
+            extra_exclude_all=extra_exclude_all,
+            _is_testing=True,
+        )
+        result = filter_func(self._record)
+        assert result is expected
+
+    @property
+    def _record(self) -> Record:
+        record = {
+            "elapsed": dt.timedelta(seconds=11, microseconds=635587),
+            "exception": None,
+            "extra": {"x": 1, "y": 2},
+            "file": RecordFile(
+                name="1723464958.py",
+                path="/var/folders/z2/t3tvc2yn33j0zdd910j7805r0000gn/T/ipykernel_98745/1723464958.py",
+            ),
+            "function": "<module>",
+            "level": RecordLevel(name="INFO", no=20, icon="ℹ️ "),  # noqa: RUF001
+            "line": 1,
+            "message": "l2",
+            "module": "1723464958",
+            "name": "__main__",
+            "process": RecordProcess(id_=98745, name="MainProcess"),
+            "thread": RecordThread(id_=8420429632, name="MainThread"),
+            "time": dt.datetime(
+                2024,
+                8,
+                31,
+                14,
+                3,
+                52,
+                388537,
+                tzinfo=dt.timezone(dt.timedelta(seconds=32400), "JST"),
+            ),
+        }
+        return cast(Any, record)
