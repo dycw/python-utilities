@@ -7,13 +7,18 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 
 from tests.conftest import FLAKY
-from utilities.pytest import throttle
+from utilities.pytest import is_pytest, throttle
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
     from _pytest.legacypath import Testdir
+
+
+class TestIsPytest:
+    def test_main(self) -> None:
+        assert is_pytest()
 
 
 class TestPytestOptions:

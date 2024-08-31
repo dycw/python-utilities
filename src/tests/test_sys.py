@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-from utilities.sys import VERSION_MAJOR_MINOR, is_pytest
-
-
-class TestIsPytest:
-    def test_main(self) -> None:
-        assert is_pytest()
+from utilities.sys import VERSION_MAJOR_MINOR
 
 
 class TestVersionMajorMinor:

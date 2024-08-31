@@ -4,6 +4,7 @@ from functools import wraps
 from inspect import iscoroutinefunction
 from os import environ
 from pathlib import Path
+from sys import modules
 from typing import TYPE_CHECKING, Any
 
 from utilities.datetime import duration_to_float, get_now
@@ -96,6 +97,21 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
         _ = config.addinivalue_line("markers", f"{opt}: mark test as {desc}")
 
 
+def is_pytest() -> bool:
+    """Check if `pytest` is running."""
+    return _is_pytest_via_os_environ() or _is_pytest_via_sys_modules()
+
+
+def _is_pytest_via_os_environ() -> bool:
+    """Check if `pytest` is running via `os.environ`."""
+    return "PYTEST_CURRENT_TEST" in environ
+
+
+def _is_pytest_via_sys_modules() -> bool:
+    """Check if `pytest` is running via `sys.modules`."""
+    return "pytest" in modules
+
+
 def throttle(
     *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
 ) -> Any:
@@ -172,6 +188,7 @@ __all__ = [
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
+    "is_pytest",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",
