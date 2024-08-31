@@ -170,7 +170,7 @@ def _log_call_bind_and_log(
     func_name = get_func_name(func)
     key = f"<{func_name}>"
     bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    logger.opt(depth=2).log(level, "", **{key: bound_args})
+    _log_from_depth_up(logger, 3, level, "", **{key: bound_args})
 
 
 def logged_sleep_sync(
@@ -240,7 +240,7 @@ def _log_from_depth_up(
     """Log from a given depth up to 0, in case it would fail otherwise."""
     if depth >= 0:
         try:
-            logger.bind(depth=depth).log(level, message, *args, **kwargs)
+            logger.opt(depth=depth).log(level, message, *args, **kwargs)
         except ValueError as error:
             if ensure_str(one(error.args)) == "call stack is not deep enough":
                 return _log_from_depth_up(

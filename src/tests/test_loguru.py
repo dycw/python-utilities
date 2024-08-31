@@ -112,6 +112,7 @@ class TestLogCall:
         expected4 = head_mid + "{'<add_async>': 'x=900, y=9'}"
         assert search(expected4, line4)
 
+    @mark.only
     def test_custom_level(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
