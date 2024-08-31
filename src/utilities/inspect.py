@@ -21,6 +21,7 @@ def bind_custom_repr(
 
 
 def extract_bound_args_repr(bound_args: BoundArguments, /) -> str:
+    """Extract the bracketed term inside a `BoundArguments`' representation."""
     return sub(r"<BoundArguments \((.*)\)>", r"\1", str(bound_args), flags=MULTILINE)
 
 
