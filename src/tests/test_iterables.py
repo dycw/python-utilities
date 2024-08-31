@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum, auto
 from itertools import repeat
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
@@ -35,6 +36,7 @@ from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
+    ResolveIncludeAndExcludeError,
     always_iterable,
     check_bijection,
     check_duplicates,
@@ -52,6 +54,7 @@ from utilities.iterables import (
     ensure_iterable,
     ensure_iterable_not_str,
     expanding_window,
+    filter_include_and_exclude,
     groupby_lists,
     is_iterable,
     is_iterable_not_enum,
@@ -59,6 +62,7 @@ from utilities.iterables import (
     one,
     one_str,
     product_dicts,
+    resolve_include_and_exclude,
     take,
     transpose,
 )
@@ -463,6 +467,66 @@ class TestExpandingWindow:
         assert result == expected
 
 
+class TestFilterIncludeAndExclude:
+    def test_none(self) -> None:
+        rng = list(range(5))
+        result = list(filter_include_and_exclude(rng))
+        assert result == rng
+
+    def test_include_singleton(self) -> None:
+        result = list(filter_include_and_exclude(range(5), include=0))
+        expected = [0]
+        assert result == expected
+
+    def test_include_iterable(self) -> None:
+        result = list(filter_include_and_exclude(range(5), include=[0, 1, 2]))
+        expected = [0, 1, 2]
+        assert result == expected
+
+    def test_exclude_singleton(self) -> None:
+        result = list(filter_include_and_exclude(range(5), exclude=0))
+        expected = [1, 2, 3, 4]
+        assert result == expected
+
+    def test_exclude_iterable(self) -> None:
+        result = list(filter_include_and_exclude(range(5), exclude=[0, 1, 2]))
+        expected = [3, 4]
+        assert result == expected
+
+    def test_both(self) -> None:
+        result = list(
+            filter_include_and_exclude(range(5), include=[0, 1], exclude=[3, 4])
+        )
+        expected = [0, 1]
+        assert result == expected
+
+    def test_include_key(self) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            n: int
+
+        result = list(
+            filter_include_and_exclude(
+                [Example(n=n) for n in range(5)], include=[0, 1, 2], key=lambda x: x.n
+            )
+        )
+        expected = [Example(n=n) for n in [0, 1, 2]]
+        assert result == expected
+
+    def test_exclude_key(self) -> None:
+        @dataclass(frozen=True, kw_only=True)
+        class Example:
+            n: int
+
+        result = list(
+            filter_include_and_exclude(
+                [Example(n=n) for n in range(5)], exclude=[0, 1, 2], key=lambda x: x.n
+            )
+        )
+        expected = [Example(n=n) for n in [3, 4]]
+        assert result == expected
+
+
 class TestGroupbyLists:
     iterable: ClassVar[str] = "AAAABBBCCDAABB"
 
@@ -605,6 +669,47 @@ class TestProductDicts:
             {"x": 2, "y": 9},
         ]
         assert result == expected
+
+
+class TestResolveIncludeAndExclude:
+    def test_none(self) -> None:
+        include, exclude = resolve_include_and_exclude()
+        assert include is None
+        assert exclude is None
+
+    def test_include_singleton(self) -> None:
+        include, exclude = resolve_include_and_exclude(include=1)
+        assert include == {1}
+        assert exclude is None
+
+    def test_include_iterable(self) -> None:
+        include, exclude = resolve_include_and_exclude(include=[1, 2, 3])
+        assert include == {1, 2, 3}
+        assert exclude is None
+
+    def test_exclude_singleton(self) -> None:
+        include, exclude = resolve_include_and_exclude(exclude=1)
+        assert include is None
+        assert exclude == {1}
+
+    def test_exclude_iterable(self) -> None:
+        include, exclude = resolve_include_and_exclude(exclude=[1, 2, 3])
+        assert include is None
+        assert exclude == {1, 2, 3}
+
+    def test_both(self) -> None:
+        include, exclude = resolve_include_and_exclude(
+            include=[1, 2, 3], exclude=[4, 5, 6]
+        )
+        assert include == {1, 2, 3}
+        assert exclude == {4, 5, 6}
+
+    def test_error(self) -> None:
+        with raises(
+            ResolveIncludeAndExcludeError,
+            match="Iterables .* and .* must not overlap; got .*",
+        ):
+            _ = resolve_include_and_exclude(include=[1, 2, 3], exclude=[3, 4, 5])
 
 
 class TestTake:

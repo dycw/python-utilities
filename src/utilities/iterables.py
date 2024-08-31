@@ -528,6 +528,47 @@ def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
 
 
 @overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: MaybeIterable[_U] | None = None,
+    exclude: MaybeIterable[_U] | None = None,
+    key: Callable[[_T], _U],
+) -> Iterable[_T]: ...
+@overload
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: MaybeIterable[_T] | None = None,
+    exclude: MaybeIterable[_T] | None = None,
+    key: Callable[[_T], Any] | None = None,
+) -> Iterable[_T]: ...
+def filter_include_and_exclude(
+    iterable: Iterable[_T],
+    /,
+    *,
+    include: MaybeIterable[_U] | None = None,
+    exclude: MaybeIterable[_U] | None = None,
+    key: Callable[[_T], _U] | None = None,
+) -> Iterable[_T]:
+    """Filter an iterable based on an inclusion/exclusion pair."""
+    include, exclude = resolve_include_and_exclude(include=include, exclude=exclude)
+    if include is not None:
+        if key is None:
+            iterable = (x for x in iterable if x in include)
+        else:
+            iterable = (x for x in iterable if key(x) in include)
+    if exclude is not None:
+        if key is None:
+            iterable = (x for x in iterable if x not in exclude)
+        else:
+            iterable = (x for x in iterable if key(x) not in exclude)
+    return iterable
+
+
+@overload
 def groupby_lists(
     iterable: Iterable[_T], /, *, key: None = None
 ) -> Iterator[tuple[_T, list[_T]]]: ...
@@ -677,6 +718,36 @@ def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K,
         yield cast(Mapping[_K, _V], dict(zip(keys, values, strict=True)))
 
 
+def resolve_include_and_exclude(
+    *,
+    include: MaybeIterable[_T] | None = None,
+    exclude: MaybeIterable[_T] | None = None,
+) -> tuple[set[_T] | None, set[_T] | None]:
+    """Resolve an inclusion/exclusion pair."""
+    include_use = include if include is None else set(always_iterable(include))
+    exclude_use = exclude if exclude is None else set(always_iterable(exclude))
+    if (
+        (include_use is not None)
+        and (exclude_use is not None)
+        and (len(include_use & exclude_use) >= 1)
+    ):
+        raise ResolveIncludeAndExcludeError(include=include_use, exclude=exclude_use)
+    return include_use, exclude_use
+
+
+@dataclass(kw_only=True)
+class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
+    include: Iterable[_T]
+    exclude: Iterable[_T]
+
+    @override
+    def __str__(self) -> str:
+        include = list(self.include)
+        exclude = list(self.exclude)
+        overlap = set(include) & set(exclude)
+        return f"Iterables {reprlib.repr(include)} and {reprlib.repr(exclude)} must not overlap; got {reprlib.repr(overlap)}"
+
+
 def take(n: int, iterable: Iterable[_T], /) -> Sequence[_T]:
     """Return first n items of the iterable as a list."""
     return list(islice(iterable, n))
@@ -724,6 +795,7 @@ __all__ = [
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
+    "ResolveIncludeAndExcludeError",
     "always_iterable",
     "check_bijection",
     "check_duplicates",
@@ -740,12 +812,14 @@ __all__ = [
     "ensure_iterable",
     "ensure_iterable_not_str",
     "expanding_window",
+    "filter_include_and_exclude",
     "groupby_lists",
     "is_iterable",
     "is_iterable_not_enum",
     "is_iterable_not_str",
     "one",
     "product_dicts",
+    "resolve_include_and_exclude",
     "take",
     "transpose",
 ]
