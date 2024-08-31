@@ -197,10 +197,16 @@ async def logged_sleep_async(
 
 def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
     """Make a `logger.catch` hook."""
+    logger2 = logger.bind(**kwargs)
 
     def callback(error: BaseException, /) -> None:
-        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
-            "Uncaught {record[exception].value!r}"
+        _log_from_depth_up(
+            logger2,
+            4,
+            LogLevel.ERROR,
+            "Uncaught {record[exception].value!r}",
+            logger="asdf",
+            exception=error,
         )
 
     return callback
@@ -235,16 +241,25 @@ def _log_from_depth_up(
     message: str,
     /,
     *args: Any,
+    exception: Any = None,
     **kwargs: Any,
 ) -> None:
     """Log from a given depth up to 0, in case it would fail otherwise."""
     if depth >= 0:
         try:
-            logger.opt(depth=depth).log(level, message, *args, **kwargs)
+            logger.opt(exception=exception, record=True, depth=depth).log(
+                level, message, *args, **kwargs
+            )
         except ValueError as error:
             if ensure_str(one(error.args)) == "call stack is not deep enough":
                 return _log_from_depth_up(
-                    logger, depth - 1, level, message, *args, **kwargs
+                    logger,
+                    depth - 1,
+                    level,
+                    message,
+                    *args,
+                    exception=exception,
+                    **kwargs,
                 )
             raise
         return None
