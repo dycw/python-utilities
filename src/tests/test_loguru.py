@@ -229,7 +229,6 @@ class TestMakeExceptHook:
         _ = make_except_hook(dummy_key="dummy_value")
 
 
-@mark.only
 class TestMakeFilter:
     def test_main(self) -> None:
         filter_func = make_filter(_is_testing=True)
@@ -296,7 +295,7 @@ class TestMakeFilter:
             param(None, "invalid", True),
         ],
     )
-    def test_name(
+    def test_name_exists(
         self,
         *,
         name_include: MaybeIterable[str] | None,
@@ -308,6 +307,28 @@ class TestMakeFilter:
         )
         result = filter_func(self._record)
         assert result is expected
+
+    @mark.parametrize(
+        ("name_include", "name_exclude"),
+        [
+            param(None, None),
+            param("__main__", None),
+            param("invalid", None),
+            param(None, "__main__"),
+            param(None, "invalid"),
+        ],
+    )
+    def test_name_does_not_exist(
+        self,
+        *,
+        name_include: MaybeIterable[str] | None,
+        name_exclude: MaybeIterable[str] | None,
+    ) -> None:
+        filter_func = make_filter(
+            name_include=name_include, name_exclude=name_exclude, _is_testing=True
+        )
+        record: Record = cast(Any, self._record | {"name": None})
+        assert filter_func(record)
 
     @mark.parametrize(
         ("extra_include_all", "extra_exclude_any", "expected"),
