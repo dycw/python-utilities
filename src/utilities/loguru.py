@@ -173,7 +173,7 @@ def _log_call_bind_and_log(
     func_name = get_func_name(func)
     key = f"<{func_name}>"
     bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    logger.opt(depth=2).log(level, "", **{key: bound_args})
+    _log_from_depth_up(logger, 3, level, "", exception=None, **{key: bound_args})
 
 
 def logged_sleep_sync(
@@ -200,10 +200,15 @@ async def logged_sleep_async(
 
 def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
     """Make a `logger.catch` hook."""
+    logger2 = logger.bind(**kwargs)
 
     def callback(error: BaseException, /) -> None:
-        logger.bind(**kwargs).opt(depth=3, exception=error, record=True).error(
-            "Uncaught {record[exception].value!r}"
+        _log_from_depth_up(
+            logger2,
+            4,
+            LogLevel.ERROR,
+            "Uncaught {record[exception].value!r}",
+            exception=error,
         )
 
     return callback
