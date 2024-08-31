@@ -19,6 +19,8 @@ from utilities.loguru import (
     HandlerConfiguration,
     InterceptHandler,
     LogLevel,
+    _log_from_depth_up,
+    _LogFromDepthUpError,
     get_logging_level,
     logged_sleep_async,
     logged_sleep_sync,
@@ -126,6 +128,12 @@ class TestLogCall:
         (line,) = out.splitlines()
         expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'<add_sync_info>': 'x=1, y=2'}"
         assert search(expected, line)
+
+
+class Test:
+    def test_erorr(self) -> None:
+        with raises(_LogFromDepthUpError, match="Depth must be non-negative; got -1"):
+            _log_from_depth_up(logger, -1, LogLevel.TRACE, "")
 
 
 class TestLoggedSleep:
