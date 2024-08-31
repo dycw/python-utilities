@@ -231,7 +231,7 @@ class TestMakeExceptHook:
 
 class TestMakeFilter:
     def test_main(self) -> None:
-        filter_func = make_filter(_is_testing=True)
+        filter_func = make_filter(_is_testing_override=True)
         assert filter_func(self._record)
 
     @mark.parametrize(
@@ -247,7 +247,7 @@ class TestMakeFilter:
         ],
     )
     def test_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(level=level, _is_testing=True)
+        filter_func = make_filter(level=level, _is_testing_override=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -264,7 +264,7 @@ class TestMakeFilter:
         ],
     )
     def test_min_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(min_level=level, _is_testing=True)
+        filter_func = make_filter(min_level=level, _is_testing_override=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -281,7 +281,7 @@ class TestMakeFilter:
         ],
     )
     def test_max_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(max_level=level, _is_testing=True)
+        filter_func = make_filter(max_level=level, _is_testing_override=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -303,7 +303,9 @@ class TestMakeFilter:
         expected: bool,
     ) -> None:
         filter_func = make_filter(
-            name_include=name_include, name_exclude=name_exclude, _is_testing=True
+            name_include=name_include,
+            name_exclude=name_exclude,
+            _is_testing_override=True,
         )
         result = filter_func(self._record)
         assert result is expected
@@ -325,7 +327,9 @@ class TestMakeFilter:
         name_exclude: MaybeIterable[str] | None,
     ) -> None:
         filter_func = make_filter(
-            name_include=name_include, name_exclude=name_exclude, _is_testing=True
+            name_include=name_include,
+            name_exclude=name_exclude,
+            _is_testing_override=True,
         )
         record: Record = cast(Any, self._record | {"name": None})
         assert filter_func(record)
@@ -360,7 +364,7 @@ class TestMakeFilter:
         filter_func = make_filter(
             extra_include_all=extra_include_all,
             extra_exclude_any=extra_exclude_any,
-            _is_testing=True,
+            _is_testing_override=True,
         )
         result = filter_func(self._record)
         assert result is expected
@@ -395,7 +399,7 @@ class TestMakeFilter:
         filter_func = make_filter(
             extra_include_any=extra_include_any,
             extra_exclude_all=extra_exclude_all,
-            _is_testing=True,
+            _is_testing_override=True,
         )
         result = filter_func(self._record)
         assert result is expected

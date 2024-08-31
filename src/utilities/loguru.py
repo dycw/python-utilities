@@ -19,6 +19,7 @@ from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
+from utilities.functools import cache
 from utilities.inspect import bind_args_custom_repr
 from utilities.iterables import resolve_include_and_exclude
 from utilities.sys import is_pytest
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike, StrMapping
 
 
+_cached_is_pytest = cache(is_pytest)
 _F = TypeVar("_F", bound=Callable[..., Any])
 
 
@@ -247,10 +249,10 @@ def make_filter(
     extra_include_any: MaybeIterable[Hashable] | None = None,
     extra_exclude_all: MaybeIterable[Hashable] | None = None,
     extra_exclude_any: MaybeIterable[Hashable] | None = None,
-    _is_testing: bool = False,
+    _is_testing_override: bool = False,
 ) -> FilterFunction:
     """Make a filter."""
-    either_is_testing = _is_testing or is_pytest()
+    is_not_pytest_or_override = (not _cached_is_pytest()) or _is_testing_override
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
@@ -284,7 +286,7 @@ def make_filter(
             return False
         if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
-        return either_is_testing
+        return is_not_pytest_or_override
 
     return filter_func
 
