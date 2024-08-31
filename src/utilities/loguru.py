@@ -238,8 +238,8 @@ def make_filter(
     max_level: LogLevel | None = None,
     name_include: MaybeIterable[str] | None = None,
     name_exclude: MaybeIterable[str] | None = None,
-    extra_include: MaybeIterable[Hashable] | None = None,
-    extra_exclude: MaybeIterable[Hashable] | None = None,
+    extra_include_all: MaybeIterable[Hashable] | None = None,
+    extra_exclude_any: MaybeIterable[Hashable] | None = None,
     _is_testing: bool = False,
 ) -> FilterFunction:
     """Make a filter."""
@@ -266,12 +266,15 @@ def make_filter(
             ):
                 return False
         rec_extra_keys = set(record["extra"])
-        extra_inc, extra_exc = resolve_include_and_exclude(
-            include=extra_include, exclude=extra_exclude
+        extra_inc_all, extra_exc_any = resolve_include_and_exclude(
+            include=extra_include_all, exclude=extra_exclude_any
         )
         if not (
-            ((extra_inc is None) or any(k in rec_extra_keys for k in extra_inc))
-            and ((extra_exc is None) or all(k not in rec_extra_keys for k in extra_exc))
+            ((extra_inc_all is None) or all(k in rec_extra_keys for k in extra_inc_all))
+            and (
+                (extra_exc_any is None)
+                or all(k not in rec_extra_keys for k in extra_exc_any)
+            )
         ):
             return False
         return either_is_testing

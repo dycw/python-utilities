@@ -309,6 +309,41 @@ class TestMakeFilter:
         result = filter_func(self._record)
         assert result is expected
 
+    @mark.parametrize(
+        ("extra_include_all", "extra_exclude_any", "expected"),
+        [
+            param(None, None, True),
+            param("x", None, True),
+            param("y", None, True),
+            param("z", None, False),
+            param(["x", "y"], None, True),
+            param(["y", "z"], None, False),
+            param(["x", "z"], None, False),
+            param("invalid", None, False),
+            param(None, "x", False),
+            param(None, "y", False),
+            param(None, "z", True),
+            param(None, ["x", "y"], False),
+            param(None, ["y", "z"], False),
+            param(None, ["x", "z"], False),
+            param(None, "invalid", True),
+        ],
+    )
+    def test_extra(
+        self,
+        *,
+        extra_include_all: MaybeIterable[str] | None,
+        extra_exclude_any: MaybeIterable[str] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(
+            extra_include_all=extra_include_all,
+            extra_exclude_any=extra_exclude_any,
+            _is_testing=True,
+        )
+        result = filter_func(self._record)
+        assert result is expected
+
     @property
     def _record(self) -> Record:
         record = {
