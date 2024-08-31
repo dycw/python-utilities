@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from functools import partial, wraps
-from inspect import iscoroutinefunction, signature
+from inspect import iscoroutinefunction
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
 from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
@@ -18,6 +18,8 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
+from utilities.functions import get_func_name
+from utilities.inspect import bind_custom_repr, extract_bound_args_repr
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -142,25 +144,30 @@ def log_call(
     if func is None:
         return partial(log_call, level=level)
 
-    sig = signature(func)
-
     if iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            arguments = sig.bind(*args, **kwargs).arguments
-            logger.opt(depth=1).log(level, "", **arguments)
+            _log_call_bind_and_log(func, level, *args, **kwargs)
             return await func(*args, **kwargs)
 
         return cast(_F, wrapped_async)
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        arguments = sig.bind(*args, **kwargs).arguments
-        logger.opt(depth=1).log(level, "", **arguments)
+        _log_call_bind_and_log(func, level, *args, **kwargs)
         return func(*args, **kwargs)
 
     return cast(_F, wrapped_sync)
+
+
+def _log_call_bind_and_log(
+    func: Callable[..., Any], level: LogLevel, /, *args: Any, **kwargs: Any
+) -> None:
+    func_name = get_func_name(func)
+    bound_args = bind_custom_repr(func, *args, **kwargs)
+    extracted = extract_bound_args_repr(bound_args)
+    logger.opt(depth=2).log(level, "", **{func_name: extracted})
 
 
 def logged_sleep_sync(
