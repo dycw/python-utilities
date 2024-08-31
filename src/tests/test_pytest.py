@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING
 from pytest import mark, param
 
 from tests.conftest import FLAKY
-from utilities.pytest import is_pytest, throttle
+from utilities.pytest import (
+    _is_pytest_via_os_environ,
+    _is_pytest_via_sys_modules,
+    is_pytest,
+    throttle,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -19,6 +24,12 @@ if TYPE_CHECKING:
 class TestIsPytest:
     def test_main(self) -> None:
         assert is_pytest()
+
+    def test_via_os_environ(self) -> None:
+        assert _is_pytest_via_os_environ()
+
+    def test_via_sys_modules(self) -> None:
+        assert _is_pytest_via_sys_modules()
 
 
 class TestPytestOptions:
