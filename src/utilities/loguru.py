@@ -20,7 +20,9 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
+from utilities.ipython import is_ipython
 from utilities.iterables import resolve_include_and_exclude
+from utilities.jupyter import is_jupyter
 from utilities.pytest import is_pytest
 
 if TYPE_CHECKING:
@@ -250,7 +252,9 @@ def make_filter(
     _is_testing_override: bool = False,
 ) -> FilterFunction:
     """Make a filter."""
-    is_not_pytest_or_override = (not is_pytest()) or _is_testing_override
+    is_interactive_or_not_testing = (
+        is_ipython() or is_jupyter() or (not is_pytest()) or _is_testing_override
+    )
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
@@ -284,7 +288,7 @@ def make_filter(
             return False
         if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
-        return is_not_pytest_or_override
+        return is_interactive_or_not_testing
 
     return filter_func
 
