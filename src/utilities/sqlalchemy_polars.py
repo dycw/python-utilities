@@ -92,7 +92,8 @@ def insert_dataframe(
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
-        ensure_tables_created(engine_or_conn, table_or_mapped_class)
+        if not assume_tables_exist:
+            ensure_tables_created(engine_or_conn, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameError(df=df)
@@ -126,7 +127,8 @@ async def insert_dataframe_async(
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
-        await ensure_tables_created_async(engine, table_or_mapped_class)
+        if not assume_tables_exist:
+            await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameAsyncError(df=df)
@@ -601,7 +603,8 @@ def upsert_dataframe(
     """Upsert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
-        ensure_tables_created(engine_or_conn, table_or_mapped_class)
+        if not assume_tables_exist:
+            ensure_tables_created(engine_or_conn, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
         raise UpsertDataFrameError(df=df)
@@ -637,7 +640,8 @@ async def upsert_dataframe_async(
     """Upsert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
-        await ensure_tables_created_async(engine, table_or_mapped_class)
+        if not assume_tables_exist:
+            await ensure_tables_created_async(engine, table_or_mapped_class)
         return
     if prepared.no_items_non_empty_df:
         raise UpsertDataFrameAsyncError(df=df)
