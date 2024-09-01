@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from inspect import signature
 from time import sleep
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pytest import mark, param
 
@@ -17,8 +17,9 @@ if TYPE_CHECKING:
 
 
 class TestIsPytest:
-    def test_main(self) -> None:
-        assert is_pytest()
+    @mark.parametrize("method", [param("environ"), param("sys"), param("both")])
+    def test_main(self, *, method: Literal["environ", "sys", "both"]) -> None:
+        assert is_pytest(method=method)
 
 
 class TestPytestOptions:
