@@ -77,10 +77,11 @@ from utilities.datetime import (
     get_today_tokyo,
     get_years,
     is_equal_mod_tz,
+    is_instance_date_not_datetime,
     is_local_datetime,
+    is_subclass_date_not_datetime,
     is_weekday,
     is_zoned_datetime,
-    isinstance_date_not_datetime,
     maybe_sub_pct_y,
     microseconds_since_epoch,
     microseconds_since_epoch_to_datetime,
@@ -331,11 +332,11 @@ class TestGetToday:
 class TestIsInstanceDateNotDatetime:
     @given(date=dates())
     def test_date(self, *, date: dt.date) -> None:
-        assert isinstance_date_not_datetime(date)
+        assert is_instance_date_not_datetime(date)
 
     @given(datetime=datetimes())
     def test_datetime(self, *, datetime: dt.datetime) -> None:
-        assert not isinstance_date_not_datetime(datetime)
+        assert not is_instance_date_not_datetime(datetime)
 
 
 class TestIsEqualModTz:
@@ -368,6 +369,16 @@ class TestIsLocalDateTime:
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_local_datetime(obj)
         assert result is expected
+
+
+class TestIsSubClassDateNotDatetime:
+    @given(date=dates())
+    def test_date(self, *, date: dt.date) -> None:
+        assert is_subclass_date_not_datetime(type(date))
+
+    @given(datetime=datetimes())
+    def test_datetime(self, *, datetime: dt.datetime) -> None:
+        assert not is_subclass_date_not_datetime(type(datetime))
 
 
 class TestIsWeekday:

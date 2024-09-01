@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from operator import eq
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
@@ -32,6 +33,8 @@ from polars import (
     Float64,
     Int32,
     Int64,
+    UInt32,
+    UInt64,
     Utf8,
     col,
     when,
@@ -103,6 +106,7 @@ from utilities.sqlalchemy_polars import (
     InsertDataFrameError,
     UpsertDataFrameAsyncError,
     UpsertDataFrameError,
+    _insert_dataframe_check_df_and_db_types,
     _insert_dataframe_map_df_column_to_table_column_and_type,
     _insert_dataframe_map_df_column_to_table_schema,
     _insert_dataframe_map_df_schema_to_table,
@@ -302,6 +306,35 @@ class TestInsertDataFrame:
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
             insert_dataframe(df, table, engine_or_conn)
+
+
+class TestInsertDataFrameCheckDFAndDBTypes:
+    @mark.parametrize(
+        ("dtype", "db_col_type", "expected"),
+        [
+            param(pl.Boolean, bool, True),
+            param(pl.Date, dt.date, True),
+            param(pl.Date, dt.datetime, False),
+            param(Datetime, dt.date, False),
+            param(Datetime, dt.datetime, True),
+            param(Float64, float, True),
+            param(Float64, int, False),
+            param(Int32, int, True),
+            param(Int32, float, False),
+            param(Int64, int, True),
+            param(Int64, float, False),
+            param(UInt32, int, True),
+            param(UInt32, float, False),
+            param(UInt64, int, True),
+            param(UInt64, float, False),
+            param(Utf8, str, True),
+        ],
+    )
+    def test_main(
+        self, *, dtype: PolarsDataType, db_col_type: type, expected: bool
+    ) -> None:
+        result = _insert_dataframe_check_df_and_db_types(dtype, db_col_type)
+        assert result is expected
 
 
 class TestInsertDataFrameMapDFColumnToTableColumnAndType:

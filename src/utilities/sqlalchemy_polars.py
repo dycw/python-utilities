@@ -19,6 +19,8 @@ from polars import (
     Int32,
     Int64,
     Time,
+    UInt32,
+    UInt64,
     Utf8,
     concat,
     read_database,
@@ -29,6 +31,7 @@ from sqlalchemy.exc import DuplicateColumnError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from typing_extensions import override
 
+from utilities.datetime import is_subclass_date_not_datetime
 from utilities.errors import redirect_error
 from utilities.functions import identity
 from utilities.iterables import (
@@ -235,14 +238,10 @@ def _insert_dataframe_check_df_and_db_types(
 ) -> bool:
     return (
         (dtype == pl.Boolean and issubclass(db_col_type, bool))
-        or (
-            dtype == Date
-            and issubclass(db_col_type, dt.date)
-            and not issubclass(db_col_type, dt.datetime)
-        )
+        or (dtype == Date and is_subclass_date_not_datetime(db_col_type))
         or (dtype == Datetime and issubclass(db_col_type, dt.datetime))
         or (dtype == Float64 and issubclass(db_col_type, float))
-        or (dtype in {Int32, Int64} and issubclass(db_col_type, int))
+        or (dtype in {Int32, Int64, UInt32, UInt64} and issubclass(db_col_type, int))
         or (dtype == Utf8 and issubclass(db_col_type, str))
     )
 
