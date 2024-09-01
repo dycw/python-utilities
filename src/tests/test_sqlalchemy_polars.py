@@ -202,6 +202,12 @@ class TestInsertDataFrame:
         df, table = self._prepare_empty_test(values)
         self._run_test_sync_error(df, table, engine, use_conn=use_conn)
 
+    @given(engine=sqlite_engines())
+    @mark.parametrize("use_conn", [param(True), param(False)])
+    def test_sync_assume_exists(self, *, engine: Engine, use_conn: bool) -> None:
+        df, table = self._prepare_empty_df_test()
+        self._run_test_sync_empty_assume_exists(df, table, engine, use_conn=use_conn)
+
     @given(data=data())
     @mark.parametrize(("strategy", "pl_dtype", "col_type", "check"), cases)
     async def test_async(
@@ -233,6 +239,13 @@ class TestInsertDataFrame:
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
             _ = await insert_dataframe_async(df, table, engine)
+
+    @given(data=data())
+    async def test_async_assume_exists(self, *, data: DataObject) -> None:
+        df, table = self._prepare_empty_df_test()
+        engine = await aiosqlite_engines(data)
+        await ensure_tables_created_async(engine, table)
+        await insert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
     def _prepare_main_test(
         self,
@@ -288,6 +301,11 @@ class TestInsertDataFrame:
         table = self._make_table(sqlalchemy.Boolean)
         return df, table
 
+    def _prepare_empty_df_test(self, /) -> tuple[DataFrame, Table]:
+        df = DataFrame(schema={"value": pl.Boolean})
+        table = self._make_table(sqlalchemy.Boolean)
+        return df, table
+
     def _run_test_sync_error(
         self,
         df: DataFrame,
@@ -306,6 +324,22 @@ class TestInsertDataFrame:
             match="Non-empty DataFrame must resolve to at least 1 item",
         ):
             insert_dataframe(df, table, engine_or_conn)
+
+    def _run_test_sync_empty_assume_exists(
+        self,
+        df: DataFrame,
+        table: Table,
+        engine_or_conn: EngineOrConnection,
+        /,
+        *,
+        use_conn: bool = False,
+    ) -> None:
+        if use_conn:
+            with yield_connection(engine_or_conn) as conn:
+                self._run_test_sync_empty_assume_exists(df, table, conn)
+            return
+        ensure_tables_created(engine_or_conn, table)
+        insert_dataframe(df, table, engine_or_conn, assume_tables_exist=True)
 
 
 class TestInsertDataFrameCheckDFAndDBTypes:
@@ -887,6 +921,15 @@ class TestUpsertDataFrame:
                 engine,
             )
 
+    @given(engine=sqlite_engines())
+    def test_sync_assume_exists(self, *, engine: Engine) -> None:
+        key = TestUpsertDataFrame.test_sync_assume_exists.__qualname__
+        name = f"test_{md5_hash(key)}"
+        df = DataFrame(schema={"value": pl.Boolean})
+        table = self._get_table(name)
+        ensure_tables_created(engine, table)
+        upsert_dataframe(df, table, engine, assume_tables_exist=True)
+
     @given(data=data(), df=_upsert_dataframes())
     async def test_async(self, *, data: DataObject, df: DataFrame) -> None:
         key = TestUpsertDataFrame.test_async.__qualname__
@@ -924,6 +967,16 @@ class TestUpsertDataFrame:
                 table,
                 engine,
             )
+
+    @given(data=data())
+    async def test_async_assume_exists(self, *, data: DataObject) -> None:
+        key = TestUpsertDataFrame.test_async_assume_exists.__qualname__
+        name = f"test_{md5_hash(key)}"
+        df = DataFrame(schema={"value": pl.Boolean})
+        table = self._get_table(name)
+        engine = await aiosqlite_engines(data)
+        await ensure_tables_created_async(engine, table)
+        await upsert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
     def _get_table(self, name: str, /) -> Table:
         return Table(
