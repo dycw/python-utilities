@@ -27,7 +27,6 @@ from hypothesis.strategies import (
 from polars import (
     Binary,
     DataFrame,
-    Date,
     Datetime,
     Decimal,
     Duration,
@@ -315,8 +314,8 @@ class TestInsertDataFrameCheckDFAndDBTypes:
         ("dtype", "db_col_type", "expected"),
         [
             param(pl.Boolean, bool, True),
-            param(Date, dt.date, True),
-            param(Date, dt.datetime, False),
+            param(pl.Date, dt.date, True),
+            param(pl.Date, dt.datetime, False),
             param(Datetime, dt.date, False),
             param(Datetime, dt.datetime, True),
             param(Float64, float, True),
