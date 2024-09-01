@@ -71,7 +71,9 @@ valid_zoned_datetimes = zoned_datetimes(
     min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]), valid=True
 ).map(drop_microseconds)
 invalid_zoned_datetimes = (
-    zoned_datetimes(max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]))
+    zoned_datetimes(
+        max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]), valid=True
+    )
     .map(drop_microseconds)
     .filter(lambda t: t < EPOCH_UTC)
 )
