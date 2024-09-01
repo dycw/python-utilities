@@ -309,7 +309,6 @@ class TestInsertDataFrame:
 
 
 class TestInsertDataFrameCheckDFAndDBTypes:
-    @mark.only
     @mark.parametrize(
         ("dtype", "db_col_type", "expected"),
         [
