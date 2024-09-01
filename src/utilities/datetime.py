@@ -69,7 +69,7 @@ class AddWeekdaysError(Exception): ...
 
 def check_date_not_datetime(date: dt.date, /) -> None:
     """Check if a date is not a datetime."""
-    if isinstance(date, dt.datetime):
+    if not is_instance_date_not_datetime(date):
         raise CheckDateNotDatetimeError(date=date)
 
 
@@ -266,11 +266,6 @@ def get_years(*, n: int = 1) -> dt.timedelta:
 YEAR = get_years(n=1)
 
 
-def isinstance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
-    """Check if an object is a date, and not a datetime."""
-    return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
-
-
 def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     """Check if x == y, modulo timezone."""
     x_aware, y_aware = x.tzinfo is not None, y.tzinfo is not None
@@ -281,9 +276,19 @@ def is_equal_mod_tz(x: dt.datetime, y: dt.datetime, /) -> bool:
     return x == y
 
 
+def is_instance_date_not_datetime(obj: Any, /) -> TypeGuard[dt.date]:
+    """Check if an object is a date, and not a datetime."""
+    return isinstance(obj, dt.date) and not isinstance(obj, dt.datetime)
+
+
 def is_local_datetime(obj: Any, /) -> TypeGuard[dt.datetime]:
     """Check if an object is a local datetime."""
     return isinstance(obj, dt.datetime) and (obj.tzinfo is None)
+
+
+def is_subclass_date_not_datetime(obj: type[Any], /) -> TypeGuard[type[dt.date]]:
+    """Check if a class is a date, and not a datetime."""
+    return issubclass(obj, dt.date) and not issubclass(obj, dt.datetime)
 
 
 _FRIDAY = 5
@@ -472,9 +477,9 @@ class Period(Generic[_TPeriod]):
     end: _TPeriod
 
     def __post_init__(self) -> None:
-        if isinstance_date_not_datetime(self.start) is not isinstance_date_not_datetime(
-            self.end
-        ):
+        if is_instance_date_not_datetime(
+            self.start
+        ) is not is_instance_date_not_datetime(self.end):
             raise _PeriodDateAndDatetimeMixedError(start=self.start, end=self.end)
         for date in [self.start, self.end]:
             if isinstance(date, dt.datetime):
@@ -736,10 +741,11 @@ __all__ = [
     "get_today_hk",
     "get_today_tokyo",
     "get_years",
+    "is_instance_date_not_datetime",
     "is_local_datetime",
+    "is_subclass_date_not_datetime",
     "is_weekday",
     "is_zoned_datetime",
-    "isinstance_date_not_datetime",
     "maybe_sub_pct_y",
     "microseconds_since_epoch",
     "microseconds_since_epoch_to_datetime",
