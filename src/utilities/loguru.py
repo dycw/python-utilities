@@ -253,7 +253,9 @@ def make_filter(
 ) -> FilterFunction:
     """Make a filter."""
     is_interactive_or_not_testing = (
-        is_ipython() or is_jupyter() or (not is_pytest()) or _is_testing_override
+        ((is_ipython() or is_jupyter()) and not is_pytest(method="environ"))
+        or _is_testing_override
+        or (not is_pytest())
     )
 
     def filter_func(record: Record, /) -> bool:
