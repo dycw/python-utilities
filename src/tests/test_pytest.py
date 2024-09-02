@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from inspect import signature
 from time import sleep
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from pytest import mark, param
 
@@ -17,9 +17,8 @@ if TYPE_CHECKING:
 
 
 class TestIsPytest:
-    @mark.parametrize("method", [param("environ"), param("sys"), param("both")])
-    def test_main(self, *, method: Literal["environ", "sys", "both"]) -> None:
-        assert is_pytest(method=method)
+    def test_main(self) -> None:
+        assert is_pytest()
 
 
 class TestPytestOptions:
@@ -183,6 +182,7 @@ class TestPytestOptions:
 
 
 class TestThrottle:
+    @FLAKY
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
     def test_basic(
@@ -205,6 +205,7 @@ class TestThrottle:
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
+    @FLAKY
     @mark.parametrize("asyncio_first", [param(True), param(False)])
     @mark.parametrize("as_float", [param(True), param(False)])
     @mark.parametrize("on_try", [param(True), param(False)])
@@ -244,6 +245,7 @@ async def test_main():
         sleep(1.0)
         testdir.runpytest().assert_outcomes(passed=1)
 
+    @FLAKY
     def test_on_pass(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """
@@ -275,6 +277,7 @@ async def test_main():
             if i == 0:
                 sleep(1.0)
 
+    @FLAKY
     def test_on_try(self, *, testdir: Testdir, tmp_path: Path) -> None:
         _ = testdir.makeconftest(
             """

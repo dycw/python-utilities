@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import partial
+from functools import partial, wraps
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -11,10 +11,13 @@ from types import (
 )
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
+from typing_extensions import ParamSpec
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
+_P = ParamSpec("_P")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 
@@ -61,6 +64,16 @@ def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
     return x if x is not None else y
 
 
+def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
+    """Lift a boolean-valued function to return its conjugation."""
+
+    @wraps(func)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> bool:
+        return not func(*args, **kwargs)
+
+    return wrapped
+
+
 def second(pair: tuple[Any, _U], /) -> _U:
     """Get the second element in a pair."""
     return pair[1]
@@ -73,5 +86,6 @@ __all__ = [
     "get_func_name",
     "identity",
     "if_not_none",
+    "not_func",
     "second",
 ]

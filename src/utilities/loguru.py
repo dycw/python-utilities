@@ -249,12 +249,6 @@ def make_filter(
     final_filter: bool | Callable[[], bool] | None = None,
 ) -> FilterFunction:
     """Make a filter."""
-    if final_filter is None:
-        final_filter_use = True
-    elif isinstance(final_filter, bool):
-        final_filter_use = final_filter
-    else:
-        final_filter_use = final_filter()
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
@@ -288,7 +282,10 @@ def make_filter(
             return False
         if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
-        return final_filter_use
+        return (final_filter is None) or (
+            (isinstance(final_filter, bool) and final_filter)
+            or (isinstance(final_filter, Callable) and final_filter())
+        )
 
     return filter_func
 

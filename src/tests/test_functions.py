@@ -7,7 +7,7 @@ from types import NoneType
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import booleans, integers
 from pytest import mark, param
 
 from utilities.asyncio import try_await
@@ -18,6 +18,7 @@ from utilities.functions import (
     get_func_name,
     identity,
     if_not_none,
+    not_func,
     second,
 )
 
@@ -128,6 +129,18 @@ class TestIdentity:
     @given(x=integers())
     def test_main(self, *, x: int) -> None:
         assert identity(x) == x
+
+
+class TestNotFunc:
+    @given(x=booleans())
+    def test_main(self, *, x: bool) -> None:
+        def return_x() -> bool:
+            return x
+
+        return_not_x = not_func(return_x)
+        result = return_not_x()
+        expected = not x
+        assert result is expected
 
 
 class TestSecond:
