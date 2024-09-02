@@ -51,6 +51,8 @@ from utilities.orjson import (
     _SCHEMA_VALUE,
     DeserializeError,
     SerializeError,
+    _object_hook,
+    _ObjectHookError,
     deserialize,
     serialize,
 )
@@ -266,3 +268,10 @@ class TestSerializeAndDeserialize:
                 assert ser_x == ser_y
         else:
             assert ser_x != ser_y
+
+
+class TestObjectHook:
+    def test_error(self) -> None:
+        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
+        with raises(_ObjectHookError, match=r"Unable to cast to object: 'invalid'"):
+            _ = _object_hook(obj)

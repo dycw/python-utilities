@@ -64,7 +64,7 @@ def serialize(obj: Any, /) -> bytes:
         raise SerializeError(obj=obj) from None
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class SerializeError(Exception):
     obj: Any
 
@@ -302,7 +302,7 @@ def _object_hook(obj: Any, /) -> Any:
             raise _ObjectHookError(data=never)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class DeserializeError(Exception):
     data: bytes
     obj: Any
@@ -391,13 +391,13 @@ def _object_hook_zoned_datetime(value: str, /) -> dt.date:
     return parse_zoned_datetime(value)  # skipif-ci-and-windows
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _ObjectHookError(Exception):
     data: Any
 
     @override
     def __str__(self) -> str:
-        return f"Unable to deserialize {self.data!r}"
+        return f"Unable to cast to object: {self.data!r}"
 
 
 __all__ = ["SerializeError", "deserialize", "serialize"]
