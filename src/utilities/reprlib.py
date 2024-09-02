@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass, field
 from enum import Enum, StrEnum
-from inspect import signature
 from itertools import islice
 from reprlib import (
     Repr,
@@ -16,100 +13,11 @@ from typing_extensions import override
 from utilities.functions import get_class_name
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Mapping
 
 
 _REPR = Repr()
 _REPR.maxother = 100
-
-
-@dataclass(repr=False)
-class ReprLocals:
-    """An object for `repr`ing local variables."""
-
-    locals: Mapping[str, Any]
-    func: Callable[..., Any]
-    include_underscore: bool = field(default=False, kw_only=True)
-    include_none: bool = field(default=False, kw_only=True)
-    fillvalue: str = field(default=_REPR.fillvalue, kw_only=True)
-    maxlevel: int = field(default=_REPR.maxlevel, kw_only=True)
-    maxtuple: int = field(default=_REPR.maxtuple, kw_only=True)
-    maxlist: int = field(default=_REPR.maxlist, kw_only=True)
-    maxarray: int = field(default=_REPR.maxarray, kw_only=True)
-    maxdict: int = field(default=_REPR.maxdict, kw_only=True)
-    maxset: int = field(default=_REPR.maxset, kw_only=True)
-    maxfrozenset: int = field(default=_REPR.maxfrozenset, kw_only=True)
-    maxdeque: int = field(default=_REPR.maxdeque, kw_only=True)
-    maxstring: int = field(default=_REPR.maxstring, kw_only=True)
-    maxlong: int = field(default=_REPR.maxlong, kw_only=True)
-    maxother: int = field(default=_REPR.maxother, kw_only=True)
-
-    @override
-    def __repr__(self) -> str:
-        mapping = _filter_mapping(
-            self.locals,
-            func=self.func,
-            include_underscore=self.include_underscore,
-            include_none=self.include_none,
-        )
-        return _custom_mapping_repr(
-            mapping,
-            fillvalue=self.fillvalue,
-            maxlevel=self.maxlevel,
-            maxtuple=self.maxtuple,
-            maxlist=self.maxlist,
-            maxarray=self.maxarray,
-            maxdict=self.maxdict,
-            maxset=self.maxset,
-            maxfrozenset=self.maxfrozenset,
-            maxdeque=self.maxdeque,
-            maxstring=self.maxstring,
-            maxlong=self.maxlong,
-            maxother=self.maxother,
-        )
-
-    @override
-    def __str__(self) -> str:
-        return self.__repr__()
-
-
-def _custom_mapping_repr(
-    mapping: Mapping[str, Any],
-    /,
-    *,
-    fillvalue: str = _REPR.fillvalue,
-    maxlevel: int = _REPR.maxlevel,
-    maxtuple: int = _REPR.maxtuple,
-    maxlist: int = _REPR.maxlist,
-    maxarray: int = _REPR.maxarray,
-    maxdict: int = _REPR.maxdict,
-    maxset: int = _REPR.maxset,
-    maxfrozenset: int = _REPR.maxfrozenset,
-    maxdeque: int = _REPR.maxdeque,
-    maxstring: int = _REPR.maxstring,
-    maxlong: int = _REPR.maxlong,
-    maxother: int = _REPR.maxother,
-) -> str:
-    """Apply the custom representation to a mapping."""
-    values = (
-        custom_repr(
-            v,
-            fillvalue=fillvalue,
-            maxlevel=maxlevel,
-            maxtuple=maxtuple,
-            maxlist=maxlist,
-            maxarray=maxarray,
-            maxdict=maxdict,
-            maxset=maxset,
-            maxfrozenset=maxfrozenset,
-            maxdeque=maxdeque,
-            maxstring=maxstring,
-            maxlong=maxlong,
-            maxother=maxother,
-        )
-        for v in mapping.values()
-    )
-    return ", ".join(f"{k}={v}" for k, v in zip(mapping, values, strict=True))
 
 
 def custom_repr(
@@ -226,30 +134,6 @@ class _CustomRepr(Repr):
         return ", ".join(pieces)
 
 
-_FILTER_MAPPING_REGEX = re.compile(r"^_")
-
-
-def _filter_mapping(
-    mapping: Mapping[str, Any],
-    /,
-    *,
-    func: Callable[..., Any] | None = None,
-    include_underscore: bool = False,
-    include_none: bool = False,
-) -> Mapping[str, Any]:
-    """Filter a mapping."""
-    if func is not None:
-        params = set(signature(func).parameters)
-        mapping = {k: v for k, v in mapping.items() if k in params}
-    if not include_underscore:
-        mapping = {
-            k: v for k, v in mapping.items() if not _FILTER_MAPPING_REGEX.search(k)
-        }
-    if not include_none:
-        mapping = {k: v for k, v in mapping.items() if v is not None}
-    return mapping
-
-
 def custom_print(
     obj: Any,
     /,
@@ -291,4 +175,4 @@ def custom_print(
         rich.print(text)
 
 
-__all__ = ["ReprLocals", "custom_print", "custom_repr"]
+__all__ = ["custom_print", "custom_repr"]
