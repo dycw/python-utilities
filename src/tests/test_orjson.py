@@ -235,11 +235,13 @@ class TestSerializeAndDeserialize:
         ):
             _ = serialize(sentinel)
 
-    @mark.only
     def test_error_deserialize(self) -> None:
         obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
         ser = serialize(obj)
-        with raises(DeserializeError, match="Unable to deserialize data 'invalid'"):
+        with raises(
+            DeserializeError,
+            match=r"Unable to deserialize data 'invalid'; object hook failed on \{.*\}",
+        ):
             _ = deserialize(ser)
 
     def _run_tests(

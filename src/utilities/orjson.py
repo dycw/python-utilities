@@ -309,7 +309,7 @@ class DeserializeError(Exception):
 
     @override
     def __str__(self) -> str:
-        return f"Unable to deserialize {self.obj!r}"
+        return f"Unable to deserialize data {self.data!r}; object hook failed on {self.obj!r}"
 
 
 def _object_hook_bytes(value: str, /) -> bytes:
