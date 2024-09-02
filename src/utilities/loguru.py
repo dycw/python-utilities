@@ -302,33 +302,6 @@ def make_filter(
     return filter_func
 
 
-def set_colors(
-    *,
-    trace: str | None = "<white><bold>",
-    debug: str | None = "<cyan><bold>",
-    info: str | None = "<green><bold>",
-    success: str | None = "<magenta><bold>",
-    warning: str | None = "<yellow><bold>",
-    error: str | None = "<red><bold>",
-    critical: str | None = "<red><bold><blink>",
-) -> None:
-    """Set the colors."""
-    if trace is not None:
-        _ = logger.level("TRACE", color=trace)
-    if debug is not None:
-        _ = logger.level("DEBUG", color=debug)
-    if info is not None:
-        _ = logger.level("INFO", color=info)
-    if success is not None:
-        _ = logger.level("SUCCESS", color=success)
-    if warning is not None:
-        _ = logger.level("WARNING", color=warning)
-    if error is not None:
-        _ = logger.level("ERROR", color=error)
-    if critical is not None:
-        _ = logger.level("CRITICAL", color=critical)
-
-
 def _log_from_depth_up(
     logger: Logger,
     depth: int,
@@ -375,5 +348,4 @@ __all__ = [
     "make_catch_hook",
     "make_except_hook",
     "make_filter",
-    "set_colors",
 ]

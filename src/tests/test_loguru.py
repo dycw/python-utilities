@@ -3,10 +3,8 @@ from __future__ import annotations
 import datetime as dt
 import sys  # do use `from sys import ...`
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from hypothesis import given
-from hypothesis.strategies import none, sampled_from
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
@@ -31,7 +29,6 @@ from utilities.loguru import (
     make_catch_hook,
     make_except_hook,
     make_filter,
-    set_colors,
 )
 from utilities.text import ensure_str, strip_and_dedent
 
@@ -499,46 +496,3 @@ class TestMakeFilter:
             ),
         }
         return cast(Any, record)
-
-
-class TestSetColors:
-    colors: ClassVar[list[str]] = [
-        "<black>",
-        "<blue>",
-        "<cyan>",
-        "<green>",
-        "<magenta>",
-        "<red>",
-        "<white>",
-        "<yellow>",
-    ]
-
-    @given(
-        trace=sampled_from(colors) | none(),
-        debug=sampled_from(colors) | none(),
-        info=sampled_from(colors) | none(),
-        success=sampled_from(colors) | none(),
-        warning=sampled_from(colors) | none(),
-        error=sampled_from(colors) | none(),
-        critical=sampled_from(colors) | none(),
-    )
-    def test_main(
-        self,
-        *,
-        trace: str | None,
-        debug: str | None,
-        info: str | None,
-        success: str | None,
-        warning: str | None,
-        error: str | None,
-        critical: str | None,
-    ) -> None:
-        set_colors(
-            trace=trace,
-            debug=debug,
-            info=info,
-            success=success,
-            warning=warning,
-            error=error,
-            critical=critical,
-        )
