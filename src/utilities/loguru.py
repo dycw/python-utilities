@@ -19,7 +19,6 @@ from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
-from utilities.inspect import bind_args_custom_repr
 from utilities.iterables import resolve_include_and_exclude
 
 if TYPE_CHECKING:
@@ -148,6 +147,9 @@ class GetLoggingLevelError(Exception):
         return f"Invalid logging level: {self.level!r}"
 
 
+_MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
+
+
 @overload
 def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
 @overload
@@ -159,30 +161,24 @@ def log_call(
     if func is None:
         return partial(log_call, level=level)
 
+    func_name = get_func_name(func)
     if iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            _log_call_bind_and_log(func, level, *args, **kwargs)
+            logger.opt(depth=1).log(
+                level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+            )
             return await func(*args, **kwargs)
 
         return cast(_F, wrapped_async)
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        _log_call_bind_and_log(func, level, *args, **kwargs)
+        logger.opt(depth=1).log(level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name})
         return func(*args, **kwargs)
 
     return cast(_F, wrapped_sync)
-
-
-def _log_call_bind_and_log(
-    func: Callable[..., Any], level: LogLevel, /, *args: Any, **kwargs: Any
-) -> None:
-    func_name = get_func_name(func)
-    key = f"<{func_name}>"
-    bound_args = bind_args_custom_repr(func, *args, **kwargs)
-    _log_from_depth_up(logger, 3, level, "", exception=None, **{key: bound_args})
 
 
 def logged_sleep_sync(

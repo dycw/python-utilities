@@ -106,6 +106,7 @@ class TestLevelConfiguration:
 
 
 class TestLogCall:
+    @mark.only
     def test_sync(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
@@ -121,15 +122,15 @@ class TestLogCall:
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"tests\.test_loguru:test_sync:\d+ -  \| {'<diff_pairwise_then_add_sync>': 'x=1000, y=100, z=10, w=1'}"
+            + r"tests\.test_loguru:test_sync:\d+ -  \| {'𝑓': 'diff_pairwise_then_add_sync'}"  # noqa: RUF001
         )
         assert search(expected1, line1)
         head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:\d+ -  \| "
-        expected2 = head_mid + "{'<diff_sync>': 'x=1000, y=100'}"
+        expected2 = head_mid + "{'𝑓': 'diff_sync'}"  # noqa: RUF001
         assert search(expected2, line2)
-        expected3 = head_mid + "{'<diff_sync>': 'x=10, y=1'}"
+        expected3 = head_mid + "{'𝑓': 'diff_sync'}"  # noqa: RUF001
         assert search(expected3, line3)
-        expected4 = head_mid + "{'<add_sync>': 'x=900, y=9'}"
+        expected4 = head_mid + "{'𝑓': 'add_sync'}"  # noqa: RUF001
         assert search(expected4, line4)
 
     async def test_async(self, *, capsys: CaptureFixture) -> None:
