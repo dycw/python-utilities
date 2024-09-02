@@ -32,6 +32,8 @@ from utilities.loguru import (
 from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from _pytest.capture import CaptureFixture
     from loguru import Record
 
@@ -231,7 +233,7 @@ class TestMakeExceptHook:
 
 class TestMakeFilter:
     def test_main(self) -> None:
-        filter_func = make_filter(_is_testing_override=True)
+        filter_func = make_filter(final_filter=True)
         assert filter_func(self._record)
 
     @mark.parametrize(
@@ -247,7 +249,7 @@ class TestMakeFilter:
         ],
     )
     def test_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(level=level, _is_testing_override=True)
+        filter_func = make_filter(level=level, final_filter=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -264,7 +266,7 @@ class TestMakeFilter:
         ],
     )
     def test_min_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(min_level=level, _is_testing_override=True)
+        filter_func = make_filter(min_level=level, final_filter=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -281,7 +283,7 @@ class TestMakeFilter:
         ],
     )
     def test_max_level(self, *, level: LogLevel, expected: bool) -> None:
-        filter_func = make_filter(max_level=level, _is_testing_override=True)
+        filter_func = make_filter(max_level=level, final_filter=True)
         result = filter_func(self._record)
         assert result is expected
 
@@ -290,9 +292,9 @@ class TestMakeFilter:
         [
             param(None, None, True),
             param("__main__", None, True),
-            param("invalid", None, False),
+            param("other", None, False),
             param(None, "__main__", False),
-            param(None, "invalid", True),
+            param(None, "other", True),
         ],
     )
     def test_name_exists(
@@ -303,9 +305,7 @@ class TestMakeFilter:
         expected: bool,
     ) -> None:
         filter_func = make_filter(
-            name_include=name_include,
-            name_exclude=name_exclude,
-            _is_testing_override=True,
+            name_include=name_include, name_exclude=name_exclude, final_filter=True
         )
         result = filter_func(self._record)
         assert result is expected
@@ -315,9 +315,9 @@ class TestMakeFilter:
         [
             param(None, None),
             param("__main__", None),
-            param("invalid", None),
+            param("other", None),
             param(None, "__main__"),
-            param(None, "invalid"),
+            param(None, "other"),
         ],
     )
     def test_name_does_not_exist(
@@ -327,9 +327,7 @@ class TestMakeFilter:
         name_exclude: MaybeIterable[str] | None,
     ) -> None:
         filter_func = make_filter(
-            name_include=name_include,
-            name_exclude=name_exclude,
-            _is_testing_override=True,
+            name_include=name_include, name_exclude=name_exclude, final_filter=True
         )
         record: Record = cast(Any, self._record | {"name": None})
         assert filter_func(record)
@@ -364,7 +362,7 @@ class TestMakeFilter:
         filter_func = make_filter(
             extra_include_all=extra_include_all,
             extra_exclude_any=extra_exclude_any,
-            _is_testing_override=True,
+            final_filter=True,
         )
         result = filter_func(self._record)
         assert result is expected
@@ -399,8 +397,34 @@ class TestMakeFilter:
         filter_func = make_filter(
             extra_include_any=extra_include_any,
             extra_exclude_all=extra_exclude_all,
-            _is_testing_override=True,
+            final_filter=True,
         )
+        result = filter_func(self._record)
+        assert result is expected
+
+    @mark.parametrize(
+        ("name", "final_filter", "expected"),
+        [
+            param("__main__", None, True),
+            param("__main__", True, True),
+            param("__main__", False, False),
+            param("__main__", lambda: True, True),
+            param("__main__", lambda: False, False),
+            param("other", None, False),
+            param("other", True, False),
+            param("other", False, False),
+            param("other", lambda: True, False),
+            param("other", lambda: False, False),
+        ],
+    )
+    def test_final_filter(
+        self,
+        *,
+        name: str,
+        final_filter: bool | Callable[[], bool] | None,
+        expected: bool,
+    ) -> None:
+        filter_func = make_filter(name_include=name, final_filter=final_filter)
         result = filter_func(self._record)
         assert result is expected
 
