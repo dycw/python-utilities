@@ -46,7 +46,16 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.orjson import deserialize, serialize
+from utilities.orjson import (
+    _SCHEMA_KEY,
+    _SCHEMA_VALUE,
+    DeserializeError,
+    SerializeError,
+    _object_hook,
+    _ObjectHookError,
+    deserialize,
+    serialize,
+)
 from utilities.sentinel import sentinel
 from utilities.typing import get_args
 from utilities.zoneinfo import HONG_KONG, UTC
@@ -222,9 +231,20 @@ class TestSerializeAndDeserialize:
             data, sqlite_engines(), two_way=True, eq=eq, eq_obj_implies_eq_ser=True
         )
 
-    def test_error(self) -> None:
-        with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
+    def test_error_serialize(self) -> None:
+        with raises(
+            SerializeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
             _ = serialize(sentinel)
+
+    def test_error_deserialize(self) -> None:
+        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
+        ser = serialize(obj)
+        with raises(
+            DeserializeError,
+            match=r"Unable to deserialize data 'invalid'; object hook failed on \{.*\}",
+        ):
+            _ = deserialize(ser)
 
     def _run_tests(
         self,
@@ -248,3 +268,10 @@ class TestSerializeAndDeserialize:
                 assert ser_x == ser_y
         else:
             assert ser_x != ser_y
+
+
+class TestObjectHook:
+    def test_error(self) -> None:
+        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
+        with raises(_ObjectHookError, match=r"Unable to cast to object: 'invalid'"):
+            _ = _object_hook(obj)
