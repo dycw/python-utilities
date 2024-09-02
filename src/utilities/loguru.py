@@ -20,10 +20,7 @@ from typing_extensions import override
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
 from utilities.inspect import bind_args_custom_repr
-from utilities.ipython import is_ipython
 from utilities.iterables import resolve_include_and_exclude
-from utilities.jupyter import is_jupyter
-from utilities.pytest import is_pytest
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -249,14 +246,15 @@ def make_filter(
     extra_include_any: MaybeIterable[Hashable] | None = None,
     extra_exclude_all: MaybeIterable[Hashable] | None = None,
     extra_exclude_any: MaybeIterable[Hashable] | None = None,
-    _is_testing_override: bool = False,
+    final_filter: bool | Callable[[], bool] | None = None,
 ) -> FilterFunction:
     """Make a filter."""
-    is_interactive_or_not_testing = (
-        ((is_ipython() or is_jupyter()) and not is_pytest(method="environ"))
-        or _is_testing_override
-        or (not is_pytest())
-    )
+    if final_filter is None:
+        final_filter_use = True
+    elif isinstance(final_filter, bool):
+        final_filter_use = final_filter
+    else:
+        final_filter_use = final_filter()
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
@@ -290,7 +288,7 @@ def make_filter(
             return False
         if (extra_exc_all is not None) and extra_exc_all.issubset(rec_extra_keys):
             return False
-        return is_interactive_or_not_testing
+        return final_filter_use
 
     return filter_func
 
