@@ -7,16 +7,7 @@ from enum import Enum, StrEnum, unique
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    TypedDict,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
 
 from orjson import (
     OPT_NON_STR_KEYS,
@@ -63,11 +54,24 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    return dumps(
-        obj,
-        default=_serialize_default,
-        option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
-    )
+    try:
+        return dumps(
+            obj,
+            default=_serialize_default,
+            option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
+        )
+    except TypeError:
+        raise SerializeError(obj=obj) from None
+
+
+@dataclass(frozen=True, kw_only=True)
+class SerializeError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        cls = get_class_name(self.obj)
+        return f"Unable to serialize object of type {cls!r}"
 
 
 class _SchemaDict(Generic[_T], TypedDict):
@@ -233,17 +237,21 @@ class _GetSchemaError(Exception):
 
 
 @overload
-def deserialize(obj: bytes, /, *, cls: type[_TDataclass]) -> _TDataclass: ...
+def deserialize(data: bytes, /, *, cls: type[_TDataclass]) -> _TDataclass: ...
 @overload
-def deserialize(obj: bytes, /, *, cls: None = ...) -> Any: ...
-def deserialize(obj: bytes, /, *, cls: type[_TDataclass] | None = None) -> Any:
+def deserialize(data: bytes, /, *, cls: None = ...) -> Any: ...
+def deserialize(data: bytes, /, *, cls: type[_TDataclass] | None = None) -> Any:
     """Deserialize an object."""
-    data = _object_hook(loads(obj))
+    pre_obj = loads(data)
+    try:
+        obj = _object_hook(pre_obj)
+    except _ObjectHookError as error:
+        raise DeserializeError(data=error.data, obj=pre_obj) from None
     if cls is None:
-        return data
+        return obj
     from dacite import Config, from_dict
 
-    return from_dict(cls, data, config=Config(cast=[Enum]))
+    return from_dict(cls, obj, config=Config(cast=[Enum]))
 
 
 def _object_hook(obj: Any, /) -> Any:
@@ -291,7 +299,17 @@ def _object_hook(obj: Any, /) -> Any:
         case _Key.sqlalchemy_engine:
             return _object_hook_sqlalchemy_engine(value)
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-            assert_never(never)
+            raise _ObjectHookError(data=never)
+
+
+@dataclass(frozen=True, kw_only=True)
+class DeserializeError(Exception):
+    data: bytes
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to deserialize {self.obj!r}"
 
 
 def _object_hook_bytes(value: str, /) -> bytes:
@@ -373,4 +391,13 @@ def _object_hook_zoned_datetime(value: str, /) -> dt.date:
     return parse_zoned_datetime(value)  # skipif-ci-and-windows
 
 
-__all__ = ["deserialize", "serialize"]
+@dataclass(frozen=True, kw_only=True)
+class _ObjectHookError(Exception):
+    data: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to deserialize {self.data!r}"
+
+
+__all__ = ["SerializeError", "deserialize", "serialize"]

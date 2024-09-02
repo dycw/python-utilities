@@ -46,7 +46,14 @@ from utilities.hypothesis import (
     zoned_datetimes,
 )
 from utilities.math import MAX_INT64, MIN_INT64
-from utilities.orjson import deserialize, serialize
+from utilities.orjson import (
+    _SCHEMA_KEY,
+    _SCHEMA_VALUE,
+    DeserializeError,
+    SerializeError,
+    deserialize,
+    serialize,
+)
 from utilities.sentinel import sentinel
 from utilities.typing import get_args
 from utilities.zoneinfo import HONG_KONG, UTC
@@ -222,9 +229,18 @@ class TestSerializeAndDeserialize:
             data, sqlite_engines(), two_way=True, eq=eq, eq_obj_implies_eq_ser=True
         )
 
-    def test_error(self) -> None:
-        with raises(TypeError, match="Type is not JSON serializable: Sentinel"):
+    def test_error_serialize(self) -> None:
+        with raises(
+            SerializeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
             _ = serialize(sentinel)
+
+    @mark.only
+    def test_error_deserialize(self) -> None:
+        obj = {_SCHEMA_KEY: "invalid", _SCHEMA_VALUE: "invalid"}
+        ser = serialize(obj)
+        with raises(DeserializeError, match="Unable to deserialize data 'invalid'"):
+            _ = deserialize(ser)
 
     def _run_tests(
         self,
