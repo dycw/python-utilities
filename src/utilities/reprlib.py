@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 _REPR = Repr()
-_REPR.maxother = 100
 
 
 def custom_repr(
