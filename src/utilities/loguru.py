@@ -48,8 +48,6 @@ if TYPE_CHECKING:
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
-
-
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<white><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
