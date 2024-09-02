@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
+from utilities.datetime import is_zoned_datetime
 from utilities.functions import get_class_name
 
 if TYPE_CHECKING:
@@ -115,6 +116,26 @@ class _CustomRepr(Repr):
             return repr(x)
         return self.repr_instance(x, level)
 
+    def repr_date(self, x: Any, level: int) -> str:
+        try:
+            from utilities.whenever import serialize_date
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        return serialize_date(x)
+
+    def repr_datetime(self, x: Any, level: int) -> str:
+        if is_zoned_datetime(x):
+            try:
+                from utilities.whenever import serialize_zoned_datetime
+            except ModuleNotFoundError:  # pragma: no cover
+                return self.repr_instance(x, level)
+            return serialize_zoned_datetime(x)
+        try:
+            from utilities.whenever import serialize_local_datetime
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        return serialize_local_datetime(x)
+
     @override
     def repr_dict(self, x: Mapping[str, Any], level: int) -> str:
         n = len(x)
@@ -132,6 +153,20 @@ class _CustomRepr(Repr):
         if n > self.maxdict:
             pieces.append(self.fillvalue)
         return ", ".join(pieces)
+
+    def repr_time(self, x: Any, level: int) -> str:
+        try:
+            from utilities.whenever import serialize_time
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        return serialize_time(x)
+
+    def repr_timedelta(self, x: Any, level: int) -> str:
+        try:
+            from utilities.whenever import serialize_timedelta
+        except ModuleNotFoundError:  # pragma: no cover
+            return self.repr_instance(x, level)
+        return serialize_timedelta(x)
 
 
 def custom_print(

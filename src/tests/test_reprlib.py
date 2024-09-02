@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime as dt
 from enum import Enum, StrEnum, auto
 from typing import TYPE_CHECKING, Any
 
@@ -7,6 +8,7 @@ from polars import int_range
 from pytest import mark, param
 
 from utilities.reprlib import custom_print, custom_repr
+from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -57,6 +59,21 @@ class TestCustomRepr:
 
         _ = custom_repr(DataFrame())
 
+    def test_date(self) -> None:
+        result = custom_repr(dt.date(2000, 1, 1))
+        expected = "2000-01-01"
+        assert result == expected
+
+    def test_datetime_local(self) -> None:
+        result = custom_repr(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None))
+        expected = "2000-01-01T00:00:00"
+        assert result == expected
+
+    def test_datetime_zoned(self) -> None:
+        result = custom_repr(dt.datetime(2000, 1, 1, tzinfo=UTC))
+        expected = "2000-01-01T00:00:00+00:00[UTC]"
+        assert result == expected
+
     def test_enum_generic(self) -> None:
         class Truth(Enum):
             true = auto()
@@ -85,3 +102,13 @@ class TestCustomRepr:
         class Series: ...
 
         _ = custom_repr(Series())
+
+    def test_time(self) -> None:
+        result = custom_repr(dt.time(0))
+        expected = "00:00:00"
+        assert result == expected
+
+    def test_timedelta(self) -> None:
+        result = custom_repr(dt.timedelta(0))
+        expected = "P0D"
+        assert result == expected
