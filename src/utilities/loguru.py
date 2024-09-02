@@ -5,7 +5,7 @@ import logging
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from functools import partial, wraps
@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         FilterDict,
         FilterFunction,
         FormatFunction,
+        LevelConfig,
         Logger,
         Message,
         Record,
@@ -47,6 +48,17 @@ if TYPE_CHECKING:
 
 
 _F = TypeVar("_F", bound=Callable[..., Any])
+
+
+LEVEL_CONFIGS: Sequence[LevelConfig] = [
+    {"name": "TRACE", "color": "<white><bold>"},
+    {"name": "DEBUG", "color": "<cyan><bold>"},
+    {"name": "INFO", "color": "<green><bold>"},
+    {"name": "SUCCESS", "color": "<magenta><bold>"},
+    {"name": "WARNING", "color": "<yellow><bold>"},
+    {"name": "ERROR", "color": "<red><bold>"},
+    {"name": "CRITICAL", "color": "<red><bold><blink>"},
+]
 
 
 class HandlerConfiguration(TypedDict, total=False):
@@ -351,6 +363,7 @@ class _LogFromDepthUpError(Exception):
 
 
 __all__ = [
+    "LEVEL_CONFIGS",
     "GetLoggingLevelError",
     "HandlerConfiguration",
     "InterceptHandler",

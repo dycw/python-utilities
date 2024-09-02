@@ -18,6 +18,7 @@ from tests.functions import (
     diff_pairwise_then_add_sync,
 )
 from utilities.loguru import (
+    LEVEL_CONFIGS,
     GetLoggingLevelError,
     HandlerConfiguration,
     InterceptHandler,
@@ -65,9 +66,46 @@ class TestGetLoggingLevel:
             _ = get_logging_level("invalid")
 
 
+class TestHandlerConfiguration:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        logger.trace("message 1")
+        out1 = capsys.readouterr().out
+        assert out1 == ""
+
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        logger.trace("message 2")
+        out2 = capsys.readouterr().out
+        expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| tests\.test_loguru:test_main:\d+ - message 2"
+        assert search(expected, out2)
+
+
 class TestInterceptHandler:
     def test_main(self) -> None:
         _ = InterceptHandler()
+
+
+class TestLevelConfiguration:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "format": "<level>{message}</level>",
+            "colorize": True,
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        logger.info("message 1")
+        out1 = capsys.readouterr().out
+        expected1 = "\x1b[1mmessage 1\x1b[0m\n"
+        assert out1 == expected1
+
+        _ = logger.configure(levels=LEVEL_CONFIGS)
+
+        logger.info("message 2")
+        out2 = capsys.readouterr().out
+        expected2 = "\x1b[32m\x1b[1mmessage 2\x1b[0m\n"
+        assert out2 == expected2
 
 
 class TestLogCall:
