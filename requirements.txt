@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.1
+uv==0.4.2
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -442,7 +442,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.9.6
+yarl==1.9.7
     # via aiohttp
 zipp==3.20.1
     # via importlib-metadata
