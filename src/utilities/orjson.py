@@ -400,4 +400,4 @@ class _ObjectHookError(Exception):
         return f"Unable to cast to object: {self.data!r}"
 
 
-__all__ = ["SerializeError", "deserialize", "serialize"]
+__all__ = ["DeserializeError", "SerializeError", "deserialize", "serialize"]
