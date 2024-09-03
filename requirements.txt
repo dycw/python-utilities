@@ -184,7 +184,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.6.0
+narwhals==1.6.1
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -424,7 +424,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.2
+uv==0.4.3
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

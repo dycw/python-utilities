@@ -30,6 +30,8 @@ from utilities.datetime import (
     EPOCH_UTC,
     HALF_YEAR,
     HOUR,
+    MICROSECOND,
+    MILLISECOND,
     MINUTE,
     MONTH,
     NOW_HK,
@@ -714,7 +716,15 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
 class TestTimedeltas:
     @mark.parametrize(
         "timedelta",
-        [param(SECOND), param(MINUTE), param(HOUR), param(DAY), param(WEEK)],
+        [
+            param(MICROSECOND),
+            param(MILLISECOND),
+            param(SECOND),
+            param(MINUTE),
+            param(HOUR),
+            param(DAY),
+            param(WEEK),
+        ],
     )
     def test_main(self, *, timedelta: dt.timedelta) -> None:
         assert isinstance(timedelta, dt.timedelta)
