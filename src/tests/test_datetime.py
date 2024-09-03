@@ -30,6 +30,8 @@ from utilities.datetime import (
     EPOCH_UTC,
     HALF_YEAR,
     HOUR,
+    MICROSECOND,
+    MILLISECOND,
     MINUTE,
     MONTH,
     NOW_HK,
@@ -110,7 +112,7 @@ if TYPE_CHECKING:
 
 class TestAddWeekdays:
     @given(date=dates(), n=integers(-10, 10))
-    @mark.parametrize("predicate", [param(gt), param(lt)])
+    @mark.parametrize("predicate", [param(gt), param(lt)], ids=str)
     def test_add(
         self, *, date: dt.date, n: int, predicate: Callable[[Any, Any], bool]
     ) -> None:
@@ -227,7 +229,9 @@ class TestDurationToTimedelta:
 
 class TestEpoch:
     @mark.parametrize(
-        ("epoch", "time_zone"), [param(EPOCH_NAIVE, None), param(EPOCH_UTC, UTC)]
+        ("epoch", "time_zone"),
+        [param(EPOCH_NAIVE, None), param(EPOCH_UTC, UTC)],
+        ids=str,
     )
     def test_main(self, *, epoch: dt.datetime, time_zone: ZoneInfo | None) -> None:
         assert isinstance(EPOCH_UTC, dt.datetime)
@@ -259,6 +263,7 @@ class TestFormatDatetimeLocalAndUTC:
                 "2000-02-02 14:03:04 (Wed, Asia/Hong_Kong, 06:03:04 UTC)",
             ),
         ],
+        ids=str,
     )
     def test_main(self, *, datetime: dt.datetime, expected: str) -> None:
         result = format_datetime_local_and_utc(datetime)
@@ -279,12 +284,12 @@ class TestGetNow:
         assert now.tzinfo in {ETC, HONG_KONG, TOKYO, UTC}
 
     @mark.parametrize(
-        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
+        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)], ids=str
     )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
 
-    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)])
+    @mark.parametrize("now", [param(NOW_UTC), param(NOW_HK), param(NOW_TOKYO)], ids=str)
     def test_constants(self, *, now: dt.datetime) -> None:
         assert isinstance(now, dt.date)
 
@@ -299,6 +304,7 @@ class TestGetTimedelta:
             param(get_half_years),
             param(get_years),
         ],
+        ids=str,
     )
     def test_getters(
         self, *, get_timedelta: Callable[..., dt.timedelta], n: int
@@ -306,7 +312,9 @@ class TestGetTimedelta:
         assert isinstance(get_timedelta(n=n), dt.timedelta)
 
     @mark.parametrize(
-        "timedelta", [param(MONTH), param(QUARTER), param(HALF_YEAR), param(YEAR)]
+        "timedelta",
+        [param(MONTH), param(QUARTER), param(HALF_YEAR), param(YEAR)],
+        ids=str,
     )
     def test_constants(self, *, timedelta: dt.timedelta) -> None:
         assert isinstance(timedelta, dt.timedelta)
@@ -319,12 +327,16 @@ class TestGetToday:
         assert isinstance(today, dt.date)
 
     @mark.parametrize(
-        "get_today", [param(get_today), param(get_today_hk), param(get_today_tokyo)]
+        "get_today",
+        [param(get_today), param(get_today_hk), param(get_today_tokyo)],
+        ids=str,
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
 
-    @mark.parametrize("today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)])
+    @mark.parametrize(
+        "today", [param(TODAY_UTC), param(TODAY_HK), param(TODAY_TOKYO)], ids=str
+    )
     def test_constants(self, *, today: dt.date) -> None:
         assert isinstance(today, dt.date)
 
@@ -365,6 +377,7 @@ class TestIsLocalDateTime:
             param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), True),
             param(dt.datetime(2000, 1, 1, tzinfo=UTC), False),
         ],
+        ids=str,
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_local_datetime(obj)
@@ -398,6 +411,7 @@ class TestIsZonedDateTime:
             param(dt.datetime(2000, 1, 1, tzinfo=UTC).replace(tzinfo=None), False),
             param(dt.datetime(2000, 1, 1, tzinfo=UTC), True),
         ],
+        ids=str,
     )
     def test_main(self, *, obj: Any, expected: bool) -> None:
         result = is_zoned_datetime(obj)
@@ -427,7 +441,7 @@ class TestMicrosecondsOrMillisecondsSinceEpoch:
         assert result == microseconds
 
     @given(datetime=datetimes(timezones=just(UTC)))
-    @mark.parametrize("strict", [param(True), param(False)])
+    @mark.parametrize("strict", [param(True), param(False)], ids=str)
     def test_datetime_to_milliseconds_exact(
         self, *, datetime: dt.datetime, strict: bool
     ) -> None:
@@ -470,6 +484,7 @@ class TestMonth:
             param(Month(2000, 1), 11, Month(2000, 12)),
             param(Month(2000, 1), 12, Month(2001, 1)),
         ],
+        ids=str,
     )
     def test_add(self, *, month: Month, n: int, expected: Month) -> None:
         result = month + n
@@ -486,6 +501,7 @@ class TestMonth:
             param(Month(2000, 1), Month(2000, 12), -11),
             param(Month(2000, 1), Month(2001, 1), -12),
         ],
+        ids=str,
     )
     def test_diff(self, *, x: Month, y: Month, expected: int) -> None:
         result = x - y
@@ -495,7 +511,7 @@ class TestMonth:
     def test_hashable(self, *, month: Month) -> None:
         _ = hash(month)
 
-    @mark.parametrize("func", [param(repr), param(str)])
+    @mark.parametrize("func", [param(repr), param(str)], ids=str)
     def test_repr(self, *, func: Callable[..., str]) -> None:
         result = func(Month(2000, 12))
         expected = "2000-12"
@@ -512,6 +528,7 @@ class TestMonth:
             param(Month(2000, 1), 12, Month(1999, 1)),
             param(Month(2000, 1), 13, Month(1998, 12)),
         ],
+        ids=str,
     )
     def test_subtract(self, *, month: Month, n: int, expected: Month) -> None:
         result = month - n
@@ -631,6 +648,7 @@ class TestRoundToWeekday:
             param(round_to_prev_weekday, True, eq),
             param(round_to_prev_weekday, False, lt),
         ],
+        ids=str,
     )
     def test_main(
         self,
@@ -680,7 +698,7 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
         assert result == microseconds
 
     @given(timedelta=timedeltas())
-    @mark.parametrize("strict", [param(True), param(False)])
+    @mark.parametrize("strict", [param(True), param(False)], ids=str)
     def test_timedelta_to_milliseconds_exact(
         self, *, timedelta: dt.timedelta, strict: bool
     ) -> None:
@@ -714,7 +732,16 @@ class TestTimedeltaToMicrosecondsOrMilliseconds:
 class TestTimedeltas:
     @mark.parametrize(
         "timedelta",
-        [param(SECOND), param(MINUTE), param(HOUR), param(DAY), param(WEEK)],
+        [
+            param(MICROSECOND),
+            param(MILLISECOND),
+            param(SECOND),
+            param(MINUTE),
+            param(HOUR),
+            param(DAY),
+            param(WEEK),
+        ],
+        ids=str,
     )
     def test_main(self, *, timedelta: dt.timedelta) -> None:
         assert isinstance(timedelta, dt.timedelta)

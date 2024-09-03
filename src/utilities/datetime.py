@@ -37,6 +37,8 @@ _MICROSECONDS_PER_MILLISECOND = int(1e3)
 _MICROSECONDS_PER_SECOND = int(1e6)
 _SECONDS_PER_DAY = 24 * 60 * 60
 _MICROSECONDS_PER_DAY = _MICROSECONDS_PER_SECOND * _SECONDS_PER_DAY
+MICROSECOND = dt.timedelta(microseconds=1)
+MILLISECOND = dt.timedelta(milliseconds=1)
 SECOND = dt.timedelta(seconds=1)
 MINUTE = dt.timedelta(minutes=1)
 HOUR = dt.timedelta(hours=1)
@@ -57,10 +59,10 @@ def add_weekdays(date: dt.date, /, *, n: int = 1) -> dt.date:
         raise AddWeekdaysError(date)
     if n >= 1:
         for _ in range(n):
-            date = round_to_next_weekday(date + dt.timedelta(days=1))
+            date = round_to_next_weekday(date + DAY)
     elif n <= -1:
         for _ in range(-n):
-            date = round_to_prev_weekday(date - dt.timedelta(days=1))
+            date = round_to_prev_weekday(date - DAY)
     return date
 
 
@@ -694,6 +696,7 @@ __all__ = [
     "HALF_YEAR",
     "HOUR",
     "MAX_MONTH",
+    "MILLISECOND",
     "MINUTE",
     "MIN_MONTH",
     "MONTH",
