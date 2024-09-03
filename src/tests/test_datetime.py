@@ -101,6 +101,7 @@ from utilities.datetime import (
     yield_days,
     yield_weekdays,
 )
+from utilities.functions import get_func_name
 from utilities.hypothesis import assume_does_not_raise, int32s, months, text_clean
 from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
 
@@ -284,7 +285,9 @@ class TestGetNow:
         assert now.tzinfo in {ETC, HONG_KONG, TOKYO, UTC}
 
     @mark.parametrize(
-        "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)], ids=str
+        "get_now",
+        [param(get_now), param(get_now_hk), param(get_now_tokyo)],
+        ids=get_func_name,
     )
     def test_getters(self, *, get_now: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_now(), dt.date)
@@ -304,7 +307,7 @@ class TestGetTimedelta:
             param(get_half_years),
             param(get_years),
         ],
-        ids=str,
+        ids=get_func_name,
     )
     def test_getters(
         self, *, get_timedelta: Callable[..., dt.timedelta], n: int
@@ -329,7 +332,7 @@ class TestGetToday:
     @mark.parametrize(
         "get_today",
         [param(get_today), param(get_today_hk), param(get_today_tokyo)],
-        ids=str,
+        ids=get_func_name,
     )
     def test_getters(self, *, get_today: Callable[[], dt.datetime]) -> None:
         assert isinstance(get_today(), dt.date)
