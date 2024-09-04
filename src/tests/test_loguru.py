@@ -11,6 +11,9 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
+    add_async_comp,
+    add_sync_comp,
+    add_sync_comp_warning,
     add_sync_info,
     diff_pairwise_then_add_async,
     diff_pairwise_then_add_sync,
@@ -172,6 +175,49 @@ class TestLogCall:
         (line,) = out.splitlines()
         expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'𝑓': 'add_sync_info'}"  # noqa: RUF001
         assert search(expected, line)
+
+
+class TestLogCompletion:
+    def test_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert add_sync_comp(1, 2) == 3
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
+        expected1 = head + r"INFO     \| tests\.functions:add_sync_comp:\d+ - middle"
+        assert search(expected1, line1)
+        expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_sync:\d+ - "
+        assert search(expected2, line2)
+
+    async def test_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await add_async_comp(1, 2) == 3
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
+        expected1 = head + r"INFO     \| tests\.functions:add_async_comp:\d+ - middle"
+        assert search(expected1, line1)
+        expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_async:\d+ - "
+        assert search(expected2, line2)
+
+    def test_custom_level(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert add_sync_comp_warning(1, 2) == 3
+        out = capsys.readouterr().out
+        (line1, line2) = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
+        expected1 = (
+            head + r"INFO     \| tests\.functions:add_sync_comp_warning:\d+ - middle"
+        )
+        assert search(expected1, line1)
+        expected2 = head + r"WARNING  \| tests\.test_loguru:test_custom_level:\d+ - "
+        assert search(expected2, line2)
 
 
 class TestLogFromDepthUp:
