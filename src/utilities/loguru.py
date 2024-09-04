@@ -181,6 +181,38 @@ def log_call(
     return cast(_F, wrapped_sync)
 
 
+@overload
+def log_completion(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+@overload
+def log_completion(
+    func: None = None, /, *, level: LogLevel = ...
+) -> Callable[[_F], _F]: ...
+def log_completion(
+    func: _F | None = None, /, *, level: LogLevel = LogLevel.SUCCESS
+) -> _F | Callable[[_F], _F]:
+    """Log the function completion."""
+    if func is None:
+        return partial(log_completion, level=level)
+
+    if iscoroutinefunction(func):
+
+        @wraps(func)
+        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+            result = await func(*args, **kwargs)
+            logger.opt(depth=1).log(level, "")
+            return result
+
+        return cast(_F, wrapped_async)
+
+    @wraps(func)
+    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+        result = func(*args, **kwargs)
+        logger.opt(depth=1).log(level, "")
+        return result
+
+    return cast(_F, wrapped_sync)
+
+
 def logged_sleep_sync(
     duration: Duration, /, *, level: LogLevel = LogLevel.INFO, depth: int = 1
 ) -> None:
@@ -337,6 +369,7 @@ __all__ = [
     "LogLevel",
     "get_logging_level",
     "log_call",
+    "log_completion",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_catch_hook",
