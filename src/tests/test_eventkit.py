@@ -18,7 +18,7 @@ _T = TypeVar("_T")
 class TestAddListener:
     @given(n=integers())
     @settings(suppress_health_check={HealthCheck.function_scoped_fixture})
-    def test_main(self, *, capsys: CaptureFixture, n: int) -> None:
+    async def test_main(self, *, capsys: CaptureFixture, n: int) -> None:
         def func(obj: _T, /) -> _T:
             print(obj)  # noqa: T201
             return identity(obj)
