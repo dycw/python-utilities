@@ -41,7 +41,7 @@ redis==5.0.8
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.32
+sqlalchemy==2.0.33
     # via dycw-utilities (pyproject.toml)
 tomli==2.0.1
     # via coverage
