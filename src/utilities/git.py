@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from re import IGNORECASE, search
 from subprocess import PIPE, CalledProcessError, check_output
 from typing import TYPE_CHECKING, TypeVar, overload
+
+from typing_extensions import override
 
 from utilities.pathlib import PWD
 
@@ -43,13 +46,19 @@ def get_repo_root(*, cwd: PathLike = PWD) -> Path:
         # newer versions of git report "Not a git repository", whilst older
         # versions report "not a git repository"
         if search("fatal: not a git repository", error.stderr, flags=IGNORECASE):
-            raise GetRepoRootError(cwd) from error
+            raise GetRepoRootError(cwd=cwd) from error
         raise  # pragma: no cover
     else:
         return Path(output.strip("\n"))
 
 
-class GetRepoRootError(Exception): ...
+@dataclass(kw_only=True)
+class GetRepoRootError(Exception):
+    cwd: PathLike
+
+    @override
+    def __str__(self) -> str:
+        return f"Path is not part of a `git` repository: {self.cwd}"
 
 
 @overload

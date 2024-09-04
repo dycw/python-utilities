@@ -46,7 +46,9 @@ class TestGetRepoRoot:
         assert result == expected
 
     def test_error(self, *, tmp_path: Path) -> None:
-        with raises(GetRepoRootError):
+        with raises(
+            GetRepoRootError, match="Path is not part of a `git` repository: .*"
+        ):
             _ = get_repo_root(cwd=tmp_path)
 
 
