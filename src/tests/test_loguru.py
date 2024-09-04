@@ -11,12 +11,12 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
-    add_async_comp,
-    add_sync_comp,
-    add_sync_comp_warning,
     add_sync_info,
-    diff_pairwise_then_add_async,
-    diff_pairwise_then_add_sync,
+    comp_test_async,
+    comp_test_custom_level,
+    comp_test_sync,
+    func_test_entry_async_inc_and_dec,
+    func_test_entry_sync_inc_and_dec,
 )
 from utilities.loguru import (
     LEVEL_CONFIGS,
@@ -108,8 +108,8 @@ class TestLevelConfiguration:
         assert out2 == expected2
 
 
-class TestLogCall:
-    def test_sync(self, *, capsys: CaptureFixture) -> None:
+class TestLog:
+    def test_entry_sync(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
             "sink": sys.stdout,
@@ -118,22 +118,22 @@ class TestLogCall:
         }
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert diff_pairwise_then_add_sync(1000, 100, 10, 1) == 909
+        assert func_test_entry_sync_inc_and_dec(1) == (2, 0)
         out = capsys.readouterr().out
-        line1, line2, line3, line4 = out.splitlines()
+        line1, line2, line3 = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"tests\.test_loguru:test_sync:\d+ -  \| {'𝑓': 'diff_pairwise_then_add_sync'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_entry_sync:\d+ -  \| {'𝑓': 'func_test_entry_sync_inc_and_dec'}"  # noqa: RUF001
         )
         assert search(expected1, line1)
-        head_mid = head + r"tests\.functions:diff_pairwise_then_add_sync:\d+ -  \| "
-        expected2 = head_mid + "{'𝑓': 'diff_sync'}"  # noqa: RUF001
+        head_mid = (
+            head + r"tests\.functions:func_test_entry_sync_inc_and_neg:\d+ -  \| "
+        )
+        expected2 = head_mid + "{'𝑓': 'func_test_entry_sync_inc'}"  # noqa: RUF001
         assert search(expected2, line2)
-        expected3 = head_mid + "{'𝑓': 'diff_sync'}"  # noqa: RUF001
+        expected3 = head_mid + "{'𝑓': 'func_test_entry_sync_dec'}"  # noqa: RUF001
         assert search(expected3, line3)
-        expected4 = head_mid + "{'𝑓': 'add_sync'}"  # noqa: RUF001
-        assert search(expected4, line4)
 
     async def test_async(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
@@ -144,24 +144,24 @@ class TestLogCall:
         }
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert await diff_pairwise_then_add_async(1000, 100, 10, 1) == 909
+        assert await func_test_entry_async_inc_and_dec(1) == (2, 0)
         out = capsys.readouterr().out
-        line1, line2, line3, line4 = out.splitlines()
+        line1, line2, line3 = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"tests\.test_loguru:test_async:\d+ -  \| {'𝑓': 'diff_pairwise_then_add_async'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_async:\d+ -  \| {'𝑓': 'func_test_entry_async_inc_and_dec'}"  # noqa: RUF001
         )
         assert search(expected1, line1)
-        head_mid = head + r"tests\.functions:diff_pairwise_then_add_async:\d+ -  \| "
-        expected2 = head_mid + "{'𝑓': 'diff_async'}"  # noqa: RUF001
+        head_mid = (
+            head + r"tests\.functions:func_test_entry_async_inc_and_dec:\d+ -  \| "
+        )
+        expected2 = head_mid + "{'𝑓': 'func_test_entry_async_inc'}"  # noqa: RUF001
         assert search(expected2, line2)
-        expected3 = head_mid + "{'𝑓': 'diff_async'}"  # noqa: RUF001
+        expected3 = head_mid + "{'𝑓': 'func_test_entry_async_dec'}"  # noqa: RUF001
         assert search(expected3, line3)
-        expected4 = head_mid + "{'𝑓': 'add_async'}"  # noqa: RUF001
-        assert search(expected4, line4)
 
-    def test_custom_level(self, *, capsys: CaptureFixture) -> None:
+    def test_entry_custom_level(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
             "sink": sys.stdout,
@@ -182,11 +182,11 @@ class TestLogCompletion:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert add_sync_comp(1, 2) == 3
+        assert comp_test_sync(1) == 2
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-        expected1 = head + r"INFO     \| tests\.functions:add_sync_comp:\d+ - middle"
+        expected1 = head + r"INFO     \| tests\.functions:comp_test_sync:\d+ - Starting"
         assert search(expected1, line1)
         expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_sync:\d+ - "
         assert search(expected2, line2)
@@ -195,11 +195,13 @@ class TestLogCompletion:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert await add_async_comp(1, 2) == 3
+        assert await comp_test_async(1) == 2
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-        expected1 = head + r"INFO     \| tests\.functions:add_async_comp:\d+ - middle"
+        expected1 = (
+            head + r"INFO     \| tests\.functions:comp_test_async:\d+ - Starting"
+        )
         assert search(expected1, line1)
         expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_async:\d+ - "
         assert search(expected2, line2)
@@ -208,12 +210,12 @@ class TestLogCompletion:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert add_sync_comp_warning(1, 2) == 3
+        assert comp_test_custom_level(1) == 2
         out = capsys.readouterr().out
         (line1, line2) = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
         expected1 = (
-            head + r"INFO     \| tests\.functions:add_sync_comp_warning:\d+ - middle"
+            head + r"INFO     \| tests\.functions:comp_test_custom_level:\d+ - Starting"
         )
         assert search(expected1, line1)
         expected2 = head + r"WARNING  \| tests\.test_loguru:test_custom_level:\d+ - "

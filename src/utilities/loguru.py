@@ -151,15 +151,15 @@ _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
 @overload
-def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+def log(func: _F, /, *, level: LogLevel = ...) -> _F: ...
 @overload
-def log_call(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
-def log_call(
+def log(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
+def log(
     func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
 ) -> _F | Callable[[_F], _F]:
     """Log the function call."""
     if func is None:
-        return partial(log_call, level=level)
+        return partial(log, level=level)
 
     func_name = get_func_name(func)
     if iscoroutinefunction(func):
@@ -182,13 +182,19 @@ def log_call(
 
 
 @overload
-def log_completion(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+def log_completion(
+    func: _F, /, *, level: LogLevel = ..., skip_none: bool = ...
+) -> _F: ...
 @overload
 def log_completion(
-    func: None = None, /, *, level: LogLevel = ...
+    func: None = None, /, *, level: LogLevel = ..., skip_none: bool = ...
 ) -> Callable[[_F], _F]: ...
 def log_completion(
-    func: _F | None = None, /, *, level: LogLevel = LogLevel.SUCCESS
+    func: _F | None = None,
+    /,
+    *,
+    level: LogLevel = LogLevel.SUCCESS,
+    skip_none: bool = False,
 ) -> _F | Callable[[_F], _F]:
     """Log the function completion."""
     if func is None:
@@ -199,7 +205,8 @@ def log_completion(
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
             result = await func(*args, **kwargs)
-            logger.opt(depth=1).log(level, "")
+            if not skip_none or (result is not None):
+                logger.opt(depth=1).log(level, "")
             return result
 
         return cast(_F, wrapped_async)
@@ -207,7 +214,8 @@ def log_completion(
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
         result = func(*args, **kwargs)
-        logger.opt(depth=1).log(level, "")
+        if not skip_none or (result is not None):
+            logger.opt(depth=1).log(level, "")
         return result
 
     return cast(_F, wrapped_sync)
@@ -368,7 +376,7 @@ __all__ = [
     "InterceptHandler",
     "LogLevel",
     "get_logging_level",
-    "log_call",
+    "log",
     "log_completion",
     "logged_sleep_async",
     "logged_sleep_sync",
