@@ -199,9 +199,9 @@ class TestLogCompletion:
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-        expected1 = head + r"INFO     \| tests\.functions:add_sync_comp:\d+ - middle"
+        expected1 = head + r"INFO     \| tests\.functions:add_async_comp:\d+ - middle"
         assert search(expected1, line1)
-        expected2 = head + r"WARNING  \| tests\.test_loguru:test_async:\d+ - "
+        expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_async:\d+ - "
         assert search(expected2, line2)
 
     def test_custom_level(self, *, capsys: CaptureFixture) -> None:
