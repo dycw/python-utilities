@@ -27,6 +27,11 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_T1 = TypeVar("_T1")
+_T2 = TypeVar("_T2")
+_T3 = TypeVar("_T3")
+_T4 = TypeVar("_T4")
+_T5 = TypeVar("_T5")
 _U = TypeVar("_U")
 Coroutine1 = Coroutine[Any, Any, _T]
 MaybeAwaitable = _T | Awaitable[_T]
@@ -107,6 +112,52 @@ async def is_awaitable(obj: Any, /) -> TypeGuard[Awaitable[Any]]:
     except TypeError:
         return False
     return True
+
+
+@overload
+async def map_async(
+    func: Callable[[_T1], Awaitable[_U]], iterable1: Iterable[_T1], /
+) -> AsyncIterable[_U]: ...
+@overload
+async def map_async(
+    func: Callable[[_T1, _T2], Awaitable[_U]],
+    iterable1: Iterable[_T1],
+    iterable2: Iterable[_T2],
+    /,
+) -> AsyncIterable[_U]: ...
+@overload
+async def map_async(
+    func: Callable[[_T1, _T2, _T3], Awaitable[_U]],
+    iterable1: Iterable[_T1],
+    iterable2: Iterable[_T2],
+    iterable3: Iterable[_T3],
+    /,
+) -> AsyncIterable[_U]: ...
+@overload
+async def map_async(
+    func: Callable[[_T1, _T2, _T3, _T4], Awaitable[_U]],
+    iterable1: Iterable[_T1],
+    iterable2: Iterable[_T2],
+    iterable3: Iterable[_T3],
+    iterable4: Iterable[_T4],
+    /,
+) -> AsyncIterable[_U]: ...
+@overload
+async def map_async(
+    func: Callable[[_T1, _T2, _T3, _T4, _T5], Awaitable[_U]],
+    iterable1: Iterable[_T1],
+    iterable2: Iterable[_T2],
+    iterable3: Iterable[_T3],
+    iterable4: Iterable[_T4],
+    iterable5: Iterable[_T5],
+    /,
+) -> Iterable[_U]: ...
+async def map_async(  # pyright: ignore[reportInconsistentOverload]
+    func: Callable[..., Awaitable[_U]], /, *iterable: Iterable[Any]
+) -> AsyncIterable[_U]:
+    """Apply a function of two arguments cumulatively to an iterable."""
+    for args in zip(*iterable, strict=False):
+        yield await func(*args)
 
 
 @overload
@@ -232,6 +283,7 @@ __all__ = [
     "groupby_async",
     "groupby_async_list",
     "is_awaitable",
+    "map_async",
     "reduce_async",
     "timeout_dur",
     "to_list",
