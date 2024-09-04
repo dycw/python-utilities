@@ -151,7 +151,7 @@ async def map_async(
     iterable4: Iterable[_T4],
     iterable5: Iterable[_T5],
     /,
-) -> Iterable[_U]: ...
+) -> AsyncIterable[_U]: ...
 async def map_async(  # pyright: ignore[reportInconsistentOverload]
     func: Callable[..., Awaitable[_U]], /, *iterable: Iterable[Any]
 ) -> AsyncIterable[_U]:
