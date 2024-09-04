@@ -11,11 +11,11 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
-    add_sync_info,
     comp_test_async,
     comp_test_custom_level,
     comp_test_sync,
     func_test_entry_async_inc_and_dec,
+    func_test_entry_custom_level,
     func_test_entry_sync_inc_and_dec,
 )
 from utilities.loguru import (
@@ -128,7 +128,7 @@ class TestLog:
         )
         assert search(expected1, line1)
         head_mid = (
-            head + r"tests\.functions:func_test_entry_sync_inc_and_neg:\d+ -  \| "
+            head + r"tests\.functions:func_test_entry_sync_inc_and_dec:\d+ -  \| "
         )
         expected2 = head_mid + "{'𝑓': 'func_test_entry_sync_inc'}"  # noqa: RUF001
         assert search(expected2, line2)
@@ -170,11 +170,10 @@ class TestLog:
         }
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert add_sync_info(1, 2) == 3
+        assert func_test_entry_custom_level(1) == 2
         out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_custom_level:\d+ -  \| {'𝑓': 'add_sync_info'}"  # noqa: RUF001
-        assert search(expected, line)
+        expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_entry_custom_level:\d+ -  \| {'𝑓': 'func_test_entry_custom_level'}"  # noqa: RUF001
+        assert search(expected, out)
 
 
 class TestLogCompletion:

@@ -6,7 +6,7 @@ from loguru import logger
 
 from utilities.loguru import LogLevel, log, log_completion
 
-# test sync
+# test entry sync
 
 
 @log
@@ -24,7 +24,7 @@ def func_test_entry_sync_inc_and_dec(x: int, /) -> tuple[int, int]:
     return func_test_entry_sync_inc(x), func_test_entry_sync_dec(x)
 
 
-# test async
+# test entry async
 
 
 @log
@@ -47,9 +47,9 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
 # test custom level
 
 
-@log(level=LogLevel.INFO)
-def add_sync_info(x: int, y: int, /) -> int:
-    return x + y
+@log(entry=LogLevel.INFO)
+def func_test_entry_custom_level(x: int, /) -> int:
+    return x + 1
 
 
 # test completion
