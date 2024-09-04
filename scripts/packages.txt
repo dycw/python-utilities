@@ -12,6 +12,7 @@ datetime
 email
 enum
 errors
+eventkit
 fpdf2
 functions
 functools

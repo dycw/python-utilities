@@ -129,6 +129,7 @@ zzz-test-defaults = [
 zzz-test-email = []
 zzz-test-enum = []
 zzz-test-errors = []
+zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
 zzz-test-fpdf2 = [
   "fpdf2 >= 2.7.9, < 2.8",
   "tzlocal >= 5.2, < 5.3",
