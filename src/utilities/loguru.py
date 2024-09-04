@@ -163,23 +163,25 @@ _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
 @overload
-def log(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+def log(func: _F, /, *, depth: int = 1, entry: LogLevel = ...) -> _F: ...
 @overload
-def log(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
 def log(
-    func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
+    func: None = None, /, *, depth: int = 1, entry: LogLevel = ...
+) -> Callable[[_F], _F]: ...
+def log(
+    func: _F | None = None, /, *, depth: int = 1, entry: LogLevel = LogLevel.TRACE
 ) -> _F | Callable[[_F], _F]:
     """Log the function call."""
     if func is None:
-        return partial(log, level=level)
+        return partial(log, depth=depth, entry=entry)
 
     func_name = get_func_name(func)
     if iscoroutinefunction(func):
 
         @wraps(func)
         async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            logger.opt(depth=1).log(
-                level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+            logger.opt(depth=depth).log(
+                entry, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
             )
             return await func(*args, **kwargs)
 
@@ -187,7 +189,9 @@ def log(
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        logger.opt(depth=1).log(level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name})
+        logger.opt(depth=depth).log(
+            entry, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+        )
         return func(*args, **kwargs)
 
     return cast(_F, wrapped_sync)

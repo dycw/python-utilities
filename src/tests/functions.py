@@ -47,9 +47,9 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
 # test entry disabled
 
 
-@log(level=LogLevel.INFO)
-def add_sync_info(x: int, y: int, /) -> int:
-    return x + y
+@log(entry=LogLevel.INFO)
+def func_test_entry_custom_level(x: int, /) -> int:
+    return x + 1
 
 
 @log(entry=None)
