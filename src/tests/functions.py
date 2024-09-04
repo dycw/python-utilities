@@ -4,8 +4,7 @@ from asyncio import sleep
 
 from loguru import logger
 
-from utilities.functions import is_not_none
-from utilities.loguru import LogLevel, log
+from utilities.loguru import LogLevel, log, log_completion
 
 # test entry sync
 
@@ -48,9 +47,9 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
 # test entry disabled
 
 
-@log(entry=None)
-def func_test_entry_disabled_sync(x: int, /) -> int:
-    return x + 1
+@log(level=LogLevel.INFO)
+def add_sync_info(x: int, y: int, /) -> int:
+    return x + y
 
 
 @log(entry=None)
@@ -77,39 +76,26 @@ def func_test_error_sync(x: int, /) -> int | None:
     msg = f"Got an odd number {x}"
     raise ValueError(msg)
 
-
-@log
-async def func_test_error_async(x: int, /) -> int | None:
-    await sleep(0.01)
-    if x % 2 == 0:
-        return x + 1
-    msg = f"Got an odd number {x}"
-    raise ValueError(msg)
-
-
-# test exit
-
-
-@log(exit_=LogLevel.INFO)
-def func_test_exit_sync(x: int, /) -> int:
+@log_completion
+def comp_test_sync(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
 
-@log(exit_=LogLevel.INFO)
-async def func_test_exit_async(x: int, /) -> int:
+@log_completion
+async def comp_test_async(x: int, /) -> int:
     logger.info("Starting")
     await sleep(0.01)
     return x + 1
 
 
-@log(exit_=LogLevel.WARNING)
-def func_test_exit_custom_level(x: int, /) -> int:
+@log_completion(level=LogLevel.WARNING)
+def comp_test_custom_level(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
 
-@log(exit_=LogLevel.INFO, exit_predicate=is_not_none)
-def func_test_exit_predicate(x: int, /) -> int | None:
+@log_completion(level=LogLevel.WARNING)
+def comp_test_nullable(x: int, /) -> int | None:
     logger.info("Starting")
     return (x + 1) if x % 2 == 0 else None
