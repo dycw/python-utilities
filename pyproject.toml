@@ -366,6 +366,7 @@ filterwarnings = [
   "error",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
+  "ignore:There is no current event loop:DeprecationWarning",  # eventkit
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
