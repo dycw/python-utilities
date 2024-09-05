@@ -74,7 +74,7 @@ def func_test_exit_custom_level(x: int, /) -> int:
     return x + 1
 
 
-@log_completion(level=LogLevel.WARNING)
+@log_completion(exit_=LogLevel.INFO, exit_predicate=is_not_none)
 def comp_test_nullable(x: int, /) -> int | None:
     logger.info("Starting")
     return (x + 1) if x % 2 == 0 else None

@@ -17,7 +17,8 @@ from utilities.functions import (
     get_class_name,
     get_func_name,
     identity,
-    if_not_none,
+    is_none,
+    is_not_none,
     not_func,
     second,
 )
@@ -115,20 +116,27 @@ class TestGetFuncName:
         assert get_func_name(Example.obj_staticmethod) == "obj_staticmethod"
 
 
-class TestIfNotNone:
-    def test_uses_first(self) -> None:
-        result = if_not_none(0, "0")
-        assert result == 0
-
-    def test_uses_second(self) -> None:
-        result = if_not_none(None, 0)
-        assert result == 0
-
-
 class TestIdentity:
     @given(x=integers())
     def test_main(self, *, x: int) -> None:
         assert identity(x) == x
+
+
+class TestIsNoneAndIsNotNone:
+    @mark.parametrize(
+        ("func", "obj", "expected"),
+        [
+            param(is_none, None, True),
+            param(is_none, 0, False),
+            param(is_not_none, None, False),
+            param(is_not_none, 0, True),
+        ],
+    )
+    def test_main(
+        self, *, func: Callable[[Any], bool], obj: Any, expected: bool
+    ) -> None:
+        result = func(obj)
+        assert result is expected
 
 
 class TestNotFunc:
