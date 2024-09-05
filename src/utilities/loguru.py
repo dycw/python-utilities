@@ -259,18 +259,21 @@ def log(
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
         if entry is not None:
-            logger.opt(depth=depth).log(
+            logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
+            logger_use.opt(depth=depth).log(
                 entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
             )
         try:
             result = func(*args, **kwargs)
         except Exception as error:
-            logger.opt(depth=depth).error(format_error(error))
+            logger_use = logger if error_bind is None else logger.bind(**error_bind)
+            logger_use.opt(depth=depth).error(format_error(error))
             raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
             exit_ is not None
         ):
-            logger.opt(depth=depth).log(exit_, exit_message)
+            logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
+            logger_use.opt(depth=depth).log(exit_, exit_message)
         return result
 
     return cast(Callable[_P, _T], wrapped_sync)
