@@ -164,15 +164,16 @@ _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 @overload
 def log(
-    func: _F,
+    func: Callable[_P, _T],
     /,
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
     entry_message: str = ...,
+    exit_predicate: Callable[[_T], bool] | None = ...,
     exit_: LogLevel | None = ...,
     exit_message: str = ...,
-) -> _F: ...
+) -> Callable[_P, _T]: ...
 @overload
 def log(
     func: None = None,
@@ -180,20 +181,22 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
+    exit_predicate: Callable[[Any], bool] | None = ...,
     entry_message: str = ...,
     exit_: LogLevel | None = ...,
     exit_message: str = ...,
-) -> Callable[[_F], _F]: ...
+) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def log(
-    func: _F | None = None,
+    func: Callable[_P, _T] | None = None,
     /,
     *,
     depth: int = 1,
     entry: LogLevel | None = LogLevel.TRACE,
     entry_message: str = "",
+    exit_predicate: Callable[[_T], bool] | None = None,
     exit_: LogLevel | None = None,
     exit_message: str = "",
-) -> _F | Callable[[_F], _F]:
+) -> Callable[_P, _T] | Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Log the function call."""
     if func is None:
         return partial(
@@ -201,63 +204,6 @@ def log(
             depth=depth,
             entry=entry,
             entry_message=entry_message,
-            exit_=exit_,
-            exit_message=exit_message,
-        )
-
-    func_name = get_func_name(func)
-    if iscoroutinefunction(func):
-
-        @wraps(func)
-        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            if entry is not None:
-                logger.opt(depth=depth).log(
-                    entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
-                )
-            result = await func(*args, **kwargs)
-            if exit_ is not None:
-                logger.opt(depth=depth).log(exit_, exit_message)
-            return result
-
-        return cast(_F, wrapped_async)
-
-    @wraps(func)
-    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        if entry is not None:
-            logger.opt(depth=depth).log(
-                entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
-            )
-        result = func(*args, **kwargs)
-        if exit_ is not None:
-            logger.opt(depth=depth).log(exit_, exit_message)
-        return result
-
-    return cast(_F, wrapped_sync)
-
-
-@overload
-def log_completion(
-    func: _F, /, *, level: LogLevel = ..., skip_none: bool = ...
-) -> _F: ...
-@overload
-def log_completion(
-    func: None = None, /, *, level: LogLevel = ..., skip_none: bool = ...
-) -> Callable[[_F], _F]: ...
-def log_completion(
-    func: _F | None = None,
-    /,
-    *,
-    level: LogLevel = LogLevel.SUCCESS,
-    skip_none: bool = False,
-) -> _F | Callable[[_F], _F]:
-    """Log the function completion."""
-    if func is None:
-        return partial(
-            log,
-            depth=depth,
-            entry=entry,
-            entry_message=entry_message,
-            format_error=format_error,
             exit_predicate=exit_predicate,
             exit_=exit_,
             exit_message=exit_message,
@@ -267,19 +213,31 @@ def log_completion(
     if iscoroutinefunction(func):
 
         @wraps(func)
-        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
+        async def wrapped_async(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+            if entry is not None:
+                logger.opt(depth=depth).log(
+                    entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+                )
             result = await func(*args, **kwargs)
-            if not skip_none or (result is not None):
-                logger.opt(depth=1).log(level, "")
+            if ((exit_predicate is None) or (exit_predicate(result))) and (
+                exit_ is not None
+            ):
+                logger.opt(depth=depth).log(exit_, exit_message)
             return result
 
         return cast(Callable[_P, _T], wrapped_async)
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+        if entry is not None:
+            logger.opt(depth=depth).log(
+                entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+            )
         result = func(*args, **kwargs)
-        if not skip_none or (result is not None):
-            logger.opt(depth=1).log(level, "")
+        if ((exit_predicate is None) or (exit_predicate(result))) and (
+            exit_ is not None
+        ):
+            logger.opt(depth=depth).log(exit_, exit_message)
         return result
 
     return cast(Callable[_P, _T], wrapped_sync)
@@ -441,7 +399,6 @@ __all__ = [
     "LogLevel",
     "get_logging_level",
     "log",
-    "log_completion",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_catch_hook",
