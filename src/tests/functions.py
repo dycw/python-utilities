@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 from asyncio import sleep
+from functools import wraps
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from utilities.functions import is_not_none
 from utilities.loguru import LogLevel, log
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 # test entry sync
 
@@ -157,3 +163,24 @@ def func_test_exit_custom_level(x: int, /) -> int:
 def func_test_exit_predicate(x: int, /) -> int | None:
     logger.info("Starting")
     return (x + 1) if x % 2 == 0 else None
+
+
+# test decorated
+
+
+def make_new(func: Callable[[int], int], /) -> Callable[[int], tuple[int, int]]:
+    @wraps(func)
+    @log
+    def wrapped(x: int, /) -> tuple[int, int]:
+        first = func(x)
+        second = func(x + 1)
+        return first, second
+
+    return wrapped
+
+
+@make_new
+@log(depth=3)
+def func_test_decorated(x: int, /) -> int:
+    logger.info(f"Starting x={x}")
+    return x + 1

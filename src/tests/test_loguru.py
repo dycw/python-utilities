@@ -12,6 +12,7 @@ from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
     Remainder2Error,
+    func_test_decorated,
     func_test_entry_async_inc_and_dec,
     func_test_entry_custom_level,
     func_test_entry_disabled_async,
@@ -487,6 +488,28 @@ class TestLog:
             self.info + r"tests\.functions:func_test_exit_predicate:\d+ - Starting"
         )
         assert search(expected2, line2), line2
+
+    def test_decorated(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_decorated(0) == (1, 2)
+        out = capsys.readouterr().out
+        (line1, line2, line3, line4, line5) = out.splitlines()
+        expected1 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        assert search(expected1, line1), line1
+        expected2 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        assert search(expected2, line2), line2
+        expected3 = (
+            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=0"
+        )
+        assert search(expected3, line3), line3
+        expected4 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        assert search(expected4, line4), line4
+        expected5 = (
+            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=1"
+        )
+        assert search(expected5, line5), line5
 
 
 class TestLoggedSleep:
