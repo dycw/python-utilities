@@ -55,21 +55,21 @@ def func_test_entry_custom_level(x: int, /) -> int:
 # test completion
 
 
-@log_completion
-def comp_test_sync(x: int, /) -> int:
+@log(exit_=LogLevel.INFO)
+def func_test_exit_sync(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
 
-@log_completion
-async def comp_test_async(x: int, /) -> int:
+@log(exit_=LogLevel.INFO)
+async def func_test_exit_async(x: int, /) -> int:
     logger.info("Starting")
     await sleep(0.01)
     return x + 1
 
 
-@log_completion(level=LogLevel.WARNING)
-def comp_test_custom_level(x: int, /) -> int:
+@log(exit_=LogLevel.WARNING)
+def func_test_exit_custom_level(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
