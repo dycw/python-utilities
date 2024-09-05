@@ -1468,6 +1468,7 @@ def yield_client(
     port: int = _PORT,
     db: int = 0,
     password: str | None = None,
+    connection_pool: redis.ConnectionPool | None = None,
     decode_responses: bool = False,
     **kwargs: Any,
 ) -> Iterator[redis.Redis]:
@@ -1477,6 +1478,7 @@ def yield_client(
         port=port,
         db=db,
         password=password,
+        connection_pool=connection_pool,
         decode_responses=decode_responses,
         **kwargs,
     )
@@ -1493,6 +1495,7 @@ async def yield_client_async(
     port: int = _PORT,
     db: str | int = 0,
     password: str | None = None,
+    connection_pool: redis.asyncio.ConnectionPool | None = None,
     decode_responses: bool = False,
     **kwargs: Any,
 ) -> AsyncIterator[redis.asyncio.Redis]:
@@ -1502,6 +1505,7 @@ async def yield_client_async(
         port=port,
         db=db,
         password=password,
+        connection_pool=connection_pool,
         decode_responses=decode_responses,
         **kwargs,
     )
