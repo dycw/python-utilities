@@ -29,12 +29,9 @@ from utilities.loguru import (
     HandlerConfiguration,
     InterceptHandler,
     LogLevel,
-    _log_from_depth_up,
-    _LogFromDepthUpError,
     get_logging_level,
     logged_sleep_async,
     logged_sleep_sync,
-    make_catch_hook,
     make_except_hook,
     make_filter,
 )
@@ -221,14 +218,25 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert func_test_error_sync(1)
         out = capsys.readouterr().out
-        (line1, line2) = out.splitlines()
+        (line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1) = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
             self.error
-            + r"tests\.test_loguru:test_error_catch_sync:\d+ - Uncaught 'ValueError': Got an odd number 1"
+            + r"tests\.test_loguru:test_error_catch_sync:\d+ - ValueError\('Got an odd number 1'\)"
         )
         assert search(expected2, line2), line2
+        assert line3 == "Traceback (most recent call last):"
+        exp_last = strip_and_dedent(
+            """
+                raise ValueError(msg)
+                                 └ 'Got an odd number 1'
+
+            ValueError: Got an odd number 1
+            """
+        )
+        lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        assert lines_last == exp_last
 
     async def test_error_no_effect_async(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
@@ -247,14 +255,25 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert await func_test_error_async(1)
         out = capsys.readouterr().out
-        (line1, line2) = out.splitlines()
+        (line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1) = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
             self.error
-            + r"tests\.test_loguru:test_error_catch_async:\d+ - Uncaught 'ValueError': Got an odd number 1"
+            + r"tests\.test_loguru:test_error_catch_async:\d+ - ValueError\('Got an odd number 1'\)"
         )
         assert search(expected2, line2), line2
+        assert line3 == "Traceback (most recent call last):"
+        exp_last = strip_and_dedent(
+            """
+                raise ValueError(msg)
+                                 └ 'Got an odd number 1'
+
+            ValueError: Got an odd number 1
+            """
+        )
+        lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        assert lines_last == exp_last
 
     def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
@@ -335,41 +354,6 @@ class TestLog:
         assert search(expected2, line2), line2
 
 
-class TestLogFromDepthUp:
-    @mark.parametrize(
-        ("depth", "expected"),
-        [
-            param(
-                0,
-                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| utilities\.loguru:_log_from_depth_up:\d+ - Hello world",
-            ),
-            param(
-                1,
-                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| tests\.test_loguru:test_main:\d+ - Hello world",
-            ),
-            param(
-                2,
-                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| _pytest\.python:pytest_pyfunc_call:\d+ - Hello world",
-            ),
-        ],
-    )
-    def test_main(self, *, capsys: CaptureFixture, depth: int, expected: str) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-        _log_from_depth_up(logger, depth, LogLevel.TRACE, "Hello world")
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        assert search(expected, line), line
-
-    def test_error_call_stack_not_deep_enough(self) -> None:
-        with raises(_LogFromDepthUpError, match="Depth must be non-negative; got -1"):
-            _log_from_depth_up(logger, -1, LogLevel.TRACE, "")
-
-    def test_error_negative_depth(self) -> None:
-        with raises(_LogFromDepthUpError, match="Depth must be non-negative; got -1"):
-            _log_from_depth_up(logger, -1, LogLevel.TRACE, "")
-
-
 class TestLoggedSleep:
     @mark.parametrize("duration", [param(0.01), param(dt.timedelta(seconds=0.1))])
     def test_sync(self, *, duration: Duration) -> None:
@@ -378,53 +362,6 @@ class TestLoggedSleep:
     @mark.parametrize("duration", [param(0.01), param(dt.timedelta(seconds=0.1))])
     async def test_async(self, *, duration: Duration) -> None:
         await logged_sleep_async(duration)
-
-
-class TestMakeCatchHook:
-    def test_main(self, *, capsys: CaptureFixture) -> None:
-        default_format = ensure_str(LOGURU_FORMAT)
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.ERROR,
-            "format": f"{default_format} | {{extra[dummy_key]}}",
-        }
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        catch_on_error = make_catch_hook(dummy_key="dummy_value")
-
-        @logger.catch(onerror=catch_on_error)
-        def divide_by_zero(x: float, /) -> float:
-            return x / 0
-
-        _ = divide_by_zero(1.0)
-        exp_first = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| ERROR    \| tests\.test_loguru:test_main:\d+ - Uncaught ZeroDivisionError\('float division by zero'\) \| dummy_value"
-        self._run_tests(capsys, exp_first)
-
-    def test_default(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        @logger.catch
-        def divide_by_zero(x: float, /) -> float:
-            return x / 0
-
-        _ = divide_by_zero(1.0)
-        exp_first = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| ERROR    \| tests\.test_loguru:test_default:\d+ - An error has been caught in function 'test_default', process 'MainProcess' \(\d+\), thread 'MainThread' \(\d+\)"
-        self._run_tests(capsys, exp_first)
-
-    def _run_tests(self, capsys: CaptureFixture, exp_first: str, /) -> None:
-        out = capsys.readouterr().out
-        lines = out.splitlines()
-        first = lines[0]
-        assert search(exp_first, first), first
-        exp_last = strip_and_dedent("""
-                return x / 0
-                       └ 1.0
-
-            ZeroDivisionError: float division by zero
-        """)
-        last = "\n".join(lines[-4:])
-        assert search(exp_last, last), last
 
 
 class TestMakeExceptHook:

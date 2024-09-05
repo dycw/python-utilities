@@ -27,7 +27,7 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.functions import get_class_name, get_func_name
+from utilities.functions import get_func_name
 from utilities.iterables import resolve_include_and_exclude
 
 if TYPE_CHECKING:
@@ -37,12 +37,10 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
-        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
         LevelConfig,
-        Logger,
         Message,
         Record,
         RetentionFunction,
@@ -59,6 +57,7 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 
+_RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<white><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
@@ -162,12 +161,6 @@ class GetLoggingLevelError(Exception):
 _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
-def _format_error(error: Exception, /) -> str:
-    """Format an error."""
-    cls = get_class_name(error)
-    return f"Uncaught {cls!r}: {error}"
-
-
 @overload
 def log(
     func: Callable[_P, _T],
@@ -175,10 +168,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
-    format_error: Callable[[Exception], str] = ...,
-    exit_predicate: Callable[[_T], bool] | None = ...,
+    error_bind: StrMapping | None = ...,
+    error_message: str = ...,
     exit_: LogLevel | None = ...,
+    exit_predicate: Callable[[_T], bool] | None = ...,
+    exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
 ) -> Callable[_P, _T]: ...
 @overload
@@ -188,10 +184,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
-    format_error: Callable[[Exception], str] = ...,
-    exit_predicate: Callable[[Any], bool] | None = ...,
+    error_bind: StrMapping | None = ...,
+    error_message: str = ...,
     exit_: LogLevel | None = ...,
+    exit_predicate: Callable[[Any], bool] | None = ...,
+    exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def log(
@@ -200,10 +199,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = LogLevel.TRACE,
+    entry_bind: StrMapping | None = None,
     entry_message: str = "",
-    format_error: Callable[[Exception], str] = _format_error,
-    exit_predicate: Callable[[_T], bool] | None = None,
+    error_bind: StrMapping | None = None,
+    error_message: str = _RECORD_EXCEPTION_VALUE,
     exit_: LogLevel | None = None,
+    exit_bind: StrMapping | None = None,
+    exit_predicate: Callable[[_T], bool] | None = None,
     exit_message: str = "",
 ) -> Callable[_P, _T] | Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Log the function call."""
@@ -212,10 +214,13 @@ def log(
             log,
             depth=depth,
             entry=entry,
+            entry_bind=entry_bind,
             entry_message=entry_message,
-            format_error=format_error,
-            exit_predicate=exit_predicate,
+            error_bind=error_bind,
+            error_message=error_message,
             exit_=exit_,
+            exit_bind=exit_bind,
+            exit_predicate=exit_predicate,
             exit_message=exit_message,
         )
 
@@ -225,18 +230,23 @@ def log(
         @wraps(func)
         async def wrapped_async(*args: _P.args, **kwargs: _P.kwargs) -> _T:
             if entry is not None:
-                logger.opt(depth=depth).log(
+                logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
+                logger_use.opt(depth=depth).log(
                     entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
                 )
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:
-                logger.opt(depth=depth).error(format_error(error))
+            except Exception:
+                logger_use = logger if error_bind is None else logger.bind(**error_bind)
+                logger_use.opt(exception=True, record=True, depth=depth).error(
+                    error_message
+                )
                 raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
                 exit_ is not None
             ):
-                logger.opt(depth=depth).log(exit_, exit_message)
+                logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
+                logger_use.opt(depth=depth).log(exit_, exit_message)
             return result
 
         return cast(Callable[_P, _T], wrapped_async)
@@ -244,18 +254,23 @@ def log(
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
         if entry is not None:
-            logger.opt(depth=depth).log(
+            logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
+            logger_use.opt(depth=depth).log(
                 entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
             )
         try:
             result = func(*args, **kwargs)
-        except Exception as error:
-            logger.opt(depth=depth).error(format_error(error))
+        except Exception:
+            logger_use = logger if error_bind is None else logger.bind(**error_bind)
+            logger_use.opt(exception=True, record=True, depth=depth).error(
+                error_message
+            )
             raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
             exit_ is not None
         ):
-            logger.opt(depth=depth).log(exit_, exit_message)
+            logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
+            logger_use.opt(depth=depth).log(exit_, exit_message)
         return result
 
     return cast(Callable[_P, _T], wrapped_sync)
@@ -283,27 +298,10 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
-def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
-    """Make a `logger.catch` hook."""
-    logger2 = logger.bind(**kwargs)
-
-    def callback(error: BaseException, /) -> None:
-        _log_from_depth_up(
-            logger2,
-            4,
-            LogLevel.ERROR,
-            "Uncaught {record[exception].value!r}",
-            exception=error,
-        )
-
-    return callback
-
-
 def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
-    callback = make_catch_hook(**kwargs)
 
     def except_hook(
         exc_type: type[BaseException],
@@ -315,7 +313,9 @@ def make_except_hook(
         if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        callback(exc_value)  # pragma: no cover
+        logger.bind(**kwargs).opt(  # pragma: no cover
+            exception=exc_value, record=True
+        ).error(_RECORD_EXCEPTION_VALUE)
         sys.exit(1)  # pragma: no cover
 
     return except_hook
@@ -376,39 +376,6 @@ def make_filter(
     return filter_func
 
 
-def _log_from_depth_up(
-    logger: Logger,
-    depth: int,
-    level: LogLevel,
-    message: str,
-    /,
-    *args: Any,
-    exception: bool | ExcInfo | BaseException | None = None,
-    **kwargs: Any,
-) -> None:
-    """Log from a given depth up to 0, in case it would fail otherwise."""
-    if depth >= 0:
-        try:
-            logger.opt(exception=exception, record=True, depth=depth).log(
-                level, message, *args, **kwargs
-            )
-        except ValueError:  # pragma: no cover
-            return _log_from_depth_up(
-                logger, depth - 1, level, message, *args, exception=exception, **kwargs
-            )
-        return None
-    raise _LogFromDepthUpError(depth=depth)
-
-
-@dataclass(kw_only=True)
-class _LogFromDepthUpError(Exception):
-    depth: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Depth must be non-negative; got {self.depth}"
-
-
 __all__ = [
     "LEVEL_CONFIGS",
     "GetLoggingLevelError",
@@ -419,7 +386,6 @@ __all__ = [
     "log",
     "logged_sleep_async",
     "logged_sleep_sync",
-    "make_catch_hook",
     "make_except_hook",
     "make_filter",
 ]
