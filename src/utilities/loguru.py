@@ -27,7 +27,7 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.functions import get_class_name, get_func_name
+from utilities.functions import get_func_name
 from utilities.iterables import resolve_include_and_exclude
 
 if TYPE_CHECKING:
@@ -57,6 +57,7 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 
+_RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<white><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
@@ -160,12 +161,6 @@ class GetLoggingLevelError(Exception):
 _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
-def _format_error(error: Exception, /) -> str:
-    """Format an error."""
-    cls = get_class_name(error)
-    return f"Uncaught {cls!r}: {error}"
-
-
 @overload
 def log(
     func: Callable[_P, _T],
@@ -176,7 +171,7 @@ def log(
     entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
     error_bind: StrMapping | None = ...,
-    format_error: Callable[[Exception], str] = ...,
+    error_message: str = ...,
     exit_: LogLevel | None = ...,
     exit_predicate: Callable[[_T], bool] | None = ...,
     exit_bind: StrMapping | None = ...,
@@ -192,7 +187,7 @@ def log(
     entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
     error_bind: StrMapping | None = ...,
-    format_error: Callable[[Exception], str] = ...,
+    error_message: str = ...,
     exit_: LogLevel | None = ...,
     exit_predicate: Callable[[Any], bool] | None = ...,
     exit_bind: StrMapping | None = ...,
@@ -207,7 +202,7 @@ def log(
     entry_bind: StrMapping | None = None,
     entry_message: str = "",
     error_bind: StrMapping | None = None,
-    format_error: Callable[[Exception], str] = _format_error,
+    error_message: str = _RECORD_EXCEPTION_VALUE,
     exit_: LogLevel | None = None,
     exit_bind: StrMapping | None = None,
     exit_predicate: Callable[[_T], bool] | None = None,
@@ -222,7 +217,7 @@ def log(
             entry_bind=entry_bind,
             entry_message=entry_message,
             error_bind=error_bind,
-            format_error=format_error,
+            error_message=error_message,
             exit_=exit_,
             exit_bind=exit_bind,
             exit_predicate=exit_predicate,
@@ -241,10 +236,10 @@ def log(
                 )
             try:
                 result = await func(*args, **kwargs)
-            except Exception as error:
+            except Exception:
                 logger_use = logger if error_bind is None else logger.bind(**error_bind)
                 logger_use.opt(exception=True, record=True, depth=depth).error(
-                    "Uncaught {record[exception].value!r}"
+                    error_message
                 )
                 raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
@@ -268,7 +263,7 @@ def log(
         except Exception:
             logger_use = logger if error_bind is None else logger.bind(**error_bind)
             logger_use.opt(exception=True, record=True, depth=depth).error(
-                "Uncaught {record[exception].value!r}"
+                error_message
             )
             raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
@@ -318,11 +313,9 @@ def make_except_hook(
         if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        logger.bind(**kwargs).opt(
+        logger.bind(**kwargs).opt(  # pragma: no cover
             exception=exc_value, record=True
-        ).error(  # pragma: no cover
-            "Uncaught {record[exception].value!r}"
-        )
+        ).error(_RECORD_EXCEPTION_VALUE)
         sys.exit(1)  # pragma: no cover
 
     return except_hook

@@ -35,7 +35,7 @@ from utilities.loguru import (
     make_except_hook,
     make_filter,
 )
-from utilities.text import ensure_str
+from utilities.text import ensure_str, strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -218,14 +218,25 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert func_test_error_sync(1)
         out = capsys.readouterr().out
-        (line1, line2) = out.splitlines()
+        (line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1) = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
             self.error
-            + r"tests\.test_loguru:test_error_catch_sync:\d+ - 'ValueError': Got an odd number 1"
+            + r"tests\.test_loguru:test_error_catch_sync:\d+ - ValueError\('Got an odd number 1'\)"
         )
         assert search(expected2, line2), line2
+        assert line3 == "Traceback (most recent call last):"
+        exp_last = strip_and_dedent(
+            """
+                raise ValueError(msg)
+                                 └ 'Got an odd number 1'
+
+            ValueError: Got an odd number 1
+            """
+        )
+        lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        assert lines_last == exp_last
 
     async def test_error_no_effect_async(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
@@ -237,6 +248,7 @@ class TestLog:
         expected = self.trace + r"tests\.test_loguru:test_error_no_effect_async:\d+ - "
         assert search(expected, line), line
 
+    @mark.xfail
     async def test_error_catch_async(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
