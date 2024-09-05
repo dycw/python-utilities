@@ -45,6 +45,13 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
     return (await func_test_entry_async_inc(x), await func_test_entry_async_dec(x))
 
 
+# test entry disabled
+
+
+def func_test_entry_disabled(x: int, /) -> int:
+    return x + 1
+
+
 # test custom level
 
 

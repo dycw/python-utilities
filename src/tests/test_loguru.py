@@ -13,6 +13,7 @@ from pytest import CaptureFixture, mark, param, raises
 from tests.functions import (
     func_test_entry_async_inc_and_dec,
     func_test_entry_custom_level,
+    func_test_entry_disabled,
     func_test_entry_sync_inc_and_dec,
     func_test_exit_async,
     func_test_exit_custom_level,
@@ -39,8 +40,8 @@ from utilities.text import ensure_str, strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from _pytest.capture import CaptureFixture
     from loguru import Record
+    from pytest import CaptureFixture
 
     from utilities.iterables import MaybeIterable
     from utilities.types import Duration
@@ -161,6 +162,19 @@ class TestLog:
         assert search(expected2, line2), line2
         expected3 = head_mid + "{'𝑓': 'func_test_entry_async_dec'}"  # noqa: RUF001
         assert search(expected3, line3), line3
+
+    def test_entry_disabled(self, *, capsys: CaptureFixture) -> None:
+        default_format = ensure_str(LOGURU_FORMAT)
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "level": LogLevel.TRACE,
+            "format": f"{default_format} | {{extra}}",
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_entry_disabled(1) == 2
+        out = capsys.readouterr().out
+        assert out == ""
 
     def test_entry_custom_level(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
