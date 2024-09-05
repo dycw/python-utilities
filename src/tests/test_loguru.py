@@ -220,7 +220,7 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert func_test_error_sync(1)
         out = capsys.readouterr().out
-        line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1 = out.splitlines()
+        line1, line2, line3, *_ = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
@@ -237,7 +237,7 @@ class TestLog:
             ValueError: Got an odd number 1
             """
         )
-        lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        lines_last = "\n".join(out.splitlines()[-4:])
         assert lines_last == exp_last
 
     def test_error_chain_no_effect_sync(self, *, capsys: CaptureFixture) -> None:
@@ -323,7 +323,7 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert await func_test_error_async(1)
         out = capsys.readouterr().out
-        (line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1) = out.splitlines()
+        line1, line2, line3, *_ = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
@@ -340,7 +340,7 @@ class TestLog:
             ValueError: Got an odd number 1
             """
         )
-        lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        lines_last = "\n".join(out.splitlines()[-4:])
         assert lines_last == exp_last
 
     def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
