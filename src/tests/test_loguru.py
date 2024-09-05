@@ -11,12 +11,14 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
+    Remainder2Error,
     func_test_entry_async_inc_and_dec,
     func_test_entry_custom_level,
     func_test_entry_disabled_async,
     func_test_entry_disabled_sync,
     func_test_entry_sync_inc_and_dec,
     func_test_error_async,
+    func_test_error_chain_outer_sync,
     func_test_error_sync,
     func_test_exit_async,
     func_test_exit_custom_level,
@@ -218,7 +220,7 @@ class TestLog:
         with raises(ValueError, match="Got an odd number 1"):
             assert func_test_error_sync(1)
         out = capsys.readouterr().out
-        (line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1) = out.splitlines()
+        line1, line2, line3, *_, line_l4, line_l3, line_l2, line_l1 = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
         assert search(expected1, line1), line1
         expected2 = (
@@ -236,6 +238,72 @@ class TestLog:
             """
         )
         lines_last = f"{line_l4}\n{line_l3}\n{line_l2}\n{line_l1}"
+        assert lines_last == exp_last
+
+    def test_error_chain_no_effect_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_error_chain_outer_sync(0) == 1
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_sync:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+        )
+        assert search(expected2, line2), line2
+
+    def test_error_chain_caught_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_error_chain_outer_sync(1) == 2
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_caught_sync:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+        )
+        assert search(expected2, line2), line2
+
+    def test_error_chain_uncaught_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        with raises(Remainder2Error):
+            assert func_test_error_chain_outer_sync(2)
+        out = capsys.readouterr().out
+        line1, line2, line3, line4, *_ = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_sync:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+        )
+        assert search(expected2, line2), line2
+        expected3 = (
+            self.error
+            + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - Remainder2Error\('Got a remainder of 2'\)"
+        )
+        assert search(expected3, line3), line3
+        assert line4 == "Traceback (most recent call last):"
+        exp_last = strip_and_dedent(
+            """
+                raise Remainder2Error(msg)
+                      │               └ 'Got a remainder of 2'
+                      └ <class 'tests.functions.Remainder2Error'>
+
+            tests.functions.Remainder2Error: Got a remainder of 2
+            """
+        )
+        lines_last = "\n".join(out.splitlines()[-5:])
         assert lines_last == exp_last
 
     async def test_error_no_effect_async(self, *, capsys: CaptureFixture) -> None:

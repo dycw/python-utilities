@@ -203,7 +203,7 @@ def log(
     entry: LogLevel | None = LogLevel.TRACE,
     entry_bind: StrMapping | None = None,
     entry_message: str = "",
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
     exit_: LogLevel | None = None,
@@ -241,9 +241,7 @@ def log(
             try:
                 result = await func(*args, **kwargs)
             except Exception as error:
-                if (error_expected is not None) and not isinstance(
-                    error, error_expected
-                ):
+                if (error_expected is None) or not isinstance(error, error_expected):
                     logger_use = (
                         logger if error_bind is None else logger.bind(**error_bind)
                     )
@@ -270,7 +268,7 @@ def log(
         try:
             result = func(*args, **kwargs)
         except Exception as error:
-            if (error_expected is not None) and not isinstance(error, error_expected):
+            if (error_expected is None) or not isinstance(error, error_expected):
                 logger_use = logger if error_bind is None else logger.bind(**error_bind)
                 logger_use.opt(exception=True, record=True, depth=depth).error(
                     error_message
