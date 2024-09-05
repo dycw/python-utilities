@@ -15,7 +15,8 @@ from tests.functions import (
     func_test_entry_custom_level,
     func_test_entry_disabled,
     func_test_entry_sync_inc_and_dec,
-    func_test_error,
+    func_test_error_async,
+    func_test_error_sync,
     func_test_exit_async,
     func_test_exit_custom_level,
     func_test_exit_predicate,
@@ -116,6 +117,7 @@ class TestLog:
     trace: ClassVar[str] = datetime + r"TRACE    \| "
     info: ClassVar[str] = datetime + r"INFO     \| "
     warning: ClassVar[str] = datetime + r"WARNING  \| "
+    error: ClassVar[str] = datetime + r"ERROR    \| "
 
     def test_entry_sync(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
@@ -169,10 +171,7 @@ class TestLog:
         assert search(expected3, line3), line3
 
     def test_entry_disabled(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert func_test_entry_disabled(1) == 2
@@ -196,28 +195,60 @@ class TestLog:
         )
         assert search(expected, out), out
 
-    def test_error_no_effect(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+    def test_error_no_effect_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert func_test_error(0) == 1
+        assert func_test_error_sync(0) == 1
         out = capsys.readouterr().out
-        line1, line2, line3 = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_exit_sync:\d+ - "
+        (line,) = out.splitlines()
+        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_sync:\d+ - "
+        assert search(expected, line), line
+
+    def test_error_catch_sync(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        with raises(ValueError, match="Got an odd number 1"):
+            assert func_test_error_sync(1)
+        out = capsys.readouterr().out
+        (line1, line2) = out.splitlines()
+        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
         assert search(expected1, line1), line1
-        expected2 = self.info + r"tests\.functions:func_test_exit_sync:\d+ - Starting"
+        expected2 = (
+            self.error
+            + r"tests\.test_loguru:test_error_catch_sync:\d+ - Uncaught 'ValueError': Got an odd number 1"
+        )
         assert search(expected2, line2), line2
-        expected3 = self.info + r"tests\.test_loguru:test_exit_sync:\d+ - "
-        assert search(expected3, line3), line3
+
+    async def test_error_no_effect_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await func_test_error_async(0) == 1
+        out = capsys.readouterr().out
+        (line,) = out.splitlines()
+        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_async:\d+ - "
+        assert search(expected, line), line
+
+    async def test_error_catch_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        with raises(ValueError, match="Got an odd number 1"):
+            assert await func_test_error_async(1)
+        out = capsys.readouterr().out
+        (line1, line2) = out.splitlines()
+        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - "
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.error
+            + r"tests\.test_loguru:test_error_catch_async:\d+ - Uncaught 'ValueError': Got an odd number 1"
+        )
+        assert search(expected2, line2), line2
 
     def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert func_test_exit_sync(1) == 2
@@ -231,10 +262,7 @@ class TestLog:
         assert search(expected3, line3), line3
 
     async def test_exit_async(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert await func_test_exit_async(1) == 2
@@ -248,10 +276,7 @@ class TestLog:
         assert search(expected3, line3), line3
 
     def test_exit_custom_level(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert func_test_exit_custom_level(1) == 2
@@ -267,10 +292,7 @@ class TestLog:
         assert search(expected3, line3), line3
 
     def test_exit_predicate_no_filter(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert func_test_exit_predicate(0) == 1
@@ -290,10 +312,7 @@ class TestLog:
         assert search(expected3, line3), line3
 
     def test_exit_predicate_filter(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {
-            "sink": sys.stdout,
-            "level": LogLevel.TRACE,
-        }
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
         assert func_test_exit_predicate(1) is None

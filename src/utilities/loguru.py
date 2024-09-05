@@ -27,7 +27,7 @@ from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.functions import get_func_name
+from utilities.functions import get_class_name, get_func_name
 from utilities.iterables import resolve_include_and_exclude
 
 if TYPE_CHECKING:
@@ -162,6 +162,12 @@ class GetLoggingLevelError(Exception):
 _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
+def _format_error(error: Exception, /) -> str:
+    """Format an error."""
+    cls = get_class_name(error)
+    return f"Uncaught {cls!r}: {error}"
+
+
 @overload
 def log(
     func: Callable[_P, _T],
@@ -170,6 +176,7 @@ def log(
     depth: int = 1,
     entry: LogLevel | None = ...,
     entry_message: str = ...,
+    format_error: Callable[[Exception], str] = ...,
     exit_predicate: Callable[[_T], bool] | None = ...,
     exit_: LogLevel | None = ...,
     exit_message: str = ...,
@@ -181,8 +188,9 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
-    exit_predicate: Callable[[Any], bool] | None = ...,
     entry_message: str = ...,
+    format_error: Callable[[Exception], str] = ...,
+    exit_predicate: Callable[[Any], bool] | None = ...,
     exit_: LogLevel | None = ...,
     exit_message: str = ...,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
@@ -193,6 +201,7 @@ def log(
     depth: int = 1,
     entry: LogLevel | None = LogLevel.TRACE,
     entry_message: str = "",
+    format_error: Callable[[Exception], str] = _format_error,
     exit_predicate: Callable[[_T], bool] | None = None,
     exit_: LogLevel | None = None,
     exit_message: str = "",
@@ -204,6 +213,7 @@ def log(
             depth=depth,
             entry=entry,
             entry_message=entry_message,
+            format_error=format_error,
             exit_predicate=exit_predicate,
             exit_=exit_,
             exit_message=exit_message,
@@ -218,7 +228,11 @@ def log(
                 logger.opt(depth=depth).log(
                     entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
                 )
-            result = await func(*args, **kwargs)
+            try:
+                result = await func(*args, **kwargs)
+            except Exception as error:
+                logger.opt(depth=depth).error(format_error(error))
+                raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
                 exit_ is not None
             ):
@@ -233,7 +247,11 @@ def log(
             logger.opt(depth=depth).log(
                 entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
             )
-        result = func(*args, **kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except Exception as error:
+            logger.opt(depth=depth).error(format_error(error))
+            raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
             exit_ is not None
         ):
