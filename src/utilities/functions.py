@@ -59,9 +59,14 @@ def identity(obj: _T, /) -> _T:
     return obj
 
 
-def if_not_none(x: _T | None, y: _U, /) -> _T | _U:
-    """Return the first value if it is not None, else the second value."""
-    return x if x is not None else y
+def is_none(obj: Any, /) -> bool:
+    """Check if an object is `None`."""
+    return obj is None
+
+
+def is_not_none(obj: Any, /) -> bool:
+    """Check if an object is not `None`."""
+    return obj is not None
 
 
 def not_func(func: Callable[_P, bool], /) -> Callable[_P, bool]:
@@ -85,7 +90,8 @@ __all__ = [
     "get_class_name",
     "get_func_name",
     "identity",
-    "if_not_none",
+    "is_none",
+    "is_not_none",
     "not_func",
     "second",
 ]

@@ -12,13 +12,22 @@ from functools import partial, wraps
 from inspect import iscoroutinefunction
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ParamSpec,
+    TextIO,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
-from utilities.functions import get_func_name
+from utilities.functions import get_class_name, get_func_name
 from utilities.iterables import resolve_include_and_exclude
 
 if TYPE_CHECKING:
@@ -46,7 +55,10 @@ if TYPE_CHECKING:
     from utilities.types import Duration, PathLike, StrMapping
 
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+_P = ParamSpec("_P")
+_T = TypeVar("_T")
+
+
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
     {"name": "TRACE", "color": "<white><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
@@ -150,67 +162,103 @@ class GetLoggingLevelError(Exception):
 _MATHEMATICAL_ITALIC_SMALL_F = "𝑓"  # noqa: RUF001
 
 
+def _format_error(error: Exception, /) -> str:
+    """Format an error."""
+    cls = get_class_name(error)
+    return f"Uncaught {cls!r}: {error}"
+
+
 @overload
-def log_call(func: _F, /, *, level: LogLevel = ...) -> _F: ...
+def log(
+    func: Callable[_P, _T],
+    /,
+    *,
+    depth: int = 1,
+    entry: LogLevel | None = ...,
+    entry_message: str = ...,
+    format_error: Callable[[Exception], str] = ...,
+    exit_predicate: Callable[[_T], bool] | None = ...,
+    exit_: LogLevel | None = ...,
+    exit_message: str = ...,
+) -> Callable[_P, _T]: ...
 @overload
-def log_call(func: None = None, /, *, level: LogLevel = ...) -> Callable[[_F], _F]: ...
-def log_call(
-    func: _F | None = None, /, *, level: LogLevel = LogLevel.TRACE
-) -> _F | Callable[[_F], _F]:
+def log(
+    func: None = None,
+    /,
+    *,
+    depth: int = 1,
+    entry: LogLevel | None = ...,
+    entry_message: str = ...,
+    format_error: Callable[[Exception], str] = ...,
+    exit_predicate: Callable[[Any], bool] | None = ...,
+    exit_: LogLevel | None = ...,
+    exit_message: str = ...,
+) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
+def log(
+    func: Callable[_P, _T] | None = None,
+    /,
+    *,
+    depth: int = 1,
+    entry: LogLevel | None = LogLevel.TRACE,
+    entry_message: str = "",
+    format_error: Callable[[Exception], str] = _format_error,
+    exit_predicate: Callable[[_T], bool] | None = None,
+    exit_: LogLevel | None = None,
+    exit_message: str = "",
+) -> Callable[_P, _T] | Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Log the function call."""
     if func is None:
-        return partial(log_call, level=level)
+        return partial(
+            log,
+            depth=depth,
+            entry=entry,
+            entry_message=entry_message,
+            format_error=format_error,
+            exit_predicate=exit_predicate,
+            exit_=exit_,
+            exit_message=exit_message,
+        )
 
     func_name = get_func_name(func)
     if iscoroutinefunction(func):
 
         @wraps(func)
-        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            logger.opt(depth=1).log(
-                level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
-            )
-            return await func(*args, **kwargs)
-
-        return cast(_F, wrapped_async)
-
-    @wraps(func)
-    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        logger.opt(depth=1).log(level, "", **{_MATHEMATICAL_ITALIC_SMALL_F: func_name})
-        return func(*args, **kwargs)
-
-    return cast(_F, wrapped_sync)
-
-
-@overload
-def log_completion(func: _F, /, *, level: LogLevel = ...) -> _F: ...
-@overload
-def log_completion(
-    func: None = None, /, *, level: LogLevel = ...
-) -> Callable[[_F], _F]: ...
-def log_completion(
-    func: _F | None = None, /, *, level: LogLevel = LogLevel.SUCCESS
-) -> _F | Callable[[_F], _F]:
-    """Log the function completion."""
-    if func is None:
-        return partial(log_completion, level=level)
-
-    if iscoroutinefunction(func):
-
-        @wraps(func)
-        async def wrapped_async(*args: Any, **kwargs: Any) -> Any:
-            result = await func(*args, **kwargs)
-            logger.opt(depth=1).log(level, "")
+        async def wrapped_async(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+            if entry is not None:
+                logger.opt(depth=depth).log(
+                    entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+                )
+            try:
+                result = await func(*args, **kwargs)
+            except Exception as error:
+                logger.opt(depth=depth).error(format_error(error))
+                raise
+            if ((exit_predicate is None) or (exit_predicate(result))) and (
+                exit_ is not None
+            ):
+                logger.opt(depth=depth).log(exit_, exit_message)
             return result
 
-        return cast(_F, wrapped_async)
+        return cast(Callable[_P, _T], wrapped_async)
 
     @wraps(func)
     def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
-        result = func(*args, **kwargs)
-        logger.opt(depth=1).log(level, "")
+        if entry is not None:
+            logger.opt(depth=depth).log(
+                entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
+            )
+        try:
+            result = func(*args, **kwargs)
+        except Exception as error:
+            logger.opt(depth=depth).error(format_error(error))
+            raise
+        if ((exit_predicate is None) or (exit_predicate(result))) and (
+            exit_ is not None
+        ):
+            logger.opt(depth=depth).log(exit_, exit_message)
         return result
 
-    return cast(_F, wrapped_sync)
+    return cast(Callable[_P, _T], wrapped_sync)
 
 
 def logged_sleep_sync(
@@ -368,8 +416,7 @@ __all__ = [
     "InterceptHandler",
     "LogLevel",
     "get_logging_level",
-    "log_call",
-    "log_completion",
+    "log",
     "logged_sleep_async",
     "logged_sleep_sync",
     "make_catch_hook",
