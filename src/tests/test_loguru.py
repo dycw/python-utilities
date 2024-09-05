@@ -501,18 +501,18 @@ class TestLog:
         assert func_test_decorated(0) == (1, 2)
         out = capsys.readouterr().out
         (line1, line2, line3, line4, line5) = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - ⋯$"
         assert search(expected1, line1), line1
-        expected2 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        expected2 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - ⋯$"
         assert search(expected2, line2), line2
         expected3 = (
-            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=0"
+            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=0$"
         )
         assert search(expected3, line3), line3
-        expected4 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - "
+        expected4 = self.trace + r"tests\.test_loguru:test_decorated:\d+ - ⋯$"
         assert search(expected4, line4), line4
         expected5 = (
-            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=1"
+            self.info + r"tests\.functions:func_test_decorated:\d+ - Starting x=1$"
         )
         assert search(expected5, line5), line5
 
