@@ -52,7 +52,7 @@ def func_test_entry_disabled(x: int, /) -> int:
     return x + 1
 
 
-# test custom level
+# test entry custom level
 
 
 @log(entry=LogLevel.INFO)
@@ -63,15 +63,15 @@ def func_test_entry_custom_level(x: int, /) -> int:
 # test error
 
 
-@log(entry=None)
-def func_test_error_predicate(x: int, /) -> int | None:
+@log
+def func_test_error(x: int, /) -> int | None:
     if x % 2 == 0:
         return x + 1
     msg = f"Got an odd number; {x}"
     raise ValueError(msg)
 
 
-# test completion
+# test exit
 
 
 @log(exit_=LogLevel.INFO)
