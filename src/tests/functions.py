@@ -64,10 +64,19 @@ def func_test_entry_custom_level(x: int, /) -> int:
 
 
 @log
-def func_test_error(x: int, /) -> int | None:
+def func_test_error_sync(x: int, /) -> int | None:
     if x % 2 == 0:
         return x + 1
-    msg = f"Got an odd number; {x}"
+    msg = f"Got an odd number {x}"
+    raise ValueError(msg)
+
+
+@log
+async def func_test_error_async(x: int, /) -> int | None:
+    await sleep(0.01)
+    if x % 2 == 0:
+        return x + 1
+    msg = f"Got an odd number {x}"
     raise ValueError(msg)
 
 
