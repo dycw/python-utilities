@@ -37,12 +37,10 @@ if TYPE_CHECKING:
 
     from loguru import (
         CompressionFunction,
-        ExcInfo,
         FilterDict,
         FilterFunction,
         FormatFunction,
         LevelConfig,
-        Logger,
         Message,
         Record,
         RetentionFunction,
@@ -267,7 +265,9 @@ def log(
             result = func(*args, **kwargs)
         except Exception as error:
             logger_use = logger if error_bind is None else logger.bind(**error_bind)
-            logger_use.opt(depth=depth).error(format_error(error))
+            logger_use.opt(exception=True, record=True, depth=depth).error(
+                "Uncaught {record[exception].value!r}"
+            )
             raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
             exit_ is not None
@@ -301,27 +301,10 @@ async def logged_sleep_async(
     await asyncio.sleep(timedelta.total_seconds())
 
 
-def make_catch_hook(**kwargs: Any) -> Callable[[BaseException], None]:
-    """Make a `logger.catch` hook."""
-    logger2 = logger.bind(**kwargs)
-
-    def callback(error: BaseException, /) -> None:
-        _log_from_depth_up(
-            logger2,
-            4,
-            LogLevel.ERROR,
-            "Uncaught {record[exception].value!r}",
-            exception=error,
-        )
-
-    return callback
-
-
 def make_except_hook(
     **kwargs: Any,
 ) -> Callable[[type[BaseException], BaseException, TracebackType | None], None]:
     """Make an `excepthook` which uses `loguru`."""
-    callback = make_catch_hook(**kwargs)
 
     def except_hook(
         exc_type: type[BaseException],
@@ -333,7 +316,11 @@ def make_except_hook(
         if issubclass(exc_type, KeyboardInterrupt):  # pragma: no cover
             __excepthook__(exc_type, exc_value, exc_traceback)
             return
-        callback(exc_value)  # pragma: no cover
+        logger.bind(**kwargs).opt(
+            exception=exc_value, record=True
+        ).error(  # pragma: no cover
+            "Uncaught {record[exception].value!r}"
+        )
         sys.exit(1)  # pragma: no cover
 
     return except_hook
@@ -394,39 +381,6 @@ def make_filter(
     return filter_func
 
 
-def _log_from_depth_up(
-    logger: Logger,
-    depth: int,
-    level: LogLevel,
-    message: str,
-    /,
-    *args: Any,
-    exception: bool | ExcInfo | BaseException | None = None,
-    **kwargs: Any,
-) -> None:
-    """Log from a given depth up to 0, in case it would fail otherwise."""
-    if depth >= 0:
-        try:
-            logger.opt(exception=exception, record=True, depth=depth).log(
-                level, message, *args, **kwargs
-            )
-        except ValueError:  # pragma: no cover
-            return _log_from_depth_up(
-                logger, depth - 1, level, message, *args, exception=exception, **kwargs
-            )
-        return None
-    raise _LogFromDepthUpError(depth=depth)
-
-
-@dataclass(kw_only=True)
-class _LogFromDepthUpError(Exception):
-    depth: int
-
-    @override
-    def __str__(self) -> str:
-        return f"Depth must be non-negative; got {self.depth}"
-
-
 __all__ = [
     "LEVEL_CONFIGS",
     "GetLoggingLevelError",
@@ -437,7 +391,6 @@ __all__ = [
     "log",
     "logged_sleep_async",
     "logged_sleep_sync",
-    "make_catch_hook",
     "make_except_hook",
     "make_filter",
 ]
