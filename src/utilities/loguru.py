@@ -243,7 +243,9 @@ def log(
                 result = await func(*args, **kwargs)
             except Exception as error:
                 logger_use = logger if error_bind is None else logger.bind(**error_bind)
-                logger_use.opt(depth=depth).error(format_error(error))
+                logger_use.opt(exception=True, record=True, depth=depth).error(
+                    "Uncaught {record[exception].value!r}"
+                )
                 raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
                 exit_ is not None
@@ -263,7 +265,7 @@ def log(
             )
         try:
             result = func(*args, **kwargs)
-        except Exception as error:
+        except Exception:
             logger_use = logger if error_bind is None else logger.bind(**error_bind)
             logger_use.opt(exception=True, record=True, depth=depth).error(
                 "Uncaught {record[exception].value!r}"
