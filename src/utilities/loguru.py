@@ -202,14 +202,14 @@ def log(
     depth: int = 1,
     entry: LogLevel | None = LogLevel.TRACE,
     entry_bind: StrMapping | None = None,
-    entry_message: str = "",
+    entry_message: str = "⋯",
     error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
     exit_: LogLevel | None = None,
     exit_bind: StrMapping | None = None,
     exit_predicate: Callable[[_T], bool] | None = None,
-    exit_message: str = "",
+    exit_message: str = "✔",
 ) -> Callable[_P, _T] | Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Log the function call."""
     if func is None:
