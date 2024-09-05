@@ -190,6 +190,10 @@ class TestLog:
         expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_entry_custom_level:\d+ -  \| {'𝑓': 'func_test_entry_custom_level'}"  # noqa: RUF001
         assert search(expected, out), out
 
+    def test_error_sync(self, *, capsys: CaptureFixture) -> None:
+        pass
+        func_test_error_predicate
+
     def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])

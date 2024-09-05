@@ -60,6 +60,17 @@ def func_test_entry_custom_level(x: int, /) -> int:
     return x + 1
 
 
+# test error
+
+
+@log(entry=None)
+def func_test_error_predicate(x: int, /) -> int | None:
+    if x % 2 == 0:
+        return x + 1
+    msg = f"Got an odd number; {x}"
+    raise ValueError(msg)
+
+
 # test completion
 
 
