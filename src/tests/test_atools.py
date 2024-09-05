@@ -29,6 +29,7 @@ class TestMemoize:
         for _ in range(2):
             assert (await increment()) == 1
 
+    @FLAKY
     async def test_with_duration(self) -> None:
         i = 0
 

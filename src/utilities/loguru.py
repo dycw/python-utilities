@@ -170,6 +170,7 @@ def log(
     entry: LogLevel | None = ...,
     entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
     error_bind: StrMapping | None = ...,
     error_message: str = ...,
     exit_: LogLevel | None = ...,
@@ -187,6 +188,7 @@ def log(
     entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
     error_bind: StrMapping | None = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
     error_message: str = ...,
     exit_: LogLevel | None = ...,
     exit_predicate: Callable[[Any], bool] | None = ...,
@@ -201,6 +203,7 @@ def log(
     entry: LogLevel | None = LogLevel.TRACE,
     entry_bind: StrMapping | None = None,
     entry_message: str = "",
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
     exit_: LogLevel | None = None,
@@ -216,6 +219,7 @@ def log(
             entry=entry,
             entry_bind=entry_bind,
             entry_message=entry_message,
+            error_expected=error_expected,
             error_bind=error_bind,
             error_message=error_message,
             exit_=exit_,
@@ -236,11 +240,14 @@ def log(
                 )
             try:
                 result = await func(*args, **kwargs)
-            except Exception:
-                logger_use = logger if error_bind is None else logger.bind(**error_bind)
-                logger_use.opt(exception=True, record=True, depth=depth).error(
-                    error_message
-                )
+            except Exception as error:
+                if (error_expected is None) or not isinstance(error, error_expected):
+                    logger_use = (
+                        logger if error_bind is None else logger.bind(**error_bind)
+                    )
+                    logger_use.opt(exception=True, record=True, depth=depth).error(
+                        error_message
+                    )
                 raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
                 exit_ is not None
@@ -260,11 +267,12 @@ def log(
             )
         try:
             result = func(*args, **kwargs)
-        except Exception:
-            logger_use = logger if error_bind is None else logger.bind(**error_bind)
-            logger_use.opt(exception=True, record=True, depth=depth).error(
-                error_message
-            )
+        except Exception as error:
+            if (error_expected is None) or not isinstance(error, error_expected):
+                logger_use = logger if error_bind is None else logger.bind(**error_bind)
+                logger_use.opt(exception=True, record=True, depth=depth).error(
+                    error_message
+                )
             raise
         if ((exit_predicate is None) or (exit_predicate(result))) and (
             exit_ is not None
