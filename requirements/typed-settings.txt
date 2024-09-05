@@ -43,5 +43,5 @@ typing-extensions==4.12.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   sqlalchemy
-whenever==0.6.7
+whenever==0.6.8
     # via dycw-utilities (pyproject.toml)
