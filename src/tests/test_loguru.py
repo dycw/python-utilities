@@ -135,15 +135,16 @@ class TestLog:
         line1, line2, line3 = out.splitlines()
         expected1 = (
             self.trace
-            + r"tests\.test_loguru:test_entry_sync:\d+ -  \| {'𝑓': 'func_test_entry_sync_inc_and_dec'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_entry_sync:\d+ - ⋯ \| {'𝑓': 'func_test_entry_sync_inc_and_dec'}$"  # noqa: RUF001
         )
         assert search(expected1, line1), line1
         trace_and_func = (
-            self.trace + r"tests\.functions:func_test_entry_sync_inc_and_dec:\d+ -  \| "
+            self.trace
+            + r"tests\.functions:func_test_entry_sync_inc_and_dec:\d+ - ⋯ \| "
         )
-        expected2 = trace_and_func + "{'𝑓': 'func_test_entry_sync_inc'}"  # noqa: RUF001
+        expected2 = trace_and_func + "{'𝑓': 'func_test_entry_sync_inc'}$"  # noqa: RUF001
         assert search(expected2, line2), line2
-        expected3 = trace_and_func + "{'𝑓': 'func_test_entry_sync_dec'}"  # noqa: RUF001
+        expected3 = trace_and_func + "{'𝑓': 'func_test_entry_sync_dec'}$"  # noqa: RUF001
         assert search(expected3, line3), line3
 
     async def test_entry_async(self, *, capsys: CaptureFixture) -> None:
@@ -160,16 +161,16 @@ class TestLog:
         line1, line2, line3 = out.splitlines()
         expected1 = (
             self.trace
-            + r"tests\.test_loguru:test_entry_async:\d+ -  \| {'𝑓': 'func_test_entry_async_inc_and_dec'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_entry_async:\d+ - ⋯ \| {'𝑓': 'func_test_entry_async_inc_and_dec'}$"  # noqa: RUF001
         )
         assert search(expected1, line1), line1
         trace_and_func = (
             self.trace
-            + r"tests\.functions:func_test_entry_async_inc_and_dec:\d+ -  \| "
+            + r"tests\.functions:func_test_entry_async_inc_and_dec:\d+ - ⋯ \| "
         )
-        expected2 = trace_and_func + "{'𝑓': 'func_test_entry_async_inc'}"  # noqa: RUF001
+        expected2 = trace_and_func + "{'𝑓': 'func_test_entry_async_inc'}$"  # noqa: RUF001
         assert search(expected2, line2), line2
-        expected3 = trace_and_func + "{'𝑓': 'func_test_entry_async_dec'}"  # noqa: RUF001
+        expected3 = trace_and_func + "{'𝑓': 'func_test_entry_async_dec'}$"  # noqa: RUF001
         assert search(expected3, line3), line3
 
     def test_entry_disabled_sync(self, *, capsys: CaptureFixture) -> None:
@@ -201,7 +202,7 @@ class TestLog:
         out = capsys.readouterr().out
         expected = (
             self.info
-            + r"tests\.test_loguru:test_entry_custom_level:\d+ -  \| {'𝑓': 'func_test_entry_custom_level'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_entry_custom_level:\d+ - ⋯ \| {'𝑓': 'func_test_entry_custom_level'}$"  # noqa: RUF001
         )
         assert search(expected, out), out
 
@@ -212,7 +213,7 @@ class TestLog:
         assert func_test_error_sync(0) == 1
         out = capsys.readouterr().out
         (line,) = out.splitlines()
-        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_sync:\d+ - "
+        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_sync:\d+ - ⋯$"
         assert search(expected, line), line
 
     def test_error_catch_sync(self, *, capsys: CaptureFixture) -> None:
@@ -223,11 +224,11 @@ class TestLog:
             assert func_test_error_sync(1)
         out = capsys.readouterr().out
         line1, line2, line3, *_ = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_sync:\d+ - ⋯$"
         assert search(expected1, line1), line1
         expected2 = (
             self.error
-            + r"tests\.test_loguru:test_error_catch_sync:\d+ - ValueError\('Got an odd number 1'\)"
+            + r"tests\.test_loguru:test_error_catch_sync:\d+ - ValueError\('Got an odd number 1'\)$"
         )
         assert search(expected2, line2), line2
         assert line3 == "Traceback (most recent call last):"
@@ -250,11 +251,11 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_sync:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_sync:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
 
@@ -266,11 +267,11 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_caught_sync:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_caught_sync:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
 
@@ -283,16 +284,16 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2, line3, line4, *_ = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_sync:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_sync:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
         expected3 = (
             self.error
-            + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - Remainder2Error\('Got a remainder of 2'\)"
+            + r"tests\.functions:func_test_error_chain_outer_sync:\d+ - Remainder2Error\('Got a remainder of 2'\)$"
         )
         assert search(expected3, line3), line3
         assert line4 == "Traceback (most recent call last):"
@@ -315,7 +316,9 @@ class TestLog:
         assert await func_test_error_async(0) == 1
         out = capsys.readouterr().out
         (line,) = out.splitlines()
-        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_async:\d+ - "
+        expected = (
+            self.trace + r"tests\.test_loguru:test_error_no_effect_async:\d+ - ⋯$"
+        )
         assert search(expected, line), line
 
     async def test_error_catch_async(self, *, capsys: CaptureFixture) -> None:
@@ -326,11 +329,11 @@ class TestLog:
             assert await func_test_error_async(1)
         out = capsys.readouterr().out
         line1, line2, line3, *_ = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - ⋯$"
         assert search(expected1, line1), line1
         expected2 = (
             self.error
-            + r"tests\.test_loguru:test_error_catch_async:\d+ - ValueError\('Got an odd number 1'\)"
+            + r"tests\.test_loguru:test_error_catch_async:\d+ - ValueError\('Got an odd number 1'\)$"
         )
         assert search(expected2, line2), line2
         assert line3 == "Traceback (most recent call last):"
@@ -353,11 +356,11 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_async:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_async:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
 
@@ -369,11 +372,11 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_caught_async:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_caught_async:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
 
