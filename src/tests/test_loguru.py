@@ -11,12 +11,12 @@ from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThrea
 from pytest import CaptureFixture, mark, param, raises
 
 from tests.functions import (
-    comp_test_async,
-    comp_test_custom_level,
-    comp_test_sync,
     func_test_entry_async_inc_and_dec,
     func_test_entry_custom_level,
     func_test_entry_sync_inc_and_dec,
+    func_test_exit_async,
+    func_test_exit_custom_level,
+    func_test_exit_sync,
 )
 from utilities.loguru import (
     LEVEL_CONFIGS,
@@ -135,7 +135,7 @@ class TestLog:
         expected3 = head_mid + "{'𝑓': 'func_test_entry_sync_dec'}"  # noqa: RUF001
         assert search(expected3, line3)
 
-    async def test_async(self, *, capsys: CaptureFixture) -> None:
+    async def test_entry_async(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
             "sink": sys.stdout,
@@ -150,7 +150,7 @@ class TestLog:
         head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| "
         expected1 = (
             head
-            + r"tests\.test_loguru:test_async:\d+ -  \| {'𝑓': 'func_test_entry_async_inc_and_dec'}"  # noqa: RUF001
+            + r"tests\.test_loguru:test_entry_async:\d+ -  \| {'𝑓': 'func_test_entry_async_inc_and_dec'}"  # noqa: RUF001
         )
         assert search(expected1, line1)
         head_mid = (
@@ -175,49 +175,37 @@ class TestLog:
         expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| tests\.test_loguru:test_entry_custom_level:\d+ -  \| {'𝑓': 'func_test_entry_custom_level'}"  # noqa: RUF001
         assert search(expected, out)
 
-    def test_error_no_effect_sync(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert func_test_error_sync(0) == 1
-        out = capsys.readouterr().out
-        (line,) = out.splitlines()
-        expected = self.trace + r"tests\.test_loguru:test_error_no_effect_sync:\d+ - "
-        assert search(expected, line), line
-
-    def test_error_catch_sync(self, *, capsys: CaptureFixture) -> None:
-        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
-        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
-
-        assert comp_test_sync(1) == 2
-        out = capsys.readouterr().out
-        line1, line2 = out.splitlines()
-        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-        expected1 = head + r"INFO     \| tests\.functions:comp_test_sync:\d+ - Starting"
-        assert search(expected1, line1)
-        expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_sync:\d+ - "
-        assert search(expected2, line2)
-
-    async def test_async(self, *, capsys: CaptureFixture) -> None:
+    def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert await comp_test_async(1) == 2
+        assert func_test_exit_sync(1) == 2
         out = capsys.readouterr().out
         line1, line2 = out.splitlines()
-        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
-        expected1 = (
-            head + r"INFO     \| tests\.functions:comp_test_async:\d+ - Starting"
-        )
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| "
+        expected1 = head + r"tests\.functions:func_test_exit_sync:\d+ - Starting"
         assert search(expected1, line1)
-        expected2 = head + r"SUCCESS  \| tests\.test_loguru:test_async:\d+ - "
+        expected2 = head + r"tests\.test_loguru:test_exit_sync:\d+ - "
+        assert search(expected2, line2)
+
+    async def test_exit_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await func_test_exit_async(1) == 2
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        head = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| "
+        expected1 = head + r"tests\.functions:func_test_exit_async:\d+ - Starting"
+        assert search(expected1, line1)
+        expected2 = head + r"tests\.test_loguru:test_exit_async:\d+ - "
         assert search(expected2, line2)
 
     def test_custom_level(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert comp_test_custom_level(1) == 2
+        assert func_test_exit_custom_level(1) == 2
         out = capsys.readouterr().out
         (line1, line2) = out.splitlines()
         expected1 = self.trace + r"tests\.test_loguru:test_error_catch_async:\d+ - "
@@ -280,7 +268,8 @@ class TestLog:
         out = capsys.readouterr().out
         (line1, line2, line3) = out.splitlines()
         expected1 = (
-            head + r"INFO     \| tests\.functions:comp_test_custom_level:\d+ - Starting"
+            head
+            + r"INFO     \| tests\.functions:func_test_exit_custom_level:\d+ - Starting"
         )
         assert search(expected2, line2), line2
 

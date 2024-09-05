@@ -61,36 +61,21 @@ async def func_test_entry_disabled_async(x: int, /) -> int:
 # test entry custom level
 
 
-@log(entry=LogLevel.INFO)
-def func_test_entry_custom_level(x: int, /) -> int:
-    return x + 1
-
-
-# test error
-
-
-@log
-def func_test_error_sync(x: int, /) -> int | None:
-    if x % 2 == 0:
-        return x + 1
-    msg = f"Got an odd number {x}"
-    raise ValueError(msg)
-
-@log_completion
-def comp_test_sync(x: int, /) -> int:
+@log(exit_=LogLevel.INFO)
+def func_test_exit_sync(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
 
-@log_completion
-async def comp_test_async(x: int, /) -> int:
+@log(exit_=LogLevel.INFO)
+async def func_test_exit_async(x: int, /) -> int:
     logger.info("Starting")
     await sleep(0.01)
     return x + 1
 
 
-@log_completion(level=LogLevel.WARNING)
-def comp_test_custom_level(x: int, /) -> int:
+@log(exit_=LogLevel.WARNING)
+def func_test_exit_custom_level(x: int, /) -> int:
     logger.info("Starting")
     return x + 1
 
