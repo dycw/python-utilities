@@ -389,16 +389,16 @@ class TestLog:
         out = capsys.readouterr().out
         line1, line2, line3, line4, *_ = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_async:\d+ - "
+            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_async:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - ⋯$"
         )
         assert search(expected2, line2), line2
         expected3 = (
             self.error
-            + r"tests\.functions:func_test_error_chain_outer_async:\d+ - Remainder2Error\('Got a remainder of 2'\)"
+            + r"tests\.functions:func_test_error_chain_outer_async:\d+ - Remainder2Error\('Got a remainder of 2'\)$"
         )
         assert search(expected3, line3), line3
         assert line4 == "Traceback (most recent call last):"
@@ -421,11 +421,11 @@ class TestLog:
         assert func_test_exit_sync(1) == 2
         out = capsys.readouterr().out
         line1, line2, line3 = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_exit_sync:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_exit_sync:\d+ - ⋯$"
         assert search(expected1, line1), line1
-        expected2 = self.info + r"tests\.functions:func_test_exit_sync:\d+ - Starting"
+        expected2 = self.info + r"tests\.functions:func_test_exit_sync:\d+ - Starting$"
         assert search(expected2, line2), line2
-        expected3 = self.info + r"tests\.test_loguru:test_exit_sync:\d+ - "
+        expected3 = self.info + r"tests\.test_loguru:test_exit_sync:\d+ - ✔$"
         assert search(expected3, line3), line3
 
     async def test_exit_async(self, *, capsys: CaptureFixture) -> None:
@@ -435,11 +435,11 @@ class TestLog:
         assert await func_test_exit_async(1) == 2
         out = capsys.readouterr().out
         line1, line2, line3 = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_exit_async:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_exit_async:\d+ - ⋯$"
         assert search(expected1, line1), line1
-        expected2 = self.info + r"tests\.functions:func_test_exit_async:\d+ - Starting"
+        expected2 = self.info + r"tests\.functions:func_test_exit_async:\d+ - Starting$"
         assert search(expected2, line2), line2
-        expected3 = self.info + r"tests\.test_loguru:test_exit_async:\d+ - "
+        expected3 = self.info + r"tests\.test_loguru:test_exit_async:\d+ - ✔$"
         assert search(expected3, line3), line3
 
     def test_exit_custom_level(self, *, capsys: CaptureFixture) -> None:
@@ -449,13 +449,13 @@ class TestLog:
         assert func_test_exit_custom_level(1) == 2
         out = capsys.readouterr().out
         (line1, line2, line3) = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_exit_custom_level:\d+ - "
+        expected1 = self.trace + r"tests\.test_loguru:test_exit_custom_level:\d+ - ⋯$"
         assert search(expected1, line1), line1
         expected2 = (
-            self.info + r"tests\.functions:func_test_exit_custom_level:\d+ - Starting"
+            self.info + r"tests\.functions:func_test_exit_custom_level:\d+ - Starting$"
         )
         assert search(expected2, line2), line2
-        expected3 = self.warning + r"tests\.test_loguru:test_exit_custom_level:\d+ - "
+        expected3 = self.warning + r"tests\.test_loguru:test_exit_custom_level:\d+ - ✔$"
         assert search(expected3, line3), line3
 
     def test_exit_predicate_no_filter(self, *, capsys: CaptureFixture) -> None:
@@ -466,15 +466,15 @@ class TestLog:
         out = capsys.readouterr().out
         (line1, line2, line3) = out.splitlines()
         expected1 = (
-            self.trace + r"tests\.test_loguru:test_exit_predicate_no_filter:\d+ - "
+            self.trace + r"tests\.test_loguru:test_exit_predicate_no_filter:\d+ - ⋯$"
         )
         assert search(expected1, line1), line1
         expected2 = (
-            self.info + r"tests\.functions:func_test_exit_predicate:\d+ - Starting"
+            self.info + r"tests\.functions:func_test_exit_predicate:\d+ - Starting$"
         )
         assert search(expected2, line2), line2
         expected3 = (
-            self.info + r"tests\.test_loguru:test_exit_predicate_no_filter:\d+ - "
+            self.info + r"tests\.test_loguru:test_exit_predicate_no_filter:\d+ - ✔$"
         )
         assert search(expected3, line3), line3
 
@@ -485,10 +485,12 @@ class TestLog:
         assert func_test_exit_predicate(1) is None
         out = capsys.readouterr().out
         (line1, line2) = out.splitlines()
-        expected1 = self.trace + r"tests\.test_loguru:test_exit_predicate_filter:\d+ - "
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_exit_predicate_filter:\d+ - ⋯$"
+        )
         assert search(expected1, line1), line1
         expected2 = (
-            self.info + r"tests\.functions:func_test_exit_predicate:\d+ - Starting"
+            self.info + r"tests\.functions:func_test_exit_predicate:\d+ - Starting$"
         )
         assert search(expected2, line2), line2
 
