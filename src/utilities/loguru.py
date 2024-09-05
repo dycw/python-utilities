@@ -175,10 +175,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
+    error_bind: StrMapping | None = ...,
     format_error: Callable[[Exception], str] = ...,
-    exit_predicate: Callable[[_T], bool] | None = ...,
     exit_: LogLevel | None = ...,
+    exit_predicate: Callable[[_T], bool] | None = ...,
+    exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
 ) -> Callable[_P, _T]: ...
 @overload
@@ -188,10 +191,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
     entry_message: str = ...,
+    error_bind: StrMapping | None = ...,
     format_error: Callable[[Exception], str] = ...,
-    exit_predicate: Callable[[Any], bool] | None = ...,
     exit_: LogLevel | None = ...,
+    exit_predicate: Callable[[Any], bool] | None = ...,
+    exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]: ...
 def log(
@@ -200,10 +206,13 @@ def log(
     *,
     depth: int = 1,
     entry: LogLevel | None = LogLevel.TRACE,
+    entry_bind: StrMapping | None = None,
     entry_message: str = "",
+    error_bind: StrMapping | None = None,
     format_error: Callable[[Exception], str] = _format_error,
-    exit_predicate: Callable[[_T], bool] | None = None,
     exit_: LogLevel | None = None,
+    exit_bind: StrMapping | None = None,
+    exit_predicate: Callable[[_T], bool] | None = None,
     exit_message: str = "",
 ) -> Callable[_P, _T] | Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Log the function call."""
@@ -212,10 +221,13 @@ def log(
             log,
             depth=depth,
             entry=entry,
+            entry_bind=entry_bind,
             entry_message=entry_message,
+            error_bind=error_bind,
             format_error=format_error,
-            exit_predicate=exit_predicate,
             exit_=exit_,
+            exit_bind=exit_bind,
+            exit_predicate=exit_predicate,
             exit_message=exit_message,
         )
 
@@ -225,18 +237,21 @@ def log(
         @wraps(func)
         async def wrapped_async(*args: _P.args, **kwargs: _P.kwargs) -> _T:
             if entry is not None:
-                logger.opt(depth=depth).log(
+                logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
+                logger_use.opt(depth=depth).log(
                     entry, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
                 )
             try:
                 result = await func(*args, **kwargs)
             except Exception as error:
-                logger.opt(depth=depth).error(format_error(error))
+                logger_use = logger if error_bind is None else logger.bind(**error_bind)
+                logger_use.opt(depth=depth).error(format_error(error))
                 raise
             if ((exit_predicate is None) or (exit_predicate(result))) and (
                 exit_ is not None
             ):
-                logger.opt(depth=depth).log(exit_, exit_message)
+                logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
+                logger_use.opt(depth=depth).log(exit_, exit_message)
             return result
 
         return cast(Callable[_P, _T], wrapped_async)
