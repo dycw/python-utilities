@@ -18,6 +18,7 @@ from tests.functions import (
     func_test_entry_disabled_sync,
     func_test_entry_sync_inc_and_dec,
     func_test_error_async,
+    func_test_error_chain_outer_async,
     func_test_error_chain_outer_sync,
     func_test_error_sync,
     func_test_exit_async,
@@ -341,6 +342,72 @@ class TestLog:
             """
         )
         lines_last = "\n".join(out.splitlines()[-4:])
+        assert lines_last == exp_last
+
+    async def test_error_chain_no_effect_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await func_test_error_chain_outer_async(0) == 1
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_no_effect_async:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+        )
+        assert search(expected2, line2), line2
+
+    async def test_error_chain_caught_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await func_test_error_chain_outer_async(1) == 2
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_caught_async:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+        )
+        assert search(expected2, line2), line2
+
+    async def test_error_chain_uncaught_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        with raises(Remainder2Error):
+            assert await func_test_error_chain_outer_async(2)
+        out = capsys.readouterr().out
+        line1, line2, line3, line4, *_ = out.splitlines()
+        expected1 = (
+            self.trace + r"tests\.test_loguru:test_error_chain_uncaught_async:\d+ - "
+        )
+        assert search(expected1, line1), line1
+        expected2 = (
+            self.trace + r"tests\.functions:func_test_error_chain_outer_async:\d+ - "
+        )
+        assert search(expected2, line2), line2
+        expected3 = (
+            self.error
+            + r"tests\.functions:func_test_error_chain_outer_async:\d+ - Remainder2Error\('Got a remainder of 2'\)"
+        )
+        assert search(expected3, line3), line3
+        assert line4 == "Traceback (most recent call last):"
+        exp_last = strip_and_dedent(
+            """
+                raise Remainder2Error(msg)
+                      │               └ 'Got a remainder of 2'
+                      └ <class 'tests.functions.Remainder2Error'>
+
+            tests.functions.Remainder2Error: Got a remainder of 2
+            """
+        )
+        lines_last = "\n".join(out.splitlines()[-5:])
         assert lines_last == exp_last
 
     def test_exit_sync(self, *, capsys: CaptureFixture) -> None:
