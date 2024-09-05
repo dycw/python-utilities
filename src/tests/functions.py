@@ -48,6 +48,13 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
 # test entry disabled
 
 
+def func_test_entry_disabled(x: int, /) -> int:
+    return x + 1
+
+
+# test custom level
+
+
 @log(entry=LogLevel.INFO)
 def func_test_entry_custom_level(x: int, /) -> int:
     return x + 1
