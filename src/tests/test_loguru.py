@@ -13,7 +13,8 @@ from pytest import CaptureFixture, mark, param, raises
 from tests.functions import (
     func_test_entry_async_inc_and_dec,
     func_test_entry_custom_level,
-    func_test_entry_disabled,
+    func_test_entry_disabled_async,
+    func_test_entry_disabled_sync,
     func_test_entry_sync_inc_and_dec,
     func_test_error_async,
     func_test_error_sync,
@@ -170,11 +171,19 @@ class TestLog:
         expected3 = trace_and_func + "{'𝑓': 'func_test_entry_async_dec'}"  # noqa: RUF001
         assert search(expected3, line3), line3
 
-    def test_entry_disabled(self, *, capsys: CaptureFixture) -> None:
+    def test_entry_disabled_sync(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert func_test_entry_disabled(1) == 2
+        assert func_test_entry_disabled_sync(1) == 2
+        out = capsys.readouterr().out
+        assert out == ""
+
+    async def test_entry_disabled_async(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert await func_test_entry_disabled_async(1) == 2
         out = capsys.readouterr().out
         assert out == ""
 
