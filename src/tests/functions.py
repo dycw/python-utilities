@@ -48,6 +48,7 @@ async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
 # test entry disabled
 
 
+@log(entry=None)
 def func_test_entry_disabled(x: int, /) -> int:
     return x + 1
 
