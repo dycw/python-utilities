@@ -4,7 +4,8 @@ from asyncio import sleep
 
 from loguru import logger
 
-from utilities.loguru import LogLevel, log, log_completion
+from utilities.functions import is_not_none
+from utilities.loguru import LogLevel, log
 
 # test entry sync
 
@@ -74,7 +75,7 @@ def func_test_exit_custom_level(x: int, /) -> int:
     return x + 1
 
 
-@log_completion(exit_=LogLevel.INFO, exit_predicate=is_not_none)
-def comp_test_nullable(x: int, /) -> int | None:
+@log(exit_=LogLevel.INFO, exit_predicate=is_not_none)
+def func_test_exit_predicate(x: int, /) -> int | None:
     logger.info("Starting")
     return (x + 1) if x % 2 == 0 else None
