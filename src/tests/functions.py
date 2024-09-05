@@ -60,13 +60,18 @@ def func_test_entry_custom_level(x: int, /) -> int:
     return x + 1
 
 
+# test error
+
+
 @log(entry=None)
-async def func_test_entry_disabled_async(x: int, /) -> int:
-    await sleep(0.01)
-    return x + 1
+def func_test_error_predicate(x: int, /) -> int | None:
+    if x % 2 == 0:
+        return x + 1
+    msg = f"Got an odd number; {x}"
+    raise ValueError(msg)
 
 
-# test entry custom level
+# test completion
 
 
 @log(exit_=LogLevel.INFO)
