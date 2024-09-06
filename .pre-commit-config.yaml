@@ -10,7 +10,7 @@ repos:
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/dycw/pre-commit-hooks
-    rev: 0.9.18
+    rev: 0.9.19
     hooks:
       - id: run-hatch-version
       - id: run-ruff-format

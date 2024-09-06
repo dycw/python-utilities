@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum
+from functools import partial
 from itertools import islice
 from reprlib import (
     Repr,
     _possibly_sorted,  # pyright: ignore[reportAttributeAccessIssue]
+)
+from types import (
+    BuiltinFunctionType,
+    FunctionType,
+    MethodDescriptorType,
+    MethodType,
+    MethodWrapperType,
+    WrapperDescriptorType,
 )
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
 from utilities.datetime import is_zoned_datetime
-from utilities.functions import get_class_name
+from utilities.functions import get_class_name, get_func_name
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -96,6 +105,17 @@ class _CustomRepr(Repr):
                 return super().repr1(x.value, level)
             cls_name = get_class_name(x)
             return super().repr1(f"{cls_name}.{x.name}", level)
+        if isinstance(
+            x,
+            BuiltinFunctionType
+            | FunctionType
+            | MethodType
+            | MethodDescriptorType
+            | MethodWrapperType
+            | WrapperDescriptorType
+            | partial,
+        ):
+            return get_func_name(x)
         return super().repr1(x, level)
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from polars import int_range
 from pytest import mark, param
 
+from utilities.functions import identity
 from utilities.reprlib import custom_print, custom_repr
 from utilities.zoneinfo import UTC
 
@@ -90,6 +91,11 @@ class TestCustomRepr:
 
         result = custom_repr(list(Truth))
         expected = "['true_value', 'false_value']"
+        assert result == expected
+
+    def test_function(self) -> None:
+        result = custom_repr(identity)
+        expected = "identity"
         assert result == expected
 
     def test_series(self) -> None:
