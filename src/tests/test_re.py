@@ -16,7 +16,6 @@ from utilities.re import (
     extract_group,
     extract_groups,
 )
-from utilities.reprlib import custom_repr
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -57,7 +56,6 @@ class TestExtractGroup:
                 "Pattern .* must match against .* exactly once; matches were .*",
             ),
         ],
-        ids=custom_repr,
     )
     def test_errors(
         self, *, pattern: str, text: str, error: type[Exception], match: str
@@ -70,7 +68,6 @@ class TestExtractGroups:
     @mark.parametrize(
         ("pattern", "text", "expected"),
         [param(r"(\d)", "A0A", ["0"]), param(r"(\d)(\w)", "A0A0", ["0", "A"])],
-        ids=custom_repr,
     )
     def test_main(self, *, pattern: str, text: str, expected: Sequence[str]) -> None:
         assert extract_groups(pattern, text) == expected
@@ -116,7 +113,6 @@ class TestExtractGroups:
                 r"Pattern .* must match against .* exactly once; matches were \[.*, .*\]",
             ),
         ],
-        ids=custom_repr,
     )
     def test_errors(
         self, *, pattern: str, text: str, error: type[Exception], match: str
