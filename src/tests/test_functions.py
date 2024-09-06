@@ -22,6 +22,7 @@ from utilities.functions import (
     not_func,
     second,
 )
+from utilities.reprlib import custom_repr
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -72,6 +73,7 @@ class TestGetFuncName:
             param(str.join, "str.join"),
             param(sys.exit, "exit"),
         ],
+        ids=custom_repr,
     )
     def test_main(self, *, func: Callable[..., Any], expected: str) -> None:
         assert get_func_name(func) == expected

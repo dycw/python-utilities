@@ -44,6 +44,7 @@ class TestCustomRepr:
                 "a=1, b=2, c=3, d=4, ...",
             ),
         ],
+        ids=custom_repr,
     )
     def test_main(self, *, mapping: Mapping[str, Any], expected: str) -> None:
         result = custom_repr(mapping)
