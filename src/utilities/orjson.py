@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, dataclass
 from decimal import Decimal
 from enum import Enum, StrEnum, unique
 from fractions import Fraction
@@ -18,8 +18,9 @@ from orjson import (
 )
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass
+from utilities.dataclasses import is_dataclass_instance
 from utilities.functions import get_class_name
+from utilities.typing import is_namedtuple_class, is_namedtuple_instance
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -53,7 +54,12 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
-    obj_use = asdict(cast(Dataclass, obj)) if is_dataclass(obj) else obj
+    if is_dataclass_instance(obj):
+        obj_use = asdict(obj)
+    elif is_namedtuple_instance(obj):
+        obj_use = tuple(obj)
+    else:
+        obj_use = obj
     try:
         return dumps(
             obj_use,
@@ -249,6 +255,8 @@ def deserialize(data: bytes, /, *, cls: type[_T] | None = None) -> Any:
         raise DeserializeError(data=error.data, obj=pre_obj) from None
     if cls is None:
         return obj
+    if is_namedtuple_class(cls):
+        return cls(*obj)
     from dacite import Config, from_dict
 
     return from_dict(cls, obj, config=Config(cast=[Enum]))

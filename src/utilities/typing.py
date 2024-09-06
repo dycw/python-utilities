@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from types import NoneType, UnionType
-from typing import Any, Literal, Protocol, TypeVar, get_origin
+from typing import Any, Literal, NamedTuple, Protocol, TypeGuard, TypeVar, get_origin
 from typing import get_args as _get_args
 
 try:  # skipif-version-ge-312
@@ -62,6 +62,25 @@ def is_mapping_type(obj: Any, /) -> bool:
     return _is_annotation_of_type(obj, Mapping)
 
 
+def is_namedtuple_class(obj: Any, /) -> TypeGuard[type[Any]]:
+    """Check if an object is a namedtuple."""
+    return isinstance(obj, type) and _is_namedtuple_core(obj)
+
+
+def is_namedtuple_instance(obj: Any, /) -> bool:
+    """Check if an object is an instance of a dataclass."""
+    return (not isinstance(obj, type)) and _is_namedtuple_core(obj)
+
+
+def _is_namedtuple_core(obj: Any, /) -> bool:
+    """Check if an object is an instance of a dataclass."""
+    try:
+        (base,) = obj.__orig_bases__
+    except (AttributeError, ValueError):
+        return False
+    return base is NamedTuple
+
+
 def is_optional_type(obj: Any, /) -> bool:
     """Check if an object is an optional type annotation."""
     return is_union_type(obj) and any(a is NoneType for a in _get_args(obj))
@@ -100,6 +119,8 @@ __all__ = [
     "is_list_type",
     "is_literal_type",
     "is_mapping_type",
+    "is_namedtuple_class",
+    "is_namedtuple_instance",
     "is_optional_type",
     "is_sequence_type",
     "is_set_type",
