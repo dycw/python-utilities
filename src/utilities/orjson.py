@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
 _T = TypeVar("_T")
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 _SCHEMA_KEY = "_k"
 _SCHEMA_VALUE = "_v"
 
@@ -238,10 +237,10 @@ class _GetSchemaError(Exception):
 
 
 @overload
-def deserialize(data: bytes, /, *, cls: type[_TDataclass]) -> _TDataclass: ...
+def deserialize(data: bytes, /, *, cls: type[_T]) -> _T: ...
 @overload
 def deserialize(data: bytes, /, *, cls: None = ...) -> Any: ...
-def deserialize(data: bytes, /, *, cls: type[_TDataclass] | None = None) -> Any:
+def deserialize(data: bytes, /, *, cls: type[_T] | None = None) -> Any:
     """Deserialize an object."""
     pre_obj = loads(data)
     try:

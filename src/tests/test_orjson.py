@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto, unique
 from fractions import Fraction
 from operator import eq
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 from hypothesis import given
 from hypothesis.strategies import (
@@ -223,7 +223,7 @@ class TestSerializeAndDeserialize:
         assert result == obj
 
     @given(x=int64s())
-    def test_subclass_of_dataclass(self, *, x: int) -> None:
+    def test_dataclass_non_decorated_subclass(self, *, x: int) -> None:
         @dataclass(kw_only=True)
         class Parent:
             x: int
@@ -257,6 +257,15 @@ class TestSerializeAndDeserialize:
             match=r"Unable to deserialize data 'invalid'; object hook failed on \{.*\}",
         ):
             _ = deserialize(ser)
+
+    @given(x=int64s())
+    def test_named_tuple(self, *, x: int) -> None:
+        class Example(NamedTuple):
+            x: int
+
+        obj = Example(x=x)
+        result = deserialize(serialize(obj), cls=Example)
+        assert result == obj
 
     def _run_tests(
         self,
