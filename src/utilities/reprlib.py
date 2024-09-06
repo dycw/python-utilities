@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum, StrEnum
 from functools import partial
 from itertools import islice
+from re import sub
 from reprlib import (
     Repr,
     _possibly_sorted,  # pyright: ignore[reportAttributeAccessIssue]
@@ -116,7 +117,7 @@ class _CustomRepr(Repr):
             | partial,
         ):
             return get_func_name(x)
-        return super().repr1(x, level)
+        return self._drop_object_address(super().repr1(x, level))
 
     def repr_DataFrame(self, x: Any, level: int) -> str:  # noqa: N802
         try:
@@ -187,6 +188,9 @@ class _CustomRepr(Repr):
         except ModuleNotFoundError:  # pragma: no cover
             return self.repr_instance(x, level)
         return serialize_timedelta(x)
+
+    def _drop_object_address(self, text: str, /) -> str:
+        return sub(" at [0-9a-fx]+", "", text)
 
 
 def custom_print(

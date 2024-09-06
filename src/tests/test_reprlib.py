@@ -98,6 +98,12 @@ class TestCustomRepr:
         expected = "identity"
         assert result == expected
 
+    def test_object(self) -> None:
+        obj = object()
+        result = custom_repr(obj)
+        expected = "<object object>"
+        assert result == expected
+
     def test_series(self) -> None:
         sr = int_range(start=0, end=100, eager=True).rename("int")
         result = custom_repr(sr)
