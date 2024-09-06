@@ -22,6 +22,7 @@ from typing_extensions import override
 
 from utilities.datetime import is_zoned_datetime
 from utilities.functions import get_class_name, get_func_name
+from utilities.zoneinfo import get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -188,6 +189,9 @@ class _CustomRepr(Repr):
         except ModuleNotFoundError:  # pragma: no cover
             return self.repr_instance(x, level)
         return serialize_timedelta(x)
+
+    def repr_ZoneInfo(self, x: Any, _: int) -> str:  # noqa: N802
+        return get_time_zone_name(x)
 
     def _drop_object_address(self, text: str, /) -> str:
         return sub(" at 0x[0-9a-fA-F]+", "", text)
