@@ -190,7 +190,7 @@ class _CustomRepr(Repr):
         return serialize_timedelta(x)
 
     def _drop_object_address(self, text: str, /) -> str:
-        return sub(" at [0-9a-fx]+", "", text)
+        return sub(" at 0x[0-9a-fA-F]+", "", text)
 
 
 def custom_print(
