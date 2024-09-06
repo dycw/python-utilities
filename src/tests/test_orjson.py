@@ -222,6 +222,18 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), cls=Outer)
         assert result == obj
 
+    @given(x=int64s())
+    def test_subclass_of_dataclass(self, *, x: int) -> None:
+        @dataclass(kw_only=True)
+        class Parent:
+            x: int
+
+        class Child(Parent): ...
+
+        obj = Child(x=x)
+        result = deserialize(serialize(obj), cls=Child)
+        assert result == obj
+
     @given(data=data())
     def test_engines(self, *, data: DataObject) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:

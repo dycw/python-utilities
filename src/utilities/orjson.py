@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from decimal import Decimal
 from enum import Enum, StrEnum, unique
 from fractions import Fraction
@@ -54,9 +54,10 @@ class _Key(StrEnum):
 
 def serialize(obj: Any, /) -> bytes:
     """Serialize an object."""
+    obj_use = asdict(cast(Dataclass, obj)) if is_dataclass(obj) else obj
     try:
         return dumps(
-            obj,
+            obj_use,
             default=_serialize_default,
             option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
