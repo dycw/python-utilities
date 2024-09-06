@@ -8,6 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import mark, param, raises
 
+from utilities.reprlib import custom_repr
 from utilities.zoneinfo import (
     HONG_KONG,
     TOKYO,
@@ -23,7 +24,9 @@ from utilities.zoneinfo import (
 class TestGetTimeZoneName:
     @given(data=data())
     @mark.parametrize(
-        ("time_zone"), [param("Asia/Hong_Kong"), param("Asia/Tokyo"), param("UTC")]
+        ("time_zone"),
+        [param("Asia/Hong_Kong"), param("Asia/Tokyo"), param("UTC")],
+        ids=custom_repr,
     )
     def test_main(self, *, data: DataObject, time_zone: str) -> None:
         zone_info_or_str = data.draw(sampled_from([ZoneInfo(time_zone), time_zone]))
@@ -41,6 +44,7 @@ class TestEnsureZoneInfo:
             param(UTC, UTC),
             param(dt.UTC, UTC),
         ],
+        ids=custom_repr,
     )
     def test_main(
         self, *, data: DataObject, time_zone: ZoneInfo | dt.timezone, expected: ZoneInfo
@@ -63,6 +67,7 @@ class TestTimeZones:
     @mark.parametrize(
         "time_zone",
         [param(HONG_KONG), param(TOKYO), param(US_CENTRAL), param(US_EASTERN)],
+        ids=custom_repr,
     )
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         assert isinstance(time_zone, ZoneInfo)

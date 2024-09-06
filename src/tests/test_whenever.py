@@ -33,6 +33,7 @@ from utilities.hypothesis import (
     timedeltas_2w,
     zoned_datetimes,
 )
+from utilities.reprlib import custom_repr
 from utilities.whenever import (
     MAX_SERIALIZABLE_TIMEDELTA,
     MAX_TWO_WAY_TIMEDELTA,
@@ -94,6 +95,7 @@ class TestCheckValidZonedDatetime:
             param(dt.datetime(1951, 4, 1, 3, tzinfo=HONG_KONG)),
             param(dt.datetime(1951, 4, 1, 5, tzinfo=HONG_KONG)),
         ],
+        ids=custom_repr,
     )
     def test_main(self, *, datetime: dt.datetime) -> None:
         check_valid_zoned_datetime(datetime)
@@ -153,7 +155,9 @@ class TestParseAndSerializeDuration:
             _ = parse_duration("invalid")
 
     @mark.parametrize(
-        "duration", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
+        "duration",
+        [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)],
+        ids=custom_repr,
     )
     def test_error_serialize(self, *, duration: Duration) -> None:
         with raises(
@@ -307,7 +311,9 @@ class TestParseAndSerializeTimedelta:
             _ = parse_timedelta("PT0.111222333S")
 
     @mark.parametrize(
-        "timedelta", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
+        "timedelta",
+        [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)],
+        ids=custom_repr,
     )
     def test_error_serialize(self, *, timedelta: dt.timedelta) -> None:
         with raises(
@@ -447,7 +453,9 @@ class TestToDatetimeDelta:
         assert result == expected
 
     @mark.parametrize(
-        "timedelta", [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)]
+        "timedelta",
+        [param(_TIMEDELTA_MICROSECONDS), param(_TIMEDELTA_OVERFLOW)],
+        ids=custom_repr,
     )
     def test_error(self, *, timedelta: dt.timedelta) -> None:
         with raises(
