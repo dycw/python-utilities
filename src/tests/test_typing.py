@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from pytest import mark, param
 
@@ -12,6 +13,8 @@ from utilities.typing import (
     is_list_type,
     is_literal_type,
     is_mapping_type,
+    is_namedtuple_class,
+    is_namedtuple_instance,
     is_optional_type,
     is_sequence_type,
     is_set_type,
@@ -70,3 +73,20 @@ class TestIsAnnotationOfType:
         self, *, func: Callable[[Any], bool], obj: Any, expected: bool
     ) -> None:
         assert func(obj) is expected
+
+
+class TestIsNamedTuple:
+    def test_main(self) -> None:
+        class Example(NamedTuple):
+            x: int
+
+        assert is_namedtuple_class(Example)
+        assert is_namedtuple_instance(Example(x=0))
+
+    def test_class(self) -> None:
+        @dataclass(kw_only=True)
+        class Example:
+            x: int
+
+        assert not is_namedtuple_class(Example)
+        assert not is_namedtuple_instance(Example(x=0))
