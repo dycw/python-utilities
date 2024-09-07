@@ -107,6 +107,8 @@ class _CustomRepr(Repr):
                 return super().repr1(x.value, level)
             cls_name = get_class_name(x)
             return super().repr1(f"{cls_name}.{x.name}", level)
+        if isinstance(x, type):
+            return get_class_name(x)
         if isinstance(
             x,
             BuiltinFunctionType
