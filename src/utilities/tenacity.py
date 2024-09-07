@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import tenacity
 from tenacity import RetryCallState
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from logging import _ExcInfoType
 
     from utilities.loguru import LogLevel
 
@@ -27,14 +28,7 @@ def before_sleep_log(
 class _LoguruAdapter:
     """Proxy for `loguru`, for use in `tenacity`."""
 
-    def log(
-        self,
-        msg: Any,
-        level: int,
-        /,
-        *,
-        exc_info: BaseException | Literal[False] | None = None,
-    ) -> None:
+    def log(self, level: int, msg: str, exc_info: _ExcInfoType, /) -> None:
         from loguru import logger
 
         logger.opt(exception=exc_info).log(msg, level)
