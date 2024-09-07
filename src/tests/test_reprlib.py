@@ -49,6 +49,13 @@ class TestCustomRepr:
         result = custom_repr(mapping)
         assert result == expected
 
+    def test_class(self) -> None:
+        class Truth(Enum): ...
+
+        result = custom_repr(Truth)
+        expected = "Truth"
+        assert result == expected
+
     def test_dataframe(self) -> None:
         df = int_range(start=0, end=100, eager=True).rename("int").to_frame()
         result = custom_repr(df)
