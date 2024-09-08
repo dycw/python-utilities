@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime as dt
 from dataclasses import dataclass
-from numbers import Number
 from operator import eq, ge, gt, le, lt, ne
 from timeit import default_timer
 from typing import TYPE_CHECKING, Any, Self
@@ -10,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Self
 from typing_extensions import override
 
 from utilities.functions import get_class_name
-from utilities.types import EnsureClassError, ensure_class
+from utilities.types import EnsureClassError, Number, ensure_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,6 +30,15 @@ class Timer:
     def __exit__(self, *_: object) -> bool:
         self._end = default_timer()
         return False
+
+    def __add__(self, other: Any) -> dt.timedelta:
+        if isinstance(other, Number):
+            return dt.timedelta(seconds=float(self) + other)
+        if isinstance(other, Timer):
+            return self.timedelta + other.timedelta
+        if isinstance(other, dt.timedelta):
+            return self.timedelta + other
+        return NotImplemented
 
     def __float__(self) -> float:
         end_use = default_timer() if (end := self._end) is None else end

@@ -15,6 +15,31 @@ if TYPE_CHECKING:
 
 
 class TestTimer:
+    def test_addition_of_float(self) -> None:
+        with Timer() as timer:
+            pass
+        assert isinstance(timer + 0.0, dt.timedelta)
+
+    def test_addition_of_timedelta(self) -> None:
+        with Timer() as timer:
+            pass
+        assert isinstance(timer + dt.timedelta(0), dt.timedelta)
+
+    def test_addition_of_timers(self) -> None:
+        with Timer() as timer1:
+            pass
+        with Timer() as timer2:
+            pass
+        assert isinstance(timer1 + timer2, dt.timedelta)
+
+    def test_addition_error(self) -> None:
+        with Timer() as timer:
+            pass
+        with raises(
+            TypeError, match=r"unsupported operand type\(s\) for \+: 'Timer' and 'str'"
+        ):
+            _ = timer + ""
+
     def test_context_manager(self) -> None:
         duration = 0.01
         with Timer() as timer:
