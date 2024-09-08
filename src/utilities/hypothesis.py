@@ -9,6 +9,7 @@ from collections.abc import (
     Hashable,
     Iterable,
     Iterator,
+    Sequence,
 )
 from contextlib import (
     AbstractAsyncContextManager,
@@ -30,6 +31,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
+    Literal,
     Protocol,
     TypeVar,
     assert_never,
@@ -63,8 +65,6 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from redis.exceptions import ResponseError
-from redis.typing import KeyT
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
@@ -96,6 +96,7 @@ Shape = int | tuple[int, ...]
 async def aiosqlite_engines(
     data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
 ) -> AsyncEngine:
+    """Strategy for generating aiosqlite engines."""
     from utilities.sqlalchemy import create_engine
 
     temp_path = data.draw(temp_paths())
@@ -188,6 +189,37 @@ def durations(
         max_timedelta_ = min(max_timedelta_, MAX_TWO_WAY_TIMEDELTA)
     st_timedeltas = timedeltas(min_value=min_timedelta_, max_value=max_timedelta_)
     return _draw(st_integers | st_floats | st_timedeltas)
+
+
+@overload
+def engines(
+    data: DataObject,
+    /,
+    *,
+    sync_or_async: Literal["sync"],
+    dialect: MaybeSearchStrategy[Sequence[Literal["sqlite", "postgres"]]] = ...,
+) -> Engine: ...
+@overload
+def engines(
+    data: DataObject,
+    /,
+    *,
+    sync_or_async: Literal["async"],
+    dialect: MaybeSearchStrategy[Sequence[Literal["sqlite", "postgres"]]] = ...,
+) -> AsyncEngine: ...
+def engines(
+    data: DataObject,
+    /,
+    *,
+    sync_or_async: MaybeSearchStrategy[Literal["sync", "async"]] = "sync",
+    dialect: MaybeSearchStrategy[Sequence[Literal["sqlite", "postgres"]]] = (
+        "sqlite",
+        "postgres",
+    ),
+) -> Engine | AsyncEngine:
+    """Strategy for generating sync & async engines."""
+    draw = lift_draw(data.draw)
+    sync_or_async_ = draw(sync_or_async)
 
 
 @composite
@@ -448,6 +480,7 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
     """Strategy for generating redis clients (with cleanup)."""
     from redis import Redis  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+    from redis.typing import KeyT  # skipif-ci-and-not-linux
 
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
     uuid = draw(uuids())  # skipif-ci-and-not-linux
@@ -455,7 +488,7 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
 
     @contextmanager
     def yield_redis() -> (  # skipif-ci-and-not-linux
-        Iterator[RedisContainer[redis.Redis]]
+        Iterator[RedisContainer[Redis]]
     ):
         with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
@@ -474,6 +507,8 @@ def redis_cms_async(
 ) -> AbstractAsyncContextManager[RedisContainer[redis.asyncio.Redis]]:
     """Strategy for generating asynchronous redis clients."""
     from redis.asyncio import Redis  # skipif-ci-and-not-linux
+    from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+    from redis.typing import KeyT  # skipif-ci-and-not-linux
 
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
     uuid = data.draw(uuids())  # skipif-ci-and-not-linux
@@ -481,7 +516,7 @@ def redis_cms_async(
 
     @asynccontextmanager
     async def yield_redis_async() -> (  # skipif-ci-and-not-linux
-        AsyncIterator[RedisContainer[redis.asyncio.Redis]]
+        AsyncIterator[RedisContainer[Redis]]
     ):
         async with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
