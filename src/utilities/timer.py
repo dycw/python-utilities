@@ -103,7 +103,7 @@ class Timer:
     def __ne__(self, other: object) -> bool:
         if isinstance(other, Number | Timer | dt.timedelta):
             return self._apply_op(ne, other)
-        return False
+        return True
 
     # properties
 
