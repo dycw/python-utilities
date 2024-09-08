@@ -57,6 +57,7 @@ from hypothesis.strategies import (
     lists,
     none,
     sampled_from,
+    sets,
     text,
     timedeltas,
     uuids,
@@ -494,6 +495,16 @@ def redis_cms_async(
     return yield_redis_async()  # skipif-ci-and-not-linux
 
 
+@composite
+def sets_fixed_length(
+    _draw: DrawFn, strategy: SearchStrategy[_T], size: MaybeSearchStrategy[int], /
+) -> set[_T]:
+    """Strategy for generating lists of a fixed length."""
+    draw = lift_draw(_draw)
+    size_ = draw(size)
+    return draw(sets(strategy, min_size=size_, max_size=size_))
+
+
 def setup_hypothesis_profiles(
     *, suppress_health_check: Iterable[HealthCheck] = ()
 ) -> None:
@@ -821,6 +832,7 @@ __all__ = [
     "random_states",
     "redis_cms",
     "redis_cms_async",
+    "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
     "sqlite_engines",

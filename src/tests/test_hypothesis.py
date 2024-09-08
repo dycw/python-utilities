@@ -57,6 +57,7 @@ from utilities.hypothesis import (
     random_states,
     redis_cms,
     redis_cms_async,
+    sets_fixed_length,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
     slices,
@@ -515,22 +516,12 @@ class TestReducedExamples:
         assert result == expected
 
 
-class TestSlices:
-    @given(data=data(), iter_len=integers(0, 10))
-    def test_main(self, *, data: DataObject, iter_len: int) -> None:
-        slice_len = data.draw(integers(0, iter_len) | none())
-        slice_ = data.draw(slices(iter_len, slice_len=slice_len))
-        range_slice = range(iter_len)[slice_]
-        assert all(i + 1 == j for i, j in pairwise(range_slice))
-        if slice_len is not None:
-            assert len(range_slice) == slice_len
-
-    @given(data=data(), iter_len=integers(0, 10))
-    def test_error(self, *, data: DataObject, iter_len: int) -> None:
-        with raises(
-            InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
-        ):
-            _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
+class TestSetsFixedLength:
+    @given(data=data(), size=integers(1, 10))
+    def test_main(self, *, data: DataObject, size: int) -> None:
+        result = data.draw(sets_fixed_length(integers(), size))
+        assert isinstance(result, set)
+        assert len(result) == size
 
 
 class TestSetupHypothesisProfiles:
@@ -550,6 +541,24 @@ class TestSetupHypothesisProfiles:
         with temp_environ({"HYPOTHESIS_MAX_EXAMPLES": str(max_examples)}):
             setup_hypothesis_profiles()
         assert settings().max_examples == max_examples
+
+
+class TestSlices:
+    @given(data=data(), iter_len=integers(0, 10))
+    def test_main(self, *, data: DataObject, iter_len: int) -> None:
+        slice_len = data.draw(integers(0, iter_len) | none())
+        slice_ = data.draw(slices(iter_len, slice_len=slice_len))
+        range_slice = range(iter_len)[slice_]
+        assert all(i + 1 == j for i, j in pairwise(range_slice))
+        if slice_len is not None:
+            assert len(range_slice) == slice_len
+
+    @given(data=data(), iter_len=integers(0, 10))
+    def test_error(self, *, data: DataObject, iter_len: int) -> None:
+        with raises(
+            InvalidArgument, match=r"Slice length \d+ exceeds iterable length \d+"
+        ):
+            _ = data.draw(slices(iter_len, slice_len=iter_len + 1))
 
 
 class TestSQLiteEngines:
