@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import datetime as dt
-from dataclasses import dataclass
-from numbers import Number
-from operator import eq, ge, gt, le, lt, ne
+from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from timeit import default_timer
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, overload
 
 from typing_extensions import override
 
-from utilities.functions import get_class_name
-from utilities.types import EnsureClassError, ensure_class
+from utilities.types import Number
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -24,6 +21,44 @@ class Timer:
         self._start = default_timer()
         self._end: float | None = None
 
+    # arithmetic
+
+    def __add__(self, other: Any) -> dt.timedelta:
+        if isinstance(other, Number):
+            return dt.timedelta(seconds=self._apply_op(add, other))
+        if isinstance(other, Timer | dt.timedelta):
+            return self._apply_op(add, other)
+        return NotImplemented
+
+    def __float__(self) -> float:
+        end_use = default_timer() if (end := self._end) is None else end
+        return end_use - self._start
+
+    def __sub__(self, other: Any) -> dt.timedelta:
+        if isinstance(other, Number):
+            return dt.timedelta(seconds=self._apply_op(sub, other))
+        if isinstance(other, Timer | dt.timedelta):
+            return self._apply_op(sub, other)
+        return NotImplemented
+
+    def __mul__(self, other: Any) -> dt.timedelta:
+        if isinstance(other, Number):
+            return dt.timedelta(seconds=self._apply_op(mul, other))
+        return NotImplemented
+
+    @overload
+    def __truediv__(self, other: Number) -> dt.timedelta: ...
+    @overload
+    def __truediv__(self, other: Timer | dt.timedelta) -> float: ...
+    def __truediv__(self, other: Any) -> dt.timedelta | float:
+        if isinstance(other, Number):
+            return dt.timedelta(seconds=self._apply_op(truediv, other))
+        if isinstance(other, Timer | dt.timedelta):
+            return self._apply_op(truediv, other)
+        return NotImplemented
+
+    # context manager
+
     def __enter__(self) -> Self:
         self._start = default_timer()
         return self
@@ -32,9 +67,7 @@ class Timer:
         self._end = default_timer()
         return False
 
-    def __float__(self) -> float:
-        end_use = default_timer() if (end := self._end) is None else end
-        return end_use - self._start
+    # repr
 
     @override
     def __repr__(self) -> str:
@@ -44,50 +77,57 @@ class Timer:
     def __str__(self) -> str:
         return str(self.timedelta)
 
+    # comparison
+
     @override
     def __eq__(self, other: object) -> bool:
-        return self._compare(other, eq)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(eq, other)
+        return False
 
     def __ge__(self, other: Any) -> bool:
-        return self._compare(other, ge)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(ge, other)
+        return NotImplemented
 
     def __gt__(self, other: Any) -> bool:
-        return self._compare(other, gt)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(gt, other)
+        return NotImplemented
 
     def __le__(self, other: Any) -> bool:
-        return self._compare(other, le)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(le, other)
+        return NotImplemented
 
     def __lt__(self, other: Any) -> bool:
-        return self._compare(other, lt)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(lt, other)
+        return NotImplemented
 
     @override
     def __ne__(self, other: object) -> bool:
-        return self._compare(other, ne)
+        if isinstance(other, Number | Timer | dt.timedelta):
+            return self._apply_op(ne, other)
+        return True
+
+    # properties
 
     @property
     def timedelta(self) -> dt.timedelta:
         """The elapsed time, as a `timedelta` object."""
         return dt.timedelta(seconds=float(self))
 
-    def _compare(self, other: Any, op: Callable[[Any, Any], bool], /) -> bool:
-        try:
-            right = ensure_class(other, (Number, Timer, dt.timedelta))
-        except EnsureClassError:
-            raise TimerError(obj=other) from None
-        left = float(self) if isinstance(right, Number | Timer) else self.timedelta
-        return op(left, right)
+    # private
+
+    def _apply_op(self, op: Callable[[Any, Any], Any], other: Any, /) -> Any:
+        if isinstance(other, Number):
+            return op(float(self), other)
+        if isinstance(other, Timer):
+            return op(self.timedelta, other.timedelta)
+        if isinstance(other, dt.timedelta):
+            return op(self.timedelta, other)
+        return NotImplemented  # pragma: no cover
 
 
-@dataclass(kw_only=True)
-class TimerError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return (
-            "Timer must be compared to a number, Timer, or timedelta; got "
-            f"{get_class_name(self.obj)!r} instead"
-        )
-
-
-__all__ = ["Timer", "TimerError"]
+__all__ = ["Timer"]
