@@ -19,6 +19,7 @@ from hypothesis.strategies import (
 )
 from pytest import mark, param, raises
 
+from utilities.hypothesis import sets_fixed_length
 from utilities.iterables import (
     CheckBijectionError,
     CheckDuplicatesError,
@@ -111,8 +112,8 @@ class TestAlwaysIterable:
 class TestCheckBijection:
     @given(data=data(), n=integers(0, 10))
     def test_main(self, *, data: DataObject, n: int) -> None:
-        keys = data.draw(sets(integers(0, 100), min_size=n, max_size=n))
-        values = data.draw(sets(integers(0, 100), min_size=n, max_size=n))
+        keys = data.draw(sets_fixed_length(integers(0, 100), n))
+        values = data.draw(sets_fixed_length(integers(0, 100), n))
         mapping = dict(zip(keys, values, strict=True))
         check_bijection(mapping)
 
