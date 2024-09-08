@@ -92,7 +92,13 @@ from sqlalchemy.exc import DuplicateColumnError
 from tests.test_sqlalchemy import _upsert_lists
 from utilities.datetime import is_equal_mod_tz
 from utilities.hashlib import md5_hash
-from utilities.hypothesis import aiosqlite_engines, sqlite_engines, text_ascii
+from utilities.hypothesis import (
+    aiosqlite_engines,
+    int32s,
+    sets_fixed_length,
+    sqlite_engines,
+    text_ascii,
+)
 from utilities.math import is_equal
 from utilities.polars import DatetimeUTC, check_polars_dataframe
 from utilities.sqlalchemy import (
@@ -906,6 +912,40 @@ class TestUpsertDataFrame:
         )
         self._assert_results(res, expected)
 
+    @given(engine=sqlite_engines())
+    def test_sync_assume_exists(self, *, engine: Engine) -> None:
+        key = TestUpsertDataFrame.test_sync_assume_exists.__qualname__
+        name = f"test_{md5_hash(key)}"
+        df = DataFrame(schema={"value": pl.Boolean})
+        table = self._get_table(name)
+        ensure_tables_created(engine, table)
+        upsert_dataframe(df, table, engine, assume_tables_exist=True)
+
+    @given(
+        engine=sqlite_engines(),
+        ids=sets_fixed_length(int32s(), 2).map(tuple),
+        value1=booleans() | none(),
+        value2=booleans() | none(),
+    )
+    def test_sync_both_nulls_and_non_nulls(
+        self,
+        *,
+        engine: Engine,
+        ids: tuple[int, int],
+        value1: bool | None,
+        value2: bool | None,
+    ) -> None:
+        key = TestUpsertDataFrame.test_sync_both_nulls_and_non_nulls.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        id1, id2 = ids
+        df = DataFrame(
+            data=[(id1, value1), (id2, value2)],
+            schema={"id_": Int64, "value": pl.Boolean},
+            orient="row",
+        )
+        upsert_dataframe(df, table, engine)
+
     @given(df=_upsert_dataframes(min_height=1), engine=sqlite_engines())
     def test_sync_error(self, *, df: DataFrame, engine: Engine) -> None:
         key = TestUpsertDataFrame.test_sync_error.__qualname__
@@ -920,15 +960,6 @@ class TestUpsertDataFrame:
                 table,
                 engine,
             )
-
-    @given(engine=sqlite_engines())
-    def test_sync_assume_exists(self, *, engine: Engine) -> None:
-        key = TestUpsertDataFrame.test_sync_assume_exists.__qualname__
-        name = f"test_{md5_hash(key)}"
-        df = DataFrame(schema={"value": pl.Boolean})
-        table = self._get_table(name)
-        ensure_tables_created(engine, table)
-        upsert_dataframe(df, table, engine, assume_tables_exist=True)
 
     @given(data=data(), df=_upsert_dataframes())
     async def test_async(self, *, data: DataObject, df: DataFrame) -> None:
@@ -952,6 +983,42 @@ class TestUpsertDataFrame:
         )
         self._assert_results(res, expected)
 
+    @given(data=data())
+    async def test_async_assume_exists(self, *, data: DataObject) -> None:
+        key = TestUpsertDataFrame.test_async_assume_exists.__qualname__
+        name = f"test_{md5_hash(key)}"
+        df = DataFrame(schema={"value": pl.Boolean})
+        table = self._get_table(name)
+        engine = await aiosqlite_engines(data)
+        await ensure_tables_created_async(engine, table)
+        await upsert_dataframe_async(df, table, engine, assume_tables_exist=True)
+
+    @given(
+        data=data(),
+        ids=sets_fixed_length(int32s(), 2).map(tuple),
+        value1=booleans() | none(),
+        value2=booleans() | none(),
+    )
+    async def test_async_both_nulls_and_non_nulls(
+        self,
+        *,
+        data: DataObject,
+        ids: tuple[int, int],
+        value1: bool | None,
+        value2: bool | None,
+    ) -> None:
+        key = TestUpsertDataFrame.test_async_both_nulls_and_non_nulls.__qualname__
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await aiosqlite_engines(data)
+        id1, id2 = ids
+        df = DataFrame(
+            data=[(id1, value1), (id2, value2)],
+            schema={"id_": Int64, "value": pl.Boolean},
+            orient="row",
+        )
+        await upsert_dataframe_async(df, table, engine)
+
     @given(data=data(), df=_upsert_dataframes(min_height=1))
     async def test_async_error(self, *, data: DataObject, df: DataFrame) -> None:
         key = TestUpsertDataFrame.test_async_error.__qualname__
@@ -967,16 +1034,6 @@ class TestUpsertDataFrame:
                 table,
                 engine,
             )
-
-    @given(data=data())
-    async def test_async_assume_exists(self, *, data: DataObject) -> None:
-        key = TestUpsertDataFrame.test_async_assume_exists.__qualname__
-        name = f"test_{md5_hash(key)}"
-        df = DataFrame(schema={"value": pl.Boolean})
-        table = self._get_table(name)
-        engine = await aiosqlite_engines(data)
-        await ensure_tables_created_async(engine, table)
-        await upsert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
     def _get_table(self, name: str, /) -> Table:
         return Table(

@@ -186,7 +186,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.6.2
+narwhals==1.6.3
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
