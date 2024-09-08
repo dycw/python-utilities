@@ -2154,6 +2154,18 @@ class TestUpsertItems:
 
     @given(data=data(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.only
+    def test_sync_both_nulls_and_non_nulls(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+    ) -> None:
+        pass
+
+    @given(data=data(), triple=_upsert_triples(nullable=True))
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     async def test_async_pair_of_dict_and_table(
         self,
         *,
