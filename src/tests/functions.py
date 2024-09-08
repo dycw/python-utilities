@@ -5,9 +5,11 @@ from functools import wraps
 from typing import TYPE_CHECKING
 
 from loguru import logger
+from tenacity import retry, wait_fixed
 
 from utilities.functions import is_not_none
 from utilities.loguru import LogLevel, log
+from utilities.tenacity import before_sleep_log
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -184,3 +186,18 @@ def make_new(func: Callable[[int], int], /) -> Callable[[int], tuple[int, int]]:
 def func_test_decorated(x: int, /) -> int:
     logger.info(f"Starting x={x}")
     return x + 1
+
+
+# test tenacity
+
+
+_counter = 0
+
+
+@retry(wait=wait_fixed(0.01), before_sleep=before_sleep_log())
+def func_test_before_sleep_log() -> int:
+    global _counter  # noqa: PLW0603
+    _counter += 1
+    if _counter >= 3:
+        return _counter
+    raise ValueError(_counter)
