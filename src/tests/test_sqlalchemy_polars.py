@@ -921,7 +921,6 @@ class TestUpsertDataFrame:
         ensure_tables_created(engine, table)
         upsert_dataframe(df, table, engine, assume_tables_exist=True)
 
-    @mark.only
     @given(
         engine=sqlite_engines(),
         ids=sets_fixed_length(int32s(), 2).map(tuple),
@@ -994,7 +993,6 @@ class TestUpsertDataFrame:
         await ensure_tables_created_async(engine, table)
         await upsert_dataframe_async(df, table, engine, assume_tables_exist=True)
 
-    @mark.only
     @given(
         data=data(),
         ids=sets_fixed_length(int32s(), 2).map(tuple),

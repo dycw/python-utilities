@@ -2142,7 +2142,6 @@ class TestUpsertItems:
         value1=booleans() | none(),
         value2=booleans() | none(),
     )
-    @mark.only
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_both_nulls_and_non_nulls(
         self,
@@ -2450,7 +2449,6 @@ class TestUpsertItems:
         value2=booleans() | none(),
     )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
-    @mark.only
     async def test_async_both_nulls_and_non_nulls(
         self,
         *,
