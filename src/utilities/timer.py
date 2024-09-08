@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from operator import add, eq, ge, gt, le, lt, mul, ne, sub, truediv
 from timeit import default_timer
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, overload
 
 from typing_extensions import override
 
@@ -46,9 +46,15 @@ class Timer:
             return dt.timedelta(seconds=self._apply_op(mul, other))
         return NotImplemented
 
-    def __truediv__(self, other: Any) -> dt.timedelta:
+    @overload
+    def __truediv__(self, other: Number) -> dt.timedelta: ...
+    @overload
+    def __truediv__(self, other: Timer | dt.timedelta) -> float: ...
+    def __truediv__(self, other: Any) -> dt.timedelta | float:
         if isinstance(other, Number):
             return dt.timedelta(seconds=self._apply_op(truediv, other))
+        if isinstance(other, Timer | dt.timedelta):
+            return self._apply_op(truediv, other)
         return NotImplemented
 
     # context manager

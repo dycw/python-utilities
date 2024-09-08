@@ -15,64 +15,60 @@ if TYPE_CHECKING:
 
 
 class TestTimer:
-    @mark.parametrize("op", [param(add), param(sub)], ids=str)
     @mark.parametrize(
-        "other", [param(0), param(0.0), param(dt.timedelta(0.0))], ids=str
+        ("op", "other", "cls"),
+        [
+            param(add, 0, dt.timedelta),
+            param(add, 0.0, dt.timedelta),
+            param(add, dt.timedelta(0.0), dt.timedelta),
+            param(sub, 0, dt.timedelta),
+            param(sub, 0.0, dt.timedelta),
+            param(sub, dt.timedelta(0.0), dt.timedelta),
+            param(mul, 1, dt.timedelta),
+            param(mul, 1.0, dt.timedelta),
+            param(truediv, 1, dt.timedelta),
+            param(truediv, 1.0, dt.timedelta),
+            param(truediv, dt.timedelta(1.0), float),
+        ],
+        ids=str,
     )
-    def test_arithmetic_add_and_sub_numbers_and_timedeltas(
+    def test_arithmetic_against_numbers_or_timedeltas(
+        self, *, op: Callable[[Any, Any], Any], other: Any, cls: type[Any]
+    ) -> None:
+        with Timer() as timer:
+            pass
+        assert isinstance(op(timer, other), cls)
+
+    @mark.parametrize(
+        ("op", "cls"),
+        [param(add, dt.timedelta), param(sub, dt.timedelta), param(truediv, float)],
+        ids=str,
+    )
+    def test_arithmetic_against_another_timer(
+        self, *, op: Callable[[Any, Any], Any], cls: type[Any]
+    ) -> None:
+        with Timer() as timer1, Timer() as timer2:
+            pass
+        assert isinstance(op(timer1, timer2), cls)
+
+    @mark.parametrize(
+        ("op", "other"),
+        [
+            param(add, ""),
+            param(sub, ""),
+            param(mul, dt.timedelta(1.0)),
+            param(mul, ""),
+            param(truediv, ""),
+        ],
+        ids=str,
+    )
+    def test_arithmetic_error(
         self, *, op: Callable[[Any, Any], Any], other: Any
     ) -> None:
         with Timer() as timer:
             pass
-        assert isinstance(op(timer, other), dt.timedelta)
-
-    @mark.parametrize("op", [param(add), param(sub)], ids=str)
-    def test_arithmetic_add_and_sub_timers(
-        self, *, op: Callable[[Any, Any], Any]
-    ) -> None:
-        with Timer() as timer1:
-            pass
-        with Timer() as timer2:
-            pass
-        assert isinstance(op(timer1, timer2), dt.timedelta)
-
-    @mark.parametrize("op", [param(mul), param(truediv)], ids=str)
-    @mark.parametrize("other", [param(1), param(1.0)], ids=str)
-    def test_arithmetic_mul_and_truediv_numbers(
-        self, *, op: Callable[[Any, Any], Any], other: Any
-    ) -> None:
-        with Timer() as timer:
-            pass
-        assert isinstance(op(timer, other), dt.timedelta)
-
-    @mark.parametrize(
-        "op", [param(add), param(sub), param(mul), param(truediv)], ids=str
-    )
-    def test_arithmetic_error(self, *, op: Callable[[Any, Any], Any]) -> None:
-        with Timer() as timer:
-            pass
         with raises(TypeError):
-            _ = op(timer, "")
-
-    @mark.parametrize("op", [param(mul), param(truediv)], ids=str)
-    def test_arithmetic_mul_and_truediv_error_timedelta(
-        self, *, op: Callable[[Any, Any], Any]
-    ) -> None:
-        with Timer() as timer:
-            pass
-        with raises(TypeError):
-            _ = op(timer, dt.timedelta(0))
-
-    @mark.parametrize("op", [param(mul), param(truediv)], ids=str)
-    def test_arithmetic_mul_and_truediv_error_timer(
-        self, *, op: Callable[[Any, Any], Any]
-    ) -> None:
-        with Timer() as timer1:
-            pass
-        with Timer() as timer2:
-            pass
-        with raises(TypeError):
-            _ = op(timer1, timer2)
+            _ = op(timer, other)
 
     @mark.parametrize(
         ("op", "expected"),
