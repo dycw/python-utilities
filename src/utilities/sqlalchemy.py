@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import auto
 from functools import reduce
 from math import floor
-from operator import ge, itemgetter, le
+from operator import ge, itemgetter, le, or_
 from re import search
 from typing import TYPE_CHECKING, Any, Literal, TypeGuard, assert_never, cast, overload
 
@@ -1342,7 +1342,7 @@ def _upsert_items_apply_on_conflict_do_update(
 ) -> Insert:
     match selected_or_all:
         case "selected":
-            columns = one(set(map(frozenset, values)))
+            columns = set(reduce(or_, values))
         case "all":
             columns = {c.name for c in insert.excluded}
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
