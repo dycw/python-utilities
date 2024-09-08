@@ -1311,6 +1311,9 @@ def _upsert_items_build(
     selected_or_all: Literal["selected", "all"] = "selected",
 ) -> Insert:
     values = list(values)
+    keys = set(reduce(or_, values))
+    dict_nones = {k: None for k in keys}
+    values = [{**dict_nones, **v} for v in values]
     if (updated_col := get_table_updated_column(table)) is not None:
         up_map = {updated_col: get_now()}
         values = [{**v, **up_map} for v in values]

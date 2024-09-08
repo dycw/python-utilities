@@ -88,7 +88,9 @@ from tests.conftest import SKIPIF_CI
 from utilities.hashlib import md5_hash
 from utilities.hypothesis import (
     aiosqlite_engines,
+    int32s,
     lists_fixed_length,
+    sets_fixed_length,
     sqlite_engines,
     temp_paths,
     text_ascii,
@@ -2134,7 +2136,13 @@ class TestUpsertItems:
             engine, table, ({"id_": id_}, table), assume_tables_exist=True
         )
 
-    @given(sqlite_engine=sqlite_engines())
+    @given(
+        sqlite_engine=sqlite_engines(),
+        ids=sets_fixed_length(int32s(), 2).map(tuple),
+        value1=booleans() | none(),
+        value2=booleans() | none(),
+    )
+    @mark.only
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_both_nulls_and_non_nulls(
         self,
@@ -2142,6 +2150,9 @@ class TestUpsertItems:
         sqlite_engine: Engine,
         create_postgres_engine: Callable[..., Engine],
         dialect: Literal["sqlite", "postgres"],
+        ids: tuple[int, int],
+        value1: bool | None,
+        value2: bool | None,
     ) -> None:
         key = TestUpsertItems.test_sync_both_nulls_and_non_nulls.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
@@ -2149,8 +2160,10 @@ class TestUpsertItems:
         engine = self._get_engine_sync(
             sqlite_engine, create_postgres_engine, table, dialect=dialect
         )
+        id1, id2 = ids
         upsert_items(
-            engine, ([{"id_": 1, "value": None}, {"id_": 2, "value": True}], table)
+            engine,
+            ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
         )
 
     @given(sqlite_engine=sqlite_engines())
@@ -2430,14 +2443,23 @@ class TestUpsertItems:
             engine, table, ({"id_": id_}, table), assume_tables_exist=True
         )
 
-    @given(data=data())
+    @given(
+        data=data(),
+        ids=sets_fixed_length(int32s(), 2).map(tuple),
+        value1=booleans() | none(),
+        value2=booleans() | none(),
+    )
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    @mark.only
     async def test_async_both_nulls_and_non_nulls(
         self,
         *,
         data: DataObject,
         create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
         dialect: Literal["sqlite", "postgres"],
+        ids: tuple[int, int],
+        value1: bool | None,
+        value2: bool | None,
     ) -> None:
         key = TestUpsertItems.test_async_both_nulls_and_non_nulls.__qualname__, dialect
         name = f"test_{md5_hash(key)}"
@@ -2445,8 +2467,10 @@ class TestUpsertItems:
         engine = await self._get_engine_async(
             data, create_postgres_engine_async, table, dialect=dialect
         )
+        id1, id2 = ids
         await upsert_items_async(
-            engine, ([{"id_": 1, "value": None}, {"id_": 2, "value": True}], table)
+            engine,
+            ([{"id_": id1, "value": value1}, {"id_": id2, "value": value2}], table),
         )
 
     @given(data=data())
