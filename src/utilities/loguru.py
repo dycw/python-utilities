@@ -28,7 +28,12 @@ from typing_extensions import override
 
 from utilities.datetime import duration_to_timedelta
 from utilities.functions import get_func_name
-from utilities.iterables import resolve_include_and_exclude
+from utilities.iterables import (
+    OneEmptyError,
+    OneNonUniqueError,
+    one,
+    resolve_include_and_exclude,
+)
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -141,16 +146,52 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-def get_logging_level(level: str, /) -> int:
-    """Get the logging level."""
+def get_logging_level_name(level: int, /) -> str:
+    """Get the logging level name."""
+    core = logger._core  # noqa: SLF001 # pyright: ignore[reportAttributeAccessIssue]
     try:
-        return logger.level(level).no
-    except ValueError:
-        raise GetLoggingLevelError(level=level) from None
+        return one(k for k, v in core.levels.items() if v.no == level)
+    except OneEmptyError:
+        raise _GetLoggingLevelNameEmptyError(level=level) from None
+    except OneNonUniqueError as error:
+        error = cast(OneNonUniqueError[str], error)
+        raise _GetLoggingLevelNameNonUniqueError(
+            level=level, first=error.first, second=error.second
+        ) from None
 
 
 @dataclass(kw_only=True)
-class GetLoggingLevelError(Exception):
+class GetLoggingLevelNameError(Exception):
+    level: int
+
+
+@dataclass(kw_only=True)
+class _GetLoggingLevelNameEmptyError(GetLoggingLevelNameError):
+    @override
+    def __str__(self) -> str:
+        return f"There is no level with severity {self.level}"
+
+
+@dataclass(kw_only=True)
+class _GetLoggingLevelNameNonUniqueError(GetLoggingLevelNameError):
+    first: str
+    second: str
+
+    @override
+    def __str__(self) -> str:
+        return f"There must be exactly one level with severity {self.level}; got {self.first!r}, {self.second!r} and perhaps more"
+
+
+def get_logging_level_number(level: str, /) -> int:
+    """Get the logging level number."""
+    try:
+        return logger.level(level).no
+    except ValueError:
+        raise GetLoggingLevelNumberError(level=level) from None
+
+
+@dataclass(kw_only=True)
+class GetLoggingLevelNumberError(Exception):
     level: str
 
     @override
@@ -346,11 +387,15 @@ def make_filter(
 
     def filter_func(record: Record, /) -> bool:
         rec_level_no = record["level"].no
-        if (level is not None) and (rec_level_no != get_logging_level(level)):
+        if (level is not None) and (rec_level_no != get_logging_level_number(level)):
             return False
-        if (min_level is not None) and (rec_level_no < get_logging_level(min_level)):
+        if (min_level is not None) and (
+            rec_level_no < get_logging_level_number(min_level)
+        ):
             return False
-        if (max_level is not None) and (rec_level_no > get_logging_level(max_level)):
+        if (max_level is not None) and (
+            rec_level_no > get_logging_level_number(max_level)
+        ):
             return False
         name = record["name"]
         if name is not None:
@@ -386,11 +431,13 @@ def make_filter(
 
 __all__ = [
     "LEVEL_CONFIGS",
-    "GetLoggingLevelError",
+    "GetLoggingLevelNameError",
+    "GetLoggingLevelNumberError",
     "HandlerConfiguration",
     "InterceptHandler",
     "LogLevel",
-    "get_logging_level",
+    "get_logging_level_name",
+    "get_logging_level_number",
     "log",
     "logged_sleep_async",
     "logged_sleep_sync",

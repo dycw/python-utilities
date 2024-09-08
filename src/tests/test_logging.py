@@ -5,10 +5,10 @@ from logging import getLogger
 from pytest import mark, param, raises
 
 from utilities.logging import (
-    GetLoggingLevelError,
+    GetLoggingLevelNumberError,
     LogLevel,
     basic_config,
-    get_logging_level,
+    get_logging_level_number,
 )
 
 
@@ -19,7 +19,7 @@ class TestBasicConfig:
         logger.info("message")
 
 
-class TestGetLoggingLevel:
+class TestGetLoggingLevelNumber:
     @mark.parametrize(
         ("level", "expected"),
         [
@@ -31,11 +31,13 @@ class TestGetLoggingLevel:
         ],
     )
     def test_main(self, *, level: str, expected: int) -> None:
-        assert get_logging_level(level) == expected
+        assert get_logging_level_number(level) == expected
 
     def test_error(self) -> None:
-        with raises(GetLoggingLevelError, match="Invalid logging level: 'invalid'"):
-            _ = get_logging_level("invalid")
+        with raises(
+            GetLoggingLevelNumberError, match="Invalid logging level: 'invalid'"
+        ):
+            _ = get_logging_level_number("invalid")
 
 
 class TestLogLevel:

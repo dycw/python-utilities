@@ -22,17 +22,17 @@ def basic_config(
     )
 
 
-def get_logging_level(level: str, /) -> int:
-    """Get the logging level."""
+def get_logging_level_number(level: str, /) -> int:
+    """Get the logging level number."""
     mapping = getLevelNamesMapping()
     try:
         return mapping[level]
     except KeyError:
-        raise GetLoggingLevelError(level=level) from None
+        raise GetLoggingLevelNumberError(level=level) from None
 
 
 @dataclass(kw_only=True)
-class GetLoggingLevelError(Exception):
+class GetLoggingLevelNumberError(Exception):
     level: str
 
     @override
@@ -51,4 +51,9 @@ class LogLevel(StrEnum):
     CRITICAL = "CRITICAL"
 
 
-__all__ = ["GetLoggingLevelError", "LogLevel", "basic_config", "get_logging_level"]
+__all__ = [
+    "GetLoggingLevelNumberError",
+    "LogLevel",
+    "basic_config",
+    "get_logging_level_number",
+]

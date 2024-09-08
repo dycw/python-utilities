@@ -29,11 +29,14 @@ from tests.functions import (
 )
 from utilities.loguru import (
     LEVEL_CONFIGS,
-    GetLoggingLevelError,
+    GetLoggingLevelNumberError,
     HandlerConfiguration,
     InterceptHandler,
     LogLevel,
-    get_logging_level,
+    _GetLoggingLevelNameEmptyError,
+    _GetLoggingLevelNameNonUniqueError,
+    get_logging_level_name,
+    get_logging_level_number,
     logged_sleep_async,
     logged_sleep_sync,
     make_except_hook,
@@ -51,9 +54,9 @@ if TYPE_CHECKING:
     from utilities.types import Duration
 
 
-class TestGetLoggingLevel:
+class TestGetLoggingLevelNameAndNumber:
     @mark.parametrize(
-        ("level", "expected"),
+        ("name", "number"),
         [
             param(LogLevel.TRACE, 5),
             param(LogLevel.DEBUG, 10),
@@ -63,13 +66,32 @@ class TestGetLoggingLevel:
             param(LogLevel.ERROR, 40),
             param(LogLevel.CRITICAL, 50),
         ],
+        ids=str,
     )
-    def test_main(self, *, level: str, expected: int) -> None:
-        assert get_logging_level(level) == expected
+    def test_main(self, *, name: str, number: int) -> None:
+        assert get_logging_level_number(name) == number
+        assert get_logging_level_name(number) == name
 
-    def test_error(self) -> None:
-        with raises(GetLoggingLevelError, match="Invalid logging level: 'invalid'"):
-            _ = get_logging_level("invalid")
+    def test_error_name_empty(self) -> None:
+        with raises(
+            _GetLoggingLevelNameEmptyError, match="There is no level with severity 0"
+        ):
+            _ = get_logging_level_name(0)
+
+    def test_error_name_non_unique(self) -> None:
+        _ = logger.level("TEST-1", no=99)
+        _ = logger.level("TEST-2", no=99)
+        with raises(
+            _GetLoggingLevelNameNonUniqueError,
+            match="There must be exactly one level with severity 99; got 'TEST-1', 'TEST-2' and perhaps more",
+        ):
+            _ = get_logging_level_name(99)
+
+    def test_error_number(self) -> None:
+        with raises(
+            GetLoggingLevelNumberError, match="Invalid logging level: 'invalid'"
+        ):
+            _ = get_logging_level_number("invalid")
 
 
 class TestHandlerConfiguration:
