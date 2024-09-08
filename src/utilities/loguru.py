@@ -431,7 +431,7 @@ def make_filter(
 
 __all__ = [
     "LEVEL_CONFIGS",
-    "GetLoggingLevelNumberError",
+    "GetLoggingLevelNameError",
     "GetLoggingLevelNumberError",
     "HandlerConfiguration",
     "InterceptHandler",
