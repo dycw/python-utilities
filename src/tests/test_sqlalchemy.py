@@ -2162,7 +2162,13 @@ class TestUpsertItems:
         create_postgres_engine: Callable[..., Engine],
         dialect: Literal["sqlite", "postgres"],
     ) -> None:
-        pass
+        key = TestUpsertItems.test_sync_error.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        self._get_engine_sync(
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
+        )
+        assert 0
 
     @given(data=data(), triple=_upsert_triples(nullable=True))
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
