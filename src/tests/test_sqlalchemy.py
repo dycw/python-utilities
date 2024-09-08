@@ -2136,6 +2136,25 @@ class TestUpsertItems:
 
     @given(sqlite_engine=sqlite_engines())
     @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    def test_sync_both_nulls_and_non_nulls(
+        self,
+        *,
+        sqlite_engine: Engine,
+        create_postgres_engine: Callable[..., Engine],
+        dialect: Literal["sqlite", "postgres"],
+    ) -> None:
+        key = TestUpsertItems.test_sync_both_nulls_and_non_nulls.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = self._get_engine_sync(
+            sqlite_engine, create_postgres_engine, table, dialect=dialect
+        )
+        upsert_items(
+            engine, ([{"id_": 1, "value": None}, {"id_": 2, "value": True}], table)
+        )
+
+    @given(sqlite_engine=sqlite_engines())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
     def test_sync_error(
         self,
         *,
@@ -2409,6 +2428,25 @@ class TestUpsertItems:
         )
         _ = await self._run_test_async(
             engine, table, ({"id_": id_}, table), assume_tables_exist=True
+        )
+
+    @given(data=data())
+    @mark.parametrize("dialect", [param("sqlite"), param("postgres", marks=SKIPIF_CI)])
+    async def test_async_both_nulls_and_non_nulls(
+        self,
+        *,
+        data: DataObject,
+        create_postgres_engine_async: Callable[..., Coroutine1[AsyncEngine]],
+        dialect: Literal["sqlite", "postgres"],
+    ) -> None:
+        key = TestUpsertItems.test_async_both_nulls_and_non_nulls.__qualname__, dialect
+        name = f"test_{md5_hash(key)}"
+        table = self._get_table(name)
+        engine = await self._get_engine_async(
+            data, create_postgres_engine_async, table, dialect=dialect
+        )
+        await upsert_items_async(
+            engine, ([{"id_": 1, "value": None}, {"id_": 2, "value": True}], table)
         )
 
     @given(data=data())
