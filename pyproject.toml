@@ -361,6 +361,7 @@ addopts = [
   "--durations-min=10",
   "--strict-markers",
 ]
+asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 filterwarnings = [
   "error",
