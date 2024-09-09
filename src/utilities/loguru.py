@@ -64,7 +64,7 @@ _T = TypeVar("_T")
 
 _RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
 LEVEL_CONFIGS: Sequence[LevelConfig] = [
-    {"name": "TRACE", "color": "<white><bold>"},
+    {"name": "TRACE", "color": "<blue><bold>"},
     {"name": "DEBUG", "color": "<cyan><bold>"},
     {"name": "INFO", "color": "<green><bold>"},
     {"name": "SUCCESS", "color": "<magenta><bold>"},
