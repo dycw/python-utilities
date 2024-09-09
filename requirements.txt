@@ -186,7 +186,7 @@ multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
-narwhals==1.6.3
+narwhals==1.6.4
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -254,7 +254,7 @@ pillow==10.4.0
     #   streamlit
 pip==24.2
     # via pypiserver
-platformdirs==4.3.1
+platformdirs==4.3.2
     # via
     #   hatch
     #   virtualenv
@@ -445,7 +445,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.10.0
+yarl==1.11.0
     # via aiohttp
 zipp==3.20.1
     # via importlib-metadata
