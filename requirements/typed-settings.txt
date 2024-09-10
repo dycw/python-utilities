@@ -37,7 +37,7 @@ sqlalchemy==2.0.34
     # via dycw-utilities (pyproject.toml)
 tomli==2.0.1
     # via coverage
-typed-settings==24.4.0
+typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via

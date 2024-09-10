@@ -404,7 +404,7 @@ tqdm==4.66.5
     #   pqdm
 trove-classifiers==2024.7.2
     # via hatchling
-typed-settings==24.4.0
+typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
 typing-extensions==4.12.2
     # via
