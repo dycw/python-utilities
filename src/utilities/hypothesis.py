@@ -219,7 +219,7 @@ def engines(
 ) -> Engine | AsyncEngine:
     """Strategy for generating sync & async engines."""
     draw = lift_draw(data.draw)
-    sync_or_async_ = draw(sync_or_async)
+    draw(sync_or_async)
 
 
 @composite

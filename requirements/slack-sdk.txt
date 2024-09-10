@@ -22,7 +22,7 @@ idna==3.8
     # via yarl
 iniconfig==2.0.0
     # via pytest
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
@@ -55,5 +55,5 @@ tomli==2.0.1
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
-yarl==1.11.0
+yarl==1.11.1
     # via aiohttp
