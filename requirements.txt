@@ -215,7 +215,7 @@ numpy==2.0.2
     #   scipy
     #   scs
     #   streamlit
-optuna==3.6.1
+optuna==4.0.0
     # via dycw-utilities (pyproject.toml)
 orjson==3.10.7
     # via dycw-utilities (pyproject.toml)
