@@ -51,6 +51,7 @@ from utilities.hypothesis import (
     int32s,
     int64s,
     int_arrays,
+    lift_data,
     lift_draw,
     lists_fixed_length,
     months,
@@ -400,6 +401,26 @@ class TestInt64s:
         with assume_does_not_raise(InvalidArgument):
             x = data.draw(int64s(min_value=min_value, max_value=max_value))
         assert max(min_value, MIN_INT64) <= x <= min(max_value, MAX_INT64)
+
+
+class TestLiftDataDraw:
+    @given(data=data(), value=booleans())
+    def test_fixed(self, *, data: DataObject, value: bool) -> None:
+        def strategy(_data: DataObject, /) -> bool:
+            draw = lift_data(_data)
+            return draw(value)
+
+        result = strategy(data)
+        assert result is value
+
+    @given(data=data(), value=booleans())
+    def test_strategy(self, *, data: DataObject, value: bool) -> None:
+        def strategy(_data: DataObject, /) -> bool:
+            draw = lift_data(_data)
+            return draw(just(value))
+
+        result = strategy(data)
+        assert result is value
 
 
 class TestLiftDraw:

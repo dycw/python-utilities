@@ -10,7 +10,7 @@ fonttools==4.53.1
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)
-hypothesis==6.111.2
+hypothesis==6.112.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -22,7 +22,7 @@ pillow==10.4.0
     # via fpdf2
 pluggy==1.5.0
     # via pytest
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

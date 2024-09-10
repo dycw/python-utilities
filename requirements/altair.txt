@@ -13,7 +13,7 @@ coverage==7.6.1
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf
-hypothesis==6.111.2
+hypothesis==6.112.0
     # via dycw-utilities (pyproject.toml)
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
@@ -47,7 +47,7 @@ pluggy==1.5.0
     # via pytest
 polars-lts-cpu==1.5.0
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

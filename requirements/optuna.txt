@@ -8,7 +8,7 @@ colorlog==6.8.2
     # via optuna
 coverage==7.6.1
     # via pytest-cov
-hypothesis==6.111.2
+hypothesis==6.112.0
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
@@ -27,7 +27,7 @@ packaging==24.1
     #   pytest-rerunfailures
 pluggy==1.5.0
     # via pytest
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
