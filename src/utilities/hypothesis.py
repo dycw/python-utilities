@@ -94,11 +94,12 @@ Shape = int | tuple[int, ...]
 
 
 async def aiosqlite_engines(
-    data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
+    _data: DataObject, /, *, metadata: MetaData | None = None, base: Any = None
 ) -> AsyncEngine:
     from utilities.sqlalchemy import create_engine
 
-    temp_path = data.draw(temp_paths())
+    draw = lift_data(_data)
+    temp_path = draw(temp_paths())
     path = Path(temp_path, "db.sqlite")
     engine = create_engine("sqlite+aiosqlite", database=str(path), async_=True)
     if metadata is not None:
