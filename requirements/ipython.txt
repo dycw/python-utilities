@@ -38,7 +38,7 @@ pure-eval==0.2.3
     # via stack-data
 pygments==2.18.0
     # via ipython
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio

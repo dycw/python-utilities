@@ -139,7 +139,7 @@ img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
 importlib-metadata==8.4.0
     # via keyring
-importlib-resources==6.4.4
+importlib-resources==6.4.5
     # via pypiserver
 iniconfig==2.0.0
     # via pytest
@@ -182,7 +182,7 @@ more-itertools==10.4.0
     #   dycw-utilities (pyproject.toml)
     #   jaraco-classes
     #   jaraco-functools
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
@@ -298,7 +298,7 @@ pyinstrument==4.7.3
     # via dycw-utilities (pyproject.toml)
 pypiserver==2.1.1
     # via dycw-utilities (pyproject.toml)
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
@@ -340,7 +340,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.8.0
+rich==13.8.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hatch
@@ -427,7 +427,7 @@ urllib3==2.2.2
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.7
+uv==0.4.8
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
@@ -445,7 +445,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.11.0
+yarl==1.11.1
     # via aiohttp
 zipp==3.20.1
     # via importlib-metadata

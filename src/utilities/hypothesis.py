@@ -364,13 +364,22 @@ class _MaybeDrawFn(Protocol):
         raise NotImplementedError(obj)  # pragma: no cover
 
 
+def lift_data(data: DataObject, /) -> _MaybeDrawFn:
+    """Lift the `data` object to handle non-`SearchStrategy` types."""
+
+    def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
+        return data.draw(obj) if isinstance(obj, SearchStrategy) else obj
+
+    return cast(_MaybeDrawFn, func)
+
+
 def lift_draw(draw: DrawFn, /) -> _MaybeDrawFn:
     """Lift the `draw` function to handle non-`SearchStrategy` types."""
 
     def func(obj: MaybeSearchStrategy[_MDF], /) -> _MDF:
         return draw(obj) if isinstance(obj, SearchStrategy) else obj
 
-    return cast(Any, func)
+    return cast(_MaybeDrawFn, func)
 
 
 @composite
@@ -826,6 +835,7 @@ __all__ = [
     "int32s",
     "int64s",
     "int_arrays",
+    "lift_data",
     "lift_draw",
     "lists_fixed_length",
     "months",

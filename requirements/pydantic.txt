@@ -22,7 +22,7 @@ pydantic==2.8.2
     # via dycw-utilities (pyproject.toml)
 pydantic-core==2.20.1
     # via pydantic
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   dycw-utilities (pyproject.toml)
     #   pytest-asyncio
