@@ -195,8 +195,11 @@ class TestTimeSeriesAddAndGet:
                             container.ts, container.key, timestamp, value
                         )
 
-    @given(data=data(), timestamp=valid_zoned_datetimes)
-    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
+    @given(
+        data=data(),
+        timestamp=valid_zoned_datetimes,
+        value=sampled_from([inf, -inf, nan]),
+    )
     async def test_error_invalid_value(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
@@ -219,11 +222,11 @@ class TestTimeSeriesAddAndGet:
 class TestTimeSeriesAddAndReadDataFrame:
     @given(
         data=data(),
-        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
         key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
             tuple
         ),
         time_zone=sampled_from([HongKong, UTC]),
+        series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
     )
     @mark.parametrize(
         ("strategy1", "dtype1"),
@@ -243,10 +246,10 @@ class TestTimeSeriesAddAndReadDataFrame:
         self,
         *,
         data: DataObject,
-        series_names: tuple[str, str],
         strategy1: SearchStrategy[Number],
         strategy2: SearchStrategy[Number],
         key_timestamp_values: tuple[str, str, str, str],
+        series_names: tuple[str, str],
         time_zone: ZoneInfo,
         dtype1: DataType,
         dtype2: DataType,
