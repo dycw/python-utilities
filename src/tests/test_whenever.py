@@ -77,7 +77,7 @@ from utilities.whenever import (
     serialize_timedelta,
     serialize_zoned_datetime,
 )
-from utilities.zoneinfo import HONG_KONG, UTC, get_time_zone_name
+from utilities.zoneinfo import UTC, HongKong, get_time_zone_name
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -91,15 +91,15 @@ class TestCheckValidZonedDatetime:
     @mark.parametrize(
         "datetime",
         [
-            param(dt.datetime(1951, 4, 1, 3, tzinfo=HONG_KONG)),
-            param(dt.datetime(1951, 4, 1, 5, tzinfo=HONG_KONG)),
+            param(dt.datetime(1951, 4, 1, 3, tzinfo=HongKong)),
+            param(dt.datetime(1951, 4, 1, 5, tzinfo=HongKong)),
         ],
     )
     def test_main(self, *, datetime: dt.datetime) -> None:
         check_valid_zoned_datetime(datetime)
 
     def test_error(self) -> None:
-        datetime = dt.datetime(1951, 4, 1, 4, tzinfo=HONG_KONG)
+        datetime = dt.datetime(1951, 4, 1, 4, tzinfo=HongKong)
         with raises(
             CheckValidZonedDateimeError,
             match=escape(
@@ -340,7 +340,7 @@ class TestParseAndSerializeTimedelta:
 class TestParseAndSerializeZonedDateTime:
     @given(
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
         )
     )
     @SKIPIF_CI_AND_WINDOWS
@@ -351,7 +351,7 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
         ).map(drop_milli_and_microseconds)
     )
     @SKIPIF_CI_AND_WINDOWS
@@ -365,7 +365,7 @@ class TestParseAndSerializeZonedDateTime:
 
     @given(
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
         )
     )
     @SKIPIF_CI_AND_WINDOWS
@@ -396,7 +396,7 @@ class TestParseAndSerializeZonedDateTime:
     @given(
         data=data(),
         datetime=zoned_datetimes(
-            time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+            time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
         ),
     )
     @SKIPIF_CI_AND_WINDOWS

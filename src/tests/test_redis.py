@@ -57,7 +57,7 @@ from utilities.redis import (
     yield_time_series,
     yield_time_series_async,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import UTC, HongKong
 
 if TYPE_CHECKING:
     import datetime as dt
@@ -68,11 +68,11 @@ if TYPE_CHECKING:
     from utilities.types import Number
 
 valid_zoned_datetimes = zoned_datetimes(
-    min_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]), valid=True
+    min_value=EPOCH_UTC, time_zone=sampled_from([HongKong, UTC]), valid=True
 ).map(drop_microseconds)
 invalid_zoned_datetimes = (
     zoned_datetimes(
-        max_value=EPOCH_UTC, time_zone=sampled_from([HONG_KONG, UTC]), valid=True
+        max_value=EPOCH_UTC, time_zone=sampled_from([HongKong, UTC]), valid=True
     )
     .map(drop_microseconds)
     .filter(lambda t: t < EPOCH_UTC)
@@ -241,7 +241,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
             tuple
         ),
-        time_zone=sampled_from([HONG_KONG, UTC]),
+        time_zone=sampled_from([HongKong, UTC]),
     )
     @mark.parametrize(
         ("strategy1", "dtype1"),
@@ -383,7 +383,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
             tuple
         ),
-        time_zone=sampled_from([HONG_KONG, UTC]),
+        time_zone=sampled_from([HongKong, UTC]),
     )
     @mark.parametrize(
         ("strategy1", "dtype1"),
@@ -575,7 +575,7 @@ class TestTimeSeriesMAddAndRange:
         data=data(),
         yield_redis=redis_cms(),
         series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
-        time_zone=sampled_from([HONG_KONG, UTC]),
+        time_zone=sampled_from([HongKong, UTC]),
         key_timestamp_value=lists_fixed_length(text_ascii(), 3, unique=True).map(tuple),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -810,7 +810,7 @@ class TestTimeSeriesMAddAndRange:
     @given(
         data=data(),
         series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
-        time_zone=sampled_from([HONG_KONG, UTC]),
+        time_zone=sampled_from([HongKong, UTC]),
         key_timestamp_value=lists_fixed_length(text_ascii(), 3, unique=True).map(tuple),
     )
     @mark.parametrize("case", [param("values"), param("DataFrame")])

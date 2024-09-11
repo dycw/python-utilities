@@ -9,12 +9,12 @@ from hypothesis.strategies import DataObject, data, sampled_from
 from pytest import mark, param, raises
 
 from utilities.zoneinfo import (
-    HONG_KONG,
-    TOKYO,
-    US_CENTRAL,
-    US_EASTERN,
     UTC,
     EnsureTimeZoneError,
+    HongKong,
+    Tokyo,
+    USCentral,
+    USEastern,
     ensure_time_zone,
     get_time_zone_name,
 )
@@ -23,7 +23,14 @@ from utilities.zoneinfo import (
 class TestGetTimeZoneName:
     @given(data=data())
     @mark.parametrize(
-        ("time_zone"), [param("Asia/Hong_Kong"), param("Asia/Tokyo"), param("UTC")]
+        "time_zone",
+        [
+            param("Asia/Hong_Kong"),
+            param("Asia/Tokyo"),
+            param("US/Central"),
+            param("US/Eastern"),
+            param("UTC"),
+        ],
     )
     def test_main(self, *, data: DataObject, time_zone: str) -> None:
         zone_info_or_str = data.draw(sampled_from([ZoneInfo(time_zone), time_zone]))
@@ -36,8 +43,10 @@ class TestEnsureZoneInfo:
     @mark.parametrize(
         ("time_zone", "expected"),
         [
-            param(HONG_KONG, HONG_KONG),
-            param(TOKYO, TOKYO),
+            param(HongKong, HongKong),
+            param(Tokyo, Tokyo),
+            param(USCentral, USCentral),
+            param(USEastern, USEastern),
             param(UTC, UTC),
             param(dt.UTC, UTC),
         ],
@@ -61,8 +70,7 @@ class TestEnsureZoneInfo:
 
 class TestTimeZones:
     @mark.parametrize(
-        "time_zone",
-        [param(HONG_KONG), param(TOKYO), param(US_CENTRAL), param(US_EASTERN)],
+        "time_zone", [param(HongKong), param(Tokyo), param(USCentral), param(USEastern)]
     )
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         assert isinstance(time_zone, ZoneInfo)

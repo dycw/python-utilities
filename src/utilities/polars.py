@@ -83,6 +83,10 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
 
+DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
+DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
+DatetimeUSCentral = Datetime(time_zone="US/Central")
+DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
 
 
@@ -782,6 +786,10 @@ __all__ = [
     "CheckPolarsDataFrameError",
     "CheckZonedDTypeOrSeriesError",
     "ColumnsToDictError",
+    "DatetimeHongKong",
+    "DatetimeTokyo",
+    "DatetimeUSCentral",
+    "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "EmptyPolarsConcatError",

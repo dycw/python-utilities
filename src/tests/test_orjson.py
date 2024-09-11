@@ -58,7 +58,7 @@ from utilities.orjson import (
 )
 from utilities.sentinel import sentinel
 from utilities.typing import get_args
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import UTC, HongKong
 
 _TrueOrFalseLit = Literal["true", "false"]
 
@@ -103,7 +103,7 @@ class TestSerializeAndDeserialize:
             param(datetimes(), True, True),
             param(
                 zoned_datetimes(
-                    time_zone=sampled_from([HONG_KONG, UTC, dt.UTC]), valid=True
+                    time_zone=sampled_from([HongKong, UTC, dt.UTC]), valid=True
                 ),
                 True,
                 True,
