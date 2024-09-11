@@ -35,11 +35,13 @@ from utilities.redis import (
     TimeSeriesReadDataFrameError,
     _TimeSeriesAddDataFrameKeyIsNotUtf8Error,
     _TimeSeriesAddDataFrameKeyMissingError,
+    _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError,
     _TimeSeriesAddDataFrameTimestampMissingError,
     _TimeSeriesAddErrorAtUpsertError,
     _TimeSeriesAddInvalidTimestampError,
     _TimeSeriesAddInvalidValueError,
-    _TimeSeriesMAddKeyMissingError,
+    _TimeSeriesReadDataFrameNoColumnsRequestedError,
+    _TimeSeriesReadDataFrameNoKeysRequestedError,
     ensure_time_series_created,
     ensure_time_series_created_async,
     time_series_add,
@@ -288,10 +290,7 @@ class TestTimeSeriesAddAndReadDataFrame:
                     )
                 case redis.asyncio.Redis():
                     await time_series_add_dataframe_async(
-                        container.ts,
-                        df,
-                        key=key,
-                        timestamp=timestamp,
+                        container.ts, df, key=key, timestamp=timestamp
                     )
                     result = await time_series_read_dataframe_async(
                         container.ts,
@@ -347,114 +346,63 @@ class TestTimeSeriesAddAndReadDataFrame:
                     with raises(_TimeSeriesAddDataFrameKeyIsNotUtf8Error, match=match):
                         _ = await time_series_add_dataframe_async(container.ts, df)
 
+    @given(data=data())
+    async def test_error_add_timestamp_is_not_a_zoned_datetime(
+        self, *, data: DataObject
+    ) -> None:
+        df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
+        match = "The 'timestamp' column must be a zoned Datetime; got Boolean"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(
+                        _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError,
+                        match=match,
+                    ):
+                        _ = time_series_add_dataframe(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(
+                        _TimeSeriesAddDataFrameTimestampIsNotAZonedDatetimeError,
+                        match=match,
+                    ):
+                        _ = await time_series_add_dataframe_async(container.ts, df)
+
+    @given(data=data())
+    async def test_error_read_no_keys_requested(self, *, data: DataObject) -> None:
+        match = "At least 1 key must be requested"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(
+                        _TimeSeriesReadDataFrameNoKeysRequestedError, match=match
+                    ):
+                        _ = time_series_read_dataframe(container.ts, [], [])
+                case redis.asyncio.Redis():
+                    with raises(
+                        _TimeSeriesReadDataFrameNoKeysRequestedError, match=match
+                    ):
+                        _ = await time_series_read_dataframe_async(container.ts, [], [])
+
+    @given(data=data())
+    async def test_error_read_no_columns_requested(self, *, data: DataObject) -> None:
+        match = "At least 1 column must be requested"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(
+                        _TimeSeriesReadDataFrameNoColumnsRequestedError, match=match
+                    ):
+                        _ = time_series_read_dataframe(container.ts, container.key, [])
+                case redis.asyncio.Redis():
+                    with raises(
+                        _TimeSeriesReadDataFrameNoColumnsRequestedError, match=match
+                    ):
+                        _ = await time_series_read_dataframe_async(
+                            container.ts, container.key, []
+                        )
+
 
 if 0:
-
-    @SKIPIF_CI_AND_NOT_LINUX
-    class TestTimeSeriesAddAndReadDataFrame:
-        @given(yield_redis=redis_cms())
-        def test_sync_error_add_timestamp_missing(
-            self, *, yield_redis: YieldRedisContainer
-        ) -> None:
-            df = DataFrame(schema={"key": Utf8})
-            with (
-                yield_redis() as container,
-                raises(
-                    TimeSeriesAddDataFrameError,
-                    match="DataFrame must have a 'timestamp' column; got .*",
-                ),
-            ):
-                _ = time_series_add_dataframe(redis.ts, df)
-
-        @given(yield_redis=redis_cms())
-        def test_sync_error_add_key_is_not_utf8(
-            self, *, yield_redis: YieldRedisContainer
-        ) -> None:
-            df = DataFrame(schema={"key": Boolean, "timestamp": DatetimeUTC})
-            with (
-                yield_redis() as container,
-                raises(
-                    TimeSeriesAddDataFrameError,
-                    match="The 'key' column must be Utf8; got Boolean",
-                ),
-            ):
-                _ = time_series_add_dataframe(redis.ts, df)
-
-        @given(yield_redis=redis_cms())
-        def test_sync_error_madd_timestamp_is_not_a_zoned_datetime(
-            self, *, yield_redis: YieldRedisContainer
-        ) -> None:
-            df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
-            with (
-                yield_redis() as container,
-                raises(
-                    TimeSeriesAddDataFrameError,
-                    match="The 'timestamp' column must be a zoned Datetime; got Boolean",
-                ),
-            ):
-                _ = time_series_add_dataframe(redis.ts, df)
-
-        @given(yield_redis=redis_cms())
-        def test_sync_error_read_no_keys_requested(
-            self, *, yield_redis: YieldRedisContainer
-        ) -> None:
-            with (
-                yield_redis() as container,
-                raises(
-                    TimeSeriesReadDataFrameError,
-                    match="At least 1 key must be requested",
-                ),
-            ):
-                _ = time_series_read_dataframe(redis.ts, [], [])
-
-        @given(yield_redis=redis_cms())
-        def test_sync_error_read_no_columns_requested(
-            self, *, yield_redis: YieldRedisContainer
-        ) -> None:
-            with (
-                yield_redis() as container,
-                raises(
-                    TimeSeriesReadDataFrameError,
-                    match="At least 1 column must be requested",
-                ),
-            ):
-                _ = time_series_read_dataframe(redis.ts, container.key, [])
-
-        @given(data=data())
-        async def test_async_error_madd_timestamp_is_not_a_zoned_datetime(
-            self, *, data: DataObject
-        ) -> None:
-            df = DataFrame(schema={"key": Utf8, "timestamp": Boolean})
-            async with redis_cms_async(data) as container:
-                with raises(
-                    TimeSeriesAddDataFrameError,
-                    match="The 'timestamp' column must be a zoned Datetime; got Boolean",
-                ):
-                    _ = await time_series_add_dataframe_async(redis.ts, df)
-
-        @given(data=data())
-        async def test_async_error_read_no_keys_requested(
-            self, *, data: DataObject
-        ) -> None:
-            async with redis_cms_async(data) as container:
-                with raises(
-                    TimeSeriesReadDataFrameError,
-                    match="At least 1 key must be requested",
-                ):
-                    _ = await time_series_read_dataframe_async(redis.ts, [], [])
-
-        @given(data=data())
-        async def test_async_error_read_no_columns_requested(
-            self, *, data: DataObject
-        ) -> None:
-            async with redis_cms_async(data) as container:
-                with raises(
-                    TimeSeriesReadDataFrameError,
-                    match="At least 1 column must be requested",
-                ):
-                    _ = await time_series_read_dataframe_async(
-                        redis.ts, container.key, []
-                    )
 
     @dataclass(frozen=True, kw_only=True)
     class _TestTimeSeriesMAddAndRangePrepare:
@@ -546,7 +494,7 @@ if 0:
         ) -> None:
             df = DataFrame()
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'key' column; got .*",
@@ -560,7 +508,7 @@ if 0:
         ) -> None:
             df = DataFrame(schema={"key": Utf8})
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'timestamp' column; got .*",
@@ -574,7 +522,7 @@ if 0:
         ) -> None:
             df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'value' column; got .*",
@@ -590,7 +538,7 @@ if 0:
                 schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
             )
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="The 'key' column must be Utf8; got Boolean",
@@ -604,7 +552,7 @@ if 0:
         ) -> None:
             df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="The 'timestamp' column must be a zoned Datetime; got Boolean",
@@ -620,7 +568,7 @@ if 0:
                 schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean}
             )
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesMAddError,
                     match="The 'value' column must be numeric; got Boolean",
@@ -688,7 +636,7 @@ if 0:
             self, *, yield_redis: YieldRedisContainer
         ) -> None:
             with (
-                yield_redis() as container,
+                yield_redis(),
                 raises(
                     TimeSeriesRangeError,
                     match="At least 1 key must be requested; got .*",
@@ -784,7 +732,7 @@ if 0:
         @given(data=data())
         async def test_async_error_madd_key_missing(self, *, data: DataObject) -> None:
             df = DataFrame()
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'key' column; got .*",
@@ -796,7 +744,7 @@ if 0:
             self, *, data: DataObject
         ) -> None:
             df = DataFrame(schema={"key": Utf8})
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'timestamp' column; got .*",
@@ -808,7 +756,7 @@ if 0:
             self, *, data: DataObject
         ) -> None:
             df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="DataFrame must have a 'value' column; got .*",
@@ -822,7 +770,7 @@ if 0:
             df = DataFrame(
                 schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
             )
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="The 'key' column must be Utf8; got Boolean",
@@ -834,7 +782,7 @@ if 0:
             self, *, data: DataObject
         ) -> None:
             df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="The 'timestamp' column must be a zoned Datetime; got Boolean",
@@ -848,7 +796,7 @@ if 0:
             df = DataFrame(
                 schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean}
             )
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesMAddError,
                     match="The 'value' column must be numeric; got Boolean",
@@ -905,7 +853,7 @@ if 0:
         async def test_async_error_range_no_keys_requested(
             self, *, data: DataObject
         ) -> None:
-            async with redis_cms_async(data) as container:
+            async with redis_cms_async(data):
                 with raises(
                     TimeSeriesRangeError,
                     match="At least 1 key must be requested; got .*",
