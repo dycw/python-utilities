@@ -7,8 +7,6 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
-import redis
-import redis.asyncio
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -492,6 +490,9 @@ class TestRandomStates:
 class TestRedisCMs:
     @given(data=data(), value=int32s())
     async def test_core(self, *, data: DataObject, value: int) -> None:
+        import redis
+        import redis.asyncio
+
         async with redis_cms(data) as container:
             match container.client:
                 case redis.Redis() as client:
@@ -506,6 +507,9 @@ class TestRedisCMs:
 
     @given(data=data(), value=int32s())
     async def test_ts(self, *, data: DataObject, value: int) -> None:
+        import redis
+        import redis.asyncio
+
         async with redis_cms(data) as container:
             match container.client:
                 case redis.Redis() as client:
