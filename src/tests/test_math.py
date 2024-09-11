@@ -28,7 +28,14 @@ from utilities.math import (
     MIN_UINT64,
     CheckIntegerError,
     NumberOfDecimalsError,
+    _EWMParameters,
+    _EWMParametersAlphaError,
+    _EWMParametersArgumentsError,
+    _EWMParametersCOMError,
+    _EWMParametersHalfLifeError,
+    _EWMParametersSpanError,
     check_integer,
+    ewm_parameters,
     is_at_least,
     is_at_least_or_nan,
     is_at_most,
@@ -121,6 +128,67 @@ class TestCheckInteger:
     def test_max_error(self) -> None:
         with raises(CheckIntegerError, match="Integer must be at most .*; got .*"):
             check_integer(1, max=0)
+
+
+@mark.only
+class TestEWMParameters:
+    expected: ClassVar[_EWMParameters] = _EWMParameters(
+        com=1.0, span=3.0, half_life=1.0, alpha=0.5
+    )
+
+    def test_com(self) -> None:
+        result = ewm_parameters(com=1.0)
+        assert result == self.expected
+
+    def test_span(self) -> None:
+        result = ewm_parameters(span=3.0)
+        assert result == self.expected
+
+    def test_half_life(self) -> None:
+        result = ewm_parameters(half_life=1.0)
+        assert result == self.expected
+
+    def test_alpha(self) -> None:
+        result = ewm_parameters(alpha=0.5)
+        assert result == self.expected
+
+    def test_error_com(self) -> None:
+        with raises(
+            _EWMParametersCOMError,
+            match=escape(r"Center of mass (γ) must be positive; got 0.0"),  # noqa: RUF001
+        ):
+            _ = ewm_parameters(com=0.0)
+
+    def test_error_span(self) -> None:
+        with raises(
+            _EWMParametersSpanError,
+            match=escape("Center of mass (γ) must be non-negative; got -0.1"),  # noqa: RUF001
+        ):
+            _ = ewm_parameters(com=0)
+
+    def test_error_half_life(self) -> None:
+        with raises(
+            _EWMParametersHalfLifeError,
+            match=escape("Half-life (λ) must be positive; got 0.0"),
+        ):
+            _ = ewm_parameters(half_life=0.0)
+
+    @mark.parametrize("alpha", [param(0.0), param(1.0)], ids=str)
+    def test_error_alpha(self, *, alpha: float) -> None:
+        with raises(
+            _EWMParametersAlphaError,
+            match=r"Smoothing factor \(α\) must be between 0 and 1 \(exclusive\); got \d\.0",  # noqa: RUF001
+        ):
+            _ = ewm_parameters(alpha=alpha)
+
+    def test_error_arguments(self) -> None:
+        with raises(
+            _EWMParametersArgumentsError,
+            match=escape(
+                r"Exactly one of center of mass (γ), span (θ), half-life (λ) and smoothing factor (α) must be given; got γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
+            ),
+        ):
+            _ = ewm_parameters()
 
 
 class TestIsAtLeast:
