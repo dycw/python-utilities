@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from functools import partial
 from itertools import product
@@ -68,11 +68,6 @@ class _RedisContainer(Generic[_TRedis]):
     @property
     def ts(self) -> TimeSeries:
         return self.client.ts()  # skipif-ci-and-not-linux
-
-
-YieldRedisContainerAsyncEither = AbstractAsyncContextManager[
-    _RedisContainer[redis.Redis] | _RedisContainer[redis.asyncio.Redis]
-]
 
 
 def ensure_time_series_created(
