@@ -88,7 +88,7 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
-pytz==2024.1
+pytz==2024.2
     # via pandas
 referencing==0.35.1
     # via

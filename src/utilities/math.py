@@ -49,7 +49,7 @@ def ewm_parameters(
             alpha=alpha,
         )
     if (com is None) and (span is not None) and (half_life is None) and (alpha is None):
-        if span < 1:
+        if span <= 1:
             raise _EWMParametersSpanError(span=span)
         alpha = 2 / (span + 1)
         return _EWMParameters(
@@ -101,7 +101,7 @@ class _EWMParametersCOMError(EWMParametersError):
 class _EWMParametersSpanError(EWMParametersError):
     @override
     def __str__(self) -> str:
-        return f"Span (θ) must be at least 1; got {self.span}"
+        return f"Span (θ) must be greater than 1; got {self.span}"
 
 
 class _EWMParametersHalfLifeError(EWMParametersError):

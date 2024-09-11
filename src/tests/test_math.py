@@ -130,7 +130,6 @@ class TestCheckInteger:
             check_integer(1, max=0)
 
 
-@mark.only
 class TestEWMParameters:
     expected: ClassVar[_EWMParameters] = _EWMParameters(
         com=1.0, span=3.0, half_life=1.0, alpha=0.5
@@ -162,9 +161,9 @@ class TestEWMParameters:
     def test_error_span(self) -> None:
         with raises(
             _EWMParametersSpanError,
-            match=escape("Center of mass (γ) must be non-negative; got -0.1"),  # noqa: RUF001
+            match=escape("Span (θ) must be greater than 1; got 1.0"),
         ):
-            _ = ewm_parameters(com=0)
+            _ = ewm_parameters(span=1.0)
 
     def test_error_half_life(self) -> None:
         with raises(
