@@ -427,12 +427,12 @@ def redis_cms(
 
     from utilities.redis import _RedisContainer  #  skipif-ci-and-not-linux
 
-    draw = lift_data(data)
+    draw = lift_data(data)  # skipif-ci-and-not-linux
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
     uuid = draw(uuids())  # skipif-ci-and-not-linux
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
-    if draw(async_):
+    if draw(async_):  # skipif-ci-and-not-linux
 
         @asynccontextmanager
         async def yield_redis_async() -> (  # skipif-ci-and-not-linux
