@@ -102,7 +102,7 @@ from utilities.datetime import (
     yield_weekdays,
 )
 from utilities.hypothesis import assume_does_not_raise, int32s, months, text_clean
-from utilities.zoneinfo import HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC
+from utilities.zoneinfo import UTC, HongKong, Tokyo, USCentral, USEastern
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -158,7 +158,7 @@ class TestCheckDateNotDatetime:
 
 
 class TestCheckZonedDatetime:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])))
     def test_date(self, *, datetime: dt.datetime) -> None:
         check_zoned_datetime(datetime)
 
@@ -245,19 +245,19 @@ class TestFormatDatetimeLocalAndUTC:
                 "2000-01-01 02:03:04 (Sat, UTC)",
             ),
             param(
-                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=HONG_KONG),
+                dt.datetime(2000, 1, 1, 2, 3, 4, tzinfo=HongKong),
                 "2000-01-01 02:03:04 (Sat, Asia/Hong_Kong, 1999-12-31 18:03:04 UTC)",
             ),
             param(
-                dt.datetime(2000, 2, 1, 2, 3, 4, tzinfo=HONG_KONG),
+                dt.datetime(2000, 2, 1, 2, 3, 4, tzinfo=HongKong),
                 "2000-02-01 02:03:04 (Tue, Asia/Hong_Kong, 01-31 18:03:04 UTC)",
             ),
             param(
-                dt.datetime(2000, 2, 2, 2, 3, 4, tzinfo=HONG_KONG),
+                dt.datetime(2000, 2, 2, 2, 3, 4, tzinfo=HongKong),
                 "2000-02-02 02:03:04 (Wed, Asia/Hong_Kong, 02-01 18:03:04 UTC)",
             ),
             param(
-                dt.datetime(2000, 2, 2, 14, 3, 4, tzinfo=HONG_KONG),
+                dt.datetime(2000, 2, 2, 14, 3, 4, tzinfo=HongKong),
                 "2000-02-02 14:03:04 (Wed, Asia/Hong_Kong, 06:03:04 UTC)",
             ),
         ],
@@ -278,7 +278,7 @@ class TestGetNow:
         now = get_now(time_zone="local")
         assert isinstance(now, dt.datetime)
         ETC = ZoneInfo("Etc/UTC")  # noqa: N806
-        assert now.tzinfo in {ETC, HONG_KONG, TOKYO, UTC}
+        assert now.tzinfo in {ETC, HongKong, Tokyo, UTC}
 
     @mark.parametrize(
         "get_now", [param(get_now), param(get_now_hk), param(get_now_tokyo)]
@@ -561,8 +561,8 @@ class TestPeriod:
         assert period.end == end
 
     @given(
-        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        start=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
+        end=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
     )
     def test_datetimes(self, *, start: dt.datetime, end: dt.datetime) -> None:
         _ = assume(start <= end)
@@ -581,7 +581,7 @@ class TestPeriod:
 
     @given(
         start=dates(),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        end=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC]) | none()),
     )
     def test_error_date_and_datetime_mix(
         self, *, start: dt.date, end: dt.datetime
@@ -592,8 +592,8 @@ class TestPeriod:
             _ = Period(start, end)
 
     @given(
-        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC]) | none()),
+        start=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC]) | none()),
+        end=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC]) | none()),
     )
     def test_error_naive_datetime(
         self, *, start: dt.datetime, end: dt.datetime
@@ -611,8 +611,8 @@ class TestPeriod:
             _ = Period(start, end)
 
     @given(
-        start=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
-        end=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])),
+        start=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
+        end=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
     )
     def test_error_invalid_datetimes(
         self, *, start: dt.datetime, end: dt.datetime
@@ -649,15 +649,15 @@ class TestRoundToWeekday:
 
 
 class TestTimedeltaSinceEpoch:
-    @given(datetime=datetimes(timezones=sampled_from([HONG_KONG, UTC, dt.UTC])))
+    @given(datetime=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])))
     def test_main(self, *, datetime: dt.datetime) -> None:
         result = timedelta_since_epoch(datetime)
         assert isinstance(result, dt.timedelta)
 
     @given(
         datetime=datetimes(timezones=just(UTC)),
-        time_zone1=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
-        time_zone2=sampled_from([HONG_KONG, TOKYO, US_CENTRAL, US_EASTERN, UTC]),
+        time_zone1=sampled_from([HongKong, Tokyo, USCentral, USEastern, UTC]),
+        time_zone2=sampled_from([HongKong, Tokyo, USCentral, USEastern, UTC]),
     )
     def test_time_zone(
         self, *, datetime: dt.datetime, time_zone1: ZoneInfo, time_zone2: ZoneInfo

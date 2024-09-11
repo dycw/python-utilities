@@ -34,6 +34,10 @@ from utilities.polars import (
     CheckPolarsDataFrameError,
     CheckZonedDTypeOrSeriesError,
     ColumnsToDictError,
+    DatetimeHongKong,
+    DatetimeTokyo,
+    DatetimeUSCentral,
+    DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
     EmptyPolarsConcatError,
@@ -67,7 +71,14 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import (
+    UTC,
+    HongKong,
+    Tokyo,
+    USCentral,
+    USEastern,
+    get_time_zone_name,
+)
 
 
 class TestCeilDatetime:
@@ -349,7 +360,7 @@ class TestCheckPolarsDataFrameSchemaSubset:
 
 
 class TestCheckZonedDTypeOrSeries:
-    @given(time_zone=sampled_from([HONG_KONG, UTC]))
+    @given(time_zone=sampled_from([HongKong, UTC]))
     @mark.parametrize("case", [param("dtype"), param("series")])
     def test_main(
         self, *, time_zone: ZoneInfo, case: Literal["dtype", "series"]
@@ -403,9 +414,18 @@ class TestColumnsToDict:
 
 
 class TestDatetimeUTC:
-    def test_main(self) -> None:
-        assert isinstance(DatetimeUTC, Datetime)
-        assert DatetimeUTC.time_zone == "UTC"
+    @mark.parametrize(
+        ("dtype", "time_zone"),
+        [
+            param(DatetimeHongKong, HongKong),
+            param(DatetimeTokyo, Tokyo),
+            param(DatetimeUSCentral, USCentral),
+            param(DatetimeUSEastern, USEastern),
+            param(DatetimeUTC, UTC),
+        ],
+    )
+    def test_main(self, *, dtype: Datetime, time_zone: ZoneInfo) -> None:
+        assert dtype.time_zone == get_time_zone_name(time_zone)
 
 
 class TestDropNullStructSeries:
@@ -921,7 +941,7 @@ class TestYieldStructSeriesElements:
 
 
 class TestZonedDatetime:
-    @given(time_zone=sampled_from([HONG_KONG, UTC]))
+    @given(time_zone=sampled_from([HongKong, UTC]))
     def test_main(self, *, time_zone: ZoneInfo) -> None:
         dtype = zoned_datetime(time_zone=time_zone)
         assert isinstance(dtype, Datetime)

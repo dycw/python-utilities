@@ -6,11 +6,11 @@ from zoneinfo import ZoneInfo
 
 from typing_extensions import override
 
-HONG_KONG = ZoneInfo("Asia/Hong_Kong")
-TOKYO = ZoneInfo("Asia/Tokyo")
+HongKong = ZoneInfo("Asia/Hong_Kong")
+Tokyo = ZoneInfo("Asia/Tokyo")
+USCentral = ZoneInfo("US/Central")
+USEastern = ZoneInfo("US/Eastern")
 UTC = ZoneInfo("UTC")
-US_CENTRAL = ZoneInfo("US/Central")
-US_EASTERN = ZoneInfo("US/Eastern")
 
 
 def ensure_time_zone(time_zone: ZoneInfo | dt.tzinfo | str, /) -> ZoneInfo:
@@ -39,12 +39,12 @@ def get_time_zone_name(time_zone: ZoneInfo | dt.timezone | str, /) -> str:
 
 
 __all__ = [
-    "HONG_KONG",
-    "TOKYO",
-    "US_CENTRAL",
-    "US_EASTERN",
     "UTC",
     "EnsureTimeZoneError",
+    "HongKong",
+    "Tokyo",
+    "USCentral",
+    "USEastern",
     "ensure_time_zone",
     "get_time_zone_name",
 ]

@@ -9,7 +9,7 @@ from pytest import mark, param
 
 from utilities.functions import identity
 from utilities.reprlib import custom_print, custom_repr
-from utilities.zoneinfo import HONG_KONG, UTC
+from utilities.zoneinfo import UTC, HongKong
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -133,6 +133,6 @@ class TestCustomRepr:
         assert result == expected
 
     def test_zone_info(self) -> None:
-        result = custom_repr(HONG_KONG)
+        result = custom_repr(HongKong)
         expected = "Asia/Hong_Kong"
         assert result == expected

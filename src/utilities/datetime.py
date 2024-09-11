@@ -20,9 +20,9 @@ from typing_extensions import override
 from utilities.platform import SYSTEM, System
 from utilities.types import Duration, ensure_not_none
 from utilities.zoneinfo import (
-    HONG_KONG,
-    TOKYO,
     UTC,
+    HongKong,
+    Tokyo,
     ensure_time_zone,
     get_time_zone_name,
 )
@@ -213,7 +213,7 @@ NOW_UTC = get_now(time_zone=UTC)
 
 def get_now_hk() -> dt.datetime:
     """Get the current time in Hong Kong."""
-    return dt.datetime.now(tz=HONG_KONG)
+    return dt.datetime.now(tz=HongKong)
 
 
 NOW_HK = get_now_hk()
@@ -221,7 +221,7 @@ NOW_HK = get_now_hk()
 
 def get_now_tokyo() -> dt.datetime:
     """Get the current time in Tokyo."""
-    return dt.datetime.now(tz=TOKYO)
+    return dt.datetime.now(tz=Tokyo)
 
 
 NOW_TOKYO = get_now_tokyo()
