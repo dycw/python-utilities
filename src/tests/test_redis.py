@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import inf, nan
-from typing import TYPE_CHECKING, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import redis
 import redis.asyncio
@@ -574,16 +574,11 @@ class TestTimeSeriesMAddAndRange:
 
     @given(data=data(), timestamp=valid_zoned_datetimes, value=int32s())
     async def test_error_madd_invalid_key(
-        self,
-        *,
-        data: DataObject,
-        timestamp: dt.datetime,
-        value: int,
-        case: Literal["values", "DataFrame"],
+        self, *, data: DataObject, timestamp: dt.datetime, value: int
     ) -> None:
         match = "The key '.*' must exist"
         async with redis_cms(data) as container:
-            values = [(f"{container.key}_{case}", timestamp, value)]
+            values = [(container.key, timestamp, value)]
             values_or_df = data.draw(
                 sampled_from([
                     values,
@@ -604,16 +599,12 @@ class TestTimeSeriesMAddAndRange:
 
     @given(data=data(), timestamp=invalid_zoned_datetimes)
     async def test_error_madd_invalid_timestamp(
-        self,
-        *,
-        data: DataObject,
-        timestamp: dt.datetime,
-        case: Literal["values", "DataFrame"],
+        self, *, data: DataObject, timestamp: dt.datetime
     ) -> None:
         value = data.draw(int32s())
         match = "Timestamps must be at least the Epoch; got .*"
         async with redis_cms(data) as container:
-            values = [(f"{container.key}_{case}", timestamp, value)]
+            values = [(container.key, timestamp, value)]
             values_or_df = data.draw(
                 sampled_from([
                     values,
