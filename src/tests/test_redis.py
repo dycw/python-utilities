@@ -31,6 +31,7 @@ from utilities.redis import (
     TimeSeriesMAddError,
     TimeSeriesRangeError,
     TimeSeriesReadDataFrameError,
+    _TimeSeriesAddErrorAtUpsertError,
     ensure_time_series_created,
     ensure_time_series_created_async,
     time_series_add,
@@ -132,28 +133,42 @@ class TestTimeSeriesAddAndGet:
                     res_timestamp, res_value = await time_series_get_async(
                         container.ts, container.key
                     )
-        assert res_timestamp == timestamp.astimezone(UTC)
-        assert res_value == value
+            assert res_timestamp == timestamp.astimezone(UTC)
+            assert res_value == value
 
     @given(
         data=data(),
         timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    def test_sync_error_at_upsert(
+    @mark.only
+    async def test_error_at_upsert(
         self,
         *,
         data: DataObject,
         timestamp: dt.datetime,
         value: float,
     ) -> None:
-        with yield_redis() as redis:
-            _ = time_series_add(redis.ts, container.key, timestamp, value)
-            with raises(
-                TimeSeriesAddError,
-                match="Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*",
-            ):
-                _ = time_series_add(redis.ts, container.key, timestamp, value)
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    _ = time_series_add(container.ts, container.key, timestamp, value)
+                case redis.asyncio.Redis():
+                    _ = await time_series_add_async(
+                        container.ts, container.key, timestamp, value
+                    )
+            match = "Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*"
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesAddErrorAtUpsertError, match=match):
+                        _ = time_series_add(
+                            container.ts, container.key, timestamp, value
+                        )
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesAddErrorAtUpsertError, match=match):
+                        _ = await time_series_add_async(
+                            container.ts, container.key, timestamp, value
+                        )
 
     @given(
         data=data(),
@@ -194,24 +209,6 @@ class TestTimeSeriesAddAndGet:
             raises(TimeSeriesAddError, match="Invalid value; got .*"),
         ):
             _ = time_series_add(redis.ts, container.key, timestamp, value)
-
-    @given(
-        data=data(),
-        timestamp=valid_zoned_datetimes,
-        value=int32s() | floats(allow_nan=False, allow_infinity=False),
-    )
-    async def test_async_error_at_upsert(
-        self, *, data: DataObject, timestamp: dt.datetime, value: float
-    ) -> None:
-        async with redis_cms_async(data) as redis:
-            _ = await time_series_add_async(redis.ts, container.key, timestamp, value)
-            with raises(
-                TimeSeriesAddError,
-                match="Error at upsert under DUPLICATE_POLICY == 'BLOCK'; got .*",
-            ):
-                _ = await time_series_add_async(
-                    redis.ts, container.key, timestamp, value
-                )
 
     @given(
         data=data(),
