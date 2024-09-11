@@ -719,7 +719,7 @@ class TestTimeSeriesMAddAndRange:
                     with raises(
                         _TimeSeriesRangeKeyWithInt64AndFloat64Error, match=match
                     ):
-                        _ = time_series_range_async(container.ts, container.key)
+                        _ = time_series_range(container.ts, container.key)
                 case redis.asyncio.Redis():
                     for vals in values:
                         _ = await time_series_madd_async(container.ts, vals)
