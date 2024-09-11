@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from math import inf, nan
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
@@ -40,6 +39,14 @@ from utilities.redis import (
     _TimeSeriesAddErrorAtUpsertError,
     _TimeSeriesAddInvalidTimestampError,
     _TimeSeriesAddInvalidValueError,
+    _TimeSeriesMAddInvalidKeyError,
+    _TimeSeriesMAddInvalidTimestampError,
+    _TimeSeriesMAddKeyIsNotUtf8Error,
+    _TimeSeriesMAddKeyMissingError,
+    _TimeSeriesMAddTimestampIsNotAZonedDatetimeError,
+    _TimeSeriesMAddTimestampMissingError,
+    _TimeSeriesMAddValueIsNotNumericError,
+    _TimeSeriesMAddValueMissingError,
     _TimeSeriesReadDataFrameNoColumnsRequestedError,
     _TimeSeriesReadDataFrameNoKeysRequestedError,
     ensure_time_series_created,
@@ -419,7 +426,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="DataFrame must have a 'key' column; got .*",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_madd_timestamp_missing(
@@ -433,7 +440,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="DataFrame must have a 'timestamp' column; got .*",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_madd_value_missing(
@@ -447,7 +454,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="DataFrame must have a 'value' column; got .*",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_madd_key_is_not_utf8(
@@ -463,7 +470,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="The 'key' column must be Utf8; got Boolean",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_madd_timestamp_is_not_a_zoned_datetime(
@@ -477,7 +484,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="The 'timestamp' column must be a zoned Datetime; got Boolean",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_madd_value_is_not_numeric(
@@ -491,7 +498,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="The 'value' column must be numeric; got Boolean",
     #         ),
     #     ):
-    #         _ = time_series_madd(redis.ts, df)
+    #         _ = time_series_madd(container.ts, df)
     #
     # @given(data=data(), yield_redis=redis_cms())
     # @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -508,7 +515,7 @@ class TestTimeSeriesMAddAndRange:
     #         )
     #         with raises(TimeSeriesMAddError, match="The key '.*' must exist"):
     #             _ = time_series_madd(
-    #                 redis.ts, values_or_df, assume_time_series_exist=True
+    #                 container.ts, values_or_df, assume_time_series_exist=True
     #             )
     #
     # @given(data=data(), yield_redis=redis_cms())
@@ -528,7 +535,7 @@ class TestTimeSeriesMAddAndRange:
     #             TimeSeriesMAddError,
     #             match="Timestamps must be at least the Epoch; got .*",
     #         ):
-    #             _ = time_series_madd(redis.ts, values_or_df)
+    #             _ = time_series_madd(container.ts, values_or_df)
     #
     # @given(data=data(), yield_redis=redis_cms())
     # @mark.parametrize("case", [param("values"), param("DataFrame")])
@@ -546,7 +553,7 @@ class TestTimeSeriesMAddAndRange:
     #             data, container.key, case, value
     #         )
     #         with raises(TimeSeriesMAddError, match="The value .* is invalid"):
-    #             _ = time_series_madd(redis.ts, values_or_df)
+    #             _ = time_series_madd(container.ts, values_or_df)
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_range_no_keys_requested(
@@ -559,7 +566,7 @@ class TestTimeSeriesMAddAndRange:
     #             match="At least 1 key must be requested; got .*",
     #         ),
     #     ):
-    #         _ = time_series_range(redis.ts, [])
+    #         _ = time_series_range(container.ts, [])
     #
     # @given(yield_redis=redis_cms())
     # def test_sync_error_range_invalid_key(
@@ -569,7 +576,7 @@ class TestTimeSeriesMAddAndRange:
     #         yield_redis() as container,
     #         raises(TimeSeriesRangeError, match="The key '.*' must exist"),
     #     ):
-    #         _ = time_series_range(redis.ts, container.key)
+    #         _ = time_series_range(container.ts, container.key)
     #
     # @given(data=data(), yield_redis=redis_cms())
     # def test_sync_error_range_key_with_int64_and_float64(
@@ -580,12 +587,12 @@ class TestTimeSeriesMAddAndRange:
     #             data, container.key
     #         )
     #         for vals in values:
-    #             _ = time_series_madd(redis.ts, vals)
+    #             _ = time_series_madd(container.ts, vals)
     #         with raises(
     #             TimeSeriesRangeError,
     #             match="The key '.*' contains both Int64 and Float64 data",
     #         ):
-    #             _ = time_series_range(redis.ts, container.key)
+    #             _ = time_series_range(container.ts, container.key)
 
     @given(
         data=data(),
@@ -673,149 +680,193 @@ class TestTimeSeriesMAddAndRange:
             assert res_range.rows() == triples
 
     @given(data=data())
-    async def test_async_error_madd_key_missing(self, *, data: DataObject) -> None:
+    async def test_error_madd_key_missing(self, *, data: DataObject) -> None:
         df = DataFrame()
         match = "DataFrame must have a 'key' column; got .*"
-        async with redis_cms_async(data):
-            with raises(TimeSeriesMAddError, match=match):
-                _ = await time_series_madd_async(redis.ts, df)
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddKeyMissingError, match=match):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddKeyMissingError, match=match):
+                        _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data())
-    async def test_async_error_madd_timestamp_missing(
-        self, *, data: DataObject
-    ) -> None:
+    async def test_error_madd_timestamp_missing(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"key": Utf8})
-        async with redis_cms_async(data):
-            with raises(
-                TimeSeriesMAddError,
-                match="DataFrame must have a 'timestamp' column; got .*",
-            ):
-                _ = await time_series_madd_async(redis.ts, df)
+        match = "DataFrame must have a 'timestamp' column; got .*"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddTimestampMissingError, match=match):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddTimestampMissingError, match=match):
+                        _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data())
-    async def test_async_error_madd_value_missing(self, *, data: DataObject) -> None:
+    async def test_error_madd_value_missing(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC})
-        async with redis_cms_async(data):
-            with raises(
-                TimeSeriesMAddError,
-                match="DataFrame must have a 'value' column; got .*",
-            ):
-                _ = await time_series_madd_async(redis.ts, df)
+        match = "DataFrame must have a 'value' column; got .*"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddValueMissingError, match=match):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddValueMissingError, match=match):
+                        _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data())
-    async def test_async_error_madd_key_is_not_utf8(self, *, data: DataObject) -> None:
+    async def test_error_madd_key_is_not_utf8(self, *, data: DataObject) -> None:
         df = DataFrame(
             schema={"key": Boolean, "timestamp": DatetimeUTC, "value": Float64}
         )
-        async with redis_cms_async(data):
-            with raises(
-                TimeSeriesMAddError,
-                match="The 'key' column must be Utf8; got Boolean",
-            ):
-                _ = await time_series_madd_async(redis.ts, df)
+        match = "The 'key' column must be Utf8; got Boolean"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddKeyIsNotUtf8Error, match=match):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddKeyIsNotUtf8Error, match=match):
+                        _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data())
-    async def test_async_error_madd_timestamp_is_not_a_zoned_datetime(
+    async def test_error_madd_timestamp_is_not_a_zoned_datetime(
         self, *, data: DataObject
     ) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": Boolean, "value": Float64})
-        async with redis_cms_async(data):
-            with raises(
-                TimeSeriesMAddError,
-                match="The 'timestamp' column must be a zoned Datetime; got Boolean",
-            ):
-                _ = await time_series_madd_async(redis.ts, df)
+        match = "The 'timestamp' column must be a zoned Datetime; got Boolean"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(
+                        _TimeSeriesMAddTimestampIsNotAZonedDatetimeError, match=match
+                    ):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(
+                        _TimeSeriesMAddTimestampIsNotAZonedDatetimeError, match=match
+                    ):
+                        _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data())
-    async def test_async_error_madd_value_is_not_numeric(
-        self, *, data: DataObject
-    ) -> None:
+    async def test_error_madd_value_is_not_numeric(self, *, data: DataObject) -> None:
         df = DataFrame(schema={"key": Utf8, "timestamp": DatetimeUTC, "value": Boolean})
-        async with redis_cms_async(data):
-            with raises(
-                TimeSeriesMAddError,
-                match="The 'value' column must be numeric; got Boolean",
-            ):
-                _ = await time_series_madd_async(redis.ts, df)
+        match = "The 'value' column must be numeric; got Boolean"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddValueIsNotNumericError, match=match):
+                        _ = time_series_madd(container.ts, df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddValueIsNotNumericError, match=match):
+                        _ = await time_series_madd_async(container.ts, df)
 
-    @given(data=data())
+    @given(data=data(), timestamp=valid_zoned_datetimes, value=int32s())
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    async def test_async_error_madd_invalid_key(
-        self, *, data: DataObject, case: Literal["values", "DataFrame"]
+    async def test_error_madd_invalid_key(
+        self,
+        *,
+        data: DataObject,
+        timestamp: dt.datetime,
+        value: int,
+        case: Literal["values", "DataFrame"],
     ) -> None:
-        async with redis_cms_async(data) as container:
-            values_or_df = self._prepare_test_error_madd_invalid_key(
-                data, container.key, case
-            )
-            with raises(TimeSeriesMAddError, match="The key '.*' must exist"):
-                _ = await time_series_madd_async(
-                    redis.ts, values_or_df, assume_time_series_exist=True
-                )
+        match = "The key '.*' must exist"
+        async with redis_cms(data) as container:
+            values = [(f"{container.key}_{case}", timestamp, value)]
+            match case:
+                case "values":
+                    values_or_df = values
+                case "DataFrame":
+                    values_or_df = DataFrame(
+                        values, schema=self.int_schema, orient="row"
+                    )
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddInvalidKeyError, match=match):
+                        _ = time_series_madd(
+                            container.ts, values_or_df, assume_time_series_exist=True
+                        )
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddInvalidKeyError, match=match):
+                        _ = await time_series_madd_async(
+                            container.ts, values_or_df, assume_time_series_exist=True
+                        )
 
-    @given(data=data())
+    @given(data=data(), timestamp=invalid_zoned_datetimes)
     @mark.parametrize("case", [param("values"), param("DataFrame")])
-    async def test_async_error_madd_invalid_timestamp(
-        self, *, data: DataObject, case: Literal["values", "DataFrame"]
+    async def test_error_madd_invalid_timestamp(
+        self,
+        *,
+        data: DataObject,
+        timestamp: dt.datetime,
+        case: Literal["values", "DataFrame"],
     ) -> None:
-        async with redis_cms_async(data) as container:
-            values_or_df = self._prepare_test_error_madd_invalid_timestamp(
-                data, container.key, case
-            )
-            with raises(
-                TimeSeriesMAddError,
-                match="Timestamps must be at least the Epoch; got .*",
-            ):
-                _ = await time_series_madd_async(redis.ts, values_or_df)
+        value = data.draw(int32s())
+        match = "Timestamps must be at least the Epoch; got .*"
+        async with redis_cms(data) as container:
+            values = [(f"{container.key}_{case}", timestamp, value)]
+            match case:
+                case "values":
+                    values_or_df = values
+                case "DataFrame":
+                    values_or_df = DataFrame(
+                        values, schema=self.int_schema, orient="row"
+                    )
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesMAddInvalidTimestampError, match=match):
+                        _ = time_series_madd(container.ts, values_or_df)
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesMAddInvalidTimestampError, match=match):
+                        _ = await time_series_madd_async(container.ts, values_or_df)
 
     @given(data=data())
     @mark.parametrize("case", [param("values"), param("DataFrame")])
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    async def test_async_error_madd_invalid_value(
-        self,
-        *,
-        data: DataObject,
-        case: Literal["values", "DataFrame"],
-        value: float,
+    async def test_error_madd_invalid_value(
+        self, *, data: DataObject, case: Literal["values", "DataFrame"], value: float
     ) -> None:
-        async with redis_cms_async(data) as container:
+        async with redis_cms(data) as container:
             values_or_df = self._prepare_test_error_madd_invalid_value(
                 data, container.key, case, value
             )
             with raises(TimeSeriesMAddError, match="The value .* is invalid"):
-                _ = await time_series_madd_async(redis.ts, values_or_df)
+                _ = await time_series_madd_async(container.ts, values_or_df)
 
     @given(data=data())
-    async def test_async_error_range_no_keys_requested(
-        self, *, data: DataObject
-    ) -> None:
-        async with redis_cms_async(data):
+    async def test_error_range_no_keys_requested(self, *, data: DataObject) -> None:
+        async with redis_cms(data):
             with raises(
-                TimeSeriesRangeError,
-                match="At least 1 key must be requested; got .*",
+                TimeSeriesRangeError, match="At least 1 key must be requested; got .*"
             ):
-                _ = await time_series_range_async(redis.ts, [])
+                _ = await time_series_range_async(container.ts, [])
 
     @given(data=data())
-    async def test_async_error_range_invalid_key(self, *, data: DataObject) -> None:
-        async with redis_cms_async(data) as container:
+    async def test_error_range_invalid_key(self, *, data: DataObject) -> None:
+        async with redis_cms(data) as container:
             with raises(TimeSeriesRangeError, match="The key '.*' must exist"):
-                _ = await time_series_range_async(redis.ts, container.key)
+                _ = await time_series_range_async(container.ts, container.key)
 
     @given(data=data())
-    async def test_async_error_range_key_with_int64_and_float64(
+    async def test_error_range_key_with_int64_and_float64(
         self, *, data: DataObject
     ) -> None:
-        async with redis_cms_async(data) as container:
+        async with redis_cms(data) as container:
             values = self._prepare_test_error_range_key_with_int64_and_float64(
                 data, container.key
             )
             for vals in values:
-                _ = await time_series_madd_async(redis.ts, vals)
+                _ = await time_series_madd_async(container.ts, vals)
             with raises(
                 TimeSeriesRangeError,
                 match="The key '.*' contains both Int64 and Float64 data",
             ):
-                _ = await time_series_range_async(redis.ts, container.key)
+                _ = await time_series_range_async(container.ts, container.key)
 
     def _prepare_test_error_madd_invalid_key(
         self, data: DataObject, key: str, case: Literal["values", "DataFrame"], /
