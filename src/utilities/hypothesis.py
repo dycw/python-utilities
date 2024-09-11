@@ -3,7 +3,12 @@ from __future__ import annotations
 import builtins
 import datetime as dt
 from collections.abc import AsyncIterator, Collection, Hashable, Iterable, Iterator
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import (
+    AbstractAsyncContextManager,
+    asynccontextmanager,
+    contextmanager,
+    suppress,
+)
 from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -57,7 +62,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.redis import YieldRedisContainerAsyncEither
+    from utilities.redis import _RedisContainer
     from utilities.types import Duration, Number
 
 
@@ -411,7 +416,9 @@ _ASYNCS = booleans()
 
 def redis_cms(
     data: DataObject, /, *, async_: MaybeSearchStrategy[bool] = _ASYNCS
-) -> YieldRedisContainerAsyncEither:
+) -> AbstractAsyncContextManager[
+    _RedisContainer[redis.Redis] | _RedisContainer[redis.asyncio.Redis]
+]:
     """Strategy for generating redis clients (with cleanup)."""
     import redis  # skipif-ci-and-not-linux
     import redis.asyncio  # skipif-ci-and-not-linux

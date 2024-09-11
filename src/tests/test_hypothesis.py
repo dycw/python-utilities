@@ -490,7 +490,6 @@ class TestRandomStates:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisCMs:
-    @mark.only
     @given(data=data(), value=int32s())
     async def test_core(self, *, data: DataObject, value: int) -> None:
         async with redis_cms(data) as container:
