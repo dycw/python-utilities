@@ -33,6 +33,7 @@ from utilities.redis import (
     TimeSeriesReadDataFrameError,
     _TimeSeriesAddErrorAtUpsertError,
     _TimeSeriesAddInvalidTimestampError,
+    _TimeSeriesAddInvalidValueError,
     ensure_time_series_created,
     ensure_time_series_created_async,
     time_series_add,
@@ -106,7 +107,6 @@ class TestTimeSeriesAddAndGet:
         timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
     async def test_main(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
@@ -138,7 +138,6 @@ class TestTimeSeriesAddAndGet:
         timestamp=valid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
     async def test_error_at_upsert(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
@@ -165,8 +164,7 @@ class TestTimeSeriesAddAndGet:
         timestamp=invalid_zoned_datetimes,
         value=int32s() | floats(allow_nan=False, allow_infinity=False),
     )
-    @mark.only
-    async def test_invalid_timestamp(
+    async def test_error_invalid_timestamp(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
         _ = assume(timestamp < EPOCH_UTC)
@@ -186,25 +184,22 @@ class TestTimeSeriesAddAndGet:
 
     @given(data=data(), timestamp=valid_zoned_datetimes)
     @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    def test_sync_invalid_value(
+    async def test_invalid_value(
         self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
-        with (
-            yield_redis() as redis,
-            raises(TimeSeriesAddError, match="Invalid value; got .*"),
-        ):
-            _ = time_series_add(redis.ts, container.key, timestamp, value)
-
-    @given(data=data(), timestamp=valid_zoned_datetimes)
-    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
-    async def test_async_invalid_value(
-        self, *, data: DataObject, timestamp: dt.datetime, value: float
-    ) -> None:
-        async with redis_cms_async(data) as redis:
-            with raises(TimeSeriesAddError, match="Invalid value; got .*"):
-                _ = await time_series_add_async(
-                    redis.ts, container.key, timestamp, value
-                )
+        match = "Invalid value; got .*"
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis():
+                    with raises(_TimeSeriesAddInvalidValueError, match=match):
+                        _ = time_series_add(
+                            container.ts, container.key, timestamp, value
+                        )
+                case redis.asyncio.Redis():
+                    with raises(_TimeSeriesAddInvalidValueError, match=match):
+                        _ = await time_series_add_async(
+                            container.ts, container.key, timestamp, value
+                        )
 
 
 if 0:
