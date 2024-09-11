@@ -326,7 +326,7 @@ python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.0.1
     # via dycw-utilities (pyproject.toml)
-pytz==2024.1
+pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via optuna

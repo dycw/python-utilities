@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isclose, isfinite, isnan, log10
+from math import exp, isclose, isfinite, isnan, log, log10
 from typing import Literal, overload
 
 from typing_extensions import override
@@ -18,6 +18,120 @@ MIN_UINT32, MAX_UINT32 = 0, 2**32 - 1
 MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 
 # functions
+
+
+@dataclass(frozen=True, kw_only=True)
+class _EWMParameters:
+    """A set of EWM parameters."""
+
+    com: float
+    span: float
+    half_life: float
+    alpha: float
+
+
+def ewm_parameters(
+    *,
+    com: float | None = None,
+    span: float | None = None,
+    half_life: float | None = None,
+    alpha: float | None = None,
+) -> _EWMParameters:
+    """Compute a set of EWM parameters."""
+    if (com is not None) and (span is None) and (half_life is None) and (alpha is None):
+        if com <= 0:
+            raise _EWMParametersCOMError(com=com)
+        alpha = 1 / (1 + com)
+        return _EWMParameters(
+            com=com,
+            span=_ewm_parameters_alpha_to_span(alpha),
+            half_life=_ewm_parameters_alpha_to_half_life(alpha),
+            alpha=alpha,
+        )
+    if (com is None) and (span is not None) and (half_life is None) and (alpha is None):
+        if span <= 1:
+            raise _EWMParametersSpanError(span=span)
+        alpha = 2 / (span + 1)
+        return _EWMParameters(
+            com=_ewm_parameters_alpha_to_com(alpha),
+            span=span,
+            half_life=_ewm_parameters_alpha_to_half_life(alpha),
+            alpha=alpha,
+        )
+    if (com is None) and (span is None) and (half_life is not None) and (alpha is None):
+        if half_life <= 0:
+            raise _EWMParametersHalfLifeError(half_life=half_life)
+        alpha = 1 - exp(-log(2) / half_life)
+        return _EWMParameters(
+            com=_ewm_parameters_alpha_to_com(alpha),
+            span=_ewm_parameters_alpha_to_span(alpha),
+            half_life=half_life,
+            alpha=alpha,
+        )
+    if (com is None) and (span is None) and (half_life is None) and (alpha is not None):
+        if not (0 < alpha < 1):
+            raise _EWMParametersAlphaError(alpha=alpha)
+        return _EWMParameters(
+            com=_ewm_parameters_alpha_to_com(alpha),
+            span=_ewm_parameters_alpha_to_span(alpha),
+            half_life=_ewm_parameters_alpha_to_half_life(alpha),
+            alpha=alpha,
+        )
+    raise _EWMParametersArgumentsError(
+        com=com, span=span, half_life=half_life, alpha=alpha
+    )
+
+
+@dataclass(kw_only=True)
+class EWMParametersError(Exception):
+    com: float | None = None
+    span: float | None = None
+    half_life: float | None = None
+    alpha: float | None = None
+
+
+@dataclass(kw_only=True)
+class _EWMParametersCOMError(EWMParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Center of mass (γ) must be positive; got {self.com}"  # noqa: RUF001
+
+
+@dataclass(kw_only=True)
+class _EWMParametersSpanError(EWMParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Span (θ) must be greater than 1; got {self.span}"
+
+
+class _EWMParametersHalfLifeError(EWMParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Half-life (λ) must be positive; got {self.half_life}"
+
+
+class _EWMParametersAlphaError(EWMParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Smoothing factor (α) must be between 0 and 1 (exclusive); got {self.alpha}"  # noqa: RUF001
+
+
+class _EWMParametersArgumentsError(EWMParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Exactly one of center of mass (γ), span (θ), half-life (λ) and smoothing factor (α) must be given; got γ={self.com}, θ={self.span}, λ={self.half_life} and α={self.alpha}"  # noqa: RUF001
+
+
+def _ewm_parameters_alpha_to_com(alpha: float, /) -> float:
+    return 1 / alpha - 1
+
+
+def _ewm_parameters_alpha_to_span(alpha: float, /) -> float:
+    return 2 / alpha - 1
+
+
+def _ewm_parameters_alpha_to_half_life(alpha: float, /) -> float:
+    return -log(2) / log(1 - alpha)
 
 
 def is_equal(x: float, y: float, /) -> bool:
@@ -488,7 +602,9 @@ __all__ = [
     "MIN_UINT32",
     "MIN_UINT64",
     "CheckIntegerError",
+    "EWMParametersError",
     "check_integer",
+    "ewm_parameters",
     "is_at_least",
     "is_at_least_or_nan",
     "is_at_most",
