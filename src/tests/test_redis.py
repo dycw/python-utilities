@@ -225,38 +225,32 @@ class TestTimeSeriesAddAndReadDataFrame:
         key_timestamp_values=lists_fixed_length(text_ascii(), 4, unique=True).map(
             tuple
         ),
+        strategy_dtype1=sampled_from([
+            (int32s(), Int64),
+            (floats(allow_nan=False, allow_infinity=False), Float64),
+        ]),
+        strategy_dtype2=sampled_from([
+            (int32s(), Int64),
+            (floats(allow_nan=False, allow_infinity=False), Float64),
+        ]),
         time_zone=sampled_from([HongKong, UTC]),
         series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
-    )
-    @mark.parametrize(
-        ("strategy1", "dtype1"),
-        [
-            param(int32s(), Int64),
-            param(floats(allow_nan=False, allow_infinity=False), Float64),
-        ],
-    )
-    @mark.parametrize(
-        ("strategy2", "dtype2"),
-        [
-            param(int32s(), Int64),
-            param(floats(allow_nan=False, allow_infinity=False), Float64),
-        ],
     )
     async def test_main(
         self,
         *,
         data: DataObject,
-        strategy1: SearchStrategy[Number],
-        strategy2: SearchStrategy[Number],
+        strategy_dtype1: tuple[SearchStrategy[Number], DataType],
+        strategy_dtype2: tuple[SearchStrategy[Number], DataType],
         key_timestamp_values: tuple[str, str, str, str],
         series_names: tuple[str, str],
         time_zone: ZoneInfo,
-        dtype1: DataType,
-        dtype2: DataType,
     ) -> None:
         timestamp1, timestamp2 = data.draw(
             tuples(valid_zoned_datetimes, valid_zoned_datetimes)
         )
+        strategy1, dtype1 = strategy_dtype1
+        strategy2, dtype2 = strategy_dtype2
         value11, value21 = data.draw(tuples(strategy1, strategy1))
         value12, value22 = data.draw(tuples(strategy2, strategy2))
         key, timestamp, column1, column2 = key_timestamp_values
