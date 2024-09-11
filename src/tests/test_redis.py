@@ -16,7 +16,7 @@ from hypothesis.strategies import (
 )
 from polars import Boolean, DataFrame, DataType, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
-from pytest import mark, param, raises
+from pytest import raises
 from redis.commands.timeseries import TimeSeries
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -573,7 +573,6 @@ class TestTimeSeriesMAddAndRange:
                         _ = await time_series_madd_async(container.ts, df)
 
     @given(data=data(), timestamp=valid_zoned_datetimes, value=int32s())
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
     async def test_error_madd_invalid_key(
         self,
         *,
@@ -585,13 +584,12 @@ class TestTimeSeriesMAddAndRange:
         match = "The key '.*' must exist"
         async with redis_cms(data) as container:
             values = [(f"{container.key}_{case}", timestamp, value)]
-            match case:
-                case "values":
-                    values_or_df = values
-                case "DataFrame":
-                    values_or_df = DataFrame(
-                        values, schema=self.int_schema, orient="row"
-                    )
+            values_or_df = data.draw(
+                sampled_from([
+                    values,
+                    DataFrame(values, schema=self.int_schema, orient="row"),
+                ])
+            )
             match container.client:
                 case redis.Redis():
                     with raises(_TimeSeriesMAddInvalidKeyError, match=match):
@@ -605,7 +603,6 @@ class TestTimeSeriesMAddAndRange:
                         )
 
     @given(data=data(), timestamp=invalid_zoned_datetimes)
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
     async def test_error_madd_invalid_timestamp(
         self,
         *,
@@ -617,13 +614,12 @@ class TestTimeSeriesMAddAndRange:
         match = "Timestamps must be at least the Epoch; got .*"
         async with redis_cms(data) as container:
             values = [(f"{container.key}_{case}", timestamp, value)]
-            match case:
-                case "values":
-                    values_or_df = values
-                case "DataFrame":
-                    values_or_df = DataFrame(
-                        values, schema=self.int_schema, orient="row"
-                    )
+            values_or_df = data.draw(
+                sampled_from([
+                    values,
+                    DataFrame(values, schema=self.int_schema, orient="row"),
+                ])
+            )
             match container.client:
                 case redis.Redis():
                     with raises(_TimeSeriesMAddInvalidTimestampError, match=match):
@@ -632,34 +628,22 @@ class TestTimeSeriesMAddAndRange:
                     with raises(_TimeSeriesMAddInvalidTimestampError, match=match):
                         _ = await time_series_madd_async(container.ts, values_or_df)
 
-    @given(data=data(), timestamp=valid_zoned_datetimes)
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @mark.parametrize("value", [param(inf), param(-inf), param(nan)])
+    @given(
+        data=data(),
+        timestamp=valid_zoned_datetimes,
+        value=sampled_from([inf, -inf, nan]),
+    )
     async def test_error_madd_invalid_value(
-        self,
-        *,
-        data: DataObject,
-        timestamp: dt.datetime,
-        case: Literal["values", "DataFrame"],
-        value: float,
+        self, *, data: DataObject, timestamp: dt.datetime, value: float
     ) -> None:
         timestamp = data.draw(valid_zoned_datetimes)
         match = "The value .* is invalid"
+        schema = {"key": Utf8, "timestamp": DatetimeUTC, "value": Float64}
         async with redis_cms(data) as container:
-            values = [(f"{container.key}_{case}", timestamp, value)]
-            match case:
-                case "values":
-                    values_or_df = values
-                case "DataFrame":
-                    values_or_df = DataFrame(
-                        values,
-                        schema={
-                            "key": Utf8,
-                            "timestamp": DatetimeUTC,
-                            "value": Float64,
-                        },
-                        orient="row",
-                    )
+            values = [(f"{container.key}", timestamp, value)]
+            values_or_df = data.draw(
+                sampled_from([values, DataFrame(values, schema=schema, orient="row")])
+            )
             match container.client:
                 case redis.Redis():
                     with raises(_TimeSeriesMAddInvalidValueError, match=match):
