@@ -14,7 +14,7 @@ from hypothesis.strategies import (
     sampled_from,
     tuples,
 )
-from polars import Boolean, DataFrame, Float64, Int64, Utf8
+from polars import Boolean, DataFrame, DataType, Float64, Int64, Utf8
 from polars.testing import assert_frame_equal
 from pytest import mark, param, raises
 from redis.commands.timeseries import TimeSeries
@@ -76,10 +76,10 @@ if TYPE_CHECKING:
     import datetime as dt
     from zoneinfo import ZoneInfo
 
-    from polars import DataType
-    from polars._typing import PolarsDataType, SchemaDict
+    from polars._typing import SchemaDict
 
     from utilities.types import Number
+
 
 valid_zoned_datetimes = zoned_datetimes(
     min_value=EPOCH_UTC, time_zone=sampled_from([HongKong, UTC]), valid=True
@@ -254,7 +254,7 @@ class TestTimeSeriesAddAndReadDataFrame:
         value11, value21 = data.draw(tuples(strategy1, strategy1))
         value12, value22 = data.draw(tuples(strategy2, strategy2))
         key, timestamp, column1, column2 = key_timestamp_values
-        columns = (column1, column2)
+        columns = column1, column2
         schema = {
             key: Utf8,
             timestamp: zoned_datetime(time_zone=time_zone),
@@ -413,14 +413,10 @@ class TestTimeSeriesMAddAndRange:
         series_names=lists_fixed_length(text_ascii(), 2, unique=True).map(tuple),
         time_zone=sampled_from([HongKong, UTC]),
         key_timestamp_value=lists_fixed_length(text_ascii(), 3, unique=True).map(tuple),
-    )
-    @mark.parametrize("case", [param("values"), param("DataFrame")])
-    @mark.parametrize(
-        ("strategy", "dtype"),
-        [
-            param(int32s(), Int64),
-            param(floats(allow_nan=False, allow_infinity=False), Float64),
-        ],
+        strategy_dtype=sampled_from([
+            (int32s(), Int64),
+            (floats(allow_nan=False, allow_infinity=False), Float64),
+        ]),
     )
     async def test_main(
         self,
@@ -429,17 +425,16 @@ class TestTimeSeriesMAddAndRange:
         series_names: tuple[str, str],
         time_zone: ZoneInfo,
         key_timestamp_value: tuple[str, str, str],
-        case: Literal["values", "DataFrame"],
-        strategy: SearchStrategy[Number],
-        dtype: PolarsDataType,
+        strategy_dtype: tuple[SearchStrategy[Number], DataType],
     ) -> None:
         timestamps = data.draw(tuples(valid_zoned_datetimes, valid_zoned_datetimes))
+        strategy, dtype = strategy_dtype
         values = data.draw(tuples(strategy, strategy))
         key, timestamp, value = key_timestamp_value
         async with redis_cms(data) as container:
             keys = cast(
                 tuple[str, str],
-                tuple(f"{container.key}_{case}_{name}" for name in series_names),
+                tuple(f"{container.key}_{name}" for name in series_names),
             )
             triples = list(zip(keys, timestamps, values, strict=True))
             schema = {
@@ -447,11 +442,9 @@ class TestTimeSeriesMAddAndRange:
                 timestamp: zoned_datetime(time_zone=time_zone),
                 value: dtype,
             }
-            match case:
-                case "values":
-                    values_or_df = triples
-                case "DataFrame":
-                    values_or_df = DataFrame(triples, schema=schema, orient="row")
+            values_or_df = data.draw(
+                sampled_from([triples, DataFrame(triples, schema=schema, orient="row")])
+            )
             match container.client:
                 case redis.Redis():
                     res_madd = time_series_madd(
