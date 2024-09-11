@@ -17,7 +17,6 @@ from contextlib import (
     contextmanager,
     suppress,
 )
-from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -26,16 +25,7 @@ from pathlib import Path
 from re import search
 from string import ascii_letters, printable
 from subprocess import run
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generic,
-    Protocol,
-    TypeVar,
-    assert_never,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, assert_never, cast, overload
 from zoneinfo import ZoneInfo
 
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
@@ -73,11 +63,8 @@ from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_da
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
-    from redis.commands.timeseries import TimeSeries
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
