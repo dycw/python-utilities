@@ -7,6 +7,8 @@ from re import search
 from subprocess import PIPE, check_output
 from typing import TYPE_CHECKING, Any, cast
 
+import redis
+import redis.asyncio
 from hypothesis import HealthCheck, Phase, assume, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.numpy import array_shapes
@@ -39,7 +41,6 @@ from utilities.hypothesis import (
     _ZONED_DATETIMES_LEFT_MOST,
     _ZONED_DATETIMES_RIGHT_MOST,
     Shape,
-    YieldRedisContainer,
     aiosqlite_engines,
     assume_does_not_raise,
     bool_arrays,
@@ -57,7 +58,6 @@ from utilities.hypothesis import (
     months,
     random_states,
     redis_cms,
-    redis_cms_async,
     sets_fixed_length,
     settings_with_reduced_examples,
     setup_hypothesis_profiles,
@@ -490,37 +490,33 @@ class TestRandomStates:
 
 @SKIPIF_CI_AND_NOT_LINUX
 class TestRedisCMs:
-    @given(yield_redis=redis_cms(), value=integers())
-    def test_sync_core(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
-        with yield_redis() as redis:
-            assert not redis.client.exists(redis.key)
-            _ = redis.client.set(redis.key, value)
-            result = int(cast(str, redis.client.get(redis.key)))
-            assert result == value
-
-    @given(yield_redis=redis_cms(), value=int32s())
-    def test_sync_ts(self, *, yield_redis: YieldRedisContainer, value: int) -> None:
-        with yield_redis() as redis:
-            assert not redis.client.exists(redis.key)
-            _ = redis.ts.add(redis.key, "*", value)
-            res_timestamp, res_value = redis.ts.get(redis.key)
-            assert isinstance(res_timestamp, int)
-            assert int(res_value) == value
-
-    @given(data=data(), value=integers())
-    async def test_async_core(self, *, data: DataObject, value: int) -> None:
-        async with redis_cms_async(data) as redis:
-            assert not await redis.client.exists(redis.key)
-            _ = await redis.client.set(redis.key, value)
-            result = int(cast(str, await redis.client.get(redis.key)))
+    @mark.only
+    @given(data=data(), value=int32s())
+    async def test_core(self, *, data: DataObject, value: int) -> None:
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis() as client:
+                    assert not client.exists(container.key)
+                    _ = client.set(container.key, value)
+                    result = int(cast(str, client.get(container.key)))
+                case redis.asyncio.Redis() as client:
+                    assert not await client.exists(container.key)
+                    _ = await client.set(container.key, value)
+                    result = int(cast(str, await client.get(container.key)))
             assert result == value
 
     @given(data=data(), value=int32s())
-    async def test_async_ts(self, *, data: DataObject, value: int) -> None:
-        async with redis_cms_async(data) as redis:
-            assert not await redis.client.exists(redis.key)
-            _ = await redis.ts.add(redis.key, "*", value)
-            res_timestamp, res_value = await redis.ts.get(redis.key)
+    async def test_ts(self, *, data: DataObject, value: int) -> None:
+        async with redis_cms(data) as container:
+            match container.client:
+                case redis.Redis() as client:
+                    assert not client.exists(container.key)
+                    _ = container.ts.add(container.key, "*", value)
+                    res_timestamp, res_value = container.ts.get(container.key)
+                case redis.asyncio.Redis() as client:
+                    assert not await client.exists(container.key)
+                    _ = await container.ts.add(container.key, "*", value)
+                    res_timestamp, res_value = await container.ts.get(container.key)
             assert isinstance(res_timestamp, int)
             assert int(res_value) == value
 

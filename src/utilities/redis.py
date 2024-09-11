@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import (
+    AbstractAsyncContextManager,
+    AbstractContextManager,
+    asynccontextmanager,
+    contextmanager,
+)
 from dataclasses import dataclass
 from functools import partial
 from itertools import product
@@ -70,7 +75,13 @@ class _RedisContainer(Generic[_TRedis]):
         return self.client.ts()  # skipif-ci-and-not-linux
 
 
-YieldRedisContainer = Callable[[], AbstractContextManager[_RedisContainer[redis.Redis]]]
+YieldRedisContainer = AbstractContextManager[_RedisContainer[redis.Redis]]
+YieldRedisContainerAsync = AbstractAsyncContextManager[
+    _RedisContainer[redis.asyncio.Redis]
+]
+YieldRedisContainerAsyncEither = AbstractAsyncContextManager[
+    _RedisContainer[redis.Redis] | _RedisContainer[redis.asyncio.Redis]
+]
 
 
 def ensure_time_series_created(

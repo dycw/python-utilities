@@ -2,21 +2,8 @@ from __future__ import annotations
 
 import builtins
 import datetime as dt
-from collections.abc import (
-    AsyncIterator,
-    Callable,
-    Collection,
-    Hashable,
-    Iterable,
-    Iterator,
-)
-from contextlib import (
-    AbstractAsyncContextManager,
-    AbstractContextManager,
-    asynccontextmanager,
-    contextmanager,
-    suppress,
-)
+from collections.abc import AsyncIterator, Collection, Hashable, Iterable, Iterator
+from contextlib import asynccontextmanager, contextmanager, suppress
 from datetime import timezone
 from enum import Enum, auto
 from math import ceil, floor, inf, isfinite, nan
@@ -56,19 +43,21 @@ from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_n
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
-from utilities.redis import _RedisContainer
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_datetime
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
+    import redis
+    import redis.asyncio
     from hypothesis.database import ExampleDatabase
     from numpy.random import RandomState
     from sqlalchemy import Engine, MetaData
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
+    from utilities.redis import YieldRedisContainerAsyncEither
     from utilities.types import Duration, Number
 
 
@@ -417,60 +406,56 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
-YieldRedisContainer = Callable[[], AbstractContextManager[_RedisContainer[redis.Redis]]]
+_ASYNCS = booleans()
 
 
 def redis_cms(
-    draw: DrawFn, /, *, async_: MaybeSearchStrategy[bool] = booleans()
-) -> YieldRedisContainer:
+    data: DataObject, /, *, async_: MaybeSearchStrategy[bool] = _ASYNCS
+) -> YieldRedisContainerAsyncEither:
     """Strategy for generating redis clients (with cleanup)."""
-    from redis import Redis  # skipif-ci-and-not-linux
+    import redis  # skipif-ci-and-not-linux
+    import redis.asyncio  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
+    from redis.typing import KeyT  # skipif-ci-and-not-linux
 
+    from utilities.redis import _RedisContainer  #  skipif-ci-and-not-linux
+
+    draw = lift_data(data)
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
     uuid = draw(uuids())  # skipif-ci-and-not-linux
     key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
 
-    @contextmanager
-    def yield_redis() -> (  # skipif-ci-and-not-linux
-        Iterator[_RedisContainer[redis.Redis]]
-    ):
-        with Redis(db=15) as client:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = client.delete(*keys)
-            yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
-            with suppress(ResponseError):
-                _ = client.delete(*keys)
+    if draw(async_):
 
-    return yield_redis  # skipif-ci-and-not-linux
+        @asynccontextmanager
+        async def yield_redis_async() -> (  # skipif-ci-and-not-linux
+            AsyncIterator[_RedisContainer[redis.asyncio.Redis]]
+        ):
+            async with redis.asyncio.Redis(db=15) as client:  # skipif-ci-and-not-linux
+                keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+                with suppress(ResponseError):
+                    _ = await client.delete(*keys)
+                yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+                keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+                with suppress(ResponseError):
+                    _ = await client.delete(*keys)
 
-
-def redis_cms_async(
-    data: DataObject, /
-) -> AbstractAsyncContextManager[_RedisContainer[redis.asyncio.Redis]]:
-    """Strategy for generating asynchronous redis clients."""
-    from redis.asyncio import Redis  # skipif-ci-and-not-linux
-
-    now = get_now(time_zone="local")  # skipif-ci-and-not-linux
-    uuid = data.draw(uuids())  # skipif-ci-and-not-linux
-    key = f"{now}_{uuid}"  # skipif-ci-and-not-linux
+        return yield_redis_async()  # skipif-ci-and-not-linux
 
     @asynccontextmanager
-    async def yield_redis_async() -> (  # skipif-ci-and-not-linux
-        AsyncIterator[_RedisContainer[redis.asyncio.Redis]]
+    async def yield_redis_sync() -> (  # skipif-ci-and-not-linux
+        AsyncIterator[_RedisContainer[redis.Redis]]
     ):
-        async with Redis(db=15) as client:  # skipif-ci-and-not-linux
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+        with redis.Redis(db=15) as client:  # skipif-ci-and-not-linux
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
-                _ = await client.delete(*keys)
+                _ = client.delete(*keys)
             yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
-            keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
+            keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
-                _ = await client.delete(*keys)
+                _ = client.delete(*keys)
 
-    return yield_redis_async()  # skipif-ci-and-not-linux
+    return yield_redis_sync()  # skipif-ci-and-not-linux
 
 
 @composite
@@ -792,7 +777,6 @@ def _draw_text(
 __all__ = [
     "MaybeSearchStrategy",
     "Shape",
-    "_RedisContainer",
     "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",
@@ -810,7 +794,6 @@ __all__ = [
     "months",
     "random_states",
     "redis_cms",
-    "redis_cms_async",
     "sets_fixed_length",
     "setup_hypothesis_profiles",
     "slices",
