@@ -38,8 +38,6 @@ from typing import (
 )
 from zoneinfo import ZoneInfo
 
-import redis
-import redis.asyncio
 from hypothesis import HealthCheck, Phase, Verbosity, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import (
@@ -63,13 +61,12 @@ from hypothesis.strategies import (
     uuids,
 )
 from hypothesis.utils.conventions import not_set
-from redis.exceptions import ResponseError
-from redis.typing import KeyT
 
 from utilities.datetime import MAX_MONTH, MIN_MONTH, Month, date_to_month, get_now
 from utilities.math import MAX_INT32, MAX_INT64, MAX_UINT32, MIN_INT32, MIN_INT64
 from utilities.pathlib import temp_cwd
 from utilities.platform import IS_WINDOWS
+from utilities.redis import _RedisContainer
 from utilities.tempfile import TEMP_DIR, TemporaryDirectory
 from utilities.text import ensure_str
 from utilities.whenever import CheckValidZonedDateimeError, check_valid_zoned_datetime
@@ -433,28 +430,12 @@ def random_states(
     return RandomState(seed=seed_use)
 
 
-_TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
+YieldRedisContainer = Callable[[], AbstractContextManager[_RedisContainer[redis.Redis]]]
 
 
-@dataclass(repr=False, frozen=True, kw_only=True)
-class RedisContainer(Generic[_TRedis]):
-    """A container for `redis.Client`."""
-
-    client: _TRedis
-    timestamp: dt.datetime
-    uuid: UUID
-    key: str
-
-    @property
-    def ts(self) -> TimeSeries:
-        return self.client.ts()  # skipif-ci-and-not-linux
-
-
-YieldRedisContainer = Callable[[], AbstractContextManager[RedisContainer[redis.Redis]]]
-
-
-@composite
-def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
+def redis_cms(
+    draw: DrawFn, /, *, async_: MaybeSearchStrategy[bool] = booleans()
+) -> YieldRedisContainer:
     """Strategy for generating redis clients (with cleanup)."""
     from redis import Redis  # skipif-ci-and-not-linux
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
@@ -465,13 +446,13 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
 
     @contextmanager
     def yield_redis() -> (  # skipif-ci-and-not-linux
-        Iterator[RedisContainer[redis.Redis]]
+        Iterator[_RedisContainer[redis.Redis]]
     ):
         with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)
-            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)
@@ -481,7 +462,7 @@ def redis_cms(draw: DrawFn, /) -> YieldRedisContainer:
 
 def redis_cms_async(
     data: DataObject, /
-) -> AbstractAsyncContextManager[RedisContainer[redis.asyncio.Redis]]:
+) -> AbstractAsyncContextManager[_RedisContainer[redis.asyncio.Redis]]:
     """Strategy for generating asynchronous redis clients."""
     from redis.asyncio import Redis  # skipif-ci-and-not-linux
 
@@ -491,13 +472,13 @@ def redis_cms_async(
 
     @asynccontextmanager
     async def yield_redis_async() -> (  # skipif-ci-and-not-linux
-        AsyncIterator[RedisContainer[redis.asyncio.Redis]]
+        AsyncIterator[_RedisContainer[redis.asyncio.Redis]]
     ):
         async with Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
-            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
             keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = await client.delete(*keys)
@@ -823,8 +804,8 @@ def _draw_text(
 
 __all__ = [
     "MaybeSearchStrategy",
-    "RedisContainer",
     "Shape",
+    "_RedisContainer",
     "aiosqlite_engines",
     "assume_does_not_raise",
     "bool_arrays",

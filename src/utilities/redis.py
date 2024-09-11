@@ -5,7 +5,16 @@ from dataclasses import dataclass
 from functools import partial
 from itertools import product
 from re import search
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, assert_never, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    NoReturn,
+    TypeVar,
+    assert_never,
+    cast,
+)
 
 import redis
 import redis.asyncio
@@ -25,6 +34,7 @@ from utilities.zoneinfo import UTC
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
+    from uuid import UUID
     from zoneinfo import ZoneInfo
 
     from polars import DataFrame
@@ -41,6 +51,26 @@ _KEY = "key"
 _TIMESTAMP = "timestamp"
 _VALUE = "value"
 _SPLIT = "|"
+
+
+_TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
+
+
+@dataclass(repr=False, frozen=True, kw_only=True)
+class _RedisContainer(Generic[_TRedis]):
+    """A container for a client; for testing purposes only."""
+
+    client: _TRedis
+    timestamp: dt.datetime
+    uuid: UUID
+    key: str
+
+    @property
+    def ts(self) -> TimeSeries:
+        return self.client.ts()  # skipif-ci-and-not-linux
+
+
+YieldRedisContainer = Callable[[], AbstractContextManager[_RedisContainer[redis.Redis]]]
 
 
 def ensure_time_series_created(
