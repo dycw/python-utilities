@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from asyncio import sleep
 from functools import wraps
 from operator import neg
 from types import NoneType
@@ -26,7 +25,7 @@ from utilities.functions import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator, Callable, Generator
+    from collections.abc import Callable, Generator
 
 _T = TypeVar("_T")
 
