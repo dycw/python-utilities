@@ -162,7 +162,6 @@ class TestSecond:
 
 
 class TestSendAndNext:
-    @mark.only
     def test_main(self, *, capsys: CaptureFixture) -> None:
         @start_generator_coroutine
         def func() -> Generator[int | None, float | None, str]:
@@ -197,7 +196,6 @@ class TestSendAndNext:
 
 
 class TestStartGeneratorCoroutine:
-    @mark.only
     def test_main(self, *, capsys: CaptureFixture) -> None:
         @start_generator_coroutine
         def func() -> Generator[int, float, str]:

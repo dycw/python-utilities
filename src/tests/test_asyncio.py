@@ -267,7 +267,6 @@ class TestReduceAsync:
 
 
 class TestSendAndNextAsync:
-    @mark.only
     async def test_main(self, *, capsys: CaptureFixture) -> None:
         @start_async_generator_coroutine
         async def func() -> AsyncGenerator[int | None, float | None]:
@@ -302,7 +301,6 @@ class TestSendAndNextAsync:
 
 
 class TestStartAsyncGeneratorCoroutine:
-    @mark.only
     async def test_main(self, *, capsys: CaptureFixture) -> None:
         @start_async_generator_coroutine
         async def func() -> AsyncGenerator[int, float]:
