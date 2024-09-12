@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING, Any, TypeVar, overload
 from typing_extensions import ParamSpec
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
+    from collections.abc import Callable, Generator
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
+_V = TypeVar("_V")
 
 
 def first(pair: tuple[_T, Any], /) -> _T:
@@ -84,6 +84,20 @@ def second(pair: tuple[Any, _U], /) -> _U:
     return pair[1]
 
 
+def start_generator_coroutine(
+    func: Callable[_P, Generator[_T, _U, _V]], /
+) -> Callable[_P, Generator[_T, _U, _V]]:
+    """Instantiate and then start a generator-coroutine."""
+
+    @wraps(func)
+    def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> Generator[_T, _U, _V]:
+        coro = func(*args, **kwargs)
+        _ = next(coro)
+        return coro
+
+    return wrapped
+
+
 __all__ = [
     "first",
     "get_class",
@@ -94,4 +108,5 @@ __all__ = [
     "is_not_none",
     "not_func",
     "second",
+    "start_generator_coroutine",
 ]
