@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
-from pytest import mark, param
+from pytest import CaptureFixture, mark, param, raises
 
 from utilities.asyncio import try_await
 from utilities.functions import (
+    ensure_not_none,
     first,
     get_class,
     get_class_name,
@@ -21,10 +22,12 @@ from utilities.functions import (
     is_not_none,
     not_func,
     second,
+    send_and_next,
+    start_generator_coroutine,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Generator
 
 _T = TypeVar("_T")
 
@@ -156,3 +159,67 @@ class TestSecond:
     def test_main(self, *, x: int, y: int) -> None:
         pair = x, y
         assert second(pair) == y
+
+
+class TestSendAndNext:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        @start_generator_coroutine
+        def func() -> Generator[int | None, float | None, str]:
+            print("Initial")  # noqa: T201
+            while True:
+                input_ = yield
+                output = round(ensure_not_none(input_))
+                if output >= 0:
+                    print(f"Received {input_}, yielding {output}")  # noqa: T201
+                    yield output
+                else:
+                    return "Done"
+
+        generator = func()
+        out = capsys.readouterr().out
+        assert out == "Initial\n", out
+        result = send_and_next(0.1, generator)
+        assert result == 0
+        out = capsys.readouterr().out
+        assert out == "Received 0.1, yielding 0\n", out
+        result = send_and_next(0.9, generator)
+        assert result == 1
+        out = capsys.readouterr().out
+        assert out == "Received 0.9, yielding 1\n", out
+        result = send_and_next(1.1, generator)
+        assert result == 1
+        out = capsys.readouterr().out
+        assert out == "Received 1.1, yielding 1\n", out
+        with raises(StopIteration) as exc:
+            _ = send_and_next(-0.9, generator)
+        assert exc.value.args == ("Done",)
+
+
+class TestStartGeneratorCoroutine:
+    def test_main(self, *, capsys: CaptureFixture) -> None:
+        @start_generator_coroutine
+        def func() -> Generator[int, float, str]:
+            print("Pre-initial")  # noqa: T201
+            x = yield 0
+            print(f"Post-initial; x={x}")  # noqa: T201
+            while x >= 0:
+                print(f"Pre-yield; x={x}")  # noqa: T201
+                x = yield round(x)
+                print(f"Post-yield; x={x}")  # noqa: T201
+            return "Done"
+
+        generator = func()
+        out = capsys.readouterr().out
+        assert out == "Pre-initial\n", out
+        assert generator.send(0.1) == 0
+        out = capsys.readouterr().out
+        assert out == "Post-initial; x=0.1\nPre-yield; x=0.1\n", out
+        assert generator.send(0.9) == 1
+        out = capsys.readouterr().out
+        assert out == "Post-yield; x=0.9\nPre-yield; x=0.9\n", out
+        assert generator.send(1.1) == 1
+        out = capsys.readouterr().out
+        assert out == "Post-yield; x=1.1\nPre-yield; x=1.1\n", out
+        with raises(StopIteration) as exc:
+            _ = generator.send(-0.9)
+        assert exc.value.args == ("Done",)

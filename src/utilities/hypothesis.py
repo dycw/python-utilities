@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
     from utilities.numpy import NDArrayB, NDArrayF, NDArrayI, NDArrayO
-    from utilities.redis import _RedisContainer
+    from utilities.redis import RedisContainer
     from utilities.types import Duration, Number
 
 
@@ -417,7 +417,7 @@ _ASYNCS = booleans()
 def redis_cms(
     data: DataObject, /, *, async_: MaybeSearchStrategy[bool] = _ASYNCS
 ) -> AbstractAsyncContextManager[
-    _RedisContainer[redis.Redis] | _RedisContainer[redis.asyncio.Redis]
+    RedisContainer[redis.Redis] | RedisContainer[redis.asyncio.Redis]
 ]:
     """Strategy for generating redis clients (with cleanup)."""
     import redis  # skipif-ci-and-not-linux
@@ -425,7 +425,7 @@ def redis_cms(
     from redis.exceptions import ResponseError  # skipif-ci-and-not-linux
     from redis.typing import KeyT  # skipif-ci-and-not-linux
 
-    from utilities.redis import _RedisContainer  #  skipif-ci-and-not-linux
+    from utilities.redis import RedisContainer  #  skipif-ci-and-not-linux
 
     draw = lift_data(data)  # skipif-ci-and-not-linux
     now = get_now(time_zone="local")  # skipif-ci-and-not-linux
@@ -436,13 +436,13 @@ def redis_cms(
 
         @asynccontextmanager
         async def yield_redis_async() -> (  # skipif-ci-and-not-linux
-            AsyncIterator[_RedisContainer[redis.asyncio.Redis]]
+            AsyncIterator[RedisContainer[redis.asyncio.Redis]]
         ):
             async with redis.asyncio.Redis(db=15) as client:  # skipif-ci-and-not-linux
                 keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
                 with suppress(ResponseError):
                     _ = await client.delete(*keys)
-                yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+                yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
                 keys = cast(list[KeyT], await client.keys(pattern=f"{key}_*"))
                 with suppress(ResponseError):
                     _ = await client.delete(*keys)
@@ -451,13 +451,13 @@ def redis_cms(
 
     @asynccontextmanager
     async def yield_redis_sync() -> (  # skipif-ci-and-not-linux
-        AsyncIterator[_RedisContainer[redis.Redis]]
+        AsyncIterator[RedisContainer[redis.Redis]]
     ):
         with redis.Redis(db=15) as client:  # skipif-ci-and-not-linux
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)
-            yield _RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
+            yield RedisContainer(client=client, timestamp=now, uuid=uuid, key=key)
             keys = cast(list[KeyT], client.keys(pattern=f"{key}_*"))
             with suppress(ResponseError):
                 _ = client.delete(*keys)

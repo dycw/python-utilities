@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from pytest import mark, param, raises
 
@@ -18,7 +18,6 @@ from utilities.types import (
     EnsureHashableError,
     EnsureIntError,
     EnsureMemberError,
-    EnsureNotNoneError,
     EnsureNumberError,
     EnsureSizedError,
     EnsureSizedNotStrError,
@@ -33,7 +32,6 @@ from utilities.types import (
     ensure_hashable,
     ensure_int,
     ensure_member,
-    ensure_not_none,
     ensure_number,
     ensure_sized,
     ensure_sized_not_str,
@@ -214,17 +212,6 @@ class TestEnsureMember:
     def test_error(self, *, nullable: bool, match: str) -> None:
         with raises(EnsureMemberError, match=match):
             _ = ensure_member(sentinel, {True, False}, nullable=nullable)
-
-
-class TestEnsureNotNone:
-    def test_main(self) -> None:
-        maybe_int = cast(int | None, 0)
-        result = ensure_not_none(maybe_int)
-        assert result == 0
-
-    def test_error(self) -> None:
-        with raises(EnsureNotNoneError, match="Object .* must not be None"):
-            _ = ensure_not_none(None)
 
 
 class TestEnsureNumber:

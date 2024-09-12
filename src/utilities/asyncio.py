@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+from functools import wraps
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
+
+from utilities.functions import ensure_not_none
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable, Coroutine
+
 from asyncio import timeout
 from collections.abc import (
     AsyncIterable,
@@ -12,7 +20,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar, cast, overload
+from typing import TYPE_CHECKING, TypeGuard
 
 from typing_extensions import override
 
@@ -25,7 +33,7 @@ if TYPE_CHECKING:
 
     from utilities.types import Duration
 
-
+_P = ParamSpec("_P")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 Coroutine1 = Coroutine[Any, Any, _T]
@@ -156,6 +164,29 @@ class ReduceAsyncError(Exception):
         return f"Empty iterable {self.iterable} with no initial value"
 
 
+async def send_and_next_async(
+    value: _U, generator: AsyncGenerator[_T | None, _U | None], /
+) -> _T:
+    """Send a value to a generator, and then yield the output."""
+    result = ensure_not_none(await generator.asend(value))
+    _ = await anext(generator)
+    return result
+
+
+def start_async_generator_coroutine(
+    func: Callable[_P, AsyncGenerator[_T, _U]], /
+) -> Callable[_P, Coroutine1[AsyncGenerator[_T, _U]]]:
+    """Instantiate and then start a generator-coroutine."""
+
+    @wraps(func)
+    async def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> AsyncGenerator[_T, _U]:
+        coro = func(*args, **kwargs)
+        _ = await anext(coro)
+        return coro
+
+    return wrapped
+
+
 def timeout_dur(*, duration: Duration | None = None) -> Timeout:
     """Timeout context manager which accepts durations."""
     delay = None if duration is None else duration_to_float(duration)
@@ -233,6 +264,8 @@ __all__ = [
     "groupby_async_list",
     "is_awaitable",
     "reduce_async",
+    "send_and_next_async",
+    "start_async_generator_coroutine",
     "timeout_dur",
     "to_list",
     "to_set",
