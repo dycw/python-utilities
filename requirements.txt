@@ -137,7 +137,7 @@ idna==3.8
     #   yarl
 img2pdf==0.5.1
     # via dycw-utilities (pyproject.toml)
-importlib-metadata==8.4.0
+importlib-metadata==8.5.0
     # via keyring
 importlib-resources==6.4.5
     # via pypiserver
@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.6.4
+narwhals==1.7.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -266,7 +266,7 @@ polars-lts-cpu==1.6.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.28.0
+protobuf==5.28.1
     # via
     #   streamlit
     #   vegafusion

@@ -42,6 +42,11 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
         super().__init__(iterable)
 
     @override
+    def __iter__(self) -> Iterator[_T]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        while bool(self):
+            yield next(self)
+
+    @override
     def __next__(self) -> _T:
         return super().__next__()
 
