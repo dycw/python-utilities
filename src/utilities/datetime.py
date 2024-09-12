@@ -17,8 +17,8 @@ from typing import (
 
 from typing_extensions import override
 
+from utilities.functions import ensure_not_none
 from utilities.platform import SYSTEM, System
-from utilities.types import Duration, ensure_not_none
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -30,6 +30,8 @@ from utilities.zoneinfo import (
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from zoneinfo import ZoneInfo
+
+    from utilities.types import Duration
 
 
 _DAYS_PER_YEAR = 365.25

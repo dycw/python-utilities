@@ -57,7 +57,7 @@ _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
 
 
 @dataclass(repr=False, frozen=True, kw_only=True)
-class _RedisContainer(Generic[_TRedis]):
+class RedisContainer(Generic[_TRedis]):
     """A container for a client; for testing purposes only."""
 
     client: _TRedis
@@ -1613,6 +1613,7 @@ def _classify_response_error(error: ResponseError, /) -> _ResponseErrorKind:
 
 
 __all__ = [
+    "RedisContainer",
     "TimeSeriesAddDataFrameError",
     "TimeSeriesAddError",
     "TimeSeriesMAddError",

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from operator import sub
+from typing import cast
 
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
+from pytest import raises
 
+from utilities.functions import EnsureNotNoneError, ensure_not_none
 from utilities.functools import cache, lru_cache, partial
 
 
@@ -21,6 +24,17 @@ class TestCache:
         for _ in range(2):
             assert func(0) == 0
         assert counter == 1
+
+
+class TestEnsureNotNone:
+    def test_main(self) -> None:
+        maybe_int = cast(int | None, 0)
+        result = ensure_not_none(maybe_int)
+        assert result == 0
+
+    def test_error(self) -> None:
+        with raises(EnsureNotNoneError, match="Object .* must not be None"):
+            _ = ensure_not_none(None)
 
 
 class TestLRUCache:

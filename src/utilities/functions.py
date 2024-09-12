@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import partial, wraps
 from types import (
     BuiltinFunctionType,
@@ -11,7 +12,7 @@ from types import (
 )
 from typing import TYPE_CHECKING, Any, TypeVar, overload
 
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, override
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -20,6 +21,22 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 _V = TypeVar("_V")
+
+
+def ensure_not_none(obj: _T | None, /) -> _T:
+    """Ensure an object is not None."""
+    if obj is None:
+        raise EnsureNotNoneError(obj=obj)
+    return obj
+
+
+@dataclass(kw_only=True)
+class EnsureNotNoneError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object {self.obj} must not be None"
 
 
 def first(pair: tuple[_T, Any], /) -> _T:
@@ -84,6 +101,13 @@ def second(pair: tuple[Any, _U], /) -> _U:
     return pair[1]
 
 
+def send_and_next(value: _U, generator: Generator[_T | None, _U | None, Any], /) -> _T:
+    """Send a value to a generator, and then yield the output."""
+    result = ensure_not_none(generator.send(value))
+    _ = next(generator)
+    return result
+
+
 def start_generator_coroutine(
     func: Callable[_P, Generator[_T, _U, _V]], /
 ) -> Callable[_P, Generator[_T, _U, _V]]:
@@ -99,6 +123,8 @@ def start_generator_coroutine(
 
 
 __all__ = [
+    "EnsureNotNoneError",
+    "ensure_not_none",
     "first",
     "get_class",
     "get_class_name",
@@ -108,5 +134,6 @@ __all__ = [
     "is_not_none",
     "not_func",
     "second",
+    "send_and_next",
     "start_generator_coroutine",
 ]

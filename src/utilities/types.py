@@ -269,22 +269,6 @@ class EnsureMemberError(Exception):
         return f"Object {self.obj} must be a member of {self.container}{desc}"
 
 
-def ensure_not_none(obj: _T | None, /) -> _T:
-    """Ensure an object is not None."""
-    if obj is None:
-        raise EnsureNotNoneError(obj=obj)
-    return obj
-
-
-@dataclass(kw_only=True)
-class EnsureNotNoneError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object {self.obj} must not be None"
-
-
 @overload
 def ensure_number(obj: Any, /, *, nullable: bool) -> Number | None: ...
 @overload
@@ -420,7 +404,6 @@ __all__ = [
     "EnsureHashableError",
     "EnsureIntError",
     "EnsureMemberError",
-    "EnsureNotNoneError",
     "EnsureNumberError",
     "EnsureSizedError",
     "EnsureSizedNotStrError",
@@ -435,7 +418,6 @@ __all__ = [
     "ensure_hashable",
     "ensure_int",
     "ensure_member",
-    "ensure_not_none",
     "ensure_number",
     "ensure_sized",
     "ensure_sized_not_str",

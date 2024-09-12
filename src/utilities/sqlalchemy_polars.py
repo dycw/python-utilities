@@ -33,7 +33,7 @@ from typing_extensions import override
 
 from utilities.datetime import is_subclass_date_not_datetime
 from utilities.errors import redirect_error
-from utilities.functions import identity
+from utilities.functions import ensure_not_none, identity
 from utilities.iterables import (
     CheckDuplicatesError,
     OneError,
@@ -61,7 +61,6 @@ from utilities.sqlalchemy import (
     upsert_items_async,
     yield_connection,
 )
-from utilities.types import StrMapping, ensure_not_none
 from utilities.zoneinfo import UTC
 
 if TYPE_CHECKING:
@@ -77,6 +76,8 @@ if TYPE_CHECKING:
 
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
+
+    from utilities.types import StrMapping
 
 
 def insert_dataframe(

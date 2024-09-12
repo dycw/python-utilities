@@ -16,6 +16,7 @@ from utilities.asyncio import (
     groupby_async_list,
     is_awaitable,
     reduce_async,
+    send_and_next_async,
     start_async_generator_coroutine,
     timeout_dur,
     to_list,
@@ -23,6 +24,7 @@ from utilities.asyncio import (
     to_sorted,
     try_await,
 )
+from utilities.functions import ensure_not_none
 from utilities.hypothesis import durations
 
 if TYPE_CHECKING:
@@ -264,34 +266,38 @@ class TestReduceAsync:
             _ = await reduce_async(add, [])
 
 
-class sadflaksdjfasl:
+class TestSendAndNextAsync:
+    @mark.only
     async def test_main(self, *, capsys: CaptureFixture) -> None:
         @start_async_generator_coroutine
-        async def func() -> AsyncGenerator[int, float]:
-            print("Starting...")  # noqa: T201
-            _ = yield
+        async def func() -> AsyncGenerator[int | None, float | None]:
+            print("Initial")  # noqa: T201
             while True:
-                x = yield
-                y = round(x)
-                print(f"Got {x}, yielding {y}...")  # noqa: T201
-                yield y
-                await sleep(0.01)
-                x = y
+                input_ = yield
+                output = round(ensure_not_none(input_))
+                if output >= 0:
+                    print(f"Received {input_}, yielding {output}")  # noqa: T201
+                    yield output
+                else:
+                    break
 
         generator = await func()
         out = capsys.readouterr().out
-        assert out == "Starting...\n", out
-        assert await generator.asend(0.1) == 0
+        assert out == "Initial\n", out
+        result = await send_and_next_async(0.1, generator)
+        assert result == 0
         out = capsys.readouterr().out
-        assert out == "Yielding 0.1...\n", out
-        assert await generator.asend(0.9) == 1
+        assert out == "Received 0.1, yielding 0\n", out
+        result = await send_and_next_async(0.9, generator)
+        assert result == 1
         out = capsys.readouterr().out
-        assert out == "Yielding 0.9...\n", out
-        assert await generator.asend(1.1) == 1
+        assert out == "Received 0.9, yielding 1\n", out
+        result = await send_and_next_async(1.1, generator)
+        assert result == 1
         out = capsys.readouterr().out
-        assert out == "Yielding 1.1...\n", out
+        assert out == "Received 1.1, yielding 1\n", out
         with raises(StopAsyncIteration) as exc:
-            _ = await generator.asend(-0.1)
+            _ = await send_and_next_async(-0.9, generator)
         assert exc.value.args == ()
 
 
@@ -322,7 +328,7 @@ class TestStartAsyncGeneratorCoroutine:
         out = capsys.readouterr().out
         assert out == "Post-yield; x=1.1\nPre-yield; x=1.1\n", out
         with raises(StopAsyncIteration) as exc:
-            _ = await generator.asend(-0.1)
+            _ = await generator.asend(-0.9)
         assert exc.value.args == ()
 
 
