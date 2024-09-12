@@ -167,7 +167,7 @@ class TestSendAndNext:
         def func() -> Generator[int | None, float | None, str]:
             print("Initial")  # noqa: T201
             while True:
-                input_ = yield
+                input_ = ensure_not_none((yield))
                 output = round(ensure_not_none(input_))
                 if output >= 0:
                     print(f"Received {input_}, yielding {output}")  # noqa: T201

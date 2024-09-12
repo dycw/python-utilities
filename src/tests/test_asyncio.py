@@ -272,8 +272,8 @@ class TestSendAndNextAsync:
         async def func() -> AsyncGenerator[int | None, float | None]:
             print("Initial")  # noqa: T201
             while True:
-                input_ = yield
-                output = round(ensure_not_none(input_))
+                input_ = ensure_not_none((yield))
+                output = round(input_)
                 if output >= 0:
                     print(f"Received {input_}, yielding {output}")  # noqa: T201
                     yield output
