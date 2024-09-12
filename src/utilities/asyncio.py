@@ -175,7 +175,7 @@ async def send_and_next_async(
 
 def start_async_generator_coroutine(
     func: Callable[_P, AsyncGenerator[_T, _U]], /
-) -> Callable[_P, Coroutine[Any, Any, AsyncGenerator[_T, _U]]]:
+) -> Callable[_P, Coroutine1[AsyncGenerator[_T, _U]]]:
     """Instantiate and then start a generator-coroutine."""
 
     @wraps(func)
