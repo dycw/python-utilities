@@ -33,6 +33,11 @@ class TestPeekable:
         expected = [5, 6, 7, 8, 9]
         assert result == expected
 
+    def test_iter(self) -> None:
+        it = peekable(range(10))
+        for value in it:
+            assert isinstance(value, int)
+
     def test_next(self) -> None:
         it = peekable(range(10))
         value = next(it)
