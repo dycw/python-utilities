@@ -11,7 +11,7 @@ from enum import StrEnum, unique
 from functools import partial, wraps
 from inspect import iscoroutinefunction
 from logging import Handler, LogRecord
-from sys import __excepthook__, _getframe
+from sys import __excepthook__, _getframe, stderr
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,7 +53,7 @@ if TYPE_CHECKING:
         Writable,
     )
 
-    from utilities.asyncio import MaybeCoroutine1
+    from utilities.asyncio import Coroutine1, MaybeCoroutine1
     from utilities.iterables import MaybeIterable
     from utilities.types import Duration, PathLike, StrMapping
 
@@ -429,6 +429,32 @@ def make_filter(
     return filter_func
 
 
+def make_slack_sink(url: str, /) -> Callable[[Message], None]:
+    """Make a `slack` sink."""
+    from utilities.slack_sdk import SendSlackError, send_slack_sync
+
+    def sink_sync(message: Message, /) -> None:
+        try:
+            send_slack_sync(message, url=url)
+        except SendSlackError as error:
+            _ = stderr.write(f"{error}\n")  # pragma: no cover
+
+    return sink_sync
+
+
+def make_slack_sink_async(url: str, /) -> Callable[[Message], Coroutine1[None]]:
+    """Make an asynchronous `slack` sink."""
+    from utilities.slack_sdk import SendSlackError, send_slack_async
+
+    async def sink_async(message: Message, /) -> None:
+        try:
+            await send_slack_async(message, url=url)
+        except SendSlackError as error:
+            _ = stderr.write(f"{error}\n")  # pragma: no cover
+
+    return sink_async
+
+
 __all__ = [
     "LEVEL_CONFIGS",
     "GetLoggingLevelNameError",
@@ -443,4 +469,6 @@ __all__ = [
     "logged_sleep_sync",
     "make_except_hook",
     "make_filter",
+    "make_slack_sink",
+    "make_slack_sink_async",
 ]
