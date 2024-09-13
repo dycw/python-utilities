@@ -5,6 +5,7 @@ import sys  # do use `from sys import ...`
 from re import search
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
+from hypothesis import given
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
@@ -27,6 +28,7 @@ from tests.functions import (
     func_test_exit_predicate,
     func_test_exit_sync,
 )
+from utilities.hypothesis import text_ascii
 from utilities.loguru import (
     LEVEL_CONFIGS,
     GetLoggingLevelNumberError,
@@ -41,6 +43,8 @@ from utilities.loguru import (
     logged_sleep_sync,
     make_except_hook,
     make_filter,
+    make_slack_sink,
+    make_slack_sink_async,
 )
 from utilities.text import ensure_str, strip_and_dedent
 
@@ -781,3 +785,20 @@ class TestMakeFilter:
             ),
         }
         return cast(Any, record)
+
+
+class TestMakeSlackSink:
+    @given(url=text_ascii())
+    def test_sync(self, *, url: str) -> None:
+        sink = make_slack_sink(url)
+        handler: HandlerConfiguration = {"sink": sink, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+        logger.trace("message")
+
+    @given(url=text_ascii())
+    async def test_async(self, *, url: str) -> None:
+        sink = make_slack_sink_async(url)
+        handler: HandlerConfiguration = {"sink": sink, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+        logger.trace("message")
+        await logger.complete()
