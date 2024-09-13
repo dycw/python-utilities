@@ -126,7 +126,7 @@ httpx==0.27.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.112.0
+hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
 idna==3.8
     # via
@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.7.0
+narwhals==1.8.0
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -402,7 +402,7 @@ tqdm==4.66.5
     #   dycw-utilities (pyproject.toml)
     #   optuna
     #   pqdm
-trove-classifiers==2024.7.2
+trove-classifiers==2024.9.12
     # via hatchling
 typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
@@ -439,7 +439,7 @@ virtualenv==20.26.4
     #   nox
 vl-convert-python==1.6.1
     # via dycw-utilities (pyproject.toml)
-whenever==0.6.8
+whenever==0.6.9
     # via dycw-utilities (pyproject.toml)
 win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
