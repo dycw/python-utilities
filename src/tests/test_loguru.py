@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from hypothesis import given
 from loguru import logger
-from loguru._defaults import LOGURU_FORMAT
 from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
 from pytest import CaptureFixture, mark, param, raises
 
@@ -38,7 +37,7 @@ from utilities.loguru import (
     make_slack_sink,
     make_slack_sink_async,
 )
-from utilities.text import ensure_str, strip_and_dedent
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
