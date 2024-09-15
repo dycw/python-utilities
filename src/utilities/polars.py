@@ -37,6 +37,7 @@ from polars import (
     all_horizontal,
     col,
     lit,
+    struct,
     when,
 )
 from polars._typing import (
@@ -427,6 +428,44 @@ def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     return dict(zip(col_key, col_value, strict=True))
 
 
+@overload
+def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfo | str = ...) -> Series: ...
+@overload
+def convert_time_zone(
+    obj: DataFrame, /, *, time_zone: ZoneInfo | str = ...
+) -> DataFrame: ...
+def convert_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str = UTC
+) -> Series | DataFrame:
+    """Convert the time zone(s) of a Series or Dataframe."""
+    match obj:
+        case Series() as series:
+            return _convert_time_zone_series(series, time_zone=time_zone)
+        case DataFrame() as df:
+            return df.select(
+                *(
+                    _convert_time_zone_series(df[c], time_zone=time_zone)
+                    for c in df.columns
+                )
+            )
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _convert_time_zone_series(
+    sr: Series, /, *, time_zone: ZoneInfo | str = UTC
+) -> Series:
+    if isinstance(sr.dtype, Struct):
+        df = sr.struct.unnest()
+        df = convert_time_zone(df, time_zone=time_zone).select(
+            struct("*").alias(sr.name)
+        )
+        return df[sr.name]
+    if isinstance(sr.dtype, Datetime):
+        return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
+    return sr
+
+
 @dataclass(kw_only=True)
 class ColumnsToDictError(Exception):
     df: DataFrame
@@ -590,6 +629,47 @@ def nan_sum_cols(
         )
 
     return reduce(func, all_exprs)
+
+
+@overload
+def replace_time_zone(
+    obj: Series, /, *, time_zone: ZoneInfo | str | None = ...
+) -> Series: ...
+@overload
+def replace_time_zone(
+    obj: DataFrame, /, *, time_zone: ZoneInfo | str | None = ...
+) -> DataFrame: ...
+def replace_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str | None = UTC
+) -> Series | DataFrame:
+    """Replace the time zone(s) of a Series or Dataframe."""
+    match obj:
+        case Series() as series:
+            return _replace_time_zone_series(series, time_zone=time_zone)
+        case DataFrame() as df:
+            return df.select(
+                *(
+                    _replace_time_zone_series(df[c], time_zone=time_zone)
+                    for c in df.columns
+                )
+            )
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _replace_time_zone_series(
+    sr: Series, /, *, time_zone: ZoneInfo | str | None = UTC
+) -> Series:
+    if isinstance(sr.dtype, Struct):
+        df = sr.struct.unnest()
+        df = replace_time_zone(df, time_zone=time_zone).select(
+            struct("*").alias(sr.name)
+        )
+        return df[sr.name]
+    if isinstance(sr.dtype, Datetime):
+        time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
+        return sr.dt.replace_time_zone(time_zone_use)
+    return sr
 
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
@@ -788,6 +868,7 @@ __all__ = [
     "check_zoned_dtype_or_series",
     "collect_series",
     "columns_to_dict",
+    "convert_time_zone",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",
@@ -796,6 +877,7 @@ __all__ = [
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
+    "replace_time_zone",
     "set_first_row_as_columns",
     "struct_data_type",
     "yield_struct_series_dataclasses",
