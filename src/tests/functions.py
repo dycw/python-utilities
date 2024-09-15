@@ -15,66 +15,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-# test entry sync
-
-
-@log
-def func_test_entry_sync_inc(x: int, /) -> int:
-    return x + 1
-
-
-@log
-def func_test_entry_sync_dec(x: int, /) -> int:
-    return x - 1
-
-
-@log
-def func_test_entry_sync_inc_and_dec(x: int, /) -> tuple[int, int]:
-    return func_test_entry_sync_inc(x), func_test_entry_sync_dec(x)
-
-
-# test entry async
-
-
-@log
-async def func_test_entry_async_inc(x: int, /) -> int:
-    await sleep(0.01)
-    return x + 1
-
-
-@log
-async def func_test_entry_async_dec(x: int, /) -> int:
-    await sleep(0.01)
-    return x - 1
-
-
-@log
-async def func_test_entry_async_inc_and_dec(x: int, /) -> tuple[int, int]:
-    return (await func_test_entry_async_inc(x), await func_test_entry_async_dec(x))
-
-
-# test entry disabled
-
-
-@log(entry=None)
-def func_test_entry_disabled_sync(x: int, /) -> int:
-    return x + 1
-
-
-@log(entry=None)
-async def func_test_entry_disabled_async(x: int, /) -> int:
-    await sleep(0.01)
-    return x + 1
-
-
-# test entry custom level
-
-
-@log(entry=LogLevel.INFO)
-def func_test_entry_custom_level(x: int, /) -> int:
-    return x + 1
-
-
 # test error
 
 
@@ -82,14 +22,6 @@ class Remainder1Error(Exception): ...
 
 
 class Remainder2Error(Exception): ...
-
-
-@log
-def func_test_error_sync(x: int, /) -> int | None:
-    if x % 2 == 0:
-        return x + 1
-    msg = f"Got an odd number {x}"
-    raise ValueError(msg)
 
 
 @log
