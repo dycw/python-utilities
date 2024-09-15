@@ -62,6 +62,11 @@ def func_test_log_exit_duration(x: int, /) -> int:
         return x + 1
 
 
+def func_test_log_contextualize(x: int, /) -> int:
+    with log(key="value"):
+        return x + 1
+
+
 _counter = 0
 
 
