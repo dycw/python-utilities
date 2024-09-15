@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TextIO, TypedDict, assert_never, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -226,6 +226,8 @@ def log(
                         exit_level_use = (
                             LogLevel.TRACE if entry_level is None else entry_level
                         )
+                    case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                        assert_never(never)
                 logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
                 logger_exit.opt(depth=depth).log(
                     exit_level_use, exit_message, timer=timer

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from time import sleep
+
 from utilities.loguru import LogLevel, log
 
 
@@ -44,3 +46,14 @@ def func_test_error_expected(x: int, /) -> int | None:
             return x + 1
         msg = f"Got an odd number: {x}"
         raise ValueError(msg)
+
+
+def func_test_exit_explicit(x: int, /) -> int:
+    with log(exit_level=LogLevel.DEBUG):
+        return x + 1
+
+
+def func_test_exit_duration(x: int, /) -> int:
+    with log(exit_duration=0.01):
+        sleep(0.02)
+        return x + 1
