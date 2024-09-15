@@ -9,24 +9,20 @@ from collections.abc import Callable, Hashable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum, unique
-from functools import wraps
-from inspect import iscoroutinefunction
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, ParamSpec, TextIO, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TextIO, TypedDict, cast
 
 from loguru import logger
 from typing_extensions import override
 
 from utilities.datetime import SECOND, duration_to_timedelta
-from utilities.functions import get_func_name
 from utilities.iterables import (
     OneEmptyError,
     OneNonUniqueError,
     one,
     resolve_include_and_exclude,
 )
-from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -50,10 +46,6 @@ if TYPE_CHECKING:
     from utilities.asyncio import Coroutine1, MaybeCoroutine1
     from utilities.iterables import MaybeIterable
     from utilities.types import Duration, PathLike, StrMapping
-
-
-_P = ParamSpec("_P")
-_T = TypeVar("_T")
 
 
 _RECORD_EXCEPTION_VALUE = "{record[exception].value!r}"
@@ -196,95 +188,48 @@ class GetLoggingLevelNumberError(Exception):
 @contextmanager
 def log(
     *,
+    depth: int = 2,
     entry_level: LogLevel | None = LogLevel.TRACE,
     entry_bind: StrMapping | None = None,
-    entry_message: str = "⋯",
+    entry_message: str = "➢",
     error_expected: type[Exception] | tuple[type[Exception], ...] | None = None,
     error_bind: StrMapping | None = None,
     error_message: str = _RECORD_EXCEPTION_VALUE,
-    exit_level: LogLevel | None | Sentinel = sentinel,
+    exit_level: LogLevel | None = None,
     exit_duration: Duration = SECOND,
     exit_bind: StrMapping | None = None,
-    exit_predicate: Callable[[_T], bool] | None = None,
     exit_message: str = "✔",
+    **kwargs: Any,
 ) -> Iterator[None]:
     """Log the function call."""
-    timer = Timer()
-    if entry_level is not None:
-        logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
-        logger_entry.opt(depth=2).log(entry_level, entry_message)
-    try:
-        yield
-    except Exception as error:
-        if (error_expected is None) or not isinstance(error, error_expected):
-            logger_error = logger if error_bind is None else logger.bind(**error_bind)
-            logger_error.opt(exception=True, record=True, depth=depth).error(
-                error_message
-            )
-        raise
-    finally:
-        if (not isinstance(exit_level, Sentinel)) or (timer >= exit_duration):
-            exit_level_use = LogLevel.TRACE if exit_level is None else exit_level
-            if (exit_level_use is not None)
-        if timer >= SECOND:
-            logger.opt(depth=depth3).info("CM finish", timer=timer)
-
-    func_name = get_func_name(func)
-    if iscoroutinefunction(func):
-
-        @wraps(func)
-        async def wrapped_async(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-            if entry_level is not None:
-                logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
-                logger_use.opt(depth=depth).log(
-                    entry_level,
-                    entry_message,
-                    **{_MATHEMATICAL_ITALIC_SMALL_F: func_name},
-                )
-            try:
-                result = await func(*args, **kwargs)
-            except Exception as error:
-                if (error_expected is None) or not isinstance(error, error_expected):
-                    logger_use = (
-                        logger if error_bind is None else logger.bind(**error_bind)
-                    )
-                    logger_use.opt(exception=True, record=True, depth=depth).error(
-                        error_message
-                    )
-                raise
-            if ((exit_predicate is None) or (exit_predicate(result))) and (
-                exit_level is not None
-            ):
-                logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
-                logger_use.opt(depth=depth).log(exit_level, exit_message)
-            return result
-
-        return cast(Callable[_P, _T], wrapped_async)
-
-    @wraps(func)
-    def wrapped_sync(*args: Any, **kwargs: Any) -> Any:
+    with logger.contextualize(**kwargs), Timer() as timer:
         if entry_level is not None:
-            logger_use = logger if entry_bind is None else logger.bind(**entry_bind)
-            logger_use.opt(depth=depth).log(
-                entry_level, entry_message, **{_MATHEMATICAL_ITALIC_SMALL_F: func_name}
-            )
+            logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
+            logger_entry.opt(depth=depth).log(entry_level, entry_message)
         try:
-            result = func(*args, **kwargs)
+            yield
         except Exception as error:
             if (error_expected is None) or not isinstance(error, error_expected):
-                logger_use = logger if error_bind is None else logger.bind(**error_bind)
-                logger_use.opt(exception=True, record=True, depth=depth).error(
+                logger_error = (
+                    logger if error_bind is None else logger.bind(**error_bind)
+                )
+                logger_error.opt(exception=True, record=True, depth=depth).error(
                     error_message
                 )
             raise
-        if ((exit_predicate is None) or (exit_predicate(result))) and (
-            exit_level is not None
-        ):
-            logger_use = logger if exit_bind is None else logger.bind(**exit_bind)
-            logger_use.opt(depth=depth).log(exit_level, exit_message)
-        return result
-
-    return cast(Callable[_P, _T], wrapped_sync)
+        finally:
+            if isinstance(exit_level, LogLevel) or (timer >= exit_duration):
+                match exit_level:
+                    case LogLevel():
+                        exit_level_use = exit_level
+                    case None:
+                        exit_level_use = (
+                            LogLevel.TRACE if entry_level is None else entry_level
+                        )
+                logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
+                logger_exit.opt(depth=depth).log(
+                    exit_level_use, exit_message, timer=timer
+                )
 
 
 def logged_sleep_sync(
