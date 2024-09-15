@@ -454,30 +454,14 @@ def _convert_time_zone_series(
     sr: Series, /, *, time_zone: ZoneInfo | str = UTC
 ) -> Series:
     if isinstance(sr.dtype, Struct):
-        return sr.cast(
-            Struct({
-                f.name: _convert_time_zone_dtype(f.dtype, time_zone=time_zone)
-                for f in sr.dtype.fields
-            })
+        df = sr.struct.unnest()
+        df = convert_time_zone(df, time_zone=time_zone).select(
+            struct("*").alias(sr.name)
         )
+        return df[sr.name]
     if isinstance(sr.dtype, Datetime):
-        return sr.cast(_convert_time_zone_dtype(sr.dtype, time_zone=time_zone))
+        return sr.dt.convert_time_zone(get_time_zone_name(time_zone))
     return sr
-
-
-def _convert_time_zone_dtype(
-    dtype: PolarsDataType, /, *, time_zone: ZoneInfo | str = UTC
-) -> PolarsDataType:
-    if isinstance(dtype, Struct):
-        return Struct({
-            f.name: _convert_time_zone_dtype(f.dtype, time_zone=time_zone)
-            for f in dtype.fields
-        })
-    if isinstance(dtype, Datetime):
-        return Datetime(
-            time_unit=dtype.time_unit, time_zone=get_time_zone_name(time_zone)
-        )
-    return dtype
 
 
 @dataclass(kw_only=True)
