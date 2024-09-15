@@ -230,7 +230,7 @@ def log(
                         assert_never(never)
                 logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
                 logger_exit.opt(depth=depth).log(
-                    exit_level_use, exit_message, timer=timer
+                    exit_level_use, exit_message, **{"⏲": timer}
                 )
 
 
