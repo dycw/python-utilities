@@ -458,7 +458,7 @@ class TestTryAwait:
         assert result is False
 
     @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
-    async def test_error_sync(self, *, cls: type[Exception]) -> None:
+    async def test_error_std_msg_sync(self, *, cls: type[Exception]) -> None:
         def func(*, value: bool) -> bool:
             if not value:
                 msg = f"Value must be True; got {value}"
@@ -471,7 +471,7 @@ class TestTryAwait:
             _ = await try_await(func(value=False))
 
     @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
-    async def test_error_async(self, *, cls: type[Exception]) -> None:
+    async def test_error_std_msg_async(self, *, cls: type[Exception]) -> None:
         async def func(*, value: bool) -> bool:
             if not value:
                 msg = f"Value must be True; got {value}"
