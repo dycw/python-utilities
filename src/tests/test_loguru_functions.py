@@ -57,8 +57,13 @@ def func_test_log_exit_explicit(x: int, /) -> int:
 
 
 def func_test_log_exit_duration(x: int, /) -> int:
-    with log(exit_duration=0.01):
-        sleep(0.02)
+    with log(exit_duration=0.0):
+        sleep(0.01)
+        return x + 1
+
+
+def func_test_log_contextualize(x: int, /) -> int:
+    with log(key="value"):
         return x + 1
 
 
