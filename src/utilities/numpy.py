@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import reduce
 from itertools import repeat
@@ -39,7 +38,6 @@ from numpy.random import default_rng
 from numpy.typing import NDArray
 from typing_extensions import override
 
-from utilities.errors import redirect_error
 from utilities.iterables import is_iterable_not_str
 
 if TYPE_CHECKING:
@@ -777,20 +775,6 @@ class PctChangeError(Exception):
         return "Shift must be non-zero"
 
 
-@contextmanager
-def redirect_empty_numpy_concatenate() -> Iterator[None]:
-    """Redirect to the `EmptyNumpyConcatenateError`."""
-    with redirect_error(
-        ValueError,
-        EmptyNumpyConcatenateError,
-        match="need at least one array to concatenate",
-    ):
-        yield
-
-
-class EmptyNumpyConcatenateError(Exception): ...
-
-
 def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArrayF:
     """Shift the elements of an array."""
     if n == 0:
@@ -821,7 +805,6 @@ def shift_bool(
 __all__ = [
     "DEFAULT_RNG",
     "AsIntError",
-    "EmptyNumpyConcatenateError",
     "FlatN0EmptyError",
     "FlatN0Error",
     "FlatN0MultipleError",
@@ -904,7 +887,6 @@ __all__ = [
     "maximum",
     "minimum",
     "pct_change",
-    "redirect_empty_numpy_concatenate",
     "shift",
     "shift_bool",
 ]
