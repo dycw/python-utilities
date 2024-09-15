@@ -201,7 +201,7 @@ def log(
     exit_message: str = "✔",
     **kwargs: Any,
 ) -> Iterator[None]:
-    """Log the function call."""
+    """Log the function entry/error/exit/duration."""
     with logger.contextualize(**kwargs), Timer() as timer:
         if entry_level is not None:
             logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
