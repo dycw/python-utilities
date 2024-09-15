@@ -486,6 +486,23 @@ class TestConvertTimeZone:
         )
         assert_frame_equal(result, expected)
 
+    def test_dataframe_nested_twice(self) -> None:
+        df = DataFrame(
+            data=[((self.now_utc,), True)],
+            schema={"datetime": Struct({"inner": DatetimeUTC}), "boolean": Boolean},
+            orient="row",
+        )
+        result = convert_time_zone(df, time_zone=HongKong)
+        expected = DataFrame(
+            data=[((self.now_hkg,), True)],
+            schema={
+                "datetime": Struct({"inner": DatetimeHongKong}),
+                "boolean": Boolean,
+            },
+            orient="row",
+        )
+        assert_frame_equal(result, expected)
+
 
 class TestDatetimeUTC:
     @mark.parametrize(
