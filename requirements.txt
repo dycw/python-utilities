@@ -128,7 +128,7 @@ hyperlink==21.0.0
     # via hatch
 hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
-idna==3.9
+idna==3.10
     # via
     #   anyio
     #   httpx
