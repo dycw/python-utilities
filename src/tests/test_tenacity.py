@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import floats
 from loguru import logger
 
-from tests.functions import func_test_before_sleep_log
+from tests.test_loguru_functions import func_test_tenacity_before_sleep_log
 from utilities.hypothesis import durations
 from utilities.tenacity import wait_exponential_jitter
 
@@ -35,7 +35,7 @@ class TestLoguruAdapter:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert func_test_before_sleep_log() == 3
+        assert func_test_tenacity_before_sleep_log() == 3
         out = capsys.readouterr().out
         lines = out.splitlines()
         assert len(lines) == 2
