@@ -60,7 +60,7 @@ httpx==0.27.2
     # via jupyterlab
 hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
-idna==3.8
+idna==3.9
     # via
     #   anyio
     #   httpx
@@ -169,7 +169,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-platformdirs==4.3.2
+platformdirs==4.3.3
     # via jupyter-core
 pluggy==1.5.0
     # via pytest

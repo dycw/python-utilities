@@ -442,24 +442,14 @@ class TestToSorted:
 
 
 class TestTryAwait:
-    async def test_maybe_awaitable(self) -> None:
-        from utilities.random import SYSTEM_RANDOM
-
-        if SYSTEM_RANDOM.random() <= 0.5:
-
-            async def func(*, value: bool) -> bool:  # pyright: ignore[reportRedeclaration]
-                await sleep(0.01)
-                return not value
-
-        else:
-
-            def func(*, value: bool) -> bool:
-                return not value
+    async def test_sync(self) -> None:
+        def func(*, value: bool) -> bool:
+            return not value
 
         result = await try_await(func(value=True))
         assert result is False
 
-    async def test_awaitable(self) -> None:
+    async def test_async(self) -> None:
         async def func(*, value: bool) -> bool:
             await sleep(0.01)
             return not value
@@ -467,9 +457,29 @@ class TestTryAwait:
         result = await try_await(func(value=True))
         assert result is False
 
-    async def test_sync(self) -> None:
+    @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
+    async def test_error_sync(self, *, cls: type[Exception]) -> None:
         def func(*, value: bool) -> bool:
+            if not value:
+                msg = f"Value must be True; got {value}"
+                raise cls(msg)
             return not value
 
         result = await try_await(func(value=True))
         assert result is False
+        with raises(cls, match="Value must be True; got False"):
+            _ = await try_await(func(value=False))
+
+    @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
+    async def test_error_async(self, *, cls: type[Exception]) -> None:
+        async def func(*, value: bool) -> bool:
+            if not value:
+                msg = f"Value must be True; got {value}"
+                raise cls(msg)
+            await sleep(0.01)
+            return not value
+
+        result = await try_await(func(value=True))
+        assert result is False
+        with raises(cls, match="Value must be True; got False"):
+            _ = await try_await(func(value=False))

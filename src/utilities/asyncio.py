@@ -264,15 +264,6 @@ async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
         raise
 
 
-@dataclass(kw_only=True)
-class TryAwaitError(Exception):
-    obj: Any
-
-    @override
-    def __str__(self) -> str:
-        return f"Object must be awaitable; got {self.obj}"
-
-
 __all__ = [
     "Coroutine1",
     "MaybeAwaitable",
@@ -289,5 +280,4 @@ __all__ = [
     "to_set",
     "to_sorted",
     "try_await",
-    'TryAwaitError'
 ]

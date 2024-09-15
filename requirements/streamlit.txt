@@ -25,7 +25,7 @@ gitpython==3.1.43
     # via streamlit
 hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
-idna==3.8
+idna==3.9
     # via requests
 iniconfig==2.0.0
     # via pytest
