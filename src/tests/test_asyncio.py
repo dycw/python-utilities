@@ -465,8 +465,6 @@ class TestTryAwait:
                 raise cls(msg)
             return not value
 
-        result = await try_await(func(value=True))
-        assert result is False
         with raises(cls, match="Value must be True; got False"):
             _ = await try_await(func(value=False))
 
@@ -479,7 +477,26 @@ class TestTryAwait:
             await sleep(0.01)
             return not value
 
-        result = await try_await(func(value=True))
-        assert result is False
         with raises(cls, match="Value must be True; got False"):
+            _ = await try_await(func(value=False))
+
+    @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
+    async def test_error_non_std_msg_sync(self, *, cls: type[Exception]) -> None:
+        def func(*, value: bool) -> bool:
+            if not value:
+                raise cls(value)
+            return not value
+
+        with raises(cls, match="False"):
+            _ = await try_await(func(value=False))
+
+    @mark.parametrize("cls", [param(ValueError), param(TypeError)], ids=str)
+    async def test_error_non_std_msg_async(self, *, cls: type[Exception]) -> None:
+        async def func(*, value: bool) -> bool:
+            if not value:
+                raise cls(value)
+            await sleep(0.01)
+            return not value
+
+        with raises(cls, match="False"):
             _ = await try_await(func(value=False))
