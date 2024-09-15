@@ -37,6 +37,7 @@ from polars import (
     all_horizontal,
     col,
     lit,
+    struct,
     when,
 )
 from polars._typing import (
@@ -436,7 +437,7 @@ def convert_time_zone(
 def convert_time_zone(
     obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str = UTC
 ) -> Series | DataFrame:
-    """Convert the time zone of a Series or Dataframe."""
+    """Convert the time zone(s) of a Series or Dataframe."""
     match obj:
         case Series() as series:
             return _convert_time_zone_series(series, time_zone=time_zone)
@@ -642,6 +643,45 @@ def nan_sum_cols(
         )
 
     return reduce(func, all_exprs)
+
+
+@overload
+def replace_time_zone(
+    obj: Series, /, *, time_zone: ZoneInfo | str | None = ...
+) -> Series: ...
+@overload
+def replace_time_zone(
+    obj: DataFrame, /, *, time_zone: ZoneInfo | str | None = ...
+) -> DataFrame: ...
+def replace_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str | None = UTC
+) -> Series | DataFrame:
+    """Replace the time zone(s) of a Series or Dataframe."""
+    match obj:
+        case Series() as series:
+            return _replace_time_zone_series(series, time_zone=time_zone)
+        case DataFrame() as df:
+            return df.select(
+                *(
+                    _replace_time_zone_series(df[c], time_zone=time_zone)
+                    for c in df.columns
+                )
+            )
+
+
+def _replace_time_zone_series(
+    sr: Series, /, *, time_zone: ZoneInfo | str | None = UTC
+) -> Series:
+    if isinstance(sr.dtype, Struct):
+        df = sr.struct.unnest()
+        df = replace_time_zone(df, time_zone=time_zone).select(
+            struct("*").alias(sr.name)
+        )
+        return df[sr.name]
+    if isinstance(sr.dtype, Datetime):
+        time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
+        return sr.dt.replace_time_zone(time_zone_use)
+    return sr
 
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
