@@ -448,7 +448,7 @@ def convert_time_zone(
                     for c in df.columns
                 )
             )
-        case _ as never:  # pragma: no cover
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 
 
@@ -653,7 +653,7 @@ def replace_time_zone(
                     for c in df.columns
                 )
             )
-        case _ as never:  # pragma: no cover
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 
 
