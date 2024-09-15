@@ -427,6 +427,58 @@ def columns_to_dict(df: DataFrame, key: str, value: str, /) -> dict[Any, Any]:
     return dict(zip(col_key, col_value, strict=True))
 
 
+@overload
+def convert_time_zone(obj: Series, /, *, time_zone: ZoneInfo | str = ...) -> Series: ...
+@overload
+def convert_time_zone(
+    obj: DataFrame, /, *, time_zone: ZoneInfo | str = ...
+) -> DataFrame: ...
+def convert_time_zone(
+    obj: Series | DataFrame, /, *, time_zone: ZoneInfo | str = UTC
+) -> Series | DataFrame:
+    """Convert the time zone of a Series or Dataframe."""
+    match obj:
+        case Series() as series:
+            return _convert_time_zone_series(series, time_zone=time_zone)
+        case DataFrame() as df:
+            return df.select(
+                *(
+                    _convert_time_zone_series(df[c], time_zone=time_zone)
+                    for c in df.columns
+                )
+            )
+
+
+def _convert_time_zone_series(
+    sr: Series, /, *, time_zone: ZoneInfo | str = UTC
+) -> Series:
+    if isinstance(sr.dtype, Struct):
+        return sr.cast(
+            Struct({
+                f.name: _convert_time_zone_dtype(f.dtype, time_zone=time_zone)
+                for f in sr.dtype.fields
+            })
+        )
+    if isinstance(sr.dtype, Datetime):
+        return sr.cast(_convert_time_zone_dtype(sr.dtype, time_zone=time_zone))
+    return sr
+
+
+def _convert_time_zone_dtype(
+    dtype: PolarsDataType, /, *, time_zone: ZoneInfo | str = UTC
+) -> PolarsDataType:
+    if isinstance(dtype, Struct):
+        return Struct({
+            f.name: _convert_time_zone_dtype(f.dtype, time_zone=time_zone)
+            for f in dtype.fields
+        })
+    if isinstance(dtype, Datetime):
+        return Datetime(
+            time_unit=dtype.time_unit, time_zone=get_time_zone_name(time_zone)
+        )
+    return dtype
+
+
 @dataclass(kw_only=True)
 class ColumnsToDictError(Exception):
     df: DataFrame
