@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from functools import wraps
+from re import search
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast, overload
 
 from utilities.functions import ensure_not_none
+from utilities.iterables import OneError, one
+from utilities.text import EnsureStrError, ensure_str
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable, Coroutine
@@ -251,8 +254,23 @@ async def try_await(obj: MaybeAwaitable[_T], /) -> _T:
     """Try await a value from an object."""
     try:
         return await cast(Awaitable[_T], obj)
-    except TypeError:
-        return cast(_T, obj)
+    except TypeError as error:
+        try:
+            text = ensure_str(one(error.args))
+        except (EnsureStrError, OneError):
+            raise error from None
+        if search("object .* can't be used in 'await' expression", text):
+            return cast(_T, obj)
+        raise
+
+
+@dataclass(kw_only=True)
+class TryAwaitError(Exception):
+    obj: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Object must be awaitable; got {self.obj}"
 
 
 __all__ = [
@@ -271,4 +289,5 @@ __all__ = [
     "to_set",
     "to_sorted",
     "try_await",
+    'TryAwaitError'
 ]
