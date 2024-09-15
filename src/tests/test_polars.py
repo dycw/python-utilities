@@ -21,7 +21,6 @@ from polars import (
     Struct,
     Utf8,
     col,
-    concat,
     datetime_range,
     int_range,
     lit,
@@ -40,7 +39,6 @@ from utilities.polars import (
     DatetimeUSEastern,
     DatetimeUTC,
     DropNullStructSeriesError,
-    EmptyPolarsConcatError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
@@ -64,7 +62,6 @@ from utilities.polars import (
     join,
     nan_sum_agg,
     nan_sum_cols,
-    redirect_empty_polars_concat,
     set_first_row_as_columns,
     struct_data_type,
     yield_struct_series_dataclasses,
@@ -629,12 +626,6 @@ class TestNanSumCols:
             [(x, y)], schema={"x": Int64, "y": Int64}, orient="row"
         ).with_columns(z=nan_sum_cols(x_use, y_use))
         assert df["z"].item() == expected
-
-
-class TestRedirectEmptyPolarsConcat:
-    def test_main(self) -> None:
-        with raises(EmptyPolarsConcatError), redirect_empty_polars_concat():
-            _ = concat([])
 
 
 class TestSetFirstRowAsColumns:
