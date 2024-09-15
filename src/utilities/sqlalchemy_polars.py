@@ -41,11 +41,7 @@ from utilities.iterables import (
     chunked,
     one,
 )
-from utilities.polars import (
-    EmptyPolarsConcatError,
-    redirect_empty_polars_concat,
-    zoned_datetime,
-)
+from utilities.polars import zoned_datetime
 from utilities.sqlalchemy import (
     CHUNK_SIZE_FRAC,
     EngineOrConnection,
@@ -325,9 +321,8 @@ def select_to_dataframe(
                 for sel in sels
             )
             try:
-                with redirect_empty_polars_concat():
-                    return concat(dfs)
-            except EmptyPolarsConcatError:
+                return concat(dfs)
+            except ValueError:
                 return DataFrame(schema=prepared.schema)
     dfs = (
         select_to_dataframe(
@@ -448,9 +443,8 @@ async def select_to_dataframe_async(
             for sel in sels
         ]
         try:
-            with redirect_empty_polars_concat():
-                return concat(dfs)
-        except EmptyPolarsConcatError:
+            return concat(dfs)
+        except ValueError:
             return DataFrame(schema=prepared.schema)
 
     async def yield_dfs() -> AsyncIterator[DataFrame]:

@@ -8,7 +8,6 @@ from hypothesis.strategies import DataObject, data, floats, integers, none
 from numpy import (
     arange,
     array,
-    concatenate,
     eye,
     full,
     inf,
@@ -28,7 +27,6 @@ from utilities.hypothesis import assume_does_not_raise, float_arrays
 from utilities.numpy import (
     DEFAULT_RNG,
     AsIntError,
-    EmptyNumpyConcatenateError,
     FlatN0EmptyError,
     FlatN0MultipleError,
     NDArrayF,
@@ -94,7 +92,6 @@ from utilities.numpy import (
     maximum,
     minimum,
     pct_change,
-    redirect_empty_numpy_concatenate,
     shift,
     shift_bool,
 )
@@ -1131,12 +1128,6 @@ class TestPctChange:
         arr = array([], dtype=float)
         with raises(PctChangeError, match="Shift must be non-zero"):
             _ = pct_change(arr, n=0)
-
-
-class TestRedirectEmptyNumpyConcatenate:
-    def test_main(self) -> None:
-        with raises(EmptyNumpyConcatenateError), redirect_empty_numpy_concatenate():
-            _ = concatenate([])
 
 
 class TestShift:

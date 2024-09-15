@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
-from contextlib import contextmanager, suppress
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum
@@ -592,18 +592,6 @@ def nan_sum_cols(
     return reduce(func, all_exprs)
 
 
-@contextmanager
-def redirect_empty_polars_concat() -> Iterator[None]:
-    """Redirect to the `EmptyPolarsConcatError`."""
-    with redirect_error(
-        ValueError, EmptyPolarsConcatError, match="cannot concat empty list"
-    ):
-        yield
-
-
-class EmptyPolarsConcatError(Exception): ...
-
-
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
     with redirect_error(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
@@ -792,7 +780,6 @@ __all__ = [
     "DatetimeUSEastern",
     "DatetimeUTC",
     "DropNullStructSeriesError",
-    "EmptyPolarsConcatError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
@@ -809,7 +796,6 @@ __all__ = [
     "join",
     "nan_sum_agg",
     "nan_sum_cols",
-    "redirect_empty_polars_concat",
     "set_first_row_as_columns",
     "struct_data_type",
     "yield_struct_series_dataclasses",
