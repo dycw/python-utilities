@@ -128,7 +128,7 @@ hyperlink==21.0.0
     # via hatch
 hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
-idna==3.9
+idna==3.10
     # via
     #   anyio
     #   httpx
@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.8.0
+narwhals==1.8.1
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)

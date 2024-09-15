@@ -25,7 +25,7 @@ gitpython==3.1.43
     # via streamlit
 hypothesis==6.112.1
     # via dycw-utilities (pyproject.toml)
-idna==3.9
+idna==3.10
     # via requests
 iniconfig==2.0.0
     # via pytest
@@ -43,7 +43,7 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.8.0
+narwhals==1.8.1
     # via altair
 numpy==2.1.1
     # via

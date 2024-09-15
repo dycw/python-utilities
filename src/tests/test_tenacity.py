@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis.strategies import floats
 from loguru import logger
 
-from tests.functions import func_test_before_sleep_log
+from tests.test_loguru_functions import func_test_tenacity_before_sleep_log
 from utilities.hypothesis import durations
 from utilities.tenacity import wait_exponential_jitter
 
@@ -35,13 +35,13 @@ class TestLoguruAdapter:
         handler: HandlerConfiguration = {"sink": sys.stdout}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert func_test_before_sleep_log() == 3
+        assert func_test_tenacity_before_sleep_log() == 3
         out = capsys.readouterr().out
         lines = out.splitlines()
         assert len(lines) == 2
         for i, line in enumerate(lines, start=1):
             expected = (
-                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| utilities\.tenacity:log:\d+ - Retrying tests\.functions\.func_test_before_sleep_log in 0\.01 seconds as it raised ValueError: "
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| INFO     \| utilities\.tenacity:log:\d+ - Retrying tests\.test_loguru_functions\.func_test_tenacity_before_sleep_log in 0\.01 seconds as it raised ValueError: "
                 + str(i)
                 + r"\."
             )
