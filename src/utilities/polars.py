@@ -448,6 +448,8 @@ def convert_time_zone(
                     for c in df.columns
                 )
             )
+        case _ as never:  # pragma: no cover
+            assert_never(never)
 
 
 def _convert_time_zone_series(
@@ -651,6 +653,8 @@ def replace_time_zone(
                     for c in df.columns
                 )
             )
+        case _ as never:  # pragma: no cover
+            assert_never(never)
 
 
 def _replace_time_zone_series(
