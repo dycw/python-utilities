@@ -26,7 +26,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
     from uuid import UUID
 
-    from redis.typing import ResponseT
+    from redis.commands.timeseries import TimeSeries
+    from redis.typing import KeyT, Number, ResponseT
 
 
 _HOST = "localhost"
@@ -219,7 +220,7 @@ class RedisKey(Generic[_T]):
         connection_pool: redis.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> None:
+    ) -> ResponseT:
         from utilities.orjson import serialize
 
         ser = serialize(value)
@@ -271,7 +272,7 @@ class RedisKey(Generic[_T]):
         connection_pool: redis.asyncio.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> None:
+    ) -> ResponseT:
         from utilities.orjson import serialize
 
         ser = serialize(value)
