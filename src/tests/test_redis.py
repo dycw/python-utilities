@@ -26,10 +26,21 @@ class TestRedisKey:
 
 
 class TestYieldClient:
-    def test_sync(self) -> None:
+    def test_sync_default(self) -> None:
         with yield_client() as client:
             assert isinstance(client, redis.Redis)
 
-    async def test_async(self) -> None:
+    def test_sync_client(self) -> None:
+        with yield_client() as client1, yield_client(client=client1) as client2:
+            assert isinstance(client2, redis.Redis)
+
+    async def test_async_default(self) -> None:
         async with yield_client_async() as client:
             assert isinstance(client, redis.asyncio.Redis)
+
+    async def test_async_client(self) -> None:
+        async with (
+            yield_client_async() as client1,
+            yield_client_async(client=client1) as client2,
+        ):
+            assert isinstance(client2, redis.asyncio.Redis)
