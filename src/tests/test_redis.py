@@ -4,7 +4,6 @@ import redis
 import redis.asyncio
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data
-from pytest import mark
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.hypothesis import redis_cms, text_ascii
@@ -29,7 +28,6 @@ class TestRedisKey:
 
 
 class TestRedisHashMapKey:
-    @mark.skip
     @given(data=data(), key=text_ascii(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, data: DataObject, key: str, value: bool) -> None:

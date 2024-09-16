@@ -9,13 +9,12 @@ import redis
 import redis.asyncio
 
 from utilities.text import ensure_bytes
+from utilities.types import ensure_int
 
 if TYPE_CHECKING:
     import datetime as dt
     from collections.abc import AsyncIterator, Iterator
     from uuid import UUID
-
-    from redis.typing import ResponseT
 
 
 _HOST = "localhost"
@@ -89,7 +88,7 @@ class RedisHashMapKey(Generic[_T]):
         connection_pool: redis.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> ResponseT:
+    ) -> int:
         """Set a value in a hashmap in `redis`."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
@@ -104,7 +103,8 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            return client_use.hset(self.name, key=key, value=cast(Any, ser))
+            response = client_use.hset(self.name, key=key, value=cast(Any, ser))
+        return ensure_int(response)
 
     async def hget_async(
         self,
@@ -152,7 +152,7 @@ class RedisHashMapKey(Generic[_T]):
         connection_pool: redis.asyncio.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> ResponseT:
+    ) -> int:
         """Set a value in a hashmap in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
@@ -220,7 +220,7 @@ class RedisKey(Generic[_T]):
         connection_pool: redis.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> ResponseT:
+    ) -> int:
         """Set a value in `redis`."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
@@ -235,7 +235,8 @@ class RedisKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            return client_use.set(self.name, ser)
+            response = client_use.set(self.name, ser)
+        return ensure_int(response)
 
     async def get_async(
         self,
@@ -280,7 +281,7 @@ class RedisKey(Generic[_T]):
         connection_pool: redis.asyncio.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> ResponseT:
+    ) -> int:
         """Set a value in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
