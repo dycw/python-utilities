@@ -81,7 +81,7 @@ class RedisKey(Generic[_T]):
             maybe_ser = ensure_bytes(client.get(self.name), nullable=True)
         return None if maybe_ser is None else deserialize(maybe_ser)
 
-    async def set(
+    def set(
         self,
         value: _T,
         /,
@@ -106,7 +106,7 @@ class RedisKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client:
-            return await client.set(self.name, ser)
+            return client.set(self.name, ser)
 
     async def get_async(
         self,
