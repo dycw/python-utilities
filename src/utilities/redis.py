@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never
 
 import redis
 import redis.asyncio
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from redis.commands.timeseries import TimeSeries
 
 
-DuplicatePolicy = Literal["block", "first", "last", "min", "max", "sum"]
 _HOST = "localhost"
 _PORT = 6379
 
