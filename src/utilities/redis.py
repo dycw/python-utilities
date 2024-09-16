@@ -366,4 +366,10 @@ async def yield_client_async(
                 assert_never(never)
 
 
-__all__ = ["RedisContainer", "RedisKey", "yield_client", "yield_client_async"]
+__all__ = [
+    "RedisContainer",
+    "RedisHashMapKey",
+    "RedisKey",
+    "yield_client",
+    "yield_client_async",
+]
