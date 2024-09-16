@@ -5,12 +5,14 @@ import redis.asyncio
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data
 
+from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.hypothesis import redis_cms
 from utilities.redis import RedisKey, yield_client, yield_client_async
 
 
 class TestRedisKey:
     @given(data=data(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
     async def test_main(self, *, data: DataObject, value: bool) -> None:
         async with redis_cms(data) as container:
             key = RedisKey(name=container.key, type=bool)
