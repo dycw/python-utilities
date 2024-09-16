@@ -21,7 +21,9 @@ _HOST = "localhost"
 _PORT = 6379
 
 
+_K = TypeVar("_K")
 _T = TypeVar("_T")
+_V = TypeVar("_V")
 _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
 
 
@@ -36,15 +38,16 @@ class RedisContainer(Generic[_TRedis]):
 
 
 @dataclass(frozen=True, kw_only=True)
-class RedisHashMapKey(Generic[_T]):
+class RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
     name: str
-    type: type[_T]
+    key: type[_K]
+    value: type[_V]
 
     def hget(
         self,
-        key: str,
+        key: _K,
         /,
         *,
         client: redis.Redis | None = None,
@@ -55,10 +58,11 @@ class RedisHashMapKey(Generic[_T]):
         connection_pool: redis.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> _T | None:
+    ) -> _V | None:
         """Get a value from a hashmap in `redis`."""
-        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
+        from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
+        ser = serialize(key)
         with yield_client(  # skipif-ci-and-not-linux
             client=client,
             host=host,
@@ -69,15 +73,15 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = client_use.hget(self.name, key)
+            maybe_ser = client_use.hget(self.name, cast(Any, ser))
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     def hset(
         self,
-        key: str,
-        value: _T,
+        key: _K,
+        value: _V,
         /,
         *,
         client: redis.Redis | None = None,
@@ -92,7 +96,8 @@ class RedisHashMapKey(Generic[_T]):
         """Set a value in a hashmap in `redis`."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(value)  # skipif-ci-and-not-linux
+        ser_key = serialize(key)  # skipif-ci-and-not-linux
+        ser_value = serialize(value)  # skipif-ci-and-not-linux
         with yield_client(  # skipif-ci-and-not-linux
             client=client,
             host=host,
@@ -103,12 +108,14 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            response = client_use.hset(self.name, key=key, value=cast(Any, ser))
-        return ensure_int(response)
+            response = client_use.hset(
+                self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
+            )
+        return ensure_int(response)  # skipif-ci-and-not-linux
 
     async def hget_async(
         self,
-        key: str,
+        key: _K,
         /,
         *,
         client: redis.asyncio.Redis | None = None,
@@ -119,10 +126,11 @@ class RedisHashMapKey(Generic[_T]):
         connection_pool: redis.asyncio.ConnectionPool | None = None,
         decode_responses: bool = False,
         **kwargs: Any,
-    ) -> _T | None:
+    ) -> _V | None:
         """Get a value from a hashmap in `redis` asynchronously."""
-        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
+        from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
+        ser = serialize(key)
         async with yield_client_async(  # skipif-ci-and-not-linux
             client=client,
             host=host,
@@ -133,15 +141,17 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = await cast(Awaitable[Any], client_use.hget(self.name, key))
+            maybe_ser = await cast(
+                Awaitable[Any], client_use.hget(self.name, cast(Any, ser))
+            )
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     async def hset_async(
         self,
-        key: str,
-        value: _T,
+        key: _K,
+        value: _V,
         /,
         *,
         client: redis.asyncio.Redis | None = None,
@@ -156,7 +166,8 @@ class RedisHashMapKey(Generic[_T]):
         """Set a value in a hashmap in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(value)  # skipif-ci-and-not-linux
+        ser_key = serialize(key)  # skipif-ci-and-not-linux
+        ser_value = serialize(value)  # skipif-ci-and-not-linux
         async with yield_client_async(  # skipif-ci-and-not-linux
             client=client,
             host=host,
@@ -167,7 +178,10 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            return await client_use.hset(self.name, key=key, value=cast(Any, ser))
+            response = await client_use.hset(
+                self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
+            )
+        return ensure_int(response)  # skipif-ci-and-not-linux
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -236,7 +250,7 @@ class RedisKey(Generic[_T]):
             **kwargs,
         ) as client_use:
             response = client_use.set(self.name, ser)
-        return ensure_int(response)
+        return ensure_int(response)  # skipif-ci-and-not-linux
 
     async def get_async(
         self,
