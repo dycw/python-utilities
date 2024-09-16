@@ -1539,7 +1539,13 @@ async def yield_client_async(
     try:
         yield client
     finally:
-        await client.aclose()
+        match client.connection_pool:
+            case redis.ConnectionPool() as pool:
+                pool.disconnect(inuse_connections=False)  # pragma: no cover
+            case redis.asyncio.ConnectionPool() as pool:
+                await pool.disconnect(inuse_connections=False)
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
 
 
 @contextmanager
