@@ -89,11 +89,9 @@ async def yield_client_async(
     finally:
         match client.connection_pool:
             case redis.ConnectionPool() as pool:
-                pool.disconnect(inuse_connections=False)  # pragma: no cover
+                pool.disconnect(inuse_connections=False)
             case redis.asyncio.ConnectionPool() as pool:
                 await pool.disconnect(inuse_connections=False)
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                assert_never(never)
 
 
 __all__ = ["RedisContainer", "yield_client", "yield_client_async"]
