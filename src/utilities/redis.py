@@ -18,10 +18,6 @@ if TYPE_CHECKING:
 DuplicatePolicy = Literal["block", "first", "last", "min", "max", "sum"]
 _HOST = "localhost"
 _PORT = 6379
-_KEY = "key"
-_TIMESTAMP = "timestamp"
-_VALUE = "value"
-_SPLIT = "|"
 
 
 _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
