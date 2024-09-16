@@ -55,9 +55,9 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> _T | None:
         """Get a value from `redis`."""
-        from utilities.orjson import deserialize
+        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
 
-        with yield_client(
+        with yield_client(  # skipif-ci-and-not-linux
             client=client,
             host=host,
             port=port,
@@ -68,7 +68,9 @@ class RedisKey(Generic[_T]):
             **kwargs,
         ) as client_use:
             maybe_ser = ensure_bytes(client_use.get(self.name), nullable=True)
-        return None if maybe_ser is None else deserialize(maybe_ser)
+        return (  # skipif-ci-and-not-linux
+            None if maybe_ser is None else deserialize(maybe_ser)
+        )
 
     def set(
         self,
@@ -85,10 +87,10 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> ResponseT:
         """Set a value in `redis`."""
-        from utilities.orjson import serialize
+        from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(value)
-        with yield_client(
+        ser = serialize(value)  # skipif-ci-and-not-linux
+        with yield_client(  # skipif-ci-and-not-linux
             client=client,
             host=host,
             port=port,
@@ -113,9 +115,9 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> _T | None:
         """Get a value from `redis` asynchronously."""
-        from utilities.orjson import deserialize
+        from utilities.orjson import deserialize  # skipif-ci-and-not-linux
 
-        async with yield_client_async(
+        async with yield_client_async(  # skipif-ci-and-not-linux
             client=client,
             host=host,
             port=port,
@@ -126,7 +128,9 @@ class RedisKey(Generic[_T]):
             **kwargs,
         ) as client_use:
             maybe_ser = ensure_bytes(await client_use.get(self.name), nullable=True)
-        return None if maybe_ser is None else deserialize(maybe_ser)
+        return (  # skipif-ci-and-not-linux
+            None if maybe_ser is None else deserialize(maybe_ser)
+        )
 
     async def set_async(
         self,
@@ -143,10 +147,10 @@ class RedisKey(Generic[_T]):
         **kwargs: Any,
     ) -> ResponseT:
         """Set a value in `redis` asynchronously."""
-        from utilities.orjson import serialize
+        from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(value)
-        async with yield_client_async(
+        ser = serialize(value)  # skipif-ci-and-not-linux
+        async with yield_client_async(  # skipif-ci-and-not-linux
             client=client,
             host=host,
             port=port,
