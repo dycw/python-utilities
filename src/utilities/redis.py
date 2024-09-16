@@ -1539,7 +1539,11 @@ async def yield_client_async(
     try:
         yield client
     finally:
-        await client.aclose()
+        match client.connection_pool:
+            case redis.ConnectionPool() as pool:
+                pool.disconnect(inuse_connections=False)
+            case redis.asyncio.ConnectionPool() as pool:
+                await pool.disconnect(inuse_connections=False)
 
 
 @contextmanager
