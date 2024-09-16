@@ -194,6 +194,7 @@ class RedisKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> _T | None:
+        """Get a value from `redis`."""
         from utilities.orjson import deserialize
 
         with yield_client(
@@ -221,6 +222,7 @@ class RedisKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> ResponseT:
+        """Set a value in `redis`."""
         from utilities.orjson import serialize
 
         ser = serialize(value)
@@ -246,6 +248,7 @@ class RedisKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> _T | None:
+        """Get a value from `redis` asynchronously."""
         from utilities.orjson import deserialize
 
         async with yield_client_async(
@@ -273,6 +276,7 @@ class RedisKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> ResponseT:
+        """Set a value in `redis` asynchronously."""
         from utilities.orjson import serialize
 
         ser = serialize(value)
