@@ -140,6 +140,7 @@ class RedisHashMapKey(Generic[_T]):
 
     async def set_async(
         self,
+        key: str,
         value: _T,
         /,
         *,
@@ -152,7 +153,7 @@ class RedisHashMapKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> ResponseT:
-        """Set a value in `redis` asynchronously."""
+        """Set a value in a hashmap in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
         ser = serialize(value)  # skipif-ci-and-not-linux
@@ -166,7 +167,7 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            return await client_use.set(self.name, ser)
+            return await client_use.hset(self.name, key=key, value=cast(Any, ser))
 
 
 @dataclass(frozen=True, kw_only=True)
