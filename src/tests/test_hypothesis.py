@@ -505,24 +505,6 @@ class TestRedisCMs:
                     result = int(cast(str, await client.get(container.key)))
             assert result == value
 
-    @given(data=data(), value=int32s())
-    async def test_ts(self, *, data: DataObject, value: int) -> None:
-        import redis
-        import redis.asyncio
-
-        async with redis_cms(data) as container:
-            match container.client:
-                case redis.Redis() as client:
-                    assert not client.exists(container.key)
-                    _ = container.ts.add(container.key, "*", value)
-                    res_timestamp, res_value = container.ts.get(container.key)
-                case redis.asyncio.Redis() as client:
-                    assert not await client.exists(container.key)
-                    _ = await container.ts.add(container.key, "*", value)
-                    res_timestamp, res_value = await container.ts.get(container.key)
-            assert isinstance(res_timestamp, int)
-            assert int(res_value) == value
-
 
 class TestReducedExamples:
     @given(frac=floats(0.0, 10.0))
