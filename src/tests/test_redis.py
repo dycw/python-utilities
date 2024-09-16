@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import redis
 import redis.asyncio
-from hypothesis import given
+from hypothesis import assume, given
 from hypothesis.strategies import DataObject, booleans, data
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from utilities.hypothesis import redis_cms
-from utilities.redis import RedisKey, yield_client, yield_client_async
+from utilities.hypothesis import redis_cms, text_ascii
+from utilities.redis import RedisHashMapKey, RedisKey, yield_client, yield_client_async
 
 
 class TestRedisKey:
@@ -25,6 +25,24 @@ class TestRedisKey:
                     assert await key.get_async() is None
                     _ = await key.set_async(value)
                     assert await key.get_async() is value
+
+
+class TestRedisHashMapKey:
+    @given(data=data(), key=text_ascii(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_main(self, *, data: DataObject, key: str, value: bool) -> None:
+        async with redis_cms(data) as container:
+            hash_map_key = RedisHashMapKey(name=container.key, type=bool)
+            match container.client:
+                case redis.Redis():
+                    assert hash_map_key.hget(key) is None
+                    _ = hash_map_key.hset(key, value)
+                    assert hash_map_key.hget(key) is value
+                case redis.asyncio.Redis():
+                    assume(False)
+                    assert await hash_map_key.get_async() is None
+                    _ = await hash_map_key.set_async(value)
+                    assert await hash_map_key.get_async() is value
 
 
 class TestYieldClient:

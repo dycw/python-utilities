@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never, cast
 
 import redis
 import redis.asyncio
-
-from utilities.text import ensure_bytes
 
 from utilities.text import ensure_bytes
 
@@ -71,13 +70,14 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = ensure_bytes(client_use.hget(self.name, key), nullable=True)
-        return (  # skipif-ci-and-not-linux
-            None if maybe_ser is None else deserialize(maybe_ser)
-        )
+            maybe_ser = client_use.hget(self.name, key)
+        if maybe_ser is None:  # skipif-ci-and-not-linux
+            return None
+        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     def hset(
         self,
+        key: str,
         value: _T,
         /,
         *,
@@ -104,10 +104,12 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            return client_use.hset(self.name, ser)
+            return client_use.hset(self.name, key=key, value=cast(Any, ser))
 
-    async def get_async(
+    async def hget_async(
         self,
+        key: str,
+        /,
         *,
         client: redis.asyncio.Redis | None = None,
         host: str = _HOST,
@@ -118,7 +120,7 @@ class RedisHashMapKey(Generic[_T]):
         decode_responses: bool = False,
         **kwargs: Any,
     ) -> _T | None:
-        """Get a value from `redis` asynchronously."""
+        """Get a value from a hashmap in `redis` asynchronously."""
         from utilities.orjson import deserialize  # skipif-ci-and-not-linux
 
         async with yield_client_async(  # skipif-ci-and-not-linux
@@ -131,10 +133,10 @@ class RedisHashMapKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = ensure_bytes(await client_use.get(self.name), nullable=True)
-        return (  # skipif-ci-and-not-linux
-            None if maybe_ser is None else deserialize(maybe_ser)
-        )
+            maybe_ser = await cast(Awaitable[Any], client_use.hget(self.name, key))
+        if maybe_ser is None:  # skipif-ci-and-not-linux
+            return None
+        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     async def set_async(
         self,
@@ -199,10 +201,10 @@ class RedisKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = ensure_bytes(client_use.get(self.name), nullable=True)
-        return (  # skipif-ci-and-not-linux
-            None if maybe_ser is None else deserialize(maybe_ser)
-        )
+            maybe_ser = client_use.get(self.name)
+        if maybe_ser is None:  # skipif-ci-and-not-linux
+            return None
+        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     def set(
         self,
@@ -259,10 +261,10 @@ class RedisKey(Generic[_T]):
             decode_responses=decode_responses,
             **kwargs,
         ) as client_use:
-            maybe_ser = ensure_bytes(await client_use.get(self.name), nullable=True)
-        return (  # skipif-ci-and-not-linux
-            None if maybe_ser is None else deserialize(maybe_ser)
-        )
+            maybe_ser = await client_use.get(self.name)
+        if maybe_ser is None:  # skipif-ci-and-not-linux
+            return None
+        return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
     async def set_async(
         self,
