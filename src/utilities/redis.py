@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
     from uuid import UUID
 
-    from redis.commands.timeseries import TimeSeries
     from redis.typing import ResponseT
 
 
@@ -230,55 +229,4 @@ async def yield_client_async(
                 assert_never(never)
 
 
-@contextmanager
-def yield_time_series(
-    *,
-    host: str = _HOST,
-    port: int = _PORT,
-    db: int = 0,
-    password: str | None = None,
-    decode_responses: bool = False,
-    **kwargs: Any,
-) -> Iterator[TimeSeries]:
-    """Yield a synchronous time series client."""
-    with yield_client(
-        host=host,
-        port=port,
-        db=db,
-        password=password,
-        decode_responses=decode_responses,
-        **kwargs,
-    ) as client:
-        yield client.ts()
-
-
-@asynccontextmanager
-async def yield_time_series_async(
-    *,
-    host: str = _HOST,
-    port: int = _PORT,
-    db: int = 0,
-    password: str | None = None,
-    decode_responses: bool = False,
-    **kwargs: Any,
-) -> AsyncIterator[TimeSeries]:
-    """Yield an asynchronous time series client."""
-    async with yield_client_async(
-        host=host,
-        port=port,
-        db=db,
-        password=password,
-        decode_responses=decode_responses,
-        **kwargs,
-    ) as client:
-        yield client.ts()
-
-
-__all__ = [
-    "RedisContainer",
-    "RedisKey",
-    "yield_client",
-    "yield_client_async",
-    "yield_time_series",
-    "yield_time_series_async",
-]
+__all__ = ["RedisContainer", "RedisKey", "yield_client", "yield_client_async"]
