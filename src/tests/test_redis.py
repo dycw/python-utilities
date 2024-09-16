@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import redis
 import redis.asyncio
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
@@ -39,10 +39,9 @@ class TestRedisHashMapKey:
                     _ = hash_map_key.hset(key, value)
                     assert hash_map_key.hget(key) is value
                 case redis.asyncio.Redis():
-                    assume(False)
-                    assert await hash_map_key.get_async() is None
-                    _ = await hash_map_key.set_async(value)
-                    assert await hash_map_key.get_async() is value
+                    assert await hash_map_key.hget_async(key) is None
+                    _ = await hash_map_key.hset_async(key, value)
+                    assert await hash_map_key.hget_async(key) is value
 
 
 class TestYieldClient:

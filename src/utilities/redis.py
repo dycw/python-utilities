@@ -138,7 +138,7 @@ class RedisHashMapKey(Generic[_T]):
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
 
-    async def set_async(
+    async def hset_async(
         self,
         key: str,
         value: _T,
