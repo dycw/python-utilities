@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, assert_never, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 import redis
 import redis.asyncio
@@ -372,13 +372,7 @@ async def yield_client_async(
     try:
         yield client_use
     finally:
-        match client_use.connection_pool:
-            case redis.ConnectionPool() as pool:
-                pool.disconnect(inuse_connections=False)  # pragma: no cover
-            case redis.asyncio.ConnectionPool() as pool:
-                await pool.disconnect(inuse_connections=False)
-            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                assert_never(never)
+        await client_use.aclose(close_connection_pool=False)
 
 
 __all__ = [
