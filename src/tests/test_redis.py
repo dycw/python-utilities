@@ -7,7 +7,7 @@ from hypothesis.strategies import DataObject, booleans, data
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
 from utilities.hypothesis import int64s, redis_cms
-from utilities.redis import RedisHashMapKey, RedisKey, yield_client, yield_client_async
+from utilities.redis import RedisHashMapKey, RedisKey
 
 
 class TestRedisKey:
@@ -42,24 +42,3 @@ class TestRedisHashMapKey:
                     assert await hash_map_key.hget_async(key, db=15) is None
                     _ = await hash_map_key.hset_async(key, value, db=15)
                     assert await hash_map_key.hget_async(key, db=15) is value
-
-
-class TestYieldClient:
-    def test_sync_default(self) -> None:
-        with yield_client() as client:
-            assert isinstance(client, redis.Redis)
-
-    def test_sync_client(self) -> None:
-        with yield_client() as client1, yield_client(client=client1) as client2:
-            assert isinstance(client2, redis.Redis)
-
-    async def test_async_default(self) -> None:
-        async with yield_client_async() as client:
-            assert isinstance(client, redis.asyncio.Redis)
-
-    async def test_async_client(self) -> None:
-        async with (
-            yield_client_async() as client1,
-            yield_client_async(client=client1) as client2,
-        ):
-            assert isinstance(client2, redis.asyncio.Redis)
