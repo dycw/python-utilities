@@ -370,7 +370,7 @@ filterwarnings = [
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
   "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
-  "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection .*>:ResourceWarning",  # redis
+  "ignore:unclosed Connection <redis.*asyncio.*connection.*Connection.*>:ResourceWarning",  # redis
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
 ]
