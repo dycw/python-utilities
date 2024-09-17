@@ -366,8 +366,9 @@ asyncio_mode = "auto"
 filterwarnings = [
   "error",
   "ignore:Implicitly cleaning up <TemporaryDirectory '.*'>:ResourceWarning",
-  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
+  "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
+  "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
 ]
 minversion = "8.0"
 testpaths = ["src/tests"]
