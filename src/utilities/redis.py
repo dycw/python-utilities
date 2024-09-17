@@ -62,7 +62,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Get a value from a hashmap in `redis`."""
         from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(key)
+        ser = serialize(key)  # skipif-ci-and-not-linux
         with yield_client(  # skipif-ci-and-not-linux
             client=client,
             host=host,
@@ -130,7 +130,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Get a value from a hashmap in `redis` asynchronously."""
         from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
-        ser = serialize(key)
+        ser = serialize(key)  # skipif-ci-and-not-linux
         async with yield_client_async(  # skipif-ci-and-not-linux
             client=client,
             host=host,
