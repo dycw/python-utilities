@@ -369,6 +369,7 @@ filterwarnings = [
   "ignore:There is no current event loop:DeprecationWarning",  # eventkit
   "ignore:ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead:DeprecationWarning",  # astor
   "ignore:unclosed <socket.*socket .*>:ResourceWarning",  # redis
+  "ignore:unclosed <StreamWriter .*>:ResourceWarning",  # redis
   "ignore:unclosed event loop <_UnixSelectorEventLoop .*>:ResourceWarning",  # redis
   "ignore:unclosed transport <_SelectorSocketTransport .*>:ResourceWarning",  # redis
 ]
