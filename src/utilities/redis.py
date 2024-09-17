@@ -48,6 +48,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         key: _K,
         /,
         *,
+        client: redis.Redis | None = None,
         host: str = _HOST,
         port: int = _PORT,
         db: int = 0,
@@ -59,17 +60,22 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Get a value from a hashmap in `redis`."""
         from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
-        client = redis.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser = serialize(key)  # skipif-ci-and-not-linux
-        maybe_ser = client.hget(self.name, cast(Any, ser))  # skipif-ci-and-not-linux
+        maybe_ser = client_use.hget(  # skipif-ci-and-not-linux
+            self.name, cast(Any, ser)
+        )
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
@@ -80,6 +86,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         value: _V,
         /,
         *,
+        client: redis.Redis | None = None,
         host: str = _HOST,
         port: int = _PORT,
         db: int = 0,
@@ -91,18 +98,21 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Set a value in a hashmap in `redis`."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        client = redis.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser_key = serialize(key)  # skipif-ci-and-not-linux
         ser_value = serialize(value)  # skipif-ci-and-not-linux
-        response = client.hset(  # skipif-ci-and-not-linux
+        response = client_use.hset(  # skipif-ci-and-not-linux
             self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
         )
         return ensure_int(response)  # skipif-ci-and-not-linux
@@ -112,6 +122,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         key: _K,
         /,
         *,
+        client: redis.asyncio.Redis | None = None,
         host: str = _HOST,
         port: int = _PORT,
         db: str | int = 0,
@@ -123,17 +134,22 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Get a value from a hashmap in `redis` asynchronously."""
         from utilities.orjson import deserialize, serialize  # skipif-ci-and-not-linux
 
-        client = redis.asyncio.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.asyncio.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser = serialize(key)  # skipif-ci-and-not-linux
-        maybe_ser = await cast(Awaitable[Any], client.hget(self.name, cast(Any, ser)))
+        maybe_ser = await cast(
+            Awaitable[Any], client_use.hget(self.name, cast(Any, ser))
+        )
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
@@ -144,6 +160,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         value: _V,
         /,
         *,
+        client: redis.asyncio.Redis | None = None,
         host: str = _HOST,
         port: int = _PORT,
         db: str | int = 0,
@@ -155,20 +172,25 @@ class RedisHashMapKey(Generic[_K, _V]):
         """Set a value in a hashmap in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        client = redis.asyncio.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.asyncio.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser_key = serialize(key)  # skipif-ci-and-not-linux
         ser_value = serialize(value)  # skipif-ci-and-not-linux
         response = await cast(  # skipif-ci-and-not-linux
             Awaitable[int],
-            client.hset(self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)),
+            client_use.hset(
+                self.name, key=cast(Any, ser_key), value=cast(Any, ser_value)
+            ),
         )
         return ensure_int(response)  # skipif-ci-and-not-linux
 
@@ -195,16 +217,19 @@ class RedisKey(Generic[_T]):
         """Get a value from `redis`."""
         from utilities.orjson import deserialize  # skipif-ci-and-not-linux
 
-        client = redis.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
-        maybe_ser = client.get(self.name)  # skipif-ci-and-not-linux
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
+        maybe_ser = client_use.get(self.name)  # skipif-ci-and-not-linux
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
@@ -226,17 +251,20 @@ class RedisKey(Generic[_T]):
         """Set a value in `redis`."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        client = redis.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser = serialize(value)  # skipif-ci-and-not-linux
-        response = client.set(self.name, ser)  # skipif-ci-and-not-linux
+        response = client_use.set(self.name, ser)  # skipif-ci-and-not-linux
         return ensure_int(response)  # skipif-ci-and-not-linux
 
     async def get_async(
@@ -254,16 +282,19 @@ class RedisKey(Generic[_T]):
         """Get a value from `redis` asynchronously."""
         from utilities.orjson import deserialize  # skipif-ci-and-not-linux
 
-        client = redis.asyncio.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
-        maybe_ser = await client.get(self.name)  # skipif-ci-and-not-linux
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.asyncio.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
+        maybe_ser = await client_use.get(self.name)  # skipif-ci-and-not-linux
         if maybe_ser is None:  # skipif-ci-and-not-linux
             return None
         return deserialize(ensure_bytes(maybe_ser))  # skipif-ci-and-not-linux
@@ -285,17 +316,20 @@ class RedisKey(Generic[_T]):
         """Set a value in `redis` asynchronously."""
         from utilities.orjson import serialize  # skipif-ci-and-not-linux
 
-        client = redis.asyncio.Redis(  # skipif-ci-and-not-linux
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            connection_pool=connection_pool,
-            decode_responses=decode_responses,
-            **kwargs,
-        )
+        if client is None:  # skipif-ci-and-not-linux
+            client_use = redis.asyncio.Redis(
+                host=host,
+                port=port,
+                db=db,
+                password=password,
+                connection_pool=connection_pool,
+                decode_responses=decode_responses,
+                **kwargs,
+            )
+        else:  # skipif-ci-and-not-linux
+            client_use = client
         ser = serialize(value)  # skipif-ci-and-not-linux
-        return await client.set(self.name, ser)  # skipif-ci-and-not-linux
+        return await client_use.set(self.name, ser)  # skipif-ci-and-not-linux
 
 
 __all__ = ["RedisContainer", "RedisHashMapKey", "RedisKey"]
