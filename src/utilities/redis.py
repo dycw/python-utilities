@@ -147,7 +147,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         else:  # skipif-ci-and-not-linux
             client_use = client
         ser = serialize(key)  # skipif-ci-and-not-linux
-        maybe_ser = await cast(
+        maybe_ser = await cast(  # skipif-ci-and-not-linux
             Awaitable[Any], client_use.hget(self.name, cast(Any, ser))
         )
         if maybe_ser is None:  # skipif-ci-and-not-linux
