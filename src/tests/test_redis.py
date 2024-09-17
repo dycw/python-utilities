@@ -4,10 +4,9 @@ import redis
 import redis.asyncio
 from hypothesis import given
 from hypothesis.strategies import DataObject, booleans, data
-from pytest import mark
 
 from tests.conftest import SKIPIF_CI_AND_NOT_LINUX
-from utilities.hypothesis import redis_cms, text_ascii
+from utilities.hypothesis import int64s, redis_cms
 from utilities.redis import RedisHashMapKey, RedisKey, yield_client, yield_client_async
 
 
@@ -29,12 +28,11 @@ class TestRedisKey:
 
 
 class TestRedisHashMapKey:
-    @mark.skip
-    @given(data=data(), key=text_ascii(), value=booleans())
+    @given(data=data(), key=int64s(), value=booleans())
     @SKIPIF_CI_AND_NOT_LINUX
-    async def test_main(self, *, data: DataObject, key: str, value: bool) -> None:
+    async def test_main(self, *, data: DataObject, key: int, value: bool) -> None:
         async with redis_cms(data) as container:
-            hash_map_key = RedisHashMapKey(name=container.key, type=bool)
+            hash_map_key = RedisHashMapKey(name=container.key, key=int, value=bool)
             match container.client:
                 case redis.Redis():
                     assert hash_map_key.hget(key, db=15) is None
