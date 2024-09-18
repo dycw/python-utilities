@@ -93,33 +93,6 @@ from utilities.zoneinfo import (
 
 
 class TestAppendDataClass:
-    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
-    def test_main(self, *, data: StrMapping) -> None:
-        schema = {"a": Int64, "b": Float64, "c": Utf8}
-        df = DataFrame([], schema=schema, orient="row")
-
-        @dataclass(kw_only=True)
-        class Row:
-            a: int | None = None
-            b: float | None = None
-
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        check_polars_dataframe(result, height=1, schema_list=schema)
-
-    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
-    def test_zoned_datetime(self, *, data: StrMapping) -> None:
-        schema = {"datetime": DatetimeUTC}
-        df = DataFrame([], schema=schema, orient="row")
-
-        @dataclass(kw_only=True)
-        class Row:
-            datetime: dt.datetime
-
-        row = Row(**data)
-        result = append_dataclass(df, row)
-        check_polars_dataframe(result, height=1, schema_list=schema)
-
     @given(
         data=fixed_dictionaries({
             "a": int64s() | none(),
@@ -127,14 +100,76 @@ class TestAppendDataClass:
             "c": text_ascii() | none(),
         })
     )
-    def test_error(self, *, data: StrMapping) -> None:
-        df = DataFrame([], schema={"a": Int64, "b": Float64}, orient="row")
+    def test_columns_and_fields_equal(self, *, data: StrMapping) -> None:
+        df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
 
         @dataclass(kw_only=True)
         class Row:
             a: int | None = None
             b: float | None = None
             c: str | None = None
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        height = 0 if (row.a is None) and (row.b is None) and (row.c is None) else 1
+        check_polars_dataframe(result, height=height, schema_list=df.schema)
+
+    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
+    def test_extra_column(self, *, data: StrMapping) -> None:
+        df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
+
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        height = 0 if (row.a is None) and (row.b is None) else 1
+        check_polars_dataframe(result, height=height, schema_list=df.schema)
+
+    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
+    def test_extra_field_but_none(self, *, data: StrMapping) -> None:
+        df = DataFrame(schema={"a": Int64, "b": Float64})
+
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+            c: str | None = None
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        height = 0 if (row.a is None) and (row.b is None) else 1
+        check_polars_dataframe(result, height=height, schema_list=df.schema)
+
+    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
+    def test_zoned_datetime(self, *, data: StrMapping) -> None:
+        df = DataFrame(schema={"datetime": DatetimeUTC})
+
+        @dataclass(kw_only=True)
+        class Row:
+            datetime: dt.datetime
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        check_polars_dataframe(result, height=1, schema_list=df.schema)
+
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s() | none(),
+            "b": floats() | none(),
+            "c": text_ascii(),
+        })
+    )
+    def test_error(self, *, data: StrMapping) -> None:
+        df = DataFrame(schema={"a": Int64, "b": Float64})
+
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+            c: str
 
         row = Row(**data)
         with raises(
