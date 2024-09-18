@@ -106,7 +106,7 @@ def is_pytest() -> bool:
 
 
 def node_id_to_path(
-    node_id: str, /, *, head: Path | None = None, suffix: str = ".csv"
+    node_id: str, /, *, head: PathLike | None = None, suffix: str = ".csv"
 ) -> Path:
     """Map a node ID to a path."""
     path_file, *parts = node_id.split("::")

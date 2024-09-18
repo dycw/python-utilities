@@ -52,7 +52,7 @@ class TestNodeIdToPath:
         result = node_id_to_path(node_id)
         assert result == expected
 
-    def test_no_head(self) -> None:
+    def test_head(self) -> None:
         node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
         result = node_id_to_path(node_id, head=Path("src/tests"))
         expected = Path("module.test_funcs", "TestClass__test_main.csv")
