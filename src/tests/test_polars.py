@@ -599,7 +599,6 @@ class TestDataClassToRow:
             }),
         })
     )
-    @mark.only
     def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
         @dataclass(kw_only=True)
         class Inner:
