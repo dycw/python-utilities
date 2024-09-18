@@ -392,8 +392,9 @@ def make_filter(
 
 
 def make_formatter(
+    mode: Literal["console", "file-color", "file-plain"],
+    /,
     *,
-    console_or_file: Literal["console", "file"],
     prefix: str | None = None,
     exception: bool = True,
 ) -> FormatFunction:
@@ -402,14 +403,16 @@ def make_formatter(
     def format_record(record: Record, /) -> str:
         """Format a record."""
         time_part = "<level>{time:HH:mm:ss}</level>"
-        match console_or_file:
+        match mode:
             case "console":
                 datetime_part = f"{{time:YYYY-MM-DD}} {time_part}.{{time:SSS}}"
-            case "file":
+            case "file-color" | "file-plain":
                 datetime_part = f"{{time:YYYY-MM-DD (ddd)}} {time_part}.{{time:SSS zz}}"
             case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
                 assert_never(never)
         parts1 = [datetime_part]
+        if mode == "file-plain":
+            parts1.append("<level>{level.name}</level>")
         if record["message"]:
             parts1.append("<level>{function}</level>: <level>{message}</level>")
         else:
