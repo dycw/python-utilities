@@ -7,7 +7,7 @@ from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import sampled_from
+from hypothesis.strategies import fixed_dictionaries, floats, none, sampled_from
 from polars import (
     Boolean,
     DataFrame,
@@ -29,7 +29,9 @@ from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
+from utilities.hypothesis import int64s, text_ascii
 from utilities.polars import (
+    AppendDataClassError,
     CheckPolarsDataFrameError,
     CheckZonedDTypeOrSeriesError,
     ColumnsToDictError,
@@ -49,6 +51,7 @@ from utilities.polars import (
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
     _yield_struct_series_element_remove_nulls,
+    append_dataclass,
     ceil_datetime,
     check_polars_dataframe,
     check_zoned_dtype_or_series,
@@ -70,6 +73,7 @@ from utilities.polars import (
     yield_struct_series_elements,
     zoned_datetime,
 )
+from utilities.types import StrMapping
 from utilities.zoneinfo import (
     UTC,
     HongKong,
@@ -78,6 +82,45 @@ from utilities.zoneinfo import (
     USEastern,
     get_time_zone_name,
 )
+
+
+class TestAppendDataClass:
+    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
+    def test_main(self, *, data: StrMapping) -> None:
+        schema = {"a": Int64, "b": Float64, "c": Utf8}
+        df = DataFrame([], schema=schema, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        check_polars_dataframe(result, height=1, schema_list=schema)
+
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s() | none(),
+            "b": floats() | none(),
+            "c": text_ascii() | none(),
+        })
+    )
+    def test_error(self, *, data: StrMapping) -> None:
+        df = DataFrame([], schema={"a": Int64, "b": Float64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+            c: str | None = None
+
+        row = Row(**data)
+        with raises(
+            AppendDataClassError,
+            match="Dataclass fields .* must be a subset of DataFrame columns .*; dataclass had extra items .*",
+        ):
+            _ = append_dataclass(df, row)
 
 
 class TestCeilDatetime:
