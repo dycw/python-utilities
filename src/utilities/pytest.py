@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import wraps
 from inspect import iscoroutinefunction
+from itertools import chain
 from os import environ
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from typing_extensions import override
 
 from utilities.datetime import duration_to_float, get_now
 from utilities.functools import cache
@@ -101,6 +105,32 @@ def is_pytest() -> bool:
     return "PYTEST_CURRENT_TEST" in environ
 
 
+def node_id_to_path(
+    node_id: str, /, *, head: Path | None = None, suffix: str = ".csv"
+) -> Path:
+    """Map a node ID to a path."""
+    path_file, *parts = node_id.split("::")
+    path_file = Path(path_file)
+    if path_file.suffix != ".py":
+        raise NodeIdToPathError(node_id=node_id)
+    path = path_file.with_suffix("")
+    if head is not None:
+        path = path.relative_to(head)
+    path = Path(".".join(path.parts), "__".join(parts))
+    if not ((len(path.suffixes) >= 1) and (path.suffixes[-1] == suffix)):
+        path = path.with_suffix("".join(chain(path.suffixes, [suffix])))
+    return path
+
+
+@dataclass(kw_only=True)
+class NodeIdToPathError(Exception):
+    node_id: str
+
+    @override
+    def __str__(self) -> str:
+        return f"Node ID must be a Python file; got {self.node_id!r}"
+
+
 def throttle(
     *, root: PathLike | None = None, duration: Duration = 1.0, on_try: bool = False
 ) -> Any:
@@ -174,10 +204,12 @@ def _throttle_write(path: Path, now: float, /) -> None:
 
 
 __all__ = [
+    "NodeIdToPathError",
     "add_pytest_addoption",
     "add_pytest_collection_modifyitems",
     "add_pytest_configure",
     "is_pytest",
+    "node_id_to_path",
     "skipif_linux",
     "skipif_mac",
     "skipif_not_linux",
