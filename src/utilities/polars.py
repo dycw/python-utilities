@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
@@ -12,6 +13,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generic,
     Literal,
     Never,
     TypeGuard,
@@ -36,6 +38,7 @@ from polars import (
     Utf8,
     all_horizontal,
     col,
+    concat,
     lit,
     struct,
     when,
@@ -54,15 +57,17 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, is_dataclass_class
+from utilities.dataclasses import Dataclass, is_dataclass_class, yield_field_names
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
+    CheckSubSetError,
     CheckSuperMappingError,
     MaybeIterable,
     check_iterables_equal,
     check_mappings_equal,
+    check_subset,
     check_supermapping,
     is_iterable_not_str,
     one,
@@ -84,11 +89,36 @@ if TYPE_CHECKING:
     from zoneinfo import ZoneInfo
 
 
+_T = TypeVar("_T")
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
 DatetimeUSEastern = Datetime(time_zone="US/Eastern")
 DatetimeUTC = Datetime(time_zone="UTC")
+
+
+def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
+    """Append a dataclass object to a DataFrame."""
+    fields = yield_field_names(obj)
+    try:
+        check_subset(fields, df.columns)
+    except CheckSubSetError as error:
+        raise AppendDataClassError(
+            left=error.left, right=error.right, extra=error.extra
+        ) from None
+    row = DataFrame([obj], orient="row")
+    return concat([df, row], how="diagonal")
+
+
+@dataclass(kw_only=True)
+class AppendDataClassError(Exception, Generic[_T]):
+    left: AbstractSet[_T]
+    right: AbstractSet[_T]
+    extra: AbstractSet[_T]
+
+    @override
+    def __str__(self) -> str:
+        return f"Dataclass fields {reprlib.repr(self.left)} must be a subset of DataFrame columns {reprlib.repr(self.right)}; dataclass had extra items {reprlib.repr(self.extra)}"
 
 
 @overload
@@ -863,6 +893,7 @@ __all__ = [
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
     "YieldStructSeriesElementsError",
+    "append_dataclass",
     "ceil_datetime",
     "check_polars_dataframe",
     "check_zoned_dtype_or_series",
