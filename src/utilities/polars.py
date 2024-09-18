@@ -509,24 +509,7 @@ class ColumnsToDictError(Exception):
 
 def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
     """Convert a dataclass into a 1-row DataFrame."""
-    df = DataFrame([obj], orient="row")
-    return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
-
-
-def _dataclass_to_row_reducer(
-    df: DataFrame, column: str, /, *, obj: Dataclass
-) -> DataFrame:
-    dtype = df[column].dtype
-    if isinstance(dtype, Datetime):
-        datetime = ensure_datetime(getattr(obj, column), nullable=True)
-        if (datetime is None) or (datetime.tzinfo is None):
-            return df
-        time_zone = ensure_time_zone(datetime.tzinfo)
-        return df.with_columns(col(column).cast(zoned_datetime(time_zone=time_zone)))
-    if isinstance(dtype, Struct):
-        inner = dataclass_to_row(getattr(obj, column))
-        return df.with_columns(**{column: inner.select(all=struct("*"))["all"]})
-    return df
+    return DataFrame([obj], orient="row")
 
 
 def drop_null_struct_series(series: Series, /) -> Series:
