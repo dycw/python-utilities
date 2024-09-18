@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from inspect import signature
+from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING
 
-from pytest import mark, param
+from pytest import mark, param, raises
 
 from tests.conftest import FLAKY
-from utilities.pytest import is_pytest, throttle
+from utilities.pytest import NodeIdToPathError, is_pytest, node_id_to_path, throttle
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
 
     from _pytest.legacypath import Testdir
 
@@ -19,6 +19,48 @@ if TYPE_CHECKING:
 class TestIsPytest:
     def test_main(self) -> None:
         assert is_pytest()
+
+
+class TestNodeIdToPath:
+    @mark.parametrize(
+        ("node_id", "expected"),
+        [
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main",
+                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
+            ),
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main.csv",
+                Path("src.tests.module.test_funcs", "TestClass__test_main.csv"),
+            ),
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main[param1, param2]",
+                Path(
+                    "src.tests.module.test_funcs",
+                    "TestClass__test_main[param1, param2].csv",
+                ),
+            ),
+            param(
+                "src/tests/module/test_funcs.py::TestClass::test_main[EUR.USD]",
+                Path(
+                    "src.tests.module.test_funcs", "TestClass__test_main[EUR.USD].csv"
+                ),
+            ),
+        ],
+    )
+    def test_main(self, *, node_id: str, expected: Path) -> None:
+        result = node_id_to_path(node_id)
+        assert result == expected
+
+    def test_head(self) -> None:
+        node_id = "src/tests/module/test_funcs.py::TestClass::test_main"
+        result = node_id_to_path(node_id, head=Path("src/tests"))
+        expected = Path("module.test_funcs", "TestClass__test_main.csv")
+        assert result == expected
+
+    def test_error_file_suffix(self) -> None:
+        with raises(NodeIdToPathError, match="Node ID must be a Python file; got .*"):
+            _ = node_id_to_path("src/tests/module/test_funcs.csv::TestClass::test_main")
 
 
 class TestPytestOptions:
