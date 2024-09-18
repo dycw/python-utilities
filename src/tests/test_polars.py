@@ -580,14 +580,51 @@ class TestDataClassToRow:
             schema_list={"a": Int64, "b": Float64, "c": Date, "d": Datetime},
         )
 
-    @given(data=fixed_dictionaries({"datetime": zoned_datetimes() | none()}))
+    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
         @dataclass(kw_only=True)
         class Row:
-            datetime: dt.datetime | None = None
+            datetime: dt.datetime
 
         df = dataclass_to_row(Row(**data))
         check_polars_dataframe(df, height=1, schema_list={"datetime": DatetimeUTC})
+
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s(),
+            "b": int64s(),
+            "inner": fixed_dictionaries({
+                "start": zoned_datetimes(),
+                "end": zoned_datetimes(),
+            }),
+        })
+    )
+    @mark.only
+    def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Inner:
+            start: dt.datetime
+            end: dt.datetime
+
+        @dataclass(kw_only=True)
+        class Outer:
+            a: int | None = None
+            b: int | None = None
+            inner: Inner | None = None
+
+        data = dict(data)
+        data["inner"] = Inner(**data["inner"])
+        outer = Outer(**data)
+        df = dataclass_to_row(outer)
+        check_polars_dataframe(
+            df,
+            height=1,
+            schema_list={
+                "a": Int64,
+                "b": Int64,
+                "inner": Struct({"start": DatetimeUTC, "end": DatetimeUTC}),
+            },
+        )
 
 
 class TestDatetimeUTC:
