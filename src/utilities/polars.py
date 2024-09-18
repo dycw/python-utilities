@@ -8,7 +8,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from datetime import timezone
 from enum import Enum
-from functools import reduce
+from functools import partial, reduce
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -73,6 +73,7 @@ from utilities.iterables import (
     one,
 )
 from utilities.math import CheckIntegerError, check_integer
+from utilities.types import ensure_datetime
 from utilities.typing import (
     get_args,
     is_frozenset_type,
@@ -81,7 +82,7 @@ from utilities.typing import (
     is_optional_type,
     is_set_type,
 )
-from utilities.zoneinfo import UTC, get_time_zone_name
+from utilities.zoneinfo import UTC, ensure_time_zone, get_time_zone_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -106,7 +107,7 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
         raise AppendDataClassError(
             left=error.left, right=error.right, extra=error.extra
         ) from None
-    row = DataFrame([obj], orient="row")
+    row = dataclass_to_row(obj)
     return concat([df, row], how="diagonal")
 
 
@@ -506,6 +507,28 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
+    """Convert a dataclass into a 1-row DataFrame."""
+    df = DataFrame([obj], orient="row")
+    return reduce(partial(_dataclass_to_row_reducer, obj=obj), df.columns, df)
+
+
+def _dataclass_to_row_reducer(
+    df: DataFrame, column: str, /, *, obj: Dataclass
+) -> DataFrame:
+    dtype = df[column].dtype
+    if isinstance(dtype, Datetime):
+        datetime = ensure_datetime(getattr(obj, column), nullable=True)
+        if (datetime is None) or (datetime.tzinfo is None):
+            return df
+        time_zone = ensure_time_zone(datetime.tzinfo)
+        return df.with_columns(col(column).cast(zoned_datetime(time_zone=time_zone)))
+    if isinstance(dtype, Struct):
+        inner = dataclass_to_row(getattr(obj, column))
+        return df.with_columns(**{column: inner.select(all=struct("*"))["all"]})
+    return df
+
+
 def drop_null_struct_series(series: Series, /) -> Series:
     """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
     try:
@@ -900,6 +923,7 @@ __all__ = [
     "collect_series",
     "columns_to_dict",
     "convert_time_zone",
+    "dataclass_to_row",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",

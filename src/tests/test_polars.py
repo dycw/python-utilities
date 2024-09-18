@@ -7,7 +7,14 @@ from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import fixed_dictionaries, floats, none, sampled_from
+from hypothesis.strategies import (
+    dates,
+    datetimes,
+    fixed_dictionaries,
+    floats,
+    none,
+    sampled_from,
+)
 from polars import (
     Boolean,
     DataFrame,
@@ -29,7 +36,7 @@ from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.hypothesis import int64s, text_ascii
+from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.polars import (
     AppendDataClassError,
     CheckPolarsDataFrameError,
@@ -58,6 +65,7 @@ from utilities.polars import (
     collect_series,
     columns_to_dict,
     convert_time_zone,
+    dataclass_to_row,
     drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
@@ -94,6 +102,19 @@ class TestAppendDataClass:
         class Row:
             a: int | None = None
             b: float | None = None
+
+        row = Row(**data)
+        result = append_dataclass(df, row)
+        check_polars_dataframe(result, height=1, schema_list=schema)
+
+    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
+    def test_zoned_datetime(self, *, data: StrMapping) -> None:
+        schema = {"datetime": DatetimeUTC}
+        df = DataFrame([], schema=schema, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            datetime: dt.datetime
 
         row = Row(**data)
         result = append_dataclass(df, row)
@@ -546,6 +567,78 @@ class TestConvertTimeZone:
             orient="row",
         )
         assert_frame_equal(result, expected)
+
+
+class TestDataClassToRow:
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s() | none(),
+            "b": floats() | none(),
+            "c": dates() | none(),
+            "d": datetimes() | none(),
+        })
+    )
+    def test_basic_types(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+            c: dt.date | None = None
+            d: dt.datetime | None = None
+
+        df = dataclass_to_row(Row(**data))
+        check_polars_dataframe(
+            df,
+            height=1,
+            schema_list={"a": Int64, "b": Float64, "c": Date, "d": Datetime},
+        )
+
+    @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
+    def test_zoned_datetime(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Row:
+            datetime: dt.datetime
+
+        row = Row(**data)
+        df = dataclass_to_row(row)
+        check_polars_dataframe(df, height=1, schema_list={"datetime": DatetimeUTC})
+
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s(),
+            "b": int64s(),
+            "inner": fixed_dictionaries({
+                "start": zoned_datetimes(),
+                "end": zoned_datetimes(),
+            }),
+        })
+    )
+    def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Inner:
+            start: dt.datetime
+            end: dt.datetime
+
+        inner = Inner(**data["inner"])
+
+        @dataclass(kw_only=True)
+        class Outer:
+            a: int | None = None
+            b: int | None = None
+            inner: Inner | None = None
+
+        data = dict(data) | {"inner": inner}
+        outer = Outer(**data)
+        df = dataclass_to_row(outer)
+        check_polars_dataframe(
+            df,
+            height=1,
+            schema_list={
+                "a": Int64,
+                "b": Int64,
+                "inner": Struct({"start": DatetimeUTC, "end": DatetimeUTC}),
+            },
+        )
 
 
 class TestDatetimeUTC:
