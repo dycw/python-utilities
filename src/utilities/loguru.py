@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, TextIO, TypedDict, assert_never, cast
+from typing import TYPE_CHECKING, Any, Literal, TextIO, TypedDict, assert_never, cast
 
 from loguru import logger
 from typing_extensions import override
@@ -389,6 +389,52 @@ def make_filter(
         )
 
     return filter_func
+
+
+def make_formatter(
+    *,
+    console_or_file: Literal["console", "file"],
+    prefix: str | None = None,
+    exception: bool = True,
+) -> FormatFunction:
+    """Make a formatter."""
+
+    def format_record(record: Record, /) -> str:
+        """Format a record."""
+        time_part = "<level>{time:HH:mm:ss}</level>"
+        match console_or_file:
+            case "console":
+                datetime_part = f"{{time:YYYY-MM-DD}} {time_part}.{{time:SSS}}"
+            case "file":
+                datetime_part = f"{{time:YYYY-MM-DD (ddd)}} {time_part}.{{time:SSS zz}}"
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
+        parts1 = [datetime_part]
+        if record["message"]:
+            parts1.append("<level>{function}</level>: <level>{message}</level>")
+        else:
+            parts1.append("<level>{function}</level>")
+        try:
+            extra = record["extra"]
+        except KeyError:
+            pass
+        else:
+            extra_non_underscore = {
+                k: v
+                for k, v in extra.items()
+                if not (isinstance(k, str) and k.startswith("_"))
+            }
+            if len(extra_non_underscore) >= 1:
+                parts1.append("{extra}")
+        parts1.append("({name}:{line})")
+        parts2 = ["  ".join(parts1), "\n"]
+        if prefix is not None:
+            parts2.insert(0, prefix)
+        if (record["exception"] is not None) and exception:
+            parts2.extend(["{exception}", "\n"])
+        return "".join(parts2)
+
+    return format_record
 
 
 def make_slack_sink(url: str, /) -> Callable[[Message], None]:

@@ -9,7 +9,7 @@ from hypothesis import given
 from loguru import logger
 from loguru._defaults import LOGURU_FORMAT
 from loguru._recattrs import RecordFile, RecordLevel, RecordProcess, RecordThread
-from pytest import CaptureFixture, mark, param, raises
+from pytest import CaptureFixture, fixture, mark, param, raises
 
 from tests.test_loguru_functions import (
     func_test_log_contextualize,
@@ -36,6 +36,7 @@ from utilities.loguru import (
     logged_sleep_sync,
     make_except_hook,
     make_filter,
+    make_formatter,
     make_slack_sink,
     make_slack_sink_async,
 )
@@ -44,11 +45,43 @@ from utilities.text import ensure_str, strip_and_dedent
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from loguru import Record
+    from loguru import Record, RecordException
     from pytest import CaptureFixture
 
     from utilities.iterables import MaybeIterable
     from utilities.types import Duration
+
+
+@fixture
+def record() -> Record:
+    record = {
+        "elapsed": dt.timedelta(seconds=11, microseconds=635587),
+        "exception": None,
+        "extra": {"x": 1, "y": 2},
+        "file": RecordFile(
+            name="1723464958.py",
+            path="/var/folders/z2/t3tvc2yn33j0zdd910j7805r0000gn/T/ipykernel_98745/1723464958.py",
+        ),
+        "function": "<module>",
+        "level": RecordLevel(name="INFO", no=20, icon="ℹ️ "),  # noqa: RUF001
+        "line": 1,
+        "message": "l2",
+        "module": "1723464958",
+        "name": "__main__",
+        "process": RecordProcess(id_=98745, name="MainProcess"),
+        "thread": RecordThread(id_=8420429632, name="MainThread"),
+        "time": dt.datetime(
+            2024,
+            8,
+            31,
+            14,
+            3,
+            52,
+            388537,
+            tzinfo=dt.timezone(dt.timedelta(seconds=32400), "JST"),
+        ),
+    }
+    return cast(Any, record)
 
 
 class TestGetLoggingLevelNameAndNumber:
@@ -275,9 +308,9 @@ class TestMakeExceptHook:
 
 
 class TestMakeFilter:
-    def test_main(self) -> None:
+    def test_main(self, *, record: Record) -> None:
         filter_func = make_filter(final_filter=True)
-        assert filter_func(self._record)
+        assert filter_func(record)
 
     @mark.parametrize(
         ("level", "expected"),
@@ -291,9 +324,9 @@ class TestMakeFilter:
             param(LogLevel.CRITICAL, False),
         ],
     )
-    def test_level(self, *, level: LogLevel, expected: bool) -> None:
+    def test_level(self, *, level: LogLevel, record: Record, expected: bool) -> None:
         filter_func = make_filter(level=level, final_filter=True)
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -308,9 +341,11 @@ class TestMakeFilter:
             param(LogLevel.CRITICAL, False),
         ],
     )
-    def test_min_level(self, *, level: LogLevel, expected: bool) -> None:
+    def test_min_level(
+        self, *, level: LogLevel, record: Record, expected: bool
+    ) -> None:
         filter_func = make_filter(min_level=level, final_filter=True)
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -325,9 +360,11 @@ class TestMakeFilter:
             param(LogLevel.CRITICAL, True),
         ],
     )
-    def test_max_level(self, *, level: LogLevel, expected: bool) -> None:
+    def test_max_level(
+        self, *, level: LogLevel, record: Record, expected: bool
+    ) -> None:
         filter_func = make_filter(max_level=level, final_filter=True)
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -345,12 +382,13 @@ class TestMakeFilter:
         *,
         name_include: MaybeIterable[str] | None,
         name_exclude: MaybeIterable[str] | None,
+        record: Record,
         expected: bool,
     ) -> None:
         filter_func = make_filter(
             name_include=name_include, name_exclude=name_exclude, final_filter=True
         )
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -368,12 +406,13 @@ class TestMakeFilter:
         *,
         name_include: MaybeIterable[str] | None,
         name_exclude: MaybeIterable[str] | None,
+        record: Record,
     ) -> None:
         filter_func = make_filter(
             name_include=name_include, name_exclude=name_exclude, final_filter=True
         )
-        record: Record = cast(Any, self._record | {"name": None})
-        assert filter_func(record)
+        record2: Record = cast(Any, record | {"name": None})
+        assert filter_func(record2)
 
     @mark.parametrize(
         ("extra_include_all", "extra_exclude_any", "expected"),
@@ -400,6 +439,7 @@ class TestMakeFilter:
         *,
         extra_include_all: MaybeIterable[str] | None,
         extra_exclude_any: MaybeIterable[str] | None,
+        record: Record,
         expected: bool,
     ) -> None:
         filter_func = make_filter(
@@ -407,7 +447,7 @@ class TestMakeFilter:
             extra_exclude_any=extra_exclude_any,
             final_filter=True,
         )
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -435,6 +475,7 @@ class TestMakeFilter:
         *,
         extra_include_any: MaybeIterable[str] | None,
         extra_exclude_all: MaybeIterable[str] | None,
+        record: Record,
         expected: bool,
     ) -> None:
         filter_func = make_filter(
@@ -442,7 +483,7 @@ class TestMakeFilter:
             extra_exclude_all=extra_exclude_all,
             final_filter=True,
         )
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
     @mark.parametrize(
@@ -465,42 +506,63 @@ class TestMakeFilter:
         *,
         name: str,
         final_filter: bool | Callable[[], bool] | None,
+        record: Record,
         expected: bool,
     ) -> None:
         filter_func = make_filter(name_include=name, final_filter=final_filter)
-        result = filter_func(self._record)
+        result = filter_func(record)
         assert result is expected
 
-    @property
-    def _record(self) -> Record:
-        record = {
-            "elapsed": dt.timedelta(seconds=11, microseconds=635587),
-            "exception": None,
-            "extra": {"x": 1, "y": 2},
-            "file": RecordFile(
-                name="1723464958.py",
-                path="/var/folders/z2/t3tvc2yn33j0zdd910j7805r0000gn/T/ipykernel_98745/1723464958.py",
-            ),
-            "function": "<module>",
-            "level": RecordLevel(name="INFO", no=20, icon="ℹ️ "),  # noqa: RUF001
-            "line": 1,
-            "message": "l2",
-            "module": "1723464958",
-            "name": "__main__",
-            "process": RecordProcess(id_=98745, name="MainProcess"),
-            "thread": RecordThread(id_=8420429632, name="MainThread"),
-            "time": dt.datetime(
-                2024,
-                8,
-                31,
-                14,
-                3,
-                52,
-                388537,
-                tzinfo=dt.timezone(dt.timedelta(seconds=32400), "JST"),
-            ),
-        }
-        return cast(Any, record)
+
+class TestMakeFormatter:
+    def test_main(self, *, record: Record) -> None:
+        format_ = make_formatter(console_or_file="console")
+        result = format_(record)
+        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
+        assert result == expected
+
+    def test_file(self, *, record: Record) -> None:
+        format_ = make_formatter(console_or_file="file")
+        result = format_(record)
+        expected = "{time:YYYY-MM-DD (ddd)} <level>{time:HH:mm:ss}</level>.{time:SSS zz}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
+        assert result == expected
+
+    def test_prefix(self, *, record: Record) -> None:
+        format_ = make_formatter(console_or_file="console", prefix=">")
+        result = format_(record)
+        expected = ">{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
+        assert result == expected
+
+    def test_no_message(self, *, record: Record) -> None:
+        record2: Record = {**record, "message": ""}
+        format_ = make_formatter(console_or_file="console")
+        result = format_(record2)
+        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>  {extra}  ({name}:{line})\n"
+        assert result == expected
+
+    def test_no_extra(self, *, record: Record) -> None:
+        record2: Record = cast(Any, {k: v for k, v in record.items() if k != "extra"})
+        format_ = make_formatter(console_or_file="console")
+        result = format_(record2)
+        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  ({name}:{line})\n"
+        assert result == expected
+
+    def test_extra_but_only_private(self, *, record: Record) -> None:
+        record2: Record = {**record, "extra": {"_key": "value"}}
+        format_ = make_formatter(console_or_file="console")
+        result = format_(record2)
+        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  ({name}:{line})\n"
+        assert result == expected
+
+    def test_exception(self, *, record: Record) -> None:
+        exception: RecordException = cast(
+            Any, {"type": None, "value": None, "traceback": None}
+        )
+        record2: Record = {**record, "exception": exception}
+        format_ = make_formatter(console_or_file="console")
+        result = format_(record2)
+        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n{exception}\n"
+        assert result == expected
 
 
 class TestMakeSlackSink:
