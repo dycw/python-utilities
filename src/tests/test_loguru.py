@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import sys  # do use `from sys import ...`
 from re import search
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
 from hypothesis import given
 from loguru import logger
@@ -515,41 +515,58 @@ class TestMakeFilter:
 
 
 class TestMakeFormatter:
-    def test_main(self, *, record: Record) -> None:
-        format_ = make_formatter(console_or_file="console")
+    @mark.parametrize(
+        ("mode", "expected"),
+        [
+            param(
+                "console",
+                "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n",
+            ),
+            param(
+                "file-color",
+                "{time:YYYY-MM-DD (ddd)} <level>{time:HH:mm:ss}</level>.{time:SSS zz}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n",
+            ),
+            param(
+                "file-plain",
+                "{time:YYYY-MM-DD (ddd)} <level>{time:HH:mm:ss}</level>.{time:SSS zz}  <level>{level.name}</level>  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n",
+            ),
+        ],
+        ids=str,
+    )
+    def test_main(
+        self,
+        *,
+        mode: Literal["console", "file-color", "file-plain"],
+        record: Record,
+        expected: str,
+    ) -> None:
+        format_ = make_formatter(mode)
         result = format_(record)
-        expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
-        assert result == expected
-
-    def test_file(self, *, record: Record) -> None:
-        format_ = make_formatter(console_or_file="file")
-        result = format_(record)
-        expected = "{time:YYYY-MM-DD (ddd)} <level>{time:HH:mm:ss}</level>.{time:SSS zz}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
         assert result == expected
 
     def test_prefix(self, *, record: Record) -> None:
-        format_ = make_formatter(console_or_file="console", prefix=">")
+        format_ = make_formatter("console", prefix=">")
         result = format_(record)
         expected = ">{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n"
         assert result == expected
 
     def test_no_message(self, *, record: Record) -> None:
         record2: Record = {**record, "message": ""}
-        format_ = make_formatter(console_or_file="console")
+        format_ = make_formatter("console")
         result = format_(record2)
         expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>  {extra}  ({name}:{line})\n"
         assert result == expected
 
     def test_no_extra(self, *, record: Record) -> None:
         record2: Record = cast(Any, {k: v for k, v in record.items() if k != "extra"})
-        format_ = make_formatter(console_or_file="console")
+        format_ = make_formatter("console")
         result = format_(record2)
         expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  ({name}:{line})\n"
         assert result == expected
 
     def test_extra_but_only_private(self, *, record: Record) -> None:
         record2: Record = {**record, "extra": {"_key": "value"}}
-        format_ = make_formatter(console_or_file="console")
+        format_ = make_formatter("console")
         result = format_(record2)
         expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  ({name}:{line})\n"
         assert result == expected
@@ -559,7 +576,7 @@ class TestMakeFormatter:
             Any, {"type": None, "value": None, "traceback": None}
         )
         record2: Record = {**record, "exception": exception}
-        format_ = make_formatter(console_or_file="console")
+        format_ = make_formatter("console")
         result = format_(record2)
         expected = "{time:YYYY-MM-DD} <level>{time:HH:mm:ss}</level>.{time:SSS}  <level>{function}</level>: <level>{message}</level>  {extra}  ({name}:{line})\n{exception}\n"
         assert result == expected
