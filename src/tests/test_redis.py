@@ -26,6 +26,21 @@ class TestRedisKey:
                     _ = await key.set_async(value, db=15)
                     assert await key.get_async(db=15) is value
 
+    @given(data=data(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_using_client(self, *, data: DataObject, value: bool) -> None:
+        async with redis_cms(data) as container:
+            key = RedisKey(name=container.key, type=bool)
+            match container.client:
+                case redis.Redis() as client:
+                    assert key.get(client=client) is None
+                    _ = key.set(value, client=client)
+                    assert key.get(client=client) is value
+                case redis.asyncio.Redis() as client:
+                    assert await key.get_async(client=client) is None
+                    _ = await key.set_async(value, client=client)
+                    assert await key.get_async(client=client) is value
+
 
 class TestRedisHashMapKey:
     @given(data=data(), key=int64s(), value=booleans())
@@ -42,3 +57,20 @@ class TestRedisHashMapKey:
                     assert await hash_map_key.hget_async(key, db=15) is None
                     _ = await hash_map_key.hset_async(key, value, db=15)
                     assert await hash_map_key.hget_async(key, db=15) is value
+
+    @given(data=data(), key=int64s(), value=booleans())
+    @SKIPIF_CI_AND_NOT_LINUX
+    async def test_using_client(
+        self, *, data: DataObject, key: int, value: bool
+    ) -> None:
+        async with redis_cms(data) as container:
+            hash_map_key = RedisHashMapKey(name=container.key, key=int, value=bool)
+            match container.client:
+                case redis.Redis() as client:
+                    assert hash_map_key.hget(key, client=client) is None
+                    _ = hash_map_key.hset(key, value, client=client)
+                    assert hash_map_key.hget(key, client=client) is value
+                case redis.asyncio.Redis() as client:
+                    assert await hash_map_key.hget_async(key, client=client) is None
+                    _ = await hash_map_key.hset_async(key, value, client=client)
+                    assert await hash_map_key.hget_async(key, client=client) is value
