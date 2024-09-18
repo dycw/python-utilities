@@ -266,7 +266,7 @@ polars-lts-cpu==1.6.0
     # via dycw-utilities (pyproject.toml)
 pqdm==0.2.0
     # via dycw-utilities (pyproject.toml)
-protobuf==5.28.1
+protobuf==5.28.2
     # via
     #   streamlit
     #   vegafusion
@@ -427,7 +427,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.11
+uv==0.4.12
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
