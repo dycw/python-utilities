@@ -5,7 +5,7 @@ import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import timezone
 from enum import Enum
 from functools import partial, reduce
@@ -57,7 +57,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, is_dataclass_class, yield_field_names
+from utilities.dataclasses import Dataclass, is_dataclass_class
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -100,14 +100,15 @@ DatetimeUTC = Datetime(time_zone="UTC")
 
 def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
     """Append a dataclass object to a DataFrame."""
-    fields = yield_field_names(obj)
+    non_null_fields = {k: v for k, v in asdict(obj).items() if v is not None}
     try:
-        check_subset(fields, df.columns)
+        check_subset(non_null_fields, df.columns)
     except CheckSubSetError as error:
         raise AppendDataClassError(
             left=error.left, right=error.right, extra=error.extra
         ) from None
-    row = dataclass_to_row(obj)
+    row_cols = set(df.columns) & set(non_null_fields)
+    row = dataclass_to_row(obj).select(*row_cols)
     return concat([df, row], how="diagonal")
 
 
