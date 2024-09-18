@@ -905,6 +905,7 @@ __all__ = [
     "collect_series",
     "columns_to_dict",
     "convert_time_zone",
+    "dataclass_to_row",
     "drop_null_struct_series",
     "ensure_expr_or_series",
     "floor_datetime",

@@ -7,7 +7,14 @@ from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import dates, fixed_dictionaries, floats, none, sampled_from
+from hypothesis.strategies import (
+    dates,
+    datetimes,
+    fixed_dictionaries,
+    floats,
+    none,
+    sampled_from,
+)
 from polars import (
     Boolean,
     DataFrame,
@@ -29,7 +36,7 @@ from polars._typing import IntoExprColumn, PolarsDataType, SchemaDict
 from polars.testing import assert_frame_equal, assert_series_equal
 from pytest import mark, param, raises
 
-from utilities.hypothesis import int64s, text_ascii
+from utilities.hypothesis import int64s, text_ascii, zoned_datetimes
 from utilities.polars import (
     AppendDataClassError,
     CheckPolarsDataFrameError,
@@ -550,24 +557,37 @@ class TestConvertTimeZone:
 
 
 class TestDataClassToRow:
-    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
+    @given(
+        data=fixed_dictionaries({
+            "a": int64s() | none(),
+            "b": floats() | none(),
+            "c": dates() | none(),
+            "d": datetimes() | none(),
+        })
+    )
     def test_basic_types(self, *, data: StrMapping) -> None:
         @dataclass(kw_only=True)
         class Row:
             a: int | None = None
             b: float | None = None
+            c: dt.date | None = None
+            d: dt.datetime | None = None
 
         df = dataclass_to_row(Row(**data))
-        check_polars_dataframe(df, height=1, schema_list={"a": Int64, "b": Float64})
+        check_polars_dataframe(
+            df,
+            height=1,
+            schema_list={"a": Int64, "b": Float64, "c": Date, "d": Datetime},
+        )
 
-    @given(data=fixed_dictionaries({"date": dates()}))
-    def test_date(self, *, data: StrMapping) -> None:
+    @given(data=fixed_dictionaries({"datetime": zoned_datetimes() | none()}))
+    def test_zoned_datetime(self, *, data: StrMapping) -> None:
         @dataclass(kw_only=True)
         class Row:
-            date: dt.date | None = None
+            datetime: dt.datetime | None = None
 
         df = dataclass_to_row(Row(**data))
-        check_polars_dataframe(df, height=1, schema_list={"date": Date})
+        check_polars_dataframe(df, height=1, schema_list={"datetime": DatetimeUTC})
 
 
 class TestDatetimeUTC:
