@@ -599,7 +599,8 @@ class TestDataClassToRow:
         class Row:
             datetime: dt.datetime
 
-        df = dataclass_to_row(Row(**data))
+        row = Row(**data)
+        df = dataclass_to_row(row)
         check_polars_dataframe(df, height=1, schema_list={"datetime": DatetimeUTC})
 
     @given(
@@ -618,14 +619,15 @@ class TestDataClassToRow:
             start: dt.datetime
             end: dt.datetime
 
+        inner = Inner(**data["inner"])
+
         @dataclass(kw_only=True)
         class Outer:
             a: int | None = None
             b: int | None = None
             inner: Inner | None = None
 
-        data = dict(data)
-        data["inner"] = Inner(**data["inner"])
+        data = dict(data) | {"inner": inner}
         outer = Outer(**data)
         df = dataclass_to_row(outer)
         check_polars_dataframe(
