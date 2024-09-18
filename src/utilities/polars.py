@@ -107,7 +107,7 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
         raise AppendDataClassError(
             left=error.left, right=error.right, extra=error.extra
         ) from None
-    row = DataFrame([obj], orient="row")
+    row = dataclass_to_row(obj)
     return concat([df, row], how="diagonal")
 
 
