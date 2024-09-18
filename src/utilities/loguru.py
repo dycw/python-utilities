@@ -477,6 +477,7 @@ __all__ = [
     "logged_sleep_sync",
     "make_except_hook",
     "make_filter",
+    "make_formatter",
     "make_slack_sink",
     "make_slack_sink_async",
 ]
