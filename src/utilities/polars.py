@@ -506,6 +506,11 @@ class ColumnsToDictError(Exception):
         return f"DataFrame must be unique on {self.key!r}\n\n{self.df}"
 
 
+def dataclass_to_row(obj: Dataclass, /) -> DataFrame:
+    """Convert a dataclass into a 1-row DataFrame."""
+    return DataFrame([obj], orient="row")
+
+
 def drop_null_struct_series(series: Series, /) -> Series:
     """Drop nulls in a struct-dtype Series as per the <= 1.1 definition."""
     try:

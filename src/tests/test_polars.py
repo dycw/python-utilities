@@ -7,7 +7,7 @@ from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
 from hypothesis import given
-from hypothesis.strategies import fixed_dictionaries, floats, none, sampled_from
+from hypothesis.strategies import dates, fixed_dictionaries, floats, none, sampled_from
 from polars import (
     Boolean,
     DataFrame,
@@ -58,6 +58,7 @@ from utilities.polars import (
     collect_series,
     columns_to_dict,
     convert_time_zone,
+    dataclass_to_row,
     drop_null_struct_series,
     ensure_expr_or_series,
     floor_datetime,
@@ -546,6 +547,27 @@ class TestConvertTimeZone:
             orient="row",
         )
         assert_frame_equal(result, expected)
+
+
+class TestDataClassToRow:
+    @given(data=fixed_dictionaries({"a": int64s() | none(), "b": floats() | none()}))
+    def test_basic_types(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Row:
+            a: int | None = None
+            b: float | None = None
+
+        df = dataclass_to_row(Row(**data))
+        check_polars_dataframe(df, height=1, schema_list={"a": Int64, "b": Float64})
+
+    @given(data=fixed_dictionaries({"date": dates()}))
+    def test_date(self, *, data: StrMapping) -> None:
+        @dataclass(kw_only=True)
+        class Row:
+            date: dt.date | None = None
+
+        df = dataclass_to_row(Row(**data))
+        check_polars_dataframe(df, height=1, schema_list={"date": Date})
 
 
 class TestDatetimeUTC:
