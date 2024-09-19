@@ -138,16 +138,6 @@ def duration_to_float(duration: Duration, /) -> float:
     return duration.total_seconds()
 
 
-def duration_to_int(duration: Duration, /) -> int:
-    """Ensure the duration is an integer."""
-    a
-    if isinstance(duration, int):
-        return float(duration)
-    if isinstance(duration, float):
-        return duration
-    return duration.total_seconds()
-
-
 def duration_to_timedelta(duration: Duration, /) -> dt.timedelta:
     """Ensure the duration is a timedelta."""
     if isinstance(duration, int | float):

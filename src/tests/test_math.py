@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 
 from hypothesis import given
 from hypothesis.strategies import integers
-from numpy import iinfo, int8, int16, int32, int64, isin, uint8, uint16, uint32, uint64
+from numpy import iinfo, int8, int16, int32, int64, uint8, uint16, uint32, uint64
 from pytest import approx, mark, param, raises
 
 from utilities.math import (
@@ -878,13 +878,7 @@ class TestOrderOfMagnitude:
 class TestSafeRound:
     @mark.parametrize(
         ("x", "expected"),
-        [
-            param(-2.0, -2),
-            param(-1.0, -1),
-            param(0.0, 0),
-            param(1.0, 1),
-            param(2.0, 2),
-        ],
+        [param(-2.0, -2), param(-1.0, -1), param(0.0, 0), param(1.0, 1), param(2.0, 2)],
         ids=str,
     )
     def test_main(self, *, x: float, expected: int) -> None:

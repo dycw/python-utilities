@@ -10,6 +10,7 @@ from typing_extensions import override
 
 from utilities.datetime import MINUTE, duration_to_float
 from utilities.functools import cache
+from utilities.math import safe_round
 
 if TYPE_CHECKING:
     from utilities.types import Duration
@@ -58,14 +59,17 @@ class SendSlackError(Exception):
 @cache
 def _get_client_sync(url: str, /, *, timeout: Duration = _TIMEOUT) -> WebhookClient:
     """Get the webhook client."""
-    timeout_use = duration_to_float(duration)
-    return WebhookClient(url, timeout=timeout)
+    timeout_use = safe_round(duration_to_float(timeout))
+    return WebhookClient(url, timeout=timeout_use)
 
 
 @cache
-def _get_client_async(url: str, /, *, timeout: int = _TIMEOUT) -> AsyncWebhookClient:
+def _get_client_async(
+    url: str, /, *, timeout: Duration = _TIMEOUT
+) -> AsyncWebhookClient:
     """Get the engine/sessionmaker for the required database."""
-    return AsyncWebhookClient(url, timeout=timeout)
+    timeout_use = safe_round(duration_to_float(timeout))
+    return AsyncWebhookClient(url, timeout=timeout_use)
 
 
 __all__ = ["send_slack_async", "send_slack_sync"]
