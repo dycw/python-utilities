@@ -28,6 +28,7 @@ from utilities.math import (
     MIN_UINT64,
     CheckIntegerError,
     NumberOfDecimalsError,
+    SafeRoundError,
     _EWMParameters,
     _EWMParametersAlphaError,
     _EWMParametersArgumentsError,
@@ -82,6 +83,7 @@ from utilities.math import (
     is_zero_or_non_micro_or_nan,
     number_of_decimals,
     order_of_magnitude,
+    safe_round,
 )
 
 
@@ -93,7 +95,7 @@ class TestCheckInteger:
         with raises(CheckIntegerError, match="Integer must be equal to .*; got .*"):
             check_integer(0, equal=1)
 
-    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))])
+    @mark.parametrize("equal_or_approx", [param(10), param((11, 0.1))], ids=str)
     def test_equal_or_approx_pass(
         self, *, equal_or_approx: int | tuple[int, float]
     ) -> None:
@@ -108,6 +110,7 @@ class TestCheckInteger:
                 r"Integer must be approximately equal to .* \(error .*\); got .*",
             ),
         ],
+        ids=str,
     )
     def test_equal_or_approx_fail(
         self, *, equal_or_approx: int | tuple[int, float], match: str
@@ -207,12 +210,15 @@ class TestIsAtLeast:
             param(0.0, inf, False),
             param(0.0, nan, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_least(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_least_or_nan(nan, y)
@@ -235,12 +241,15 @@ class TestIsAtMost:
             param(0.0, inf, True),
             param(0.0, nan, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_at_most(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     def test_nan(self, *, y: float) -> None:
         assert is_at_most_or_nan(nan, y)
@@ -261,6 +270,7 @@ class TestIsBetween:
             param(0.0, 1.0, 1.0, False),
             param(nan, -1.0, 1.0, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, low: float, high: float, expected: bool) -> None:
         assert is_between(x, low, high, abs_tol=1e-8) is expected
@@ -268,10 +278,12 @@ class TestIsBetween:
     @mark.parametrize(
         "low",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     @mark.parametrize(
         "high",
         [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     def test_nan(self, *, low: float, high: float) -> None:
         assert is_between_or_nan(nan, low, high)
@@ -294,6 +306,7 @@ class TestIsEqual:
             param(0.0, inf, False),
             param(0.0, nan, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_equal(x, y) is expected
@@ -318,6 +331,7 @@ class TestIsEqualOrApprox:
             param((10, 0.1), (11, 0.1), True),
             param((10, 0.1), (12, 0.1), False),
         ],
+        ids=str,
     )
     def test_main(
         self, *, x: int | tuple[int, float], y: int | tuple[int, float], expected: bool
@@ -337,6 +351,7 @@ class TestIsFinite:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite(x) is expected
@@ -366,6 +381,7 @@ class TestIsFiniteAndIntegral:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_integral(x, abs_tol=1e-8) is expected
@@ -389,6 +405,7 @@ class TestIsFiniteAndNegative:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_negative(x, abs_tol=1e-8) is expected
@@ -412,6 +429,7 @@ class TestIsFiniteAndNonNegative:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_negative(x, abs_tol=1e-8) is expected
@@ -435,6 +453,7 @@ class TestIsFiniteAndNonPositive:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_positive(x, abs_tol=1e-8) is expected
@@ -458,6 +477,7 @@ class TestIsFiniteAndNonZero:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_non_zero(x, abs_tol=1e-8) is expected
@@ -481,6 +501,7 @@ class TestIsFiniteAndPositive:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_finite_and_positive(x, abs_tol=1e-8) is expected
@@ -504,12 +525,15 @@ class TestIsGreaterThan:
             param(0.0, inf, False),
             param(0.0, nan, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_greater_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     def test_nan(self, *, y: float) -> None:
         assert is_greater_than_or_nan(nan, y)
@@ -538,6 +562,7 @@ class TestIsIntegral:
             param(inf, True, True),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_is_integral(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_integral(x, abs_tol=1e-8) is expected
@@ -561,12 +586,15 @@ class TestIsLessThan:
             param(0.0, inf, True),
             param(0.0, nan, False),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: bool) -> None:
         assert is_less_than(x, y, abs_tol=1e-8) is expected
 
     @mark.parametrize(
-        "y", [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)]
+        "y",
+        [param(-inf), param(-1.0), param(0.0), param(1.0), param(inf), param(nan)],
+        ids=str,
     )
     def test_nan(self, *, y: float) -> None:
         assert is_less_than_or_nan(nan, y)
@@ -589,6 +617,7 @@ class TestIsNegative:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_negative(x, abs_tol=1e-8) is expected
@@ -612,6 +641,7 @@ class TestIsNonNegative:
             param(inf, True, True),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_negative(x, abs_tol=1e-8) is expected
@@ -635,6 +665,7 @@ class TestIsNonPositive:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_non_positive(x, abs_tol=1e-8) is expected
@@ -658,6 +689,7 @@ class TestIsNonZero:
             param(inf, True),
             param(nan, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool) -> None:
         assert is_non_zero(x, abs_tol=1e-8) is expected
@@ -681,6 +713,7 @@ class TestIsPositive:
             param(inf, True, True),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_positive(x, abs_tol=1e-8) is expected
@@ -704,6 +737,7 @@ class TestIsZero:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero(x, abs_tol=1e-8) is expected
@@ -727,6 +761,7 @@ class TestIsZeroOrFiniteAndNonMicro:
             param(inf, False, False),
             param(nan, False, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool, expected_nan: bool) -> None:
         assert is_zero_or_finite_and_non_micro(x, abs_tol=1e-8) is expected
@@ -750,6 +785,7 @@ class TestIsZeroOrNonMicro:
             param(inf, True),
             param(nan, True),
         ],
+        ids=str,
     )
     def test_main(self, *, x: float, expected: bool) -> None:
         assert is_zero_or_non_micro(x, abs_tol=1e-8) is expected
@@ -769,6 +805,7 @@ class TestMaxLongAndDouble:
             param(MIN_UINT32, MAX_UINT32, uint32),
             param(MIN_UINT64, MAX_UINT64, uint64),
         ],
+        ids=str,
     )
     def test_main(self, *, min_value: int, max_value: int, dtype: Any) -> None:
         info = iinfo(dtype)
@@ -794,6 +831,7 @@ class TestNumberOfDecimals:
             param(0.12345678, 8),
             param(0.123456789, 9),
         ],
+        ids=str,
     )
     def test_main(self, *, integer: int, frac: float, expected: int) -> None:
         x = integer + frac
@@ -824,8 +862,9 @@ class TestOrderOfMagnitude:
             param(50.0, 1.69897, 2),
             param(100.0, 2.0, 2),
         ],
+        ids=str,
     )
-    @mark.parametrize("sign", [param(1.0), param(-1.0)])
+    @mark.parametrize("sign", [param(1.0), param(-1.0)], ids=str)
     def test_main(
         self, *, sign: float, x: float, exp_float: float, exp_int: int
     ) -> None:
@@ -834,3 +873,35 @@ class TestOrderOfMagnitude:
         assert res_float == approx(exp_float)
         res_int = order_of_magnitude(x_use, round_=True)
         assert res_int == exp_int
+
+
+class TestSafeRound:
+    @mark.parametrize(
+        ("x", "expected"),
+        [param(-2.0, -2), param(-1.0, -1), param(0.0, 0), param(1.0, 1), param(2.0, 2)],
+        ids=str,
+    )
+    def test_main(self, *, x: float, expected: int) -> None:
+        result = safe_round(x)
+        assert isinstance(result, int)
+        assert result == expected
+
+    @mark.parametrize(
+        "x",
+        [
+            param(-inf),
+            param(-1.5),
+            param(-0.5),
+            param(0.5),
+            param(1.5),
+            param(inf),
+            param(nan),
+        ],
+        ids=str,
+    )
+    def test_error(self, *, x: float) -> None:
+        with raises(
+            SafeRoundError,
+            match=r"Unable to safely round .* \(rel_tol=.*, abs_tol=.*\)",
+        ):
+            _ = safe_round(x)

@@ -2,17 +2,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 from slack_sdk.webhook import WebhookClient, WebhookResponse
 from slack_sdk.webhook.async_client import AsyncWebhookClient
 from typing_extensions import override
 
+from utilities.datetime import MINUTE, duration_to_float
 from utilities.functools import cache
+from utilities.math import safe_round
 
-_TIMEOUT = 30
+if TYPE_CHECKING:
+    from utilities.types import Duration
+
+_TIMEOUT = MINUTE
 
 
-def send_slack_sync(text: str, /, *, url: str, timeout: int = _TIMEOUT) -> None:
+def send_slack_sync(text: str, /, *, url: str, timeout: Duration = _TIMEOUT) -> None:
     """Send a message to Slack, synchronously."""
     client = _get_client_sync(url, timeout=timeout)  # pragma: no cover
     response = client.send(text=text)  # pragma: no cover
@@ -24,7 +30,7 @@ async def send_slack_async(
     /,
     *,
     url: str,
-    timeout: int = _TIMEOUT,  # noqa: ASYNC109
+    timeout: Duration = _TIMEOUT,  # noqa: ASYNC109
 ) -> None:
     """Send a message via Slack."""
     client = _get_client_async(url, timeout=timeout)  # pragma: no cover
@@ -51,15 +57,19 @@ class SendSlackError(Exception):
 
 
 @cache
-def _get_client_sync(url: str, /, *, timeout: int = _TIMEOUT) -> WebhookClient:
+def _get_client_sync(url: str, /, *, timeout: Duration = _TIMEOUT) -> WebhookClient:
     """Get the webhook client."""
-    return WebhookClient(url, timeout=timeout)
+    timeout_use = safe_round(duration_to_float(timeout))
+    return WebhookClient(url, timeout=timeout_use)
 
 
 @cache
-def _get_client_async(url: str, /, *, timeout: int = _TIMEOUT) -> AsyncWebhookClient:
+def _get_client_async(
+    url: str, /, *, timeout: Duration = _TIMEOUT
+) -> AsyncWebhookClient:
     """Get the engine/sessionmaker for the required database."""
-    return AsyncWebhookClient(url, timeout=timeout)
+    timeout_use = safe_round(duration_to_float(timeout))
+    return AsyncWebhookClient(url, timeout=timeout_use)
 
 
 __all__ = ["send_slack_async", "send_slack_sync"]
