@@ -2,10 +2,20 @@ from __future__ import annotations
 
 from time import sleep
 
+from loguru import logger
 from tenacity import retry, wait_fixed
 
 from utilities.loguru import LogLevel, log
 from utilities.tenacity import before_sleep_log
+
+# eventkit
+
+
+def func_test_eventkit(n: int, /) -> None:
+    logger.trace("n={n}", n=n)
+
+
+# loguru
 
 
 def func_test_log_entry_inc_and_dec(x: int, /) -> tuple[int, int]:
@@ -65,6 +75,9 @@ def func_test_log_exit_duration(x: int, /) -> int:
 def func_test_log_contextualize(x: int, /) -> int:
     with log(key="value"):
         return x + 1
+
+
+# tenacity
 
 
 _counter = 0

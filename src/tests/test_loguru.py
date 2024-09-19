@@ -135,7 +135,7 @@ class TestHandlerConfiguration:
 
         logger.trace("message 2")
         out2 = capsys.readouterr().out
-        expected = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| tests\.test_loguru:test_main:\d+ - message 2"
+        expected = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| TRACE    \| tests\.test_loguru:test_main:\d+ - message 2$"
         assert search(expected, out2), out2
 
 
@@ -167,7 +167,7 @@ class TestLevelConfiguration:
 
 
 class TestLog:
-    datetime: ClassVar[str] = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
+    datetime: ClassVar[str] = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \| "
     loguru: ClassVar[str] = r"tests\.test_loguru_functions:"
     trace: ClassVar[str] = datetime + r"TRACE    \| " + loguru
     debug: ClassVar[str] = datetime + r"DEBUG    \| " + loguru
