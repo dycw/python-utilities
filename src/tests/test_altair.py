@@ -8,7 +8,7 @@ import polars as pl
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import booleans, integers, just, none, sampled_from
 from polars import DataFrame, Float64, datetime_range, int_range
-from pytest import fixture
+from pytest import fixture, mark, param
 
 from utilities.altair import (
     plot_dataframes,
@@ -18,11 +18,13 @@ from utilities.altair import (
     vconcat_charts,
 )
 from utilities.datetime import get_now
-from utilities.polars import DatetimeUTC
-from utilities.zoneinfo import UTC
+from utilities.polars import DatetimeUTC, zoned_datetime
+from utilities.types import ensure_class
+from utilities.zoneinfo import UTC, HongKong, Tokyo
 
 if TYPE_CHECKING:
     from pathlib import Path
+    from zoneinfo import ZoneInfo
 
 
 @fixture
@@ -40,7 +42,7 @@ def time_series() -> DataFrame:
     )
 
 
-class TestPlotDataFrame:
+class TestPlotDataFrames:
     @given(
         x=just("datetime") | none(),
         y=sampled_from([
@@ -72,6 +74,18 @@ class TestPlotDataFrame:
         width: int,
     ) -> None:
         _ = plot_dataframes(time_series, x=x, y=y, height=height, width=width)
+
+    @mark.parametrize("time_zone", [param(UTC), param(HongKong), param(Tokyo)], ids=str)
+    def test_auto_localization(self, *, time_zone: ZoneInfo) -> None:
+        df = DataFrame(
+            data=[(dt.datetime(2000, 1, 1, 12, tzinfo=time_zone), 0.0)],
+            schema={"datetime": zoned_datetime(time_zone=time_zone), "value": Float64},
+            orient="row",
+        )
+        chart = plot_dataframes(df, x="datetime", y="value")
+        datetime = ensure_class(chart.data, DataFrame)["datetime"].item()
+        expected = dt.datetime(2000, 1, 1, 12, tzinfo=time_zone).replace(tzinfo=None)
+        assert datetime == expected
 
 
 class TestPlotIntradayDataFrame:
