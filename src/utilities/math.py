@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
 from math import exp, isclose, isfinite, isnan, log, log10
 from typing import Literal, overload
@@ -515,6 +516,26 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     return round(result) if round_ else result
 
 
+def safe_round(
+    x: float, /, *, rel_tol: float | None = None, abs_tol: float | None = None
+) -> int:
+    """Safely round a float."""
+    if is_finite_and_integral(x, rel_tol=rel_tol, abs_tol=abs_tol):
+        return round(x)
+    raise SafeRoundError(x=x, rel_tol=rel_tol, abs_tol=abs_tol)
+
+
+@dataclass(kw_only=True)
+class SafeRoundError(Exception):
+    x: float
+    rel_tol: float | None = None
+    abs_tol: float | None = None
+
+    @override
+    def __str__(self) -> str:
+        return f"Unable to safely round {self.x} (rel_tol={self.rel_tol}, abs_tol={self.abs_tol})"
+
+
 # checks
 
 
@@ -603,6 +624,7 @@ __all__ = [
     "MIN_UINT64",
     "CheckIntegerError",
     "EWMParametersError",
+    "SafeRoundError",
     "check_integer",
     "ewm_parameters",
     "is_at_least",
@@ -649,4 +671,5 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "number_of_decimals",
     "order_of_magnitude",
+    "safe_round",
 ]
