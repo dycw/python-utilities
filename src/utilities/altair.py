@@ -64,6 +64,9 @@ def plot_dataframes(
     import polars as pl
     from polars import int_range
 
+    from utilities.polars import replace_time_zone
+
+    data = replace_time_zone(data, time_zone=None)
     if x is None:
         data = data.with_columns(_index=int_range(end=pl.len()))
         x_use = "_index"
