@@ -29,7 +29,7 @@ async def send_slack_async(
     """Send a message via Slack."""
     client = _get_client_async(url, timeout=timeout)  # pragma: no cover
     response = await client.send(text=text)  # pragma: no cover
-    _check_status_code(response)  # pragma: no cover
+    _check_status_code(text, response)  # pragma: no cover
 
 
 def _check_status_code(text: str, response: WebhookResponse, /) -> None:
