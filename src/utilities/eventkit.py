@@ -28,7 +28,7 @@ def _add_listener_error(event: Event, exception: Exception, /) -> None:
     try:
         from loguru import logger
     except Exception as error:  # noqa: BLE001  # pragma: no cover
-        _ = stderr.write(f"Error running {event}; got {error}")  # pragma: no cover
+        _ = stderr.write(f"Error running {event}; got {error}")
     else:
         logger.opt(exception=exception).error("Error running {event}", event=event)
 
