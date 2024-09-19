@@ -45,8 +45,8 @@ class SendSlackError(Exception):
 
     @override
     def __str__(self) -> str:
-        code = self.response.status_code
-        phrase = HTTPStatus(code).phrase
+        code = self.response.status_code  # pragma: no cover
+        phrase = HTTPStatus(code).phrase  # pragma: no cover
         return f"Error sending to Slack:\n\n{self.text}\n\n{code}: {phrase}"  # pragma: no cover
 
 
