@@ -14,7 +14,6 @@ from polars import (
     DataFrame,
     Date,
     Datetime,
-    Duration,
     Float64,
     Int32,
     Int64,
@@ -73,7 +72,8 @@ if TYPE_CHECKING:
     from sqlalchemy.sql import ColumnCollection
     from sqlalchemy.sql.base import ReadOnlyColumnCollection
 
-    from utilities.types import StrMapping
+    import utilities.types
+    from utilities.types import Duration, StrMapping
 
 
 def insert_dataframe(
@@ -120,12 +120,15 @@ async def insert_dataframe_async(
     snake: bool = False,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
+    timeout: utilities.types.Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Insert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         if not assume_tables_exist:
-            await ensure_tables_created_async(engine, table_or_mapped_class)
+            await ensure_tables_created_async(
+                engine, table_or_mapped_class, timeout=timeout
+            )
         return
     if prepared.no_items_non_empty_df:
         raise InsertDataFrameAsyncError(df=df)
@@ -134,6 +137,7 @@ async def insert_dataframe_async(
         prepared.items,
         chunk_size_frac=chunk_size_frac,
         assume_tables_exist=assume_tables_exist,
+        timeout=timeout,
     )
 
 
@@ -541,7 +545,7 @@ def _select_to_dataframe_map_table_column_type_to_dtype(
     if issubclass(py_type, dt.time):
         return Time
     if issubclass(py_type, dt.timedelta):
-        return Duration
+        return pl.Duration
     if issubclass(py_type, float):
         return Float64
     if issubclass(py_type, int):
@@ -631,12 +635,15 @@ async def upsert_dataframe_async(
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
     selected_or_all: Literal["selected", "all"] = "selected",
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Upsert a DataFrame into a database."""
     prepared = _insert_dataframe_prepare(df, table_or_mapped_class, snake=snake)
     if prepared.no_items_empty_df:
         if not assume_tables_exist:
-            await ensure_tables_created_async(engine, table_or_mapped_class)
+            await ensure_tables_created_async(
+                engine, table_or_mapped_class, timeout=timeout
+            )
         return
     if prepared.no_items_non_empty_df:
         raise UpsertDataFrameAsyncError(df=df)
@@ -644,8 +651,9 @@ async def upsert_dataframe_async(
         engine,
         prepared.items,
         chunk_size_frac=chunk_size_frac,
-        assume_tables_exist=assume_tables_exist,
         selected_or_all=selected_or_all,
+        assume_tables_exist=assume_tables_exist,
+        timeout=timeout,
     )
 
 

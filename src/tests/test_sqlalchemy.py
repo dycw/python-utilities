@@ -2608,15 +2608,15 @@ class TestUpsertItems:
                 await upsert_items_async(
                     engine_or_conn,
                     *items,
-                    assume_tables_exist=assume_tables_exist,
                     selected_or_all=selected_or_all,
+                    assume_tables_exist=assume_tables_exist,
                 )
             return []
         await upsert_items_async(
             engine_or_conn,
             *items,
-            assume_tables_exist=assume_tables_exist,
             selected_or_all=selected_or_all,
+            assume_tables_exist=assume_tables_exist,
         )
         sel = self._get_select(table_or_mapped_class)
         async with yield_connection_async(engine_or_conn) as conn:
