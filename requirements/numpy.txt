@@ -14,7 +14,7 @@ llvmlite==0.43.0
     # via numba
 numba==0.60.0
     # via numbagg
-numbagg==0.8.1
+numbagg==0.8.2
     # via dycw-utilities (pyproject.toml)
 numpy==2.0.2
     # via
