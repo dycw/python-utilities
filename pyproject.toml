@@ -254,6 +254,7 @@ zzz-test-typing = []
 zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.9, < 0.7"]
 zzz-test-zipfile = []
+zzz-test-zlib = ["orjson >= 3.10.7, < 3.11"]
 zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
 
 [project.scripts]

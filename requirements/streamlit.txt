@@ -43,7 +43,7 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.8.1
+narwhals==1.8.2
     # via altair
 numpy==2.1.1
     # via
@@ -57,7 +57,7 @@ packaging==24.1
     #   pytest
     #   pytest-rerunfailures
     #   streamlit
-pandas==2.2.2
+pandas==2.2.3
     # via streamlit
 pillow==10.4.0
     # via streamlit
