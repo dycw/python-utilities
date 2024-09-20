@@ -17,7 +17,7 @@ altair==5.4.1
     #   vegafusion
 annotated-types==0.7.0
     # via pydantic
-anyio==4.4.0
+anyio==4.5.0
     # via httpx
 argcomplete==3.5.0
     # via nox
@@ -194,7 +194,7 @@ nox==2024.4.15
     # via dycw-utilities (pyproject.toml)
 numba==0.60.0
     # via numbagg
-numbagg==0.8.1
+numbagg==0.8.2
     # via dycw-utilities (pyproject.toml)
 numpy==2.0.2
     # via
@@ -427,7 +427,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.12
+uv==0.4.13
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)

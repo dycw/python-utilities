@@ -64,6 +64,7 @@ from sqlalchemy.sql.functions import now
 from sqlalchemy.sql.schema import ColumnElementColumnDefault
 from typing_extensions import override
 
+from utilities.asyncio import timeout_dur
 from utilities.datetime import get_now
 from utilities.errors import redirect_error
 from utilities.functions import get_class_name
@@ -79,6 +80,7 @@ from utilities.iterables import (
 )
 from utilities.text import ensure_str
 from utilities.types import (
+    Duration,
     StrMapping,
     TupleOrStrMapping,
     is_string_mapping,
@@ -589,11 +591,12 @@ async def ensure_tables_created_async(
     engine_or_conn: AsyncEngineOrConnection,
     /,
     *tables_or_mapped_classes: TableOrMappedClass,
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Ensure a table/set of tables is/are created."""
     prepared = _ensure_tables_created_prepare(engine_or_conn, *tables_or_mapped_classes)
     for table in prepared.tables:
-        async with yield_connection_async(engine_or_conn) as conn:
+        async with yield_connection_async(engine_or_conn, timeout=timeout) as conn:
             try:
                 await conn.run_sync(table.create)
             except DatabaseError as error:
@@ -659,11 +662,12 @@ def ensure_tables_dropped(
 async def ensure_tables_dropped_async(
     engine_or_conn: AsyncEngineOrConnection,
     *tables_or_mapped_classes: TableOrMappedClass,
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Ensure a table/set of tables is/are dropped."""
     prepared = _ensure_tables_dropped_prepare(engine_or_conn, *tables_or_mapped_classes)
     for table in prepared.tables:
-        async with yield_connection_async(engine_or_conn) as conn:
+        async with yield_connection_async(engine_or_conn, timeout=timeout) as conn:
             try:
                 await conn.run_sync(table.drop)
             except DatabaseError as error:
@@ -882,6 +886,7 @@ async def insert_items_async(
     *items: _InsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
     assume_tables_exist: bool = False,
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Insert a set of items into a database.
 
@@ -912,9 +917,11 @@ async def insert_items_async(
     except _InsertItemsPrepareError as error:
         raise InsertItemsAsyncError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created_async(engine_or_conn, *prepared.tables)
+        await ensure_tables_created_async(
+            engine_or_conn, *prepared.tables, timeout=timeout
+        )
     for ins, parameters in prepared.yield_pairs():
-        async with yield_connection_async(engine_or_conn) as conn:
+        async with yield_connection_async(engine_or_conn, timeout=timeout) as conn:
             _ = await conn.execute(ins, parameters=parameters)
 
 
@@ -1374,8 +1381,9 @@ async def upsert_items_async(
     /,
     *items: _UpsertItem,
     chunk_size_frac: float = CHUNK_SIZE_FRAC,
-    assume_tables_exist: bool = False,
     selected_or_all: Literal["selected", "all"] = "selected",
+    assume_tables_exist: bool = False,
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> None:
     """Upsert a set of items into a database.
 
@@ -1402,9 +1410,11 @@ async def upsert_items_async(
     except _UpsertItemsPrepareError as error:
         raise UpsertItemsAsyncError(item=error.item) from None
     if not assume_tables_exist:
-        await ensure_tables_created_async(engine_or_conn, *prepared.tables)
+        await ensure_tables_created_async(
+            engine_or_conn, *prepared.tables, timeout=timeout
+        )
     for ins, parameters in prepared.yield_pairs():
-        async with yield_connection_async(engine_or_conn) as conn:
+        async with yield_connection_async(engine_or_conn, timeout=timeout) as conn:
             _ = await conn.execute(ins, parameters=parameters)
 
 
@@ -1429,11 +1439,14 @@ def yield_connection(engine_or_conn: EngineOrConnection, /) -> Iterator[Connecti
 
 @asynccontextmanager
 async def yield_connection_async(
-    engine_or_conn: AsyncEngineOrConnection, /
+    engine_or_conn: AsyncEngineOrConnection,
+    /,
+    *,
+    timeout: Duration | None = None,  # noqa: ASYNC109
 ) -> AsyncIterator[AsyncConnection]:
     """Yield an asynchronous connection."""
     if isinstance(engine_or_conn, AsyncEngine):
-        async with engine_or_conn.begin() as conn:
+        async with timeout_dur(duration=timeout), engine_or_conn.begin() as conn:
             yield conn
     else:
         yield engine_or_conn
