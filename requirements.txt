@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.8.1
+narwhals==1.8.2
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -234,7 +234,7 @@ packaging==24.1
     #   pytest
     #   pytest-rerunfailures
     #   streamlit
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   streamlit
     #   vegafusion
