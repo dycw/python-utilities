@@ -40,7 +40,7 @@ dev = [
   "more-itertools >= 10.5.0, < 10.6",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2024.4.15, < 2024.5",
-  "numbagg >= 0.8.1, < 0.9",
+  "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",
   "optuna >= 4.0.0, < 4.1",
   "orjson >= 3.10.7, < 3.11",
@@ -164,7 +164,7 @@ zzz-test-modules = []
 zzz-test-more-itertools = ["more-itertools >= 10.5.0, < 10.6"]
 zzz-test-numpy = [
   "bottleneck >= 1.4.0, < 1.5",
-  "numbagg >= 0.8.1, < 0.9",
+  "numbagg >= 0.8.2, < 0.9",
   "numpy >= 2.0.2, < 2.1",
 ]
 zzz-test-optuna = ["optuna >= 3.6.1, < 3.7"]
