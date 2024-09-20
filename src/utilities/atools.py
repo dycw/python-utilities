@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Hashable, Iterator
+from collections.abc import Callable, Hashable, Iterator
 from dataclasses import dataclass
 from inspect import signature
 from re import search
@@ -19,6 +19,7 @@ from atools import memoize as _memoize
 from atools._memoize_decorator import Pickler, _AsyncMemoize
 from typing_extensions import override
 
+from utilities.asyncio import Coroutine1
 from utilities.types import ensure_class
 from utilities.typing import get_args
 
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
-_AsyncFunc = Callable[_P, Awaitable[_R]]
+_AsyncFunc = Callable[_P, Coroutine1[_R]]
 
 
 class _NoMemoize:
