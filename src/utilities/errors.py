@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import wraps
 from re import search
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
 from utilities.text import EnsureStrError, ensure_str
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Iterator
 
 
 @dataclass(kw_only=True)
@@ -83,32 +82,4 @@ class _RedirectErrorArgNotStringError(RedirectErrorError):
         return f"Error argument must be a string; got {self.arg}."
 
 
-_T = TypeVar("_T")
-_TExc = TypeVar("_TExc", bound=Exception)
-
-
-def retry(
-    func: Callable[[], _T],
-    error: type[Exception] | tuple[type[Exception], ...],
-    callback: Callable[[_TExc], None],
-    /,
-    *,
-    predicate: Callable[[_TExc], bool] | None = None,
-) -> Callable[[], _T]:
-    """Retry a function if an error is caught after the callback."""
-
-    @wraps(func)
-    def inner() -> _T:
-        try:
-            return func()
-        except error as caught:
-            caught = cast(_TExc, caught)
-            if (predicate is None) or predicate(caught):
-                callback(caught)
-                return func()
-            raise
-
-    return inner
-
-
-__all__ = ["ImpossibleCaseError", "RedirectErrorError", "redirect_error", "retry"]
+__all__ = ["ImpossibleCaseError", "RedirectErrorError", "redirect_error"]
