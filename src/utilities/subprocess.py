@@ -110,18 +110,18 @@ def stream_command(
     write_stderr: Callable[[str], None] | None = None,
 ) -> CompletedProcess[str]:
     """Mimic subprocess.run, while processing the command output in real time."""
-    if write_stdout is None:
+    if write_stdout is None:  # skipif-not-windows
         from loguru import logger
 
         write_stdout_use = logger.info
-    else:
-        write_stdout_use = write_stdout  # skipif-not-windows
-    if write_stderr is None:
+    else:  # skipif-not-windows
+        write_stdout_use = write_stdout
+    if write_stderr is None:  # skipif-not-windows
         from loguru import logger
 
         write_stderr_use = logger.error
-    else:
-        write_stderr_use = write_stderr  # skipif-not-windows
+    else:  # skipif-not-windows
+        write_stderr_use = write_stderr
 
     popen = Popen(  # skipif-not-windows
         args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True
