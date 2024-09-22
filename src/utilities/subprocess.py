@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from functools import partial
 from io import StringIO
 from pathlib import Path
@@ -9,9 +10,10 @@ from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
 from typing import IO, TYPE_CHECKING, TextIO
 
-from utilities.errors import redirect_error
+from typing_extensions import override
+
 from utilities.functions import ensure_not_none
-from utilities.iterables import OneError, one
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
