@@ -110,22 +110,24 @@ def stream_command(
     write_stderr: Callable[[str], None] | None = None,
 ) -> CompletedProcess[str]:
     """Mimic subprocess.run, while processing the command output in real time."""
-    if write_stdout is None:  # pragma: no cover
+    if write_stdout is None:
         from loguru import logger
 
         write_stdout_use = logger.info
     else:
-        write_stdout_use = write_stdout  # pragma: no cover
-    if write_stderr is None:  # pragma: no cover
+        write_stdout_use = write_stdout  # skipif-not-windows
+    if write_stderr is None:
         from loguru import logger
 
         write_stderr_use = logger.error
     else:
-        write_stderr_use = write_stderr  # pragma: no cover
+        write_stderr_use = write_stderr  # skipif-not-windows
 
-    popen = Popen(args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True)
-    stdout_out, stderr_out = StringIO(), StringIO()
-    with (
+    popen = Popen(  # skipif-not-windows
+        args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True
+    )
+    stdout_out, stderr_out = StringIO(), StringIO()  # skipif-not-windows
+    with (  # skipif-not-windows
         popen as process,
         ThreadPoolExecutor(2) as pool,  # two threads to handle the streams
     ):
@@ -133,15 +135,15 @@ def stream_command(
         stderr_in = ensure_not_none(process.stderr)
         _stream_command_handle(stdout_in, pool, write_stdout_use, stdout_out)
         _stream_command_handle(stderr_in, pool, write_stderr_use, stderr_out)
-    retcode = process.wait()
-    if retcode == 0:
+    retcode = process.wait()  # skipif-not-windows
+    if retcode == 0:  # skipif-not-windows
         return CompletedProcess(
             process.args,
             retcode,
             stdout=stdout_out.getvalue(),
             stderr=stderr_out.getvalue(),
         )
-    raise CalledProcessError(retcode, process.args)
+    raise CalledProcessError(retcode, process.args)  # skipif-not-windows
 
 
 def _stream_command_handle(
@@ -151,18 +153,20 @@ def _stream_command_handle(
     buffer_out: TextIO,
     /,
 ) -> None:
-    process = partial(
+    process = partial(  # skipif-not-windows
         _stream_command_write, write_console=write_console, buffer=buffer_out
     )
-    _ = deque(pool.submit(process, line.rstrip("\n")) for line in buffer_in if line)
+    _ = deque(  # skipif-not-windows
+        pool.submit(process, line.rstrip("\n")) for line in buffer_in if line
+    )
 
 
 def _stream_command_write(
     line: str, /, *, write_console: Callable[[str], None], buffer: TextIO
 ) -> None:
     """Write to console and buffer."""
-    write_console(line)
-    _ = buffer.write(f"{line}\n")
+    write_console(line)  # skipif-not-windows
+    _ = buffer.write(f"{line}\n")  # skipif-not-windows
 
 
 __all__ = [
