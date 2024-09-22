@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from functools import partial
 from io import StringIO
 from pathlib import Path
@@ -9,9 +10,10 @@ from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
 from typing import IO, TYPE_CHECKING, TextIO
 
-from utilities.errors import redirect_error
+from typing_extensions import override
+
 from utilities.functions import ensure_not_none
-from utilities.iterables import OneError, one
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
@@ -35,15 +37,40 @@ def get_shell_output(
     """
     cwd = Path(cwd)
     if activate is not None:
-        with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
+        try:
             activate = one(cwd.rglob("activate"))
+        except OneEmptyError:
+            raise _GetShellOutputEmptyError(cwd=cwd) from None
+        except OneNonUniqueError as error:
+            raise _GetShellOutputNonUniqueError(
+                cwd=cwd, first=error.first, second=error.second
+            ) from None
         cmd = f"source {activate}; {cmd}"  # skipif-not-windows
 
     with temp_environ(env):  # pragma: no cover
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
-class GetShellOutputError(Exception): ...
+@dataclass(kw_only=True)
+class GetShellOutputError(Exception):
+    cwd: Path
+
+
+@dataclass(kw_only=True)
+class _GetShellOutputEmptyError(GetShellOutputError):
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.cwd)!r} contains no 'activate' file"
+
+
+@dataclass(kw_only=True)
+class _GetShellOutputNonUniqueError(GetShellOutputError):
+    first: Path
+    second: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.cwd)!r} must contain exactly one 'activate' file; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
 
 
 def run_accept_address_in_use(args: Sequence[str], /, *, exist_ok: bool) -> None:

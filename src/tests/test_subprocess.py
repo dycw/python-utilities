@@ -12,8 +12,9 @@ from pytest import CaptureFixture, raises
 from utilities.loguru import HandlerConfiguration, LogLevel
 from utilities.pytest import skipif_windows
 from utilities.subprocess import (
-    GetShellOutputError,
     _address_already_in_use_pattern,
+    _GetShellOutputEmptyError,
+    _GetShellOutputNonUniqueError,
     get_shell_output,
     stream_command,
 )
@@ -42,7 +43,21 @@ class TestGetShellOutput:
 
     def test_no_activate(self, *, tmp_path: Path) -> None:
         venv = Path(tmp_path, ".venv")
-        with raises(GetShellOutputError):
+        with raises(
+            _GetShellOutputEmptyError, match="Path '.*' contains no 'activate' file"
+        ):
+            _ = get_shell_output("ls", cwd=venv, activate=venv)
+
+    def test_multiple_activate(self, *, tmp_path: Path) -> None:
+        venv = Path(tmp_path, ".venv")
+        activate1, activate2 = [Path(venv, str(i), "activate") for i in [1, 2]]
+        for activate in [activate1, activate2]:
+            activate.parent.mkdir(parents=True)
+            activate.touch()
+        with raises(
+            _GetShellOutputNonUniqueError,
+            match="Path '.*' must contain exactly one 'activate' file; got '.*', '.*' and perhaps more",
+        ):
             _ = get_shell_output("ls", cwd=venv, activate=venv)
 
 
