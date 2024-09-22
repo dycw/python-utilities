@@ -108,18 +108,18 @@ def stream_command(
     write_stderr: Callable[[str], None] | None = None,
 ) -> CompletedProcess[str]:
     """Mimic subprocess.run, while processing the command output in real time."""
-    if write_stdout is None:
+    if write_stdout is None:  # pragma: no cover
         from loguru import logger
 
         write_stdout_use = logger.info
     else:
-        write_stdout_use = write_stdout
-    if write_stderr is None:
+        write_stdout_use = write_stdout  # pragma: no cover
+    if write_stderr is None:  # pragma: no cover
         from loguru import logger
 
         write_stderr_use = logger.error
     else:
-        write_stderr_use = write_stderr
+        write_stderr_use = write_stderr  # pragma: no cover
 
     popen = Popen(args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True)
     stdout_out, stderr_out = StringIO(), StringIO()

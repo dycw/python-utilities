@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sys  # do use `from sys import ...`
 from pathlib import Path
-from re import search
+from re import escape, search
+from subprocess import CalledProcessError
 from typing import Any, ClassVar, cast
 
 from loguru import logger
@@ -76,6 +77,14 @@ class TestStreamCommand:
             + r"ERROR    \| utilities\.subprocess:_stream_command_write:\d+ - stderr message$"
         )
         assert search(expected2, line2), line2
+
+    @skipif_windows
+    def test_error(self) -> None:
+        with raises(
+            CalledProcessError,
+            match=escape("Command '['false']' returned non-zero exit status 1."),
+        ):
+            _ = stream_command(["false"])
 
 
 if __name__ == "__main__":
