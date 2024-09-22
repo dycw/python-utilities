@@ -76,3 +76,9 @@ class TestStreamCommand:
             + r"ERROR    \| utilities\.subprocess:_stream_command_write:\d+ - stderr message$"
         )
         assert search(expected2, line2), line2
+
+
+if __name__ == "__main__":
+    _ = stream_command(  # noqa: S604
+        'echo "stdout message" && sleep 2 && echo "stderr message" >&2', shell=True
+    )
