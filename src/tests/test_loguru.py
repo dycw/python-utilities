@@ -13,8 +13,9 @@ from pytest import CaptureFixture, fixture, mark, param, raises
 
 from tests.test_loguru_functions import (
     func_test_log_contextualize,
+    func_test_log_disable,
+    func_test_log_entry,
     func_test_log_entry_disabled,
-    func_test_log_entry_inc_and_dec,
     func_test_log_entry_non_default_level,
     func_test_log_error,
     func_test_log_error_expected,
@@ -173,19 +174,23 @@ class TestLog:
     debug: ClassVar[str] = datetime + r"DEBUG    \| " + loguru
     error: ClassVar[str] = datetime + r"ERROR    \| " + loguru
 
+    def test_disable(self, *, capsys: CaptureFixture) -> None:
+        handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_log_disable(1) == 2
+        out = capsys.readouterr().out
+        assert out == ""
+
     def test_entry(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}
         _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
 
-        assert func_test_log_entry_inc_and_dec(1) == (2, 0)
+        assert func_test_log_entry(1) == 2
         out = capsys.readouterr().out
-        line1, line2, line3 = out.splitlines()
-        expected1 = self.trace + r"func_test_log_entry_inc_and_dec:\d+ - ➢$"
-        assert search(expected1, line1), line1
-        expected2 = self.trace + r"_func_test_log_entry_inc:\d+ - ➢$"
-        assert search(expected2, line2), line2
-        expected3 = self.trace + r"_func_test_log_entry_dec:\d+ - ➢$"
-        assert search(expected3, line3), line3
+        (line,) = out.splitlines()
+        expected = self.trace + r"func_test_log_entry:\d+ - ➢$"
+        assert search(expected, line), line
 
     def test_entry_disabled(self, *, capsys: CaptureFixture) -> None:
         handler: HandlerConfiguration = {"sink": sys.stdout, "level": LogLevel.TRACE}

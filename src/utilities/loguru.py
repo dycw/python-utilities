@@ -188,6 +188,7 @@ class GetLoggingLevelNumberError(Exception):
 @contextmanager
 def log(
     *,
+    disable: bool = False,
     depth: int = 2,
     entry_level: LogLevel | None = LogLevel.TRACE,
     entry_bind: StrMapping | None = None,
@@ -202,12 +203,32 @@ def log(
     **kwargs: Any,
 ) -> Iterator[None]:
     """Log the function entry/error/exit/duration."""
-    core_depth = depth + 2
-    with Timer() as timer:
-        if len(kwargs) >= 1:
-            with (
-                logger.contextualize(**kwargs),
-                _log_core(
+    if disable:
+        yield
+    else:
+        core_depth = depth + 2
+        with Timer() as timer:
+            if len(kwargs) >= 1:
+                with (
+                    logger.contextualize(**kwargs),
+                    _log_core(
+                        timer,
+                        core_depth,
+                        entry_level=entry_level,
+                        entry_bind=entry_bind,
+                        entry_message=entry_message,
+                        error_expected=error_expected,
+                        error_bind=error_bind,
+                        error_message=error_message,
+                        exit_level=exit_level,
+                        exit_duration=exit_duration,
+                        exit_bind=exit_bind,
+                        exit_message=exit_message,
+                    ),
+                ):
+                    yield
+            else:
+                with _log_core(
                     timer,
                     core_depth,
                     entry_level=entry_level,
@@ -220,25 +241,8 @@ def log(
                     exit_duration=exit_duration,
                     exit_bind=exit_bind,
                     exit_message=exit_message,
-                ),
-            ):
-                yield
-        else:
-            with _log_core(
-                timer,
-                core_depth,
-                entry_level=entry_level,
-                entry_bind=entry_bind,
-                entry_message=entry_message,
-                error_expected=error_expected,
-                error_bind=error_bind,
-                error_message=error_message,
-                exit_level=exit_level,
-                exit_duration=exit_duration,
-                exit_bind=exit_bind,
-                exit_message=exit_message,
-            ):
-                yield
+                ):
+                    yield
 
 
 @contextmanager
