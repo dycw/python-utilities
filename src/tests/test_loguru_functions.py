@@ -18,21 +18,14 @@ def func_test_eventkit(n: int, /) -> None:
 # loguru
 
 
-def func_test_log_entry_inc_and_dec(x: int, /) -> tuple[int, int]:
-    with log():
-        inc = _func_test_log_entry_inc(x)
-        dec = _func_test_log_entry_dec(x)
-        return inc, dec
-
-
-def _func_test_log_entry_inc(x: int, /) -> int:
-    with log():
+def func_test_log_disable(x: int, /) -> int:
+    with log(disable=True):
         return x + 1
 
 
-def _func_test_log_entry_dec(x: int, /) -> int:
+def func_test_log_entry(x: int, /) -> int:
     with log():
-        return x - 1
+        return x + 1
 
 
 def func_test_log_entry_disabled(x: int, /) -> int:
