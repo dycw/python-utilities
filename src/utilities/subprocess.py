@@ -1,17 +1,24 @@
 from __future__ import annotations
 
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from functools import partial
+from io import StringIO
 from pathlib import Path
 from re import MULTILINE, escape, search
-from subprocess import PIPE, CalledProcessError, check_output
-from typing import TYPE_CHECKING
+from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
+from typing import IO, TYPE_CHECKING, TextIO
 
-from utilities.errors import redirect_error
-from utilities.iterables import OneError, one
+from typing_extensions import override
+
+from utilities.functions import ensure_not_none
+from utilities.iterables import OneEmptyError, OneNonUniqueError, one
 from utilities.os import temp_environ
 from utilities.pathlib import PWD
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     from utilities.types import PathLike
 
@@ -30,22 +37,47 @@ def get_shell_output(
     """
     cwd = Path(cwd)
     if activate is not None:
-        with redirect_error(OneError, GetShellOutputError(f"{cwd=}")):
+        try:
             activate = one(cwd.rglob("activate"))
+        except OneEmptyError:
+            raise _GetShellOutputEmptyError(cwd=cwd) from None
+        except OneNonUniqueError as error:
+            raise _GetShellOutputNonUniqueError(
+                cwd=cwd, first=error.first, second=error.second
+            ) from None
         cmd = f"source {activate}; {cmd}"  # skipif-not-windows
 
-    with temp_environ(env):  # pragma: no cover
+    with temp_environ(env):  # skipif-not-windows
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
-class GetShellOutputError(Exception): ...
+@dataclass(kw_only=True)
+class GetShellOutputError(Exception):
+    cwd: Path
+
+
+@dataclass(kw_only=True)
+class _GetShellOutputEmptyError(GetShellOutputError):
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.cwd)!r} contains no 'activate' file"
+
+
+@dataclass(kw_only=True)
+class _GetShellOutputNonUniqueError(GetShellOutputError):
+    first: Path
+    second: Path
+
+    @override
+    def __str__(self) -> str:
+        return f"Path {str(self.cwd)!r} must contain exactly one 'activate' file; got {str(self.first)!r}, {str(self.second)!r} and perhaps more"
 
 
 def run_accept_address_in_use(args: Sequence[str], /, *, exist_ok: bool) -> None:
     """Run a command, accepting the 'address already in use' error."""
-    try:  # pragma: no cover
+    try:  # skipif-not-windows
         _ = check_output(list(args), stderr=PIPE, text=True)
-    except CalledProcessError as error:  # pragma: no cover
+    except CalledProcessError as error:  # skipif-not-windows
         pattern = _address_already_in_use_pattern()
         try:
             from loguru import logger
@@ -68,4 +100,78 @@ def _address_already_in_use_pattern() -> str:
     return f"^{escaped}$"
 
 
-__all__ = ["GetShellOutputError", "get_shell_output", "run_accept_address_in_use"]
+def stream_command(
+    args: str | list[str],
+    /,
+    *,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    write_stdout: Callable[[str], None] | None = None,
+    write_stderr: Callable[[str], None] | None = None,
+) -> CompletedProcess[str]:
+    """Mimic subprocess.run, while processing the command output in real time."""
+    if write_stdout is None:  # skipif-not-windows
+        from loguru import logger
+
+        write_stdout_use = logger.info
+    else:  # skipif-not-windows
+        write_stdout_use = write_stdout
+    if write_stderr is None:  # skipif-not-windows
+        from loguru import logger
+
+        write_stderr_use = logger.error
+    else:  # skipif-not-windows
+        write_stderr_use = write_stderr
+
+    popen = Popen(  # skipif-not-windows
+        args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True
+    )
+    stdout_out, stderr_out = StringIO(), StringIO()  # skipif-not-windows
+    with (  # skipif-not-windows
+        popen as process,
+        ThreadPoolExecutor(2) as pool,  # two threads to handle the streams
+    ):
+        stdout_in = ensure_not_none(process.stdout)
+        stderr_in = ensure_not_none(process.stderr)
+        _stream_command_handle(stdout_in, pool, write_stdout_use, stdout_out)
+        _stream_command_handle(stderr_in, pool, write_stderr_use, stderr_out)
+    retcode = process.wait()  # skipif-not-windows
+    if retcode == 0:  # skipif-not-windows
+        return CompletedProcess(
+            process.args,
+            retcode,
+            stdout=stdout_out.getvalue(),
+            stderr=stderr_out.getvalue(),
+        )
+    raise CalledProcessError(retcode, process.args)  # skipif-not-windows
+
+
+def _stream_command_handle(
+    buffer_in: IO[str],
+    pool: ThreadPoolExecutor,
+    write_console: Callable[[str], None],
+    buffer_out: TextIO,
+    /,
+) -> None:
+    process = partial(  # skipif-not-windows
+        _stream_command_write, write_console=write_console, buffer=buffer_out
+    )
+    _ = deque(  # skipif-not-windows
+        pool.submit(process, line.rstrip("\n")) for line in buffer_in if line
+    )
+
+
+def _stream_command_write(
+    line: str, /, *, write_console: Callable[[str], None], buffer: TextIO
+) -> None:
+    """Write to console and buffer."""
+    write_console(line)  # skipif-not-windows
+    _ = buffer.write(f"{line}\n")  # skipif-not-windows
+
+
+__all__ = [
+    "GetShellOutputError",
+    "get_shell_output",
+    "run_accept_address_in_use",
+    "stream_command",
+]
