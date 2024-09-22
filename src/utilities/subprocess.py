@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import partial
 from io import StringIO
 from pathlib import Path
 from re import MULTILINE, escape, search
 from subprocess import PIPE, CalledProcessError, CompletedProcess, Popen, check_output
-from typing import TYPE_CHECKING, TextIO
+from typing import IO, TYPE_CHECKING, TextIO
 
 from typing_extensions import override
 
@@ -131,15 +129,19 @@ def stream_command(
         popen as process,
         ThreadPoolExecutor(2) as pool,  # two threads to handle the streams
     ):
-        exhaust = partial(pool.submit, partial(deque, maxlen=0))
-        for buffer_in, write_console, buffer_out in [
-            (process.stdout, write_stdout_use, buffer_stdout),
-            (process.stderr, write_stderr_use, buffer_stderr),
-        ]:
-            _ = exhaust(
-                _stream_command_write(write_console, buffer_out, line[:-1])
-                for line in ensure_not_none(buffer_in)
-            )
+        _ = pool.submit(
+            _stream_command_write,
+            ensure_not_none(process.stdout),
+            write_stdout_use,
+            buffer_stdout,
+        )
+        _ = pool.submit(
+            _stream_command_write,
+            ensure_not_none(process.stderr),
+            write_stderr_use,
+            buffer_stderr,
+        )
+
     retcode = ensure_not_none(process.poll())  # skipif-not-windows
     if retcode == 0:  # skipif-not-windows
         return CompletedProcess(
@@ -157,11 +159,13 @@ def stream_command(
 
 
 def _stream_command_write(
-    write_console: Callable[[str], None], buffer: TextIO, line: str, /
+    stream: IO[str], write_console: Callable[[str], None], buffer: TextIO, /
 ) -> None:
     """Write to console and buffer."""
-    write_console(line)  # skipif-not-windows
-    _ = buffer.write(f"{line}\n")  # skipif-not-windows
+    for line in stream:  # skipif-not-windows
+        stripped = line.rstrip()
+        write_console(stripped)
+        _ = buffer.write(f"{stripped}\n")
 
 
 __all__ = [
