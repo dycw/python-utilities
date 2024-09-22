@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from functools import partial
 from io import StringIO
 from pathlib import Path
 from re import MULTILINE, escape, search
@@ -126,47 +124,48 @@ def stream_command(
     popen = Popen(  # skipif-not-windows
         args, stdout=PIPE, stderr=PIPE, shell=shell, env=env, text=True
     )
-    stdout_out, stderr_out = StringIO(), StringIO()  # skipif-not-windows
+    buffer_stdout, buffer_stderr = StringIO(), StringIO()  # skipif-not-windows
     with (  # skipif-not-windows
         popen as process,
         ThreadPoolExecutor(2) as pool,  # two threads to handle the streams
     ):
-        stdout_in = ensure_not_none(process.stdout)
-        stderr_in = ensure_not_none(process.stderr)
-        _stream_command_handle(stdout_in, pool, write_stdout_use, stdout_out)
-        _stream_command_handle(stderr_in, pool, write_stderr_use, stderr_out)
-    retcode = process.wait()  # skipif-not-windows
+        _ = pool.submit(
+            _stream_command_write,
+            ensure_not_none(process.stdout),
+            write_stdout_use,
+            buffer_stdout,
+        )
+        _ = pool.submit(
+            _stream_command_write,
+            ensure_not_none(process.stderr),
+            write_stderr_use,
+            buffer_stderr,
+        )
+
+    retcode = ensure_not_none(process.poll())  # skipif-not-windows
     if retcode == 0:  # skipif-not-windows
         return CompletedProcess(
             process.args,
             retcode,
-            stdout=stdout_out.getvalue(),
-            stderr=stderr_out.getvalue(),
+            stdout=buffer_stdout.getvalue(),
+            stderr=buffer_stderr.getvalue(),
         )
-    raise CalledProcessError(retcode, process.args)  # skipif-not-windows
-
-
-def _stream_command_handle(
-    buffer_in: IO[str],
-    pool: ThreadPoolExecutor,
-    write_console: Callable[[str], None],
-    buffer_out: TextIO,
-    /,
-) -> None:
-    process = partial(  # skipif-not-windows
-        _stream_command_write, write_console=write_console, buffer=buffer_out
-    )
-    _ = deque(  # skipif-not-windows
-        pool.submit(process, line.rstrip("\n")) for line in buffer_in if line
+    raise CalledProcessError(  # skipif-not-windows
+        retcode,
+        process.args,
+        output=buffer_stdout.getvalue(),
+        stderr=buffer_stderr.getvalue(),
     )
 
 
 def _stream_command_write(
-    line: str, /, *, write_console: Callable[[str], None], buffer: TextIO
+    stream: IO[str], write_console: Callable[[str], None], buffer: TextIO, /
 ) -> None:
     """Write to console and buffer."""
-    write_console(line)  # skipif-not-windows
-    _ = buffer.write(f"{line}\n")  # skipif-not-windows
+    for line in stream:  # skipif-not-windows
+        stripped = line.rstrip()
+        write_console(stripped)
+        _ = buffer.write(f"{stripped}\n")
 
 
 __all__ = [
