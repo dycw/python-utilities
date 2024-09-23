@@ -235,8 +235,7 @@ class TestSerializeAndDeserialize:
         assert result == obj
 
     @given(data=data())
-    @mark.only
-    def test_dataclass_literal_of_enums(self, *, data: DataObject) -> None:
+    def test_dataclass_enum_subsets(self, *, data: DataObject) -> None:
         class Color(Enum):
             red = auto()
             green = auto()
