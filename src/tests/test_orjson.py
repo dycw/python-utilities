@@ -6,6 +6,7 @@ from fractions import Fraction
 from operator import eq
 from typing import Any, Literal, NamedTuple
 
+from dacite import WrongTypeError
 from hypothesis import given
 from hypothesis.strategies import (
     DataObject,
@@ -234,21 +235,19 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(obj), cls=Child)
         assert result == obj
 
-    @given(data=data())
-    def test_dataclass_enum_subsets(self, *, data: DataObject) -> None:
-        class Color(Enum):
-            red = auto()
-            green = auto()
-            blue = auto()
+    def test_dataclass_enum_subsets(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
 
-        RedOrGreen = Literal[Color.red, Color.green]  # noqa: N806
+        TrueOnly = Literal[Truth.true]  # noqa: N806
 
         @dataclass(kw_only=True)
         class Example:
-            color: RedOrGreen  # pyright: ignore[reportInvalidTypeForm]
+            color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
 
-        obj = Example(color=data.draw(sampled_from([Color.red, Color.green])))
-        result = deserialize(serialize(obj), cls=Example, enum_subsets=[RedOrGreen])
+        obj = Example(color=Truth.true)
+        result = deserialize(serialize(obj), cls=Example, enum_subsets=[TrueOnly])
         assert result == obj
 
     @given(data=data())
@@ -274,6 +273,25 @@ class TestSerializeAndDeserialize:
             match=r"Unable to deserialize data 'invalid'; object hook failed on \{.*\}",
         ):
             _ = deserialize(ser)
+
+    def test_error_dataclass_enum_subsets(self) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        TrueOnly = Literal[Truth.true]  # noqa: N806
+
+        @dataclass(kw_only=True)
+        class Example:
+            color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
+
+        obj = Example(color=Truth.false)
+        ser = serialize(obj)
+        with raises(
+            WrongTypeError,
+            match='wrong value type for field "color" - should be "2" instead of value .* of type ".*"',
+        ):
+            _ = deserialize(ser, cls=Example, enum_subsets=[TrueOnly])
 
     @given(x=int64s())
     def test_named_tuple(self, *, x: int) -> None:
