@@ -235,6 +235,24 @@ class TestSerializeAndDeserialize:
         assert result == obj
 
     @given(data=data())
+    @mark.only
+    def test_dataclass_literal_of_enums(self, *, data: DataObject) -> None:
+        class Color(Enum):
+            red = auto()
+            green = auto()
+            blue = auto()
+
+        RedOrGreen = Literal[Color.red, Color.green]  # noqa: N806
+
+        @dataclass(kw_only=True)
+        class Example:
+            color: RedOrGreen  # pyright: ignore[reportInvalidTypeForm]
+
+        obj = Example(color=data.draw(sampled_from([Color.red, Color.green])))
+        result = deserialize(serialize(obj), cls=Example, enum_subsets=[RedOrGreen])
+        assert result == obj
+
+    @given(data=data())
     def test_engines(self, *, data: DataObject) -> None:
         def eq(x: Engine, y: Engine, /) -> bool:
             return x.url == y.url
