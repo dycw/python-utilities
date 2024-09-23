@@ -7,8 +7,18 @@ from enum import Enum, StrEnum, unique
 from fractions import Fraction
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    TypedDict,
+    TypeVar,
+    _LiteralGenericAlias,
+    cast,
+    overload,
+)
 
+from dacite import WrongTypeError
 from orjson import (
     OPT_NON_STR_KEYS,
     OPT_PASSTHROUGH_DATETIME,
@@ -20,12 +30,14 @@ from typing_extensions import override
 
 from utilities.dataclasses import is_dataclass_instance
 from utilities.functions import get_class_name
-from utilities.typing import is_namedtuple_class, is_namedtuple_instance
+from utilities.iterables import OneError, one
+from utilities.typing import get_args, is_namedtuple_class, is_namedtuple_instance
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from sqlalchemy.engine import Engine
+
 
 _T = TypeVar("_T")
 _SCHEMA_KEY = "_k"
@@ -243,10 +255,28 @@ class _GetSchemaError(Exception):
 
 
 @overload
-def deserialize(data: bytes, /, *, cls: type[_T]) -> _T: ...
+def deserialize(
+    data: bytes,
+    /,
+    *,
+    cls: type[_T],
+    enum_subsets: Iterable[_LiteralGenericAlias] | None = ...,
+) -> _T: ...
 @overload
-def deserialize(data: bytes, /, *, cls: None = ...) -> Any: ...
-def deserialize(data: bytes, /, *, cls: type[_T] | None = None) -> Any:
+def deserialize(
+    data: bytes,
+    /,
+    *,
+    cls: None = ...,
+    enum_subsets: Iterable[_LiteralGenericAlias] | None = ...,
+) -> Any: ...
+def deserialize(
+    data: bytes,
+    /,
+    *,
+    cls: type[_T] | None = None,
+    enum_subsets: Iterable[_LiteralGenericAlias] | None = None,
+) -> Any:
     """Deserialize an object."""
     pre_obj = loads(data)
     try:
@@ -259,7 +289,11 @@ def deserialize(data: bytes, /, *, cls: type[_T] | None = None) -> Any:
         return cls(*obj)
     from dacite import Config, from_dict
 
-    return from_dict(cls, obj, config=Config(cast=[Enum]))
+    if enum_subsets is None:
+        type_hooks = {}
+    else:
+        type_hooks = {es: _make_type_hook(es) for es in enum_subsets}
+    return from_dict(cls, obj, config=Config(type_hooks=type_hooks, cast=[Enum]))
 
 
 def _object_hook(obj: Any, /) -> Any:
@@ -406,6 +440,17 @@ class _ObjectHookError(Exception):
     @override
     def __str__(self) -> str:
         return f"Unable to cast to object: {self.data!r}"
+
+
+def _make_type_hook(enum_subset: _LiteralGenericAlias, /) -> Callable[[Any], Enum]:
+    def hook(value: Any, /) -> Enum:
+        members = cast(tuple[Enum, ...], get_args(enum_subset))
+        try:
+            return one(e for e in members if e.value == value)
+        except OneError:
+            raise WrongTypeError(value, enum_subset) from None
+
+    return hook
 
 
 __all__ = ["DeserializeError", "SerializeError", "deserialize", "serialize"]
