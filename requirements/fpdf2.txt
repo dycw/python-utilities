@@ -6,7 +6,7 @@ coverage==7.6.1
     # via pytest-cov
 defusedxml==0.7.1
     # via fpdf2
-fonttools==4.53.1
+fonttools==4.54.1
     # via fpdf2
 fpdf2==2.7.9
     # via dycw-utilities (pyproject.toml)

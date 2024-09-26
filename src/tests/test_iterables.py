@@ -62,11 +62,13 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
     one_str,
+    pairwise_tail,
     product_dicts,
     resolve_include_and_exclude,
     take,
     transpose,
 )
+from utilities.sentinel import sentinel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
@@ -655,6 +657,14 @@ class TestOneStr:
             OneStrError, match=r"Iterable .* does not contain 'd' \(case insensitive\)"
         ):
             _ = one_str(["a", "b", "c"], "d", case_sensitive=False)
+
+
+class TestPairwiseTail:
+    def test_main(self) -> None:
+        iterable = range(5)
+        result = list(pairwise_tail(iterable))
+        expected = [(0, 1), (1, 2), (2, 3), (3, 4), (4, sentinel)]
+        assert result == expected
 
 
 class TestProductDicts:
