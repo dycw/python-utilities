@@ -15,8 +15,9 @@ from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from itertools import accumulate, chain, groupby, islice, product
+from itertools import accumulate, chain, groupby, islice, pairwise, product
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generic,
     Literal,
@@ -37,8 +38,12 @@ from utilities.math import (
     _CheckIntegerMinError,
     check_integer,
 )
+from utilities.sentinel import sentinel
 from utilities.text import ensure_str
 from utilities.types import ensure_hashable
+
+if TYPE_CHECKING:
+    from utilities.sentinel import Sentinel
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
@@ -711,6 +716,11 @@ class _OneStrCaseInsensitiveEmptyError(OneStrError):
         return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)} (case insensitive)"
 
 
+def pairwise_tail(iterable: Iterable[_T], /) -> Iterator[tuple[_T, _T | Sentinel]]:
+    """Return pairwise elements, with the last paired with the sentinel."""
+    return pairwise(chain(iterable, [sentinel]))
+
+
 def product_dicts(mapping: Mapping[_K, Iterable[_V]], /) -> Iterator[Mapping[_K, _V]]:
     """Return the cartesian product of the values in a mapping, as mappings."""
     keys = list(mapping)
@@ -818,6 +828,7 @@ __all__ = [
     "is_iterable_not_enum",
     "is_iterable_not_str",
     "one",
+    "pairwise_tail",
     "product_dicts",
     "resolve_include_and_exclude",
     "take",
