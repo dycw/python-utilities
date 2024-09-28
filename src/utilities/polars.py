@@ -24,7 +24,6 @@ from typing import (
     overload,
 )
 
-from pandas.core.dtypes.cast import ensure_str
 from polars import (
     Boolean,
     DataFrame,
@@ -814,8 +813,8 @@ def yield_rows_as_dataclasses(
     check_types: Literal["none", "first", "all"] = "first",
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses."""
-    from dacite import Config, from_dict
-    from dacite.exceptions import MissingValueError, WrongTypeError
+    from dacite import from_dict
+    from dacite.exceptions import WrongTypeError
 
     columns = df.columns
     fields = set(yield_field_names(cls))
@@ -854,9 +853,7 @@ def yield_rows_as_dataclasses(
 
 
 def _yield_rows_as_dataclasses_no_check_types(
-    rows: Iterator[dict[str, Any]],
-    cls: type[_TDataclass],
-    /,
+    rows: Iterator[dict[str, Any]], cls: type[_TDataclass], /
 ) -> Iterator[_TDataclass]:
     """Yield the rows of a DataFrame as dataclasses without type checking."""
     from dacite import Config, from_dict

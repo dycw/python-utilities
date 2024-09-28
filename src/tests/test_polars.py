@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
-from math import exp, isfinite, nan
+from math import isfinite, nan
 from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
@@ -52,7 +52,6 @@ from utilities.polars import (
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
-    YieldRowsAsDataClassesError,
     YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
