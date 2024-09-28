@@ -842,7 +842,13 @@ def yield_rows_as_dataclasses(
                 ) from None
             yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
         case "all":
-            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
+            try:
+                for row in rows:
+                    yield from_dict(cls, row)
+            except WrongTypeError as error:
+                raise _YieldRowsAsDataClassesWrongTypeError(
+                    df=df, cls=cls, msg=str(error)
+                ) from None
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             assert_never(never)
 

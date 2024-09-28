@@ -1144,19 +1144,10 @@ class TestStructDataType:
 
 @mark.only
 class TestYieldRowsAsDataclasses:
-    def test_none(self) -> None:
-        df = DataFrame([(1,), (2,), (3,)], schema={"x": int}, orient="row")
-
-        @dataclass(kw_only=True)
-        class Row:
-            x: str
-
-        result = list(yield_rows_as_dataclasses(df, Row, check_types="none"))
-        expected = [Row(x=1), Row(x=2), Row(x=3)]  # pyright: ignore[reportArgumentType]
-        assert result == expected
-
-    @mark.parametrize("check_types", [param("first"), param("all")], ids=str)
-    def test_first(self, *, check_types: Literal["first", "all"]) -> None:
+    @mark.parametrize(
+        "check_types", [param("none"), param("first"), param("all")], ids=str
+    )
+    def test_main(self, *, check_types: Literal["none", "first", "all"]) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True)
@@ -1165,6 +1156,42 @@ class TestYieldRowsAsDataclasses:
 
         result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
         expected = [Row(x=1), Row(x=2), Row(x=3)]
+        assert result == expected
+
+    def test_none(self) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": int}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: str
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types="none"))
+        expected = [Row(x=cast(Any, 1)), Row(x=cast(Any, 2)), Row(x=cast(Any, 3))]
+        assert result == expected
+
+    def test_first(self) -> None:
+        df = DataFrame([(1,), (None,), (None,)], schema={"x": int}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: int
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types="first"))
+        expected = [Row(x=1), Row(x=cast(Any, None)), Row(x=cast(Any, None))]
+        assert result == expected
+
+    @mark.parametrize(
+        "check_types", [param("none"), param("first"), param("all")], ids=str
+    )
+    def test_empty(self, *, check_types: Literal["first", "all"]) -> None:
+        df = DataFrame([], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: int
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
+        expected = []
         assert result == expected
 
     def test_error_superset(self) -> None:
@@ -1180,7 +1207,7 @@ class TestYieldRowsAsDataclasses:
         ):
             _ = list(yield_rows_as_dataclasses(df, Row))
 
-    def test_error_wrong_type(self) -> None:
+    def test_error_first_wrong_type(self) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True)
@@ -1192,6 +1219,19 @@ class TestYieldRowsAsDataclasses:
             match='wrong value type for field "x" - should be "str" instead of value "1" of type "int"',
         ):
             _ = list(yield_rows_as_dataclasses(df, Row))
+
+    def test_error_all_wrong_type(self) -> None:
+        df = DataFrame([(1,), (None,), (3,)], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: int
+
+        with raises(
+            _YieldRowsAsDataClassesWrongTypeError,
+            match='wrong value type for field "x" - should be "int" instead of value "None" of type "NoneType"',
+        ):
+            _ = list(yield_rows_as_dataclasses(df, Row, check_types="all"))
 
 
 class TestYieldStructSeriesDataclasses:
