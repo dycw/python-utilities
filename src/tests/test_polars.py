@@ -1141,7 +1141,6 @@ class TestStructDataType:
             _ = struct_data_type(Example)
 
 
-@mark.only
 class TestYieldRowsAsDataclasses:
     @mark.parametrize(
         "check_types", [param("none"), param("first"), param("all")], ids=str
