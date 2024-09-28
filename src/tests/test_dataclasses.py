@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import NoneType
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pytest import mark, param, raises
 
 from utilities.dataclasses import (
     Dataclass,
     GetDataClassClassError,
+    extend_non_sentinel,
     get_dataclass_class,
     is_dataclass_class,
     is_dataclass_instance,
@@ -16,6 +17,9 @@ from utilities.dataclasses import (
     yield_field_names,
 )
 from utilities.sentinel import sentinel
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class TestDataClassProtocol:
@@ -30,6 +34,23 @@ class TestDataClassProtocol:
             x: None = None
 
         _ = identity(Example())
+
+
+class TestExtendNonSentinel:
+    def test_main(self) -> None:
+        @dataclass
+        class Example:
+            x: Sequence[int] = field(default_factory=list)
+
+        obj = Example()
+        obj1 = extend_non_sentinel(obj, x=1)
+        assert obj1.x == [1]
+        obj2 = extend_non_sentinel(obj1, x=sentinel)
+        assert obj2.x == [1]
+
+    @mark.parametrize("obj", [param(None), param(NoneType)])
+    def test_others(self, *, obj: Any) -> None:
+        assert not is_dataclass_instance(obj)
 
 
 class TestGetDataClassClass:
@@ -80,9 +101,11 @@ class TestReplaceNonSentinel:
         class Example:
             x: int = 0
 
-        curr = Example()
-        assert replace_non_sentinel(curr, x=1).x == 1
-        assert replace_non_sentinel(curr, x=sentinel).x == 0
+        obj = Example()
+        obj1 = replace_non_sentinel(obj, x=1)
+        assert obj1.x == 1
+        obj2 = replace_non_sentinel(obj1, x=sentinel)
+        assert obj2.x == 1
 
     @mark.parametrize("obj", [param(None), param(NoneType)])
     def test_others(self, *, obj: Any) -> None:
