@@ -2,7 +2,7 @@ import datetime as dt
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum, auto
-from math import isfinite, nan
+from math import exp, isfinite, nan
 from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
@@ -52,12 +52,15 @@ from utilities.polars import (
     IsNullStructSeriesError,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
+    YieldRowsAsDataClassesError,
     YieldStructSeriesElementsError,
     _check_polars_dataframe_predicates,
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
     _yield_struct_series_element_remove_nulls,
+    _YieldRowsAsDataClassesColumnsSuperSetError,
+    _YieldRowsAsDataClassesWrongTypeError,
     append_dataclass,
     ceil_datetime,
     check_polars_dataframe,
@@ -77,6 +80,7 @@ from utilities.polars import (
     replace_time_zone,
     set_first_row_as_columns,
     struct_data_type,
+    yield_rows_as_dataclasses,
     yield_struct_series_dataclasses,
     yield_struct_series_elements,
     zoned_datetime,
@@ -1136,6 +1140,58 @@ class TestStructDataType:
 
         with raises(StructDataTypeError, match="Unsupported type: <class 'NoneType'>"):
             _ = struct_data_type(Example)
+
+
+@mark.only
+class TestYieldRowsAsDataclasses:
+    def test_none(self) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": int}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: str
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types="none"))
+        expected = [Row(x=1), Row(x=2), Row(x=3)]  # pyright: ignore[reportArgumentType]
+        assert result == expected
+
+    @mark.parametrize("check_types", [param("first"), param("all")], ids=str)
+    def test_first(self, *, check_types: Literal["first", "all"]) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: int
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
+        expected = [Row(x=1), Row(x=2), Row(x=3)]
+        assert result == expected
+
+    def test_error_superset(self) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            y: int
+
+        with raises(
+            _YieldRowsAsDataClassesColumnsSuperSetError,
+            match="DataFrame columns .* must be a superset of dataclass fields .*; dataclass had extra fields .*",
+        ):
+            _ = list(yield_rows_as_dataclasses(df, Row))
+
+    def test_error_wrong_type(self) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True)
+        class Row:
+            x: str
+
+        with raises(
+            _YieldRowsAsDataClassesWrongTypeError,
+            match='wrong value type for field "x" - should be "str" instead of value "1" of type "int"',
+        ):
+            _ = list(yield_rows_as_dataclasses(df, Row))
 
 
 class TestYieldStructSeriesDataclasses:

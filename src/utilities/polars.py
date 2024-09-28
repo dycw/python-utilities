@@ -24,6 +24,7 @@ from typing import (
     overload,
 )
 
+from pandas.core.dtypes.cast import ensure_str
 from polars import (
     Boolean,
     DataFrame,
@@ -57,18 +58,20 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, is_dataclass_class
+from utilities.dataclasses import Dataclass, is_dataclass_class, yield_field_names
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
     CheckMappingsEqualError,
     CheckSubSetError,
     CheckSuperMappingError,
+    CheckSuperSetError,
     MaybeIterable,
     check_iterables_equal,
     check_mappings_equal,
     check_subset,
     check_supermapping,
+    check_superset,
     is_iterable_not_str,
     one,
 )
@@ -91,6 +94,7 @@ if TYPE_CHECKING:
 
 
 _T = TypeVar("_T")
+_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
 DatetimeHongKong = Datetime(time_zone="Asia/Hong_Kong")
 DatetimeTokyo = Datetime(time_zone="Asia/Tokyo")
 DatetimeUSCentral = Datetime(time_zone="US/Central")
@@ -802,6 +806,86 @@ class _StructDataTypeTypeError(StructDataTypeError):
         return f"Unsupported type: {self.ann}"
 
 
+def yield_rows_as_dataclasses(
+    df: DataFrame,
+    cls: type[_TDataclass],
+    /,
+    *,
+    check_types: Literal["none", "first", "all"] = "first",
+) -> Iterator[_TDataclass]:
+    """Yield the rows of a DataFrame as dataclasses."""
+    from dacite import Config, from_dict
+    from dacite.exceptions import MissingValueError, WrongTypeError
+
+    columns = df.columns
+    fields = set(yield_field_names(cls))
+    try:
+        check_superset(columns, fields)
+    except CheckSuperSetError as error:
+        raise _YieldRowsAsDataClassesColumnsSuperSetError(
+            df=df, cls=cls, left=error.left, right=error.right, extra=error.extra
+        ) from None
+    rows = df.iter_rows(named=True)
+    match check_types:
+        case "none":
+            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
+        case "first":
+            try:
+                first = next(rows)
+            except StopIteration:
+                return
+            try:
+                yield from_dict(cls, first)
+            except WrongTypeError as error:
+                raise _YieldRowsAsDataClassesWrongTypeError(
+                    df=df, cls=cls, msg=str(error)
+                ) from None
+            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
+        case "all":
+            yield from _yield_rows_as_dataclasses_no_check_types(rows, cls)
+        case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+            assert_never(never)
+
+
+def _yield_rows_as_dataclasses_no_check_types(
+    rows: Iterator[dict[str, Any]],
+    cls: type[_TDataclass],
+    /,
+) -> Iterator[_TDataclass]:
+    """Yield the rows of a DataFrame as dataclasses without type checking."""
+    from dacite import Config, from_dict
+
+    config = Config(check_types=False)
+    for row in rows:
+        yield from_dict(cls, row, config=config)
+
+
+@dataclass(kw_only=True)
+class YieldRowsAsDataClassesError(Exception):
+    df: DataFrame
+    cls: type[Dataclass]
+
+
+@dataclass(kw_only=True)
+class _YieldRowsAsDataClassesColumnsSuperSetError(YieldRowsAsDataClassesError):
+    left: AbstractSet[str]
+    right: AbstractSet[str]
+    extra: AbstractSet[str]
+
+    @override
+    def __str__(self) -> str:
+        return f"DataFrame columns {reprlib.repr(self.left)} must be a superset of dataclass fields {reprlib.repr(self.right)}; dataclass had extra fields {reprlib.repr(self.extra)}."
+
+
+@dataclass(kw_only=True)
+class _YieldRowsAsDataClassesWrongTypeError(YieldRowsAsDataClassesError):
+    msg: str
+
+    @override
+    def __str__(self) -> str:
+        return self.msg
+
+
 @overload
 def yield_struct_series_elements(
     series: Series, /, *, strict: Literal[True]
@@ -860,9 +944,6 @@ class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError
         return f"Series must not have nulls; got {self.series}"
 
 
-_TDataclass = TypeVar("_TDataclass", bound=Dataclass)
-
-
 @overload
 def yield_struct_series_dataclasses(
     series: Series,
@@ -916,6 +997,7 @@ __all__ = [
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
     "SetFirstRowAsColumnsError",
+    "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
     "append_dataclass",
     "ceil_datetime",
@@ -936,6 +1018,7 @@ __all__ = [
     "replace_time_zone",
     "set_first_row_as_columns",
     "struct_data_type",
+    "yield_rows_as_dataclasses",
     "yield_struct_series_dataclasses",
     "yield_struct_series_elements",
     "zoned_datetime",
