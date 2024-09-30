@@ -473,7 +473,7 @@ class ParseMonthError(Exception):
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
-@dataclass(slots=True)
+@dataclass(unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
