@@ -84,7 +84,7 @@ class TestIsNamedTuple:
         assert is_namedtuple_instance(Example(x=0))
 
     def test_class(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: int
 
