@@ -876,9 +876,9 @@ class TestOrderOfMagnitude:
         assert res_int == exp_int
 
 
-class TestRoundToFloat:
+class TestRoundToMultiple:
     @mark.parametrize(
-        ("x", "y", "expected"),
+        ("x", "multiple", "expected"),
         [
             param(0.0, 0.5, 0.0),
             param(0.1, 0.5, 0.0),
@@ -904,8 +904,8 @@ class TestRoundToFloat:
         ],
         ids=str,
     )
-    def test_main(self, *, x: float, y: float, expected: float) -> None:
-        result = round_to_float(x, y)
+    def test_main(self, *, x: float, multiple: float, expected: float) -> None:
+        result = round_to_multiple(x, multiple)
         assert result == approx(expected)
 
 
