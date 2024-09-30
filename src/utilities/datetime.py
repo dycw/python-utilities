@@ -384,7 +384,7 @@ def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
     return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
 
 
-@dataclass(order=True, slots=True)
+@dataclass(order=True, unsafe_hash=True, slots=True)
 class Month:
     """Represents a month in time."""
 
