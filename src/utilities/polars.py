@@ -727,7 +727,18 @@ def _replace_time_zone_series(
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
     return sr
+def rolling_params(
 
+
+    sma_window: int | None = None,
+    ewma_com: float | None = None,
+    ewma_span: float | None = None,
+    ewma_half_life: float | None = None,
+    ewma_alpha: float | None = None,
+    min_periods: int | None = BOLLINGER_MIN_PERIODS,
+    std_dev: float = BOLLINGER_STD_DEV,
+) -> Series:
+)
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
@@ -1012,6 +1023,7 @@ __all__ = [
     "dataclass_to_row",
     "drop_null_struct_series",
     "ensure_expr_or_series",
+    "ewm_parameters",
     "floor_datetime",
     "is_not_null_struct_series",
     "is_null_struct_series",
