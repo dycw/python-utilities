@@ -102,7 +102,7 @@ def _serialize_default(obj: Any, /) -> _SchemaDict:
     return {_SCHEMA_KEY: schema.key, _SCHEMA_VALUE: schema.serializer(obj)}
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _Schema(Generic[_T]):
     key: _Key
     serializer: Callable[[_T], Any]

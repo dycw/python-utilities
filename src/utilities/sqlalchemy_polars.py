@@ -150,7 +150,7 @@ class InsertDataFrameAsyncError(Exception):
         return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _InsertDataFramePrepare:
     items: tuple[Sequence[StrMapping], TableOrMappedClass]
     no_items_empty_df: bool
@@ -468,7 +468,7 @@ async def select_to_dataframe_async(
     return yield_dfs()
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _SelectToDataFramePrepare:
     sel: Select[Any]
     schema: SchemaDict

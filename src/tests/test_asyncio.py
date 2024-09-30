@@ -59,7 +59,7 @@ async def _yield_strs_async() -> AsyncIterator[str]:
         await sleep(0.01)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _Container:
     text: str
 

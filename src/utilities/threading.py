@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 _P = ParamSpec("_P")
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class BackgroundTask:
     """An event and daemon thread, running a task in the background."""
 

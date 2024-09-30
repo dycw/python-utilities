@@ -504,7 +504,7 @@ class TestFilterIncludeAndExclude:
         assert result == expected
 
     def test_include_key(self) -> None:
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Example:
             n: int
 
@@ -517,7 +517,7 @@ class TestFilterIncludeAndExclude:
         assert result == expected
 
     def test_exclude_key(self) -> None:
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Example:
             n: int
 
