@@ -25,7 +25,7 @@ _V = TypeVar("_V")
 _TRedis = TypeVar("_TRedis", redis.Redis, redis.asyncio.Redis)
 
 
-@dataclass(repr=False, kw_only=True)
+@dataclass(repr=False, kw_only=True, slots=True)
 class RedisContainer(Generic[_TRedis]):
     """A container for a client; for testing purposes only."""
 
