@@ -905,7 +905,7 @@ class TestRoundToFloat:
         ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: float) -> None:
-        result = round_to_multiple(x, y)
+        result = round_to_float(x, y)
         assert result == approx(expected)
 
 
