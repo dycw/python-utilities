@@ -52,7 +52,7 @@ _T = TypeVar("_T")
 class TestClickField:
     @given(default=integers(), appname=app_names, value=integers())
     def test_main(self, *, default: int, appname: str, value: int) -> None:
-        @dataclass(kw_only=True, slots=True)
+        @dataclass(frozen=True, kw_only=True, slots=True)
         class Config:
             num: int = click_field(default=default, param_decls=("-n", "--num"))
 
@@ -123,7 +123,7 @@ class TestClickOptions:
         cfg: _T,
         /,
     ) -> None:
-        @dataclass(kw_only=True, slots=True)
+        @dataclass(frozen=True, kw_only=True, slots=True)
         class Config:
             value: test_cls = default
 
@@ -220,7 +220,7 @@ class TestLoadSettings:
         equal: Callable[[_T, _T], bool],
         /,
     ) -> None:
-        @dataclass(kw_only=True, slots=True)
+        @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
             value: test_cls = default
 
@@ -236,7 +236,7 @@ class TestLoadSettings:
     @given(appname=app_names)
     @mark.parametrize("cls", [param(dt.date), param(dt.time), param(dt.timedelta)])
     def test_errors(self, *, appname: str, cls: Any) -> None:
-        @dataclass(kw_only=True, slots=True)
+        @dataclass(frozen=True, kw_only=True, slots=True)
         class Settings:
             value: cls = None
 
