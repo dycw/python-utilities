@@ -119,7 +119,7 @@ class _EWMParametersAlphaError(EWMParametersError):
 class _EWMParametersArgumentsError(EWMParametersError):
     @override
     def __str__(self) -> str:
-        return f"Exactly one of center of mass (γ), span (θ), half-life (λ) and smoothing factor (α) must be given; got γ={self.com}, θ={self.span}, λ={self.half_life} and α={self.alpha}"  # noqa: RUF001
+        return f"Exactly one of center of mass (γ), span (θ), half-life (λ) or smoothing factor (α) must be given; got γ={self.com}, θ={self.span}, λ={self.half_life} and α={self.alpha}"  # noqa: RUF001
 
 
 def _ewm_parameters_alpha_to_com(alpha: float, /) -> float:

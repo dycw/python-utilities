@@ -74,7 +74,12 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.math import CheckIntegerError, check_integer
+from utilities.math import (
+    CheckIntegerError,
+    _EWMParameters,
+    check_integer,
+    ewm_parameters,
+)
 from utilities.types import ensure_datetime
 from utilities.typing import (
     get_args,
@@ -727,18 +732,114 @@ def _replace_time_zone_series(
         time_zone_use = None if time_zone is None else get_time_zone_name(time_zone)
         return sr.dt.replace_time_zone(time_zone_use)
     return sr
-def rolling_params(
 
 
-    sma_window: int | None = None,
-    ewma_com: float | None = None,
-    ewma_span: float | None = None,
-    ewma_half_life: float | None = None,
-    ewma_alpha: float | None = None,
-    min_periods: int | None = BOLLINGER_MIN_PERIODS,
-    std_dev: float = BOLLINGER_STD_DEV,
-) -> Series:
-)
+@overload
+def rolling_parameters(
+    *,
+    s_window: int,
+    e_com: None = None,
+    e_span: None = None,
+    e_half_life: None = None,
+    e_alpha: None = None,
+    min_periods: int | None = None,
+) -> _RollingParametersSimple: ...
+@overload
+def rolling_parameters(
+    *,
+    s_window: None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int,
+) -> _RollingParametersExp: ...
+def rolling_parameters(
+    *,
+    s_window: int | None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int | None = None,
+) -> _RollingParametersSimple | _RollingParametersExp:
+    """Resolve a set of rolling parameters."""
+    if (
+        (s_window is not None)
+        and (e_com is None)
+        and (e_span is None)
+        and (e_half_life is None)
+        and (e_alpha is None)
+    ):
+        return _RollingParametersSimple(window=s_window, min_periods=min_periods)
+    if (s_window is None) and (
+        (e_com is not None)
+        or (e_span is not None)
+        or (e_half_life is not None)
+        or (e_alpha is not None)
+    ):
+        if min_periods is None:
+            raise _RollingParamsMinPeriodsError(
+                e_com=e_com,
+                e_span=e_span,
+                e_half_life=e_half_life,
+                e_alpha=e_alpha,
+                min_periods=min_periods,
+            )
+        params = ewm_parameters(
+            com=e_com, span=e_span, half_life=e_half_life, alpha=e_alpha
+        )
+        return _RollingParametersExp(
+            com=params.com,
+            span=params.span,
+            half_life=params.half_life,
+            alpha=params.alpha,
+            min_periods=min_periods,
+        )
+    raise _RollingParamsArgumentsError(
+        s_window=s_window,
+        e_com=e_com,
+        e_span=e_span,
+        e_half_life=e_half_life,
+        e_alpha=e_alpha,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class RollingParamsError(Exception):
+    s_window: int | None = None
+    e_com: float | None = None
+    e_span: float | None = None
+    e_half_life: float | None = None
+    e_alpha: float | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParamsArgumentsError(RollingParamsError):
+    @override
+    def __str__(self) -> str:
+        return f"Exactly one of center of 's_window', 'e_mass' (γ), 'e_span' (θ), 'e_half_life' (λ) or smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParamsMinPeriodsError(RollingParamsError):
+    min_periods: int | None = None
+
+    @override
+    def __str__(self) -> str:
+        return f"Exponential rolling requires 'min_periods' to be set; got {self.min_periods}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersSimple:
+    window: int
+    min_periods: int | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersExp(_EWMParameters):
+    min_periods: int
+
 
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
@@ -1010,6 +1111,7 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
+    "RollingParamsError",
     "SetFirstRowAsColumnsError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
@@ -1023,7 +1125,6 @@ __all__ = [
     "dataclass_to_row",
     "drop_null_struct_series",
     "ensure_expr_or_series",
-    "ewm_parameters",
     "floor_datetime",
     "is_not_null_struct_series",
     "is_null_struct_series",
@@ -1031,6 +1132,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
+    "rolling_parameters",
     "set_first_row_as_columns",
     "struct_data_type",
     "yield_rows_as_dataclasses",
