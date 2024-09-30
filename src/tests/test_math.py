@@ -188,7 +188,7 @@ class TestEWMParameters:
         with raises(
             _EWMParametersArgumentsError,
             match=escape(
-                r"Exactly one of center of mass (γ), span (θ), half-life (λ) and smoothing factor (α) must be given; got γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
+                r"Exactly one of center of mass (γ), span (θ), half-life (λ) or smoothing factor (α) must be given; got γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
             ),
         ):
             _ = ewm_parameters()

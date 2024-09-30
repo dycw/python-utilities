@@ -74,7 +74,12 @@ from utilities.iterables import (
     is_iterable_not_str,
     one,
 )
-from utilities.math import CheckIntegerError, check_integer
+from utilities.math import (
+    CheckIntegerError,
+    _EWMParameters,
+    check_integer,
+    ewm_parameters,
+)
 from utilities.types import ensure_datetime
 from utilities.typing import (
     get_args,
@@ -729,6 +734,113 @@ def _replace_time_zone_series(
     return sr
 
 
+@overload
+def rolling_parameters(
+    *,
+    s_window: int,
+    e_com: None = None,
+    e_span: None = None,
+    e_half_life: None = None,
+    e_alpha: None = None,
+    min_periods: int | None = None,
+) -> _RollingParametersSimple: ...
+@overload
+def rolling_parameters(
+    *,
+    s_window: None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int,
+) -> _RollingParametersExp: ...
+def rolling_parameters(
+    *,
+    s_window: int | None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int | None = None,
+) -> _RollingParametersSimple | _RollingParametersExp:
+    """Resolve a set of rolling parameters."""
+    if (
+        (s_window is not None)
+        and (e_com is None)
+        and (e_span is None)
+        and (e_half_life is None)
+        and (e_alpha is None)
+    ):
+        return _RollingParametersSimple(window=s_window, min_periods=min_periods)
+    if (s_window is None) and (
+        (e_com is not None)
+        or (e_span is not None)
+        or (e_half_life is not None)
+        or (e_alpha is not None)
+    ):
+        if min_periods is None:
+            raise _RollingParametersMinPeriodsError(
+                e_com=e_com,
+                e_span=e_span,
+                e_half_life=e_half_life,
+                e_alpha=e_alpha,
+                min_periods=min_periods,
+            )
+        params = ewm_parameters(
+            com=e_com, span=e_span, half_life=e_half_life, alpha=e_alpha
+        )
+        return _RollingParametersExp(
+            com=params.com,
+            span=params.span,
+            half_life=params.half_life,
+            alpha=params.alpha,
+            min_periods=min_periods,
+        )
+    raise _RollingParametersArgumentsError(
+        s_window=s_window,
+        e_com=e_com,
+        e_span=e_span,
+        e_half_life=e_half_life,
+        e_alpha=e_alpha,
+    )
+
+
+@dataclass(kw_only=True, slots=True)
+class RollingParametersError(Exception):
+    s_window: int | None = None
+    e_com: float | None = None
+    e_span: float | None = None
+    e_half_life: float | None = None
+    e_alpha: float | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersArgumentsError(RollingParametersError):
+    @override
+    def __str__(self) -> str:
+        return f"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersMinPeriodsError(RollingParametersError):
+    min_periods: int | None = None
+
+    @override
+    def __str__(self) -> str:
+        return f"Exponential rolling requires 'min_periods' to be set; got {self.min_periods}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersSimple:
+    window: int
+    min_periods: int | None = None
+
+
+@dataclass(kw_only=True, slots=True)
+class _RollingParametersExp(_EWMParameters):
+    min_periods: int
+
+
 def set_first_row_as_columns(df: DataFrame, /) -> DataFrame:
     """Set the first row of a DataFrame as its columns."""
     with redirect_error(OutOfBoundsError, SetFirstRowAsColumnsError(f"{df=}")):
@@ -999,6 +1111,7 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
+    "RollingParametersError",
     "SetFirstRowAsColumnsError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
@@ -1019,6 +1132,7 @@ __all__ = [
     "nan_sum_agg",
     "nan_sum_cols",
     "replace_time_zone",
+    "rolling_parameters",
     "set_first_row_as_columns",
     "struct_data_type",
     "yield_rows_as_dataclasses",
