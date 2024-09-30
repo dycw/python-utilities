@@ -743,7 +743,7 @@ def rolling_parameters(
     e_half_life: None = None,
     e_alpha: None = None,
     min_periods: int | None = None,
-) -> _RollingParametersSimple: ...
+) -> RollingParametersSimple: ...
 @overload
 def rolling_parameters(
     *,
@@ -753,7 +753,8 @@ def rolling_parameters(
     e_half_life: float | None = None,
     e_alpha: float | None = None,
     min_periods: int,
-) -> _RollingParametersExp: ...
+) -> RollingParametersExponential: ...
+@overload
 def rolling_parameters(
     *,
     s_window: int | None = None,
@@ -762,7 +763,16 @@ def rolling_parameters(
     e_half_life: float | None = None,
     e_alpha: float | None = None,
     min_periods: int | None = None,
-) -> _RollingParametersSimple | _RollingParametersExp:
+) -> RollingParametersSimple | RollingParametersExponential: ...
+def rolling_parameters(
+    *,
+    s_window: int | None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int | None = None,
+) -> RollingParametersSimple | RollingParametersExponential:
     """Resolve a set of rolling parameters."""
     if (
         (s_window is not None)
@@ -771,7 +781,7 @@ def rolling_parameters(
         and (e_half_life is None)
         and (e_alpha is None)
     ):
-        return _RollingParametersSimple(window=s_window, min_periods=min_periods)
+        return RollingParametersSimple(window=s_window, min_periods=min_periods)
     if (s_window is None) and (
         (e_com is not None)
         or (e_span is not None)
@@ -789,7 +799,7 @@ def rolling_parameters(
         params = ewm_parameters(
             com=e_com, span=e_span, half_life=e_half_life, alpha=e_alpha
         )
-        return _RollingParametersExp(
+        return RollingParametersExponential(
             com=params.com,
             span=params.span,
             half_life=params.half_life,
@@ -831,13 +841,13 @@ class _RollingParametersMinPeriodsError(RollingParametersError):
 
 
 @dataclass(kw_only=True, slots=True)
-class _RollingParametersSimple:
+class RollingParametersSimple:
     window: int
     min_periods: int | None = None
 
 
 @dataclass(kw_only=True, slots=True)
-class _RollingParametersExp(_EWMParameters):
+class RollingParametersExponential(_EWMParameters):
     min_periods: int
 
 
@@ -1112,6 +1122,8 @@ __all__ = [
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
     "RollingParametersError",
+    "RollingParametersExponential",
+    "RollingParametersSimple",
     "SetFirstRowAsColumnsError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
