@@ -603,7 +603,7 @@ async def ensure_tables_created_async(
                 _ensure_tables_maybe_reraise(error, prepared.match)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EnsureTablesCreatedOrDroppedPrepare:
     match: str
     tables: AbstractSet[Table]
@@ -752,7 +752,7 @@ def get_dialect(engine_or_conn: MaybeAsyncEngineOrConnection, /) -> Dialect:
     raise GetDialectError(dialect=dialect)  # pragma: no cover
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetDialectError(Exception):
     dialect: sqlalchemy.Dialect
 
@@ -772,7 +772,7 @@ def get_table(obj: Any, /) -> Table:
     raise GetTableError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetTableError(Exception):
     obj: Any
 
@@ -872,7 +872,7 @@ def insert_items(
             _ = conn.execute(ins, parameters=parameters)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class InsertItemsError(Exception):
     item: _InsertItem
 
@@ -925,7 +925,7 @@ async def insert_items_async(
             _ = await conn.execute(ins, parameters=parameters)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class InsertItemsAsyncError(Exception):
     item: _InsertItem
 
@@ -934,7 +934,7 @@ class InsertItemsAsyncError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _PreInsertUpsertItems:
     tables: Sequence[Table]
     yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
@@ -975,7 +975,7 @@ def _insert_items_prepare(
     return _PreInsertUpsertItems(tables=tables, yield_pairs=yield_pairs)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _InsertItemsPrepareError(Exception):
     item: _InsertItem
 
@@ -1045,7 +1045,7 @@ def mapped_class_to_dict(obj: Any, /) -> dict[str, Any]:
     return dict(yield_items())
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _NormalizedInsertItem:
     values: TupleOrStrMapping
     table: Table
@@ -1090,7 +1090,7 @@ def _normalize_insert_item(item: _InsertItem, /) -> Iterator[_NormalizedInsertIt
     raise _NormalizeInsertItemError(item=item)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _NormalizeInsertItemError(Exception):
     item: _InsertItem
 
@@ -1099,7 +1099,7 @@ class _NormalizeInsertItemError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _NormalizedUpsertItem:
     values: StrMapping
     table: Table
@@ -1171,7 +1171,7 @@ def _normalize_upsert_item_inner(
     raise _NormalizeUpsertItemError(item=item)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _NormalizeUpsertItemError(Exception):
     item: _UpsertItem
 
@@ -1265,7 +1265,7 @@ def upsert_items(
             _ = conn.execute(ins, parameters=parameters)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class UpsertItemsError(Exception):
     item: _InsertItem
 
@@ -1367,7 +1367,7 @@ def _upsert_items_apply_on_conflict_do_update(
             assert_never(never)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _UpsertItemsPrepareError(Exception):
     item: _InsertItem
 
@@ -1418,7 +1418,7 @@ async def upsert_items_async(
             _ = await conn.execute(ins, parameters=parameters)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class UpsertItemsAsyncError(Exception):
     item: _InsertItem
 

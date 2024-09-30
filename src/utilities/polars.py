@@ -115,7 +115,7 @@ def append_dataclass(df: DataFrame, obj: Dataclass, /) -> DataFrame:
     return concat([df, row], how="diagonal")
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class AppendDataClassError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -188,7 +188,7 @@ def check_polars_dataframe(
         _check_polars_dataframe_width(df, width)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckPolarsDataFrameError(Exception):
     df: DataFrame
 
@@ -201,7 +201,7 @@ def _check_polars_dataframe_columns(df: DataFrame, columns: Iterable[str], /) ->
         raise _CheckPolarsDataFrameColumnsError(df=df, columns=columns) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameColumnsError(CheckPolarsDataFrameError):
     columns: Sequence[str]
 
@@ -219,7 +219,7 @@ def _check_polars_dataframe_dtypes(
         raise _CheckPolarsDataFrameDTypesError(df=df, dtypes=dtypes) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameDTypesError(CheckPolarsDataFrameError):
     dtypes: Iterable[PolarsDataType]
 
@@ -242,7 +242,7 @@ def _check_polars_dataframe_height(
         raise _CheckPolarsDataFrameHeightError(df=df) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameHeightError(CheckPolarsDataFrameError):
     @override
     def __str__(self) -> str:
@@ -268,7 +268,7 @@ def _check_polars_dataframe_predicates(
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFramePredicatesError(CheckPolarsDataFrameError):
     predicates: Mapping[str, Callable[[Any], bool]]
     missing: AbstractSet[str]
@@ -303,7 +303,7 @@ def _check_polars_dataframe_schema_list(df: DataFrame, schema: SchemaDict, /) ->
         raise _CheckPolarsDataFrameSchemaListError(df=df, schema=schema) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameSchemaListError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
@@ -319,7 +319,7 @@ def _check_polars_dataframe_schema_set(df: DataFrame, schema: SchemaDict, /) -> 
         raise _CheckPolarsDataFrameSchemaSetError(df=df, schema=schema) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameSchemaSetError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
@@ -335,7 +335,7 @@ def _check_polars_dataframe_schema_subset(df: DataFrame, schema: SchemaDict, /) 
         raise _CheckPolarsDataFrameSchemaSubsetError(df=df, schema=schema) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameSchemaSubsetError(CheckPolarsDataFrameError):
     schema: SchemaDict
 
@@ -349,7 +349,7 @@ def _check_polars_dataframe_shape(df: DataFrame, shape: tuple[int, int], /) -> N
         raise _CheckPolarsDataFrameShapeError(df=df, shape=shape) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameShapeError(CheckPolarsDataFrameError):
     shape: tuple[int, int]
 
@@ -373,7 +373,7 @@ def _check_polars_dataframe_sorted(
         raise _CheckPolarsDataFrameSortedError(df=df, by=by_use) from error
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameSortedError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
@@ -392,7 +392,7 @@ def _check_polars_dataframe_unique(
         raise _CheckPolarsDataFrameUniqueError(df=df, by=by_use)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameUniqueError(CheckPolarsDataFrameError):
     by: IntoExpr | list[IntoExpr]
 
@@ -406,7 +406,7 @@ def _check_polars_dataframe_width(df: DataFrame, width: int, /) -> None:
         raise _CheckPolarsDataFrameWidthError(df=df, width=width)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckPolarsDataFrameWidthError(CheckPolarsDataFrameError):
     width: int
 
@@ -429,19 +429,19 @@ def check_zoned_dtype_or_series(dtype_or_series: DataType | Series, /) -> None:
         raise _CheckZonedDTypeOrSeriesNotZonedError(dtype=dtype)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckZonedDTypeOrSeriesError(Exception):
     dtype: DataType
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckZonedDTypeOrSeriesNotDatetimeError(CheckZonedDTypeOrSeriesError):
     @override
     def __str__(self) -> str:
         return f"Data type must be Datetime; got {self.dtype}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckZonedDTypeOrSeriesNotZonedError(CheckZonedDTypeOrSeriesError):
     @override
     def __str__(self) -> str:
@@ -501,7 +501,7 @@ def _convert_time_zone_series(
     return sr
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ColumnsToDictError(Exception):
     df: DataFrame
     key: str
@@ -542,7 +542,7 @@ def drop_null_struct_series(series: Series, /) -> Series:
     return series.filter(is_not_null)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class DropNullStructSeriesError(Exception):
     series: Series
 
@@ -586,7 +586,7 @@ def is_not_null_struct_series(series: Series, /) -> Series:
         raise IsNotNullStructSeriesError(series=error.series) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class IsNotNullStructSeriesError(Exception):
     series: Series
 
@@ -630,7 +630,7 @@ def _is_null_struct_to_expr_reducer(expr: Expr, path: str, /) -> Expr:
     return expr.struct[path]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class IsNullStructSeriesError(Exception):
     series: Series
 
@@ -776,11 +776,11 @@ def _struct_data_type_one(
     raise _StructDataTypeTypeError(ann=ann)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class StructDataTypeError(Exception): ...
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _StructDataTypeNotADataclassError(StructDataTypeError):
     cls: type[Dataclass]
 
@@ -789,14 +789,14 @@ class _StructDataTypeNotADataclassError(StructDataTypeError):
         return f"Object must be a dataclass; got {self.cls}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _StructDataTypeTimeZoneMissingError(StructDataTypeError):
     @override
     def __str__(self) -> str:
         return "Time-zone must be given"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _StructDataTypeTypeError(StructDataTypeError):
     ann: Any
 
@@ -863,13 +863,13 @@ def _yield_rows_as_dataclasses_no_check_types(
         yield from_dict(cls, row, config=config)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class YieldRowsAsDataClassesError(Exception):
     df: DataFrame
     cls: type[Dataclass]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _YieldRowsAsDataClassesColumnsSuperSetError(YieldRowsAsDataClassesError):
     left: AbstractSet[str]
     right: AbstractSet[str]
@@ -880,7 +880,7 @@ class _YieldRowsAsDataClassesColumnsSuperSetError(YieldRowsAsDataClassesError):
         return f"DataFrame columns {reprlib.repr(self.left)} must be a superset of dataclass fields {reprlib.repr(self.right)}; dataclass had extra fields {reprlib.repr(self.extra)}."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _YieldRowsAsDataClassesWrongTypeError(YieldRowsAsDataClassesError):
     msg: str
 
@@ -928,19 +928,19 @@ def _yield_struct_series_element_is_mapping_of_str(
     return isinstance(obj, Mapping) and all(isinstance(k, str) for k in obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class YieldStructSeriesElementsError(Exception):
     series: Series
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _YieldStructSeriesElementsDTypeError(YieldStructSeriesElementsError):
     @override
     def __str__(self) -> str:
         return f"Series must have Struct-dtype; got {self.series.dtype}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _YieldStructSeriesElementsNullElementsError(YieldStructSeriesElementsError):
     @override
     def __str__(self) -> str:

@@ -48,19 +48,19 @@ def load_settings(cls: type[_TDataclass], /, *, cwd: PathLike = PWD) -> _TDatacl
     return cls(**dict(yield_items()))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class LoadSettingsError(Exception):
     path: Path
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _LoadSettingsFileNotFoundError(LoadSettingsError):
     @override
     def __str__(self) -> str:
         return f"Path {str(self.path)!r} must exist."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _LoadSettingsEmptyError(LoadSettingsError):
     field: str
 
@@ -69,7 +69,7 @@ class _LoadSettingsEmptyError(LoadSettingsError):
         return f"Field {self.field!r} must exist."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _LoadSettingsNonUniqueError(LoadSettingsError):
     field: str
     counts: Mapping[str, int]

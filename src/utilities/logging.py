@@ -31,7 +31,7 @@ def get_logging_level_number(level: str, /) -> int:
         raise GetLoggingLevelNumberError(level=level) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
     level: str
 

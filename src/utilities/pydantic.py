@@ -32,20 +32,20 @@ def load_model(model: type[_BM], path: PathLike, /) -> _BM:
         raise _LoadModelIsADirectoryError(model=model, path=path) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class LoadModelError(Exception):
     model: type[BaseModel]
     path: Path
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _LoadModelFileNotFoundError(LoadModelError):
     @override
     def __str__(self) -> str:
         return f"Unable to load {self.model}; path {str(self.path)!r} must exist."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _LoadModelIsADirectoryError(LoadModelError):
     @override
     def __str__(self) -> str:

@@ -77,7 +77,7 @@ def check_bijection(mapping: Mapping[Any, Hashable], /) -> None:
         raise CheckBijectionError(mapping=mapping, counts=error.counts) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckBijectionError(Exception, Generic[_THashable]):
     mapping: Mapping[Any, _THashable]
     counts: Mapping[_THashable, int]
@@ -94,7 +94,7 @@ def check_duplicates(iterable: Iterable[Hashable], /) -> None:
         raise CheckDuplicatesError(iterable=iterable, counts=counts)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckDuplicatesError(Exception, Generic[_THashable]):
     iterable: Iterable[_THashable]
     counts: Mapping[_THashable, int]
@@ -134,7 +134,7 @@ def check_iterables_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
 _CheckIterablesEqualState = Literal["left_longer", "right_longer"]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckIterablesEqualError(Exception, Generic[_T]):
     left: list[_T]
     right: list[_T]
@@ -192,12 +192,12 @@ def check_length(
         raise _CheckLengthMaxError(obj=obj, max_=error.max_) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckLengthError(Exception):
     obj: Sized
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckLengthEqualError(CheckLengthError):
     equal: int
 
@@ -206,7 +206,7 @@ class _CheckLengthEqualError(CheckLengthError):
         return f"Object {reprlib.repr(self.obj)} must have length {self.equal}; got {len(self.obj)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckLengthEqualOrApproxError(CheckLengthError):
     equal_or_approx: int | tuple[int, float]
 
@@ -220,7 +220,7 @@ class _CheckLengthEqualOrApproxError(CheckLengthError):
         return f"Object {reprlib.repr(self.obj)} must have {desc}; got {len(self.obj)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckLengthMinError(CheckLengthError):
     min_: int
 
@@ -229,7 +229,7 @@ class _CheckLengthMinError(CheckLengthError):
         return f"Object {reprlib.repr(self.obj)} must have minimum length {self.min_}; got {len(self.obj)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckLengthMaxError(CheckLengthError):
     max_: int
 
@@ -244,7 +244,7 @@ def check_lengths_equal(left: Sized, right: Sized, /) -> None:
         raise CheckLengthsEqualError(left=left, right=right)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckLengthsEqualError(Exception):
     left: Sized
     right: Sized
@@ -278,7 +278,7 @@ def check_mappings_equal(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckMappingsEqualError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -324,7 +324,7 @@ def check_sets_equal(left: Iterable[Any], right: Iterable[Any], /) -> None:
         )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckSetsEqualError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -367,7 +367,7 @@ def check_submapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> No
         raise CheckSubMappingError(left=left, right=right, extra=extra, errors=errors)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckSubMappingError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -402,7 +402,7 @@ def check_subset(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckSubSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckSubSetError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -431,7 +431,7 @@ def check_supermapping(left: Mapping[Any, Any], right: Mapping[Any, Any], /) -> 
         raise CheckSuperMappingError(left=left, right=right, extra=extra, errors=errors)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckSuperMappingError(Exception, Generic[_K, _V]):
     left: Mapping[_K, _V]
     right: Mapping[_K, _V]
@@ -466,7 +466,7 @@ def check_superset(left: Iterable[Any], right: Iterable[Any], /) -> None:
         raise CheckSuperSetError(left=left_as_set, right=right_as_set, extra=extra)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckSuperSetError(Exception, Generic[_T]):
     left: AbstractSet[_T]
     right: AbstractSet[_T]
@@ -498,7 +498,7 @@ def ensure_iterable(obj: Any, /) -> Iterable[Any]:
     raise EnsureIterableError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureIterableError(Exception):
     obj: Any
 
@@ -514,7 +514,7 @@ def ensure_iterable_not_str(obj: Any, /) -> Iterable[Any]:
     raise EnsureIterableNotStrError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureIterableNotStrError(Exception):
     obj: Any
 
@@ -626,19 +626,19 @@ def one(iterable: Iterable[_T], /) -> _T:
     raise OneNonUniqueError(iterable=iterable, first=first, second=second)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class OneError(Exception, Generic[_T]):
     iterable: Iterable[_T]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class OneEmptyError(OneError[_T]):
     @override
     def __str__(self) -> str:
         return f"Iterable {reprlib.repr(self.iterable)} must not be empty"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class OneNonUniqueError(OneError[_T]):
     first: _T
     second: _T
@@ -678,13 +678,13 @@ def one_str(
         raise _OneStrCaseInsensitiveEmptyError(iterable=iterable, text=text) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class OneStrError(Exception):
     iterable: Iterable[str]
     text: str
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _OneStrDuplicatesError(OneStrError):
     counts: Mapping[str, int]
 
@@ -693,14 +693,14 @@ class _OneStrDuplicatesError(OneStrError):
         return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates; got {reprlib.repr(self.counts)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _OneStrCaseSensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
         return f"Iterable {reprlib.repr(self.iterable)} does not contain {reprlib.repr(self.text)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _OneStrCaseInsensitiveBijectionError(OneStrError):
     counts: Mapping[str, int]
 
@@ -709,7 +709,7 @@ class _OneStrCaseInsensitiveBijectionError(OneStrError):
         return f"Iterable {reprlib.repr(self.iterable)} must not contain duplicates (case insensitive); got {reprlib.repr(self.counts)}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _OneStrCaseInsensitiveEmptyError(OneStrError):
     @override
     def __str__(self) -> str:
@@ -745,7 +745,7 @@ def resolve_include_and_exclude(
     return include_use, exclude_use
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ResolveIncludeAndExcludeError(Exception, Generic[_T]):
     include: Iterable[_T]
     exclude: Iterable[_T]

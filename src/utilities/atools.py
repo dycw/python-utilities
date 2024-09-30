@@ -127,7 +127,7 @@ async def refresh_memoized(
     return await func(*args, **kwargs)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class RefreshMemoizedError(Exception):
     func: _AsyncFunc[..., Any]
 

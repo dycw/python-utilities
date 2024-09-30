@@ -77,7 +77,7 @@ def check_date_not_datetime(date: dt.date, /) -> None:
         raise CheckDateNotDatetimeError(date=date)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckDateNotDatetimeError(Exception):
     date: dt.date
 
@@ -92,7 +92,7 @@ def check_zoned_datetime(datetime: dt.datetime, /) -> None:
         raise CheckZonedDatetimeError(datetime=datetime)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckZonedDatetimeError(Exception):
     datetime: dt.datetime
 
@@ -155,7 +155,7 @@ def ensure_month(month: Month | str, /) -> Month:
         raise EnsureMonthError(month=error.month) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureMonthError(Exception):
     month: str
 
@@ -364,7 +364,7 @@ def milliseconds_since_epoch(
     return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class MillisecondsSinceEpochError(Exception):
     datetime: dt.datetime
     remainder: int
@@ -384,7 +384,7 @@ def milliseconds_to_timedelta(milliseconds: int, /) -> dt.timedelta:
     return microseconds_to_timedelta(_MICROSECONDS_PER_MILLISECOND * milliseconds)
 
 
-@dataclass(order=True, frozen=True)
+@dataclass(order=True, unsafe_hash=True, slots=True)
 class Month:
     """Represents a month in time."""
 
@@ -435,7 +435,7 @@ class Month:
         return dt.date(self.year, self.month, day)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class MonthError(Exception):
     year: int
     month: int
@@ -461,7 +461,7 @@ def parse_month(month: str, /) -> Month:
     raise ParseMonthError(month=month)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseMonthError(Exception):
     month: str
 
@@ -473,7 +473,7 @@ class ParseMonthError(Exception):
 _TPeriod = TypeVar("_TPeriod", dt.date, dt.datetime)
 
 
-@dataclass(slots=True)
+@dataclass(unsafe_hash=True, slots=True)
 class Period(Generic[_TPeriod]):
     """A period of time."""
 
@@ -502,27 +502,27 @@ class Period(Generic[_TPeriod]):
         return self.end - self.start
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class PeriodError(Generic[_TPeriod], Exception):
     start: _TPeriod
     end: _TPeriod
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _PeriodDateAndDatetimeMixedError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got date and datetime mix ({self.start}, {self.end})"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _PeriodNaiveDatetimeError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
         return f"Invalid period; got naive datetime(s) ({self.start}, {self.end})"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _PeriodInvalidError(PeriodError[_TPeriod]):
     @override
     def __str__(self) -> str:
@@ -597,7 +597,7 @@ def timedelta_to_milliseconds(
     return milliseconds + remainder / _MICROSECONDS_PER_MILLISECOND
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class TimedeltaToMillisecondsError(Exception):
     timedelta: dt.timedelta
     remainder: int
@@ -636,7 +636,7 @@ def yield_days(
     raise YieldDaysError(start=start, end=end, days=days)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class YieldDaysError(Exception):
     start: dt.date | None
     end: dt.date | None
@@ -678,7 +678,7 @@ def yield_weekdays(
     raise YieldWeekdaysError(start=start, end=end, days=days)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class YieldWeekdaysError(Exception):
     start: dt.date | None
     end: dt.date | None

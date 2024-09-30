@@ -129,11 +129,11 @@ def ensure_enum(
         ) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureEnumError(Exception): ...
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EnsureEnumSingleValueSingleEnumError(EnsureEnumError):
     value: MaybeStr[Enum]
     enum: type[Enum]
@@ -144,7 +144,7 @@ class _EnsureEnumSingleValueSingleEnumError(EnsureEnumError):
         return f"{self.value!r} is not an instance of {self.enum!r}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EnsureEnumSingleValueMultipleEnumsError(EnsureEnumError):
     value: Any
     enums: tuple[type[Enum], ...]
@@ -227,13 +227,13 @@ def _parse_enum_raise_empty_error(
     raise _ParseEnumCaseInsensitiveEmptyError(value=value, enum=enum)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseEnumError(Exception, Generic[_E]):
     value: str
     enum: type[_E]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseEnumCaseInsensitiveBijectionError(ParseEnumError):
     counts: Mapping[str, int]
 
@@ -242,28 +242,28 @@ class _ParseEnumCaseInsensitiveBijectionError(ParseEnumError):
         return f"Enum {self.enum} must not contain duplicates (case insensitive); got {self.counts}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseEnumCaseSensitiveEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
         return f"Enum {self.enum} does not contain {self.value!r} (case sensitive)"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseEnumCaseInsensitiveEmptyError(ParseEnumError):
     @override
     def __str__(self) -> str:
         return f"Enum {self.enum} does not contain {self.value!r} (case insensitive)"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseEnumStrEnumCaseSensitiveAmbiguousError(ParseEnumError):
     @override
     def __str__(self) -> str:
         return f"StrEnum {self.enum} contains {self.value!r} in both its keys and values (case sensitive)"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseEnumStrEnumCaseInsensitiveAmbiguousError(ParseEnumError):
     @override
     def __str__(self) -> str:

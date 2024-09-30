@@ -106,7 +106,7 @@ class TestAppendDataClass:
     def test_columns_and_fields_equal(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             a: int | None = None
             b: float | None = None
@@ -121,7 +121,7 @@ class TestAppendDataClass:
     def test_extra_column(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"a": Int64, "b": Float64, "c": Utf8})
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             a: int | None = None
             b: float | None = None
@@ -135,7 +135,7 @@ class TestAppendDataClass:
     def test_extra_field_but_none(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"a": Int64, "b": Float64})
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             a: int | None = None
             b: float | None = None
@@ -150,7 +150,7 @@ class TestAppendDataClass:
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"datetime": DatetimeUTC})
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             datetime: dt.datetime
 
@@ -168,7 +168,7 @@ class TestAppendDataClass:
     def test_error(self, *, data: StrMapping) -> None:
         df = DataFrame(schema={"a": Int64, "b": Float64})
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             a: int | None = None
             b: float | None = None
@@ -617,7 +617,7 @@ class TestDataClassToRow:
         })
     )
     def test_basic_types(self, *, data: StrMapping) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             a: int | None = None
             b: float | None = None
@@ -633,7 +633,7 @@ class TestDataClassToRow:
 
     @given(data=fixed_dictionaries({"datetime": zoned_datetimes()}))
     def test_zoned_datetime(self, *, data: StrMapping) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             datetime: dt.datetime
 
@@ -652,14 +652,14 @@ class TestDataClassToRow:
         })
     )
     def test_zoned_datetime_nested(self, *, data: StrMapping) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             start: dt.datetime
             end: dt.datetime
 
         inner = Inner(**data["inner"])
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             a: int | None = None
             b: int | None = None
@@ -1005,7 +1005,7 @@ class TestSetFirstRowAsColumns:
 
 class TestStructDataType:
     def test_simple(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             bool_: bool
             bool_maybe: bool | None = None
@@ -1034,7 +1034,7 @@ class TestStructDataType:
         assert result == expected
 
     def test_datetime(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             field: dt.datetime
 
@@ -1047,7 +1047,7 @@ class TestStructDataType:
             true = auto()
             false = auto()
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             field: Truth
 
@@ -1058,7 +1058,7 @@ class TestStructDataType:
     def test_literal(self) -> None:
         LowOrHigh = Literal["low", "high"]  # noqa: N806
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             field: LowOrHigh  # pyright: ignore[reportInvalidTypeForm]
 
@@ -1067,7 +1067,7 @@ class TestStructDataType:
         assert result == expected
 
     def test_containers(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             frozenset_: frozenset[int]
             list_: list[int]
@@ -1082,11 +1082,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_list_of_struct(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             field: int
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: list[Inner]
 
@@ -1095,11 +1095,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_struct(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             field: int
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
 
@@ -1108,11 +1108,11 @@ class TestStructDataType:
         assert result == expected
 
     def test_struct_of_list(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             field: list[int]
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
 
@@ -1125,7 +1125,7 @@ class TestStructDataType:
             _ = struct_data_type(cast(Any, None))
 
     def test_missing_time_zone_error(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             field: dt.datetime
 
@@ -1133,7 +1133,7 @@ class TestStructDataType:
             _ = struct_data_type(Example)
 
     def test_missing_type_error(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             field: None
 
@@ -1148,7 +1148,7 @@ class TestYieldRowsAsDataclasses:
     def test_main(self, *, check_types: Literal["none", "first", "all"]) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: int
 
@@ -1159,7 +1159,7 @@ class TestYieldRowsAsDataclasses:
     def test_none(self) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": int}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: str
 
@@ -1170,7 +1170,7 @@ class TestYieldRowsAsDataclasses:
     def test_first(self) -> None:
         df = DataFrame([(1,), (None,), (None,)], schema={"x": int}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: int
 
@@ -1184,7 +1184,7 @@ class TestYieldRowsAsDataclasses:
     def test_empty(self, *, check_types: Literal["first", "all"]) -> None:
         df = DataFrame([], schema={"x": Int64}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: int
 
@@ -1195,7 +1195,7 @@ class TestYieldRowsAsDataclasses:
     def test_error_superset(self) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             y: int
 
@@ -1208,7 +1208,7 @@ class TestYieldRowsAsDataclasses:
     def test_error_first_wrong_type(self) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: str
 
@@ -1221,7 +1221,7 @@ class TestYieldRowsAsDataclasses:
     def test_error_all_wrong_type(self) -> None:
         df = DataFrame([(1,), (None,), (3,)], schema={"x": Int64}, orient="row")
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             x: int
 
@@ -1234,7 +1234,7 @@ class TestYieldRowsAsDataclasses:
 
 class TestYieldStructSeriesDataclasses:
     def test_main(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Row:
             lower: int | None = None
             upper: int | None = None
@@ -1254,12 +1254,12 @@ class TestYieldStructSeriesDataclasses:
         assert result == expected
 
     def test_nested(self) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             lower: int
             upper: int
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             a: int | None = None
             b: int | None = None

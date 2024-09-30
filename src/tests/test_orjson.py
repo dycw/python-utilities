@@ -185,7 +185,7 @@ class TestSerializeAndDeserialize:
 
         truth = data.draw(sampled_from(Truth))
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Inner:
             date: dt.date
             enum: Truth
@@ -194,7 +194,7 @@ class TestSerializeAndDeserialize:
             local_datetime: dt.datetime
             text: str
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Outer:
             inner: Inner
             date: dt.date
@@ -225,7 +225,7 @@ class TestSerializeAndDeserialize:
 
     @given(x=int64s())
     def test_dataclass_non_decorated_subclass(self, *, x: int) -> None:
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Parent:
             x: int
 
@@ -242,7 +242,7 @@ class TestSerializeAndDeserialize:
 
         TrueOnly = Literal[Truth.true]  # noqa: N806
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
 
@@ -281,7 +281,7 @@ class TestSerializeAndDeserialize:
 
         TrueOnly = Literal[Truth.true]  # noqa: N806
 
-        @dataclass(kw_only=True)
+        @dataclass(kw_only=True, slots=True)
         class Example:
             color: TrueOnly  # pyright: ignore[reportInvalidTypeForm]
 

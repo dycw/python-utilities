@@ -156,7 +156,7 @@ async def reduce_async(
     return value
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ReduceAsyncError(Exception):
     func: Callable[[Any, Any], Awaitable[Any]]
     iterable: Iterable[Any]

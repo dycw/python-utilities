@@ -18,7 +18,7 @@ class TestLoadSettings:
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_main(self, *, root: Path, value: int) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
 
@@ -32,7 +32,7 @@ class TestLoadSettings:
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_upper_case_dotenv(self, *, root: Path, value: int) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
 
@@ -46,7 +46,7 @@ class TestLoadSettings:
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_upper_case_key(self, *, root: Path, value: int) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             KEY: str
 
@@ -60,7 +60,7 @@ class TestLoadSettings:
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_extra_key(self, *, root: Path, value: int) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
 
@@ -75,7 +75,7 @@ class TestLoadSettings:
     @given(root=git_repos())
     @settings_with_reduced_examples()
     def test_error_file_not_found(self, *, root: Path) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             KEY: str
 
@@ -85,7 +85,7 @@ class TestLoadSettings:
     @given(root=git_repos())
     @settings_with_reduced_examples()
     def test_error_field_missing(self, *, root: Path) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
 
@@ -97,7 +97,7 @@ class TestLoadSettings:
     @given(root=git_repos(), value=integers())
     @settings_with_reduced_examples()
     def test_error_field_duplicated(self, *, root: Path, value: int) -> None:
-        @dataclass(frozen=True)
+        @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
 

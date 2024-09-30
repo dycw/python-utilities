@@ -559,6 +559,7 @@ class TestPeriod:
         period = Period(start, end)
         assert period.start == start
         assert period.end == end
+        _ = hash(period)
 
     @given(
         start=datetimes(timezones=sampled_from([HongKong, UTC, dt.UTC])),
@@ -569,6 +570,7 @@ class TestPeriod:
         period = Period(start, end)
         assert period.start == start
         assert period.end == end
+        _ = hash(period)
 
     @given(start=dates(), days=integers(min_value=0))
     def test_duration(self, *, start: dt.date, days: int) -> None:

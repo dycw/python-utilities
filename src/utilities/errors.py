@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ImpossibleCaseError(Exception):
     case: list[str]
 
@@ -57,14 +57,14 @@ def redirect_error(
         raise
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class RedirectErrorError(Exception):
     old: type[Exception] | tuple[type[Exception], ...]
     new: Exception | type[Exception]
     match: str | None = None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _RedirectErrorNonUniqueArgError(RedirectErrorError):
     args: tuple[Any, ...]
 
@@ -73,7 +73,7 @@ class _RedirectErrorNonUniqueArgError(RedirectErrorError):
         return f"Error must contain a unique argument; got {self.args}."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _RedirectErrorArgNotStringError(RedirectErrorError):
     arg: Any
 
