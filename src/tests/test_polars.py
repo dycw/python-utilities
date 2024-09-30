@@ -60,10 +60,10 @@ from utilities.polars import (
     _check_polars_dataframe_schema_list,
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
+    _RollingParametersArgumentsError,
     _RollingParametersExp,
+    _RollingParametersMinPeriodsError,
     _RollingParametersSimple,
-    _RollingParamsArgumentsError,
-    _RollingParamsMinPeriodsError,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
@@ -1046,7 +1046,7 @@ class TestRollingParameters:
             or (e_alpha is not None)
         )
         with raises(
-            _RollingParamsMinPeriodsError,
+            _RollingParametersMinPeriodsError,
             match="Exponential rolling requires 'min_periods' to be set; got None",
         ):
             _ = rolling_parameters(  # pyright: ignore[reportCallIssue]
@@ -1055,7 +1055,7 @@ class TestRollingParameters:
 
     def test_error_argument(self) -> None:
         with raises(
-            _RollingParamsArgumentsError,
+            _RollingParametersArgumentsError,
             match=escape(
                 r"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window=None, γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
             ),

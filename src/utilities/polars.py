@@ -779,7 +779,7 @@ def rolling_parameters(
         or (e_alpha is not None)
     ):
         if min_periods is None:
-            raise _RollingParamsMinPeriodsError(
+            raise _RollingParametersMinPeriodsError(
                 e_com=e_com,
                 e_span=e_span,
                 e_half_life=e_half_life,
@@ -796,7 +796,7 @@ def rolling_parameters(
             alpha=params.alpha,
             min_periods=min_periods,
         )
-    raise _RollingParamsArgumentsError(
+    raise _RollingParametersArgumentsError(
         s_window=s_window,
         e_com=e_com,
         e_span=e_span,
@@ -806,7 +806,7 @@ def rolling_parameters(
 
 
 @dataclass(kw_only=True, slots=True)
-class RollingParamsError(Exception):
+class RollingParametersError(Exception):
     s_window: int | None = None
     e_com: float | None = None
     e_span: float | None = None
@@ -815,14 +815,14 @@ class RollingParamsError(Exception):
 
 
 @dataclass(kw_only=True, slots=True)
-class _RollingParamsArgumentsError(RollingParamsError):
+class _RollingParametersArgumentsError(RollingParametersError):
     @override
     def __str__(self) -> str:
         return f"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
 
 
 @dataclass(kw_only=True, slots=True)
-class _RollingParamsMinPeriodsError(RollingParamsError):
+class _RollingParametersMinPeriodsError(RollingParametersError):
     min_periods: int | None = None
 
     @override
@@ -1111,7 +1111,7 @@ __all__ = [
     "DatetimeUTC",
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
-    "RollingParamsError",
+    "RollingParametersError",
     "SetFirstRowAsColumnsError",
     "YieldRowsAsDataClassesError",
     "YieldStructSeriesElementsError",
