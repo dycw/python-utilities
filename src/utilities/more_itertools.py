@@ -69,7 +69,7 @@ class peekable(_peekable, Generic[_T]):  # noqa: N801
             yield next(self)
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True, slots=True)
 class Split(Generic[_T]):
     """An iterable split into head/tail."""
 

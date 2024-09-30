@@ -6,7 +6,7 @@ from pathlib import Path
 from utilities.typed_settings import click_field
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True, slots=True)
 class Config:
     """Settings for the `pypi_server` script."""
 

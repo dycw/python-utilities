@@ -14,7 +14,7 @@ _P = ParamSpec("_P")
 _T = TypeVar("_T")
 
 
-@dataclass(frozen=True)
+@dataclass(kw_only=True, slots=True)
 class Output(Generic[_T]):
     """A function output, and its memory usage."""
 
