@@ -515,7 +515,7 @@ def order_of_magnitude(x: float, /, *, round_: bool = False) -> float:
     return round(result) if round_ else result
 
 
-def round_to_multiple(x: float, y: float, /) -> float:
+def round_to_float(x: float, y: float, /) -> float:
     """Round a float to the nearest multiple of another float."""
     return y * round(x / y)
 
@@ -675,6 +675,6 @@ __all__ = [
     "is_zero_or_non_micro_or_nan",
     "number_of_decimals",
     "order_of_magnitude",
-    "round_to_multiple",
+    "round_to_float",
     "safe_round",
 ]

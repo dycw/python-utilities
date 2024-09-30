@@ -83,7 +83,7 @@ from utilities.math import (
     is_zero_or_non_micro_or_nan,
     number_of_decimals,
     order_of_magnitude,
-    round_to_multiple,
+    round_to_float,
     safe_round,
 )
 
@@ -905,7 +905,7 @@ class TestRoundToFloat:
         ids=str,
     )
     def test_main(self, *, x: float, y: float, expected: float) -> None:
-        result = round_to_multiple(x, y)
+        result = round_to_float(x, y)
         assert result == approx(expected)
 
 
