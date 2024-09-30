@@ -29,7 +29,7 @@ class TestDataClassProtocol:
         def identity(x: T, /) -> T:
             return x
 
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
@@ -38,7 +38,7 @@ class TestDataClassProtocol:
 
 class TestExtendNonSentinel:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: Sequence[int] = field(default_factory=list)
 
@@ -55,7 +55,7 @@ class TestExtendNonSentinel:
 
 class TestGetDataClassClass:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
@@ -69,7 +69,7 @@ class TestGetDataClassClass:
 
 class TestIsDataClassClass:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
@@ -83,7 +83,7 @@ class TestIsDataClassClass:
 
 class TestIsDataClassInstance:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
@@ -97,7 +97,7 @@ class TestIsDataClassInstance:
 
 class TestReplaceNonSentinel:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: int = 0
 
@@ -114,7 +114,7 @@ class TestReplaceNonSentinel:
 
 class TestYieldDataClassFieldNames:
     def test_main(self) -> None:
-        @dataclass
+        @dataclass(kw_only=True, slots=True)
         class Example:
             x: None = None
 
