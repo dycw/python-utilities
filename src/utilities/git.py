@@ -52,7 +52,7 @@ def get_repo_root(*, cwd: PathLike = PWD) -> Path:
         return Path(output.strip("\n"))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetRepoRootError(Exception):
     cwd: PathLike
 

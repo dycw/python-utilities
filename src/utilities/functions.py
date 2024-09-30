@@ -30,7 +30,7 @@ def ensure_not_none(obj: _T | None, /) -> _T:
     return obj
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureNotNoneError(Exception):
     obj: Any
 

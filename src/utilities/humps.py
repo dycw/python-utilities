@@ -46,20 +46,20 @@ def snake_case_mappings(text: Iterable[str], /) -> dict[str, str]:
     return mapping
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SnakeCaseMappingsError(Exception):
     text: list[str]
     counts: Mapping[Hashable, int]
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _SnakeCaseMappingsDuplicateKeysError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:
         return f"Strings {self.text} must not contain duplicates; got {self.counts}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _SnakeCaseMappingsDuplicateValuesError(SnakeCaseMappingsError):
     @override
     def __str__(self) -> str:
