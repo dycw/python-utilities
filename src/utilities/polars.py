@@ -754,6 +754,16 @@ def rolling_parameters(
     e_alpha: float | None = None,
     min_periods: int,
 ) -> _RollingParametersExp: ...
+@overload
+def rolling_parameters(
+    *,
+    s_window: int | None = None,
+    e_com: float | None = None,
+    e_span: float | None = None,
+    e_half_life: float | None = None,
+    e_alpha: float | None = None,
+    min_periods: int | None = None,
+) -> _RollingParametersSimple | _RollingParametersExp: ...
 def rolling_parameters(
     *,
     s_window: int | None = None,
