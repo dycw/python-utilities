@@ -17,7 +17,7 @@ class TestGetBestParams:
         study = create_study(direction="minimize")
         study.optimize(objective, n_trials=200)
 
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Params:
             x: float
 
@@ -28,7 +28,7 @@ class TestGetBestParams:
 
 class TestMakeObjective:
     def test_main(self) -> None:
-        @dataclass(frozen=True, kw_only=True)
+        @dataclass(kw_only=True)
         class Params:
             x: float
 

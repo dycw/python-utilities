@@ -38,7 +38,7 @@ _HEIGHT = 400
 _WIDTH = 800
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _PlotDataFramesSpec:
     y: Sequence[str]
     height: int = _HEIGHT

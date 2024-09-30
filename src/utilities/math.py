@@ -20,7 +20,7 @@ MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 # functions
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _EWMParameters:
     """A set of EWM parameters."""
 

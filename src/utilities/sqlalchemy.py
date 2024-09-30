@@ -603,7 +603,7 @@ async def ensure_tables_created_async(
                 _ensure_tables_maybe_reraise(error, prepared.match)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _EnsureTablesCreatedOrDroppedPrepare:
     match: str
     tables: AbstractSet[Table]
@@ -934,7 +934,7 @@ class InsertItemsAsyncError(Exception):
         return f"Item must be valid; got {self.item}"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True)
 class _PreInsertUpsertItems:
     tables: Sequence[Table]
     yield_pairs: Callable[[], Iterator[tuple[Insert, Any]]]
