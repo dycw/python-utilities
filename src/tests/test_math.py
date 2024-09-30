@@ -83,6 +83,7 @@ from utilities.math import (
     is_zero_or_non_micro_or_nan,
     number_of_decimals,
     order_of_magnitude,
+    round_to_multiple,
     safe_round,
 )
 
@@ -873,6 +874,39 @@ class TestOrderOfMagnitude:
         assert res_float == approx(exp_float)
         res_int = order_of_magnitude(x_use, round_=True)
         assert res_int == exp_int
+
+
+class TestRoundToMultiple:
+    @mark.parametrize(
+        ("x", "multiple", "expected"),
+        [
+            param(0.0, 0.5, 0.0),
+            param(0.1, 0.5, 0.0),
+            param(0.2, 0.5, 0.0),
+            param(0.3, 0.5, 0.5),
+            param(0.4, 0.5, 0.5),
+            param(0.5, 0.5, 0.5),
+            param(0.6, 0.5, 0.5),
+            param(0.7, 0.5, 0.5),
+            param(0.8, 0.5, 1.0),
+            param(0.9, 0.5, 1.0),
+            param(1.0, 0.5, 1.0),
+            param(1.1, 0.5, 1.0),
+            param(1.2, 0.5, 1.0),
+            param(1.3, 0.5, 1.5),
+            param(1.4, 0.5, 1.5),
+            param(1.5, 0.5, 1.5),
+            param(1.6, 0.5, 1.5),
+            param(1.7, 0.5, 1.5),
+            param(1.8, 0.5, 2.0),
+            param(1.9, 0.5, 2.0),
+            param(2.0, 0.5, 2.0),
+        ],
+        ids=str,
+    )
+    def test_main(self, *, x: float, multiple: float, expected: float) -> None:
+        result = round_to_multiple(x, multiple)
+        assert result == approx(expected)
 
 
 class TestSafeRound:
