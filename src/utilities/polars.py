@@ -753,7 +753,7 @@ def rolling_parameters(
     e_half_life: float | None = None,
     e_alpha: float | None = None,
     min_periods: int,
-) -> RollingParametersExp: ...
+) -> RollingParametersExponential: ...
 @overload
 def rolling_parameters(
     *,
@@ -763,7 +763,7 @@ def rolling_parameters(
     e_half_life: float | None = None,
     e_alpha: float | None = None,
     min_periods: int | None = None,
-) -> RollingParametersSimple | RollingParametersExp: ...
+) -> RollingParametersSimple | RollingParametersExponential: ...
 def rolling_parameters(
     *,
     s_window: int | None = None,
@@ -772,7 +772,7 @@ def rolling_parameters(
     e_half_life: float | None = None,
     e_alpha: float | None = None,
     min_periods: int | None = None,
-) -> RollingParametersSimple | RollingParametersExp:
+) -> RollingParametersSimple | RollingParametersExponential:
     """Resolve a set of rolling parameters."""
     if (
         (s_window is not None)
@@ -799,7 +799,7 @@ def rolling_parameters(
         params = ewm_parameters(
             com=e_com, span=e_span, half_life=e_half_life, alpha=e_alpha
         )
-        return RollingParametersExp(
+        return RollingParametersExponential(
             com=params.com,
             span=params.span,
             half_life=params.half_life,
@@ -847,7 +847,7 @@ class RollingParametersSimple:
 
 
 @dataclass(kw_only=True, slots=True)
-class RollingParametersExp(_EWMParameters):
+class RollingParametersExponential(_EWMParameters):
     min_periods: int
 
 
@@ -1122,7 +1122,7 @@ __all__ = [
     "DropNullStructSeriesError",
     "IsNullStructSeriesError",
     "RollingParametersError",
-    "RollingParametersExp",
+    "RollingParametersExponential",
     "RollingParametersSimple",
     "SetFirstRowAsColumnsError",
     "YieldRowsAsDataClassesError",

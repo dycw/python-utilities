@@ -53,6 +53,8 @@ from utilities.polars import (
     DropNullStructSeriesError,
     IsNotNullStructSeriesError,
     IsNullStructSeriesError,
+    RollingParametersExponential,
+    RollingParametersSimple,
     SetFirstRowAsColumnsError,
     StructDataTypeError,
     YieldStructSeriesElementsError,
@@ -61,9 +63,7 @@ from utilities.polars import (
     _check_polars_dataframe_schema_set,
     _check_polars_dataframe_schema_subset,
     _RollingParametersArgumentsError,
-    _RollingParametersExp,
     _RollingParametersMinPeriodsError,
-    _RollingParametersSimple,
     _yield_struct_series_element_remove_nulls,
     _YieldRowsAsDataClassesColumnsSuperSetError,
     _YieldRowsAsDataClassesWrongTypeError,
@@ -996,19 +996,19 @@ class TestRollingParameters:
     @given(s_window=integers())
     def test_simple(self, *, s_window: int) -> None:
         params = rolling_parameters(s_window=s_window)
-        assert isinstance(params, _RollingParametersSimple)
+        assert isinstance(params, RollingParametersSimple)
 
     @given(e_com=floats(0.0, 10.0), min_periods=integers(1, 10))
     def test_exponential_com(self, *, e_com: float, min_periods: int) -> None:
         _ = assume(is_positive(e_com, abs_tol=1e-8))
         params = rolling_parameters(e_com=e_com, min_periods=min_periods)
-        assert isinstance(params, _RollingParametersExp)
+        assert isinstance(params, RollingParametersExponential)
 
     @given(e_span=floats(0.0, 10.0), min_periods=integers(1, 10))
     def test_exponential_span(self, *, e_span: float, min_periods: int) -> None:
         _ = assume(is_greater_than(e_span, 1.0, abs_tol=1e-8))
         params = rolling_parameters(e_span=e_span, min_periods=min_periods)
-        assert isinstance(params, _RollingParametersExp)
+        assert isinstance(params, RollingParametersExponential)
 
     @given(e_half_life=floats(0.0, 10.0), min_periods=integers(1, 10))
     def test_exponential_half_life(
@@ -1016,14 +1016,14 @@ class TestRollingParameters:
     ) -> None:
         _ = assume(is_positive(e_half_life, abs_tol=1e-8))
         params = rolling_parameters(e_half_life=e_half_life, min_periods=min_periods)
-        assert isinstance(params, _RollingParametersExp)
+        assert isinstance(params, RollingParametersExponential)
 
     @given(e_alpha=floats(0.0, 1.0), min_periods=integers(1, 10))
     def test_exponential_alpha(self, *, e_alpha: float, min_periods: int) -> None:
         _ = assume(is_positive(e_alpha, abs_tol=1e-8))
         _ = assume(is_less_than(e_alpha, 1.0, abs_tol=1e-8))
         params = rolling_parameters(e_alpha=e_alpha, min_periods=min_periods)
-        assert isinstance(params, _RollingParametersExp)
+        assert isinstance(params, RollingParametersExponential)
 
     @given(
         e_com=floats(0.0, 10.0) | none(),
