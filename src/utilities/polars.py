@@ -818,7 +818,7 @@ class RollingParamsError(Exception):
 class _RollingParamsArgumentsError(RollingParamsError):
     @override
     def __str__(self) -> str:
-        return f"Exactly one of center of 's_window', 'e_mass' (γ), 'e_span' (θ), 'e_half_life' (λ) or smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
+        return f"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window={self.s_window}, γ={self.e_com}, θ={self.e_span}, λ={self.e_half_life} and α={self.e_alpha}"  # noqa: RUF001
 
 
 @dataclass(kw_only=True, slots=True)
