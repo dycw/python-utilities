@@ -24,7 +24,7 @@ def ensure_time_zone(time_zone: ZoneInfo | dt.tzinfo | str, /) -> ZoneInfo:
     raise EnsureTimeZoneError(time_zone=time_zone)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureTimeZoneError(Exception):
     time_zone: dt.tzinfo
 

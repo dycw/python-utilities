@@ -35,7 +35,7 @@ class RedisContainer(Generic[_TRedis]):
     key: str
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class RedisHashMapKey(Generic[_K, _V]):
     """A hashmap key in a redis store."""
 
@@ -195,7 +195,7 @@ class RedisHashMapKey(Generic[_K, _V]):
         return ensure_int(response)  # skipif-ci-and-not-linux
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class RedisKey(Generic[_T]):
     """A key in a redis store."""
 

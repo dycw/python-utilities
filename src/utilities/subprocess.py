@@ -49,19 +49,19 @@ def get_shell_output(
         return check_output(cmd, stderr=PIPE, shell=True, cwd=cwd, text=True)  # noqa: S602
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetShellOutputError(Exception):
     cwd: Path
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetShellOutputEmptyError(GetShellOutputError):
     @override
     def __str__(self) -> str:
         return f"Path {str(self.cwd)!r} contains no 'activate' file"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetShellOutputNonUniqueError(GetShellOutputError):
     first: Path
     second: Path

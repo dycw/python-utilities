@@ -20,7 +20,7 @@ MIN_UINT64, MAX_UINT64 = 0, 2**64 - 1
 # functions
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EWMParameters:
     """A set of EWM parameters."""
 
@@ -82,7 +82,7 @@ def ewm_parameters(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EWMParametersError(Exception):
     com: float | None = None
     span: float | None = None
@@ -90,14 +90,14 @@ class EWMParametersError(Exception):
     alpha: float | None = None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EWMParametersCOMError(EWMParametersError):
     @override
     def __str__(self) -> str:
         return f"Center of mass (γ) must be positive; got {self.com}"  # noqa: RUF001
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EWMParametersSpanError(EWMParametersError):
     @override
     def __str__(self) -> str:
@@ -495,7 +495,7 @@ def _number_of_decimals_check_scale(frac: float, scale: int, /) -> bool:
     return isclose(scaled, round(scaled))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class NumberOfDecimalsError(Exception):
     x: float
     max_decimals: int
@@ -529,7 +529,7 @@ def safe_round(
     raise SafeRoundError(x=x, rel_tol=rel_tol, abs_tol=abs_tol)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SafeRoundError(Exception):
     x: float
     rel_tol: float | None = None
@@ -563,12 +563,12 @@ def check_integer(
         raise _CheckIntegerMaxError(n=n, max_=max)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckIntegerError(Exception):
     n: int
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckIntegerEqualError(CheckIntegerError):
     equal: int
 
@@ -577,7 +577,7 @@ class _CheckIntegerEqualError(CheckIntegerError):
         return f"Integer must be equal to {self.equal}; got {self.n}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckIntegerEqualOrApproxError(CheckIntegerError):
     equal_or_approx: int | tuple[int, float]
 
@@ -591,7 +591,7 @@ class _CheckIntegerEqualOrApproxError(CheckIntegerError):
         return f"Integer must be {desc}; got {self.n}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckIntegerMinError(CheckIntegerError):
     min_: int
 
@@ -600,7 +600,7 @@ class _CheckIntegerMinError(CheckIntegerError):
         return f"Integer must be at least {self.min_}; got {self.n}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _CheckIntegerMaxError(CheckIntegerError):
     max_: int
 

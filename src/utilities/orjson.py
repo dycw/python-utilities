@@ -82,7 +82,7 @@ def serialize(obj: Any, /) -> bytes:
         raise SerializeError(obj=obj) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SerializeError(Exception):
     obj: Any
 
@@ -102,7 +102,7 @@ def _serialize_default(obj: Any, /) -> _SchemaDict:
     return {_SCHEMA_KEY: schema.key, _SCHEMA_VALUE: schema.serializer(obj)}
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _Schema(Generic[_T]):
     key: _Key
     serializer: Callable[[_T], Any]
@@ -245,7 +245,7 @@ def _get_schema_zoned_datetime() -> _Schema[dt.datetime]:
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetSchemaError(Exception):
     obj: Any
 
@@ -344,7 +344,7 @@ def _object_hook(obj: Any, /) -> Any:
             raise _ObjectHookError(data=never)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class DeserializeError(Exception):
     data: bytes
     obj: Any
@@ -433,7 +433,7 @@ def _object_hook_zoned_datetime(value: str, /) -> dt.date:
     return parse_zoned_datetime(value)  # skipif-ci-and-windows
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ObjectHookError(Exception):
     data: Any
 

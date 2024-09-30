@@ -122,7 +122,7 @@ def node_id_to_path(
     return path
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class NodeIdToPathError(Exception):
     node_id: str
 

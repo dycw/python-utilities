@@ -40,7 +40,7 @@ def ensure_bool(obj: Any, /, *, nullable: bool = False) -> bool | None:
         raise EnsureBoolError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureBoolError(Exception):
     obj: Any
     nullable: bool
@@ -118,7 +118,7 @@ def ensure_class(  # pyright: ignore[reportInconsistentOverload]
     raise EnsureClassError(obj=obj, cls=cls, nullable=nullable)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureClassError(Exception):
     obj: Any
     cls: type[Any] | tuple[type[Any], ...]
@@ -142,7 +142,7 @@ def ensure_date(obj: Any, /, *, nullable: bool = False) -> dt.date | None:
         raise EnsureDateError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureDateError(Exception):
     obj: Any
     nullable: bool
@@ -167,7 +167,7 @@ def ensure_datetime(obj: Any, /, *, nullable: bool = False) -> dt.datetime | Non
         raise EnsureDatetimeError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureDatetimeError(Exception):
     obj: Any
     nullable: bool
@@ -190,7 +190,7 @@ def ensure_float(obj: Any, /, *, nullable: bool = False) -> float | None:
         raise EnsureFloatError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureFloatError(Exception):
     obj: Any
     nullable: bool
@@ -208,7 +208,7 @@ def ensure_hashable(obj: Any, /) -> Hashable:
     raise EnsureHashableError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureHashableError(Exception):
     obj: Any
 
@@ -229,7 +229,7 @@ def ensure_int(obj: Any, /, *, nullable: bool = False) -> int | None:
         raise EnsureIntError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureIntError(Exception):
     obj: Any
     nullable: bool
@@ -257,7 +257,7 @@ def ensure_member(
     raise EnsureMemberError(obj=obj, container=container, nullable=nullable)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureMemberError(Exception):
     obj: Any
     container: Container[Any]
@@ -281,7 +281,7 @@ def ensure_number(obj: Any, /, *, nullable: bool = False) -> Number | None:
         raise EnsureNumberError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureNumberError(Exception):
     obj: Any
     nullable: bool
@@ -299,7 +299,7 @@ def ensure_sized(obj: Any, /) -> Sized:
     raise EnsureSizedError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureSizedError(Exception):
     obj: Any
 
@@ -315,7 +315,7 @@ def ensure_sized_not_str(obj: Any, /) -> Sized:
     raise EnsureSizedNotStrError(obj=obj)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureSizedNotStrError(Exception):
     obj: Any
 
@@ -336,7 +336,7 @@ def ensure_time(obj: Any, /, *, nullable: bool = False) -> dt.time | None:
         raise EnsureTimeError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureTimeError(Exception):
     obj: Any
     nullable: bool

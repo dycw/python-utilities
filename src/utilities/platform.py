@@ -32,7 +32,7 @@ def get_system() -> System:
     raise GetSystemError(sys=sys)  # pragma: no cover
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetSystemError(Exception):
     sys: str
 

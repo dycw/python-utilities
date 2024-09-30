@@ -109,7 +109,7 @@ def _get_loaders(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetLoadersError(Exception):
     appname: str
 

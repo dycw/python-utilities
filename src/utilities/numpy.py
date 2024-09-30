@@ -215,19 +215,19 @@ def flatn0(array: NDArrayB, /) -> int:
         raise FlatN0MultipleError(array=array) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class FlatN0Error(Exception):
     array: NDArrayB
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class FlatN0EmptyError(FlatN0Error):
     @override
     def __str__(self) -> str:
         return f"Array {self.array} must contain a True."
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class FlatN0MultipleError(FlatN0Error):
     @override
     def __str__(self) -> str:
@@ -768,7 +768,7 @@ def pct_change(
     return flip(result, axis=axis)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class PctChangeError(Exception):
     @override
     def __str__(self) -> str:
@@ -787,7 +787,7 @@ def shift(array: NDArrayF | NDArrayI, /, *, n: int = 1, axis: int = -1) -> NDArr
     return shifted
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ShiftError(Exception):
     @override
     def __str__(self) -> str:

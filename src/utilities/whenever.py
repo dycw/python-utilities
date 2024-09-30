@@ -44,7 +44,7 @@ def check_valid_zoned_datetime(datetime: dt.datetime, /) -> None:
         raise CheckValidZonedDateimeError(datetime=datetime, result=result)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class CheckValidZonedDateimeError(Exception):
     datetime: dt.datetime
     result: dt.datetime
@@ -65,7 +65,7 @@ def ensure_date(date: dt.date | str, /) -> dt.date:
         raise EnsureDateError(date=error.date) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureDateError(Exception):
     date: str
 
@@ -84,7 +84,7 @@ def ensure_duration(duration: Duration | str, /) -> Duration:
         raise EnsureDurationError(duration=error.duration) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureDurationError(Exception):
     duration: str
 
@@ -103,7 +103,7 @@ def ensure_local_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
         raise EnsureLocalDateTimeError(datetime=error.datetime) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureLocalDateTimeError(Exception):
     datetime: str
 
@@ -122,7 +122,7 @@ def ensure_time(time: dt.time | str, /) -> dt.time:
         raise EnsureTimeError(time=error.time) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureTimeError(Exception):
     time: str
 
@@ -145,19 +145,19 @@ def ensure_timedelta(timedelta: dt.timedelta | str, /) -> dt.timedelta:
         ) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureTimedeltaError(Exception):
     timedelta: str
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EnsureTimedeltaParseError(EnsureTimedeltaError):
     @override
     def __str__(self) -> str:
         return f"Unable to ensure timedelta; got {self.timedelta!r}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _EnsureTimedeltaNanosecondError(EnsureTimedeltaError):
     nanoseconds: int
 
@@ -176,7 +176,7 @@ def ensure_zoned_datetime(datetime: dt.datetime | str, /) -> dt.datetime:
         raise EnsureZonedDateTimeError(datetime=error.datetime) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureZonedDateTimeError(Exception):
     datetime: str
 
@@ -203,7 +203,7 @@ def parse_date(date: str, /) -> dt.date:
     return dt.date(year=int(year), month=int(month), day=int(day))
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseDateError(Exception):
     date: str
 
@@ -224,7 +224,7 @@ def parse_duration(duration: str, /) -> Duration:
         raise ParseDurationError(duration=duration) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseDurationError(Exception):
     duration: str
 
@@ -268,7 +268,7 @@ def parse_local_datetime(datetime: str, /) -> dt.datetime:
     ).replace(tzinfo=None)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseLocalDateTimeError(Exception):
     datetime: str
 
@@ -286,7 +286,7 @@ def parse_time(time: str, /) -> dt.time:
     return w_time.py_time()
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseTimeError(Exception):
     time: str
 
@@ -315,19 +315,19 @@ def parse_timedelta(timedelta: str, /) -> dt.timedelta:
     return dt.timedelta(days=total_days, microseconds=total_micros)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseTimedeltaError(Exception):
     timedelta: str
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseTimedeltaParseError(ParseTimedeltaError):
     @override
     def __str__(self) -> str:
         return f"Unable to parse timedelta; got {self.timedelta!r}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ParseTimedeltaNanosecondError(ParseTimedeltaError):
     nanoseconds: int
 
@@ -371,7 +371,7 @@ def parse_zoned_datetime(datetime: str, /) -> dt.datetime:
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class ParseZonedDateTimeError(Exception):
     datetime: str
 
@@ -396,7 +396,7 @@ def serialize_duration(duration: Duration, /) -> str:
         raise SerializeDurationError(duration=error.timedelta) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SerializeDurationError(Exception):
     duration: Duration
 
@@ -414,7 +414,7 @@ def serialize_local_datetime(datetime: dt.datetime, /) -> str:
     return ldt.format_common_iso()
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SerializeLocalDateTimeError(Exception):
     datetime: dt.datetime
 
@@ -437,7 +437,7 @@ def serialize_timedelta(timedelta: dt.timedelta, /) -> str:
     return dtd.format_common_iso()
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SerializeTimeDeltaError(Exception):
     timedelta: dt.timedelta
 
@@ -459,7 +459,7 @@ def serialize_zoned_datetime(datetime: dt.datetime, /) -> str:
     return zdt.format_common_iso()
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SerializeZonedDateTimeError(Exception):
     datetime: dt.datetime
 
@@ -487,7 +487,7 @@ def _to_datetime_delta(timedelta: dt.timedelta, /) -> DateTimeDelta:
     return -_to_datetime_delta(-timedelta)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _ToDateTimeDeltaError(Exception):
     timedelta: dt.timedelta
 

@@ -146,19 +146,19 @@ def get_logging_level_name(level: int, /) -> str:
         ) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNameError(Exception):
     level: int
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetLoggingLevelNameEmptyError(GetLoggingLevelNameError):
     @override
     def __str__(self) -> str:
         return f"There is no level with severity {self.level}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _GetLoggingLevelNameNonUniqueError(GetLoggingLevelNameError):
     first: str
     second: str
@@ -176,7 +176,7 @@ def get_logging_level_number(level: str, /) -> int:
         raise GetLoggingLevelNumberError(level=level) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class GetLoggingLevelNumberError(Exception):
     level: str
 

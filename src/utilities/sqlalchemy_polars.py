@@ -102,7 +102,7 @@ def insert_dataframe(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class InsertDataFrameError(Exception):
     df: DataFrame
 
@@ -141,7 +141,7 @@ async def insert_dataframe_async(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class InsertDataFrameAsyncError(Exception):
     df: DataFrame
 
@@ -150,7 +150,7 @@ class InsertDataFrameAsyncError(Exception):
         return f"Non-empty DataFrame must resolve to at least 1 item\n\n{self.df}"
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _InsertDataFramePrepare:
     items: tuple[Sequence[StrMapping], TableOrMappedClass]
     no_items_empty_df: bool
@@ -468,7 +468,7 @@ async def select_to_dataframe_async(
     return yield_dfs()
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class _SelectToDataFramePrepare:
     sel: Select[Any]
     schema: SchemaDict
@@ -616,7 +616,7 @@ def upsert_dataframe(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class UpsertDataFrameError(Exception):
     df: DataFrame
 
@@ -657,7 +657,7 @@ async def upsert_dataframe_async(
     )
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class UpsertDataFrameAsyncError(Exception):
     df: DataFrame
 

@@ -26,7 +26,7 @@ def ensure_bytes(obj: Any, /, *, nullable: bool = False) -> bytes | None:
         raise EnsureBytesError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureBytesError(Exception):
     obj: Any
     nullable: bool
@@ -49,7 +49,7 @@ def ensure_str(obj: Any, /, *, nullable: bool = False) -> str | None:
         raise EnsureStrError(obj=error.obj, nullable=nullable) from None
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class EnsureStrError(Exception):
     obj: Any
     nullable: bool

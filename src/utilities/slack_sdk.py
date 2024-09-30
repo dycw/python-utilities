@@ -44,7 +44,7 @@ def _check_status_code(text: str, response: WebhookResponse, /) -> None:
         raise SendSlackError(text=text, response=response)
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class SendSlackError(Exception):
     text: str
     response: WebhookResponse
