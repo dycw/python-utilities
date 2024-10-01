@@ -340,7 +340,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.9.0
+rich==13.8.1
     # via
     #   dycw-utilities (pyproject.toml)
     #   hatch
@@ -360,7 +360,7 @@ scipy==1.14.1
     #   scs
 scs==3.2.7
     # via cvxpy
-setuptools==73.0.1
+setuptools==75.1.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
