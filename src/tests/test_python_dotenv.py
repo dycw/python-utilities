@@ -1,23 +1,26 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from enum import Enum, auto
+from pathlib import Path
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
-from utilities.hypothesis import git_repos, settings_with_reduced_examples
-from utilities.python_dotenv import LoadSettingsError, load_settings
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
+from utilities.python_dotenv import (
+    _LoadSettingsEmptyError,
+    _LoadSettingsFileNotFoundError,
+    _LoadSettingsNonUniqueError,
+    _LoadSettingsTypeError,
+    load_settings,
+)
+from utilities.sentinel import Sentinel
 
 
 class TestLoadSettings:
-    @given(root=git_repos(), value=integers())
+    @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_main(self, *, root: Path, value: int) -> None:
+    def test_main(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -29,9 +32,9 @@ class TestLoadSettings:
         expected = Settings(key=str(value))
         assert settings == expected
 
-    @given(root=git_repos(), value=integers())
+    @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_upper_case_dotenv(self, *, root: Path, value: int) -> None:
+    def test_upper_case_dotenv(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -43,9 +46,9 @@ class TestLoadSettings:
         expected = Settings(key=str(value))
         assert settings == expected
 
-    @given(root=git_repos(), value=integers())
+    @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_upper_case_key(self, *, root: Path, value: int) -> None:
+    def test_upper_case_key(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             KEY: str
@@ -57,9 +60,9 @@ class TestLoadSettings:
         expected = Settings(KEY=str(value))
         assert settings == expected
 
-    @given(root=git_repos(), value=integers())
+    @given(root=git_repos(), value=text_ascii())
     @settings_with_reduced_examples()
-    def test_extra_key(self, *, root: Path, value: int) -> None:
+    def test_extra_key(self, *, root: Path, value: str) -> None:
         @dataclass(kw_only=True, slots=True)
         class Settings:
             key: str
@@ -72,6 +75,39 @@ class TestLoadSettings:
         expected = Settings(key=str(value))
         assert settings == expected
 
+    @given(root=git_repos(), value=integers())
+    @settings_with_reduced_examples()
+    def test_int(self, *, root: Path, value: int) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: int
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(data=data(), root=git_repos())
+    @settings_with_reduced_examples()
+    def test_enum(self, *, data: DataObject, root: Path) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Truth
+
+        value = data.draw(sampled_from(Truth))
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value.name}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
     @given(root=git_repos())
     @settings_with_reduced_examples()
     def test_error_file_not_found(self, *, root: Path) -> None:
@@ -79,7 +115,7 @@ class TestLoadSettings:
         class Settings:
             KEY: str
 
-        with raises(LoadSettingsError, match=r"Path '.*' must exist\."):
+        with raises(_LoadSettingsFileNotFoundError, match=r"Path '.*' must exist"):
             _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos())
@@ -91,7 +127,7 @@ class TestLoadSettings:
 
         root.joinpath(".env").touch()
 
-        with raises(LoadSettingsError, match=r"Field 'key' must exist\."):
+        with raises(_LoadSettingsEmptyError, match=r"Field 'key' must exist"):
             _ = load_settings(Settings, cwd=root)
 
     @given(root=git_repos(), value=integers())
@@ -106,6 +142,22 @@ class TestLoadSettings:
             _ = fh.write(f"KEY = {value}\n")
 
         with raises(
-            LoadSettingsError, match=r"Field 'key' must exist exactly once; got .*\."
+            _LoadSettingsNonUniqueError,
+            match=r"Field 'key' must exist exactly once; got .*",
+        ):
+            _ = load_settings(Settings, cwd=root)
+
+    @given(root=git_repos(), value=text_ascii())
+    @settings_with_reduced_examples()
+    def test_error_type(self, *, root: Path, value: str) -> None:
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Sentinel
+
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value}\n")
+
+        with raises(
+            _LoadSettingsTypeError, match=r"Field 'key' has unsupported type .*"
         ):
             _ = load_settings(Settings, cwd=root)
