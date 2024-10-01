@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from hypothesis import given
 from hypothesis.strategies import integers
@@ -9,9 +7,6 @@ from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples
 from utilities.python_dotenv import LoadSettingsError, load_settings
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class TestLoadSettings:
