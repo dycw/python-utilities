@@ -137,5 +137,7 @@ class TestLoadSettings:
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write(f"key = {value}\n")
 
-        with raises(_LoadSettingsTypeError, match=r"Field 'key' has supposed type .*"):
+        with raises(
+            _LoadSettingsTypeError, match=r"Field 'key' has unsupported type .*"
+        ):
             _ = load_settings(Settings, cwd=root)
