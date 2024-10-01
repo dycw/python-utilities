@@ -43,7 +43,7 @@ markupsafe==2.1.5
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.8.4
+narwhals==1.9.0
     # via altair
 numpy==2.1.1
     # via
@@ -96,7 +96,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.8.1
+rich==13.9.0
     # via streamlit
 rpds-py==0.20.0
     # via
