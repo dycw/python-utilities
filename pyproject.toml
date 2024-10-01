@@ -41,7 +41,7 @@ dev = [
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "nox >= 2024.4.15, < 2024.5",
   "numbagg >= 0.8.2, < 0.9",
-  "numpy >= 2.0.2, < 2.1",  # if 2.1, then llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
+  "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
   "orjson >= 3.10.7, < 3.11",
   "polars-lts-cpu >= 1.8.0, < 1.9",
