@@ -79,7 +79,6 @@ dev = [
   "pytest-xdist >= 3.6.1, < 3.7",
   # CI
   "win32_setctime >= 1.1.0, < 1.2",  # https://github.com/Delgan/loguru/issues/147
-  "setuptools >= 73.0.1, < 73.1",  # https://github.com/theY4Kman/pytest-only/issues/14
 ]
 scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",

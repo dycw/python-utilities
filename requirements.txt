@@ -360,8 +360,6 @@ scipy==1.14.1
     #   scs
 scs==3.2.7
     # via cvxpy
-setuptools==73.0.1
-    # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
 six==1.16.0
