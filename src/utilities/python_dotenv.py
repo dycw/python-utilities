@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from dotenv import dotenv_values
 from typing_extensions import override
 
 from utilities.dataclasses import Dataclass
+from utilities.enum import ensure_enum
 from utilities.git import get_repo_root
 from utilities.iterables import (
     _OneStrCaseInsensitiveBijectionError,
@@ -48,6 +50,8 @@ def load_settings(cls: type[_TDataclass], /, *, cwd: PathLike = PWD) -> _TDatacl
                     value = raw_value
                 elif fld.type is int:
                     value = int(raw_value)
+                elif isinstance(fld.type, type) and issubclass(fld.type, Enum):
+                    value = ensure_enum(raw_value, fld.type)
                 else:
                     raise _LoadSettingsTypeError(
                         path=path, field=fld.name, type=fld.type

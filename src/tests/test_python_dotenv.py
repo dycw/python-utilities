@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 
 from hypothesis import given
-from hypothesis.strategies import integers
+from hypothesis.strategies import DataObject, data, integers, sampled_from
 from pytest import raises
 
 from utilities.hypothesis import git_repos, settings_with_reduced_examples, text_ascii
@@ -83,6 +84,25 @@ class TestLoadSettings:
 
         with root.joinpath(".env").open(mode="w") as fh:
             _ = fh.write(f"key = {value}\n")
+
+        settings = load_settings(Settings, cwd=root)
+        expected = Settings(key=value)
+        assert settings == expected
+
+    @given(data=data(), root=git_repos())
+    @settings_with_reduced_examples()
+    def test_enum(self, *, data: DataObject, root: Path) -> None:
+        class Truth(Enum):
+            true = auto()
+            false = auto()
+
+        @dataclass(kw_only=True, slots=True)
+        class Settings:
+            key: Truth
+
+        value = data.draw(sampled_from(Truth))
+        with root.joinpath(".env").open(mode="w") as fh:
+            _ = fh.write(f"key = {value.name}\n")
 
         settings = load_settings(Settings, cwd=root)
         expected = Settings(key=value)
