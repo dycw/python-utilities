@@ -102,7 +102,7 @@ def add_pytest_configure(config: Config, options: Iterable[tuple[str, str]], /) 
 
 def is_pytest() -> bool:
     """Check if `pytest` is running."""
-    return "PYTEST_CURRENT_TEST" in environ
+    return "PYTEST_VERSION" in environ
 
 
 def node_id_to_path(
