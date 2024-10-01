@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from dotenv import dotenv_values
 from typing_extensions import override
@@ -32,7 +32,7 @@ def load_settings(cls: type[_TDataclass], /, *, cwd: PathLike = PWD) -> _TDatacl
     maybe_values = dotenv_values(path)
     values = {k: v for k, v in maybe_values.items() if v is not None}
 
-    def yield_items() -> Iterator[tuple[str, str]]:
+    def yield_items() -> Iterator[tuple[str, Any]]:
         for fld in fields(cls):
             try:
                 key = one_str(values, fld.name, case_sensitive=False)
@@ -43,7 +43,16 @@ def load_settings(cls: type[_TDataclass], /, *, cwd: PathLike = PWD) -> _TDatacl
                     path=path, field=fld.name, counts=error.counts
                 ) from None
             else:
-                yield fld.name, values[key]
+                raw_value = values[key]
+                if fld.type is str:
+                    value = raw_value
+                elif fld.type is int:
+                    value = int(raw_value)
+                else:
+                    raise _LoadSettingsTypeError(
+                        path=path, field=fld.name, type=fld.type
+                    )
+                yield fld.name, value
 
     return cls(**dict(yield_items()))
 
@@ -57,7 +66,7 @@ class LoadSettingsError(Exception):
 class _LoadSettingsFileNotFoundError(LoadSettingsError):
     @override
     def __str__(self) -> str:
-        return f"Path {str(self.path)!r} must exist."
+        return f"Path {str(self.path)!r} must exist"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -66,7 +75,7 @@ class _LoadSettingsEmptyError(LoadSettingsError):
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must exist."
+        return f"Field {self.field!r} must exist"
 
 
 @dataclass(kw_only=True, slots=True)
@@ -76,7 +85,17 @@ class _LoadSettingsNonUniqueError(LoadSettingsError):
 
     @override
     def __str__(self) -> str:
-        return f"Field {self.field!r} must exist exactly once; got {self.counts}."
+        return f"Field {self.field!r} must exist exactly once; got {self.counts}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _LoadSettingsTypeError(LoadSettingsError):
+    field: str
+    type: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Field {self.field!r} has unsupported type {self.type!r}"
 
 
 __all__ = ["LoadSettingsError", "load_settings"]
