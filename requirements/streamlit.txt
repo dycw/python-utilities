@@ -23,7 +23,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via streamlit
-hypothesis==6.112.2
+hypothesis==6.112.5
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via requests
@@ -39,13 +39,13 @@ jsonschema-specifications==2023.12.1
     # via jsonschema
 markdown-it-py==3.0.0
     # via rich
-markupsafe==2.1.5
+markupsafe==3.0.0
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.9.0
+narwhals==1.9.1
     # via altair
-numpy==2.1.1
+numpy==2.1.2
     # via
     #   pandas
     #   pyarrow
@@ -96,7 +96,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.3
     # via streamlit
-rich==13.9.1
+rich==13.9.2
     # via streamlit
 rpds-py==0.20.0
     # via
@@ -108,13 +108,13 @@ smmap==5.0.1
     # via gitdb
 sortedcontainers==2.4.0
     # via hypothesis
-streamlit==1.38.0
+streamlit==1.39.0
     # via dycw-utilities (pyproject.toml)
-tenacity==8.5.0
+tenacity==9.0.0
     # via streamlit
 toml==0.10.2
     # via streamlit
-tomli==2.0.1
+tomli==2.0.2
     # via coverage
 tornado==6.4.1
     # via streamlit

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import islice
 from textwrap import indent
@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from more_itertools import partition, split_into
+from more_itertools import bucket, partition, split_into
 from more_itertools import peekable as _peekable
 from typing_extensions import override
 
@@ -23,7 +23,16 @@ from utilities.functions import get_class_name
 from utilities.sentinel import Sentinel, sentinel
 
 _T = TypeVar("_T")
+_THashable = TypeVar("_THashable", bound=Hashable)
 _U = TypeVar("_U")
+
+
+def bucket_mapping(
+    iterable: Iterable[_T], func: Callable[[_T], _THashable], /
+) -> Mapping[_THashable, Iterator[_T]]:
+    """Bucket the values of iterable into a mapping."""
+    b = bucket(iterable, func)
+    return {key: b[key] for key in b}
 
 
 def partition_typeguard(
@@ -153,4 +162,4 @@ def _yield_splits3(
         yield cast(Split[Sequence[_T]], Split(head=list(head_win), tail=list(tail_win)))
 
 
-__all__ = ["Split", "partition_typeguard", "peekable", "yield_splits"]
+__all__ = ["Split", "bucket_mapping", "partition_typeguard", "peekable", "yield_splits"]

@@ -16,7 +16,7 @@ requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 dev = [
-  "aiohttp >= 3.10.5, < 3.11",  # for slack-sdk
+  "aiohttp >= 3.10.9, < 3.11",  # for slack-sdk
   "aiosqlite >= 0.20.0, < 0.21",
   "altair >= 5.4.1, < 5.5",
   "asyncpg >= 0.29.0, < 0.30",  # for sqlalchemy async
@@ -30,10 +30,10 @@ dev = [
   "cvxpy >= 1.5.3, < 1.6",
   "dacite >= 1.8.1, < 1.9",
   "eventkit >= 1.0.3, < 1.1",
-  "fpdf2 >= 2.7.9, < 2.8",
+  "fpdf2 >= 2.8.1, < 2.9",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "hatch >= 1.12.0, < 1.13",
-  "hypothesis >= 6.112.1, < 6.113",
+  "hypothesis >= 6.112.5, < 6.113",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.2, < 0.8",
   "memory-profiler >= 0.61.0, < 0.62",
@@ -44,7 +44,7 @@ dev = [
   "numpy >= 2.0.2, < 2.1",  # if 2.1, llvmite: RuntimeError: Cannot install on Python version 3.11.9; only versions >=3.6,<3.10 are supported.
   "optuna >= 4.0.0, < 4.1",
   "orjson >= 3.10.7, < 3.11",
-  "polars-lts-cpu >= 1.8.0, < 1.9",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
   "pqdm >= 0.2.0, < 0.3",
   "psycopg2-binary >= 2.9.9, < 2.10",  # for sqlalchemy
   "pydantic >= 2.9.0, < 2.10",
@@ -53,20 +53,20 @@ dev = [
   "pypiserver[passlib] >= 2.2.0, < 2.3",
   "pytest >= 8.3.3, < 8.4",
   "python-dotenv >= 1.0.1, < 1.1",
-  "redis >= 5.1.0, < 5.2",
+  "redis >= 5.1.1, < 5.2",
   "rich >= 13.8.1, < 13.9",  # if 13.9, twine upload fails https://github.com/dycw/python-utilities/actions/runs/11125686648/job/30913966455
   "scipy >= 1.14.1, < 1.15",
   "slack-sdk >= 3.33.0, < 3.34",
   "sqlalchemy >= 2.0.35, < 2.1",
-  "streamlit >= 1.38.0, < 1.39",
-  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
+  "streamlit >= 1.39.0, < 1.40",
+  "tenacity >= 9.0.0, < 9.1",
   "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.5.0, < 24.6",
   "tzdata >= 2024.1, < 2024.2",
   "tzlocal >= 5.2, < 5.3",
   "vegafusion >= 1.6.9, < 1.7",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
-  "vl-convert-python >= 1.6.1, < 1.7",
+  "vl-convert-python >= 1.7.0, < 1.8",
   "whenever >= 0.6.9, < 0.7",
   # test
   "coverage-conditional-plugin >= 0.9.0, < 0.10",
@@ -88,7 +88,7 @@ scripts-pypi-server = [
   "typed-settings >= 24.5.0, < 24.6",
 ]
 test = [
-  "hypothesis >= 6.112.1, < 6.113",
+  "hypothesis >= 6.112.5, < 6.113",
   "pytest >= 8.3.3, < 8.4",
   "pytest-randomly >= 3.15.0, < 3.16",
   "pytest-rerunfailures >= 14.0, < 15",
@@ -98,7 +98,7 @@ zzz-test-altair = [
   "altair >= 5.4.1, < 5.5",
   "atomicwrites >= 1.4.1, < 1.5",
   "img2pdf >= 0.5.1, < 0.6",
-  "polars-lts-cpu >= 1.8.0, < 1.9",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
   "vl-convert-python >= 1.6.1, < 1.7",
 ]
 zzz-test-astor = ["astor >= 0.8.1, < 0.9"]
@@ -119,7 +119,7 @@ zzz-test-cvxpy = ["cvxpy >= 1.5.3, < 1.6"]
 zzz-test-dataclasses = []
 zzz-test-datetime = ["tzlocal >= 5.2, < 5.3"]
 zzz-test-defaults = [
-  "hypothesis >= 6.112.1, < 6.113",
+  "hypothesis >= 6.112.5, < 6.113",
   "pytest >= 8.3.3, < 8.4",
   "pytest-asyncio >= 0.23.8, < 0.24",
   "pytest-cov >= 5.0.0, < 5.1",
@@ -131,7 +131,7 @@ zzz-test-enum = []
 zzz-test-errors = []
 zzz-test-eventkit = ["eventkit >= 1.0.3, < 1.1"]
 zzz-test-fpdf2 = [
-  "fpdf2 >= 2.7.9, < 2.8",
+  "fpdf2 >= 2.8.1, < 2.9",
   "tzlocal >= 5.2, < 5.3",
 ]
 zzz-test-functions = []
@@ -145,7 +145,7 @@ zzz-test-hypothesis = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
   "numpy >= 2.0.2, < 2.1",
-  "redis >= 5.1.0, < 5.2",
+  "redis >= 5.1.1, < 5.2",
   "sqlalchemy >= 2.0.35, < 2.1",
   "whenever >= 0.6.9, < 0.7",
 ]
@@ -154,7 +154,7 @@ zzz-test-iterables = []
 zzz-test-jupyter = [
   "jupyterlab >= 4.2.0, < 4.3",
   "pandas >= 2.2.2, < 2.3",
-  "polars-lts-cpu >= 1.8.0, < 1.9",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
 ]
 zzz-test-logging = []
 zzz-test-loguru = ["loguru >= 0.7.2, < 0.8"]
@@ -179,7 +179,7 @@ zzz-test-pickle = ["atomicwrites >= 1.4.1, < 1.5"]
 zzz-test-platform = []
 zzz-test-polars = [
   "dacite >= 1.8.1, < 1.9",
-  "polars-lts-cpu >= 1.8.0, < 1.9",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
 ]
 zzz-test-pqdm = ["pqdm >= 0.2.0, < 0.3"]
 zzz-test-pydantic = [
@@ -198,10 +198,10 @@ zzz-test-python-dotenv = ["python-dotenv >= 1.0.1, < 1.1"]
 zzz-test-random = []
 zzz-test-re = []
 zzz-test-redis = [
-  "polars-lts-cpu >= 1.8.0, < 1.9",
-  "redis >= 5.1.0, < 5.2",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
+  "redis >= 5.1.1, < 5.2",
 ]
-zzz-test-reprlib = ["polars-lts-cpu >= 1.8.0, < 1.9"]
+zzz-test-reprlib = ["polars-lts-cpu >= 1.9.0, < 1.10"]
 zzz-test-scipy = ["scipy >= 1.14.1, < 1.15"]
 zzz-test-scripts-pypi-server = [
   "click >= 8.1.7, < 8.2",
@@ -211,7 +211,7 @@ zzz-test-scripts-pypi-server = [
 ]
 zzz-test-sentinel = []
 zzz-test-slack-sdk = [
-  "aiohttp >= 3.10.5, < 3.11",  # for slack-sdk
+  "aiohttp >= 3.10.9, < 3.11",  # for slack-sdk
   "slack-sdk >= 3.33.0, < 3.34",
 ]
 zzz-test-socket = []
@@ -227,18 +227,18 @@ zzz-test-sqlalchemy = [
 zzz-test-sqlalchemy-polars = [
   "aiosqlite >= 0.20.0, < 0.21",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "polars-lts-cpu >= 1.8.0, < 1.9",
+  "polars-lts-cpu >= 1.9.0, < 1.10",
   "nest-asyncio >= 1.6.0, < 1.7",  # for sqlalchemy async
   "pyhumps >= 3.8.0, < 3.9",
   "sqlalchemy >= 2.0.35, < 2.1",
 ]
-zzz-test-streamlit = ["streamlit >= 1.38.0, < 1.39"]
+zzz-test-streamlit = ["streamlit >= 1.39.0, < 1.40"]
 zzz-test-subprocess = ["loguru >= 0.7.2, < 0.8"]
 zzz-test-sys = []
 zzz-test-tempfile = []
 zzz-test-tenacity = [
   "loguru >= 0.7.2, < 0.8",
-  "tenacity >= 8.5.0",  # streamlit >= 8.1.0, < 9
+  "tenacity >= 9.0.0, < 9.1",
 ]
 zzz-test-text = []
 zzz-test-timer = []

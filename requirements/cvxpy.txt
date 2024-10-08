@@ -10,11 +10,11 @@ cvxpy==1.5.3
     # via dycw-utilities (pyproject.toml)
 ecos==2.0.14
     # via cvxpy
-hypothesis==6.112.2
+hypothesis==6.112.5
     # via dycw-utilities (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
-numpy==2.1.1
+numpy==2.1.2
     # via
     #   clarabel
     #   cvxpy
@@ -60,7 +60,7 @@ scs==3.2.7
     # via cvxpy
 sortedcontainers==2.4.0
     # via hypothesis
-tomli==2.0.1
+tomli==2.0.2
     # via coverage
 typing-extensions==4.12.2
     # via dycw-utilities (pyproject.toml)
