@@ -340,9 +340,7 @@ def check_engine(
     """
     match get_dialect(engine_or_conn):
         case (  # skipif-ci-and-not-linux
-            Dialect.mssql
-            | Dialect.mysql
-            | Dialect.postgresql
+            Dialect.mssql | Dialect.mysql | Dialect.postgresql
         ):
             query = "select * from information_schema.tables"
         case Dialect.oracle:  # pragma: no cover
