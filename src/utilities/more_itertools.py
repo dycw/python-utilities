@@ -27,10 +27,10 @@ _THashable = TypeVar("_THashable", bound=Hashable)
 _U = TypeVar("_U")
 
 
-def map_groupby(
+def bucket_mapping(
     iterable: Iterable[_T], func: Callable[[_T], _THashable], /
 ) -> Mapping[_THashable, Iterator[_T]]:
-    """Group the values of iterable by a set of mapped values."""
+    """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
     return {key: b[key] for key in b}
 
@@ -162,4 +162,4 @@ def _yield_splits3(
         yield cast(Split[Sequence[_T]], Split(head=list(head_win), tail=list(tail_win)))
 
 
-__all__ = ["Split", "map_groupby", "partition_typeguard", "peekable", "yield_splits"]
+__all__ = ["Split", "bucket_mapping", "partition_typeguard", "peekable", "yield_splits"]

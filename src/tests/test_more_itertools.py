@@ -6,7 +6,7 @@ from pytest import mark, param, raises
 
 from utilities.more_itertools import (
     Split,
-    map_groupby,
+    bucket_mapping,
     partition_typeguard,
     peekable,
     yield_splits,
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-class TestMapGroupby:
+class TestBucketMapping:
     def test_main(self) -> None:
         iterable = ["a1", "b1", "c1", "a2", "b2", "c2", "b3"]
-        mapping = map_groupby(iterable, lambda x: x[0])
+        mapping = bucket_mapping(iterable, lambda x: x[0])
         assert set(mapping) == {"a", "b", "c"}
         assert list(mapping["a"]) == ["a1", "a2"]
         assert list(mapping["b"]) == ["b1", "b2", "b3"]
