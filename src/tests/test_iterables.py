@@ -592,7 +592,7 @@ class TestCollection:
         assert isinstance(collection, Collection)
         assert len(collection) == 3
 
-    def test_new_post_init(self) -> None:
+    def test_new_check_items(self) -> None:
         class SubCollection(Collection[_Item]):
             @classmethod
             @override
