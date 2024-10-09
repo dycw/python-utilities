@@ -440,11 +440,18 @@ class TestCollection:
         expected = Collection(_Item(1))
         assert result == expected
 
-    def test_and_iterable(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection & Collection(_Item(1), _Item(2))
+    def test_and_collection(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection & Collection(_Item(1))
         assert isinstance(result, Collection)
-        expected = Collection(_Item(1), _Item(2))
+        expected = Collection(_Item(1))
+        assert result == expected
+
+    def test_and_iterable(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection & [_Item(1)]
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(1))
         assert result == expected
 
     def test_filter(self) -> None:
@@ -574,11 +581,53 @@ class TestCollection:
         expected = Collection(map(_Item, range(4)))
         assert result == expected
 
-    def test_or_iterable(self) -> None:
+    def test_or_collection(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection | Collection(map(_Item, range(1, 4)))
         assert isinstance(result, Collection)
         expected = Collection(map(_Item, range(4)))
+        assert result == expected
+
+    def test_or_iterable(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection | map(_Item, range(1, 4))
+        assert isinstance(result, Collection)
+        expected = Collection(map(_Item, range(4)))
+        assert result == expected
+
+    def test_sub_single_int(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection - 1
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(0), _Item(2))
+        assert result == expected
+
+    def test_sub_single_item(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection - _Item(1)
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(0), _Item(2))
+        assert result == expected
+
+    def test_sub_collection(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection - Collection(_Item(1))
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(0), _Item(2))
+        assert result == expected
+
+    def test_sub_iterable_items(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection - [_Item(1)]
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(0), _Item(2))
+        assert result == expected
+
+    def test_sub_iterable_ints(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        result = collection - [1]
+        assert isinstance(result, Collection)
+        expected = Collection(_Item(0), _Item(2))
         assert result == expected
 
 
