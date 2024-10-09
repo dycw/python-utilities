@@ -592,6 +592,18 @@ class TestCollection:
         assert isinstance(collection, Collection)
         assert len(collection) == 3
 
+    def test_new_post_init(self) -> None:
+        class SubCollection(Collection[_Item]):
+            @classmethod
+            @override
+            def check_items(cls, items: Iterable[_Item]) -> None:
+                if any(item.n >= 1 for item in items):
+                    msg = "n >= 1 is not permitted"
+                    raise ValueError(msg)
+
+        with raises(ValueError, match="n >= 1 is not permitted"):
+            _ = SubCollection(map(_Item, range(3)))
+
     def test_or_singleton(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection | _Item(3)
