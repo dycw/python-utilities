@@ -18,6 +18,7 @@ from hypothesis.strategies import (
     text,
 )
 from pytest import mark, param, raises
+from typing_extensions import override
 
 from utilities.hypothesis import sets_fixed_length
 from utilities.iterables import (
@@ -35,6 +36,7 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
+    MaybeIterable,
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
@@ -537,26 +539,17 @@ class TestCollection:
         collection = Collection(map(_Item, range(3)))
         _ = hash(collection)
 
-    def test_init_one_singleton(self) -> None:
-        collection = Collection(_Item(1))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 1
-        assert one(collection) == _Item(1)
+    def test_init(self) -> None:
+        class SubCollection(Collection[_Item]):
+            @override
+            def __init__(self, *item_or_items: MaybeIterable[_Item]) -> None:
+                super().__init__(*item_or_items)
+                if any(item.n >= 1 for item in self):
+                    msg = "n >= 1 is not permitted"
+                    raise ValueError(msg)
 
-    def test_init_one_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
-
-    def test_init_many_singletons(self) -> None:
-        collection = Collection(_Item(1), _Item(2), _Item(3))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
-
-    def test_init_many_iterables(self) -> None:
-        collection = Collection(map(_Item, range(3)), map(_Item, range(3)))
-        assert isinstance(collection, Collection)
-        assert len(collection) == 3
+        with raises(ValueError, match="n >= 1 is not permitted"):
+            _ = SubCollection(map(_Item, range(3)))
 
     def test_iter(self) -> None:
         collection = Collection(map(_Item, range(3)))
@@ -577,6 +570,39 @@ class TestCollection:
         assert isinstance(result, Collection)
         expected = Collection(range(3))
         assert result == expected
+
+    def test_new_one_singleton(self) -> None:
+        collection = Collection(_Item(1))
+        assert isinstance(collection, Collection)
+        assert len(collection) == 1
+        assert one(collection) == _Item(1)
+
+    def test_new_one_iterable(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        assert isinstance(collection, Collection)
+        assert len(collection) == 3
+
+    def test_new_many_singletons(self) -> None:
+        collection = Collection(_Item(1), _Item(2), _Item(3))
+        assert isinstance(collection, Collection)
+        assert len(collection) == 3
+
+    def test_new_many_iterables(self) -> None:
+        collection = Collection(map(_Item, range(3)), map(_Item, range(3)))
+        assert isinstance(collection, Collection)
+        assert len(collection) == 3
+
+    def test_new_check_items(self) -> None:
+        class SubCollection(Collection[_Item]):
+            @classmethod
+            @override
+            def check_items(cls, items: Iterable[_Item]) -> None:
+                if any(item.n >= 1 for item in items):
+                    msg = "n >= 1 is not permitted"
+                    raise ValueError(msg)
+
+        with raises(ValueError, match="n >= 1 is not permitted"):
+            _ = SubCollection(map(_Item, range(3)))
 
     def test_or_singleton(self) -> None:
         collection = Collection(map(_Item, range(3)))
