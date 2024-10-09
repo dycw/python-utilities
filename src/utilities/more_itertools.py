@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import islice
@@ -27,12 +28,27 @@ _THashable = TypeVar("_THashable", bound=Hashable)
 _U = TypeVar("_U")
 
 
+@overload
 def bucket_mapping(
-    iterable: Iterable[_T], func: Callable[[_T], _THashable], /
-) -> Mapping[_THashable, Iterator[_T]]:
+    iterable: Iterable[_T], func: Callable[[_T], _THashable], /, *, list: Literal[True]
+) -> Mapping[_THashable, Sequence[_T]]: ...
+@overload
+def bucket_mapping(
+    iterable: Iterable[_T], func: Callable[[_T], _THashable], /, *, list: bool = False
+) -> Mapping[_THashable, Iterator[_T]]: ...
+def bucket_mapping(
+    iterable: Iterable[_T],
+    func: Callable[[_T], _THashable],
+    /,
+    *,
+    list: bool = False,  # noqa: A002
+) -> Mapping[_THashable, Iterator[_T]] | Mapping[_THashable, Sequence[_T]]:
     """Bucket the values of iterable into a mapping."""
     b = bucket(iterable, func)
-    return {key: b[key] for key in b}
+    mapping = {key: b[key] for key in b}
+    if list:
+        return {key: builtins.list(value) for key, value in mapping.items()}
+    return mapping
 
 
 def partition_typeguard(
