@@ -1004,7 +1004,7 @@ class TestRollingParameters:
         params = rolling_parameters(e_com=e_com, min_periods=min_periods)
         assert isinstance(params, RollingParametersExponential)
 
-    @given(e_span=floats(0.0, 10.0), min_periods=integers(1, 10))
+    @given(e_span=floats(1.0, 10.0), min_periods=integers(1, 10))
     def test_exponential_span(self, *, e_span: float, min_periods: int) -> None:
         _ = assume(is_greater_than(e_span, 1.0, abs_tol=1e-8))
         params = rolling_parameters(e_span=e_span, min_periods=min_periods)

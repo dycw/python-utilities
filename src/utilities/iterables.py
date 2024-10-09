@@ -22,7 +22,6 @@ from typing import (
     Generic,
     Literal,
     Never,
-    Protocol,
     Self,
     TypeGuard,
     TypeVar,
@@ -57,6 +56,7 @@ _T3 = TypeVar("_T3")
 _T4 = TypeVar("_T4")
 _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
+_UHashable = TypeVar("_UHashable", bound=Hashable)
 MaybeIterable = _T | Iterable[_T]
 
 
@@ -484,114 +484,46 @@ def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
     return iter(partial(take, n, iter(iterable)), [])
 
 
-class _SupportsHashAndLT(Protocol):
-    @override
-    def __hash__(self) -> int: ...  # pragma: no cover
-    def __lt__(self, other: Any, /) -> bool: ...  # pragma: no cover
-
-
-_TSupportsHashAndSort = TypeVar("_TSupportsHashAndSort", bound=_SupportsHashAndLT)
-_USupportsHashAndSort = TypeVar("_USupportsHashAndSort", bound=_SupportsHashAndLT)
-
-
-class Collection(frozenset[_TSupportsHashAndSort]):
+class Collection(frozenset[_THashable]):
     """A collection of hashable, sortable items."""
 
-    def __new__(cls, *item_or_items: MaybeIterable[_TSupportsHashAndSort]) -> Self:
+    def __new__(cls, *item_or_items: MaybeIterable[_THashable]) -> Self:
         items = list(chain(*map(always_iterable, item_or_items)))
         cls.check_items(items)
         return super().__new__(cls, items)
 
-    def __init__(self, *item_or_items: MaybeIterable[_TSupportsHashAndSort]) -> None:
+    def __init__(self, *item_or_items: MaybeIterable[_THashable]) -> None:
         super().__init__()
         _ = item_or_items
 
     @override
-    def __and__(self, other: MaybeIterable[_TSupportsHashAndSort], /) -> Self:
+    def __and__(self, other: MaybeIterable[_THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__and__(other))
-        return self.__and__(type(self)(always_iterable(other)))
-
-    @overload
-    def __getitem__(
-        self, item: int | _TSupportsHashAndSort, /
-    ) -> _TSupportsHashAndSort: ...
-    @overload
-    def __getitem__(
-        self,
-        item: Sequence[int]
-        | slice
-        | tuple[int, ...]
-        | tuple[_TSupportsHashAndSort, ...],
-        /,
-    ) -> Self: ...
-    def __getitem__(
-        self,
-        item: int
-        | slice
-        | Sequence[int]
-        | tuple[int, ...]
-        | tuple[_TSupportsHashAndSort, ...]
-        | _TSupportsHashAndSort,
-        /,
-    ) -> _TSupportsHashAndSort | Self:
-        if isinstance(item, int):
-            return sorted(self)[item]
-        if isinstance(item, slice):
-            return type(self)(sorted(self)[item])
-        if isinstance(item, tuple):
-            if all(isinstance(i, int) for i in item):
-                item = cast(tuple[int, ...], item)
-                return type(self)(v for i, v in enumerate(sorted(self)) if i in item)
-            item = cast(tuple[_TSupportsHashAndSort, ...], item)
-            return self & item
-        if isinstance(item, Sequence):
-            return type(self)(v for i, v in enumerate(sorted(self)) if i in item)
-        try:
-            return one(i for i in self if i == item)
-        except OneEmptyError:
-            raise KeyError(item) from None
+        return self.__and__(type(self)(other))
 
     @override
-    def __iter__(self) -> Iterator[_TSupportsHashAndSort]:
-        yield from sorted(super().__iter__())
-
-    @override
-    def __or__(self, other: MaybeIterable[_TSupportsHashAndSort], /) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __or__(self, other: MaybeIterable[_THashable], /) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(other, type(self)):
             return type(self)(super().__or__(other))
         return self.__or__(type(self)(other))
 
     @override
-    def __sub__(
-        self, other: int | Sequence[int] | MaybeIterable[_TSupportsHashAndSort], /
-    ) -> Self:
-        if isinstance(other, int):
-            return self - self[other]
-        if isinstance(other, Sequence) and all(isinstance(i, int) for i in other):
-            other = cast(Sequence[int], other)
-            return self - self[other]
+    def __sub__(self, other: MaybeIterable[_THashable], /) -> Self:
         if isinstance(other, type(self)):
             return type(self)(super().__sub__(other))
-        other = cast(Iterable[_TSupportsHashAndSort], other)
         return self.__sub__(type(self)(other))
 
     @classmethod
-    def check_items(cls, items: Iterable[_TSupportsHashAndSort], /) -> None:
+    def check_items(cls, items: Iterable[_THashable], /) -> None:
         _ = items
 
-    def filter(self, func: Callable[[_TSupportsHashAndSort], bool], /) -> Self:
+    def filter(self, func: Callable[[_THashable], bool], /) -> Self:
         return type(self)(filter(func, self))
 
-    def get(self, item: int | _TSupportsHashAndSort, /) -> _TSupportsHashAndSort | None:
-        try:
-            return self[item]
-        except (IndexError, KeyError):
-            return None
-
     def map(
-        self, func: Callable[[_TSupportsHashAndSort], _USupportsHashAndSort], /
-    ) -> Collection[_USupportsHashAndSort]:
+        self, func: Callable[[_THashable], _UHashable], /
+    ) -> Collection[_UHashable]:
         values = cast(Any, map(func, self))
         return cast(Any, type(self)(values))
 
