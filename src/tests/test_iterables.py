@@ -533,6 +533,10 @@ class TestCollection:
         expected = Collection(_Item(1), _Item(2))
         assert result == expected
 
+    def test_hash(self) -> None:
+        collection = Collection(map(_Item, range(3)))
+        _ = hash(collection)
+
     def test_init_one_singleton(self) -> None:
         collection = Collection(_Item(1))
         assert isinstance(collection, Collection)
