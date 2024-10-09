@@ -749,13 +749,22 @@ class TestFrozenSet:
     def test_and_singleton(self) -> None:
         collection = FrozenSet(map(_Item, range(3)))
         result = collection & _Item(1)
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1))
         assert result == expected
 
     def test_and_iterable(self) -> None:
         collection = FrozenSet(map(_Item, range(4)))
         result = collection & FrozenSet(_Item(1), _Item(2))
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_filter(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection.filter(lambda item: item.n % 2 == 0)
+        assert isinstance(result, FrozenSet)
+        expected = FrozenSet(_Item(0), _Item(2))
         assert result == expected
 
     def test_get_item_single_int(self) -> None:
@@ -778,24 +787,28 @@ class TestFrozenSet:
     def test_get_item_slice(self) -> None:
         collection = FrozenSet(map(_Item, range(4)))
         result = collection[1:3]
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1), _Item(2))
         assert result == expected
 
     def test_get_item_multiple_ints(self) -> None:
         collection = FrozenSet(map(_Item, range(4)))
         result = collection[1, 2]
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1), _Item(2))
         assert result == expected
 
     def test_get_item_multiple_items(self) -> None:
         collection = FrozenSet(map(_Item, range(4)))
         result = collection[_Item(1), _Item(2)]
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1), _Item(2))
         assert result == expected
 
     def test_get_item_sequence_ints(self) -> None:
         collection = FrozenSet(map(_Item, range(4)))
         result = collection[[1, 2]]
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(_Item(1), _Item(2))
         assert result == expected
 
@@ -820,15 +833,37 @@ class TestFrozenSet:
         assert isinstance(collection, FrozenSet)
         assert len(collection) == 3
 
+    def test_iter(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = list(collection)
+        expected = list(map(_Item, range(3)))
+        assert result == expected
+
+    def test_map_return_same_type(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.map(lambda item: replace(item, n=item.n + 1))
+        assert isinstance(result, FrozenSet)
+        expected = FrozenSet(map(_Item, range(1, 4)))
+        assert result == expected
+
+    def test_map_return_different_type(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.map(lambda item: item.n)
+        assert isinstance(result, FrozenSet)
+        expected = FrozenSet(range(3))
+        assert result == expected
+
     def test_or_singleton(self) -> None:
         collection = FrozenSet(map(_Item, range(3)))
         result = collection | _Item(3)
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(map(_Item, range(4)))
         assert result == expected
 
     def test_or_iterable(self) -> None:
         collection = FrozenSet(map(_Item, range(3)))
         result = collection | FrozenSet(map(_Item, range(1, 4)))
+        assert isinstance(result, FrozenSet)
         expected = FrozenSet(map(_Item, range(4)))
         assert result == expected
 
