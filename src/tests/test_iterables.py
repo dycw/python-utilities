@@ -429,7 +429,7 @@ class TestChunked:
         assert result == expected
 
 
-@dataclass(order=True, unsafe_hash=True, slots=True)
+@dataclass(unsafe_hash=True, slots=True)
 class _Item:
     n: int
 
@@ -463,78 +463,6 @@ class TestCollection:
         expected = Collection(_Item(0), _Item(2))
         assert result == expected
 
-    def test_get_single_int_ok(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.get(1)
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_single_int_fail(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.get(3)
-        assert result is None
-
-    def test_get_single_item_ok(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.get(_Item(1))
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_single_item_fail(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection.get(_Item(3))
-        assert result is None
-
-    def test_get_item_single_int_ok(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection[1]
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_item_single_int_fail(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        with raises(IndexError):
-            _ = collection[3]
-
-    def test_get_item_single_item_ok(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection[_Item(1)]
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_item_single_item_fail(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        with raises(KeyError):
-            _ = collection[_Item(3)]
-
-    def test_get_item_slice(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection[1:3]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_multiple_ints(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection[1, 2]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_multiple_items(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection[_Item(1), _Item(2)]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_sequence_ints(self) -> None:
-        collection = Collection(map(_Item, range(4)))
-        result = collection[[1, 2]]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1), _Item(2))
-        assert result == expected
-
     def test_hash(self) -> None:
         collection = Collection(map(_Item, range(3)))
         _ = hash(collection)
@@ -550,12 +478,6 @@ class TestCollection:
 
         with raises(ValueError, match="n >= 1 is not permitted"):
             _ = SubCollection(map(_Item, range(3)))
-
-    def test_iter(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = list(collection)
-        expected = list(map(_Item, range(3)))
-        assert result == expected
 
     def test_map_return_same_type(self) -> None:
         collection = Collection(map(_Item, range(3)))
@@ -625,13 +547,6 @@ class TestCollection:
         expected = Collection(map(_Item, range(4)))
         assert result == expected
 
-    def test_sub_single_int(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - 1
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
     def test_sub_single_item(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection - _Item(1)
@@ -646,16 +561,9 @@ class TestCollection:
         expected = Collection(_Item(0), _Item(2))
         assert result == expected
 
-    def test_sub_iterable_items(self) -> None:
+    def test_sub_iterable(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection - [_Item(1)]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_iterable_ints(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - [1]
         assert isinstance(result, Collection)
         expected = Collection(_Item(0), _Item(2))
         assert result == expected
