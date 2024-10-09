@@ -1049,7 +1049,7 @@ class TestRollingParameters:
             _RollingParametersMinPeriodsError,
             match="Exponential rolling requires 'min_periods' to be set; got None",
         ):
-            _ = rolling_parameters(  # pyright: ignore[reportCallIssue]
+            _ = rolling_parameters(
                 e_com=e_com, e_span=e_span, e_half_life=e_half_life, e_alpha=e_alpha
             )
 
@@ -1060,7 +1060,7 @@ class TestRollingParameters:
                 r"Exactly one of simple window, exponential center of mass (γ), exponential span (θ), exponential half-life (λ) or exponential smoothing factor (α) must be given; got s_window=None, γ=None, θ=None, λ=None and α=None"  # noqa: RUF001
             ),
         ):
-            _ = rolling_parameters()  # pyright: ignore[reportCallIssue]
+            _ = rolling_parameters()
 
 
 class TestSetFirstRowAsColumns:

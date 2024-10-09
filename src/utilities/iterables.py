@@ -503,6 +503,7 @@ class Collection(frozenset[_TSupportsHashAndSort]):
         return super().__new__(cls, items)
 
     def __init__(self, *item_or_items: MaybeIterable[_TSupportsHashAndSort]) -> None:
+        super().__init__()
         _ = item_or_items
 
     @override
