@@ -661,13 +661,14 @@ class FrozenSet(frozenset[_TSupportsHashAndSort]):
     def get(self, item: int | _TSupportsHashAndSort, /) -> _TSupportsHashAndSort | None:
         try:
             return self[item]
-        except KeyError:
+        except (IndexError, KeyError):
             return None
 
     def map(
         self, func: Callable[[_TSupportsHashAndSort], _USupportsHashAndSort], /
     ) -> FrozenSet[_USupportsHashAndSort]:
-        return type(self)(map(func, self))
+        values = cast(Any, map(func, self))
+        return cast(Any, type(self)(values))
 
 
 @overload

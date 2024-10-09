@@ -558,11 +558,38 @@ class TestFrozenSet:
         expected = FrozenSet(_Item(0), _Item(2))
         assert result == expected
 
-    def test_get_item_single_int(self) -> None:
+    def test_get_single_int_ok(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.get(1)
+        expected = _Item(1)
+        assert result == expected
+
+    def test_get_single_int_fail(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.get(3)
+        assert result is None
+
+    def test_get_single_item_ok(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.get(_Item(1))
+        expected = _Item(1)
+        assert result == expected
+
+    def test_get_single_item_fail(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection.get(_Item(3))
+        assert result is None
+
+    def test_get_item_single_int_ok(self) -> None:
         collection = FrozenSet(map(_Item, range(3)))
         result = collection[1]
         expected = _Item(1)
         assert result == expected
+
+    def test_get_item_single_int_fail(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        with raises(IndexError):
+            _ = collection[3]
 
     def test_get_item_single_item_ok(self) -> None:
         collection = FrozenSet(map(_Item, range(3)))
