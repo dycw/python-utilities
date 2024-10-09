@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeGuard
+from typing import TYPE_CHECKING, Any, ClassVar, TypeGuard
 
 from pytest import mark, param, raises
 
@@ -18,13 +18,21 @@ if TYPE_CHECKING:
 
 
 class TestBucketMapping:
+    iterable: ClassVar[list[str]] = ["a1", "b1", "c1", "a2", "b2", "c2", "b3"]
+
     def test_main(self) -> None:
-        iterable = ["a1", "b1", "c1", "a2", "b2", "c2", "b3"]
-        mapping = bucket_mapping(iterable, lambda x: x[0])
+        mapping = bucket_mapping(self.iterable, lambda x: x[0])
         assert set(mapping) == {"a", "b", "c"}
         assert list(mapping["a"]) == ["a1", "a2"]
         assert list(mapping["b"]) == ["b1", "b2", "b3"]
         assert list(mapping["c"]) == ["c1", "c2"]
+
+    def test_list(self) -> None:
+        mapping = bucket_mapping(self.iterable, lambda x: x[0], list=True)
+        assert set(mapping) == {"a", "b", "c"}
+        assert mapping["a"] == ["a1", "a2"]
+        assert mapping["b"] == ["b1", "b2", "b3"]
+        assert mapping["c"] == ["c1", "c2"]
 
 
 class TestPartitionTypeguard:
