@@ -35,7 +35,6 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
-    FrozenSet,
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
@@ -441,18 +440,11 @@ class TestCollection:
         expected = Collection(_Item(1))
         assert result == expected
 
-    def test_and_collection(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection & Collection(_Item(1))
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(1))
-        assert result == expected
-
     def test_and_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection & [_Item(1)]
+        collection = Collection(map(_Item, range(4)))
+        result = collection & Collection(_Item(1), _Item(2))
         assert isinstance(result, Collection)
-        expected = Collection(_Item(1))
+        expected = Collection(_Item(1), _Item(2))
         assert result == expected
 
     def test_filter(self) -> None:
@@ -534,10 +526,6 @@ class TestCollection:
         expected = Collection(_Item(1), _Item(2))
         assert result == expected
 
-    def test_hash(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        _ = hash(collection)
-
     def test_init_one_singleton(self) -> None:
         collection = Collection(_Item(1))
         assert isinstance(collection, Collection)
@@ -586,53 +574,11 @@ class TestCollection:
         expected = Collection(map(_Item, range(4)))
         assert result == expected
 
-    def test_or_collection(self) -> None:
+    def test_or_iterable(self) -> None:
         collection = Collection(map(_Item, range(3)))
         result = collection | Collection(map(_Item, range(1, 4)))
         assert isinstance(result, Collection)
         expected = Collection(map(_Item, range(4)))
-        assert result == expected
-
-    def test_or_iterable(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection | map(_Item, range(1, 4))
-        assert isinstance(result, Collection)
-        expected = Collection(map(_Item, range(4)))
-        assert result == expected
-
-    def test_sub_single_int(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - 1
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_single_item(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - _Item(1)
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_collection(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - Collection(_Item(1))
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_iterable_items(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - [_Item(1)]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_sub_iterable_ints(self) -> None:
-        collection = Collection(map(_Item, range(3)))
-        result = collection - [1]
-        assert isinstance(result, Collection)
-        expected = Collection(_Item(0), _Item(2))
         assert result == expected
 
 
@@ -737,161 +683,6 @@ class TestFilterIncludeAndExclude:
             )
         )
         expected = [Example(n=n) for n in [3, 4]]
-        assert result == expected
-
-
-@dataclass(order=True, unsafe_hash=True, slots=True)
-class _Item:
-    n: int
-
-
-class TestFrozenSet:
-    def test_and_singleton(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection & _Item(1)
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1))
-        assert result == expected
-
-    def test_and_iterable(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection & FrozenSet(_Item(1), _Item(2))
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_filter(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection.filter(lambda item: item.n % 2 == 0)
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(0), _Item(2))
-        assert result == expected
-
-    def test_get_single_int_ok(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.get(1)
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_single_int_fail(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.get(3)
-        assert result is None
-
-    def test_get_single_item_ok(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.get(_Item(1))
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_single_item_fail(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.get(_Item(3))
-        assert result is None
-
-    def test_get_item_single_int_ok(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection[1]
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_item_single_int_fail(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        with raises(IndexError):
-            _ = collection[3]
-
-    def test_get_item_single_item_ok(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection[_Item(1)]
-        expected = _Item(1)
-        assert result == expected
-
-    def test_get_item_single_item_fail(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        with raises(KeyError):
-            _ = collection[_Item(3)]
-
-    def test_get_item_slice(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection[1:3]
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_multiple_ints(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection[1, 2]
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_multiple_items(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection[_Item(1), _Item(2)]
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_get_item_sequence_ints(self) -> None:
-        collection = FrozenSet(map(_Item, range(4)))
-        result = collection[[1, 2]]
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(_Item(1), _Item(2))
-        assert result == expected
-
-    def test_init_one_singleton(self) -> None:
-        collection = FrozenSet(_Item(1))
-        assert isinstance(collection, FrozenSet)
-        assert len(collection) == 1
-        assert one(collection) == _Item(1)
-
-    def test_init_one_iterable(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        assert isinstance(collection, FrozenSet)
-        assert len(collection) == 3
-
-    def test_init_many_singletons(self) -> None:
-        collection = FrozenSet(_Item(1), _Item(2), _Item(3))
-        assert isinstance(collection, FrozenSet)
-        assert len(collection) == 3
-
-    def test_init_many_iterables(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)), map(_Item, range(3)))
-        assert isinstance(collection, FrozenSet)
-        assert len(collection) == 3
-
-    def test_iter(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = list(collection)
-        expected = list(map(_Item, range(3)))
-        assert result == expected
-
-    def test_map_return_same_type(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.map(lambda item: replace(item, n=item.n + 1))
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(map(_Item, range(1, 4)))
-        assert result == expected
-
-    def test_map_return_different_type(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection.map(lambda item: item.n)
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(range(3))
-        assert result == expected
-
-    def test_or_singleton(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection | _Item(3)
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(map(_Item, range(4)))
-        assert result == expected
-
-    def test_or_iterable(self) -> None:
-        collection = FrozenSet(map(_Item, range(3)))
-        result = collection | FrozenSet(map(_Item, range(1, 4)))
-        assert isinstance(result, FrozenSet)
-        expected = FrozenSet(map(_Item, range(4)))
         assert result == expected
 
 
