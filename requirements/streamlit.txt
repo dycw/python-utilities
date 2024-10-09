@@ -13,7 +13,7 @@ cachetools==5.5.0
     # via streamlit
 certifi==2024.8.30
     # via requests
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 click==8.1.7
     # via streamlit
@@ -35,15 +35,15 @@ jinja2==3.1.4
     #   pydeck
 jsonschema==4.23.0
     # via altair
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 markdown-it-py==3.0.0
     # via rich
-markupsafe==3.0.0
+markupsafe==3.0.1
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-narwhals==1.9.1
+narwhals==1.9.2
     # via altair
 numpy==2.1.2
     # via
