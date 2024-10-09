@@ -486,8 +486,8 @@ def chunked(iterable: Iterable[_T], n: int, /) -> Iterator[Sequence[_T]]:
 
 class _SupportsHashAndLT(Protocol):
     @override
-    def __hash__(self) -> int: ...
-    def __lt__(self, other: Any, /) -> bool: ...
+    def __hash__(self) -> int: ...  # pragma: no cover
+    def __lt__(self, other: Any, /) -> bool: ...  # pragma: no cover
 
 
 _TSupportsHashAndSort = TypeVar("_TSupportsHashAndSort", bound=_SupportsHashAndLT)
@@ -559,9 +559,17 @@ class Collection(frozenset[_TSupportsHashAndSort]):
         return self.__or__(type(self)(other))
 
     @override
-    def __sub__(self, other: MaybeIterable[_TSupportsHashAndSort], /) -> Self:
+    def __sub__(
+        self, other: int | Sequence[int] | MaybeIterable[_TSupportsHashAndSort], /
+    ) -> Self:
+        if isinstance(other, int):
+            return self - self[other]
+        if isinstance(other, Sequence) and all(isinstance(i, int) for i in other):
+            other = cast(Sequence[int], other)
+            return self - self[other]
         if isinstance(other, type(self)):
             return type(self)(super().__sub__(other))
+        other = cast(Iterable[_TSupportsHashAndSort], other)
         return self.__sub__(type(self)(other))
 
     def filter(self, func: Callable[[_TSupportsHashAndSort], bool], /) -> Self:
