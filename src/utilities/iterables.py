@@ -497,10 +497,12 @@ _USupportsHashAndSort = TypeVar("_USupportsHashAndSort", bound=_SupportsHashAndL
 class Collection(frozenset[_TSupportsHashAndSort]):
     """A collection of hashable, sortable items."""
 
-    @override
     def __new__(cls, *item_or_items: MaybeIterable[_TSupportsHashAndSort]) -> Self:
         items = list(chain(*map(always_iterable, item_or_items)))
         return super().__new__(cls, items)
+
+    def __init__(self, *item_or_items: MaybeIterable[_TSupportsHashAndSort]) -> None:
+        _ = item_or_items
 
     @override
     def __and__(self, other: MaybeIterable[_TSupportsHashAndSort], /) -> Self:
