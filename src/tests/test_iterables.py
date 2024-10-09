@@ -35,6 +35,7 @@ from utilities.iterables import (
     Collection,
     EnsureIterableError,
     EnsureIterableNotStrError,
+    FrozenSet,
     OneEmptyError,
     OneNonUniqueError,
     OneStrError,
@@ -736,6 +737,99 @@ class TestFilterIncludeAndExclude:
             )
         )
         expected = [Example(n=n) for n in [3, 4]]
+        assert result == expected
+
+
+@dataclass(order=True, unsafe_hash=True, slots=True)
+class _Item:
+    n: int
+
+
+class TestFrozenSet:
+    def test_and_singleton(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection & _Item(1)
+        expected = FrozenSet(_Item(1))
+        assert result == expected
+
+    def test_and_iterable(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection & FrozenSet(_Item(1), _Item(2))
+        expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_get_item_single_int(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection[1]
+        expected = _Item(1)
+        assert result == expected
+
+    def test_get_item_single_item_ok(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection[_Item(1)]
+        expected = _Item(1)
+        assert result == expected
+
+    def test_get_item_single_item_fail(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        with raises(KeyError):
+            _ = collection[_Item(3)]
+
+    def test_get_item_slice(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection[1:3]
+        expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_get_item_multiple_ints(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection[1, 2]
+        expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_get_item_multiple_items(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection[_Item(1), _Item(2)]
+        expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_get_item_sequence_ints(self) -> None:
+        collection = FrozenSet(map(_Item, range(4)))
+        result = collection[[1, 2]]
+        expected = FrozenSet(_Item(1), _Item(2))
+        assert result == expected
+
+    def test_init_one_singleton(self) -> None:
+        collection = FrozenSet(_Item(1))
+        assert isinstance(collection, FrozenSet)
+        assert len(collection) == 1
+        assert one(collection) == _Item(1)
+
+    def test_init_one_iterable(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        assert isinstance(collection, FrozenSet)
+        assert len(collection) == 3
+
+    def test_init_many_singletons(self) -> None:
+        collection = FrozenSet(_Item(1), _Item(2), _Item(3))
+        assert isinstance(collection, FrozenSet)
+        assert len(collection) == 3
+
+    def test_init_many_iterables(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)), map(_Item, range(3)))
+        assert isinstance(collection, FrozenSet)
+        assert len(collection) == 3
+
+    def test_or_singleton(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection | _Item(3)
+        expected = FrozenSet(map(_Item, range(4)))
+        assert result == expected
+
+    def test_or_iterable(self) -> None:
+        collection = FrozenSet(map(_Item, range(3)))
+        result = collection | FrozenSet(map(_Item, range(1, 4)))
+        expected = FrozenSet(map(_Item, range(4)))
         assert result == expected
 
 
