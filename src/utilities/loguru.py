@@ -209,7 +209,7 @@ def log(
         core_depth = depth + 2
         with Timer() as timer:
             if len(kwargs) >= 1:
-                with (
+                with (  # pragma: no cover
                     logger.contextualize(**kwargs),
                     _log_core(
                         timer,
