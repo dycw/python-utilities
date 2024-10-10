@@ -1260,7 +1260,24 @@ class TestYieldRowsAsDataclasses:
     @mark.parametrize(
         "check_types", [param("none"), param("first"), param("all")], ids=str
     )
-    def test_empty(self, *, check_types: Literal["first", "all"]) -> None:
+    def test_missing_columns_for_fields_with_defaults(
+        self, *, check_types: Literal["none", "first", "all"]
+    ) -> None:
+        df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
+
+        @dataclass(kw_only=True, slots=True)
+        class Row:
+            x: int
+            y: int | None = None
+
+        result = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
+        expected = [Row(x=1), Row(x=2), Row(x=3)]
+        assert result == expected
+
+    @mark.parametrize(
+        "check_types", [param("none"), param("first"), param("all")], ids=str
+    )
+    def test_empty(self, *, check_types: Literal["none", "first", "all"]) -> None:
         df = DataFrame([], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
@@ -1271,7 +1288,12 @@ class TestYieldRowsAsDataclasses:
         expected = []
         assert result == expected
 
-    def test_error_superset(self) -> None:
+    @mark.parametrize(
+        "check_types", [param("none"), param("first"), param("all")], ids=str
+    )
+    def test_error_superset(
+        self, *, check_types: Literal["none", "first", "all"]
+    ) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")
 
         @dataclass(kw_only=True, slots=True)
@@ -1282,7 +1304,7 @@ class TestYieldRowsAsDataclasses:
             _YieldRowsAsDataClassesColumnsSuperSetError,
             match="DataFrame columns .* must be a superset of dataclass fields .*; dataclass had extra fields .*",
         ):
-            _ = list(yield_rows_as_dataclasses(df, Row))
+            _ = list(yield_rows_as_dataclasses(df, Row, check_types=check_types))
 
     def test_error_first_wrong_type(self) -> None:
         df = DataFrame([(1,), (2,), (3,)], schema={"x": Int64}, orient="row")

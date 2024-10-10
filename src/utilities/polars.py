@@ -5,7 +5,7 @@ import reprlib
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
-from dataclasses import asdict, dataclass
+from dataclasses import _MISSING_TYPE, asdict, dataclass, fields
 from datetime import timezone
 from enum import Enum
 from functools import partial, reduce
@@ -57,7 +57,7 @@ from polars.exceptions import ColumnNotFoundError, OutOfBoundsError
 from polars.testing import assert_frame_equal
 from typing_extensions import override
 
-from utilities.dataclasses import Dataclass, is_dataclass_class, yield_field_names
+from utilities.dataclasses import Dataclass, is_dataclass_class
 from utilities.errors import redirect_error
 from utilities.iterables import (
     CheckIterablesEqualError,
@@ -939,9 +939,14 @@ def yield_rows_as_dataclasses(
     from dacite.exceptions import WrongTypeError
 
     columns = df.columns
-    fields = set(yield_field_names(cls))
+    required: set[str] = set()
+    for field in fields(cls):
+        if isinstance(field.default, _MISSING_TYPE) and isinstance(
+            field.default_factory, _MISSING_TYPE
+        ):
+            required.add(field.name)
     try:
-        check_superset(columns, fields)
+        check_superset(columns, required)
     except CheckSuperSetError as error:
         raise _YieldRowsAsDataClassesColumnsSuperSetError(
             df=df, cls=cls, left=error.left, right=error.right, extra=error.extra
