@@ -9,7 +9,7 @@ attrs==24.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-coverage==7.6.1
+coverage==7.6.2
     # via pytest-cov
 deprecated==1.2.14
     # via pikepdf

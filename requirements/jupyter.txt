@@ -38,7 +38,7 @@ charset-normalizer==3.4.0
     # via requests
 comm==0.2.2
     # via ipykernel
-coverage==7.6.1
+coverage==7.6.2
     # via pytest-cov
 debugpy==1.8.6
     # via ipykernel
