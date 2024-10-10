@@ -72,7 +72,7 @@ colorlog==6.8.2
     # via
     #   nox
     #   optuna
-coverage==7.6.1
+coverage==7.6.2
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -88,7 +88,7 @@ defusedxml==0.7.1
     # via fpdf2
 deprecated==1.2.14
     # via pikepdf
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
 ecos==2.0.14
     # via cvxpy

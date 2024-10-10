@@ -2,7 +2,7 @@
 #    uv pip compile --extra=zzz-test-defaults --extra=zzz-test-subprocess --prerelease=disallow --output-file=requirements/subprocess.txt --python-version=3.11 pyproject.toml
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.1
+coverage==7.6.2
     # via pytest-cov
 hypothesis==6.112.5
     # via dycw-utilities (pyproject.toml)
