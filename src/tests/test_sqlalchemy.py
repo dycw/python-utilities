@@ -7,7 +7,7 @@ from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import sqlalchemy
-from hypothesis import assume, given
+from hypothesis import assume, given, settings
 from hypothesis.strategies import (
     DataObject,
     SearchStrategy,
@@ -174,6 +174,7 @@ from utilities.sqlalchemy import (
     mapped_class_to_dict,
     parse_engine,
     reflect_table,
+    selectable_to_string,
     serialize_engine,
     upsert_items,
     upsert_items_async,
@@ -181,6 +182,7 @@ from utilities.sqlalchemy import (
     yield_connection_async,
     yield_primary_key_columns,
 )
+from utilities.text import strip_and_dedent
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -1850,6 +1852,28 @@ class TestReflectTable:
         table = Table("example", MetaData(), Column("Id", Integer, primary_key=True))
         with raises(NoSuchTableError):
             _ = reflect_table(table, engine)
+
+
+class TestSelectableToString:
+    @given(engine=sqlite_engines())
+    @settings(max_examples=1)
+    def test_main(self, *, engine: Engine) -> None:
+        table = Table(
+            "example",
+            MetaData(),
+            Column("id_", Integer, primary_key=True),
+            Column("value", Boolean, nullable=True),
+        )
+        sel = select(table).where(table.c.value >= 1)
+        result = selectable_to_string(sel, engine)
+        expected = strip_and_dedent(
+            """
+                SELECT example.id_, example.value --
+                FROM example --
+                WHERE example.value >= 1
+            """.replace("--\n", "\n")
+        )
+        assert result == expected
 
 
 class TestSerializeEngine:

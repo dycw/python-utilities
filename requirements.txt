@@ -186,7 +186,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-narwhals==1.9.2
+narwhals==1.9.3
     # via altair
 nest-asyncio==1.6.0
     # via dycw-utilities (pyproject.toml)
@@ -219,7 +219,7 @@ optuna==4.0.0
     # via dycw-utilities (pyproject.toml)
 orjson==3.10.7
     # via dycw-utilities (pyproject.toml)
-osqp==0.6.7.post2
+osqp==0.6.7.post3
     # via cvxpy
 packaging==24.1
     # via
@@ -404,7 +404,7 @@ tqdm==4.66.5
     #   dycw-utilities (pyproject.toml)
     #   optuna
     #   pqdm
-trove-classifiers==2024.9.12
+trove-classifiers==2024.10.12
     # via hatchling
 typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
@@ -447,7 +447,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.14.0
+yarl==1.15.0
     # via aiohttp
 zipp==3.20.2
     # via importlib-metadata

@@ -23,7 +23,7 @@ numpy==2.1.2
     #   qdldl
     #   scipy
     #   scs
-osqp==0.6.7.post2
+osqp==0.6.7.post3
     # via cvxpy
 packaging==24.1
     # via

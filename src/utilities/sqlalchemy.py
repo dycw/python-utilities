@@ -28,6 +28,7 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     PrimaryKeyConstraint,
+    Selectable,
     String,
     Table,
     Unicode,
@@ -1201,6 +1202,16 @@ def reflect_table(
         return Table(name, metadata, autoload_with=conn)
 
 
+def selectable_to_string(
+    selectable: Selectable[Any], engine_or_conn: MaybeAsyncEngineOrConnection, /
+) -> str:
+    """Convert a selectable into a string."""
+    com = selectable.compile(
+        dialect=engine_or_conn.dialect, compile_kwargs={"literal_binds": True}
+    )
+    return str(com)
+
+
 def serialize_engine(engine: Engine, /) -> str:
     """Serialize an Engine."""
     return engine.url.render_as_string(hide_password=False)
@@ -1493,6 +1504,7 @@ __all__ = [
     "is_upsert_item_pair",
     "mapped_class_to_dict",
     "parse_engine",
+    "selectable_to_string",
     "serialize_engine",
     "upsert_items",
     "upsert_items_async",
