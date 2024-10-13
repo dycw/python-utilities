@@ -17,7 +17,7 @@ altair==5.4.1
     #   vegafusion
 annotated-types==0.7.0
     # via pydantic
-anyio==4.6.0
+anyio==4.6.1
     # via httpx
 argcomplete==3.5.1
     # via nox
@@ -102,7 +102,7 @@ fonttools==4.54.1
     # via fpdf2
 fpdf2==2.8.1
     # via dycw-utilities (pyproject.toml)
-frozendict==2.4.5
+frozendict==2.4.6
     # via atools
 frozenlist==1.4.1
     # via
@@ -404,7 +404,7 @@ tqdm==4.66.5
     #   dycw-utilities (pyproject.toml)
     #   optuna
     #   pqdm
-trove-classifiers==2024.10.12
+trove-classifiers==2024.10.13
     # via hatchling
 typed-settings==24.5.0
     # via dycw-utilities (pyproject.toml)
@@ -447,7 +447,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.15.0
+yarl==1.15.1
     # via aiohttp
 zipp==3.20.2
     # via importlib-metadata
