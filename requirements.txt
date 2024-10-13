@@ -126,7 +126,7 @@ httpx==0.27.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.112.5
+hypothesis==6.115.0
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -296,7 +296,7 @@ pygments==2.18.0
     # via rich
 pyhumps==3.8.0
     # via dycw-utilities (pyproject.toml)
-pyinstrument==4.7.3
+pyinstrument==5.0.0
     # via dycw-utilities (pyproject.toml)
 pypiserver==2.2.0
     # via dycw-utilities (pyproject.toml)
