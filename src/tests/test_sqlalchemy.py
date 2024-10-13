@@ -1167,7 +1167,7 @@ class TestGetTable:
         with raises(
             GetTableError, match="Object .* must be a Table or mapped class; got .*"
         ):
-            _ = get_table(type(None))
+            _ = get_table(cast(Any, type(None)))
 
 
 class TestGetTableName:

@@ -58,6 +58,7 @@ _T5 = TypeVar("_T5")
 _THashable = TypeVar("_THashable", bound=Hashable)
 _UHashable = TypeVar("_UHashable", bound=Hashable)
 MaybeIterable = _T | Iterable[_T]
+MaybeIterableHashable = _THashable | tuple[_THashable, ...]
 
 
 def always_iterable(obj: MaybeIterable[_T], /) -> Iterable[_T]:
@@ -848,6 +849,7 @@ __all__ = [
     "EnsureIterableError",
     "EnsureIterableNotStrError",
     "MaybeIterable",
+    "MaybeIterableHashable",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",

@@ -387,8 +387,8 @@ def check_table_against_reflection(
 
 
 def _check_tables_equal(
-    x: Any,
-    y: Any,
+    x: TableOrMappedClass,
+    y: TableOrMappedClass,
     /,
     *,
     snake_table: bool = False,
@@ -762,12 +762,12 @@ class GetDialectError(Exception):
         )
 
 
-def get_table(obj: Any, /) -> Table:
+def get_table(obj: TableOrMappedClass, /) -> Table:
     """Get the table from a Table or mapped class."""
     if isinstance(obj, Table):
         return obj
     if is_mapped_class(obj):
-        return obj.__table__
+        return cast(Table, obj.__table__)
     raise GetTableError(obj=obj)
 
 
@@ -1461,7 +1461,7 @@ async def yield_connection_async(
         yield engine_or_conn
 
 
-def yield_primary_key_columns(obj: Any, /) -> Iterator[Column]:
+def yield_primary_key_columns(obj: TableOrMappedClass, /) -> Iterator[Column]:
     """Yield the primary key columns of a table."""
     table = get_table(obj)
     yield from table.primary_key
