@@ -238,6 +238,114 @@ class ZonedDateTime(ParamType):
             self.fail(f"Unable to parse {value}", param, ctx)
 
 
+# parameters - frozenset
+
+
+class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
+    """A frozenset-valued parameter."""
+
+    def __init__(
+        self, param: _TParam, /, *, separator: str = ",", empty: str = SENTINEL_REPR
+    ) -> None:
+        self.name = f"FROZENSET[{param.name}]"
+        self._param = param
+        self._separator = separator
+        self._empty = empty
+        super().__init__()
+
+    @override
+    def __repr__(self) -> str:
+        desc = repr(self._param)
+        return f"FROZENSET[{desc}]"
+
+    @override
+    def convert(
+        self, value: frozenset[_T] | str, param: Parameter | None, ctx: Context | None
+    ) -> frozenset[_T]:
+        """Convert a value into the `ListDates` type."""
+        if isinstance(value, frozenset):
+            return value
+
+        values = split_str(value, separator=self._separator, empty=self._empty)
+        return frozenset(self._param.convert(v, param, ctx) for v in values)
+
+    @override
+    def get_metavar(self, param: Parameter) -> str | None:
+        if (metavar := self._param.get_metavar(param)) is None:
+            name = self.name.upper()
+        else:
+            name = f"FROZENSET{metavar}"
+        sep = f"SEP={self._separator}"
+        desc = f"{name} {sep}"
+        return _make_metavar(param, desc)
+
+
+class FrozenSetBools(FrozenSetParameter[BoolParamType, str]):
+    """A frozenset-of-bools-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(BoolParamType(), separator=separator, empty=empty)
+
+
+class FrozenSetDates(FrozenSetParameter[Date, dt.date]):
+    """A frozenset-of-dates-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(Date(), separator=separator, empty=empty)
+
+
+class FrozenSetEnums(FrozenSetParameter[Enum[_E], _E]):
+    """A frozenset-of-enums-valued parameter."""
+
+    def __init__(
+        self,
+        enum: type[_E],
+        /,
+        *,
+        case_sensitive: bool = False,
+        separator: str = ",",
+        empty: str = SENTINEL_REPR,
+    ) -> None:
+        super().__init__(
+            Enum(enum, case_sensitive=case_sensitive), separator=separator, empty=empty
+        )
+
+
+class FrozenSetFloats(FrozenSetParameter[FloatParamType, float]):
+    """A frozenset-of-floats-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(FloatParamType(), separator=separator, empty=empty)
+
+
+class FrozenSetInts(FrozenSetParameter[IntParamType, int]):
+    """A frozenset-of-ints-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(IntParamType(), separator=separator, empty=empty)
+
+
+class FrozenSetMonths(FrozenSetParameter[Month, utilities.datetime.Month]):
+    """A frozenset-of-months-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(Month(), separator=separator, empty=empty)
+
+
+class FrozenSetStrs(FrozenSetParameter[StringParamType, str]):
+    """A frozenset-of-strs-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(StringParamType(), separator=separator, empty=empty)
+
+
+class FrozenSetUUIDs(FrozenSetParameter[UUIDParameterType, UUID]):
+    """A frozenset-of-UUIDs-valued parameter."""
+
+    def __init__(self, *, separator: str = ",", empty: str = SENTINEL_REPR) -> None:
+        super().__init__(UUIDParameterType(), separator=separator, empty=empty)
+
+
 # parameters - list
 
 
@@ -388,12 +496,22 @@ __all__ = [
     "ExistingDirPath",
     "ExistingFilePath",
     "FilePath",
+    "FrozenSetBools",
+    "FrozenSetDates",
+    "FrozenSetEnums",
+    "FrozenSetFloats",
+    "FrozenSetInts",
+    "FrozenSetMonths",
+    "FrozenSetParameter",
+    "FrozenSetStrs",
+    "FrozenSetUUIDs",
     "ListBools",
     "ListDates",
     "ListEnums",
     "ListFloats",
     "ListInts",
     "ListMonths",
+    "ListParameter",
     "ListStrs",
     "ListUUIDs",
     "LocalDateTime",
