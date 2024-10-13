@@ -849,6 +849,7 @@ __all__ = [
     "EnsureIterableError",
     "EnsureIterableNotStrError",
     "MaybeIterable",
+    "MaybeIterableHashable",
     "OneEmptyError",
     "OneError",
     "OneNonUniqueError",
