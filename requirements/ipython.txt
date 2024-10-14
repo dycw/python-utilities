@@ -4,7 +4,7 @@ asttokens==2.4.1
     # via stack-data
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.2
+coverage==7.6.3
     # via pytest-cov
 decorator==5.1.1
     # via ipython

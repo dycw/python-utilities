@@ -4,7 +4,7 @@ astor==0.8.1
     # via dycw-utilities (pyproject.toml)
 attrs==24.2.0
     # via hypothesis
-coverage==7.6.2
+coverage==7.6.3
     # via pytest-cov
 hypothesis==6.115.0
     # via dycw-utilities (pyproject.toml)
