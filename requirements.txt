@@ -17,7 +17,7 @@ altair==5.4.1
     #   vegafusion
 annotated-types==0.7.0
     # via pydantic
-anyio==4.6.1
+anyio==4.6.2
     # via httpx
 argcomplete==3.5.1
     # via nox
@@ -43,7 +43,7 @@ backports-tarfile==1.2.0
     # via jaraco-context
 blinker==1.8.2
     # via streamlit
-bottleneck==1.4.0
+bottleneck==1.4.1
     # via dycw-utilities (pyproject.toml)
 bounded-pool-executor==0.0.3
     # via pqdm
@@ -72,7 +72,7 @@ colorlog==6.8.2
     # via
     #   nox
     #   optuna
-coverage==7.6.2
+coverage==7.6.3
     # via
     #   coverage-conditional-plugin
     #   pytest-cov
@@ -447,7 +447,7 @@ win32-setctime==1.1.0
     # via dycw-utilities (pyproject.toml)
 wrapt==1.16.0
     # via deprecated
-yarl==1.15.1
+yarl==1.15.2
     # via aiohttp
 zipp==3.20.2
     # via importlib-metadata
