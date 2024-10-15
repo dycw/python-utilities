@@ -352,10 +352,10 @@ def _log_core(
                     error_message
                 )
             raise
-        if not (
-            isinstance(exit_level, LogLevel)
-            or not isinstance(container.obj, Sentinel)
-            or (timer >= exit_duration)
+        if (
+            (exit_level is None)
+            and isinstance(container.obj, Sentinel)
+            and (timer <= exit_duration)
         ):
             return
         match exit_level:
