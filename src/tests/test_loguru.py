@@ -280,7 +280,6 @@ class TestLog:
         )
         assert search(expected2, line2), line2
 
-    @mark.only
     def test_exit_variable(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
         handler: HandlerConfiguration = {
@@ -292,14 +291,10 @@ class TestLog:
 
         assert func_test_log_exit_variable(1) == 2
         out = capsys.readouterr().out
-        assert 0, out
         line1, line2 = out.splitlines()
         expected1 = self.trace + r"func_test_log_exit_variable:\d+ - ➢ | {}$"
         assert search(expected1, line1), line1
-        expected2 = (
-            self.trace
-            + r"func_test_log_exit_duration:\d+ - ✔ | {'⏲': \d:\d{2}:\d{2}\.\d{6}}$"
-        )
+        expected2 = self.trace + r"func_test_log_exit_variable:\d+ - ✔ | {'✔': 2}"
         assert search(expected2, line2), line2
 
     def test_contextualize(self, *, capsys: CaptureFixture) -> None:
