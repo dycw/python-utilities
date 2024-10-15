@@ -22,7 +22,6 @@ from typing import (
     TypeVar,
     assert_never,
     cast,
-    overload,
 )
 
 from loguru import logger
@@ -203,9 +202,12 @@ _T = TypeVar("_T")
 
 @dataclass(kw_only=True, slots=True)
 class _LogContainer(Generic[_T]):
+    disable: bool = False
     obj: _T | Sentinel = sentinel
 
     def __call__(self, obj: _T) -> _T:
+        if self.disable:
+            return obj
         if not isinstance(self.obj, Sentinel):
             raise _LogContainerError(old=self.obj, new=obj)
         self.obj = obj
@@ -223,63 +225,6 @@ class _LogContainerError(Exception):
 
 
 @contextmanager
-@overload
-def log(
-    *,
-    context: StrMapping | None = ...,
-    disable: Literal[True],
-    depth: int = ...,
-    entry_level: LogLevel | None = ...,
-    entry_bind: StrMapping | None = ...,
-    entry_message: str = ...,
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    error_bind: StrMapping | None = ...,
-    error_message: str = ...,
-    exit_level: LogLevel | None = ...,
-    exit_duration: Duration = ...,
-    exit_bind: StrMapping | None = ...,
-    exit_message: str = ...,
-    **kwargs: ...,
-) -> Iterator[None]: ...
-@contextmanager
-@overload
-def log(
-    *,
-    context: StrMapping | None = ...,
-    disable: Literal[False] = False,
-    depth: int = ...,
-    entry_level: LogLevel | None = ...,
-    entry_bind: StrMapping | None = ...,
-    entry_message: str = ...,
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    error_bind: StrMapping | None = ...,
-    error_message: str = ...,
-    exit_level: LogLevel | None = ...,
-    exit_duration: Duration = ...,
-    exit_bind: StrMapping | None = ...,
-    exit_message: str = ...,
-    **kwargs: ...,
-) -> Iterator[_LogContainer[Any]]: ...
-@contextmanager
-@overload
-def log(
-    *,
-    context: StrMapping | None = ...,
-    disable: bool = False,
-    depth: int = ...,
-    entry_level: LogLevel | None = ...,
-    entry_bind: StrMapping | None = ...,
-    entry_message: str = ...,
-    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
-    error_bind: StrMapping | None = ...,
-    error_message: str = ...,
-    exit_level: LogLevel | None = ...,
-    exit_duration: Duration = ...,
-    exit_bind: StrMapping | None = ...,
-    exit_message: str = ...,
-    **kwargs: ...,
-) -> Iterator[None] | Iterator[_LogContainer[Any]]: ...
-@contextmanager
 def log(
     *,
     context: StrMapping | None = None,
@@ -296,10 +241,10 @@ def log(
     exit_bind: StrMapping | None = None,
     exit_message: str = "✔",
     **kwargs: Any,
-) -> Iterator[None] | Iterator[_LogContainer[Any]]:
+) -> Iterator[_LogContainer[Any]]:
     """Log the function entry/error/exit/duration."""
     if disable:
-        yield
+        yield _LogContainer(disable=True)
     else:
         core_depth = depth + 2
         if context is not None:
