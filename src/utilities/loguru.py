@@ -6,7 +6,7 @@ import reprlib
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Hashable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum, unique
@@ -226,7 +226,7 @@ class _LogContainerError(Exception):
 @overload
 def log(
     *,
-    context: Mapping[str, Any] | None = ...,
+    context: StrMapping | None = ...,
     disable: Literal[True],
     depth: int = ...,
     entry_level: LogLevel | None = ...,
@@ -245,7 +245,7 @@ def log(
 @overload
 def log(
     *,
-    context: Mapping[str, Any] | None = ...,
+    context: StrMapping | None = ...,
     disable: Literal[False] = False,
     depth: int = ...,
     entry_level: LogLevel | None = ...,
@@ -263,7 +263,7 @@ def log(
 @contextmanager
 def log(
     *,
-    context: Mapping[str, Any] | None = None,
+    context: StrMapping | None = None,
     disable: bool = False,
     depth: int = 2,
     entry_level: LogLevel | None = LogLevel.TRACE,
