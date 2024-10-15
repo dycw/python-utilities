@@ -75,6 +75,11 @@ def func_test_log_exit_variable(x: int, /) -> int:
         return log_cap(x + 1)
 
 
+def func_test_log_exit_variable_disable(x: int, /) -> int:
+    with log(disable=True, exit_level=LogLevel.DEBUG) as log_cap:
+        return log_cap(x + 1)
+
+
 # tenacity
 
 
