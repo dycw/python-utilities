@@ -70,6 +70,11 @@ def func_test_log_contextualize(x: int, /) -> int:
         return x + 1
 
 
+def func_test_log_exit_variable(x: int, /) -> int:
+    with log(exit_level=LogLevel.DEBUG) as log_cap:
+        return log_cap(x + 1)
+
+
 # tenacity
 
 

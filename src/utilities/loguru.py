@@ -5,13 +5,24 @@ import logging
 import sys
 import time
 from asyncio import AbstractEventLoop
-from collections.abc import Callable, Hashable, Iterator, Sequence
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum, unique
 from logging import Handler, LogRecord
 from sys import __excepthook__, _getframe, stderr
-from typing import TYPE_CHECKING, Any, Literal, TextIO, TypedDict, assert_never, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Literal,
+    TextIO,
+    TypedDict,
+    TypeVar,
+    assert_never,
+    cast,
+    overload,
+)
 
 from loguru import logger
 from typing_extensions import override
@@ -23,6 +34,7 @@ from utilities.iterables import (
     one,
     resolve_include_and_exclude,
 )
+from utilities.sentinel import Sentinel, sentinel
 from utilities.timer import Timer
 
 if TYPE_CHECKING:
@@ -185,9 +197,66 @@ class GetLoggingLevelNumberError(Exception):
         return f"Invalid logging level: {self.level!r}"
 
 
+_T = TypeVar("_T")
+
+
+@dataclass(kw_only=True, slots=True)
+class _LogContainer(Generic[_T]):
+    obj: _T | Sentinel = sentinel
+
+    def __call__(self, obj: _T) -> _T:
+        if not isinstance(self.obj, Sentinel):
+            msg = f"Container already contains {self.obj}; cannot set {obj}"
+            raise _LogContainerError(msg)
+        self.obj = obj
+        return obj
+
+
+class _LogContainerError(Exception): ...
+
+
+@contextmanager
+@overload
+def log(
+    *,
+    context: Mapping[str, Any] | None = ...,
+    disable: Literal[True],
+    depth: int = ...,
+    entry_level: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
+    entry_message: str = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
+    error_bind: StrMapping | None = ...,
+    error_message: str = ...,
+    exit_level: LogLevel | None = ...,
+    exit_duration: Duration = ...,
+    exit_bind: StrMapping | None = ...,
+    exit_message: str = ...,
+    **kwargs: ...,
+) -> Iterator[None]: ...
+@contextmanager
+@overload
+def log(
+    *,
+    context: Mapping[str, Any] | None = ...,
+    disable: Literal[False] = False,
+    depth: int = ...,
+    entry_level: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
+    entry_message: str = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
+    error_bind: StrMapping | None = ...,
+    error_message: str = ...,
+    exit_level: LogLevel | None = ...,
+    exit_duration: Duration = ...,
+    exit_bind: StrMapping | None = ...,
+    exit_message: str = ...,
+    **kwargs: ...,
+) -> Iterator[_LogContainer]: ...
 @contextmanager
 def log(
     *,
+    context: Mapping[str, Any] | None = None,
     disable: bool = False,
     depth: int = 2,
     entry_level: LogLevel | None = LogLevel.TRACE,
@@ -201,18 +270,17 @@ def log(
     exit_bind: StrMapping | None = None,
     exit_message: str = "✔",
     **kwargs: Any,
-) -> Iterator[None]:
+) -> Iterator[None] | Iterator[_LogContainer]:
     """Log the function entry/error/exit/duration."""
     if disable:
         yield
     else:
         core_depth = depth + 2
         with Timer() as timer:
-            if len(kwargs) >= 1:
+            if context is not None:
                 with (  # pragma: no cover
-                    logger.contextualize(**kwargs),
+                    logger.contextualize(**context),
                     _log_core(
-                        timer,
                         core_depth,
                         entry_level=entry_level,
                         entry_bind=entry_bind,
@@ -224,12 +292,22 @@ def log(
                         exit_duration=exit_duration,
                         exit_bind=exit_bind,
                         exit_message=exit_message,
-                    ),
+                        **kwargs,
+                    ) as container,
                 ):
-                    yield
+                    yield container
+                _log_finalize(
+                    timer,
+                    container,
+                    depth=depth,
+                    entry_level=entry_level,
+                    exit_level=exit_level,
+                    exit_duration=exit_duration,
+                    exit_bind=exit_bind,
+                    exit_message=exit_message,
+                )
             else:
                 with _log_core(
-                    timer,
                     core_depth,
                     entry_level=entry_level,
                     entry_bind=entry_bind,
@@ -241,13 +319,23 @@ def log(
                     exit_duration=exit_duration,
                     exit_bind=exit_bind,
                     exit_message=exit_message,
-                ):
-                    yield
+                    **kwargs,
+                ) as container:
+                    yield container
+                _log_finalize(
+                    timer,
+                    container,
+                    depth=depth,
+                    entry_level=entry_level,
+                    exit_level=exit_level,
+                    exit_duration=exit_duration,
+                    exit_bind=exit_bind,
+                    exit_message=exit_message,
+                )
 
 
 @contextmanager
 def _log_core(
-    timer: Timer,
     depth: int,
     /,
     *,
@@ -261,34 +349,66 @@ def _log_core(
     exit_duration: Duration = SECOND,
     exit_bind: StrMapping | None = None,
     exit_message: str = "✔",
-) -> Iterator[None]:
-    if entry_level is not None:
-        logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
-        logger_entry.opt(depth=depth).log(entry_level, entry_message)
-    try:
-        yield
-    except Exception as error:
-        if (error_expected is None) or not isinstance(error, error_expected):
-            logger_error = logger if error_bind is None else logger.bind(**error_bind)
-            logger_error.opt(exception=True, record=True, depth=depth).error(
-                error_message
-            )
-        raise
-    finally:
-        if isinstance(exit_level, LogLevel) or (timer >= exit_duration):
-            match exit_level:
-                case LogLevel():
-                    exit_level_use = exit_level
-                case None:
-                    exit_level_use = (
-                        LogLevel.TRACE if entry_level is None else entry_level
-                    )
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                    assert_never(never)
-            logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
-            logger_exit.opt(depth=depth).log(
-                exit_level_use, exit_message, **{"⏲": timer}
-            )
+    **kwargs: Any,
+) -> Iterator[_LogContainer]:
+    with Timer() as timer:
+        if entry_level is not None:
+            logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
+            logger_entry.opt(depth=depth).log(entry_level, entry_message, **kwargs)
+        try:
+            yield _LogContainer()
+        except Exception as error:
+            if (error_expected is None) or not isinstance(error, error_expected):
+                logger_error = (
+                    logger if error_bind is None else logger.bind(**error_bind)
+                )
+                logger_error.opt(exception=True, record=True, depth=depth).error(
+                    error_message
+                )
+            raise
+        finally:
+            if isinstance(exit_level, LogLevel) or (timer >= exit_duration):
+                match exit_level:
+                    case LogLevel():
+                        exit_level_use = exit_level
+                    case None:
+                        exit_level_use = (
+                            LogLevel.TRACE if entry_level is None else entry_level
+                        )
+                    case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                        assert_never(never)
+                logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
+                logger_exit.opt(depth=depth).log(
+                    exit_level_use, exit_message, **{"⏲": timer}
+                )
+
+
+def _log_finalize(
+    timer: Timer,
+    container: _LogContainer,
+    /,
+    *,
+    depth: int = 2,
+    entry_level: LogLevel | None = LogLevel.TRACE,
+    exit_level: LogLevel | None = None,
+    exit_duration: Duration = SECOND,
+    exit_bind: StrMapping | None = None,
+    exit_message: str = "✔",
+) -> None:
+    if isinstance(exit_level, LogLevel) or (timer >= exit_duration):
+        match exit_level:
+            case LogLevel():
+                level_use = exit_level
+            case None:
+                level_use = LogLevel.TRACE if entry_level is None else entry_level
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
+        logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
+        kwargs = {}
+        if not isinstance(container.obj, Sentinel):
+            kwargs["✔"] = container.obj
+        kwargs["⏲"] = timer
+        logger_exit.opt(depth=depth).log(level_use, exit_message, **kwargs)
 
 
 def logged_sleep_sync(
