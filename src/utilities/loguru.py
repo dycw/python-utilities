@@ -259,7 +259,7 @@ def log(
     exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
     **kwargs: ...,
-) -> Iterator[_LogContainer]: ...
+) -> Iterator[_LogContainer[Any]]: ...
 @contextmanager
 @overload
 def log(
@@ -278,7 +278,7 @@ def log(
     exit_bind: StrMapping | None = ...,
     exit_message: str = ...,
     **kwargs: ...,
-) -> Iterator[None] | Iterator[_LogContainer]: ...
+) -> Iterator[None] | Iterator[_LogContainer[Any]]: ...
 @contextmanager
 def log(
     *,
@@ -296,7 +296,7 @@ def log(
     exit_bind: StrMapping | None = None,
     exit_message: str = "✔",
     **kwargs: Any,
-) -> Iterator[None] | Iterator[_LogContainer]:
+) -> Iterator[None] | Iterator[_LogContainer[Any]]:
     """Log the function entry/error/exit/duration."""
     if disable:
         yield
@@ -355,7 +355,7 @@ def _log_core(
     exit_bind: StrMapping | None = None,
     exit_message: str = "✔",
     **kwargs: Any,
-) -> Iterator[_LogContainer]:
+) -> Iterator[_LogContainer[Any]]:
     with Timer() as timer:
         if entry_level is not None:
             logger_entry = logger if entry_bind is None else logger.bind(**entry_bind)
