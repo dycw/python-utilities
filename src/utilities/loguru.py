@@ -261,6 +261,25 @@ def log(
     **kwargs: ...,
 ) -> Iterator[_LogContainer]: ...
 @contextmanager
+@overload
+def log(
+    *,
+    context: StrMapping | None = ...,
+    disable: bool = False,
+    depth: int = ...,
+    entry_level: LogLevel | None = ...,
+    entry_bind: StrMapping | None = ...,
+    entry_message: str = ...,
+    error_expected: type[Exception] | tuple[type[Exception], ...] | None = ...,
+    error_bind: StrMapping | None = ...,
+    error_message: str = ...,
+    exit_level: LogLevel | None = ...,
+    exit_duration: Duration = ...,
+    exit_bind: StrMapping | None = ...,
+    exit_message: str = ...,
+    **kwargs: ...,
+) -> Iterator[None] | Iterator[_LogContainer]: ...
+@contextmanager
 def log(
     *,
     context: StrMapping | None = None,
