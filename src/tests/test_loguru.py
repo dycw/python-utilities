@@ -306,7 +306,7 @@ class TestLog:
                 return log_cap(x)
 
         with raises(
-            _LogContainerError, match="Contained already contains 1; cannot set 1"
+            _LogContainerError, match="Container already contains 1; cannot set 1"
         ):
             _ = func(1)
 
