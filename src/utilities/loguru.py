@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import reprlib
 import sys
 import time
 from asyncio import AbstractEventLoop
@@ -206,13 +207,19 @@ class _LogContainer(Generic[_T]):
 
     def __call__(self, obj: _T) -> _T:
         if not isinstance(self.obj, Sentinel):
-            msg = f"Container already contains {self.obj}; cannot set {obj}"
-            raise _LogContainerError(msg)
+            raise _LogContainerError(old=self.obj, new=obj)
         self.obj = obj
         return obj
 
 
-class _LogContainerError(Exception): ...
+@dataclass(kw_only=True, slots=True)
+class _LogContainerError(Exception):
+    old: Any
+    new: Any
+
+    @override
+    def __str__(self) -> str:
+        return f"Container already contains {reprlib.repr(self.old)}; cannot set {reprlib.repr(self.new)}"
 
 
 @contextmanager

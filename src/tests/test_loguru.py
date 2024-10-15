@@ -32,8 +32,10 @@ from utilities.loguru import (
     LogLevel,
     _GetLoggingLevelNameEmptyError,
     _GetLoggingLevelNameNonUniqueError,
+    _LogContainerError,
     get_logging_level_name,
     get_logging_level_number,
+    log,
     logged_sleep_async,
     logged_sleep_sync,
     make_except_hook,
@@ -296,6 +298,17 @@ class TestLog:
         assert search(expected1, line1), line1
         expected2 = self.trace + r"func_test_log_exit_variable:\d+ - ✔ | {'✔': 2}"
         assert search(expected2, line2), line2
+
+    def test_exit_variable_error(self) -> None:
+        def func(x: int, /) -> int:
+            with log() as log_cap:
+                _ = log_cap(x)
+                return log_cap(x)
+
+        with raises(
+            _LogContainerError, match="Contained already contains 1; cannot set 1"
+        ):
+            _ = func(1)
 
     def test_contextualize(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)
