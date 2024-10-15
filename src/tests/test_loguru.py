@@ -21,6 +21,7 @@ from tests.test_loguru_functions import (
     func_test_log_error_expected,
     func_test_log_exit_duration,
     func_test_log_exit_explicit,
+    func_test_log_exit_variable,
 )
 from utilities.hypothesis import text_ascii
 from utilities.loguru import (
@@ -31,8 +32,10 @@ from utilities.loguru import (
     LogLevel,
     _GetLoggingLevelNameEmptyError,
     _GetLoggingLevelNameNonUniqueError,
+    _LogContainerError,
     get_logging_level_name,
     get_logging_level_number,
+    log,
     logged_sleep_async,
     logged_sleep_sync,
     make_except_hook,
@@ -278,6 +281,34 @@ class TestLog:
             + r"func_test_log_exit_duration:\d+ - ✔ | {'⏲': \d:\d{2}:\d{2}\.\d{6}}$"
         )
         assert search(expected2, line2), line2
+
+    def test_exit_variable(self, *, capsys: CaptureFixture) -> None:
+        default_format = ensure_str(LOGURU_FORMAT)
+        handler: HandlerConfiguration = {
+            "sink": sys.stdout,
+            "level": LogLevel.TRACE,
+            "format": f"{default_format} | {{extra}}",
+        }
+        _ = logger.configure(handlers=[cast(dict[str, Any], handler)])
+
+        assert func_test_log_exit_variable(1) == 2
+        out = capsys.readouterr().out
+        line1, line2 = out.splitlines()
+        expected1 = self.trace + r"func_test_log_exit_variable:\d+ - ➢ | {}$"
+        assert search(expected1, line1), line1
+        expected2 = self.trace + r"func_test_log_exit_variable:\d+ - ✔ | {'✔': 2}"
+        assert search(expected2, line2), line2
+
+    def test_exit_variable_error(self) -> None:
+        def func(x: int, /) -> int:
+            with log() as log_cap:
+                _ = log_cap(x)
+                return log_cap(x)
+
+        with raises(
+            _LogContainerError, match="Container already contains 1; cannot set 1"
+        ):
+            _ = func(1)
 
     def test_contextualize(self, *, capsys: CaptureFixture) -> None:
         default_format = ensure_str(LOGURU_FORMAT)

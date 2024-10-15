@@ -17,7 +17,7 @@ altair==5.4.1
     #   vegafusion
 annotated-types==0.7.0
     # via pydantic
-anyio==4.6.2
+anyio==4.6.2.post1
     # via httpx
 argcomplete==3.5.1
     # via nox
@@ -116,7 +116,7 @@ greenlet==3.1.1
     # via dycw-utilities (pyproject.toml)
 h11==0.14.0
     # via httpcore
-hatch==1.12.0
+hatch==1.13.0
     # via dycw-utilities (pyproject.toml)
 hatchling==1.25.0
     # via hatch
@@ -126,7 +126,7 @@ httpx==0.27.2
     # via hatch
 hyperlink==21.0.0
     # via hatch
-hypothesis==6.115.0
+hypothesis==6.115.2
     # via dycw-utilities (pyproject.toml)
 idna==3.10
     # via
@@ -419,7 +419,7 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy
     #   streamlit
-tzdata==2024.1
+tzdata==2024.2
     # via
     #   dycw-utilities (pyproject.toml)
     #   pandas
@@ -429,7 +429,7 @@ urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.20
+uv==0.4.21
     # via hatch
 vegafusion==1.6.9
     # via dycw-utilities (pyproject.toml)
