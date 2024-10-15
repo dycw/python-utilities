@@ -32,7 +32,7 @@ dev = [
   "eventkit >= 1.0.3, < 1.1",
   "fpdf2 >= 2.8.1, < 2.9",
   "greenlet >= 3.1.1, < 3.2",  # for sqlalchemy async
-  "hatch >= 1.12.0, < 1.13",
+  "hatch >= 1.13.0, < 1.14",
   "hypothesis >= 6.115.2, < 6.116",
   "img2pdf >= 0.5.1, < 0.6",
   "loguru >= 0.7.2, < 0.8",
@@ -62,7 +62,7 @@ dev = [
   "tenacity >= 9.0.0, < 9.1",
   "tqdm >= 4.66.5, < 4.67",
   "typed-settings >= 24.5.0, < 24.6",
-  "tzdata >= 2024.1, < 2024.2",
+  "tzdata >= 2024.2, < 2024.3",
   "tzlocal >= 5.2, < 5.3",
   "vegafusion >= 1.6.9, < 1.7",
   "vegafusion-python-embed >= 1.6.9, < 1.7",
@@ -255,7 +255,7 @@ zzz-test-warnings = []
 zzz-test-whenever = ["whenever >= 0.6.9, < 0.7"]
 zzz-test-zipfile = []
 zzz-test-zlib = ["orjson >= 3.10.7, < 3.11"]
-zzz-test-zoneinfo = ["tzdata >= 2024.1, < 2024.2"]
+zzz-test-zoneinfo = ["tzdata >= 2024.2, < 2024.3"]
 
 [project.scripts]
 start-pypi-server = "utilities.scripts.pypi_server:main"
