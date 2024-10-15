@@ -352,29 +352,26 @@ def _log_core(
                     error_message
                 )
             raise
-        if (
+        if not (
             isinstance(exit_level, LogLevel)
             or not isinstance(container.obj, Sentinel)
             or (timer >= exit_duration)
         ):
-            match exit_level:
-                case LogLevel():
-                    exit_level_use = exit_level
-                case None:
-                    exit_level_use = (
-                        LogLevel.TRACE if entry_level is None else entry_level
-                    )
-                case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
-                    assert_never(never)
-            logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
-            exit_kwargs = {}
-            if not isinstance(container.obj, Sentinel):
-                exit_kwargs["✔"] = container.obj
-            if timer >= exit_duration:
-                exit_kwargs["⏲"] = timer
-            logger_exit.opt(depth=depth).log(
-                exit_level_use, exit_message, **exit_kwargs
-            )
+            return
+        match exit_level:
+            case LogLevel():
+                exit_level_use = exit_level
+            case None:
+                exit_level_use = LogLevel.TRACE if entry_level is None else entry_level
+            case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
+                assert_never(never)
+        logger_exit = logger if exit_bind is None else logger.bind(**exit_bind)
+        exit_kwargs = {}
+        if not isinstance(container.obj, Sentinel):
+            exit_kwargs["✔"] = container.obj
+        if timer >= exit_duration:
+            exit_kwargs["⏲"] = timer
+        logger_exit.opt(depth=depth).log(exit_level_use, exit_message, **exit_kwargs)
 
 
 def logged_sleep_sync(
