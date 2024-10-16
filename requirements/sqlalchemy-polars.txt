@@ -41,7 +41,7 @@ pytest-rerunfailures==14.0
     # via dycw-utilities (pyproject.toml)
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==2.0.35
+sqlalchemy==2.0.36
     # via dycw-utilities (pyproject.toml)
 tomli==2.0.2
     # via coverage
