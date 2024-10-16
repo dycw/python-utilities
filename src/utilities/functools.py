@@ -4,7 +4,6 @@ from collections.abc import Callable
 from functools import cache as _cache
 from functools import lru_cache as _lru_cache
 from functools import partial as _partial
-from functools import update_wrapper
 from typing import Any, TypeVar, cast, overload
 
 from typing_extensions import override
@@ -16,9 +15,7 @@ _T = TypeVar("_T")
 def cache(func: _F, /) -> _F:
     """Typed version of `cache`."""
     typed_cache = cast(Callable[[_F], _F], _cache)
-    cached_func = typed_cache(func)
-    update_wrapper(cached_func, func)
-    return cached_func
+    return typed_cache(func)
 
 
 @overload
