@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto, unique
 from fractions import Fraction
 from operator import eq
+from time import sleep
 from typing import Any, Literal, NamedTuple
 
 from dacite import WrongTypeError
@@ -58,6 +59,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.timer import Timer
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC, HongKong
 
@@ -301,6 +303,28 @@ class TestSerializeAndDeserialize:
         obj = Example(x=x)
         result = deserialize(serialize(obj), cls=Example)
         assert result == obj
+
+    def test_timer(self) -> None:
+        with Timer() as timer:
+            sleep(0.01)
+
+        result = deserialize(serialize(timer))
+        assert result == timer
+
+    def test_arbitrary_objects(self) -> None:
+        with raises(
+            SerializeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
+            _ = serialize(sentinel)
+        result = serialize(sentinel, fallback=True)
+        expected = b'{"_k":"any","_v":"<sentinel>"}'
+        assert result == expected
+
+    def test_arbitrary_objects_alongside_regular_objects(self) -> None:
+        obj = {"truth": True, "sentinel": sentinel}
+        result = deserialize(serialize(obj, fallback=True))
+        expected = {"truth": True, "sentinel": str(sentinel)}
+        assert result == expected
 
     def _run_tests(
         self,
