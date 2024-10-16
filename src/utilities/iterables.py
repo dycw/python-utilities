@@ -580,6 +580,11 @@ def expanding_window(iterable: Iterable[_T], /) -> islice[list[_T]]:
     return islice(accumulate(iterable, func=func, initial=[]), 1, None)
 
 
+def hashable_to_iterable(obj: _THashable | None, /) -> tuple[_THashable, ...] | None:
+    """Lift a hashable singleton to an iterable of hashables."""
+    return None if obj is None else (obj,)
+
+
 @overload
 def filter_include_and_exclude(
     iterable: Iterable[_T],
@@ -874,6 +879,7 @@ __all__ = [
     "expanding_window",
     "filter_include_and_exclude",
     "groupby_lists",
+    "hashable_to_iterable",
     "is_iterable",
     "is_iterable_not_enum",
     "is_iterable_not_str",

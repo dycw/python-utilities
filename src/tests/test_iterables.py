@@ -60,6 +60,7 @@ from utilities.iterables import (
     expanding_window,
     filter_include_and_exclude,
     groupby_lists,
+    hashable_to_iterable,
     is_iterable,
     is_iterable_not_enum,
     is_iterable_not_str,
@@ -610,6 +611,19 @@ class TestExpandingWindow:
     )
     def test_main(self, *, iterable: Iterable[int], expected: list[list[int]]) -> None:
         result = list(expanding_window(iterable))
+        assert result == expected
+
+
+class TestHashableToIterable:
+    def test_none(self) -> None:
+        result = hashable_to_iterable(None)
+        expected = None
+        assert result is expected
+
+    @given(x=lists(integers()))
+    def test_integers(self, *, x: int) -> None:
+        result = hashable_to_iterable(x)
+        expected = (x,)
         assert result == expected
 
 
