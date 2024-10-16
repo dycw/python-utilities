@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial, wraps
+from functools import _lru_cache_wrapper, partial, wraps
 from types import (
     BuiltinFunctionType,
     FunctionType,
@@ -10,7 +10,7 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from typing_extensions import ParamSpec, override
 
@@ -62,6 +62,8 @@ def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
     if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
         return obj.__name__
+    if isinstance(obj, _lru_cache_wrapper):
+        return cast(Any, obj).__name__
     if isinstance(
         obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
     ):
