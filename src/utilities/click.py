@@ -115,11 +115,16 @@ class Enum(ParamType, Generic[_E]):
 
     @override
     def convert(
-        self, value: MaybeStr[_E], param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> _E:
         """Convert a value into the `Enum` type."""
+
+        if isinstance(value, Enum | str):
+            with suppress(EnsureEnumError):
+                return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
+        return self.fail(f"Unable to parse {value}", param, ctx)
+
         try:
-            return ensure_enum(value, self._enum, case_sensitive=self._case_sensitive)
         except EnsureEnumError:
             return self.fail(f"Unable to parse {value}", param, ctx)
 
