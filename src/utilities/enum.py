@@ -40,25 +40,39 @@ def ensure_enum(
     value: MaybeStr[_E], enum: type[_E], /, *, case_sensitive: bool = ...
 ) -> _E: ...
 def ensure_enum(
-    value: MaybeStr[_E] | None, enum: Any, /, *, case_sensitive: bool = False
+    value: MaybeStr[_E] | None, enum: type[_E], /, *, case_sensitive: bool = False
 ) -> _E | None:
     """Ensure the object is a member of the enum."""
     if value is None:
         return None
-    if isinstance(value, Enum):
+    if isinstance(value, enum):
         return value
-    return parse_enum(value, enum, case_sensitive=case_sensitive)
+    if isinstance(value, Enum):
+        raise _EnsureEnumTypeEnumError(value=value, enum=enum)
+    try:
+        return parse_enum(value, enum, case_sensitive=case_sensitive)
+    except ParseEnumError as error:
+        raise _EnsureEnumParseError(value=error.value, enum=error.enum) from None
 
 
 @dataclass(kw_only=True, slots=True)
-class EnsureEnumError(Exception):
-    value: MaybeStr[Enum]
-    enum: type[Enum]
-    case_sensitive: bool
+class EnsureEnumError(Exception, Generic[_E]):
+    value: MaybeStr[_E]
+    enum: type[_E]
 
+
+@dataclass(kw_only=True, slots=True)
+class _EnsureEnumTypeEnumError(EnsureEnumError):
     @override
     def __str__(self) -> str:
         return f"{self.value!r} is not an instance of {self.enum!r}"
+
+
+@dataclass(kw_only=True, slots=True)
+class _EnsureEnumParseError(EnsureEnumError):
+    @override
+    def __str__(self) -> str:
+        return f"Unable to ensure enum; got {self.value!r}"
 
 
 def parse_enum(

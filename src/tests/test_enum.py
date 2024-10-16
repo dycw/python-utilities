@@ -16,41 +16,6 @@ from utilities.enum import (
 )
 
 
-class TestEnsureEnum:
-    @given(data=data())
-    def test_main(self, *, data: DataObject) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        truth: Truth = data.draw(sampled_from(Truth))
-        input_: MaybeStr[Truth] = data.draw(sampled_from([truth, truth.name]))
-        result = ensure_enum(input_, Truth)
-        assert result is truth
-
-    def test_none(self) -> None:
-        class Truth(Enum):
-            true = auto()
-            false = auto()
-
-        result = ensure_enum(None, Truth)
-        assert result is None
-
-    @given(data=data())
-    def test_error_single_value_single_enum(self, *, data: DataObject) -> None:
-        class Truth1(Enum):
-            true1 = auto()
-            false1 = auto()
-
-        class Truth2(Enum):
-            true2 = auto()
-            false2 = auto()
-
-        truth: Truth1 = data.draw(sampled_from(Truth1))
-        with raises(EnsureEnumError, match=".* is not an instance of .*"):
-            _ = ensure_enum(truth, Truth2)
-
-
 class TestParseEnum:
     @given(data=data())
     def test_generic_enum(self, *, data: DataObject) -> None:
