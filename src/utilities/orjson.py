@@ -362,6 +362,10 @@ def _object_hook(obj: Any, /) -> Any:
         # third party
         case _Key.sqlalchemy_engine:
             return _object_hook_sqlalchemy_engine(value)
+        # fallback
+        case _Key.any:
+            return _object_hook_fallback(value)
+        # never
         case _ as never:  # pyright: ignore[reportUnnecessaryComparison]
             raise _ObjectHookError(data=never)
 
@@ -393,6 +397,10 @@ def _object_hook_date(value: str, /) -> dt.date:
 
 def _object_hook_decimal(value: str, /) -> Decimal:
     return Decimal(value)
+
+
+def _object_hook_fallback(value: str, /) -> str:
+    return value
 
 
 def _object_hook_fraction(value: tuple[int, int], /) -> Fraction:

@@ -320,6 +320,12 @@ class TestSerializeAndDeserialize:
         expected = b'{"_k":"any","_v":"<sentinel>"}'
         assert result == expected
 
+    def test_arbitrary_objects_alongside_regular_objects(self) -> None:
+        obj = {"truth": True, "sentinel": sentinel}
+        result = deserialize(serialize(obj, fallback=True))
+        expected = {"truth": True, "sentinel": str(sentinel)}
+        assert result == expected
+
     def _run_tests(
         self,
         data: DataObject,
