@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum, auto, unique
 from fractions import Fraction
 from operator import eq
+from time import sleep
 from typing import Any, Literal, NamedTuple
 
 from dacite import WrongTypeError
@@ -58,6 +59,7 @@ from utilities.orjson import (
     serialize,
 )
 from utilities.sentinel import sentinel
+from utilities.timer import Timer
 from utilities.typing import get_args
 from utilities.zoneinfo import UTC, HongKong
 
@@ -301,6 +303,13 @@ class TestSerializeAndDeserialize:
         obj = Example(x=x)
         result = deserialize(serialize(obj), cls=Example)
         assert result == obj
+
+    def test_timer(self) -> None:
+        with Timer() as timer:
+            sleep(0.01)
+
+        result = deserialize(serialize(timer))
+        assert result == timer
 
     def _run_tests(
         self,

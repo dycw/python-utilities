@@ -31,6 +31,7 @@ from typing_extensions import override
 from utilities.dataclasses import is_dataclass_instance
 from utilities.functions import get_class_name
 from utilities.iterables import OneError, one
+from utilities.timer import Timer
 from utilities.typing import get_args, is_namedtuple_class, is_namedtuple_instance
 
 if TYPE_CHECKING:
@@ -141,6 +142,9 @@ def _get_schema(obj: _T, /) -> _Schema[_T]:
         return cast(_Schema[_T], _get_schema_frozenset())
     if isinstance(obj, set):
         return cast(_Schema[_T], _get_schema_set())
+    # first party
+    if isinstance(obj, Timer):
+        return cast(_Schema[_T], _get_schema_timer())
     # third party
     if (schema := _get_schema_engine(obj)) is not None:
         return cast(_Schema[_T], schema)
@@ -229,6 +233,15 @@ def _get_schema_time() -> _Schema[dt.time]:
     from utilities.whenever import serialize_time
 
     return _Schema(key=_Key.time, serializer=serialize_time)
+
+
+def _get_schema_timer() -> _Schema[Timer]:
+    from utilities.whenever import serialize_timedelta
+
+    def serializer(obj: Timer, /) -> str:
+        return serialize_timedelta(obj.timedelta)
+
+    return _Schema(key=_Key.timedelta, serializer=serializer)
 
 
 def _get_schema_timedelta() -> _Schema[dt.timedelta]:
