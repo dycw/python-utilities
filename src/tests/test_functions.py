@@ -25,6 +25,7 @@ from utilities.functions import (
     send_and_next,
     start_generator_coroutine,
 )
+from utilities.functools import cache, lru_cache
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -85,6 +86,20 @@ class TestGetFuncName:
             return identity(x)
 
         assert get_func_name(wrapped) == "identity"
+
+    def test_cache(self) -> None:
+        @cache
+        def cache_func(x: int, /) -> int:
+            return x
+
+        assert get_func_name(cache_func) == "cache_func"
+
+    def test_lru_cache(self) -> None:
+        @lru_cache
+        def lru_cache_func(x: int, /) -> int:
+            return x
+
+        assert get_func_name(lru_cache_func) == "lru_cache_func"
 
     def test_object(self) -> None:
         class Example:

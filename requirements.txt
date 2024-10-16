@@ -276,7 +276,7 @@ psutil==6.0.0
     # via
     #   memory-profiler
     #   vegafusion
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via dycw-utilities (pyproject.toml)
 ptyprocess==0.7.0
     # via pexpect
@@ -362,7 +362,7 @@ scipy==1.14.1
     #   scs
 scs==3.2.7
     # via cvxpy
-setuptools==75.1.0
+setuptools==75.2.0
     # via dycw-utilities (pyproject.toml)
 shellingham==1.5.4
     # via hatch
