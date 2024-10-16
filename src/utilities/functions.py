@@ -10,7 +10,7 @@ from types import (
     MethodWrapperType,
     WrapperDescriptorType,
 )
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from typing_extensions import ParamSpec, override
 
@@ -60,10 +60,10 @@ def get_class_name(obj: Any, /) -> str:
 
 def get_func_name(obj: Callable[..., Any], /) -> str:
     """Get the name of a callable."""
-    if isinstance(
-        obj, BuiltinFunctionType | FunctionType | MethodType | _lru_cache_wrapper
-    ):
+    if isinstance(obj, BuiltinFunctionType | FunctionType | MethodType):
         return obj.__name__
+    if isinstance(obj, _lru_cache_wrapper):
+        return cast(Any, obj).__name__
     if isinstance(
         obj, MethodDescriptorType | MethodWrapperType | WrapperDescriptorType
     ):
