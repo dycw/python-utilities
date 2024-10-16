@@ -311,7 +311,6 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(timer))
         assert result == timer
 
-    @mark.only
     def test_arbitrary_objects(self) -> None:
         with raises(
             SerializeError, match="Unable to serialize object of type 'Sentinel'"
