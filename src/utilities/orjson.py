@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from decimal import Decimal
 from enum import Enum, StrEnum, unique
 from fractions import Fraction
+from functools import partial
 from ipaddress import IPv4Address, IPv6Address
 from pathlib import Path
 from typing import (
@@ -47,6 +48,7 @@ _SCHEMA_VALUE = "_v"
 
 @unique
 class _Key(StrEnum):
+    any = "any"
     bytes = "byt"
     complex = "cmp"
     date = "dat"
@@ -65,7 +67,7 @@ class _Key(StrEnum):
     zoned_datetime = "zdt"
 
 
-def serialize(obj: Any, /) -> bytes:
+def serialize(obj: Any, /, *, fallback: bool = False) -> bytes:
     """Serialize an object."""
     if is_dataclass_instance(obj):
         obj_use = asdict(obj)
@@ -76,7 +78,7 @@ def serialize(obj: Any, /) -> bytes:
     try:
         return dumps(
             obj_use,
-            default=_serialize_default,
+            default=partial(_serialize_default, fallback=fallback),
             option=OPT_NON_STR_KEYS | OPT_PASSTHROUGH_DATETIME | OPT_SORT_KEYS,
         )
     except TypeError:
@@ -98,8 +100,8 @@ class _SchemaDict(Generic[_T], TypedDict):
     _v: _T
 
 
-def _serialize_default(obj: Any, /) -> _SchemaDict:
-    schema = _get_schema(obj)
+def _serialize_default(obj: Any, /, *, fallback: bool = False) -> _SchemaDict:
+    schema = _get_schema(obj, fallback=fallback)
     return {_SCHEMA_KEY: schema.key, _SCHEMA_VALUE: schema.serializer(obj)}
 
 
@@ -109,7 +111,7 @@ class _Schema(Generic[_T]):
     serializer: Callable[[_T], Any]
 
 
-def _get_schema(obj: _T, /) -> _Schema[_T]:
+def _get_schema(obj: _T, /, *, fallback: bool = False) -> _Schema[_T]:
     # standard library
     if isinstance(obj, bytes):
         return cast(_Schema[_T], _get_schema_bytes())
@@ -148,6 +150,9 @@ def _get_schema(obj: _T, /) -> _Schema[_T]:
     # third party
     if (schema := _get_schema_engine(obj)) is not None:
         return cast(_Schema[_T], schema)
+    # fallback
+    if fallback:
+        return cast(_Schema[_T], _get_schema_fallback())
     raise _GetSchemaError(obj=obj)
 
 
@@ -181,6 +186,10 @@ def _get_schema_engine(obj: Any, /) -> _Schema[Engine] | None:
                 serializer=lambda e: e.url.render_as_string(hide_password=False),
             )
     return None
+
+
+def _get_schema_fallback() -> _Schema[Any]:
+    return _Schema(key=_Key.any, serializer=str)
 
 
 def _get_schema_fraction() -> _Schema[Fraction]:

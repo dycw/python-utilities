@@ -311,6 +311,16 @@ class TestSerializeAndDeserialize:
         result = deserialize(serialize(timer))
         assert result == timer
 
+    @mark.only
+    def test_arbitrary_objects(self) -> None:
+        with raises(
+            SerializeError, match="Unable to serialize object of type 'Sentinel'"
+        ):
+            _ = serialize(sentinel)
+        result = serialize(sentinel, fallback=True)
+        expected = b'{"_k":"any","_v":"<sentinel>"}'
+        assert result == expected
+
     def _run_tests(
         self,
         data: DataObject,
