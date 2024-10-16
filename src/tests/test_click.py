@@ -442,6 +442,17 @@ class TestParameters:
 
         _ = failable
 
+    @mark.only
+    def test_frozensets_enum(self) -> None:
+        @command()
+        @option("--value", type=FrozenSetEnums(_Truth), default=123)
+        def cli(*, value: cls) -> None:
+            echo(f"value = {serialize(value)}")
+
+        result = CliRunner().invoke(cli)
+        assert result.exit_code == 0
+        assert result.stdout == f"value = {serialize(value)}\n"
+
 
 class TestCLIHelp:
     @mark.parametrize(

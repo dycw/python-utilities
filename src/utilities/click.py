@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import enum
 import pathlib
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from uuid import UUID
 
@@ -22,6 +23,7 @@ import utilities.types
 from utilities.datetime import EnsureMonthError, ensure_month
 from utilities.enum import EnsureEnumError, MaybeStr, ensure_enum
 from utilities.functions import get_class_name
+from utilities.iterables import is_iterable, is_iterable_not_str
 from utilities.sentinel import SENTINEL_REPR
 from utilities.text import split_str
 
@@ -57,15 +59,15 @@ class Date(ParamType):
 
     @override
     def convert(
-        self, value: dt.date | str, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> dt.date:
         """Convert a value into the `Date` type."""
         from utilities.whenever import EnsureDateError, ensure_date
 
-        try:
-            return ensure_date(value)
-        except EnsureDateError:
-            self.fail(f"Unable to parse {value}", param, ctx)
+        if isinstance(value, dt.date | str):
+            with suppress(EnsureDateError):
+                return ensure_date(value)
+        return self.fail(f"Unable to parse {value} of type", param, ctx)
 
 
 class Duration(ParamType):
@@ -80,17 +82,17 @@ class Duration(ParamType):
     @override
     def convert(
         self,
-        value: utilities.types.Duration | str,
+        value: Any,
         param: Parameter | None,
         ctx: Context | None,
     ) -> utilities.types.Duration:
         """Convert a value into the `Duration` type."""
         from utilities.whenever import EnsureDurationError, ensure_duration
 
-        try:
-            return ensure_duration(value)
-        except EnsureDurationError:
-            self.fail(f"Unable to parse {value}", param, ctx)
+        if isinstance(value, utilities.types.Duration | str):
+            with suppress(EnsureDurationError):
+                return ensure_duration(value)
+        return self.fail(f"Unable to parse {value}", param, ctx)
 
 
 _E = TypeVar("_E", bound=enum.Enum)
@@ -260,14 +262,16 @@ class FrozenSetParameter(ParamType, Generic[_TParam, _T]):
 
     @override
     def convert(
-        self, value: frozenset[_T] | str, param: Parameter | None, ctx: Context | None
+        self, value: Any, param: Parameter | None, ctx: Context | None
     ) -> frozenset[_T]:
         """Convert a value into the `ListDates` type."""
-        if isinstance(value, frozenset):
-            return value
-
-        values = split_str(value, separator=self._separator, empty=self._empty)
-        return frozenset(self._param.convert(v, param, ctx) for v in values)
+        if is_iterable_not_str(value):
+            return frozenset(value)
+        if isinstance(value, str):
+            values = split_str(value, separator=self._separator, empty=self._empty)
+            return frozenset(self._param.convert(v, param, ctx) for v in values)
+        self.fail(f"Unable to parse {value}", param, ctx)
+        return None
 
     @override
     def get_metavar(self, param: Parameter) -> str | None:
