@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from functools import wraps
+from functools import cache, lru_cache, wraps
 from operator import neg
 from types import NoneType
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -25,7 +25,6 @@ from utilities.functions import (
     send_and_next,
     start_generator_coroutine,
 )
-from utilities.functools import cache, lru_cache
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -80,19 +79,19 @@ class TestGetFuncName:
     def test_main(self, *, func: Callable[..., Any], expected: str) -> None:
         assert get_func_name(func) == expected
 
-    def test_decorated(self) -> None:
-        @wraps(identity)
-        def wrapped(x: _T, /) -> _T:
-            return identity(x)
-
-        assert get_func_name(wrapped) == "identity"
-
     def test_cache(self) -> None:
         @cache
         def cache_func(x: int, /) -> int:
             return x
 
         assert get_func_name(cache_func) == "cache_func"
+
+    def test_decorated(self) -> None:
+        @wraps(identity)
+        def wrapped(x: _T, /) -> _T:
+            return identity(x)
+
+        assert get_func_name(wrapped) == "identity"
 
     def test_lru_cache(self) -> None:
         @lru_cache

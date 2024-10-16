@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum
-from functools import partial
+from functools import _lru_cache_wrapper, partial
 from itertools import islice
 from re import sub
 from reprlib import (
@@ -117,7 +117,8 @@ class _CustomRepr(Repr):
             | MethodDescriptorType
             | MethodWrapperType
             | WrapperDescriptorType
-            | partial,
+            | partial
+            | _lru_cache_wrapper,
         ):
             return get_func_name(x)
         return self._drop_object_address(super().repr1(x, level))
