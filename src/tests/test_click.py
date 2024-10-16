@@ -442,16 +442,21 @@ class TestParameters:
 
         _ = failable
 
-    @mark.only
-    def test_frozensets_enum(self) -> None:
+    @mark.parametrize(
+        "param", [param(ListEnums(_Truth)), param(FrozenSetEnums(_Truth))], ids=str
+    )
+    def test_error_list_and_frozensets_parse(self, *, param: ParamType) -> None:
         @command()
-        @option("--value", type=FrozenSetEnums(_Truth), default=123)
-        def cli(*, value: cls) -> None:
-            echo(f"value = {serialize(value)}")
+        @option("--value", type=param, default=0)
+        def cli(*, value: list[_Truth] | frozenset[_Truth]) -> None:
+            echo(f"value = {value}")
 
         result = CliRunner().invoke(cli)
-        assert result.exit_code == 0
-        assert result.stdout == f"value = {serialize(value)}\n"
+        assert result.exit_code == 2
+        assert search(
+            "Invalid value for '--value': Unable to parse 0 of type <class 'int'>",
+            result.stdout,
+        )
 
 
 class TestCLIHelp:
