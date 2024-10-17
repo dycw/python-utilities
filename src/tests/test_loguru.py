@@ -17,6 +17,7 @@ from tests.test_loguru_functions import (
     func_test_log_error,
     func_test_log_error_expected,
     func_test_log_exit_variable,
+    func_test_log_exit_variable_disable,
     func_test_log_main,
     func_test_log_non_default_level,
 )
@@ -260,6 +261,12 @@ class TestLog:
         expected = self.trace + r"func_test_log_exit_variable:\d+ - "
         assert search(expected + r"➢ \| \{\}$", line1), line1
         assert search(expected + r"✔ \| ({'⏲': .*, '✔': 2})$", line2), line2
+
+    def test_exit_variable_disable(self, *, capsys: CaptureFixture) -> None:
+        self._configure()
+        assert func_test_log_exit_variable_disable(1) == 2
+        out = capsys.readouterr().out
+        assert out == ""
 
     def test_exit_variable_error(self) -> None:
         def func(x: int, /) -> int:
